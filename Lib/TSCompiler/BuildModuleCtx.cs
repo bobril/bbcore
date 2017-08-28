@@ -51,6 +51,7 @@ namespace Lib.TSCompiler
             {
                 var source = _result.WithoutExtension2Source[fullPath.Substring(0, fullPath.Length - ".js".Length)];
                 _result.RecompiledLast.Add(source);
+                TrullyCompiledCount++;
                 source.JsLink = outputInfo;
             }
             else if (fullPath.EndsWith(".d.ts"))
@@ -66,6 +67,10 @@ namespace Lib.TSCompiler
         }
 
         static string[] ExtensionsToImport = new string[] { ".tsx", ".ts", ".d.ts", ".jsx", ".js" };
+        internal OrderedHashSet<string> ToCheck;
+        internal OrderedHashSet<string> ToCompile;
+        internal uint CrawledCount;
+        internal int TrullyCompiledCount;
 
         public bool ChangedDts { get; internal set; }
 
@@ -102,7 +107,9 @@ namespace Lib.TSCompiler
             {
                 AddSource(itemInfo);
             }
-            if (itemInfo.DtsLink != null)
+            CheckAdd(item.FullPath);
+            Crawl();
+            if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath))
             {
                 return itemInfo.DtsLink.Owner.FullPath;
             }
@@ -123,14 +130,9 @@ namespace Lib.TSCompiler
             }
             var itemInfo = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
             itemInfo.ImportedAsModule = name;
-            if (IsTsOrTsx(mainFile))
+            AddSource(itemInfo);
+            if (!IsTsOrTsx(mainFile))
             {
-                AddSource(itemInfo);
-                return mainFile;
-            }
-            else
-            {
-                AddSource(itemInfo);
                 if (moduleInfo.TypesMainFile != null)
                 {
                     var dtsPath = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.TypesMainFile);
@@ -140,8 +142,14 @@ namespace Lib.TSCompiler
                         return dtsPath;
                     }
                 }
-                return mainFile;
             }
+            CheckAdd(item.FullPath);
+            Crawl();
+            if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath))
+            {
+                return itemInfo.DtsLink.Owner.FullPath;
+            }
+            return item.FullPath;
         }
 
         public void reportDiag(bool isError, int code, string text, string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
@@ -154,6 +162,55 @@ namespace Lib.TSCompiler
             var fi = TSFileAdditionalInfo.Get(fc, _owner.DiskCache);
             Console.WriteLine((isError ? "Error" : "Warn") + " " + fileName + ":" + startLine + " TS" + code + " " + text);
             fi.ReportDiag(isError, code, text, startLine, startCharacter, endLine, endCharacter);
+        }
+
+        public bool CheckAdd(string fullNameWithExtension)
+        {
+            if (ToCheck.Contains(fullNameWithExtension))
+                return false;
+            ToCheck.Add(fullNameWithExtension);
+            return true;
+        }
+
+        public void Crawl()
+        {
+            while (CrawledCount < ToCheck.Count)
+            {
+                var fileName = ToCheck[(int)CrawledCount];
+                CrawledCount++;
+                var fileCache = _owner.DiskCache.TryGetItem(fileName) as IFileCache;
+                if (fileCache == null || fileCache.IsInvalid)
+                {
+                    continue; // skip missing files
+                }
+                var fileAdditional = TSFileAdditionalInfo.Get(fileCache, _owner.DiskCache);
+                AddSource(fileAdditional);
+                if (fileAdditional.NeedsCompilation())
+                {
+                    if (fileAdditional.DtsLink != null)
+                        fileAdditional.DtsLink.Owner.IsInvalid = true;
+                    fileAdditional.DtsLink = null;
+                    fileAdditional.JsLink = null;
+                    fileAdditional.MapLink = null;
+                    ToCompile.Add(fileName);
+                }
+                else
+                {
+                    foreach (var localAdditional in fileAdditional.LocalImports)
+                    {
+                        var localName = localAdditional.Owner.FullPath;
+                        if (localName.EndsWith(".d.ts")) continue; // we cannot handle change in .d.ts without source
+                        CheckAdd(localName);
+                    }
+                    foreach (var moduleInfo in fileAdditional.ModuleImports)
+                    {
+                        moduleInfo.LoadProjectJson();
+                        var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
+                        if (mainFile.EndsWith(".d.ts")) continue; // we cannot handle change in .d.ts without source
+                        CheckAdd(mainFile);
+                    }
+                }
+            }
         }
     }
 }

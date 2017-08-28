@@ -83,7 +83,7 @@ namespace Lib.TSCompiler
                     }
                     if (parsed.GetValue("dependencies") is JObject parsedV)
                     {
-                        foreach(var i in parsedV.Properties())
+                        foreach (var i in parsedV.Properties())
                         {
                             deps.Add(i.Name);
                         }
@@ -109,6 +109,8 @@ namespace Lib.TSCompiler
                 _buildCtx = buildCtx,
                 _owner = this,
                 _result = new BuildResult(),
+                ToCheck = new OrderedHashSet<string>(),
+                ToCompile = new OrderedHashSet<string>()
             };
             ITSCompiler compiler = null;
             try
@@ -135,68 +137,28 @@ namespace Lib.TSCompiler
                 do
                 {
                     buildModuleCtx.ChangedDts = false;
-                    var toCheck = new OrderedHashSet<string>();
-                    toCheck.Add(PathUtils.Join(Owner.FullPath, MainFile));
-                    var toCompile = new OrderedHashSet<string>();
-                    Crawl(buildModuleCtx, toCheck, toCompile);
-                    if (toCompile.Count != 0)
+                    buildModuleCtx.CrawledCount = 0;
+                    buildModuleCtx.TrullyCompiledCount = 0;
+                    buildModuleCtx.ToCheck.Clear();
+                    buildModuleCtx.ToCompile.Clear();
+                    buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, MainFile));
+                    // TODO: Add test sources from ProjectOptions
+                    buildModuleCtx.Crawl();
+                    if (buildModuleCtx.ToCompile.Count != 0)
                     {
                         compiler.MeasurePerformance = true;
-                        compiler.CreateProgram(Owner.FullPath, toCompile.ToArray());
+                        compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.ToArray());
                         compiler.CompileProgram();
                         compiler.EmitProgram();
                         buildModuleCtx.UpdateCacheIds();
+                        // TODO: If any compilation errors then break;
                     }
-                } while (buildModuleCtx.ChangedDts);
+                } while (buildModuleCtx.ChangedDts || buildModuleCtx.TrullyCompiledCount < buildModuleCtx.ToCompile.Count);
                 BuildResult = buildModuleCtx._result;
             }
             finally
             {
                 if (compiler != null) buildCtx._compilerPool.Release(compiler);
-            }
-        }
-
-        void Crawl(BuildModuleCtx buildModuleCtx, OrderedHashSet<string> toCheck, OrderedHashSet<string> toCompile)
-        {
-            for (var idx = 0; idx < toCheck.Count; idx++)
-            {
-                var fileName = toCheck[idx];
-                var fileCache = DiskCache.TryGetItem(fileName) as IFileCache;
-                if (fileCache == null || fileCache.IsInvalid)
-                {
-                    throw new Exception("Missing " + fileName);
-                }
-                var fileAdditional = TSFileAdditionalInfo.Get(fileCache, DiskCache);
-                buildModuleCtx.AddSource(fileAdditional);
-                if (fileAdditional.NeedsCompilation())
-                {
-                    if (fileAdditional.DtsLink != null)
-                        fileAdditional.DtsLink.Owner.IsInvalid = true;
-                    fileAdditional.DtsLink = null;
-                    fileAdditional.JsLink = null;
-                    fileAdditional.MapLink = null;
-                    toCompile.Add(fileName);
-                }
-                else
-                {
-                    foreach (var localAdditional in fileAdditional.LocalImports)
-                    {
-                        var localName = localAdditional.Owner.FullPath;
-                        if (toCheck.Contains(localName))
-                            continue;
-                        if (localName.EndsWith(".d.ts")) continue;
-                        toCheck.Add(localName);
-                    }
-                    foreach(var moduleInfo in fileAdditional.ModuleImports)
-                    {
-                        moduleInfo.LoadProjectJson();
-                        var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
-                        if (toCheck.Contains(mainFile))
-                            continue;
-                        if (mainFile.EndsWith(".d.ts")) continue;
-                        toCheck.Add(mainFile);
-                    }
-                }
             }
         }
 
