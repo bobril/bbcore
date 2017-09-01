@@ -38,8 +38,7 @@ namespace Lib.TSCompiler
                 sourceMapBuilder.AddText("});");
             }
             sourceMapBuilder.AddText("//# sourceMappingURL=" + mapUrl);
-            _sourceMap = sourceMapBuilder.Build();
-            _sourceMap.sourceRoot = sourceRoot;
+            _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
             _sourceMapString = _sourceMap.ToString();
             _bundleJs = sourceMapBuilder.Content();
             BuildFastBundlerIndexHtml();

@@ -37,11 +37,12 @@ namespace Lib.Utils
             return _content.ToString();
         }
 
-        public SourceMap Build()
+        public SourceMap Build(string subtractDir, string srcRoot)
         {
             return new SourceMap
             {
-                sources = _sources.ToList(),
+                sourceRoot = srcRoot,
+                sources = _sources.Select(s => PathUtils.Subtract(s, subtractDir)).ToList(),
                 mappings = _mappings.ToString()
             };
         }

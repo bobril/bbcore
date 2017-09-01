@@ -31,13 +31,13 @@ namespace Lib.TSCompiler
         public void writeFile(string fileName, string data)
         {
             var fullPath = PathUtils.Join(_owner.Owner.FullPath, fileName);
+            var dirPath = PathUtils.Parent(fullPath);
             if (fullPath.EndsWith(".js.map"))
             {
                 var source = _result.WithoutExtension2Source[fullPath.Substring(0, fullPath.Length - ".js.map".Length)];
-                source.MapLink = SourceMap.Parse(data);
+                source.MapLink = SourceMap.Parse(data, dirPath);
                 return;
             }
-            var dirPath = PathUtils.Parent(fullPath);
             var fileOnly = fullPath.Substring(dirPath.Length + 1);
             var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
             if (fullPath.EndsWith(".js"))

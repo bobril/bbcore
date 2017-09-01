@@ -20,7 +20,7 @@
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.0.0-alpha2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.0.0-alpha2" />
     <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-alpha2" />
-    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0-preview2-final" />
+    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="System.Reactive" Version="4.0.0-preview00001" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0-preview2-25608-02" />

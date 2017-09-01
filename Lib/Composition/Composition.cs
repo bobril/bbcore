@@ -55,7 +55,7 @@ namespace Lib.Composition
                 Owner = proj,
                 Defines = new Dictionary<string, bool> { { "DEBUG", true } }
             };
-            lock(_projectsLock)
+            lock (_projectsLock)
             {
                 _projects.Add(proj.ProjectOptions);
             }
@@ -92,7 +92,7 @@ namespace Lib.Composition
             var path = context.Request.Path;
             if (path == "/")
                 path = "/index.html";
-            switch(path)
+            switch (path)
             {
                 case "/index.html":
                     context.Response.ContentType = "text/html";
@@ -111,6 +111,17 @@ namespace Lib.Composition
                     await context.Response.WriteAsync(_currentProject.FastBundle.SourceMapString);
                     return;
             }
+            if (path.StartsWithSegments("/bb/base", out var src))
+            {
+                var srcPath = PathUtils.Join(_currentProject.Owner.Owner.FullPath, src.Value.Substring(1));
+                var srcFileCache = _dc.TryGetItem(srcPath) as IFileCache;
+                if (srcFileCache != null)
+                {
+                    context.Response.ContentType = "text/plain";
+                    await context.Response.WriteAsync(srcFileCache.Utf8Content);
+                    return;
+                }
+            }
             context.Response.StatusCode = 404;
             await context.Response.WriteAsync("Not found " + path);
         }
@@ -118,19 +129,20 @@ namespace Lib.Composition
         public void InitInteractiveMode()
         {
             _hasBuildWork.Set();
-            _dc.ChangeObservable.Subscribe((_)=> {
+            _dc.ChangeObservable.Subscribe((_) =>
+            {
                 _hasBuildWork.Set();
             });
             Task.Run(() =>
             {
-                while(_hasBuildWork.WaitOne())
+                while (_hasBuildWork.WaitOne())
                 {
                     ProjectOptions[] toBuild;
-                    lock(_projectsLock)
+                    lock (_projectsLock)
                     {
                         toBuild = _projects.ToArray();
                     }
-                    foreach(var proj in toBuild)
+                    foreach (var proj in toBuild)
                     {
                         var ctx = new BuildCtx(_compilerPool);
                         proj.Owner.Build(ctx);

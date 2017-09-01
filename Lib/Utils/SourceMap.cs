@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Lib.Utils
 {
@@ -32,10 +33,14 @@ namespace Lib.Utils
             };
         }
 
-        public static SourceMap Parse(string content)
+        public static SourceMap Parse(string content, string dir)
         {
             var res = Newtonsoft.Json.JsonConvert.DeserializeObject<SourceMap>(content);
             if (res.version != 3) throw new Exception("Invalid Source Map version " + res.version);
+            if (dir!=null)
+            {
+                res.sources = res.sources.Select(s => PathUtils.Join(dir, s)).ToList();
+            }
             return res;
         }
 
