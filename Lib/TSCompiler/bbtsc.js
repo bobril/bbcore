@@ -118,6 +118,18 @@ function bbCompileProgram() {
         }
     }
 }
+var sourceInfos = Object.create(null);
+function bbGatherSourceInfo() {
+    var typeChecker = program.getTypeChecker();
+    var sourceFiles = program.getSourceFiles();
+    var resolvePathStringLiteral = function (nn) { return bb.resolvePathStringLiteral(nn.getSourceFile().fileName, nn.text); };
+    for (var i = 0; i < sourceFiles.length; i++) {
+        var sourceFile = sourceFiles[i];
+        if (sourceFile.isDeclarationFile)
+            continue;
+        sourceInfos[sourceFile.fileName] = gatherSourceInfo(sourceFile, typeChecker, resolvePathStringLiteral);
+    }
+}
 function bbEmitProgram() {
     var res = program.emit();
     reportDiagnostics(res.diagnostics);
@@ -130,4 +142,311 @@ function bbFinishTSPerformance() {
     });
     ts.performance.disable();
     return JSON.stringify(res);
+}
+function evalNode(n, tc, resolveStringLiteral) {
+    switch (n.kind) {
+        case ts.SyntaxKind.StringLiteral: {
+            var nn = n;
+            if (resolveStringLiteral) {
+                return resolveStringLiteral(nn);
+            }
+            return nn.text;
+        }
+        case ts.SyntaxKind.NumericLiteral: {
+            var nn = n;
+            return parseFloat(nn.text);
+        }
+        case ts.SyntaxKind.TrueKeyword: return true;
+        case ts.SyntaxKind.FalseKeyword: return false;
+        case ts.SyntaxKind.NullKeyword: return null;
+        case ts.SyntaxKind.PrefixUnaryExpression: {
+            var nn = n;
+            var operand = evalNode(nn.operand, tc, resolveStringLiteral);
+            if (operand !== undefined) {
+                var op = null;
+                switch (nn.operator) {
+                    case ts.SyntaxKind.PlusToken:
+                        op = "+";
+                        break;
+                    case ts.SyntaxKind.MinusToken:
+                        op = "-";
+                        break;
+                    case ts.SyntaxKind.TildeToken:
+                        op = "~";
+                        break;
+                    case ts.SyntaxKind.ExclamationToken:
+                        op = "!";
+                        break;
+                    default: return undefined;
+                }
+                var f = new Function("a", "return " + op + "a");
+                return f(operand);
+            }
+            return undefined;
+        }
+        case ts.SyntaxKind.BinaryExpression: {
+            var nn = n;
+            var left = evalNode(nn.left, tc, resolveStringLiteral);
+            var right = evalNode(nn.right, tc);
+            if (left !== undefined && right !== undefined) {
+                var op = null;
+                switch (nn.operatorToken.kind) {
+                    case ts.SyntaxKind.BarBarToken:
+                    case ts.SyntaxKind.AmpersandAmpersandToken:
+                    case ts.SyntaxKind.BarToken:
+                    case ts.SyntaxKind.CaretToken:
+                    case ts.SyntaxKind.AmpersandToken:
+                    case ts.SyntaxKind.EqualsEqualsToken:
+                    case ts.SyntaxKind.ExclamationEqualsToken:
+                    case ts.SyntaxKind.EqualsEqualsEqualsToken:
+                    case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+                    case ts.SyntaxKind.LessThanToken:
+                    case ts.SyntaxKind.GreaterThanToken:
+                    case ts.SyntaxKind.LessThanEqualsToken:
+                    case ts.SyntaxKind.GreaterThanEqualsToken:
+                    case ts.SyntaxKind.InstanceOfKeyword:
+                    case ts.SyntaxKind.InKeyword:
+                    case ts.SyntaxKind.LessThanLessThanToken:
+                    case ts.SyntaxKind.GreaterThanGreaterThanToken:
+                    case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                    case ts.SyntaxKind.PlusToken:
+                    case ts.SyntaxKind.MinusToken:
+                    case ts.SyntaxKind.AsteriskToken:
+                    case ts.SyntaxKind.SlashToken:
+                    case ts.SyntaxKind.PercentToken:
+                        op = nn.operatorToken.getText();
+                        break;
+                    default: return undefined;
+                }
+                var f = new Function("a", "b", "return a " + op + " b");
+                return f(left, right);
+            }
+            return undefined;
+        }
+        case ts.SyntaxKind.ConditionalExpression: {
+            var nn = n;
+            var cond = evalNode(nn.condition, tc);
+            if (cond === undefined)
+                return undefined;
+            var e = cond ? nn.whenTrue : nn.whenFalse;
+            return evalNode(e, tc, resolveStringLiteral);
+        }
+        case ts.SyntaxKind.ExportAssignment: {
+            var nn = n;
+            return evalNode(nn.expression, tc, resolveStringLiteral);
+        }
+        case ts.SyntaxKind.Identifier:
+        case ts.SyntaxKind.PropertyAccessExpression: {
+            var s = tc.getSymbolAtLocation(n);
+            if (s == null)
+                return undefined;
+            if (((s.flags & ts.SymbolFlags.Alias) !== 0) && n.kind === ts.SyntaxKind.PropertyAccessExpression) {
+                if (s.declarations == null || s.declarations.length !== 1)
+                    return undefined;
+                var decl = s.declarations[0];
+                return evalNode(decl, tc, resolveStringLiteral);
+            }
+            else if (((s.flags & ts.SymbolFlags.Alias) !== 0) && n.kind === ts.SyntaxKind.Identifier) {
+                if (s.declarations == null || s.declarations.length !== 1)
+                    return undefined;
+                var decl = s.declarations[0];
+                if (decl.kind !== ts.SyntaxKind.ImportSpecifier)
+                    return undefined;
+                if (decl.parent && decl.parent.parent && decl.parent.parent.parent && decl.parent.parent.parent.kind === ts.SyntaxKind.ImportDeclaration) {
+                    var impdecl = decl.parent.parent.parent;
+                    var s2 = tc.getSymbolAtLocation(impdecl.moduleSpecifier);
+                    if (s2 && s2.exports.get(decl.propertyName.escapedText)) {
+                        var s3 = s2.exports.get(decl.propertyName.escapedText);
+                        if (s3 == null)
+                            return undefined;
+                        var exportAssign = s3.declarations[0];
+                        return evalNode(exportAssign, tc, resolveStringLiteral);
+                    }
+                }
+            }
+            else if (((s.flags & ts.SymbolFlags.Property) !== 0) && n.kind === ts.SyntaxKind.PropertyAccessExpression) {
+                var obj = evalNode(n.expression, tc, resolveStringLiteral);
+                if (typeof obj !== "object")
+                    return undefined;
+                var name = n.name.text;
+                return obj[name];
+            }
+            else if (s.flags & ts.SymbolFlags.Variable) {
+                if (s.valueDeclaration.parent.flags & ts.NodeFlags.Const) {
+                    return evalNode(s.valueDeclaration.initializer, tc, resolveStringLiteral);
+                }
+            }
+            return undefined;
+        }
+        case ts.SyntaxKind.TypeAssertionExpression: {
+            var nn = n;
+            return evalNode(nn.expression, tc, resolveStringLiteral);
+        }
+        case ts.SyntaxKind.ObjectLiteralExpression: {
+            var ole = n;
+            var res = {};
+            for (var i = 0; i < ole.properties.length; i++) {
+                var prop = ole.properties[i];
+                if (prop.kind === ts.SyntaxKind.PropertyAssignment && (prop.name.kind === ts.SyntaxKind.Identifier || prop.name.kind === ts.SyntaxKind.StringLiteral)) {
+                    var name = prop.name.kind === ts.SyntaxKind.Identifier ? prop.name.text : prop.name.text;
+                    res[name] = evalNode(prop.initializer, tc, resolveStringLiteral);
+                }
+            }
+            return res;
+        }
+        default: {
+            //console.log((<any>ts).SyntaxKind[n.kind]);
+            return undefined;
+        }
+    }
+}
+function isBobrilFunction(name, callExpression, sourceInfo) {
+    var text = callExpression.expression.getText();
+    return text === sourceInfo.bobrilNamespace + '.' + name || text === sourceInfo.bobrilImports[name];
+}
+function isBobrilG11NFunction(name, callExpression, sourceInfo) {
+    var text = callExpression.expression.getText();
+    return text === sourceInfo.bobrilG11NNamespace + '.' + name || text === sourceInfo.bobrilG11NImports[name];
+}
+function extractBindings(bindings, ns, ims) {
+    if (bindings.kind === ts.SyntaxKind.NamedImports) {
+        var namedBindings = bindings;
+        for (var i = 0; i < namedBindings.elements.length; i++) {
+            var binding = namedBindings.elements[i];
+            ims[(binding.propertyName || binding.name).text] = binding.name.text;
+        }
+    }
+    else if (ns == null && bindings.kind === ts.SyntaxKind.NamespaceImport) {
+        return bindings.name.text;
+    }
+    return ns;
+}
+function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
+    var result = {
+        sourceFile: source,
+        sourceDeps: [],
+        bobrilNamespace: undefined,
+        bobrilImports: Object.create(null),
+        bobrilG11NNamespace: undefined,
+        bobrilG11NImports: Object.create(null),
+        sprites: [],
+        styleDefs: [],
+        trs: [],
+        assets: []
+    };
+    function visit(n) {
+        if (n.kind === ts.SyntaxKind.ImportDeclaration) {
+            var id = n;
+            var moduleSymbol = tc.getSymbolAtLocation(id.moduleSpecifier);
+            if (moduleSymbol == null)
+                return;
+            var fn = moduleSymbol.valueDeclaration.getSourceFile().fileName;
+            if (id.importClause) {
+                var bindings = id.importClause.namedBindings;
+                if (/bobriln?\/index\.ts/i.test(fn)) {
+                    result.bobrilNamespace = extractBindings(bindings, result.bobrilNamespace, result.bobrilImports);
+                }
+                else if (/bobril-g11n\/index\.ts/i.test(fn)) {
+                    result.bobrilG11NNamespace = extractBindings(bindings, result.bobrilG11NNamespace, result.bobrilG11NImports);
+                }
+            }
+            result.sourceDeps.push([moduleSymbol.name, fn]);
+        }
+        else if (n.kind === ts.SyntaxKind.ExportDeclaration) {
+            var ed = n;
+            if (ed.moduleSpecifier) {
+                var moduleSymbol = tc.getSymbolAtLocation(ed.moduleSpecifier);
+                if (moduleSymbol == null)
+                    return;
+                result.sourceDeps.push([moduleSymbol.name, moduleSymbol.valueDeclaration.getSourceFile().fileName]);
+            }
+        }
+        else if (n.kind === ts.SyntaxKind.CallExpression) {
+            var ce = n;
+            if (isBobrilFunction('asset', ce, result)) {
+                result.assets.push({ callExpression: ce, name: evalNode(ce.arguments[0], tc, resolvePathStringLiteral) });
+            }
+            else if (isBobrilFunction('sprite', ce, result)) {
+                var si = { callExpression: ce };
+                for (var i = 0; i < ce.arguments.length; i++) {
+                    var res = evalNode(ce.arguments[i], tc, i === 0 ? resolvePathStringLiteral : undefined); // first argument is path
+                    if (res !== undefined)
+                        switch (i) {
+                            case 0:
+                                if (typeof res === 'string')
+                                    si.name = res;
+                                break;
+                            case 1:
+                                if (typeof res === 'string')
+                                    si.color = res;
+                                break;
+                            case 2:
+                                if (typeof res === 'number')
+                                    si.width = res;
+                                break;
+                            case 3:
+                                if (typeof res === 'number')
+                                    si.height = res;
+                                break;
+                            case 4:
+                                if (typeof res === 'number')
+                                    si.x = res;
+                                break;
+                            case 5:
+                                if (typeof res === 'number')
+                                    si.y = res;
+                                break;
+                            default: throw new Error('b.sprite cannot have more than 6 parameters');
+                        }
+                }
+                result.sprites.push(si);
+            }
+            else if (isBobrilFunction('styleDef', ce, result) || isBobrilFunction('styleDefEx', ce, result)) {
+                var item = { callExpression: ce, isEx: isBobrilFunction('styleDefEx', ce, result), userNamed: false };
+                if (ce.arguments.length == 3 + (item.isEx ? 1 : 0)) {
+                    item.name = evalNode(ce.arguments[ce.arguments.length - 1], tc);
+                    item.userNamed = true;
+                }
+                else {
+                    if (ce.parent.kind === ts.SyntaxKind.VariableDeclaration) {
+                        var vd = ce.parent;
+                        item.name = vd.name.text;
+                    }
+                    else if (ce.parent.kind === ts.SyntaxKind.BinaryExpression) {
+                        var be = ce.parent;
+                        if (be.operatorToken != null && be.left != null && be.operatorToken.kind === ts.SyntaxKind.FirstAssignment && be.left.kind === ts.SyntaxKind.Identifier) {
+                            item.name = be.left.text;
+                        }
+                    }
+                }
+                result.styleDefs.push(item);
+            }
+            else if (isBobrilG11NFunction('t', ce, result)) {
+                var item = { callExpression: ce, message: "", withParams: false, knownParams: undefined, hint: undefined, justFormat: false };
+                item.message = evalNode(ce.arguments[0], tc);
+                if (ce.arguments.length >= 2) {
+                    item.withParams = true;
+                    var params = evalNode(ce.arguments[1], tc);
+                    item.knownParams = params != undefined && typeof params === "object" ? Object.keys(params) : [];
+                }
+                if (ce.arguments.length >= 3) {
+                    item.hint = evalNode(ce.arguments[2], tc);
+                }
+                result.trs.push(item);
+            }
+            else if (isBobrilG11NFunction('f', ce, result)) {
+                var item = { callExpression: ce, message: "", withParams: false, knownParams: undefined, hint: undefined, justFormat: true };
+                item.message = evalNode(ce.arguments[0], tc);
+                if (ce.arguments.length >= 2) {
+                    item.withParams = true;
+                    var params = evalNode(ce.arguments[1], tc);
+                    item.knownParams = params !== undefined && typeof params === "object" ? Object.keys(params) : [];
+                }
+                result.trs.push(item);
+            }
+        }
+        ts.forEachChild(n, visit);
+    }
+    visit(source);
+    return result;
 }

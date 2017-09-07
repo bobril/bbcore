@@ -148,10 +148,13 @@ namespace Lib.TSCompiler
                     {
                         compiler.MeasurePerformance = true;
                         compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.ToArray());
-                        compiler.CompileProgram();
-                        compiler.EmitProgram();
+                        if (!compiler.CompileProgram())
+                            break;
+
+                        compiler.GatherSourceInfo();
+                        if (!compiler.EmitProgram())
+                            break;
                         buildModuleCtx.UpdateCacheIds();
-                        // TODO: If any compilation errors then break;
                     }
                 } while (buildModuleCtx.ChangedDts || buildModuleCtx.TrullyCompiledCount < buildModuleCtx.ToCompile.Count);
                 BuildResult = buildModuleCtx._result;

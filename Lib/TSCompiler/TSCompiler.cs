@@ -198,6 +198,11 @@ namespace Lib.TSCompiler
                     return res + "|false|Jsx";
                 throw new ArgumentException("Unknown extension " + res + " in " + containingFile + " importing " + name);
             }
+
+            public string resolvePathStringLiteral(string sourcePath, string text)
+            {
+                return PathUtils.Join(PathUtils.Parent(sourcePath), text);
+            }
         }
 
         BBCallbacks _callbacks;
@@ -232,6 +237,7 @@ namespace Lib.TSCompiler
 
         bool _wasError;
         string _currentDirectory;
+        private TimeSpan _gatherTime;
 
         public bool CompileProgram()
         {
@@ -240,13 +246,21 @@ namespace Lib.TSCompiler
             return !_wasError;
         }
 
+        public void GatherSourceInfo()
+        {
+            var engine = getJSEnviroment();
+            var start = DateTime.UtcNow;
+            engine.CallFunction("bbGatherSourceInfo");
+            _gatherTime = DateTime.UtcNow - start;
+        }
+
         public bool EmitProgram()
         {
             var engine = getJSEnviroment();
             var res = engine.CallFunction<bool>("bbEmitProgram") && !_wasError;
             if (MeasurePerformance)
             {
-                Console.WriteLine(engine.CallFunction("bbFinishTSPerformance"));
+                Console.WriteLine(engine.CallFunction("bbFinishTSPerformance")+$" GatherInfo: {_gatherTime.TotalMilliseconds:0}");
             }
             return res;
         }
