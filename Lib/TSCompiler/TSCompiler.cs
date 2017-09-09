@@ -203,6 +203,17 @@ namespace Lib.TSCompiler
             {
                 return PathUtils.Join(PathUtils.Parent(sourcePath), text);
             }
+
+            public void reportSourceInfo(string fileName, string info)
+            {
+                var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
+                var file = _owner._diskCache.TryGetItem(fullPath) as IFileCache;
+                if (file == null)
+                {
+                    return;
+                }
+                GetFileInfo(file).SourceInfo = JsonConvert.DeserializeObject<SourceInfo>(info);
+            }
         }
 
         BBCallbacks _callbacks;

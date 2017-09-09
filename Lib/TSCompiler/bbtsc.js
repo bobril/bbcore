@@ -127,8 +127,18 @@ function bbGatherSourceInfo() {
         var sourceFile = sourceFiles[i];
         if (sourceFile.isDeclarationFile)
             continue;
-        sourceInfos[sourceFile.fileName] = gatherSourceInfo(sourceFile, typeChecker, resolvePathStringLiteral);
+        var sourceInfo = gatherSourceInfo(sourceFile, typeChecker, resolvePathStringLiteral);
+        sourceInfos[sourceFile.fileName] = sourceInfo;
+        bb.reportSourceInfo(sourceFile.fileName, JSON.stringify(toJsonableSourceInfo(sourceInfo)));
     }
+}
+function toJsonableSourceInfo(sourceInfo) {
+    return {
+        assets: sourceInfo.assets.map(function (a) { return ({ nodeId: ts.getNodeId(a.callExpression), name: a.name }); }),
+        sprites: sourceInfo.sprites.map(function (s) { return ({ nodeId: ts.getNodeId(s.callExpression), name: s.name, color: s.color, width: s.width, height: s.height, x: s.x, y: s.y }); }),
+        translations: sourceInfo.trs.map(function (t) { return ({ nodeId: ts.getNodeId(t.callExpression), message: typeof t.message === "string" ? t.message : undefined, hint: t.hint, justFormat: t.justFormat, withParams: t.withParams, knownParams: t.knownParams }); }),
+        styleDefs: sourceInfo.styleDefs.map(function (s) { return ({ nodeId: ts.getNodeId(s.callExpression), name: s.name, userNamed: s.userNamed, isEx: s.isEx }); })
+    };
 }
 function bbEmitProgram() {
     var res = program.emit();
@@ -324,7 +334,6 @@ function extractBindings(bindings, ns, ims) {
 function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
     var result = {
         sourceFile: source,
-        sourceDeps: [],
         bobrilNamespace: undefined,
         bobrilImports: Object.create(null),
         bobrilG11NNamespace: undefined,
@@ -349,16 +358,6 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                 else if (/bobril-g11n\/index\.ts/i.test(fn)) {
                     result.bobrilG11NNamespace = extractBindings(bindings, result.bobrilG11NNamespace, result.bobrilG11NImports);
                 }
-            }
-            result.sourceDeps.push([moduleSymbol.name, fn]);
-        }
-        else if (n.kind === ts.SyntaxKind.ExportDeclaration) {
-            var ed = n;
-            if (ed.moduleSpecifier) {
-                var moduleSymbol = tc.getSymbolAtLocation(ed.moduleSpecifier);
-                if (moduleSymbol == null)
-                    return;
-                result.sourceDeps.push([moduleSymbol.name, moduleSymbol.valueDeclaration.getSourceFile().fileName]);
             }
         }
         else if (n.kind === ts.SyntaxKind.CallExpression) {
@@ -401,26 +400,6 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                 }
                 result.sprites.push(si);
             }
-            else if (isBobrilFunction('styleDef', ce, result) || isBobrilFunction('styleDefEx', ce, result)) {
-                var item = { callExpression: ce, isEx: isBobrilFunction('styleDefEx', ce, result), userNamed: false };
-                if (ce.arguments.length == 3 + (item.isEx ? 1 : 0)) {
-                    item.name = evalNode(ce.arguments[ce.arguments.length - 1], tc);
-                    item.userNamed = true;
-                }
-                else {
-                    if (ce.parent.kind === ts.SyntaxKind.VariableDeclaration) {
-                        var vd = ce.parent;
-                        item.name = vd.name.text;
-                    }
-                    else if (ce.parent.kind === ts.SyntaxKind.BinaryExpression) {
-                        var be = ce.parent;
-                        if (be.operatorToken != null && be.left != null && be.operatorToken.kind === ts.SyntaxKind.FirstAssignment && be.left.kind === ts.SyntaxKind.Identifier) {
-                            item.name = be.left.text;
-                        }
-                    }
-                }
-                result.styleDefs.push(item);
-            }
             else if (isBobrilG11NFunction('t', ce, result)) {
                 var item = { callExpression: ce, message: "", withParams: false, knownParams: undefined, hint: undefined, justFormat: false };
                 item.message = evalNode(ce.arguments[0], tc);
@@ -443,6 +422,29 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                     item.knownParams = params !== undefined && typeof params === "object" ? Object.keys(params) : [];
                 }
                 result.trs.push(item);
+            }
+            else {
+                var isStyleDef = isBobrilFunction('styleDef', ce, result);
+                if (isStyleDef || isBobrilFunction('styleDefEx', ce, result)) {
+                    var item = { callExpression: ce, isEx: !isStyleDef, userNamed: false };
+                    if (ce.arguments.length == 3 + (item.isEx ? 1 : 0)) {
+                        item.name = evalNode(ce.arguments[ce.arguments.length - 1], tc);
+                        item.userNamed = true;
+                    }
+                    else {
+                        if (ce.parent.kind === ts.SyntaxKind.VariableDeclaration) {
+                            var vd = ce.parent;
+                            item.name = vd.name.text;
+                        }
+                        else if (ce.parent.kind === ts.SyntaxKind.BinaryExpression) {
+                            var be = ce.parent;
+                            if (be.operatorToken != null && be.left != null && be.operatorToken.kind === ts.SyntaxKind.FirstAssignment && be.left.kind === ts.SyntaxKind.Identifier) {
+                                item.name = be.left.text;
+                            }
+                        }
+                    }
+                    result.styleDefs.push(item);
+                }
             }
         }
         ts.forEachChild(n, visit);

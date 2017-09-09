@@ -13,6 +13,7 @@ namespace Lib.TSCompiler
         public TSFileAdditionalInfo DtsLink { get; set; }
         public TSFileAdditionalInfo JsLink { get; set; }
         public SourceMap MapLink { get; set; }
+        public SourceInfo SourceInfo { get; set; }
 
         List<TSProject> _moduleImports;
 

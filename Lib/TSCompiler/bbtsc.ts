@@ -1,5 +1,10 @@
 /// <reference path="../node_modules/typescript/lib/typescriptServices.d.ts" />
 
+// expose internal useful TS functions
+declare namespace ts {
+    function getNodeId(node: Node): number;
+}
+
 declare var bbCurrentDirectory: string;
 declare var bbDefaultLibLocation: string;
 
@@ -20,6 +25,7 @@ interface IBB {
     // resolvedName:string|isExternalLibraryImport:boolean|extension:string(Ts,Tsx,Dts,Js,Jsx)
     resolveModuleName(name: string, containingFile: string): string;
     resolvePathStringLiteral(sourcePath: string, text: string): string;
+    reportSourceInfo(fileName: string, info: string): void;
 }
 
 let parseCache: { [fileName: string]: [number, ts.SourceFile] } = {};
@@ -164,8 +170,19 @@ function bbGatherSourceInfo(): void {
         let sourceFile = sourceFiles[i];
         if (sourceFile.isDeclarationFile)
             continue;
-        sourceInfos[sourceFile.fileName] = gatherSourceInfo(sourceFile, typeChecker, resolvePathStringLiteral);
+        let sourceInfo = gatherSourceInfo(sourceFile, typeChecker, resolvePathStringLiteral);
+        sourceInfos[sourceFile.fileName] = sourceInfo;
+        bb.reportSourceInfo(sourceFile.fileName, JSON.stringify(toJsonableSourceInfo(sourceInfo)));
     }
+}
+
+function toJsonableSourceInfo(sourceInfo: SourceInfo) {
+    return {
+        assets: sourceInfo.assets.map(a => ({ nodeId: ts.getNodeId(a.callExpression), name: a.name })),
+        sprites: sourceInfo.sprites.map(s => ({ nodeId: ts.getNodeId(s.callExpression), name: s.name, color: s.color, width: s.width, height: s.height, x: s.x, y: s.y })),
+        translations: sourceInfo.trs.map(t => ({ nodeId: ts.getNodeId(t.callExpression), message: typeof t.message === "string" ? t.message : undefined, hint: t.hint, justFormat: t.justFormat, withParams: t.withParams, knownParams: t.knownParams })),
+        styleDefs: sourceInfo.styleDefs.map(s => ({ nodeId: ts.getNodeId(s.callExpression), name: s.name, userNamed: s.userNamed, isEx: s.isEx }))
+    };
 }
 
 function bbEmitProgram(): boolean {
@@ -331,7 +348,6 @@ function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts
 interface SourceInfo {
     sourceFile: ts.SourceFile;
     // module name, module main file
-    sourceDeps: [string, string][];
     bobrilNamespace: string | undefined;
     bobrilImports: { [name: string]: string };
     bobrilG11NNamespace: string | undefined;
@@ -399,7 +415,6 @@ function extractBindings(bindings: ts.NamespaceImport | ts.NamedImports, ns: str
 function gatherSourceInfo(source: ts.SourceFile, tc: ts.TypeChecker, resolvePathStringLiteral: (sl: ts.StringLiteral) => string): SourceInfo {
     let result: SourceInfo = {
         sourceFile: source,
-        sourceDeps: [],
         bobrilNamespace: undefined,
         bobrilImports: Object.create(null),
         bobrilG11NNamespace: undefined,
@@ -422,15 +437,6 @@ function gatherSourceInfo(source: ts.SourceFile, tc: ts.TypeChecker, resolvePath
                 } else if (/bobril-g11n\/index\.ts/i.test(fn)) {
                     result.bobrilG11NNamespace = extractBindings(bindings, result.bobrilG11NNamespace, result.bobrilG11NImports);
                 }
-            }
-            result.sourceDeps.push([moduleSymbol.name, fn]);
-        }
-        else if (n.kind === ts.SyntaxKind.ExportDeclaration) {
-            let ed = <ts.ExportDeclaration>n;
-            if (ed.moduleSpecifier) {
-                let moduleSymbol = tc.getSymbolAtLocation(ed.moduleSpecifier);
-                if (moduleSymbol == null) return;
-                result.sourceDeps.push([moduleSymbol.name, moduleSymbol.valueDeclaration!.getSourceFile().fileName]);
             }
         }
         else if (n.kind === ts.SyntaxKind.CallExpression) {
@@ -464,23 +470,6 @@ function gatherSourceInfo(source: ts.SourceFile, tc: ts.TypeChecker, resolvePath
                     }
                 }
                 result.sprites.push(si);
-            } else if (isBobrilFunction('styleDef', ce, result) || isBobrilFunction('styleDefEx', ce, result)) {
-                let item: StyleDefInfo = { callExpression: ce, isEx: isBobrilFunction('styleDefEx', ce, result), userNamed: false };
-                if (ce.arguments.length == 3 + (item.isEx ? 1 : 0)) {
-                    item.name = evalNode(ce.arguments[ce.arguments.length - 1], tc);
-                    item.userNamed = true;
-                } else {
-                    if (ce.parent!.kind === ts.SyntaxKind.VariableDeclaration) {
-                        let vd = <ts.VariableDeclaration>ce.parent;
-                        item.name = (<ts.Identifier>vd.name).text;
-                    } else if (ce.parent!.kind === ts.SyntaxKind.BinaryExpression) {
-                        let be = <ts.BinaryExpression>ce.parent;
-                        if (be.operatorToken != null && be.left != null && be.operatorToken.kind === ts.SyntaxKind.FirstAssignment && be.left.kind === ts.SyntaxKind.Identifier) {
-                            item.name = (<ts.Identifier>be.left).text;
-                        }
-                    }
-                }
-                result.styleDefs.push(item);
             } else if (isBobrilG11NFunction('t', ce, result)) {
                 let item: TranslationMessage = { callExpression: ce, message: "", withParams: false, knownParams: undefined, hint: undefined, justFormat: false };
                 item.message = evalNode(ce.arguments[0], tc);
@@ -502,6 +491,26 @@ function gatherSourceInfo(source: ts.SourceFile, tc: ts.TypeChecker, resolvePath
                     item.knownParams = params !== undefined && typeof params === "object" ? Object.keys(params) : [];
                 }
                 result.trs.push(item);
+            } else {
+                let isStyleDef = isBobrilFunction('styleDef', ce, result);
+                if (isStyleDef || isBobrilFunction('styleDefEx', ce, result)) {
+                    let item: StyleDefInfo = { callExpression: ce, isEx: !isStyleDef, userNamed: false };
+                    if (ce.arguments.length == 3 + (item.isEx ? 1 : 0)) {
+                        item.name = evalNode(ce.arguments[ce.arguments.length - 1], tc);
+                        item.userNamed = true;
+                    } else {
+                        if (ce.parent!.kind === ts.SyntaxKind.VariableDeclaration) {
+                            let vd = <ts.VariableDeclaration>ce.parent;
+                            item.name = (<ts.Identifier>vd.name).text;
+                        } else if (ce.parent!.kind === ts.SyntaxKind.BinaryExpression) {
+                            let be = <ts.BinaryExpression>ce.parent;
+                            if (be.operatorToken != null && be.left != null && be.operatorToken.kind === ts.SyntaxKind.FirstAssignment && be.left.kind === ts.SyntaxKind.Identifier) {
+                                item.name = (<ts.Identifier>be.left).text;
+                            }
+                        }
+                    }
+                    result.styleDefs.push(item);
+                }
             }
         }
         ts.forEachChild(n, visit);
