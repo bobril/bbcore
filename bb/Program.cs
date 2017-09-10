@@ -15,7 +15,7 @@ namespace bb
             var composition = new Lib.Composition.Composition();
             composition.InitTools("2.4.2");
             composition.InitDiskCache();
-            composition.AddProject("c:/Research/bobril/bbExamples/clickingSpree");
+            composition.AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
             composition.StartWebServer(null);
             composition.InitInteractiveMode();
             composition.WaitForStop();
