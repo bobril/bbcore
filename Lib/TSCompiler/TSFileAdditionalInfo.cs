@@ -62,7 +62,7 @@ namespace Lib.TSCompiler
 
         public bool NeedsCompilation()
         {
-            if (JsOutput == null || MapLink == null || _moduleImports == null || _localImports == null || LastCompilationCacheIds == null)
+            if (JsOutput == null || _moduleImports == null || _localImports == null || LastCompilationCacheIds == null)
             {
                 return true;
             }

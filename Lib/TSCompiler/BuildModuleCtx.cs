@@ -140,6 +140,14 @@ namespace Lib.TSCompiler
                     item = _owner.DiskCache.TryGetItem(dtsPath) as IFileCache;
                     if (item != null && !item.IsInvalid)
                     {
+                        if (itemInfo.NeedsCompilation())
+                        {
+                            itemInfo.StartCompiling();
+                            itemInfo.DtsLink = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
+                            itemInfo.JsOutput = itemInfo.Owner.Utf8Content;
+                            _result.RecompiledLast.Add(itemInfo);
+                            TrullyCompiledCount++;
+                        }
                         return dtsPath;
                     }
                 }
