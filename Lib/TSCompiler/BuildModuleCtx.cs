@@ -30,40 +30,41 @@ namespace Lib.TSCompiler
 
         public void writeFile(string fileName, string data)
         {
-            var fullPath = PathUtils.Join(_owner.Owner.FullPath, fileName);
-            var dirPath = PathUtils.Parent(fullPath);
-            if (fullPath.EndsWith(".js.map"))
+            if (fileName.EndsWith(".js.map"))
             {
-                var source = _result.WithoutExtension2Source[fullPath.Substring(0, fullPath.Length - ".js.map".Length)];
-                source.MapLink = SourceMap.Parse(data, dirPath);
+                var relativeTo = PathUtils.Parent(PathUtils.Join(_owner.Owner.FullPath, fileName));
+                var sourceMap = SourceMap.Parse(data, relativeTo);
+                var sourceFullPath = PathUtils.WithoutExtension(sourceMap.sources[0]);
+                var sourceForMap = _result.WithoutExtension2Source[sourceFullPath];
+                sourceForMap.MapLink = sourceMap;
                 return;
             }
-            var fileOnly = fullPath.Substring(dirPath.Length + 1);
-            var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
+            if (!fileName.StartsWith("_virtual/"))
+                throw new Exception("writeFile does not start with _virtual");
+            fileName = fileName.Substring(9);
+            var fullPath = PathUtils.Join(_owner.Owner.FullPath, fileName);
             if (fullPath.EndsWith(".js"))
             {
                 data = SourceMap.RemoveLinkToSourceMap(data);
-            }
-            var wasChange = dc.WriteVirtualFile(fileOnly, data);
-            var output = dc.TryGetChild(fileOnly) as IFileCache;
-            var outputInfo = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
-            if (fullPath.EndsWith(".js"))
-            {
-                var source = _result.WithoutExtension2Source[fullPath.Substring(0, fullPath.Length - ".js".Length)];
-                _result.RecompiledLast.Add(source);
+                var sourceForJs = _result.WithoutExtension2Source[fullPath.Substring(0, fullPath.Length - ".js".Length)];
+                _result.RecompiledLast.Add(sourceForJs);
                 TrullyCompiledCount++;
-                source.JsLink = outputInfo;
+                sourceForJs.JsOutput = data;
+                return;
             }
-            else if (fullPath.EndsWith(".d.ts"))
-            {
-                var source = _result.WithoutExtension2Source[fullPath.Substring(0, fullPath.Length - ".d.ts".Length)];
-                source.DtsLink = outputInfo;
-                if (wasChange) ChangedDts = true;
-            }
-            else
+            if (!fullPath.EndsWith(".d.ts"))
             {
                 throw new Exception("Unknown extension written by TS " + fullPath);
             }
+            var dirPath = PathUtils.Parent(fullPath);
+            var fileOnly = fullPath.Substring(dirPath.Length + 1);
+            var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
+            var wasChange = dc.WriteVirtualFile(fileOnly, data);
+            var output = dc.TryGetChild(fileOnly) as IFileCache;
+            var outputInfo = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
+            var source = _result.WithoutExtension2Source[fullPath.Substring(0, fullPath.Length - ".d.ts".Length)];
+            source.DtsLink = outputInfo;
+            if (wasChange) ChangedDts = true;
         }
 
         static string[] ExtensionsToImport = new string[] { ".tsx", ".ts", ".d.ts", ".jsx", ".js" };
@@ -190,7 +191,7 @@ namespace Lib.TSCompiler
                     if (fileAdditional.DtsLink != null)
                         fileAdditional.DtsLink.Owner.IsInvalid = true;
                     fileAdditional.DtsLink = null;
-                    fileAdditional.JsLink = null;
+                    fileAdditional.JsOutput = null;
                     fileAdditional.MapLink = null;
                     ToCompile.Add(fileName);
                 }

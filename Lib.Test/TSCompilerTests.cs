@@ -169,7 +169,7 @@ console.log(""Hello"");
             BuildResult buildResult = BuildProject();
             Assert.Equal(1, buildResult.RecompiledLast.Count);
             Assert.Equal(1, buildResult.WithoutExtension2Source.Count);
-            Assert.Contains("Hello", buildResult.RecompiledLast.First().JsLink.Owner.Utf8Content);
+            Assert.Contains("Hello", buildResult.RecompiledLast.First().JsOutput);
         }
 
         [Fact]
@@ -182,7 +182,7 @@ console.log(""Changed"");
             BuildResult buildResult = BuildProject();
             Assert.Equal(1, buildResult.RecompiledLast.Count);
             Assert.Equal(1, buildResult.WithoutExtension2Source.Count);
-            Assert.Contains("Changed", buildResult.RecompiledLast.First().JsLink.Owner.Utf8Content);
+            Assert.Contains("Changed", buildResult.RecompiledLast.First().JsOutput);
         }
 
         [Fact]

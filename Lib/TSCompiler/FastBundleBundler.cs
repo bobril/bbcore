@@ -34,7 +34,7 @@ namespace Lib.TSCompiler
             foreach (var source in BuildResult.WithoutExtension2Source)
             {
                 sourceMapBuilder.AddText($"R('{PathUtils.Subtract(source.Key, root)}',function(require, module, exports, global){{");
-                sourceMapBuilder.AddSource(source.Value.JsLink.Owner.Utf8Content, source.Value.MapLink);
+                sourceMapBuilder.AddSource(source.Value.JsOutput, source.Value.MapLink);
                 sourceMapBuilder.AddText("});");
             }
             sourceMapBuilder.AddText("//# sourceMappingURL=" + mapUrl);

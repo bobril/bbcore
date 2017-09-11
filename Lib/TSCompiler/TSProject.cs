@@ -132,6 +132,11 @@ namespace Lib.TSCompiler
                     experimentalDecorators = true,
                     noEmitHelpers = true,
                     allowJs = true,
+                    checkJs = false,
+                    rootDir = buildModuleCtx._owner.Owner.FullPath,
+                    outDir = "_virtual",
+                    removeComments = false,
+                    types = new string[0],
                     lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable" }
                 });
                 do

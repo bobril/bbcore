@@ -11,7 +11,7 @@ namespace Lib.TSCompiler
         public IDiskCache DiskCache { get; set; }
         public List<int> LastCompilationCacheIds { get; set; }
         public TSFileAdditionalInfo DtsLink { get; set; }
-        public TSFileAdditionalInfo JsLink { get; set; }
+        public string JsOutput { get; set; }
         public SourceMap MapLink { get; set; }
         public SourceInfo SourceInfo { get; set; }
 
@@ -62,7 +62,7 @@ namespace Lib.TSCompiler
 
         public bool NeedsCompilation()
         {
-            if (JsLink == null || MapLink == null || _moduleImports == null || _localImports == null || LastCompilationCacheIds == null)
+            if (JsOutput == null || MapLink == null || _moduleImports == null || _localImports == null || LastCompilationCacheIds == null)
             {
                 return true;
             }
