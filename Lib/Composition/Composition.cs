@@ -10,6 +10,8 @@ using Lib.WebServer;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using System.Threading;
+using Lib.Utils.CommandLineParser.Definitions;
+using Lib.Utils.CommandLineParser.Parser;
 
 namespace Lib.Composition
 {
@@ -24,6 +26,24 @@ namespace Lib.Composition
         WebServerHost _webServer;
         AutoResetEvent _hasBuildWork = new AutoResetEvent(true);
         private ProjectOptions _currentProject;
+        private CommandLineCommand _command;
+
+        public void ParseCommandLineArgs(string[] args)
+        {
+            _command = CommandLineParser.Parse
+            (
+                args: args,
+                commands: new List<CommandLineCommand>()
+                {
+                    new MainCommand(),
+                    new BuildCommand(),
+                    new TranslationCommand(),
+                    new TestCommand(),
+                    new BuildInteractiveCommand(),
+                    new BuildInteractiveNoUpdateCommand()
+                }
+            );
+        }
 
         public void InitTools(string version)
         {

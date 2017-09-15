@@ -13,6 +13,7 @@ namespace bb
         static void Main(string[] args)
         {
             var composition = new Lib.Composition.Composition();
+            composition.ParseCommandLineArgs(args);
             composition.InitTools("2.4.2");
             composition.InitDiskCache();
             composition.AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
