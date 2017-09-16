@@ -214,6 +214,11 @@ namespace Lib.TSCompiler
                 }
                 GetFileInfo(file).SourceInfo = JsonConvert.DeserializeObject<SourceInfo>(info);
             }
+
+            public string getModifications(string fileName)
+            {
+                return JsonConvert.SerializeObject(_owner.Ctx.getPreEmitTransformations(fileName));
+            }
         }
 
         BBCallbacks _callbacks;

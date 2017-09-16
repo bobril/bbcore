@@ -142,8 +142,40 @@ namespace Lib.Composition
                     return;
                 }
             }
+            var resourcePath = _currentProject.Owner.Owner.FullPath + path;
+            var resourceFileCache = _dc.TryGetItem(resourcePath) as IFileCache;
+            if (resourceFileCache != null)
+            {
+                context.Response.ContentType = PathToMimeType(path);
+                var content = resourceFileCache.ByteContent;
+                await context.Response.Body.WriteAsync(content, 0, content.Length);
+                return;
+            }
             context.Response.StatusCode = 404;
             await context.Response.WriteAsync("Not found " + path);
+        }
+
+        string PathToMimeType(string path)
+        {
+            var lastDotIndex = path.LastIndexOf('.');
+            if (lastDotIndex < 0) return "application/unknown";
+            var extension = path.Substring(lastDotIndex + 1);
+            switch(extension)
+            {
+                case "png": return "image/png";
+                case "jpg":
+                case "jpeg": return "image/jpeg";
+                case "gif": return "image/gif";
+                case "svg": return "image/svg+xml";
+                case "css": return "text/css";
+                case "html":
+                case "htm": return "text/html";
+                case "jsx":
+                case "js": return "application/javascript";
+                case "tsx":
+                case "ts": return "text/plain";
+            }
+            return "application/unknown";
         }
 
         public void InitInteractiveMode()

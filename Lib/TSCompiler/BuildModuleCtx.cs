@@ -2,6 +2,7 @@
 using Lib.Utils;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Lib.TSCompiler
 {
@@ -220,6 +221,28 @@ namespace Lib.TSCompiler
                     }
                 }
             }
+        }
+
+        public IDictionary<long, object[]> getPreEmitTransformations(string fileName)
+        {
+            var fc = _owner.DiskCache.TryGetItem(fileName) as IFileCache;
+            if (fc == null) return null;
+            var fai = TSFileAdditionalInfo.Get(fc, _owner.DiskCache);
+            var sourceInfo = fai.SourceInfo;
+            if (sourceInfo == null) return null;
+            var res = new Dictionary<long, object[]>();
+            sourceInfo.assets.ForEach(a =>
+            {
+                if (a.name == null) return;
+                res[a.nodeId] = new object[] { 0, PathUtils.Subtract(a.name,_owner.Owner.FullPath) };
+            });
+            sourceInfo.sprites.ForEach(s =>
+            {
+                if (s.name == null) return;
+                res[s.nodeId] = new object[] { 0, PathUtils.Subtract(s.name, _owner.Owner.FullPath) };
+            });
+            if (res.Count == 0) return null;
+            return res;
         }
     }
 }

@@ -1,5 +1,25 @@
 "use strict";
 /// <reference path="../node_modules/typescript/lib/typescriptServices.d.ts" />
+var __read = (this && this.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
+var __spread = (this && this.__spread) || function () {
+    for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+    return ar;
+};
 var parseCache = {};
 function createCompilerHost(setParentNodes) {
     function getCanonicalFileName(fileName) {
@@ -75,6 +95,7 @@ function bbGetCurrentCompilerOptions() {
     return JSON.stringify(compilerOptions);
 }
 var program;
+var typeChecker;
 function addLibPrefixPostfix(names) {
     for (var i = 0; i < names.length; i++) {
         if (names[i].startsWith("lib."))
@@ -90,6 +111,7 @@ function bbCreateProgram(rootNames) {
         addLibPrefixPostfix(compilerOptions.lib);
     //bb.trace(JSON.stringify(compilerOptions));
     program = ts.createProgram(rootNames.split("|"), compilerOptions, createCompilerHost());
+    typeChecker = program.getTypeChecker();
 }
 function reportDiagnostic(diagnostic) {
     if (diagnostic.file) {
@@ -120,7 +142,6 @@ function bbCompileProgram() {
 }
 var sourceInfos = Object.create(null);
 function bbGatherSourceInfo() {
-    var typeChecker = program.getTypeChecker();
     var sourceFiles = program.getSourceFiles();
     var resolvePathStringLiteral = function (nn) { return bb.resolvePathStringLiteral(nn.getSourceFile().fileName, nn.text); };
     for (var i = 0; i < sourceFiles.length; i++) {
@@ -141,7 +162,7 @@ function toJsonableSourceInfo(sourceInfo) {
     };
 }
 function bbEmitProgram() {
-    var res = program.emit();
+    var res = program.emit(undefined, undefined, undefined, undefined, transformers);
     reportDiagnostics(res.diagnostics);
     return !res.emitSkipped;
 }
@@ -153,6 +174,35 @@ function bbFinishTSPerformance() {
     ts.performance.disable();
     return JSON.stringify(res);
 }
+var transformers = {
+    before: [
+        function (context) { return function (node) {
+            var modifications = JSON.parse(bb.getModifications(node.getSourceFile().fileName));
+            if (modifications == null)
+                return node;
+            function visitor(node) {
+                node = ts.visitEachChild(node, visitor, context);
+                var id = node.id;
+                if (typeof id === "number") {
+                    var modification = modifications[id];
+                    if (Array.isArray(modification)) {
+                        var callEx = node;
+                        switch (modification[0]) {
+                            case 0:// change first parameter to constant in modification[1]
+                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread([ts.createLiteral(modification[1])], callEx.arguments.slice(1))), callEx);
+                                break;
+                            default:
+                                throw new Error("Unknown modification type " + modification[0] + " for " + id);
+                        }
+                    }
+                }
+                //bb.trace(ts.SyntaxKind[node.kind]);
+                return node;
+            }
+            return ts.visitEachChild(node, visitor, context);
+        }; }
+    ]
+};
 function evalNode(n, tc, resolveStringLiteral) {
     switch (n.kind) {
         case ts.SyntaxKind.StringLiteral: {

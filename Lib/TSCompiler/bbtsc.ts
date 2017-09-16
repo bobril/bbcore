@@ -26,6 +26,7 @@ interface IBB {
     resolveModuleName(name: string, containingFile: string): string;
     resolvePathStringLiteral(sourcePath: string, text: string): string;
     reportSourceInfo(fileName: string, info: string): void;
+    getModifications(fileName: string): string;
 }
 
 let parseCache: { [fileName: string]: [number, ts.SourceFile] } = {};
@@ -112,6 +113,7 @@ function bbGetCurrentCompilerOptions(): string {
 }
 
 let program: ts.Program;
+let typeChecker: ts.TypeChecker;
 
 function addLibPrefixPostfix(names: string[]) {
     for (var i = 0; i < names.length; i++) {
@@ -128,6 +130,7 @@ function bbCreateProgram(rootNames: string) {
     if (compilerOptions.lib != null) addLibPrefixPostfix(compilerOptions.lib);
     //bb.trace(JSON.stringify(compilerOptions));
     program = ts.createProgram(rootNames.split("|"), compilerOptions, createCompilerHost());
+    typeChecker = program.getTypeChecker();
 }
 
 function reportDiagnostic(diagnostic: ts.Diagnostic) {
@@ -163,7 +166,6 @@ function bbCompileProgram(): void {
 const sourceInfos: { [name: string]: SourceInfo } = Object.create(null);
 
 function bbGatherSourceInfo(): void {
-    let typeChecker = program.getTypeChecker();
     let sourceFiles = program.getSourceFiles();
     const resolvePathStringLiteral = (nn: ts.StringLiteral) => bb.resolvePathStringLiteral(nn.getSourceFile().fileName, nn.text);
     for (let i = 0; i < sourceFiles.length; i++) {
@@ -186,7 +188,7 @@ function toJsonableSourceInfo(sourceInfo: SourceInfo) {
 }
 
 function bbEmitProgram(): boolean {
-    const res = program.emit();
+    const res = program.emit(undefined, undefined, undefined, undefined, transformers);
     reportDiagnostics(res.diagnostics);
     return !res.emitSkipped;
 }
@@ -198,6 +200,35 @@ function bbFinishTSPerformance(): string {
     });
     (ts as any).performance.disable();
     return JSON.stringify(res);
+}
+
+const transformers: ts.CustomTransformers = {
+    before: [
+        (context) => (node: ts.SourceFile): ts.SourceFile => {
+            let modifications: { [nodeId: number]: any[] } = JSON.parse(bb.getModifications(node.getSourceFile().fileName));
+            if (modifications == null) return node;
+            function visitor(node: ts.Node): ts.Node {
+                node = ts.visitEachChild(node, visitor, context);
+                let id = (node as any).id;
+                if (typeof id === "number") {
+                    let modification = modifications[id];
+                    if (Array.isArray(modification)) {
+                        let callEx = node as ts.CallExpression;
+                        switch (modification[0] as number) {
+                            case 0: // change first parameter to constant in modification[1]
+                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, [ts.createLiteral(modification[1] as (string | number | boolean)), ...callEx.arguments.slice(1)]), callEx)
+                                break;
+                            default:
+                                throw new Error("Unknown modification type " + modification[0] + " for " + id);
+                        }
+                    }
+                }
+                //bb.trace(ts.SyntaxKind[node.kind]);
+                return node;
+            }
+            return ts.visitEachChild(node, visitor, context);
+        }
+    ]
 }
 
 function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts.StringLiteral) => string): any {
