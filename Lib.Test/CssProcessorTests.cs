@@ -1,4 +1,5 @@
-﻿using Lib.Utils;
+﻿using Lib.CSSProcessor;
+using Lib.Utils;
 using System;
 using Xunit;
 
@@ -18,23 +19,42 @@ namespace Lib.Test
         [Fact]
         void ProcessSimpleCss()
         {
-            var cssProcessor = new CSSProcessor.CssProcessor(_tools);
+            var cssProcessor = new CssProcessor(_tools);
             Assert.Equal(".c { width: 100% }", cssProcessor.ProcessCss(".c { width: 100% }", "/dir/file.css", (url, from) => url).Result);
         }
 
         [Fact]
         void ProcessCssWithUrl()
         {
-            var cssProcessor = new CSSProcessor.CssProcessor(_tools);
+            var cssProcessor = new CssProcessor(_tools);
             Func<string, string, string> urlReplacerUrlFrom = (url, from) =>
                      {
                          Assert.Equal("logo.png", url);
                          Assert.Equal("./dir", from);
                          return from + "/" + url;
                      };
-            Assert.Equal(".c { background-image: url(\"./dir/logo.png\") }", 
+            Assert.Equal(".c { background-image: url(\"./dir/logo.png\") }",
                 cssProcessor.ProcessCss(".c { background-image: url(\"logo.png\") }", "./dir/file.css",
                 urlReplacerUrlFrom).Result);
+        }
+
+        [Fact]
+        void MinimizeCss()
+        {
+            var cssProcessor = new CssProcessor(_tools);
+            Assert.Equal(".c{width:100%}", cssProcessor.ConcatenateAndMinifyCss(
+                new[] { new SourceFromPair(".c { width: 100% }", "/dir/file.css") }, (url, from) => url).Result);
+        }
+
+        [Fact]
+        void ConcatenateAndMinimizeCss()
+        {
+            var cssProcessor = new CssProcessor(_tools);
+            Assert.Equal(".c{background-image:url(/dir/logo.png)}.c2{background-image:url(pogo.png)}", cssProcessor.ConcatenateAndMinifyCss(
+                new[] {
+                    new SourceFromPair(".c { background-image: url(\"logo.png\") }", "/dir/file.css"),
+                    new SourceFromPair(".c2 { background-image: url(\"pogo.png\") }", "./file.css")
+                }, (url, from) => from+"/"+url).Result);
         }
     }
 }

@@ -451,6 +451,7 @@ namespace Lib.DiskCache
             {
                 _length = Encoding.UTF8.GetByteCount(content);
                 _content = content;
+                _modified = DateTime.UtcNow;
                 _changeId++; // It is called always under lock
                 if (Parent != null)
                 {

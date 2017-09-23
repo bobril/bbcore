@@ -3,6 +3,8 @@ using Lib.DiskCache;
 using Lib.ToolsDir;
 using JavaScriptEngineSwitcher.Core;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Lib.CSSProcessor
 {
@@ -14,7 +16,6 @@ namespace Lib.CSSProcessor
             _callbacks = new BBCallbacks(this);
         }
 
-        IDiskCache _diskCache;
         readonly IToolsDir _toolsDir;
         Func<string, string, string> _urlReplacer;
         TaskCompletionSource<string> _tcs;
@@ -42,6 +43,11 @@ namespace Lib.CSSProcessor
             {
                 _owner._tcs.SetException(new Exception(result));
             }
+
+            public string readFileSync(string fileName)
+            {
+                return "";
+            }
         }
 
         BBCallbacks _callbacks;
@@ -60,12 +66,23 @@ namespace Lib.CSSProcessor
             return engine;
         }
 
-        public Task<string> ProcessCss(string source, string from, Func<string, string, string> urlReplacerUrlFrom)
+        public Task<string> ProcessCss(string source, string from, Func<string, string, string> urlReplacer)
         {
-            _urlReplacer = urlReplacerUrlFrom;
+            _urlReplacer = urlReplacer;
             _tcs = new TaskCompletionSource<string>();
             var engine = getJSEnviroment();
             engine.CallFunction("bbProcessCss", source, from);
+            return _tcs.Task;
+        }
+
+        public Task<string> ConcatenateAndMinifyCss(System.Collections.Generic.IEnumerable<SourceFromPair> inputs, Func<string, string, string> urlReplacer)
+        {
+            _urlReplacer = urlReplacer;
+            _tcs = new TaskCompletionSource<string>();
+            var engine = getJSEnviroment();
+            var serializerSettings = new JsonSerializerSettings();
+            serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            engine.CallFunction("bbConcatAndMinify", Newtonsoft.Json.JsonConvert.SerializeObject(inputs, serializerSettings));
             return _tcs.Task;
         }
     }

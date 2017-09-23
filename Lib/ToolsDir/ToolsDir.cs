@@ -11,15 +11,23 @@ namespace Lib.ToolsDir
 {
     public class ToolsDir : IToolsDir
     {
+        static object _lock = new object();
+
         public ToolsDir(string dir)
         {
             _path = dir;
             if (!new DirectoryInfo(dir).Exists)
                 Directory.CreateDirectory(_path);
             _tsLibDir = PathUtils.Join(Path, "node_modules/typescript/lib");
-            var jsEngineSwitcher = JsEngineSwitcher.Current;
-            jsEngineSwitcher.EngineFactories.Add(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory());
-            jsEngineSwitcher.DefaultEngineName = JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;
+            lock (_lock)
+            {
+                var jsEngineSwitcher = JsEngineSwitcher.Current;
+                if (!jsEngineSwitcher.EngineFactories.Any())
+                {
+                    jsEngineSwitcher.EngineFactories.Add(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory());
+                    jsEngineSwitcher.DefaultEngineName = JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;
+                }
+            }
             _loaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js");
         }
 
@@ -67,12 +75,12 @@ namespace Lib.ToolsDir
         public void InstallTypeScriptVersion(string version = "*")
         {
             _typeScriptJsContent = null;
-            RunYarn(Path, "add typescript@" + version+ " --no-emoji --non-interactive");
+            RunYarn(Path, "add typescript@" + version + " --no-emoji --non-interactive");
         }
 
         public void RunYarn(string dir, string aParams)
         {
-            var yarnPath = Environment.GetEnvironmentVariable("PATH").Split(System.IO.Path.PathSeparator).Select((p)=> PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), "yarn.cmd")).First((p) => File.Exists(p));
+            var yarnPath = Environment.GetEnvironmentVariable("PATH").Split(System.IO.Path.PathSeparator).Select((p) => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), "yarn.cmd")).First((p) => File.Exists(p));
             var start = new ProcessStartInfo(yarnPath, aParams)
             {
                 UseShellExecute = false,
