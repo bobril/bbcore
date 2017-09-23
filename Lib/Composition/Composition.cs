@@ -112,25 +112,6 @@ namespace Lib.Composition
             var path = context.Request.Path;
             if (path == "/")
                 path = "/index.html";
-            switch (path)
-            {
-                case "/index.html":
-                    context.Response.ContentType = "text/html";
-                    await context.Response.WriteAsync(_currentProject.FastBundle.IndexHtml);
-                    return;
-                case "/loader.js":
-                    context.Response.ContentType = "text/javascript";
-                    await context.Response.WriteAsync(_tools.LoaderJs);
-                    return;
-                case "/bundle.js":
-                    context.Response.ContentType = "text/javascript";
-                    await context.Response.WriteAsync(_currentProject.FastBundle.BundleJs);
-                    return;
-                case "/bundle.js.map":
-                    context.Response.ContentType = "text/javascript";
-                    await context.Response.WriteAsync(_currentProject.FastBundle.SourceMapString);
-                    return;
-            }
             if (path.StartsWithSegments("/bb/base", out var src))
             {
                 var srcPath = PathUtils.Join(_currentProject.Owner.Owner.FullPath, src.Value.Substring(1));
@@ -142,40 +123,23 @@ namespace Lib.Composition
                     return;
                 }
             }
-            var resourcePath = _currentProject.Owner.Owner.FullPath + path;
-            var resourceFileCache = _dc.TryGetItem(resourcePath) as IFileCache;
-            if (resourceFileCache != null)
+            var pathWithoutFirstSlash = path.Value.Substring(1);
+            var filesContentFromCurrentProjectBuildResult = _currentProject.Owner.BuildResult.FilesContent;
+            if (filesContentFromCurrentProjectBuildResult.TryGetValue(pathWithoutFirstSlash, out var content))
             {
-                context.Response.ContentType = PathToMimeType(path);
-                var content = resourceFileCache.ByteContent;
-                await context.Response.Body.WriteAsync(content, 0, content.Length);
+                context.Response.ContentType = PathUtils.PathToMimeType(pathWithoutFirstSlash);
+                if (content is string)
+                {
+                    await context.Response.WriteAsync((string)content);
+                }
+                else
+                {
+                    await context.Response.Body.WriteAsync((byte[])content, 0, ((byte[])content).Length);
+                }
                 return;
             }
             context.Response.StatusCode = 404;
             await context.Response.WriteAsync("Not found " + path);
-        }
-
-        string PathToMimeType(string path)
-        {
-            var lastDotIndex = path.LastIndexOf('.');
-            if (lastDotIndex < 0) return "application/unknown";
-            var extension = path.Substring(lastDotIndex + 1);
-            switch(extension)
-            {
-                case "png": return "image/png";
-                case "jpg":
-                case "jpeg": return "image/jpeg";
-                case "gif": return "image/gif";
-                case "svg": return "image/svg+xml";
-                case "css": return "text/css";
-                case "html":
-                case "htm": return "text/html";
-                case "jsx":
-                case "js": return "application/javascript";
-                case "tsx":
-                case "ts": return "text/plain";
-            }
-            return "application/unknown";
         }
 
         public void InitInteractiveMode()
@@ -199,7 +163,7 @@ namespace Lib.Composition
                         var ctx = new BuildCtx(_compilerPool);
                         proj.Owner.Build(ctx);
                         var buildResult = proj.Owner.BuildResult;
-                        var fastBundle = new FastBundleBundler();
+                        var fastBundle = new FastBundleBundler(_tools);
                         fastBundle.Project = proj;
                         fastBundle.BuildResult = buildResult;
                         fastBundle.Build("bb/base", "bundle.js.map");

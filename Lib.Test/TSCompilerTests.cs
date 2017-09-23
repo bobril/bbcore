@@ -7,7 +7,6 @@ using Lib.Watcher;
 using System.Text;
 using System.Linq;
 using Lib.TSCompiler;
-using Lib.ToolsDir;
 
 namespace Lib.Test
 {

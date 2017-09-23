@@ -147,5 +147,35 @@ namespace Lib.Utils
                 pos = pos2 + 1;
             }
         }
+
+        public static string PathToMimeType(string path)
+        {
+            var lastDotIndex = path.LastIndexOf('.');
+            if (lastDotIndex < 0) return "application/unknown";
+            var extension = path.Substring(lastDotIndex + 1);
+            return ExtensionToMimeType(extension);
+        }
+
+        public static string ExtensionToMimeType(string extension)
+        {
+            switch (extension)
+            {
+                case "png": return "image/png";
+                case "jpg":
+                case "jpeg": return "image/jpeg";
+                case "gif": return "image/gif";
+                case "svg": return "image/svg+xml";
+                case "css": return "text/css";
+                case "html":
+                case "htm": return "text/html";
+                case "jsx":
+                case "js": return "application/javascript";
+                case "tsx":
+                case "ts": return "text/plain";
+                case "map":
+                case "json": return "application/json";
+            }
+            return "application/unknown";
+        }
     }
 }

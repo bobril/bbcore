@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Lib.Utils;
+using Lib.ToolsDir;
+using Lib.DiskCache;
 
 namespace Lib.TSCompiler
 {
@@ -13,21 +15,24 @@ namespace Lib.TSCompiler
         string _sourceMapString;
         string _bundleJs;
         string _indexHtml;
+        readonly IToolsDir _tools;
 
         static FastBundleBundler()
         {
             tslibSource = ResourceUtils.GetText("Lib.TSCompiler.tslib.js");
         }
 
+        public FastBundleBundler(IToolsDir tools)
+        {
+            _tools = tools;
+        }
+
         public ProjectOptions Project { get; set; }
         public BuildResult BuildResult { get; set; }
-        public SourceMap SourceMap { get => _sourceMap; }
-        public string SourceMapString { get => _sourceMapString; }
-        public string BundleJs { get => _bundleJs; }
-        public string IndexHtml { get => _indexHtml; }
 
         public void Build(string sourceRoot, string mapUrl)
         {
+            var diskCache = Project.Owner.DiskCache;
             var root = Project.Owner.Owner.FullPath;
             var sourceMapBuilder = new SourceMapBuilder();
             sourceMapBuilder.AddText(tslibSource);
@@ -42,9 +47,32 @@ namespace Lib.TSCompiler
             _sourceMapString = _sourceMap.ToString();
             _bundleJs = sourceMapBuilder.Content();
             BuildFastBundlerIndexHtml();
+            BuildResult.FilesContent.Clear();
+            BuildResult.FilesContent["index.html"] = _indexHtml;
+            BuildResult.FilesContent["loader.js"] = _tools.LoaderJs;
+            BuildResult.FilesContent["bundle.js"] = _bundleJs;
+            BuildResult.FilesContent["bundle.js.map"] = _sourceMapString;
+            foreach (var source in BuildResult.WithoutExtension2Source)
+            {
+                var sourceInfo = source.Value.SourceInfo;
+                if (sourceInfo == null) continue;
+                var a = sourceInfo.assets;
+                for (int i = 0; i < a.Count; i++)
+                {
+                    var name = a[i].name;
+                    if (name == null) continue;
+                    var resourceFileCache = diskCache.TryGetItem(name) as IFileCache;
+                    if (resourceFileCache != null)
+                    {
+                        BuildResult.FilesContent[PathUtils.Subtract(name, root)] = resourceFileCache.ByteContent;
+                    }
+                }
+
+            }
+            BuildResult.SourceMap = _sourceMap;
         }
 
-        public void BuildFastBundlerIndexHtml()
+        void BuildFastBundlerIndexHtml()
         {
             var title = "Bobril Application";
             _indexHtml = $@"<!DOCTYPE html>
@@ -80,7 +108,7 @@ namespace Lib.TSCompiler
             return res.ToString();
         }
 
-        public string GetModuleMap()
+        string GetModuleMap()
         {
             var root = Project.Owner.Owner.FullPath;
             var res = new Dictionary<string, string>();
@@ -95,7 +123,7 @@ namespace Lib.TSCompiler
             return $"R.map = {Newtonsoft.Json.JsonConvert.SerializeObject(res)};";
         }
 
-        public string RequireBobril()
+        string RequireBobril()
         {
             if (BuildResult.WithoutExtension2Source.ContainsKey(Project.Owner.Owner.FullPath + "/node_modules/bobril/index"))
             {
