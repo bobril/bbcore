@@ -10,9 +10,9 @@ using Newtonsoft.Json;
 
 namespace Lib.TSCompiler
 {
-    public class TSCompiler : ITSCompiler
+    public class TsCompiler : ITSCompiler
     {
-        public TSCompiler(IToolsDir toolsDir)
+        public TsCompiler(IToolsDir toolsDir)
         {
             _toolsDir = toolsDir;
             _callbacks = new BBCallbacks(this);
@@ -48,9 +48,9 @@ namespace Lib.TSCompiler
 
         class BBCallbacks
         {
-            TSCompiler _owner;
+            TsCompiler _owner;
 
-            public BBCallbacks(TSCompiler owner)
+            public BBCallbacks(TsCompiler owner)
             {
                 _owner = owner;
             }
@@ -212,7 +212,9 @@ namespace Lib.TSCompiler
                 {
                     return;
                 }
-                GetFileInfo(file).SourceInfo = JsonConvert.DeserializeObject<SourceInfo>(info);
+                var fileInfo = GetFileInfo(file);
+                fileInfo.SourceInfo = JsonConvert.DeserializeObject<SourceInfo>(info);
+                _owner.Ctx.AddDependenciesFromSourceInfo(fileInfo);
             }
 
             public string getModifications(string fileName)
@@ -231,7 +233,7 @@ namespace Lib.TSCompiler
             var engine = _toolsDir.CreateJsEngine();
             engine.Execute(_toolsDir.TypeScriptJsContent, _toolsDir.TypeScriptLibDir + "/typescript.js");
             engine.EmbedHostObject("bb", _callbacks);
-            var assembly = typeof(TSCompiler).Assembly;
+            var assembly = typeof(TsCompiler).Assembly;
             engine.ExecuteResource("Lib.TSCompiler.bbtsc.js", assembly);
             engine.SetVariableValue("bbDefaultLibLocation", _toolsDir.TypeScriptLibDir);
             _engine = engine;

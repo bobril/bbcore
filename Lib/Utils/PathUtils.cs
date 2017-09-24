@@ -148,6 +148,13 @@ namespace Lib.Utils
             }
         }
 
+        public static string GetExtension(string path)
+        {
+            var lastDotIndex = path.LastIndexOf('.');
+            if (lastDotIndex < 0) return "";
+            return path.Substring(lastDotIndex + 1);
+        }
+
         public static string PathToMimeType(string path)
         {
             var lastDotIndex = path.LastIndexOf('.');

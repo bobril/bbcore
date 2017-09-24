@@ -1,14 +1,15 @@
-﻿using System.Threading;
+﻿using Lib.CSSProcessor;
+using System.Threading;
 
-namespace Lib.TSCompiler
+namespace Lib.Composition
 {
     public class BuildCtx
     {
-        public BuildCtx(ITSCompilerPool compilerPool)
+        public BuildCtx(ICompilerPool compilerPool)
         {
             _cts = new CancellationTokenSource();
             _cancelationToken = _cts.Token;
-            _compilerPool = compilerPool;
+            CompilerPool = compilerPool;
         }
 
         public void Cancel()
@@ -18,6 +19,6 @@ namespace Lib.TSCompiler
 
         CancellationTokenSource _cts;
         public CancellationToken _cancelationToken;
-        public ITSCompilerPool _compilerPool;
+        public ICompilerPool CompilerPool;
     }
 }

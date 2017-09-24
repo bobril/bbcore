@@ -7,6 +7,7 @@ using Lib.Watcher;
 using System.Text;
 using System.Linq;
 using Lib.TSCompiler;
+using Lib.Composition;
 
 namespace Lib.Test
 {
@@ -138,17 +139,17 @@ namespace Lib.Test
     {
         string _bbdir;
         ToolsDir.ToolsDir _tools;
-        private TSCompilerPool _compilerPool;
-        private FakeFsAbstraction fs;
-        private string projdir;
-        private DiskCache.DiskCache dc;
+        CompilerPool _compilerPool;
+        FakeFsAbstraction fs;
+        string projdir;
+        DiskCache.DiskCache dc;
 
         public CompilerTests()
         {
             _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore");
             _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"));
             _tools.InstallTypeScriptVersion();
-            _compilerPool = new TSCompilerPool(_tools);
+            _compilerPool = new CompilerPool(_tools);
         }
 
         [Fact]
@@ -167,8 +168,8 @@ console.log(""Hello"");
             ");
             BuildResult buildResult = BuildProject();
             Assert.Equal(1, buildResult.RecompiledLast.Count);
-            Assert.Equal(1, buildResult.WithoutExtension2Source.Count);
-            Assert.Contains("Hello", buildResult.RecompiledLast.First().JsOutput);
+            Assert.Equal(1, buildResult.Path2FileInfo.Count);
+            Assert.Contains("Hello", buildResult.RecompiledLast.First().Output);
         }
 
         [Fact]
@@ -180,8 +181,8 @@ console.log(""Changed"");
             ");
             BuildResult buildResult = BuildProject();
             Assert.Equal(1, buildResult.RecompiledLast.Count);
-            Assert.Equal(1, buildResult.WithoutExtension2Source.Count);
-            Assert.Contains("Changed", buildResult.RecompiledLast.First().JsOutput);
+            Assert.Equal(1, buildResult.Path2FileInfo.Count);
+            Assert.Contains("Changed", buildResult.RecompiledLast.First().Output);
         }
 
         [Fact]
@@ -198,7 +199,7 @@ export function fn() { return ""Lib42""; }
             ");
             BuildResult buildResult = BuildProject();
             Assert.Equal(2, buildResult.RecompiledLast.Count);
-            Assert.Equal(2, buildResult.WithoutExtension2Source.Count);
+            Assert.Equal(2, buildResult.Path2FileInfo.Count);
         }
 
         [Fact]
@@ -210,7 +211,7 @@ export function fn() { return ""Lib42!""; }
             ");
             BuildResult buildResult = BuildProject();
             Assert.Equal(1, buildResult.RecompiledLast.Count);
-            Assert.Equal(2, buildResult.WithoutExtension2Source.Count);
+            Assert.Equal(2, buildResult.Path2FileInfo.Count);
         }
 
         [Fact]
@@ -223,7 +224,7 @@ export var change = true;
             ");
             BuildResult buildResult = BuildProject();
             Assert.Equal(2, buildResult.RecompiledLast.Count);
-            Assert.Equal(2, buildResult.WithoutExtension2Source.Count);
+            Assert.Equal(2, buildResult.Path2FileInfo.Count);
         }
 
         void AddSimpleProjectJson()

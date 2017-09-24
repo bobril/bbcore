@@ -5,13 +5,23 @@ using System.Linq;
 
 namespace Lib.TSCompiler
 {
+    public enum FileCompilationType
+    {
+        Unknown,
+        TypeScript,
+        JavaScript,
+        Css,
+        Resource
+    }
+
     public class TSFileAdditionalInfo
     {
+        public FileCompilationType Type;
         public IFileCache Owner { get; set; }
         public IDiskCache DiskCache { get; set; }
         public List<int> LastCompilationCacheIds { get; set; }
         public TSFileAdditionalInfo DtsLink { get; set; }
-        public string JsOutput { get; set; }
+        public string Output { get; set; }
         public SourceMap MapLink { get; set; }
         public SourceInfo SourceInfo { get; set; }
 
@@ -62,7 +72,7 @@ namespace Lib.TSCompiler
 
         public bool NeedsCompilation()
         {
-            if (JsOutput == null || _moduleImports == null || _localImports == null || LastCompilationCacheIds == null)
+            if (Output == null || _moduleImports == null || _localImports == null || LastCompilationCacheIds == null)
             {
                 return true;
             }

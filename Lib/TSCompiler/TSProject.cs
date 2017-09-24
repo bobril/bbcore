@@ -1,4 +1,5 @@
-﻿using Lib.DiskCache;
+﻿using Lib.Composition;
+using Lib.DiskCache;
 using Lib.Utils;
 using Newtonsoft.Json.Linq;
 using System;
@@ -115,7 +116,7 @@ namespace Lib.TSCompiler
             ITSCompiler compiler = null;
             try
             {
-                compiler = buildCtx._compilerPool.Get();
+                compiler = buildCtx.CompilerPool.GetTs();
                 compiler.DiskCache = DiskCache;
                 compiler.Ctx = buildModuleCtx;
                 compiler.MergeCompilerOptions(new TSCompilerOptions
@@ -155,8 +156,8 @@ namespace Lib.TSCompiler
                         compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.ToArray());
                         if (!compiler.CompileProgram())
                             break;
-
                         compiler.GatherSourceInfo();
+                                                
                         if (!compiler.EmitProgram())
                             break;
                         buildModuleCtx.UpdateCacheIds();
@@ -166,7 +167,7 @@ namespace Lib.TSCompiler
             }
             finally
             {
-                if (compiler != null) buildCtx._compilerPool.Release(compiler);
+                if (compiler != null) buildCtx.CompilerPool.ReleaseTs(compiler);
             }
         }
 

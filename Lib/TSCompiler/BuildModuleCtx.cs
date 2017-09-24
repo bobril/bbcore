@@ -3,6 +3,7 @@ using Lib.Utils;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Lib.Composition;
 
 namespace Lib.TSCompiler
 {
@@ -18,7 +19,7 @@ namespace Lib.TSCompiler
 
         public void AddSource(TSFileAdditionalInfo file)
         {
-            _result.WithoutExtension2Source[PathUtils.WithoutExtension(file.Owner.FullPath)] = file;
+            _result.Path2FileInfo[file.Owner.FullPath] = file;
         }
 
         public void UpdateCacheIds()
@@ -35,8 +36,8 @@ namespace Lib.TSCompiler
             {
                 var relativeTo = PathUtils.Parent(PathUtils.Join(_owner.Owner.FullPath, fileName));
                 var sourceMap = SourceMap.Parse(data, relativeTo);
-                var sourceFullPath = PathUtils.WithoutExtension(sourceMap.sources[0]);
-                var sourceForMap = _result.WithoutExtension2Source[sourceFullPath];
+                var sourceFullPath = sourceMap.sources[0];
+                var sourceForMap = _result.Path2FileInfo[sourceFullPath];
                 sourceForMap.MapLink = sourceMap;
                 return;
             }
@@ -47,10 +48,10 @@ namespace Lib.TSCompiler
             if (fullPath.EndsWith(".js"))
             {
                 data = SourceMap.RemoveLinkToSourceMap(data);
-                var sourceForJs = _result.WithoutExtension2Source[fullPath.Substring(0, fullPath.Length - ".js".Length)];
+                var sourceForJs = _result.Path2FileInfo[fullPath.Substring(0, fullPath.Length - ".js".Length) + ".ts"];
                 _result.RecompiledLast.Add(sourceForJs);
                 TrullyCompiledCount++;
-                sourceForJs.JsOutput = data;
+                sourceForJs.Output = data;
                 return;
             }
             if (!fullPath.EndsWith(".d.ts"))
@@ -63,7 +64,7 @@ namespace Lib.TSCompiler
             var wasChange = dc.WriteVirtualFile(fileOnly, data);
             var output = dc.TryGetChild(fileOnly) as IFileCache;
             var outputInfo = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
-            var source = _result.WithoutExtension2Source[fullPath.Substring(0, fullPath.Length - ".d.ts".Length)];
+            var source = _result.Path2FileInfo[fullPath.Substring(0, fullPath.Length - ".d.ts".Length)+".ts"];
             source.DtsLink = outputInfo;
             if (wasChange) ChangedDts = true;
         }
@@ -107,6 +108,7 @@ namespace Lib.TSCompiler
             }
             else
             {
+                itemInfo.Type = FileCompilationType.TypeScript;
                 AddSource(itemInfo);
             }
             CheckAdd(item.FullPath);
@@ -135,24 +137,20 @@ namespace Lib.TSCompiler
             AddSource(itemInfo);
             if (!IsTsOrTsx(mainFile))
             {
+                itemInfo.Type = FileCompilationType.JavaScript;
+                CheckAdd(mainFile);
                 if (moduleInfo.TypesMainFile != null)
                 {
                     var dtsPath = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.TypesMainFile);
                     item = _owner.DiskCache.TryGetItem(dtsPath) as IFileCache;
+                    itemInfo.DtsLink = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
                     if (item != null && !item.IsInvalid)
                     {
-                        if (itemInfo.NeedsCompilation())
-                        {
-                            itemInfo.StartCompiling();
-                            itemInfo.DtsLink = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
-                            itemInfo.JsOutput = itemInfo.Owner.Utf8Content;
-                            _result.RecompiledLast.Add(itemInfo);
-                            TrullyCompiledCount++;
-                        }
                         return dtsPath;
                     }
                 }
             }
+            itemInfo.Type = FileCompilationType.TypeScript;
             CheckAdd(item.FullPath);
             Crawl();
             if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath))
@@ -195,14 +193,54 @@ namespace Lib.TSCompiler
                 }
                 var fileAdditional = TSFileAdditionalInfo.Get(fileCache, _owner.DiskCache);
                 AddSource(fileAdditional);
+                if (fileAdditional.Type == FileCompilationType.Unknown)
+                {
+                    fileAdditional.Type = FileCompilationType.TypeScript;
+                }
                 if (fileAdditional.NeedsCompilation())
                 {
-                    if (fileAdditional.DtsLink != null)
-                        fileAdditional.DtsLink.Owner.IsInvalid = true;
-                    fileAdditional.DtsLink = null;
-                    fileAdditional.JsOutput = null;
-                    fileAdditional.MapLink = null;
-                    ToCompile.Add(fileName);
+                    switch (fileAdditional.Type)
+                    {
+                        case FileCompilationType.TypeScript:
+                            if (fileAdditional.DtsLink != null)
+                                fileAdditional.DtsLink.Owner.IsInvalid = true;
+                            fileAdditional.DtsLink = null;
+                            fileAdditional.Output = null;
+                            fileAdditional.MapLink = null;
+                            ToCompile.Add(fileName);
+                            break;
+                        case FileCompilationType.JavaScript:
+                            fileAdditional.StartCompiling();
+                            fileAdditional.Output = fileAdditional.Owner.Utf8Content;
+                            _result.RecompiledLast.Add(fileAdditional);
+                            TrullyCompiledCount++;
+                            break;
+                        case FileCompilationType.Resource:
+                            fileAdditional.StartCompiling();
+                            _result.RecompiledLast.Add(fileAdditional);
+                            TrullyCompiledCount++;
+                            break;
+                        case FileCompilationType.Css:
+                            fileAdditional.StartCompiling();
+                            var cssProcessor = _buildCtx.CompilerPool.GetCss();
+                            try
+                            {
+                                fileAdditional.Output = cssProcessor.ProcessCss(fileAdditional.Owner.Utf8Content, fileAdditional.Owner.FullPath, (string url, string from) =>
+                                {
+                                    var full = PathUtils.Join(from, url);
+                                    var fullJustName = full.Split('?', '#')[0];
+                                    fileAdditional.ImportingLocal(AutodetectAndAddDependency(fileAdditional, fullJustName));
+                                    return full;
+                                }).Result;
+                            }
+                            finally
+                            {
+                                _buildCtx.CompilerPool.ReleaseCss(cssProcessor);
+                            }
+                            _result.RecompiledLast.Add(fileAdditional);
+                            TrullyCompiledCount++;
+                            break;
+                    }
                 }
                 else
                 {
@@ -219,6 +257,7 @@ namespace Lib.TSCompiler
                         if (mainFile.EndsWith(".d.ts")) continue; // we cannot handle change in .d.ts without source
                         CheckAdd(mainFile);
                     }
+                    AddDependenciesFromSourceInfo(fileAdditional);
                 }
             }
         }
@@ -234,7 +273,7 @@ namespace Lib.TSCompiler
             sourceInfo.assets.ForEach(a =>
             {
                 if (a.name == null) return;
-                res[a.nodeId] = new object[] { 0, PathUtils.Subtract(a.name,_owner.Owner.FullPath) };
+                res[a.nodeId] = new object[] { 0, PathUtils.Subtract(a.name, _owner.Owner.FullPath) };
             });
             sourceInfo.sprites.ForEach(s =>
             {
@@ -243,6 +282,52 @@ namespace Lib.TSCompiler
             });
             if (res.Count == 0) return null;
             return res;
+        }
+
+        public void AddDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo)
+        {
+            var sourceInfo = fileInfo.SourceInfo;
+            if (sourceInfo == null) return;
+            sourceInfo.assets.ForEach(a =>
+            {
+                if (a.name == null) return;
+                var assetName = a.name;
+                AutodetectAndAddDependency(fileInfo, assetName);
+            });
+            sourceInfo.sprites.ForEach(s =>
+            {
+                if (s.name == null) return;
+                var assetName = s.name;
+                AutodetectAndAddDependency(fileInfo, assetName);
+            });
+        }
+
+        TSFileAdditionalInfo AutodetectAndAddDependency(TSFileAdditionalInfo fileInfo, string depName)
+        {
+            var extension = PathUtils.GetExtension(depName);
+            var depFile = fileInfo.DiskCache.TryGetItem(depName) as IFileCache;
+            if (depFile == null)
+            {
+                // TODO: show error about not found
+                return null;
+            }
+            var assetFileInfo = TSFileAdditionalInfo.Get(depFile, fileInfo.DiskCache);
+            switch (extension)
+            {
+                case "css":
+                    assetFileInfo.Type = FileCompilationType.Css;
+                    CheckAdd(depName);
+                    break;
+                case "js":
+                    assetFileInfo.Type = FileCompilationType.JavaScript;
+                    CheckAdd(depName);
+                    break;
+                default:
+                    assetFileInfo.Type = FileCompilationType.Resource;
+                    CheckAdd(depName);
+                    break;
+            }
+            return assetFileInfo;
         }
     }
 }

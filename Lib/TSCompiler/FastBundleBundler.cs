@@ -36,50 +36,47 @@ namespace Lib.TSCompiler
             var root = Project.Owner.Owner.FullPath;
             var sourceMapBuilder = new SourceMapBuilder();
             sourceMapBuilder.AddText(tslibSource);
-            foreach (var source in BuildResult.WithoutExtension2Source)
+            BuildResult.FilesContent.Clear();
+            var cssLink = "";
+            foreach (var source in BuildResult.Path2FileInfo)
             {
-                sourceMapBuilder.AddText($"R('{PathUtils.Subtract(source.Key, root)}',function(require, module, exports, global){{");
-                sourceMapBuilder.AddSource(source.Value.JsOutput, source.Value.MapLink);
-                sourceMapBuilder.AddText("});");
+                if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript)
+                {
+                    sourceMapBuilder.AddText($"R('{PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root)}',function(require, module, exports, global){{");
+                    sourceMapBuilder.AddSource(source.Value.Output, source.Value.MapLink);
+                    sourceMapBuilder.AddText("});");
+                }
+                else if (source.Value.Type == FileCompilationType.Css)
+                {
+                    string cssPath = PathUtils.Subtract(source.Value.Owner.FullPath, root);
+                    BuildResult.FilesContent[cssPath] = source.Value.Owner.ByteContent;
+                    cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
+                }
+                else if (source.Value.Type == FileCompilationType.Resource)
+                {
+                    BuildResult.FilesContent[PathUtils.Subtract(source.Value.Owner.FullPath, root)] = source.Value.Owner.ByteContent;
+                }
             }
             sourceMapBuilder.AddText("//# sourceMappingURL=" + mapUrl);
             _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
             _sourceMapString = _sourceMap.ToString();
             _bundleJs = sourceMapBuilder.Content();
-            BuildFastBundlerIndexHtml();
-            BuildResult.FilesContent.Clear();
+            BuildFastBundlerIndexHtml(cssLink);
             BuildResult.FilesContent["index.html"] = _indexHtml;
             BuildResult.FilesContent["loader.js"] = _tools.LoaderJs;
             BuildResult.FilesContent["bundle.js"] = _bundleJs;
             BuildResult.FilesContent["bundle.js.map"] = _sourceMapString;
-            foreach (var source in BuildResult.WithoutExtension2Source)
-            {
-                var sourceInfo = source.Value.SourceInfo;
-                if (sourceInfo == null) continue;
-                var a = sourceInfo.assets;
-                for (int i = 0; i < a.Count; i++)
-                {
-                    var name = a[i].name;
-                    if (name == null) continue;
-                    var resourceFileCache = diskCache.TryGetItem(name) as IFileCache;
-                    if (resourceFileCache != null)
-                    {
-                        BuildResult.FilesContent[PathUtils.Subtract(name, root)] = resourceFileCache.ByteContent;
-                    }
-                }
-
-            }
             BuildResult.SourceMap = _sourceMap;
         }
 
-        void BuildFastBundlerIndexHtml()
+        void BuildFastBundlerIndexHtml(string cssLink)
         {
             var title = "Bobril Application";
             _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
         <meta charset=""utf-8"">
-        <title>{title}</title>
+        <title>{title}</title>{cssLink}
     </head>
     <body>
         <script type=""text/javascript"" src=""loader.js"" charset=""utf-8""></script>
@@ -112,20 +109,21 @@ namespace Lib.TSCompiler
         {
             var root = Project.Owner.Owner.FullPath;
             var res = new Dictionary<string, string>();
-            foreach (var source in BuildResult.WithoutExtension2Source)
+            foreach (var source in BuildResult.Path2FileInfo)
             {
                 var module = source.Value.ImportedAsModule;
                 if (module != null)
                 {
-                    res.Add(module, PathUtils.Subtract(source.Key, root));
+                    res.Add(module, PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root));
                 }
             }
             return $"R.map = {Newtonsoft.Json.JsonConvert.SerializeObject(res)};";
         }
 
+        // Bobril must be first because it contains polyfills
         string RequireBobril()
         {
-            if (BuildResult.WithoutExtension2Source.ContainsKey(Project.Owner.Owner.FullPath + "/node_modules/bobril/index"))
+            if (BuildResult.Path2FileInfo.ContainsKey(Project.Owner.Owner.FullPath + "/node_modules/bobril/index.ts"))
             {
                 return "R.r('bobril')";
             }

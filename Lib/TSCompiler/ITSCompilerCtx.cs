@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Lib.DiskCache;
 
 namespace Lib.TSCompiler
 {
@@ -9,5 +10,6 @@ namespace Lib.TSCompiler
         string resolveModuleMain(string name, TSFileAdditionalInfo parentInfo);
         void reportDiag(bool isError, int code, string text, string fileName, int startLine, int startCharacter, int endLine, int endCharacter);
         IDictionary<long,object[]> getPreEmitTransformations(string fileName);
+        void AddDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo);
     }
 }

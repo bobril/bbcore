@@ -20,7 +20,7 @@ namespace Lib.Composition
         string _bbdir;
         ToolsDir.IToolsDir _tools;
         DiskCache.DiskCache _dc;
-        TSCompilerPool _compilerPool;
+        CompilerPool _compilerPool;
         object _projectsLock = new object();
         List<ProjectOptions> _projects = new List<ProjectOptions>();
         WebServerHost _webServer;
@@ -53,7 +53,7 @@ namespace Lib.Composition
             {
                 _tools.InstallTypeScriptVersion(version);
             }
-            _compilerPool = new TSCompilerPool(_tools);
+            _compilerPool = new CompilerPool(_tools);
         }
 
         public void InitDiskCache()
