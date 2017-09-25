@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace Lib.TSCompiler
 {
@@ -98,7 +99,32 @@ namespace Lib.TSCompiler
                     }
                     PackageJsonChangeId = newChangeId;
                     Dependencies = deps;
+                    if (ProjectOptions != null)
+                    {
+                        FillProjectOptionsFromPackageJson(parsed);
+                    }
                 }
+            }
+        }
+
+        private void FillProjectOptionsFromPackageJson(JObject parsed)
+        {
+            ProjectOptions.Title = "Bobril Application";
+            ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec\\.ts(?:x)?$";
+            ProjectOptions.HtmlHead = "";
+
+            var bobrilSection = parsed.GetValue("bobril") as JObject;
+            if (bobrilSection == null)
+            {
+                return;
+            }
+            if (bobrilSection["title"].Type == JTokenType.String)
+            {
+                ProjectOptions.Title = bobrilSection.Value<string>("title");
+            }
+            if (bobrilSection["head"].Type == JTokenType.String)
+            {
+                ProjectOptions.HtmlHead = bobrilSection.Value<string>("head");
             }
         }
 
@@ -147,6 +173,7 @@ namespace Lib.TSCompiler
                     buildModuleCtx.TrullyCompiledCount = 0;
                     buildModuleCtx.ToCheck.Clear();
                     buildModuleCtx.ToCompile.Clear();
+                    ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
                     buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, MainFile));
                     // TODO: Add test sources from ProjectOptions
                     buildModuleCtx.Crawl();
@@ -157,7 +184,7 @@ namespace Lib.TSCompiler
                         if (!compiler.CompileProgram())
                             break;
                         compiler.GatherSourceInfo();
-                                                
+
                         if (!compiler.EmitProgram())
                             break;
                         buildModuleCtx.UpdateCacheIds();

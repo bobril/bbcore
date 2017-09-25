@@ -71,12 +71,11 @@ namespace Lib.TSCompiler
 
         void BuildFastBundlerIndexHtml(string cssLink)
         {
-            var title = "Bobril Application";
             _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
-        <meta charset=""utf-8"">
-        <title>{title}</title>{cssLink}
+        <meta charset=""utf-8"">{Project.HtmlHeadExpanded}
+        <title>{Project.Title}</title>{cssLink}
     </head>
     <body>
         <script type=""text/javascript"" src=""loader.js"" charset=""utf-8""></script>

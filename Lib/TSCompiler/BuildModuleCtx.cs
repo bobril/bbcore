@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Lib.Composition;
+using System.Text.RegularExpressions;
 
 namespace Lib.TSCompiler
 {
@@ -64,7 +65,7 @@ namespace Lib.TSCompiler
             var wasChange = dc.WriteVirtualFile(fileOnly, data);
             var output = dc.TryGetChild(fileOnly) as IFileCache;
             var outputInfo = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
-            var source = _result.Path2FileInfo[fullPath.Substring(0, fullPath.Length - ".d.ts".Length)+".ts"];
+            var source = _result.Path2FileInfo[fullPath.Substring(0, fullPath.Length - ".d.ts".Length) + ".ts"];
             source.DtsLink = outputInfo;
             if (wasChange) ChangedDts = true;
         }
@@ -180,6 +181,20 @@ namespace Lib.TSCompiler
             return true;
         }
 
+        public string ExpandHtmlHead(string htmlHead)
+        {
+            return new Regex("<<[^>]+>>").Replace(htmlHead, (Match m) =>
+            {
+                return ShortenPathAddVersionDir(AutodetectAndAddDependency(_owner.DiskCache, PathUtils.Join(_owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4))).Owner.FullPath);
+            });
+        }
+
+        public string ShortenPathAddVersionDir(string fullPath)
+        {
+            // TODO: finish this ...
+            return PathUtils.Subtract(fullPath, _owner.Owner.FullPath);
+        }
+
         public void Crawl()
         {
             while (CrawledCount < ToCheck.Count)
@@ -229,7 +244,7 @@ namespace Lib.TSCompiler
                                 {
                                     var full = PathUtils.Join(from, url);
                                     var fullJustName = full.Split('?', '#')[0];
-                                    fileAdditional.ImportingLocal(AutodetectAndAddDependency(fileAdditional, fullJustName));
+                                    fileAdditional.ImportingLocal(AutodetectAndAddDependency(fileAdditional.DiskCache, fullJustName));
                                     return full;
                                 }).Result;
                             }
@@ -292,26 +307,26 @@ namespace Lib.TSCompiler
             {
                 if (a.name == null) return;
                 var assetName = a.name;
-                AutodetectAndAddDependency(fileInfo, assetName);
+                AutodetectAndAddDependency(fileInfo.DiskCache, assetName);
             });
             sourceInfo.sprites.ForEach(s =>
             {
                 if (s.name == null) return;
                 var assetName = s.name;
-                AutodetectAndAddDependency(fileInfo, assetName);
+                AutodetectAndAddDependency(fileInfo.DiskCache, assetName);
             });
         }
 
-        TSFileAdditionalInfo AutodetectAndAddDependency(TSFileAdditionalInfo fileInfo, string depName)
+        TSFileAdditionalInfo AutodetectAndAddDependency(IDiskCache dc, string depName)
         {
             var extension = PathUtils.GetExtension(depName);
-            var depFile = fileInfo.DiskCache.TryGetItem(depName) as IFileCache;
+            var depFile = dc.TryGetItem(depName) as IFileCache;
             if (depFile == null)
             {
                 // TODO: show error about not found
                 return null;
             }
-            var assetFileInfo = TSFileAdditionalInfo.Get(depFile, fileInfo.DiskCache);
+            var assetFileInfo = TSFileAdditionalInfo.Get(depFile, dc);
             switch (extension)
             {
                 case "css":
