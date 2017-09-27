@@ -191,6 +191,15 @@ var transformers = {
                             case 0:// change first parameter to constant in modification[1]
                                 node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread([ts.createLiteral(modification[1])], callEx.arguments.slice(1))), callEx);
                                 break;
+                            case 1:// set argument count to modification[1]
+                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, sliceAndPad(callEx.arguments, 0, modification[1])), callEx);
+                                break;
+                            case 2:// set parameter with index modification[1] to modification[2] and set argument count to modification[3]
+                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [ts.createLiteral(modification[2])], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
+                                break;
+                            case 3:// set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
+                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [ts.createAdd(ts.createLiteral(modification[2]), callEx.arguments[modification[1]])], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
+                                break;
                             default:
                                 throw new Error("Unknown modification type " + modification[0] + " for " + id);
                         }
@@ -203,6 +212,13 @@ var transformers = {
         }; }
     ]
 };
+function sliceAndPad(args, start, end) {
+    var res = args.slice(start, end);
+    while (res.length < end - start) {
+        res.push(ts.createVoidZero());
+    }
+    return res;
+}
 function evalNode(n, tc, resolveStringLiteral) {
     switch (n.kind) {
         case ts.SyntaxKind.StringLiteral: {

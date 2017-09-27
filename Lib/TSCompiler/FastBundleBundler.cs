@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Text;
 using Lib.Utils;
 using Lib.ToolsDir;
-using Lib.DiskCache;
 
 namespace Lib.TSCompiler
 {

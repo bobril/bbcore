@@ -216,7 +216,33 @@ const transformers: ts.CustomTransformers = {
                         let callEx = node as ts.CallExpression;
                         switch (modification[0] as number) {
                             case 0: // change first parameter to constant in modification[1]
-                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, [ts.createLiteral(modification[1] as (string | number | boolean)), ...callEx.arguments.slice(1)]), callEx)
+                                node = ts.setTextRange(
+                                    ts.createCall(callEx.expression, undefined,
+                                        [ts.createLiteral(modification[1] as (string | number | boolean)),
+                                        ...callEx.arguments.slice(1)]),
+                                    callEx);
+                                break;
+                            case 1: // set argument count to modification[1]
+                                node = ts.setTextRange(
+                                    ts.createCall(callEx.expression, undefined,
+                                        sliceAndPad(callEx.arguments, 0, modification[1] as number)),
+                                    callEx);
+                                break;
+                            case 2: // set parameter with index modification[1] to modification[2] and set argument count to modification[3]
+                                node = ts.setTextRange(
+                                    ts.createCall(callEx.expression, undefined,
+                                        [...sliceAndPad(callEx.arguments, 0, (modification[1] as number)),
+                                        ts.createLiteral(modification[2] as (string | number | boolean)),
+                                        ...sliceAndPad(callEx.arguments, (modification[1] as number) + 1, modification[3] as number)]),
+                                    callEx);
+                                break;
+                            case 3: // set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
+                                node = ts.setTextRange(
+                                    ts.createCall(callEx.expression, undefined,
+                                        [...sliceAndPad(callEx.arguments, 0, (modification[1] as number)),
+                                        ts.createAdd(ts.createLiteral(modification[2] as (string | number | boolean)), callEx.arguments[modification[1] as number]),
+                                        ...sliceAndPad(callEx.arguments, (modification[1] as number) + 1, modification[3] as number)]),
+                                    callEx);
                                 break;
                             default:
                                 throw new Error("Unknown modification type " + modification[0] + " for " + id);
@@ -229,6 +255,14 @@ const transformers: ts.CustomTransformers = {
             return ts.visitEachChild(node, visitor, context);
         }
     ]
+}
+
+function sliceAndPad(args: ts.NodeArray<ts.Expression>, start: number, end: number) {
+    var res = args.slice(start, end);
+    while (res.length < end - start) {
+        res.push(ts.createVoidZero());
+    }
+    return res;
 }
 
 function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts.StringLiteral) => string): any {

@@ -109,23 +109,22 @@ namespace Lib.TSCompiler
 
         private void FillProjectOptionsFromPackageJson(JObject parsed)
         {
-            ProjectOptions.Title = "Bobril Application";
             ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec\\.ts(?:x)?$";
-            ProjectOptions.HtmlHead = "";
-
             var bobrilSection = parsed.GetValue("bobril") as JObject;
+            ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
+            ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "");
+            ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
             if (bobrilSection == null)
             {
                 return;
             }
-            if (bobrilSection["title"].Type == JTokenType.String)
-            {
-                ProjectOptions.Title = bobrilSection.Value<string>("title");
-            }
-            if (bobrilSection["head"].Type == JTokenType.String)
-            {
-                ProjectOptions.HtmlHead = bobrilSection.Value<string>("head");
-            }
+        }
+
+        public string GetStringProperty(JObject obj, string name, string @default)
+        {
+            if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
+                return (string)value;
+            return @default;
         }
 
         public void Build(BuildCtx buildCtx)

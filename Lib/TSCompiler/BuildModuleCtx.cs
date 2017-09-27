@@ -295,6 +295,41 @@ namespace Lib.TSCompiler
                 if (s.name == null) return;
                 res[s.nodeId] = new object[] { 0, PathUtils.Subtract(s.name, _owner.Owner.FullPath) };
             });
+            var styleDefNaming = _owner.ProjectOptions.StyleDefNaming;
+            var styleDefPrefix = _owner.ProjectOptions.PrefixStyleNames;
+            sourceInfo.styleDefs.ForEach(s =>
+            {
+                var skipEx = s.isEx ? 1 : 0;
+                if (s.userNamed)
+                {
+                    if (styleDefNaming == StyleDefNamingStyle.AddNames || styleDefNaming == StyleDefNamingStyle.PreserveNames)
+                    {
+                        if (styleDefPrefix.Length > 0)
+                        {
+                            if (s.name != null)
+                            {
+                                res[s.nodeId] = new object[] { 2, 2 + skipEx, styleDefPrefix + s.name, 3 + skipEx };
+                            }
+                            else
+                            {
+                                res[s.nodeId] = new object[] { 3, 2 + skipEx, styleDefPrefix, 3 + skipEx };
+                            }
+                        }
+                    }
+                    else
+                    {
+                        res[s.nodeId] = new object[] { 1, 2 + skipEx };
+                    }
+                }
+                else
+                {
+                    if (styleDefNaming == StyleDefNamingStyle.AddNames && s.name != null)
+                    {
+                        // TODO: heuristicaly improve s.name by filename
+                        res[s.nodeId] = new object[] { 2, 2 + skipEx, styleDefPrefix + s.name, 3 + skipEx };
+                    }
+                }
+            });
             if (res.Count == 0) return null;
             return res;
         }
