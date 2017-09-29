@@ -31,7 +31,15 @@ namespace Lib.TSCompiler
                 var newChangeId = ((IFileCache)packageJsonFile).ChangeId;
                 if (newChangeId != PackageJsonChangeId)
                 {
-                    var parsed = JObject.Parse(((IFileCache)packageJsonFile).Utf8Content);
+                    JObject parsed;
+                    try
+                    {
+                        parsed = JObject.Parse(((IFileCache)packageJsonFile).Utf8Content);
+                    }
+                    catch (Exception)
+                    {
+                        parsed = new JObject();
+                    }
                     var deps = new HashSet<string>();
                     var hasMain = false;
                     if (parsed.GetValue("typescript") is JObject parsedT)
@@ -112,7 +120,7 @@ namespace Lib.TSCompiler
             ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec\\.ts(?:x)?$";
             var bobrilSection = parsed.GetValue("bobril") as JObject;
             ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
-            ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "");
+            ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
             ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
             if (bobrilSection == null)
             {

@@ -111,13 +111,13 @@ namespace Lib.Test
             if (fad.Item1 == null) fad.Item1 = "";
             if (_content.TryGetValue(new KeyValuePair<string, string>(fad.Item1, fad.Item2), out var file))
             {
-                if (file!=null)
+                if (file != null)
                 {
                     throw new Exception("mkdir fail already file " + path);
                 }
                 return;
             }
-            if (fad.Item1!="")
+            if (fad.Item1 != "")
             {
                 CreateDir(fad.Item1);
             }
@@ -227,6 +227,32 @@ export var change = true;
             Assert.Equal(2, buildResult.Path2FileInfo.Count);
         }
 
+        [Fact]
+        public void StyleDefAddNamesWithoutPrefixing()
+        {
+            InitFakeProject();
+            AddSimpleProjectJson();
+            AddBobrilWithStyleDef();
+            fs.AddTextFile(PathUtils.Join(projdir, "index.ts"), @"
+import * as b from ""bobril"";
+var s1 = b.styleDef({ color: ""blue"" });
+var s2 = b.styleDef({ color: ""red"" }, { hover: { color: ""navy"" } });
+var s3 = b.styleDef({}, undefined, ""myname"");
+var s4 = b.styleDefEx(s1, {});
+var s5 = b.styleDefEx(s2, {}, {});
+var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname""); 
+            ");
+            BuildResult buildResult = BuildProject();
+            Assert.Equal(@"""use strict"";
+var b = require(""bobril"");
+var s1 = b.styleDef({ color: ""blue"" }, void 0, ""s1"");
+var s2 = b.styleDef({ color: ""red"" }, { hover: { color: ""navy"" } }, ""s2"");
+var s3 = b.styleDef({}, undefined, ""myname"");
+var s4 = b.styleDefEx(s1, {}, void 0, ""s4"");
+var s5 = b.styleDefEx(s2, {}, {}, ""s5"");
+var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildResult.Path2FileInfo[PathUtils.Join(projdir, "index.ts")].Output);
+        }
+
         void AddSimpleProjectJson()
         {
             fs.AddTextFile(PathUtils.Join(projdir, "package.json"), @"
@@ -236,14 +262,23 @@ export var change = true;
             ");
         }
 
-        BuildResult BuildProject()
+        BuildResult BuildProject(Action<ProjectOptions> configure = null)
         {
             var ctx = new BuildCtx(_compilerPool);
             var dirCache = dc.TryGetItem(projdir) as IDirectoryCache;
             var proj = TSProject.Get(dirCache, dc);
+            proj.IsRootProject = true;
+            if (proj.ProjectOptions == null)
+            {
+                proj.ProjectOptions = new ProjectOptions
+                {
+                    Owner = proj,
+                    Defines = new Dictionary<string, bool> { { "DEBUG", true } }
+                };
+            }
+            configure?.Invoke(proj.ProjectOptions);
             proj.Build(ctx);
-            var buildResult = proj.BuildResult;
-            return buildResult;
+            return proj.BuildResult;
         }
 
         void InitFakeProject()
@@ -254,6 +289,34 @@ export var change = true;
             dc = new DiskCache.DiskCache(fs, () => fs);
             dc.AddRoot(_tools.TypeScriptLibDir);
             dc.AddRoot(projdir);
+        }
+
+        void AddBobrilWithStyleDef()
+        {
+            fs.AddTextFile(PathUtils.Join(projdir, "node_modules/bobril/package.json"), @"
+{
+    ""name"": ""bobril"",
+    ""main"": ""index.js""
+}
+            ");
+            fs.AddTextFile(PathUtils.Join(projdir, "node_modules/bobril/index.ts"), @"
+export type IBobrilStyleDef = string;
+export function styleDef(
+  style: any,
+  pseudo?: { [name: string]: any },
+  nameHint?: string
+): IBobrilStyleDef {
+  return """";
+}
+export function styleDefEx(
+  parent: IBobrilStyleDef | IBobrilStyleDef[] | undefined,
+  style: any,
+  pseudo?: { [name: string]: any },
+  nameHint?: string
+): IBobrilStyleDef {
+  return """";
+}
+            ");
         }
     }
 }

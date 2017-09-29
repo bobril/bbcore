@@ -47,6 +47,9 @@ namespace Lib.ToolsDir
                 if (_typeScriptJsContent == null)
                 {
                     _typeScriptJsContent = File.ReadAllText(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
+
+                    // Patch TypeScript compiler to never generate useless __esmodule = true
+                    _typeScriptJsContent = _typeScriptJsContent.Replace("(shouldEmitUnderscoreUnderscoreESModule())", "(false)");
                 }
                 return _typeScriptJsContent;
             }
