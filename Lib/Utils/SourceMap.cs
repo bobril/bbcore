@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Lib.Utils
 {
@@ -30,6 +31,19 @@ namespace Lib.Utils
             {
                 sources = new List<string>(),
                 mappings = ""
+            };
+        }
+
+        public static SourceMap Identity(string content, string fileName)
+        {
+            var sb = new StringBuilder();
+            sb.Append("AAAA");
+            for (var i = 0; i < content.Length; i++)
+                if (content[i] == '\n') sb.Append(";AACA");
+            return new SourceMap
+            {
+                sources = new List<string> { fileName },
+                mappings = sb.ToString()
             };
         }
 

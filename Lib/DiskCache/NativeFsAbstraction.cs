@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace Lib.DiskCache
 {
@@ -43,12 +44,40 @@ namespace Lib.DiskCache
 
         public byte[] ReadAllBytes(string path)
         {
-            return File.ReadAllBytes(path);
+            int retry = 0;
+            while (true)
+            {
+                try
+                {
+                    return File.ReadAllBytes(path);
+                }
+                catch (System.Exception)
+                {
+                    retry++;
+                    if (retry > 5)
+                        throw;
+                }
+                Thread.Sleep(50 * retry);
+            }
         }
 
         public string ReadAllUtf8(string path)
         {
-            return File.ReadAllText(path, Encoding.UTF8);
+            int retry = 0;
+            while (true)
+            {
+                try
+                {
+                    return File.ReadAllText(path, Encoding.UTF8);
+                }
+                catch (System.Exception)
+                {
+                    retry++;
+                    if (retry > 5)
+                        throw;
+                }
+                Thread.Sleep(50 * retry);
+            }
         }
     }
 }

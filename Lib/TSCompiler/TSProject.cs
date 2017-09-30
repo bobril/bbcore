@@ -138,6 +138,7 @@ namespace Lib.TSCompiler
         public void Build(BuildCtx buildCtx)
         {
             LoadProjectJson();
+            ProjectOptions.RefreshTestSources();
             var buildModuleCtx = new BuildModuleCtx()
             {
                 _buildCtx = buildCtx,
@@ -171,7 +172,7 @@ namespace Lib.TSCompiler
                     outDir = "_virtual",
                     removeComments = false,
                     types = new string[0],
-                    lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable" }
+                    lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
                 });
                 do
                 {

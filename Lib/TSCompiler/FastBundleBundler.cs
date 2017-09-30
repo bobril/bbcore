@@ -39,6 +39,7 @@ namespace Lib.TSCompiler
             {
                 if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript)
                 {
+                    if (source.Value.Output == null) continue; // Skip d.ts
                     sourceMapBuilder.AddText($"R('{PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root)}',function(require, module, exports, global){{");
                     sourceMapBuilder.AddSource(source.Value.Output, source.Value.MapLink);
                     sourceMapBuilder.AddText("});");

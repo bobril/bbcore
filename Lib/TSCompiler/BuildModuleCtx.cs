@@ -10,10 +10,6 @@ namespace Lib.TSCompiler
 {
     public class BuildModuleCtx : ITSCompilerCtx
     {
-        public BuildModuleCtx()
-        {
-        }
-
         public BuildCtx _buildCtx;
         public TSProject _owner;
         public BuildResult _result;
@@ -227,6 +223,7 @@ namespace Lib.TSCompiler
                         case FileCompilationType.JavaScript:
                             fileAdditional.StartCompiling();
                             fileAdditional.Output = fileAdditional.Owner.Utf8Content;
+                            fileAdditional.MapLink = SourceMap.Identity(fileAdditional.Output, fileAdditional.Owner.FullPath);
                             _result.RecompiledLast.Add(fileAdditional);
                             TrullyCompiledCount++;
                             break;
