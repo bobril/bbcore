@@ -24,8 +24,12 @@ namespace Lib.TSCompiler
             _tools = tools;
         }
 
-        public ProjectOptions Project { get; set; }
-        public BuildResult BuildResult { get; set; }
+        public ProjectOptions Project;
+        public BuildResult BuildResult;
+
+        // value could be string or byte[]
+        public Dictionary<string, object> FilesContent;
+
 
         public void Build(string sourceRoot, string mapUrl)
         {
@@ -33,7 +37,6 @@ namespace Lib.TSCompiler
             var root = Project.Owner.Owner.FullPath;
             var sourceMapBuilder = new SourceMapBuilder();
             sourceMapBuilder.AddText(tslibSource);
-            BuildResult.FilesContent.Clear();
             var cssLink = "";
             foreach (var source in BuildResult.Path2FileInfo)
             {
@@ -47,27 +50,50 @@ namespace Lib.TSCompiler
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
                     string cssPath = PathUtils.Subtract(source.Value.Owner.FullPath, root);
-                    BuildResult.FilesContent[cssPath] = source.Value.Owner.ByteContent;
+                    FilesContent[cssPath] = source.Value.Owner.ByteContent;
                     cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
                 }
                 else if (source.Value.Type == FileCompilationType.Resource)
                 {
-                    BuildResult.FilesContent[PathUtils.Subtract(source.Value.Owner.FullPath, root)] = source.Value.Owner.ByteContent;
+                    FilesContent[PathUtils.Subtract(source.Value.Owner.FullPath, root)] = source.Value.Owner.ByteContent;
                 }
             }
             sourceMapBuilder.AddText("//# sourceMappingURL=" + mapUrl);
             _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
             _sourceMapString = _sourceMap.ToString();
             _bundleJs = sourceMapBuilder.Content();
-            BuildFastBundlerIndexHtml(cssLink);
-            BuildResult.FilesContent["index.html"] = _indexHtml;
-            BuildResult.FilesContent["loader.js"] = _tools.LoaderJs;
-            BuildResult.FilesContent["bundle.js"] = _bundleJs;
-            BuildResult.FilesContent["bundle.js.map"] = _sourceMapString;
+            if (Project.ExampleSources.Count > 0)
+            {
+                if (Project.ExampleSources.Count == 1)
+                {
+                    BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(Project.ExampleSources[0], root)), cssLink);
+                }
+                else
+                {
+                    var htmlList = new List<string>();
+                    foreach (var exampleSrc in Project.ExampleSources)
+                    {
+                        var moduleNameWOExt = PathUtils.WithoutExtension(PathUtils.Subtract(exampleSrc, root));
+                        BuildFastBundlerIndexHtml(moduleNameWOExt, cssLink);
+                        var justName = PathUtils.SplitDirAndFile(moduleNameWOExt).Item2;
+                        FilesContent[justName + ".html"] = _indexHtml;
+                        htmlList.Add(justName);
+                    }
+                    BuildExampleListHtml(htmlList, cssLink);
+                }
+            }
+            else
+            {
+                BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(Project.MainFile, root)), cssLink);
+            }
+            FilesContent["index.html"] = _indexHtml;
+            FilesContent["loader.js"] = _tools.LoaderJs;
+            FilesContent["bundle.js"] = _bundleJs;
+            FilesContent["bundle.js.map"] = _sourceMapString;
             BuildResult.SourceMap = _sourceMap;
         }
 
-        void BuildFastBundlerIndexHtml(string cssLink)
+        void BuildFastBundlerIndexHtml(string mainModule, string cssLink)
         {
             _indexHtml = $@"<!DOCTYPE html>
 <html>
@@ -84,11 +110,30 @@ namespace Lib.TSCompiler
         <script type=""text/javascript"" src=""bundle.js"" charset=""utf-8""></script>
         <script type=""text/javascript"">
             {RequireBobril()}
-            R.r('{PathUtils.WithoutExtension(Project.Owner.MainFile)}');
+            R.r('{mainModule}');
         </script>
     </body>
 </html>
 ";
+        }
+
+        void BuildExampleListHtml(List<string> namesWOExt, string cssLink)
+        {
+            var testList = "";
+            for (var i = 0; i < namesWOExt.Count; i++)
+            {
+                testList += $@"<li><a href=""{namesWOExt[i]}.html"">{namesWOExt[i]}</a></li>";
+            }
+            _indexHtml = $@"<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=""utf-8"">{Project.HtmlHeadExpanded}
+        <title>${Project.Title}</title>${cssLink}
+    </head>
+    <body>
+    <ul>{testList}</ul>
+    </body>
+</html>";
         }
 
         string GetGlobalDefines()

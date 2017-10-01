@@ -45,10 +45,13 @@ namespace Lib.TSCompiler
             if (fullPath.EndsWith(".js"))
             {
                 data = SourceMap.RemoveLinkToSourceMap(data);
-                var sourceForJs = _result.Path2FileInfo[fullPath.Substring(0, fullPath.Length - ".js".Length) + ".ts"];
+                var sourceName = fullPath.Substring(0, fullPath.Length - ".js".Length) + ".ts";
+                TSFileAdditionalInfo sourceForJs = null;
+                if (!_result.Path2FileInfo.TryGetValue(sourceName, out sourceForJs))
+                    _result.Path2FileInfo.TryGetValue(sourceName + "x", out sourceForJs);
+                sourceForJs.Output = data;
                 _result.RecompiledLast.Add(sourceForJs);
                 TrullyCompiledCount++;
-                sourceForJs.Output = data;
                 return;
             }
             if (!fullPath.EndsWith(".d.ts"))
@@ -61,7 +64,10 @@ namespace Lib.TSCompiler
             var wasChange = dc.WriteVirtualFile(fileOnly, data);
             var output = dc.TryGetChild(fileOnly) as IFileCache;
             var outputInfo = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
-            var source = _result.Path2FileInfo[fullPath.Substring(0, fullPath.Length - ".d.ts".Length) + ".ts"];
+            var sourceName2 = fullPath.Substring(0, fullPath.Length - ".d.ts".Length) + ".ts";
+            TSFileAdditionalInfo source = null;
+            if (!_result.Path2FileInfo.TryGetValue(sourceName2, out source))
+                _result.Path2FileInfo.TryGetValue(sourceName2 + "x", out source);
             source.DtsLink = outputInfo;
             if (wasChange) ChangedDts = true;
         }
@@ -219,6 +225,8 @@ namespace Lib.TSCompiler
                             fileAdditional.Output = null;
                             fileAdditional.MapLink = null;
                             ToCompile.Add(fileName);
+                            // d.ts files are compiled automaticaly (they don't have any output)
+                            if (fileName.EndsWith(".d.ts")) TrullyCompiledCount++;
                             break;
                         case FileCompilationType.JavaScript:
                             fileAdditional.StartCompiling();

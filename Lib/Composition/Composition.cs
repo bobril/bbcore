@@ -124,7 +124,7 @@ namespace Lib.Composition
                 }
             }
             var pathWithoutFirstSlash = path.Value.Substring(1);
-            var filesContentFromCurrentProjectBuildResult = _currentProject.Owner.BuildResult.FilesContent;
+            var filesContentFromCurrentProjectBuildResult = _currentProject.FilesContent;
             if (filesContentFromCurrentProjectBuildResult.TryGetValue(pathWithoutFirstSlash, out var content))
             {
                 context.Response.ContentType = PathUtils.PathToMimeType(pathWithoutFirstSlash);
@@ -153,6 +153,7 @@ namespace Lib.Composition
             {
                 while (_hasBuildWork.WaitOne())
                 {
+                    DateTime start = DateTime.UtcNow;
                     ProjectOptions[] toBuild;
                     lock (_projectsLock)
                     {
@@ -161,14 +162,45 @@ namespace Lib.Composition
                     foreach (var proj in toBuild)
                     {
                         var ctx = new BuildCtx(_compilerPool);
+                        proj.Owner.LoadProjectJson();
+                        proj.RefreshMainFile();
+                        proj.RefreshTestSources();
+                        proj.DetectBobrilJsxDts();
+                        proj.RefreshExampleSources();
+                        ctx.TSCompilerOptions = new TSCompilerOptions
+                        {
+                            sourceMap = true,
+                            skipLibCheck = true,
+                            skipDefaultLibCheck = true,
+                            target = ScriptTarget.ES5,
+                            preserveConstEnums = false,
+                            jsx = JsxEmit.React,
+                            reactNamespace = proj.BobrilJsx ? "b" : "React",
+                            experimentalDecorators = true,
+                            noEmitHelpers = true,
+                            allowJs = true,
+                            checkJs = false,
+                            removeComments = false,
+                            types = new string[0],
+                            lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
+                        };
+                        ctx.Sources = new HashSet<string>();
+                        ctx.Sources.Add(proj.MainFile);
+                        proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
+                        if (proj.BobrilJsxDts != null)
+                            ctx.Sources.Add(proj.BobrilJsxDts);
                         proj.Owner.Build(ctx);
-                        var buildResult = proj.Owner.BuildResult;
+                        var buildResult = ctx.BuildResult;
+                        var filesContent = new Dictionary<string, object>();
                         var fastBundle = new FastBundleBundler(_tools);
+                        fastBundle.FilesContent = filesContent;
                         fastBundle.Project = proj;
                         fastBundle.BuildResult = buildResult;
                         fastBundle.Build("bb/base", "bundle.js.map");
                         proj.FastBundle = fastBundle;
+                        proj.FilesContent = filesContent;
                     }
+                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1"));
                 }
             });
         }

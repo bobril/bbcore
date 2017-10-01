@@ -16,7 +16,6 @@ namespace Lib.TSCompiler
         public string MainFile { get; set; }
         public string TypesMainFile { get; set; }
         public ProjectOptions ProjectOptions { get; set; }
-        public BuildResult BuildResult { get; set; }
         public int PackageJsonChangeId { get; set; }
         public int InterfaceChangeId { get; set; }
         public bool IsRootProject { get; set; }
@@ -122,6 +121,8 @@ namespace Lib.TSCompiler
             ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
             ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
             ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
+            ProjectOptions.Example = GetStringProperty(bobrilSection, "example", "");
+            ProjectOptions.BobrilJsx = true;
             if (bobrilSection == null)
             {
                 return;
@@ -137,8 +138,6 @@ namespace Lib.TSCompiler
 
         public void Build(BuildCtx buildCtx)
         {
-            LoadProjectJson();
-            ProjectOptions.RefreshTestSources();
             var buildModuleCtx = new BuildModuleCtx()
             {
                 _buildCtx = buildCtx,
@@ -153,27 +152,12 @@ namespace Lib.TSCompiler
                 compiler = buildCtx.CompilerPool.GetTs();
                 compiler.DiskCache = DiskCache;
                 compiler.Ctx = buildModuleCtx;
-                compiler.MergeCompilerOptions(new TSCompilerOptions
-                {
-                    declaration = true,
-                    sourceMap = true,
-                    skipLibCheck = true,
-                    skipDefaultLibCheck = true,
-                    module = ModuleKind.CommonJS,
-                    target = ScriptTarget.ES5,
-                    preserveConstEnums = false,
-                    jsx = JsxEmit.React,
-                    reactNamespace = "b",
-                    experimentalDecorators = true,
-                    noEmitHelpers = true,
-                    allowJs = true,
-                    checkJs = false,
-                    rootDir = buildModuleCtx._owner.Owner.FullPath,
-                    outDir = "_virtual",
-                    removeComments = false,
-                    types = new string[0],
-                    lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
-                });
+                var compOpt = buildCtx.TSCompilerOptions.Clone();
+                compOpt.rootDir = buildModuleCtx._owner.Owner.FullPath;
+                compOpt.outDir = "_virtual";
+                compOpt.module = ModuleKind.CommonJS;
+                compOpt.declaration = true;
+                compiler.MergeCompilerOptions(compOpt);
                 do
                 {
                     buildModuleCtx.ChangedDts = false;
@@ -182,8 +166,10 @@ namespace Lib.TSCompiler
                     buildModuleCtx.ToCheck.Clear();
                     buildModuleCtx.ToCompile.Clear();
                     ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
-                    buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, MainFile));
-                    // TODO: Add test sources from ProjectOptions
+                    foreach(var src in buildCtx.Sources)
+                    {
+                        buildModuleCtx.CheckAdd(src);
+                    }
                     buildModuleCtx.Crawl();
                     if (buildModuleCtx.ToCompile.Count != 0)
                     {
@@ -198,7 +184,7 @@ namespace Lib.TSCompiler
                         buildModuleCtx.UpdateCacheIds();
                     }
                 } while (buildModuleCtx.ChangedDts || buildModuleCtx.TrullyCompiledCount < buildModuleCtx.ToCompile.Count);
-                BuildResult = buildModuleCtx._result;
+                buildCtx.BuildResult = buildModuleCtx._result;
             }
             finally
             {

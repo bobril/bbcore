@@ -1,4 +1,6 @@
 ﻿using Lib.CSSProcessor;
+using Lib.TSCompiler;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Lib.Composition
@@ -16,6 +18,11 @@ namespace Lib.Composition
         {
             _cts.Cancel(true);
         }
+
+        public TSCompilerOptions TSCompilerOptions { get; set; }
+        public HashSet<string> Sources { get; set; }
+
+        public BuildResult BuildResult { get; set; }
 
         CancellationTokenSource _cts;
         public CancellationToken _cancelationToken;

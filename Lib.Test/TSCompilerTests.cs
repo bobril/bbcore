@@ -278,7 +278,7 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
             }
             configure?.Invoke(proj.ProjectOptions);
             proj.Build(ctx);
-            return proj.BuildResult;
+            return ctx.BuildResult;
         }
 
         void InitFakeProject()

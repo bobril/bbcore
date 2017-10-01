@@ -574,6 +574,10 @@ namespace Lib.DiskCache
                 }
                 else
                 {
+                    if (subItem is IDirectoryCache)
+                    {
+                        UpdateIfNeededNoLock((IDirectoryCache)subItem);
+                    }
                     return subItem;
                 }
             }
