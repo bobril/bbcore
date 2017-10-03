@@ -146,10 +146,7 @@ namespace Lib.Composition
         public void InitInteractiveMode()
         {
             _hasBuildWork.Set();
-            _dc.ChangeObservable.Window(TimeSpan.FromMilliseconds(200)).SelectMany(a=>a.Count()).Where(c=>c>0).Subscribe((_) =>
-            {
-                _hasBuildWork.Set();
-            });
+            _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200)).Subscribe((_) => _hasBuildWork.Set());
             Task.Run(() =>
             {
                 while (_hasBuildWork.WaitOne())
