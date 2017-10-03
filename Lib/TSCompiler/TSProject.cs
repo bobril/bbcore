@@ -144,7 +144,8 @@ namespace Lib.TSCompiler
                 _owner = this,
                 _result = new BuildResult(),
                 ToCheck = new OrderedHashSet<string>(),
-                ToCompile = new OrderedHashSet<string>()
+                ToCompile = new OrderedHashSet<string>(),
+                ToCompileDts = new OrderedHashSet<string>()
             };
             ITSCompiler compiler = null;
             try
@@ -165,6 +166,7 @@ namespace Lib.TSCompiler
                     buildModuleCtx.TrullyCompiledCount = 0;
                     buildModuleCtx.ToCheck.Clear();
                     buildModuleCtx.ToCompile.Clear();
+                    buildModuleCtx.ToCompileDts.Clear();
                     ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
                     foreach(var src in buildCtx.Sources)
                     {
@@ -174,7 +176,7 @@ namespace Lib.TSCompiler
                     if (buildModuleCtx.ToCompile.Count != 0)
                     {
                         compiler.MeasurePerformance = true;
-                        compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.ToArray());
+                        compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
                             break;
                         compiler.GatherSourceInfo();

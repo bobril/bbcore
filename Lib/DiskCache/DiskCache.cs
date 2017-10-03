@@ -453,10 +453,7 @@ namespace Lib.DiskCache
                 _content = content;
                 _modified = DateTime.UtcNow;
                 _changeId++; // It is called always under lock
-                if (Parent != null)
-                {
-                    ((DirectoryCache)Parent).NoteChange();
-                }
+                // don't NoteChange to parent because that's not really user modified input file
             }
 
             public DateTime Modified => _modified;

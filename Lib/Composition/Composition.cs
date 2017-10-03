@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Lib.Utils.CommandLineParser.Definitions;
 using Lib.Utils.CommandLineParser.Parser;
+using System.Globalization;
 
 namespace Lib.Composition
 {
@@ -145,7 +146,7 @@ namespace Lib.Composition
         public void InitInteractiveMode()
         {
             _hasBuildWork.Set();
-            _dc.ChangeObservable.Subscribe((_) =>
+            _dc.ChangeObservable.Window(TimeSpan.FromMilliseconds(200)).SelectMany(a=>a.Count()).Where(c=>c>0).Subscribe((_) =>
             {
                 _hasBuildWork.Set();
             });
@@ -200,7 +201,7 @@ namespace Lib.Composition
                         proj.FastBundle = fastBundle;
                         proj.FilesContent = filesContent;
                     }
-                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1"));
+                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture));
                 }
             });
         }

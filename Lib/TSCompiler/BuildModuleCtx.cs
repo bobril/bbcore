@@ -75,6 +75,7 @@ namespace Lib.TSCompiler
         static string[] ExtensionsToImport = new string[] { ".tsx", ".ts", ".d.ts", ".jsx", ".js" };
         internal OrderedHashSet<string> ToCheck;
         internal OrderedHashSet<string> ToCompile;
+        internal OrderedHashSet<string> ToCompileDts;
         internal uint CrawledCount;
         internal int TrullyCompiledCount;
 
@@ -224,9 +225,11 @@ namespace Lib.TSCompiler
                             fileAdditional.DtsLink = null;
                             fileAdditional.Output = null;
                             fileAdditional.MapLink = null;
-                            ToCompile.Add(fileName);
-                            // d.ts files are compiled automaticaly (they don't have any output)
-                            if (fileName.EndsWith(".d.ts")) TrullyCompiledCount++;
+                            // d.ts files are compiled always but they don't have any output so needs to be in separate set
+                            if (fileName.EndsWith(".d.ts"))
+                                ToCompileDts.Add(fileName);
+                            else
+                                ToCompile.Add(fileName);
                             break;
                         case FileCompilationType.JavaScript:
                             fileAdditional.StartCompiling();
