@@ -155,7 +155,7 @@ namespace Lib.Test
         [Fact]
         public void LatestTypeScriptVersionDidntChanged()
         {
-            Assert.Equal("2.4.2", _tools.GetTypeScriptVersion());
+            Assert.Equal("2.5.3", _tools.GetTypeScriptVersion());
         }
 
         [Fact]
@@ -167,8 +167,8 @@ namespace Lib.Test
 console.log(""Hello"");
             ");
             BuildResult buildResult = BuildProject();
-            Assert.Equal(1, buildResult.RecompiledLast.Count);
-            Assert.Equal(1, buildResult.Path2FileInfo.Count);
+            Assert.Single(buildResult.RecompiledLast);
+            Assert.Single(buildResult.Path2FileInfo);
             Assert.Contains("Hello", buildResult.RecompiledLast.First().Output);
         }
 
@@ -180,8 +180,8 @@ console.log(""Hello"");
 console.log(""Changed"");
             ");
             BuildResult buildResult = BuildProject();
-            Assert.Equal(1, buildResult.RecompiledLast.Count);
-            Assert.Equal(1, buildResult.Path2FileInfo.Count);
+            Assert.Single(buildResult.RecompiledLast);
+            Assert.Single(buildResult.Path2FileInfo);
             Assert.Contains("Changed", buildResult.RecompiledLast.First().Output);
         }
 
@@ -210,7 +210,7 @@ export function fn() { return ""Lib42""; }
 export function fn() { return ""Lib42!""; }
             ");
             BuildResult buildResult = BuildProject();
-            Assert.Equal(1, buildResult.RecompiledLast.Count);
+            Assert.Single(buildResult.RecompiledLast);
             Assert.Equal(2, buildResult.Path2FileInfo.Count);
         }
 
@@ -275,8 +275,35 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
                     Owner = proj,
                     Defines = new Dictionary<string, bool> { { "DEBUG", true } }
                 };
+                proj.LoadProjectJson();
+                proj.ProjectOptions.RefreshMainFile();
+                proj.ProjectOptions.RefreshTestSources();
+                proj.ProjectOptions.DetectBobrilJsxDts();
+                proj.ProjectOptions.RefreshExampleSources();
             }
             configure?.Invoke(proj.ProjectOptions);
+            ctx.TSCompilerOptions = new TSCompilerOptions
+            {
+                sourceMap = true,
+                skipLibCheck = true,
+                skipDefaultLibCheck = true,
+                target = ScriptTarget.ES5,
+                preserveConstEnums = false,
+                jsx = JsxEmit.React,
+                reactNamespace = "b",
+                experimentalDecorators = true,
+                noEmitHelpers = true,
+                allowJs = true,
+                checkJs = false,
+                removeComments = false,
+                types = new string[0],
+                lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
+            };
+            ctx.Sources = new HashSet<string>();
+            ctx.Sources.Add(proj.MainFile);
+            proj.ProjectOptions.ExampleSources.ForEach(s => ctx.Sources.Add(s));
+            if (proj.ProjectOptions.BobrilJsxDts != null)
+                ctx.Sources.Add(proj.ProjectOptions.BobrilJsxDts);
             proj.Build(ctx);
             return ctx.BuildResult;
         }

@@ -170,7 +170,7 @@ namespace Lib.TSCompiler
                     ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
                     foreach(var src in buildCtx.Sources)
                     {
-                        buildModuleCtx.CheckAdd(src);
+                        buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
                     }
                     buildModuleCtx.Crawl();
                     if (buildModuleCtx.ToCompile.Count != 0)
