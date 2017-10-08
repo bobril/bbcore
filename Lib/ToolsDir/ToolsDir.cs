@@ -15,10 +15,10 @@ namespace Lib.ToolsDir
 
         public ToolsDir(string dir)
         {
-            _path = dir;
+            Path = dir;
             if (!new DirectoryInfo(dir).Exists)
-                Directory.CreateDirectory(_path);
-            _tsLibDir = PathUtils.Join(Path, "node_modules/typescript/lib");
+                Directory.CreateDirectory(Path);
+            TypeScriptLibDir = PathUtils.Join(Path, "node_modules/typescript/lib");
             lock (_lock)
             {
                 var jsEngineSwitcher = JsEngineSwitcher.Current;
@@ -28,17 +28,20 @@ namespace Lib.ToolsDir
                     jsEngineSwitcher.DefaultEngineName = JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;
                 }
             }
-            _loaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js");
+            LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js");
+            JasmineCoreJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine.js");
+            JasmineDts = ResourceUtils.GetText("Lib.ToolsDir.jasmine.d.ts");
+            JasmineDtsPath = PathUtils.Join(Path, "jasmine.d.ts");
+            File.WriteAllText(JasmineDtsPath, JasmineDts);
+            JasmineBootJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot.js");
+            WebtAJs = ResourceUtils.GetText("Lib.ToolsDir.webt_a.js");
+            WebtIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.webt_index.html");
         }
 
-        string _path;
-        public string Path => _path;
-
-        string _tsLibDir;
-        public string TypeScriptLibDir => _tsLibDir;
+        public string Path { get; }
+        public string TypeScriptLibDir { get; }
 
         string _typeScriptJsContent;
-        readonly string _loaderJs;
 
         public string TypeScriptJsContent
         {
@@ -55,7 +58,19 @@ namespace Lib.ToolsDir
             }
         }
 
-        public string LoaderJs => _loaderJs;
+        public string LoaderJs { get; }
+
+        public string JasmineCoreJs { get; }
+
+        public string JasmineBootJs { get; }
+
+        public string JasmineDts { get; }
+
+        public string JasmineDtsPath { get; }
+
+        public string WebtIndexHtml { get; }
+
+        public string WebtAJs { get; }
 
         public string GetTypeScriptVersion()
         {

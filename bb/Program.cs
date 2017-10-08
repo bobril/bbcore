@@ -17,6 +17,7 @@ namespace bb
             composition.InitTools("2.4.2");
             composition.InitDiskCache();
             composition.AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            composition.InitTestServer();
             composition.StartWebServer(null);
             composition.InitInteractiveMode();
             composition.WaitForStop();

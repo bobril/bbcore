@@ -2,6 +2,8 @@
 using System.Text;
 using Lib.Utils;
 using Lib.ToolsDir;
+using System;
+using System.Linq;
 
 namespace Lib.TSCompiler
 {
@@ -31,7 +33,7 @@ namespace Lib.TSCompiler
         public Dictionary<string, object> FilesContent;
 
 
-        public void Build(string sourceRoot, string mapUrl)
+        public void Build(string sourceRoot, string mapUrl, bool testProj = false)
         {
             var diskCache = Project.Owner.DiskCache;
             var root = Project.Owner.Owner.FullPath;
@@ -62,7 +64,7 @@ namespace Lib.TSCompiler
             _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
             _sourceMapString = _sourceMap.ToString();
             _bundleJs = sourceMapBuilder.Content();
-            if (Project.ExampleSources.Count > 0)
+            if (!testProj && Project.ExampleSources.Count > 0)
             {
                 if (Project.ExampleSources.Count == 1)
                 {
@@ -82,15 +84,54 @@ namespace Lib.TSCompiler
                     BuildExampleListHtml(htmlList, cssLink);
                 }
             }
+            else if (testProj)
+            {
+                BuildFastBundlerTestHtml(Project.TestSources, root, cssLink);
+            }
             else
             {
                 BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(Project.MainFile, root)), cssLink);
             }
-            FilesContent["index.html"] = _indexHtml;
-            FilesContent["loader.js"] = _tools.LoaderJs;
-            FilesContent["bundle.js"] = _bundleJs;
-            FilesContent["bundle.js.map"] = _sourceMapString;
+            if (testProj)
+            {
+                FilesContent["test.html"] = _indexHtml;
+                FilesContent["jasmine-core.js"] = _tools.JasmineCoreJs;
+                FilesContent["jasmine-boot.js"] = _tools.JasmineBootJs;
+            }
+            else
+            {
+                FilesContent["index.html"] = _indexHtml;
+                FilesContent["loader.js"] = _tools.LoaderJs;
+            }
+            FilesContent[PathUtils.WithoutExtension(mapUrl)] = _bundleJs;
+            FilesContent[mapUrl] = _sourceMapString;
             BuildResult.SourceMap = _sourceMap;
+        }
+
+        void BuildFastBundlerTestHtml(List<string> testSources, string root, string cssLink)
+        {
+            var reqSpec = string.Join(' ', testSources.Select(src => "R.r(\'" + PathUtils.WithoutExtension(PathUtils.Subtract(src, root)) + "\');"));
+            _indexHtml = $@"<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=""utf-8"">{Project.HtmlHeadExpanded}
+        <title>{Project.Title}</title>{cssLink}
+    </head>
+    <body>
+        <script type=""text/javascript"" src=""jasmine-core.js"" charset=""utf-8""></script>
+        <script type=""text/javascript"" src=""jasmine-boot.js"" charset=""utf-8""></script>
+        <script type=""text/javascript"" src=""loader.js"" charset=""utf-8""></script>
+        <script type=""text/javascript"">
+            {GetGlobalDefines()}
+            {GetModuleMap()}
+        </script>
+        <script type=""text/javascript"" src=""testbundle.js"" charset=""utf-8""></script>
+        <script type=""text/javascript"">
+            {RequireBobril()}{reqSpec}
+        </script>
+    </body>
+</html>
+";
         }
 
         void BuildFastBundlerIndexHtml(string mainModule, string cssLink)

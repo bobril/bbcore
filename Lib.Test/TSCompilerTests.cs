@@ -272,6 +272,7 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
             {
                 proj.ProjectOptions = new ProjectOptions
                 {
+                    Tools = _tools,
                     Owner = proj,
                     Defines = new Dictionary<string, bool> { { "DEBUG", true } }
                 };

@@ -26,8 +26,9 @@ namespace Lib.Composition
         List<ProjectOptions> _projects = new List<ProjectOptions>();
         WebServerHost _webServer;
         AutoResetEvent _hasBuildWork = new AutoResetEvent(true);
-        private ProjectOptions _currentProject;
-        private CommandLineCommand _command;
+        ProjectOptions _currentProject;
+        CommandLineCommand _command;
+        ILongPollingServer _testServer;
 
         public void ParseCommandLineArgs(string[] args)
         {
@@ -60,7 +61,7 @@ namespace Lib.Composition
         public void InitDiskCache()
         {
             _dc = new DiskCache.DiskCache(new NativeFsAbstraction(), () => new ModulesLinksOsWatcher());
-            _dc.AddRoot(_tools.TypeScriptLibDir);
+            _dc.AddRoot(_tools.Path);
         }
 
         public ProjectOptions AddProject(string path)
@@ -73,6 +74,7 @@ namespace Lib.Composition
             if (proj.ProjectOptions != null) return proj.ProjectOptions;
             proj.ProjectOptions = new ProjectOptions
             {
+                Tools = _tools,
                 Owner = proj,
                 Defines = new Dictionary<string, bool> { { "DEBUG", true } }
             };
@@ -113,6 +115,29 @@ namespace Lib.Composition
             var path = context.Request.Path;
             if (path == "/")
                 path = "/index.html";
+            if (path.StartsWithSegments("/bb/test", out var bbtest))
+            {
+                if (bbtest == "")
+                {
+                    context.Response.Redirect("/bb/test/", true);
+                    return;
+                }
+                if (bbtest == "/" || bbtest == "/index.html")
+                {
+                    await context.Response.WriteAsync(_tools.WebtIndexHtml);
+                    return;
+                }
+                if (bbtest == "/a.js")
+                {
+                    await context.Response.WriteAsync(_tools.WebtAJs);
+                    return;
+                }
+            }
+            if (path == "/bb/api/test")
+            {
+                await _testServer.Handle(context);
+                return;
+            }
             if (path.StartsWithSegments("/bb/base", out var src))
             {
                 var srcPath = PathUtils.Join(_currentProject.Owner.Owner.FullPath, src.Value.Substring(1));
@@ -143,6 +168,11 @@ namespace Lib.Composition
             await context.Response.WriteAsync("Not found " + path);
         }
 
+        public void InitTestServer()
+        {
+            _testServer = new LongPollingServer(() => new TestServerConnectionHandler());
+        }
+
         public void InitInteractiveMode()
         {
             _hasBuildWork.Set();
@@ -159,29 +189,13 @@ namespace Lib.Composition
                     }
                     foreach (var proj in toBuild)
                     {
-                        var ctx = new BuildCtx(_compilerPool);
                         proj.Owner.LoadProjectJson();
                         proj.RefreshMainFile();
                         proj.RefreshTestSources();
                         proj.DetectBobrilJsxDts();
                         proj.RefreshExampleSources();
-                        ctx.TSCompilerOptions = new TSCompilerOptions
-                        {
-                            sourceMap = true,
-                            skipLibCheck = true,
-                            skipDefaultLibCheck = true,
-                            target = ScriptTarget.ES5,
-                            preserveConstEnums = false,
-                            jsx = JsxEmit.React,
-                            reactNamespace = proj.BobrilJsx ? "b" : "React",
-                            experimentalDecorators = true,
-                            noEmitHelpers = true,
-                            allowJs = true,
-                            checkJs = false,
-                            removeComments = false,
-                            types = new string[0],
-                            lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
-                        };
+                        var ctx = new BuildCtx(_compilerPool);
+                        ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
                         ctx.Sources = new HashSet<string>();
                         ctx.Sources.Add(proj.MainFile);
                         proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
@@ -195,12 +209,52 @@ namespace Lib.Composition
                         fastBundle.Project = proj;
                         fastBundle.BuildResult = buildResult;
                         fastBundle.Build("bb/base", "bundle.js.map");
-                        proj.FastBundle = fastBundle;
+                        proj.MainProjFastBundle = fastBundle;
+
+                        if (proj.TestSources != null && proj.TestSources.Count > 0)
+                        {
+                            ctx = new BuildCtx(_compilerPool);
+                            ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
+                            ctx.Sources = new HashSet<string>();
+                            ctx.Sources.Add(proj.JasmineDts);
+                            proj.TestSources.ForEach(s => ctx.Sources.Add(s));
+                            if (proj.BobrilJsxDts != null)
+                                ctx.Sources.Add(proj.BobrilJsxDts);
+                            proj.Owner.Build(ctx);
+                            var testBuildResult = ctx.BuildResult;
+                            fastBundle = new FastBundleBundler(_tools);
+                            fastBundle.FilesContent = filesContent;
+                            fastBundle.Project = proj;
+                            fastBundle.BuildResult = buildResult;
+                            fastBundle.Build("bb/base", "testbundle.js.map", true);
+                            proj.TestProjFastBundle = fastBundle;
+                        }
                         proj.FilesContent = filesContent;
                     }
                     Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture));
                 }
             });
+        }
+
+        static TSCompilerOptions GetDefaultTSCompilerOptions(ProjectOptions proj)
+        {
+            return new TSCompilerOptions
+            {
+                sourceMap = true,
+                skipLibCheck = true,
+                skipDefaultLibCheck = true,
+                target = ScriptTarget.ES5,
+                preserveConstEnums = false,
+                jsx = JsxEmit.React,
+                reactNamespace = proj.BobrilJsx ? "b" : "React",
+                experimentalDecorators = true,
+                noEmitHelpers = true,
+                allowJs = true,
+                checkJs = false,
+                removeComments = false,
+                types = new string[0],
+                lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
+            };
         }
 
         public void WaitForStop()

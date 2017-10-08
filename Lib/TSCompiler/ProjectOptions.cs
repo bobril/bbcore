@@ -15,6 +15,7 @@ namespace Lib.TSCompiler
 
     public class ProjectOptions
     {
+        public ToolsDir.IToolsDir Tools { get; set; }
         public TSProject Owner { get; set; }
         public string TestSourcesRegExp { get; set; }
         public Dictionary<string, bool> Defines { get; set; }
@@ -31,7 +32,8 @@ namespace Lib.TSCompiler
         public List<string> TestSources { get; set; }
         public List<string> ExampleSources { get; set; }
         public string BobrilJsxDts { get; set; }
-        public FastBundleBundler FastBundle { get; set; }
+        public FastBundleBundler MainProjFastBundle { get; set; }
+        public FastBundleBundler TestProjFastBundle { get; internal set; }
 
         // value could be string or byte[]
         public Dictionary<string, object> FilesContent;
@@ -94,6 +96,7 @@ namespace Lib.TSCompiler
 
         public void RefreshTestSources()
         {
+            JasmineDts = Tools.JasmineDtsPath;
             var res = new List<string>(TestSources?.Count ?? 4);
             var fileRegex = new Regex(TestSourcesRegExp, RegexOptions.CultureInvariant);
             RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);

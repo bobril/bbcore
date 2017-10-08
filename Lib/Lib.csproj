@@ -7,16 +7,24 @@
     <None Remove="CSSProcessor\bbcss.js" />
     <None Remove="CSSProcessor\bundle.min.js" />
     <None Remove="ToolsDir\jasmine-boot.js" />
+    <None Remove="ToolsDir\jasmine.d.ts" />
+    <None Remove="ToolsDir\jasmine.js" />
     <None Remove="ToolsDir\liveReload.js" />
     <None Remove="ToolsDir\loader.js" />
+    <None Remove="ToolsDir\webt_a.js" />
+    <None Remove="ToolsDir\webt_index.html" />
     <None Remove="TSCompiler\tslib.js" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="CSSProcessor\bbcss.js" />
     <EmbeddedResource Include="CSSProcessor\bundle.min.js" />
     <EmbeddedResource Include="ToolsDir\jasmine-boot.js" />
+    <EmbeddedResource Include="ToolsDir\jasmine.d.ts" />
+    <EmbeddedResource Include="ToolsDir\jasmine.js" />
     <EmbeddedResource Include="ToolsDir\liveReload.js" />
     <EmbeddedResource Include="ToolsDir\loader.js" />
+    <EmbeddedResource Include="ToolsDir\webt_a.js" />
+    <EmbeddedResource Include="ToolsDir\webt_index.html" />
     <EmbeddedResource Include="TSCompiler\bbtsc.js" />
     <EmbeddedResource Include="TSCompiler\tslib.js" />
   </ItemGroup>
