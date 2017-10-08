@@ -225,7 +225,7 @@ namespace Lib.Composition
                             fastBundle = new FastBundleBundler(_tools);
                             fastBundle.FilesContent = filesContent;
                             fastBundle.Project = proj;
-                            fastBundle.BuildResult = buildResult;
+                            fastBundle.BuildResult = testBuildResult;
                             fastBundle.Build("bb/base", "testbundle.js.map", true);
                             proj.TestProjFastBundle = fastBundle;
                         }

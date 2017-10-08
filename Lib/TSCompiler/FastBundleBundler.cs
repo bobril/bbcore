@@ -127,7 +127,7 @@ namespace Lib.TSCompiler
         </script>
         <script type=""text/javascript"" src=""testbundle.js"" charset=""utf-8""></script>
         <script type=""text/javascript"">
-            {RequireBobril()}{reqSpec}
+            {RequireBobril()} {reqSpec}
         </script>
     </body>
 </html>
@@ -208,7 +208,7 @@ namespace Lib.TSCompiler
         {
             if (BuildResult.Path2FileInfo.ContainsKey(Project.Owner.Owner.FullPath + "/node_modules/bobril/index.ts"))
             {
-                return "R.r('bobril')";
+                return "R.r('bobril');";
             }
             return "";
         }
