@@ -210,7 +210,7 @@ namespace Lib.WebServer
                 return;
             }
             Connection c = null;
-            if (data["id"] != null)
+            if (!string.IsNullOrEmpty((string)data["id"]))
             {
                 _connections.TryGetValue(data["id"].ToString(), out c);
                 if (c == null)
