@@ -28,7 +28,8 @@ namespace Lib.Composition
         AutoResetEvent _hasBuildWork = new AutoResetEvent(true);
         ProjectOptions _currentProject;
         CommandLineCommand _command;
-        ILongPollingServer _testServer;
+        private TestServer _testServer;
+        ILongPollingServer _testServerLongPollingHandler;
 
         public void ParseCommandLineArgs(string[] args)
         {
@@ -135,7 +136,7 @@ namespace Lib.Composition
             }
             if (path == "/bb/api/test")
             {
-                await _testServer.Handle(context);
+                await _testServerLongPollingHandler.Handle(context);
                 return;
             }
             if (path.StartsWithSegments("/bb/base", out var src))
@@ -170,7 +171,9 @@ namespace Lib.Composition
 
         public void InitTestServer()
         {
-            _testServer = new LongPollingServer(() => new TestServerConnectionHandler());
+            _testServer = new TestServer();
+            _testServerLongPollingHandler = new LongPollingServer(_testServer.NewConnectionHandler);
+            _testServer.OnTestResults.Subscribe((results) => { Console.WriteLine("Tests on {0} Failed: {1} Skipped: {2} Total: {3} Duration: {4:F1}s",results.UserAgent, results.TestsFailed,results.TestsSkipped,results.TotalTests,results.Duration*0.001); });
         }
 
         public void InitInteractiveMode()
@@ -228,6 +231,7 @@ namespace Lib.Composition
                             fastBundle.BuildResult = testBuildResult;
                             fastBundle.Build("bb/base", "testbundle.js.map", true);
                             proj.TestProjFastBundle = fastBundle;
+                            _testServer.StartTest("/test.html");
                         }
                         proj.FilesContent = filesContent;
                     }

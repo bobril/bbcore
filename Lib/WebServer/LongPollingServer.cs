@@ -111,7 +111,7 @@ namespace Lib.WebServer
                             return;
                         if (_toSend.Count > 0)
                         {
-                            toSend = new Dictionary<string, object> { { "id", _id }, { "m", _toSend.ToDictionary((i) => i.Item1, (i) => i.Item2) } };
+                            toSend = new Dictionary<string, object> { { "id", _id }, { "m", _toSend.Select(p => new { m = p.Item1, d = p.Item2 }).ToList() } };
                             _responseEnder = null;
                             _response = null;
                         }
@@ -122,7 +122,7 @@ namespace Lib.WebServer
                     await response.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(toSend)).ContinueWith((t) =>
                     {
                         Retimeout();
-                        ender.TrySetResult(Unit.Default);
+                        if (ender != null) ender.TrySetResult(Unit.Default);
                     });
                     return;
                 }
@@ -243,16 +243,11 @@ namespace Lib.WebServer
             {
                 waitAllowed = false;
                 var ms = (JArray)data["m"];
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                Task.Run(() =>
+                for (var i = 0; i < ms.Count; i++)
                 {
-                    for (var i = 0; i < ms.Count; i++)
-                    {
-                        var msi = ms[i] as JObject;
-                        c.ReceivedMessage(msi["m"].ToString(), (object)msi["d"]);
-                    }
-                });
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                    var msi = ms[i] as JObject;
+                    c.ReceivedMessage(msi["m"].ToString(), (object)msi["d"]);
+                }
             }
             await c.PollResponse(context, waitAllowed, firstResponse);
         }

@@ -5,6 +5,7 @@ using Lib.Watcher;
 using Lib.Utils;
 using Lib.ToolsDir;
 using Lib.TSCompiler;
+using System.Globalization;
 
 namespace bb
 {
@@ -12,9 +13,11 @@ namespace bb
     {
         static void Main(string[] args)
         {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             var composition = new Lib.Composition.Composition();
             composition.ParseCommandLineArgs(args);
-            composition.InitTools("2.4.2");
+            composition.InitTools("2.5.3");
             composition.InitDiskCache();
             composition.AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
             composition.InitTestServer();
