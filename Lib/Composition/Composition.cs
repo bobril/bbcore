@@ -28,8 +28,10 @@ namespace Lib.Composition
         AutoResetEvent _hasBuildWork = new AutoResetEvent(true);
         ProjectOptions _currentProject;
         CommandLineCommand _command;
-        private TestServer _testServer;
+        TestServer _testServer;
         ILongPollingServer _testServerLongPollingHandler;
+        MainServer _mainServer;
+        ILongPollingServer _mainServerLongPollingHandler;
 
         public void ParseCommandLineArgs(string[] args)
         {
@@ -84,6 +86,7 @@ namespace Lib.Composition
                 _projects.Add(proj.ProjectOptions);
             }
             _currentProject = proj.ProjectOptions;
+            _mainServer.Project = _currentProject;
             return proj.ProjectOptions;
         }
 
@@ -139,6 +142,17 @@ namespace Lib.Composition
                 await _testServerLongPollingHandler.Handle(context);
                 return;
             }
+            if (path == "/bb/api/main")
+            {
+                await _mainServerLongPollingHandler.Handle(context);
+                return;
+            }
+            if (path == "/bb/api/projectdirectory")
+            {
+                await context.Response.WriteAsync(_currentProject.Owner.Owner.FullPath);
+                return;
+            }
+
             if (path.StartsWithSegments("/bb/base", out var src))
             {
                 var srcPath = PathUtils.Join(_currentProject.Owner.Owner.FullPath, src.Value.Substring(1));
@@ -173,7 +187,14 @@ namespace Lib.Composition
         {
             _testServer = new TestServer();
             _testServerLongPollingHandler = new LongPollingServer(_testServer.NewConnectionHandler);
-            _testServer.OnTestResults.Subscribe((results) => { Console.WriteLine("Tests on {0} Failed: {1} Skipped: {2} Total: {3} Duration: {4:F1}s",results.UserAgent, results.TestsFailed,results.TestsSkipped,results.TotalTests,results.Duration*0.001); });
+            _testServer.OnTestResults.Subscribe((results) => { Console.WriteLine("Tests on {0} Failed: {1} Skipped: {2} Total: {3} Duration: {4:F1}s", results.UserAgent, results.TestsFailed, results.TestsSkipped, results.TotalTests, results.Duration * 0.001); });
+        }
+
+        public void InitMainServer()
+        {
+            _mainServer = new MainServer(() => _testServer.GetState());
+            _mainServerLongPollingHandler = new LongPollingServer(_mainServer.NewConnectionHandler);
+            _testServer.OnChange.Subscribe((_) => { _mainServer.NotifyTestServerChange(); });
         }
 
         public void InitInteractiveMode()
@@ -190,6 +211,10 @@ namespace Lib.Composition
                     {
                         toBuild = _projects.ToArray();
                     }
+                    _mainServer.NotifyCompilationStarted();
+                    int errors = 0;
+                    int warnings = 0;
+                    List<CompilationResultMessage> messages = new List<CompilationResultMessage>();
                     foreach (var proj in toBuild)
                     {
                         proj.Owner.LoadProjectJson();
@@ -235,6 +260,8 @@ namespace Lib.Composition
                         }
                         proj.FilesContent = filesContent;
                     }
+                    var duration = DateTime.UtcNow - start;
+                    _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
                     Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture));
                 }
             });

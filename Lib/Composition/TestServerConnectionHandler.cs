@@ -1,44 +1,8 @@
-﻿using System;
-using Lib.WebServer;
+﻿using Lib.WebServer;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Reactive;
-using System.Reactive.Subjects;
-using System.Reactive.Linq;
 
 namespace Lib.Composition
 {
-    public class MessageAndStack
-    {
-        public string Message;
-        public List<StackFrame> Stack;
-    }
-
-    public class SuiteOrTest
-    {
-        public int Id;
-        public int ParentId;
-        public bool IsSuite;
-        public string Name;
-        public bool Skipped;
-        public bool Failure;
-        public double Duration;
-        public List<MessageAndStack> Failures;
-        public List<SuiteOrTest> Nested;
-        public List<MessageAndStack> Logs;
-    }
-
-    public class TestResultsHolder : SuiteOrTest
-    {
-        public string UserAgent;
-        public bool Running;
-        public int TestsFailed;
-        public int TestsSkipped;
-        public int TestsFinished;
-        public int TotalTests;
-    }
-
-
     internal class TestServerConnectionHandler : ILongPollingConnectionHandler
     {
         ILongPollingConnection _connection;
@@ -126,7 +90,7 @@ namespace Lib.Composition
                     }
                 case "suiteStart":
                     {
-                        lock(_lock)
+                        lock (_lock)
                         {
                             if (_curResults == null) break;
                             if (_suiteStack == null) break;
@@ -278,7 +242,12 @@ namespace Lib.Composition
 
         void InitCurResults()
         {
-            _curResults = new TestResultsHolder
+            _curResults = CreateEmptyResults();
+        }
+
+        TestResultsHolder CreateEmptyResults()
+        {
+            return new TestResultsHolder
             {
                 UserAgent = _userAgent,
                 Nested = new List<SuiteOrTest>(),
@@ -299,52 +268,15 @@ namespace Lib.Composition
             };
         }
 
-    }
-
-    internal class TestServer
-    {
-        public readonly ConcurrentDictionary<TestServerConnectionHandler, TestServerConnectionHandler> Clients = new ConcurrentDictionary<TestServerConnectionHandler, TestServerConnectionHandler>();
-        int _runid;
-        public Subject<Unit> OnChange = new Subject<Unit>();
-        public Subject<Unit> OnTestingStarted = new Subject<Unit>();
-        public Subject<TestResultsHolder> OnTestResults = new Subject<TestResultsHolder>();
-        internal Subject<Unit> OnChangeRaw = new Subject<Unit>();
-
-        public TestServer()
+        internal TestResultsHolder GetLatestResults()
         {
-            OnChangeRaw.Throttle(TimeSpan.FromMilliseconds(500)).Subscribe(OnChange);
-        }
-
-        public string Url { get; internal set; }
-
-        public ILongPollingConnectionHandler NewConnectionHandler()
-        {
-            return new TestServerConnectionHandler(this);
-        }
-
-        public void StartTest(string url)
-        {
-            _runid++;
-            Url = url;
-            foreach (var client in Clients.Keys)
+            lock (_lock)
             {
-                client.StartTest(url, _runid);
+                var latestResults = _curResults ?? _oldResults;
+                if (latestResults == null)
+                    return CreateEmptyResults();
+                return latestResults.Clone();
             }
-        }
-
-        internal void NotifyFinishedResults(TestResultsHolder oldResults)
-        {
-            OnTestResults.OnNext(oldResults);
-        }
-
-        internal void NotifySomeChange()
-        {
-            OnChangeRaw.OnNext(Unit.Default);
-        }
-
-        internal void NotifyTestingStarted()
-        {
-            OnTestingStarted.OnNext(Unit.Default);
         }
     }
 }

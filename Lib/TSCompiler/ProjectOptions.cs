@@ -34,6 +34,7 @@ namespace Lib.TSCompiler
         public string BobrilJsxDts { get; set; }
         public FastBundleBundler MainProjFastBundle { get; set; }
         public FastBundleBundler TestProjFastBundle { get; internal set; }
+        public bool LiveReloadEnabled { get; internal set; }
 
         // value could be string or byte[]
         public Dictionary<string, object> FilesContent;
