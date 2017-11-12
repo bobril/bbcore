@@ -13,6 +13,8 @@ using System.Threading;
 using Lib.Utils.CommandLineParser.Definitions;
 using Lib.Utils.CommandLineParser.Parser;
 using System.Globalization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Lib.Composition
 {
@@ -52,6 +54,10 @@ namespace Lib.Composition
 
         public void InitTools(string version)
         {
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
             _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)), ".bbcore");
             _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"));
             if (_tools.GetTypeScriptVersion() != version)

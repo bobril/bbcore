@@ -55,7 +55,7 @@ namespace Lib.Composition
             SendToAll("compilationFinished", new Dictionary<string, object> {
                 { "errors", errors },
                 { "warnings", warnings },
-                { "time", time },
+                { "time", (int)(time*1000) },
                 { "messages", messages }
             });
         }
