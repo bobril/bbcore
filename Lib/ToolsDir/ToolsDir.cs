@@ -36,6 +36,8 @@ namespace Lib.ToolsDir
             JasmineBootJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot.js");
             WebtAJs = ResourceUtils.GetText("Lib.ToolsDir.webt_a.js");
             WebtIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.webt_index.html");
+            WebAJs = ResourceUtils.GetText("Lib.ToolsDir.web_a.js");
+            WebIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.web_index.html");
         }
 
         public string Path { get; }
@@ -69,7 +71,8 @@ namespace Lib.ToolsDir
         public string JasmineDtsPath { get; }
 
         public string WebtIndexHtml { get; }
-
+        public string WebAJs { get; }
+        public string WebIndexHtml { get; }
         public string WebtAJs { get; }
 
         public string GetTypeScriptVersion()

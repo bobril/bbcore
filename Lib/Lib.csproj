@@ -13,6 +13,8 @@
     <None Remove="ToolsDir\loader.js" />
     <None Remove="ToolsDir\webt_a.js" />
     <None Remove="ToolsDir\webt_index.html" />
+    <None Remove="ToolsDir\web_a.js" />
+    <None Remove="ToolsDir\web_index.html" />
     <None Remove="TSCompiler\tslib.js" />
   </ItemGroup>
   <ItemGroup>
@@ -25,12 +27,14 @@
     <EmbeddedResource Include="ToolsDir\loader.js" />
     <EmbeddedResource Include="ToolsDir\webt_a.js" />
     <EmbeddedResource Include="ToolsDir\webt_index.html" />
+    <EmbeddedResource Include="ToolsDir\web_a.js" />
+    <EmbeddedResource Include="ToolsDir\web_index.html" />
     <EmbeddedResource Include="TSCompiler\bbtsc.js" />
     <EmbeddedResource Include="TSCompiler\tslib.js" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.0.0-alpha6" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.0.0-alpha6" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.0.0-alpha7" />
     <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-alpha6" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />

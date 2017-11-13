@@ -16,6 +16,8 @@ namespace Lib.ToolsDir
         string JasmineDts { get; }
         string WebtIndexHtml { get; }
         string WebtAJs { get; }
+        string WebIndexHtml { get; }
+        string WebAJs { get; }
         string JasmineDtsPath { get; }
 
         IJsEngine CreateJsEngine();

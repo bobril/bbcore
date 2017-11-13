@@ -15,6 +15,7 @@ using Lib.Utils.CommandLineParser.Parser;
 using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Lib.Chrome;
 
 namespace Lib.Composition
 {
@@ -34,6 +35,8 @@ namespace Lib.Composition
         ILongPollingServer _testServerLongPollingHandler;
         MainServer _mainServer;
         ILongPollingServer _mainServerLongPollingHandler;
+        IChromeProcessFactory _chromeProcessFactory;
+        IChromeProcess _chromeProcess;
 
         public void ParseCommandLineArgs(string[] args)
         {
@@ -125,6 +128,24 @@ namespace Lib.Composition
             var path = context.Request.Path;
             if (path == "/")
                 path = "/index.html";
+            if (path.StartsWithSegments("/bb", out var bbweb))
+            {
+                if (bbweb == "")
+                {
+                    context.Response.Redirect("/bb/", true);
+                    return;
+                }
+                if (bbweb == "/" || bbweb == "/index.html")
+                {
+                    await context.Response.WriteAsync(_tools.WebIndexHtml);
+                    return;
+                }
+                if (bbweb == "/a.js")
+                {
+                    await context.Response.WriteAsync(_tools.WebAJs);
+                    return;
+                }
+            }
             if (path.StartsWithSegments("/bb/test", out var bbtest))
             {
                 if (bbtest == "")
@@ -263,6 +284,7 @@ namespace Lib.Composition
                             fastBundle.Build("bb/base", "testbundle.js.map", true);
                             proj.TestProjFastBundle = fastBundle;
                             _testServer.StartTest("/test.html");
+                            StartChromeTest();
                         }
                         proj.FilesContent = filesContent;
                     }
@@ -294,6 +316,35 @@ namespace Lib.Composition
             };
         }
 
+        public void StartChromeTest()
+        {
+            if (_chromeProcessFactory == null)
+            {
+                _chromeProcessFactory = new ChromeProcessFactory();
+            }
+            if (_chromeProcess == null)
+            {
+                try
+                {
+                    _chromeProcess = _chromeProcessFactory.Create($"http://localhost:{_webServer.Port}/bb/test/");
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine("Failed To Start Chrome Headless");
+                    Console.WriteLine(ex);
+                }
+            }
+        }
+
+        public void StopChromeTest()
+        {
+            if (_chromeProcess != null)
+            {
+                _chromeProcess.Dispose();
+                _chromeProcess = null;
+            }
+        }
+
         public void WaitForStop()
         {
             Console.TreatControlCAsInput = true;
@@ -303,6 +354,7 @@ namespace Lib.Composition
                 if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.C)
                     break;
             }
+            StopChromeTest();
         }
     }
 }

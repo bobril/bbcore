@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using System.Linq;
+using System.Net;
 
 namespace Lib.WebServer
 {
@@ -44,9 +45,12 @@ namespace Lib.WebServer
             return new WebHostBuilder().UseKestrel(config =>
             {
                 config.AddServerHeader = false;
+                config.Limits.MaxRequestBodySize = int.MaxValue;
+                config.ApplicationSchedulingMode = Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.Internal.SchedulingMode.Inline;
+                config.Listen(BindToAny ? IPAddress.Any : IPAddress.Loopback, port);
             })
-            .UseUrls((BindToAny ? "http://*:" : "http://127.0.0.1:") + port)
-            .PreferHostingUrls(true)
+            //.UseUrls((BindToAny ? "http://*:" : "http://127.0.0.1:") + port)
+            //.PreferHostingUrls(true)
             .Configure(a => a.Run(Handler))
             .Build();
         }
