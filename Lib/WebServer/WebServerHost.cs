@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 
 namespace Lib.WebServer
 {
@@ -22,11 +23,24 @@ namespace Lib.WebServer
             _webHost = BuildWebHost(Port);
             if (Port != 0 && FallbackToRandomPort)
             {
+                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
+                    IAsyncResult result = socket.BeginConnect(IPAddress.Loopback, Port, null, null);
+                    result.AsyncWaitHandle.WaitOne(100, true);
+                    if (socket.Connected)
+                    {
+                        socket.EndConnect(result);
+                        socket.Close();
+                        throw new Exception($"Port {Port} already used");
+                    }
+                    else
+                    {
+                        socket.Close();
+                    }
                     _webHost.Start();
                 }
-                catch
+                catch (Exception)
                 {
                     _webHost.Dispose();
                     _webHost = BuildWebHost(0);
@@ -47,10 +61,8 @@ namespace Lib.WebServer
                 config.AddServerHeader = false;
                 config.Limits.MaxRequestBodySize = int.MaxValue;
                 config.ApplicationSchedulingMode = Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.Internal.SchedulingMode.Inline;
-                config.Listen(BindToAny ? IPAddress.Any : IPAddress.Loopback, port);
+                config.Listen(BindToAny ? IPAddress.IPv6Any : IPAddress.IPv6Loopback, port);
             })
-            //.UseUrls((BindToAny ? "http://*:" : "http://127.0.0.1:") + port)
-            //.PreferHostingUrls(true)
             .Configure(a => a.Run(Handler))
             .Build();
         }
