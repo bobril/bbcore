@@ -283,7 +283,7 @@ namespace Lib.Composition
                             fastBundle.BuildResult = testBuildResult;
                             fastBundle.Build("bb/base", "testbundle.js.map", true);
                             proj.TestProjFastBundle = fastBundle;
-                            _testServer.StartTest("/test.html");
+                            _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { $"http://localhost:{_webServer.Port}/testbundle.js", testBuildResult.SourceMap } });
                             StartChromeTest();
                         }
                         proj.FilesContent = filesContent;
@@ -328,7 +328,7 @@ namespace Lib.Composition
                 {
                     _chromeProcess = _chromeProcessFactory.Create($"http://localhost:{_webServer.Port}/bb/test/");
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine("Failed To Start Chrome Headless");
                     Console.WriteLine(ex);

@@ -4,6 +4,8 @@ using System.Collections.Concurrent;
 using System.Reactive;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
+using System.Collections.Generic;
+using Lib.Utils;
 
 namespace Lib.Composition
 {
@@ -22,16 +24,18 @@ namespace Lib.Composition
         }
 
         public string Url { get; internal set; }
+        public IDictionary<string, SourceMap> SourceMaps { get; internal set; }
 
         public ILongPollingConnectionHandler NewConnectionHandler()
         {
             return new TestServerConnectionHandler(this);
         }
 
-        public void StartTest(string url)
+        public void StartTest(string url, IDictionary<string, SourceMap> sourceMaps)
         {
             _runid++;
             Url = url;
+            SourceMaps = sourceMaps;
             foreach (var client in Clients.Keys)
             {
                 client.StartTest(url, _runid);

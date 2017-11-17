@@ -208,7 +208,19 @@ namespace Lib.Composition
         MessageAndStack ConvertMessageAndStack(string message, string rawStack)
         {
             var stack = StackFrame.Parse(rawStack);
-            // TODO: resolve SourceMap
+            foreach (var frame in stack)
+            {
+                if (_testServer.SourceMaps.TryGetValue(frame.FileName, out var sm))
+                {
+                    var pos = sm.FindPosition(frame.LineNumber, frame.ColumnNumber);
+                    if (pos.SourceName != null)
+                    {
+                        frame.FileName = pos.SourceName;
+                        frame.LineNumber = pos.Line;
+                        frame.ColumnNumber = pos.Col;
+                    }
+                }
+            }
             return new MessageAndStack
             {
                 Message = message,
