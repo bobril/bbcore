@@ -283,7 +283,7 @@ namespace Lib.Composition
                             fastBundle.BuildResult = testBuildResult;
                             fastBundle.Build("bb/base", "testbundle.js.map", true);
                             proj.TestProjFastBundle = fastBundle;
-                            _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { $"http://localhost:{_webServer.Port}/testbundle.js", testBuildResult.SourceMap } });
+                            _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
                             StartChromeTest();
                         }
                         proj.FilesContent = filesContent;

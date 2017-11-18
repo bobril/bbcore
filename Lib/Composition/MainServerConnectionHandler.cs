@@ -40,7 +40,8 @@ namespace Lib.Composition
             {
                 case "focusPlace":
                     {
-                        _mainServer.SendToAll(message, new Dictionary<string, object> { { "fn", PathUtils.Join(_mainServer.ProjectDir, (string)data.fn) }, { "pos", data.pos } });
+                        var position = new Dictionary<string, object> { { "fn", PathUtils.Join(_mainServer.ProjectDir, (string)data.fn) }, { "pos", data.pos } };
+                        _mainServer.SendToAll(message, position);
                         break;
                     }
                 /*case "runAction":

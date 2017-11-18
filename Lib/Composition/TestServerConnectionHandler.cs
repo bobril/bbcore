@@ -1,5 +1,6 @@
 ﻿using Lib.WebServer;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Lib.Composition
 {
@@ -210,6 +211,10 @@ namespace Lib.Composition
             var stack = StackFrame.Parse(rawStack);
             foreach (var frame in stack)
             {
+                if (frame.FileName.StartsWith("http://") || frame.FileName.StartsWith("https://"))
+                {
+                    frame.FileName = frame.FileName.Substring(frame.FileName.IndexOf('/', 8) + 1);
+                }
                 if (_testServer.SourceMaps.TryGetValue(frame.FileName, out var sm))
                 {
                     var pos = sm.FindPosition(frame.LineNumber, frame.ColumnNumber);
@@ -221,6 +226,7 @@ namespace Lib.Composition
                     }
                 }
             }
+            stack = stack.Where(f => f.FileName != "jasmine-core.js").ToList();
             return new MessageAndStack
             {
                 Message = message,

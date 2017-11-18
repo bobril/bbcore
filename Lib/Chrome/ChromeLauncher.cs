@@ -32,7 +32,7 @@ namespace Lib.Chrome
             var chromeProcessArgs = new List<string>
             {
                 $"--user-data-dir=\"{directoryInfo.FullName}\"",
-                $"--remote-debugging-port={8080}",
+                $"--remote-debugging-port={8081}",
                 "--bwsi",
                 "--no-first-run",
                 "--headless",

@@ -61,6 +61,7 @@ namespace Lib.WebServer
                 config.AddServerHeader = false;
                 config.Limits.MaxRequestBodySize = int.MaxValue;
                 config.ApplicationSchedulingMode = Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.Internal.SchedulingMode.Inline;
+                config.Listen(BindToAny ? IPAddress.Any : IPAddress.Loopback, port);
                 config.Listen(BindToAny ? IPAddress.IPv6Any : IPAddress.IPv6Loopback, port);
             })
             .Configure(a => a.Run(Handler))
