@@ -63,6 +63,7 @@ namespace Lib.TSCompiler
                 {
                     return null;
                 }
+                GetFileInfo(file).StartCompiling();
                 return file.ChangeId;
             }
 
@@ -74,7 +75,6 @@ namespace Lib.TSCompiler
                 {
                     return null;
                 }
-                GetFileInfo(file).StartCompiling();
                 return file.Utf8Content;
             }
 

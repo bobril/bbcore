@@ -48,6 +48,7 @@ namespace Lib.TSCompiler
         List<TSFileAdditionalInfo> _localImports;
         List<Diag> _diag;
 
+        public IReadOnlyList<Diag> Diagnostic { get => _diag; }
         public IReadOnlyList<TSFileAdditionalInfo> LocalImports { get => _localImports; }
         public string ImportedAsModule { get; internal set; }
 
@@ -108,15 +109,15 @@ namespace Lib.TSCompiler
             LastCompilationCacheIds = BuildLastCompilationCacheIds().ToList();
         }
 
-        private class Diag
+        public class Diag
         {
-            private bool isError;
-            private int code;
-            private string text;
-            private int startLine;
-            private int startCharacter;
-            private int endLine;
-            private int endCharacter;
+            public bool isError;
+            public int code;
+            public string text;
+            public int startLine;
+            public int startCharacter;
+            public int endLine;
+            public int endCharacter;
 
             public Diag(bool isError, int code, string text, int startLine, int startCharacter, int endLine, int endCharacter)
             {

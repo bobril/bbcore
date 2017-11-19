@@ -214,7 +214,12 @@ namespace Lib.Composition
         {
             _testServer = new TestServer();
             _testServerLongPollingHandler = new LongPollingServer(_testServer.NewConnectionHandler);
-            _testServer.OnTestResults.Subscribe((results) => { Console.WriteLine("Tests on {0} Failed: {1} Skipped: {2} Total: {3} Duration: {4:F1}s", results.UserAgent, results.TestsFailed, results.TestsSkipped, results.TotalTests, results.Duration * 0.001); });
+            _testServer.OnTestResults.Subscribe((results) =>
+            {
+                Console.ForegroundColor = results.TestsFailed != 0 ? ConsoleColor.Red : results.TestsSkipped != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                Console.WriteLine("Tests on {0} Failed: {1} Skipped: {2} Total: {3} Duration: {4:F1}s", results.UserAgent, results.TestsFailed, results.TestsSkipped, results.TotalTests, results.Duration * 0.001);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            });
         }
 
         public void InitMainServer()
@@ -241,7 +246,8 @@ namespace Lib.Composition
                     _mainServer.NotifyCompilationStarted();
                     int errors = 0;
                     int warnings = 0;
-                    List<CompilationResultMessage> messages = new List<CompilationResultMessage>();
+                    var messages = new List<CompilationResultMessage>();
+                    var messagesFromFiles = new HashSet<string>();
                     foreach (var proj in toBuild)
                     {
                         proj.Owner.LoadProjectJson();
@@ -265,7 +271,7 @@ namespace Lib.Composition
                         fastBundle.BuildResult = buildResult;
                         fastBundle.Build("bb/base", "bundle.js.map");
                         proj.MainProjFastBundle = fastBundle;
-
+                        IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
                         if (proj.TestSources != null && proj.TestSources.Count > 0)
                         {
                             ctx = new BuildCtx(_compilerPool);
@@ -283,16 +289,67 @@ namespace Lib.Composition
                             fastBundle.BuildResult = testBuildResult;
                             fastBundle.Build("bb/base", "testbundle.js.map", true);
                             proj.TestProjFastBundle = fastBundle;
-                            _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
-                            StartChromeTest();
+                            IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                            if (errors == 0)
+                            {
+                                _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
+                                StartChromeTest();
+                            }
+                        }
+                        else
+                        {
+                            proj.TestProjFastBundle = null;
                         }
                         proj.FilesContent = filesContent;
                     }
                     var duration = DateTime.UtcNow - start;
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
-                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture));
+                    Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning"));
+                    Console.ForegroundColor = ConsoleColor.Gray;
                 }
             });
+        }
+
+        string Plural(int number, string word)
+        {
+            if (number == 0) return "no " + word + "s";
+            return number + " " + word + (number > 1 ? "s" : "");
+        }
+
+        void IncludeMessages(FastBundleBundler fastBundle, ref int errors, ref int warnings, List<CompilationResultMessage> messages, HashSet<string> messagesFromFiles)
+        {
+            IncludeMessages(fastBundle.BuildResult, ref errors, ref warnings, messages, messagesFromFiles);
+        }
+
+        void IncludeMessages(BuildResult buildResult, ref int errors, ref int warnings, List<CompilationResultMessage> messages, HashSet<string> messagesFromFiles)
+        {
+            foreach (var pathInfoPair in buildResult.Path2FileInfo)
+            {
+                if (messagesFromFiles.Contains(pathInfoPair.Key))
+                    continue;
+                messagesFromFiles.Add(pathInfoPair.Key);
+                var diag = pathInfoPair.Value.Diagnostic;
+                if (diag == null)
+                    continue;
+                foreach (var d in diag)
+                {
+                    if (d.isError) errors++; else warnings++;
+                    messages.Add(new CompilationResultMessage
+                    {
+                        FileName = pathInfoPair.Key,
+                        IsError = d.isError,
+                        Text = d.text,
+                        Pos = new int[]
+                        {
+                            d.startLine+1,
+                            d.startCharacter+1,
+                            d.endLine+1,
+                            d.endCharacter+1
+                        }
+                    });
+                }
+            }
         }
 
         static TSCompilerOptions GetDefaultTSCompilerOptions(ProjectOptions proj)

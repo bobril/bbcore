@@ -32,7 +32,8 @@ namespace Lib.WebServer
                     {
                         socket.EndConnect(result);
                         socket.Close();
-                        throw new Exception($"Port {Port} already used");
+                        _webHost = BuildWebHost(0);
+                        _webHost.Start();
                     }
                     else
                     {
