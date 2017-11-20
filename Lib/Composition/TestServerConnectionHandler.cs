@@ -211,6 +211,7 @@ namespace Lib.Composition
             var stack = StackFrame.Parse(rawStack);
             foreach (var frame in stack)
             {
+                if (frame.FileName == null) continue;
                 if (frame.FileName.StartsWith("http://") || frame.FileName.StartsWith("https://"))
                 {
                     frame.FileName = frame.FileName.Substring(frame.FileName.IndexOf('/', 8) + 1);
@@ -226,7 +227,7 @@ namespace Lib.Composition
                     }
                 }
             }
-            stack = stack.Where(f => f.FileName != "jasmine-core.js").ToList();
+            stack = stack.Where(f => f.FileName!=null && f.FileName != "jasmine-core.js" && f.FileName != "jasmine-boot.js").ToList();
             return new MessageAndStack
             {
                 Message = message,

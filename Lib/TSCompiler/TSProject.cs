@@ -123,6 +123,7 @@ namespace Lib.TSCompiler
             ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
             ProjectOptions.Example = GetStringProperty(bobrilSection, "example", "");
             ProjectOptions.BobrilJsx = true;
+            ProjectOptions.CompilerOptions = TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject);
             if (bobrilSection == null)
             {
                 return;
@@ -154,11 +155,12 @@ namespace Lib.TSCompiler
                 compiler.DiskCache = DiskCache;
                 compiler.Ctx = buildModuleCtx;
                 var compOpt = buildCtx.TSCompilerOptions.Clone();
-                compOpt.rootDir = buildModuleCtx._owner.Owner.FullPath;
+                compOpt.rootDir = Owner.FullPath;
                 compOpt.outDir = "_virtual";
                 compOpt.module = ModuleKind.CommonJS;
                 compOpt.declaration = true;
                 compiler.MergeCompilerOptions(compOpt);
+                compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
                 do
                 {
                     buildModuleCtx.ChangedDts = false;

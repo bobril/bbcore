@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 namespace Lib.TSCompiler
 {
@@ -67,6 +68,12 @@ namespace Lib.TSCompiler
         public bool? traceResolution { get; set; }
         public IList<string> types { get; set; }
         public IList<string> typeRoots { get; set; }
+
+        static public TSCompilerOptions Parse(JToken jToken)
+        {
+            if (jToken == null) return new TSCompilerOptions();
+            return jToken.ToObject<TSCompilerOptions>();
+        }
 
         public TSCompilerOptions Clone()
         {

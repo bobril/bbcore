@@ -193,7 +193,7 @@ namespace Lib.Composition
             }
             var pathWithoutFirstSlash = path.Value.Substring(1);
             var filesContentFromCurrentProjectBuildResult = _currentProject.FilesContent;
-            if (filesContentFromCurrentProjectBuildResult.TryGetValue(pathWithoutFirstSlash, out var content))
+            if (filesContentFromCurrentProjectBuildResult != null && filesContentFromCurrentProjectBuildResult.TryGetValue(pathWithoutFirstSlash, out var content))
             {
                 context.Response.ContentType = PathUtils.PathToMimeType(pathWithoutFirstSlash);
                 if (content is string)

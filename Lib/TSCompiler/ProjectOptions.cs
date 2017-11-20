@@ -38,6 +38,7 @@ namespace Lib.TSCompiler
 
         // value could be string or byte[]
         public Dictionary<string, object> FilesContent;
+        internal TSCompilerOptions CompilerOptions;
 
         public void RefreshMainFile()
         {

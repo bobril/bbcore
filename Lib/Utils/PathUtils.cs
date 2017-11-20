@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace Lib.Utils
 {
@@ -67,7 +69,26 @@ namespace Lib.Utils
             {
                 return pathA.Substring(pathB.Length + 1);
             }
-            throw new NotImplementedException();
+            int commonStart = 0;
+            while (true)
+            {
+                var slash = pathA.IndexOf('/', commonStart);
+                if (slash < 0) break;
+                if (pathB.Substring(commonStart, slash - commonStart + 1) != pathA.Substring(commonStart, slash - commonStart + 1))
+                {
+                    break;
+                }
+                commonStart = slash + 1;
+            }
+            var upCount = pathB.Skip(commonStart).Count(ch => ch == '/');
+            var sb = new StringBuilder();
+            while (upCount >= 0)
+            {
+                sb.Append("../");
+                upCount--;
+            }
+            sb.Append(pathA.Substring(commonStart));
+            return sb.ToString();
         }
 
         public static (string, string) SplitDirAndFile(string path)

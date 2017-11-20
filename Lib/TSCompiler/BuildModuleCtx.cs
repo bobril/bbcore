@@ -40,6 +40,7 @@ namespace Lib.TSCompiler
             }
             if (!fileName.StartsWith("_virtual/"))
                 throw new Exception("writeFile does not start with _virtual");
+            var fullPathWithVirtual = PathUtils.Join(_owner.Owner.FullPath, fileName);
             fileName = fileName.Substring(9);
             var fullPath = PathUtils.Join(_owner.Owner.FullPath, fileName);
             if (fullPath.EndsWith(".js"))
@@ -58,6 +59,12 @@ namespace Lib.TSCompiler
             {
                 throw new Exception("Unknown extension written by TS " + fullPath);
             }
+            data = new Regex("\\/\\/\\/ <reference path=\\\"(.+)\\\" \\/>").Replace(data, (m) =>
+            {
+                var origPath = m.Groups[1].Value;
+                var newPath = PathUtils.Subtract(PathUtils.Join(PathUtils.Parent(fullPathWithVirtual), origPath), PathUtils.Parent(fullPath));
+                return "/// <reference path=\"" + newPath + "\" />";
+            });
             var dirPath = PathUtils.Parent(fullPath);
             var fileOnly = fullPath.Substring(dirPath.Length + 1);
             var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
@@ -153,6 +160,7 @@ namespace Lib.TSCompiler
                         return dtsPath;
                     }
                 }
+                return null;
             }
             itemInfo.Type = FileCompilationType.TypeScript;
             CheckAdd(item.FullPath);
