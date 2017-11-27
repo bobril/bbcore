@@ -1,10 +1,6 @@
 ﻿using System;
-using System.IO;
 using Lib.DiskCache;
-using Lib.Watcher;
 using Lib.Utils;
-using Lib.ToolsDir;
-using Lib.TSCompiler;
 using System.Globalization;
 
 namespace bb
@@ -17,7 +13,7 @@ namespace bb
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             var composition = new Lib.Composition.Composition();
             composition.ParseCommandLineArgs(args);
-            composition.InitTools("2.5.3");
+            composition.InitTools("2.6.1");
             composition.InitDiskCache();
             composition.InitTestServer();
             composition.InitMainServer();
