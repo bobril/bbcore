@@ -35,6 +35,11 @@ namespace Lib.TSCompiler
         public FastBundleBundler MainProjFastBundle { get; set; }
         public FastBundleBundler TestProjFastBundle { get; internal set; }
         public bool LiveReloadEnabled { get; internal set; }
+        public bool Localize;
+        public string DefaultLanguage;
+        public string OutputSubDir;
+
+        public Translation.TranslationDb TranslationDb;
 
         // value could be string or byte[]
         public Dictionary<string, object> FilesContent;

@@ -11,5 +11,6 @@ namespace Lib.DiskCache
         IDirectoryCache Root();
         Func<(IDirectoryCache parent, string name, bool isDir), bool> DefaultFilter { get; set; }
         IObservable<Unit> ChangeObservable { get; }
+        IFsAbstraction FsAbstraction { get; }
     }
 }

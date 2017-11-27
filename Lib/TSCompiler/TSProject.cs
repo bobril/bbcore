@@ -5,12 +5,13 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Lib.TSCompiler
 {
     public class TSProject
     {
+        private bool WasFirstInitialize;
+
         public IDiskCache DiskCache { get; set; }
         public IDirectoryCache Owner { get; set; }
         public string MainFile { get; set; }
@@ -114,8 +115,9 @@ namespace Lib.TSCompiler
             }
         }
 
-        private void FillProjectOptionsFromPackageJson(JObject parsed)
+        void FillProjectOptionsFromPackageJson(JObject parsed)
         {
+            ProjectOptions.Localize = Dependencies.Contains("bobril-g11n");
             ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec\\.ts(?:x)?$";
             var bobrilSection = parsed.GetValue("bobril") as JObject;
             ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
@@ -135,6 +137,18 @@ namespace Lib.TSCompiler
             if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
                 return (string)value;
             return @default;
+        }
+
+        public void FirstInitialize()
+        {
+            if (WasFirstInitialize)
+                return;
+            WasFirstInitialize = true;
+            if (ProjectOptions.Localize)
+            {
+                ProjectOptions.TranslationDb = new Translation.TranslationDb(DiskCache.FsAbstraction);
+                ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
+            }
         }
 
         public void Build(BuildCtx buildCtx)
@@ -170,7 +184,7 @@ namespace Lib.TSCompiler
                     buildModuleCtx.ToCompile.Clear();
                     buildModuleCtx.ToCompileDts.Clear();
                     ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
-                    foreach(var src in buildCtx.Sources)
+                    foreach (var src in buildCtx.Sources)
                     {
                         buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
                     }
@@ -196,7 +210,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        public static TSProject FindInfoForModule(IDirectoryCache dir, IDiskCache diskCache, string moduleName)
+        public static TSProject FindInfoForModule(IDirectoryCache dir, IDiskCache diskCache, string moduleName, out string diskName)
         {
             while (!dir.IsFake)
             {
@@ -208,12 +222,14 @@ namespace Lib.TSCompiler
                     var mdir = nmdir.TryGetChild(moduleName) as IDirectoryCache;
                     if (mdir != null)
                     {
+                        diskName = mdir.Name;
                         diskCache.UpdateIfNeeded(mdir);
                         return Get(mdir, diskCache);
                     }
                 }
                 dir = dir.Parent;
             }
+            diskName = null;
             return null;
         }
 

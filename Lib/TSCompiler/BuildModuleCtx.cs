@@ -111,6 +111,10 @@ namespace Lib.TSCompiler
             var item = ExtensionsToImport.Select(ext => dc.TryGetChild(fileOnly + ext) as IFileCache).FirstOrDefault(i => i != null && !i.IsInvalid);
             if (item == null)
                 return null;
+            if (item.FullPath.Substring(0, name.Length) != name)
+            {
+                parentInfo.ReportDiag(false, 1, "Local import has wrong casing '" + name + "' on disk '" + item.FullPath + "'", 0, 0, 0, 0);
+            }
             var itemInfo = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
             parentInfo.ImportingLocal(itemInfo);
             if (IsDts(item.FullPath))
@@ -133,8 +137,12 @@ namespace Lib.TSCompiler
 
         public string resolveModuleMain(string name, TSFileAdditionalInfo parentInfo)
         {
-            var moduleInfo = TSProject.FindInfoForModule(_owner.Owner, _owner.DiskCache, name);
+            var moduleInfo = TSProject.FindInfoForModule(_owner.Owner, _owner.DiskCache, name, out var diskName);
             if (moduleInfo == null) return null;
+            if (name != diskName)
+            {
+                parentInfo.ReportDiag(false, 2, "Module import has wrong casing '" + name + "' on disk '" + diskName + "'", 0, 0, 0, 0);
+            }
             moduleInfo.LoadProjectJson();
             parentInfo.ImportingModule(moduleInfo);
             var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
@@ -313,6 +321,18 @@ namespace Lib.TSCompiler
                 if (s.name == null) return;
                 res[s.nodeId] = new object[] { 0, PathUtils.Subtract(s.name, _owner.Owner.FullPath) };
             });
+            var trdb = _owner.ProjectOptions.TranslationDb;
+            if (trdb != null)
+            {
+                sourceInfo.translations.ForEach(t =>
+                {
+                    if (t.justFormat) return;
+                    if (t.message == null) return;
+                    var id = trdb.AddToDB(t.message, t.hint, t.withParams);
+                    var finalId = trdb.MapId(id);
+                    res[t.nodeId] = new object[] { 2, 0, finalId, 1 + (t.withParams ? 1 : 0) };
+                });
+            }
             var styleDefNaming = _owner.ProjectOptions.StyleDefNaming;
             var styleDefPrefix = _owner.ProjectOptions.PrefixStyleNames;
             sourceInfo.styleDefs.ForEach(s =>

@@ -117,7 +117,7 @@ namespace Lib.TSCompiler
         <meta charset=""utf-8"">{Project.HtmlHeadExpanded}
         <title>{Project.Title}</title>{cssLink}
     </head>
-    <body>
+    <body>{InitG11n()}
         <script type=""text/javascript"" src=""jasmine-core.js"" charset=""utf-8""></script>
         <script type=""text/javascript"" src=""jasmine-boot.js"" charset=""utf-8""></script>
         <script type=""text/javascript"" src=""loader.js"" charset=""utf-8""></script>
@@ -142,7 +142,7 @@ namespace Lib.TSCompiler
         <meta charset=""utf-8"">{Project.HtmlHeadExpanded}
         <title>{Project.Title}</title>{cssLink}
     </head>
-    <body>
+    <body>{InitG11n()}
         <script type=""text/javascript"" src=""loader.js"" charset=""utf-8""></script>
         <script type=""text/javascript"">
             {GetGlobalDefines()}
@@ -156,6 +156,27 @@ namespace Lib.TSCompiler
     </body>
 </html>
 ";
+        }
+
+        string InitG11n()
+        {
+            if (!Project.Localize)
+                return "";
+            var res = "<script>";
+            if (Project.Localize)
+            {
+                res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s+\".js\"}};";
+                if (Project.DefaultLanguage != null)
+                {
+                    res += $"var g11nLoc=\"{Project.DefaultLanguage}\";";
+                }
+            }
+            //if (Project.bundlePng)
+            //{
+            //    res += $"var bobrilBPath=\"{Project.bundlePng}\";";
+            //}
+            res += "</script>";
+            return res;
         }
 
         void BuildExampleListHtml(List<string> namesWOExt, string cssLink)

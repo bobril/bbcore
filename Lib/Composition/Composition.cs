@@ -251,6 +251,7 @@ namespace Lib.Composition
                     foreach (var proj in toBuild)
                     {
                         proj.Owner.LoadProjectJson();
+                        proj.Owner.FirstInitialize();
                         proj.RefreshMainFile();
                         proj.RefreshTestSources();
                         proj.DetectBobrilJsxDts();
