@@ -8,7 +8,6 @@ namespace Lib.Composition
     {
         ILongPollingConnection _connection;
         TestServer _testServer;
-        bool _idle;
         string _userAgent;
         string _url;
         private int _runid;
@@ -21,7 +20,6 @@ namespace Lib.Composition
         public TestServerConnectionHandler(TestServer testServer)
         {
             _testServer = testServer;
-            _idle = true;
         }
 
         public void OnConnect(ILongPollingConnection connection)
@@ -254,7 +252,6 @@ namespace Lib.Composition
 
         void DoStart()
         {
-            _idle = false;
             InitCurResults();
             _connection.Send("test", new { url = _url });
         }
