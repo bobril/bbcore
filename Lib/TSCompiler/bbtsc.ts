@@ -20,8 +20,16 @@ interface IBB {
     realPath(path: string): string;
     trace(text: string): void;
     reportTypeScriptDiag(isError: boolean, code: number, text: string): void;
-    reportTypeScriptDiagFile(isError: boolean, code: number, text: string,
-        fileName: string, startLine: number, startCharacter: number, endLine: number, endCharacter: number): void;
+    reportTypeScriptDiagFile(
+        isError: boolean,
+        code: number,
+        text: string,
+        fileName: string,
+        startLine: number,
+        startCharacter: number,
+        endLine: number,
+        endCharacter: number
+    ): void;
     // resolvedName:string|isExternalLibraryImport:boolean|extension:string(Ts,Tsx,Dts,Js,Jsx)
     resolveModuleName(name: string, containingFile: string): string;
     resolvePathStringLiteral(sourcePath: string, text: string): string;
@@ -36,7 +44,11 @@ function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
         return fileName;
     }
 
-    function getSourceFile(fileName: string, languageVersion: ts.ScriptTarget, onError?: (message: string) => void): ts.SourceFile {
+    function getSourceFile(
+        fileName: string,
+        languageVersion: ts.ScriptTarget,
+        onError?: (message: string) => void
+    ): ts.SourceFile {
         let version = bb.getChangeId(fileName);
         if (version == undefined) {
             if (onError) {
@@ -45,8 +57,7 @@ function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
             throw new Error("Cannot getSourceFile " + fileName);
         }
         let cache = parseCache[fileName];
-        if (cache && version == cache[0])
-            return cache[1];
+        if (cache && version == cache[0]) return cache[1];
         let text = bb.readFile(fileName, true);
         if (text == undefined) {
             if (onError) {
@@ -59,7 +70,12 @@ function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
         return res;
     }
 
-    function writeFile(fileName: string, data: string, _writeByteOrderMark: boolean, onError?: (message: string) => void) {
+    function writeFile(
+        fileName: string,
+        data: string,
+        _writeByteOrderMark: boolean,
+        onError?: (message: string) => void
+    ) {
         if (!bb.writeFile(fileName, data)) {
             if (onError) {
                 onError("Write failed " + fileName);
@@ -70,24 +86,32 @@ function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
     return {
         getSourceFile,
         getDefaultLibLocation: () => bbDefaultLibLocation,
-        getDefaultLibFileName: options => bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options),
+        getDefaultLibFileName: options =>
+            bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options),
         writeFile,
         getCurrentDirectory: () => bbCurrentDirectory,
         useCaseSensitiveFileNames: () => true,
         getCanonicalFileName,
         getNewLine: () => "\n",
-        fileExists: (name) => bb.fileExists(name),
-        readFile: (fileName) => bb.readFile(fileName, false),
-        trace: (text) => bb.trace(text),
-        directoryExists: (dir) => bb.dirExists(dir),
-        getEnvironmentVariable: (name: string) => { bb.trace("Getting ENV " + name); return ""; },
+        fileExists: name => bb.fileExists(name),
+        readFile: fileName => bb.readFile(fileName, false),
+        trace: text => bb.trace(text),
+        directoryExists: dir => bb.dirExists(dir),
+        getEnvironmentVariable: (name: string) => {
+            bb.trace("Getting ENV " + name);
+            return "";
+        },
         getDirectories: (name: string) => bb.getDirectories(name).split("|"),
-        realpath: (path) => bb.realPath(path),
+        realpath: path => bb.realPath(path),
         resolveModuleNames(moduleNames: string[], containingFile: string): ts.ResolvedModuleFull[] {
-            return moduleNames.map((n) => {
+            return moduleNames.map(n => {
                 let r = bb.resolveModuleName(n, containingFile).split("|");
                 if (r.length < 3) return null as any;
-                let res: ts.ResolvedModuleFull = { resolvedFileName: r[0], isExternalLibraryImport: r[1] == "true", extension: (ts.Extension as any)[r[2]] }
+                let res: ts.ResolvedModuleFull = {
+                    resolvedFileName: r[0],
+                    isExternalLibraryImport: r[1] == "true",
+                    extension: (ts.Extension as any)[r[2]]
+                };
                 return res;
             });
         }
@@ -136,15 +160,29 @@ function bbCreateProgram(rootNames: string) {
 function reportDiagnostic(diagnostic: ts.Diagnostic) {
     if (diagnostic.file) {
         var locStart = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
-        var locEnd = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start! + diagnostic.length!);
-        bb.reportTypeScriptDiagFile(diagnostic.category === ts.DiagnosticCategory.Error, diagnostic.code, ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'),
-            diagnostic.file.fileName, locStart.line, locStart.character, locEnd.line, locEnd.character);
+        var locEnd = diagnostic.file.getLineAndCharacterOfPosition(
+            diagnostic.start! + diagnostic.length!
+        );
+        bb.reportTypeScriptDiagFile(
+            diagnostic.category === ts.DiagnosticCategory.Error,
+            diagnostic.code,
+            ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"),
+            diagnostic.file.fileName,
+            locStart.line,
+            locStart.character,
+            locEnd.line,
+            locEnd.character
+        );
     } else {
-        bb.reportTypeScriptDiag(diagnostic.category === ts.DiagnosticCategory.Error, diagnostic.code, ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
+        bb.reportTypeScriptDiag(
+            diagnostic.category === ts.DiagnosticCategory.Error,
+            diagnostic.code,
+            ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
+        );
     }
 }
 
-function reportDiagnostics(diagnostics: ts.Diagnostic[]) {
+function reportDiagnostics(diagnostics: ReadonlyArray<ts.Diagnostic>) {
     for (var i = 0; i < diagnostics.length; i++) {
         reportDiagnostic(diagnostics[i]);
     }
@@ -167,11 +205,11 @@ const sourceInfos: { [name: string]: SourceInfo } = Object.create(null);
 
 function bbGatherSourceInfo(): void {
     let sourceFiles = program.getSourceFiles();
-    const resolvePathStringLiteral = (nn: ts.StringLiteral) => bb.resolvePathStringLiteral(nn.getSourceFile().fileName, nn.text);
+    const resolvePathStringLiteral = (nn: ts.StringLiteral) =>
+        bb.resolvePathStringLiteral(nn.getSourceFile().fileName, nn.text);
     for (let i = 0; i < sourceFiles.length; i++) {
         let sourceFile = sourceFiles[i];
-        if (sourceFile.isDeclarationFile)
-            continue;
+        if (sourceFile.isDeclarationFile) continue;
         let sourceInfo = gatherSourceInfo(sourceFile, typeChecker, resolvePathStringLiteral);
         sourceInfos[sourceFile.fileName] = sourceInfo;
         bb.reportSourceInfo(sourceFile.fileName, JSON.stringify(toJsonableSourceInfo(sourceInfo)));
@@ -180,10 +218,33 @@ function bbGatherSourceInfo(): void {
 
 function toJsonableSourceInfo(sourceInfo: SourceInfo) {
     return {
-        assets: sourceInfo.assets.map(a => ({ nodeId: ts.getNodeId(a.callExpression), name: a.name })),
-        sprites: sourceInfo.sprites.map(s => ({ nodeId: ts.getNodeId(s.callExpression), name: s.name, color: s.color, width: s.width, height: s.height, x: s.x, y: s.y })),
-        translations: sourceInfo.trs.map(t => ({ nodeId: ts.getNodeId(t.callExpression), message: typeof t.message === "string" ? t.message : undefined, hint: t.hint, justFormat: t.justFormat, withParams: t.withParams, knownParams: t.knownParams })),
-        styleDefs: sourceInfo.styleDefs.map(s => ({ nodeId: ts.getNodeId(s.callExpression), name: s.name, userNamed: s.userNamed, isEx: s.isEx }))
+        assets: sourceInfo.assets.map(a => ({
+            nodeId: ts.getNodeId(a.callExpression),
+            name: a.name
+        })),
+        sprites: sourceInfo.sprites.map(s => ({
+            nodeId: ts.getNodeId(s.callExpression),
+            name: s.name,
+            color: s.color,
+            width: s.width,
+            height: s.height,
+            x: s.x,
+            y: s.y
+        })),
+        translations: sourceInfo.trs.map(t => ({
+            nodeId: ts.getNodeId(t.callExpression),
+            message: typeof t.message === "string" ? t.message : undefined,
+            hint: t.hint,
+            justFormat: t.justFormat,
+            withParams: t.withParams,
+            knownParams: t.knownParams
+        })),
+        styleDefs: sourceInfo.styleDefs.map(s => ({
+            nodeId: ts.getNodeId(s.callExpression),
+            name: s.name,
+            userNamed: s.userNamed,
+            isEx: s.isEx
+        }))
     };
 }
 
@@ -204,8 +265,10 @@ function bbFinishTSPerformance(): string {
 
 const transformers: ts.CustomTransformers = {
     before: [
-        (context) => (node: ts.SourceFile): ts.SourceFile => {
-            let modifications: { [nodeId: number]: any[] } = JSON.parse(bb.getModifications(node.getSourceFile().fileName));
+        context => (node: ts.SourceFile): ts.SourceFile => {
+            let modifications: { [nodeId: number]: any[] } = JSON.parse(
+                bb.getModifications(node.getSourceFile().fileName)
+            );
             if (modifications == null) return node;
             function visitor(node: ts.Node): ts.Node {
                 node = ts.visitEachChild(node, visitor, context);
@@ -217,35 +280,75 @@ const transformers: ts.CustomTransformers = {
                         switch (modification[0] as number) {
                             case 0: // change first parameter to constant in modification[1]
                                 node = ts.setTextRange(
-                                    ts.createCall(callEx.expression, undefined,
-                                        [ts.createLiteral(modification[1] as (string | number | boolean)),
-                                        ...callEx.arguments.slice(1)]),
-                                    callEx);
+                                    ts.createCall(callEx.expression, undefined, [
+                                        ts.createLiteral(modification[1] as
+                                            | string
+                                            | number
+                                            | boolean),
+                                        ...callEx.arguments.slice(1)
+                                    ]),
+                                    callEx
+                                );
                                 break;
                             case 1: // set argument count to modification[1]
                                 node = ts.setTextRange(
-                                    ts.createCall(callEx.expression, undefined,
-                                        sliceAndPad(callEx.arguments, 0, modification[1] as number)),
-                                    callEx);
+                                    ts.createCall(
+                                        callEx.expression,
+                                        undefined,
+                                        sliceAndPad(callEx.arguments, 0, modification[1] as number)
+                                    ),
+                                    callEx
+                                );
                                 break;
                             case 2: // set parameter with index modification[1] to modification[2] and set argument count to modification[3]
                                 node = ts.setTextRange(
-                                    ts.createCall(callEx.expression, undefined,
-                                        [...sliceAndPad(callEx.arguments, 0, (modification[1] as number)),
-                                        ts.createLiteral(modification[2] as (string | number | boolean)),
-                                        ...sliceAndPad(callEx.arguments, (modification[1] as number) + 1, modification[3] as number)]),
-                                    callEx);
+                                    ts.createCall(callEx.expression, undefined, [
+                                        ...sliceAndPad(
+                                            callEx.arguments,
+                                            0,
+                                            modification[1] as number
+                                        ),
+                                        ts.createLiteral(modification[2] as
+                                            | string
+                                            | number
+                                            | boolean),
+                                        ...sliceAndPad(
+                                            callEx.arguments,
+                                            (modification[1] as number) + 1,
+                                            modification[3] as number
+                                        )
+                                    ]),
+                                    callEx
+                                );
                                 break;
                             case 3: // set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
                                 node = ts.setTextRange(
-                                    ts.createCall(callEx.expression, undefined,
-                                        [...sliceAndPad(callEx.arguments, 0, (modification[1] as number)),
-                                        ts.createAdd(ts.createLiteral(modification[2] as (string | number | boolean)), callEx.arguments[modification[1] as number]),
-                                        ...sliceAndPad(callEx.arguments, (modification[1] as number) + 1, modification[3] as number)]),
-                                    callEx);
+                                    ts.createCall(callEx.expression, undefined, [
+                                        ...sliceAndPad(
+                                            callEx.arguments,
+                                            0,
+                                            modification[1] as number
+                                        ),
+                                        ts.createAdd(
+                                            ts.createLiteral(modification[2] as
+                                                | string
+                                                | number
+                                                | boolean),
+                                            callEx.arguments[modification[1] as number]
+                                        ),
+                                        ...sliceAndPad(
+                                            callEx.arguments,
+                                            (modification[1] as number) + 1,
+                                            modification[3] as number
+                                        )
+                                    ]),
+                                    callEx
+                                );
                                 break;
                             default:
-                                throw new Error("Unknown modification type " + modification[0] + " for " + id);
+                                throw new Error(
+                                    "Unknown modification type " + modification[0] + " for " + id
+                                );
                         }
                     }
                 }
@@ -255,7 +358,7 @@ const transformers: ts.CustomTransformers = {
             return ts.visitEachChild(node, visitor, context);
         }
     ]
-}
+};
 
 function sliceAndPad(args: ts.NodeArray<ts.Expression>, start: number, end: number) {
     var res = args.slice(start, end);
@@ -265,7 +368,11 @@ function sliceAndPad(args: ts.NodeArray<ts.Expression>, start: number, end: numb
     return res;
 }
 
-function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts.StringLiteral) => string): any {
+function evalNode(
+    n: ts.Node,
+    tc: ts.TypeChecker,
+    resolveStringLiteral?: (sl: ts.StringLiteral) => string
+): any {
     switch (n.kind) {
         case ts.SyntaxKind.StringLiteral: {
             let nn = <ts.StringLiteral>n;
@@ -278,20 +385,32 @@ function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts
             let nn = <ts.LiteralExpression>n;
             return parseFloat(nn.text);
         }
-        case ts.SyntaxKind.TrueKeyword: return true;
-        case ts.SyntaxKind.FalseKeyword: return false;
-        case ts.SyntaxKind.NullKeyword: return null;
+        case ts.SyntaxKind.TrueKeyword:
+            return true;
+        case ts.SyntaxKind.FalseKeyword:
+            return false;
+        case ts.SyntaxKind.NullKeyword:
+            return null;
         case ts.SyntaxKind.PrefixUnaryExpression: {
             let nn = <ts.PrefixUnaryExpression>n;
             let operand = evalNode(nn.operand, tc, resolveStringLiteral);
             if (operand !== undefined) {
                 let op = null;
                 switch (nn.operator) {
-                    case ts.SyntaxKind.PlusToken: op = "+"; break;
-                    case ts.SyntaxKind.MinusToken: op = "-"; break;
-                    case ts.SyntaxKind.TildeToken: op = "~"; break;
-                    case ts.SyntaxKind.ExclamationToken: op = "!"; break;
-                    default: return undefined;
+                    case ts.SyntaxKind.PlusToken:
+                        op = "+";
+                        break;
+                    case ts.SyntaxKind.MinusToken:
+                        op = "-";
+                        break;
+                    case ts.SyntaxKind.TildeToken:
+                        op = "~";
+                        break;
+                    case ts.SyntaxKind.ExclamationToken:
+                        op = "!";
+                        break;
+                    default:
+                        return undefined;
                 }
                 var f = new Function("a", "return " + op + "a");
                 return f(operand);
@@ -330,7 +449,8 @@ function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts
                     case ts.SyntaxKind.PercentToken:
                         op = nn.operatorToken.getText();
                         break;
-                    default: return undefined;
+                    default:
+                        return undefined;
                 }
                 var f = new Function("a", "b", "return a " + op + " b");
                 return f(left, right);
@@ -352,37 +472,54 @@ function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts
         case ts.SyntaxKind.PropertyAccessExpression: {
             let s = tc.getSymbolAtLocation(n);
             if (s == null) return undefined;
-            if (((s.flags & ts.SymbolFlags.Alias) !== 0) && n.kind === ts.SyntaxKind.PropertyAccessExpression) {
-                if (s.declarations == null || s.declarations.length !== 1)
-                    return undefined;
+            if (
+                (s.flags & ts.SymbolFlags.Alias) !== 0 &&
+                n.kind === ts.SyntaxKind.PropertyAccessExpression
+            ) {
+                if (s.declarations == null || s.declarations.length !== 1) return undefined;
                 let decl = <ts.ImportSpecifier>s.declarations[0];
                 return evalNode(decl, tc, resolveStringLiteral);
-            } else if (((s.flags & ts.SymbolFlags.Alias) !== 0) && n.kind === ts.SyntaxKind.Identifier) {
-                if (s.declarations == null || s.declarations.length !== 1)
-                    return undefined;
+            } else if (
+                (s.flags & ts.SymbolFlags.Alias) !== 0 &&
+                n.kind === ts.SyntaxKind.Identifier
+            ) {
+                if (s.declarations == null || s.declarations.length !== 1) return undefined;
                 let decl = <ts.ImportSpecifier>s.declarations[0];
-                if (decl.kind !== ts.SyntaxKind.ImportSpecifier)
-                    return undefined;
-                if (decl.parent && decl.parent.parent && decl.parent.parent.parent && decl.parent.parent.parent.kind === ts.SyntaxKind.ImportDeclaration) {
+                if (decl.kind !== ts.SyntaxKind.ImportSpecifier) return undefined;
+                if (
+                    decl.parent &&
+                    decl.parent.parent &&
+                    decl.parent.parent.parent &&
+                    decl.parent.parent.parent.kind === ts.SyntaxKind.ImportDeclaration
+                ) {
                     let impdecl = <ts.ImportDeclaration>decl.parent.parent.parent;
                     let s2 = tc.getSymbolAtLocation(impdecl.moduleSpecifier);
                     if (s2 && s2.exports!.get(decl.propertyName!.escapedText)) {
                         let s3 = s2.exports!.get(decl.propertyName!.escapedText);
-                        if (s3 == null)
-                            return undefined;
+                        if (s3 == null) return undefined;
                         let exportAssign = <ts.ExportAssignment>s3.declarations![0];
                         return evalNode(exportAssign, tc, resolveStringLiteral);
                     }
                 }
-            } else if (((s.flags & ts.SymbolFlags.Property) !== 0) && n.kind === ts.SyntaxKind.PropertyAccessExpression) {
-                let obj = evalNode((<ts.PropertyAccessExpression>n).expression, tc, resolveStringLiteral);
-                if (typeof obj !== "object")
-                    return undefined;
+            } else if (
+                (s.flags & ts.SymbolFlags.Property) !== 0 &&
+                n.kind === ts.SyntaxKind.PropertyAccessExpression
+            ) {
+                let obj = evalNode(
+                    (<ts.PropertyAccessExpression>n).expression,
+                    tc,
+                    resolveStringLiteral
+                );
+                if (typeof obj !== "object") return undefined;
                 let name = (<ts.PropertyAccessExpression>n).name.text;
                 return obj[name];
             } else if (s.flags & ts.SymbolFlags.Variable) {
                 if (s.valueDeclaration!.parent!.flags & ts.NodeFlags.Const) {
-                    return evalNode((<ts.VariableDeclaration>s.valueDeclaration).initializer!, tc, resolveStringLiteral);
+                    return evalNode(
+                        (<ts.VariableDeclaration>s.valueDeclaration).initializer!,
+                        tc,
+                        resolveStringLiteral
+                    );
                 }
             }
             return undefined;
@@ -396,9 +533,20 @@ function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts
             let res: { [name: string]: any } = {};
             for (let i = 0; i < ole.properties.length; i++) {
                 let prop = ole.properties[i];
-                if (prop.kind === ts.SyntaxKind.PropertyAssignment && (prop.name.kind === ts.SyntaxKind.Identifier || prop.name.kind === ts.SyntaxKind.StringLiteral)) {
-                    let name = prop.name.kind === ts.SyntaxKind.Identifier ? (<ts.Identifier>prop.name).text : (<ts.StringLiteral>prop.name).text;
-                    res[name] = evalNode((<ts.PropertyAssignment>prop).initializer, tc, resolveStringLiteral);
+                if (
+                    prop.kind === ts.SyntaxKind.PropertyAssignment &&
+                    (prop.name.kind === ts.SyntaxKind.Identifier ||
+                        prop.name.kind === ts.SyntaxKind.StringLiteral)
+                ) {
+                    let name =
+                        prop.name.kind === ts.SyntaxKind.Identifier
+                            ? (<ts.Identifier>prop.name).text
+                            : (<ts.StringLiteral>prop.name).text;
+                    res[name] = evalNode(
+                        (<ts.PropertyAssignment>prop).initializer,
+                        tc,
+                        resolveStringLiteral
+                    );
                 }
             }
             return res;
@@ -454,17 +602,34 @@ interface TranslationMessage {
     justFormat: boolean;
 }
 
-function isBobrilFunction(name: string, callExpression: ts.CallExpression, sourceInfo: SourceInfo): boolean {
+function isBobrilFunction(
+    name: string,
+    callExpression: ts.CallExpression,
+    sourceInfo: SourceInfo
+): boolean {
     let text = callExpression.expression.getText();
-    return text === sourceInfo.bobrilNamespace + '.' + name || text === sourceInfo.bobrilImports[name];
+    return (
+        text === sourceInfo.bobrilNamespace + "." + name || text === sourceInfo.bobrilImports[name]
+    );
 }
 
-function isBobrilG11NFunction(name: string, callExpression: ts.CallExpression, sourceInfo: SourceInfo): boolean {
+function isBobrilG11NFunction(
+    name: string,
+    callExpression: ts.CallExpression,
+    sourceInfo: SourceInfo
+): boolean {
     let text = callExpression.expression.getText();
-    return text === sourceInfo.bobrilG11NNamespace + '.' + name || text === sourceInfo.bobrilG11NImports[name];
+    return (
+        text === sourceInfo.bobrilG11NNamespace + "." + name ||
+        text === sourceInfo.bobrilG11NImports[name]
+    );
 }
 
-function extractBindings(bindings: ts.NamespaceImport | ts.NamedImports, ns: string | undefined, ims: { [name: string]: string }): string | undefined {
+function extractBindings(
+    bindings: ts.NamespaceImport | ts.NamedImports,
+    ns: string | undefined,
+    ims: { [name: string]: string }
+): string | undefined {
     if (bindings.kind === ts.SyntaxKind.NamedImports) {
         let namedBindings = <ts.NamedImports>bindings;
         for (let i = 0; i < namedBindings.elements.length; i++) {
@@ -477,7 +642,11 @@ function extractBindings(bindings: ts.NamespaceImport | ts.NamedImports, ns: str
     return ns;
 }
 
-function gatherSourceInfo(source: ts.SourceFile, tc: ts.TypeChecker, resolvePathStringLiteral: (sl: ts.StringLiteral) => string): SourceInfo {
+function gatherSourceInfo(
+    source: ts.SourceFile,
+    tc: ts.TypeChecker,
+    resolvePathStringLiteral: (sl: ts.StringLiteral) => string
+): SourceInfo {
     let result: SourceInfo = {
         sourceFile: source,
         bobrilNamespace: undefined,
@@ -497,69 +666,109 @@ function gatherSourceInfo(source: ts.SourceFile, tc: ts.TypeChecker, resolvePath
             let fn = moduleSymbol.valueDeclaration!.getSourceFile().fileName;
             if (id.importClause) {
                 let bindings = id.importClause.namedBindings!;
-                if (/bobriln?\/index\.ts/i.test(fn)) {
-                    result.bobrilNamespace = extractBindings(bindings, result.bobrilNamespace, result.bobrilImports);
-                } else if (/bobril-g11n\/index\.ts/i.test(fn)) {
-                    result.bobrilG11NNamespace = extractBindings(bindings, result.bobrilG11NNamespace, result.bobrilG11NImports);
+                if (/bobriln?\/index\.(?:d\.)?ts$/i.test(fn)) {
+                    result.bobrilNamespace = extractBindings(
+                        bindings,
+                        result.bobrilNamespace,
+                        result.bobrilImports
+                    );
+                } else if (/bobril-g11n\/index\.(?:d\.)?ts$/i.test(fn)) {
+                    result.bobrilG11NNamespace = extractBindings(
+                        bindings,
+                        result.bobrilG11NNamespace,
+                        result.bobrilG11NImports
+                    );
                 }
             }
-        }
-        else if (n.kind === ts.SyntaxKind.CallExpression) {
+        } else if (n.kind === ts.SyntaxKind.CallExpression) {
             let ce = <ts.CallExpression>n;
-            if (isBobrilFunction('asset', ce, result)) {
-                result.assets.push({ callExpression: ce, name: evalNode(ce.arguments[0], tc, resolvePathStringLiteral) });
-            } else if (isBobrilFunction('sprite', ce, result)) {
+            if (isBobrilFunction("asset", ce, result)) {
+                result.assets.push({
+                    callExpression: ce,
+                    name: evalNode(ce.arguments[0], tc, resolvePathStringLiteral)
+                });
+            } else if (isBobrilFunction("sprite", ce, result)) {
                 let si: SpriteInfo = { callExpression: ce };
                 for (let i = 0; i < ce.arguments.length; i++) {
-                    let res = evalNode(ce.arguments[i], tc, i === 0 ? resolvePathStringLiteral : undefined); // first argument is path
-                    if (res !== undefined) switch (i) {
-                        case 0:
-                            if (typeof res === 'string') si.name = res;
-                            break;
-                        case 1:
-                            if (typeof res === 'string') si.color = res;
-                            break;
-                        case 2:
-                            if (typeof res === 'number') si.width = res;
-                            break;
-                        case 3:
-                            if (typeof res === 'number') si.height = res;
-                            break;
-                        case 4:
-                            if (typeof res === 'number') si.x = res;
-                            break;
-                        case 5:
-                            if (typeof res === 'number') si.y = res;
-                            break;
-                        default: throw new Error('b.sprite cannot have more than 6 parameters');
-                    }
+                    let res = evalNode(
+                        ce.arguments[i],
+                        tc,
+                        i === 0 ? resolvePathStringLiteral : undefined
+                    ); // first argument is path
+                    if (res !== undefined)
+                        switch (i) {
+                            case 0:
+                                if (typeof res === "string") si.name = res;
+                                break;
+                            case 1:
+                                if (typeof res === "string") si.color = res;
+                                break;
+                            case 2:
+                                if (typeof res === "number") si.width = res;
+                                break;
+                            case 3:
+                                if (typeof res === "number") si.height = res;
+                                break;
+                            case 4:
+                                if (typeof res === "number") si.x = res;
+                                break;
+                            case 5:
+                                if (typeof res === "number") si.y = res;
+                                break;
+                            default:
+                                throw new Error("b.sprite cannot have more than 6 parameters");
+                        }
                 }
                 result.sprites.push(si);
-            } else if (isBobrilG11NFunction('t', ce, result)) {
-                let item: TranslationMessage = { callExpression: ce, message: "", withParams: false, knownParams: undefined, hint: undefined, justFormat: false };
+            } else if (isBobrilG11NFunction("t", ce, result)) {
+                let item: TranslationMessage = {
+                    callExpression: ce,
+                    message: "",
+                    withParams: false,
+                    knownParams: undefined,
+                    hint: undefined,
+                    justFormat: false
+                };
                 item.message = evalNode(ce.arguments[0], tc);
                 if (ce.arguments.length >= 2) {
                     item.withParams = true;
                     let params = evalNode(ce.arguments[1], tc);
-                    item.knownParams = params != undefined && typeof params === "object" ? Object.keys(params) : [];
+                    item.knownParams =
+                        params != undefined && typeof params === "object"
+                            ? Object.keys(params)
+                            : [];
                 }
                 if (ce.arguments.length >= 3) {
                     item.hint = evalNode(ce.arguments[2], tc);
                 }
                 result.trs.push(item);
-            } else if (isBobrilG11NFunction('f', ce, result)) {
-                let item: TranslationMessage = { callExpression: ce, message: "", withParams: false, knownParams: undefined, hint: undefined, justFormat: true };
+            } else if (isBobrilG11NFunction("f", ce, result)) {
+                let item: TranslationMessage = {
+                    callExpression: ce,
+                    message: "",
+                    withParams: false,
+                    knownParams: undefined,
+                    hint: undefined,
+                    justFormat: true
+                };
                 item.message = evalNode(ce.arguments[0], tc);
                 if (ce.arguments.length >= 2) {
                     item.withParams = true;
                     let params = evalNode(ce.arguments[1], tc);
-                    item.knownParams = params !== undefined && typeof params === "object" ? Object.keys(params) : [];
+                    item.knownParams =
+                        params !== undefined && typeof params === "object"
+                            ? Object.keys(params)
+                            : [];
                 }
                 result.trs.push(item);
             } else {
-                let isStyleDef = isBobrilFunction('styleDef', ce, result);
-                if (isStyleDef || isBobrilFunction('styleDefEx', ce, result)) {
-                    let item: StyleDefInfo = { callExpression: ce, isEx: !isStyleDef, userNamed: false };
+                let isStyleDef = isBobrilFunction("styleDef", ce, result);
+                if (isStyleDef || isBobrilFunction("styleDefEx", ce, result)) {
+                    let item: StyleDefInfo = {
+                        callExpression: ce,
+                        isEx: !isStyleDef,
+                        userNamed: false
+                    };
                     if (ce.arguments.length == 3 + (item.isEx ? 1 : 0)) {
                         item.name = evalNode(ce.arguments[ce.arguments.length - 1], tc);
                         item.userNamed = true;
@@ -569,7 +778,12 @@ function gatherSourceInfo(source: ts.SourceFile, tc: ts.TypeChecker, resolvePath
                             item.name = (<ts.Identifier>vd.name).text;
                         } else if (ce.parent!.kind === ts.SyntaxKind.BinaryExpression) {
                             let be = <ts.BinaryExpression>ce.parent;
-                            if (be.operatorToken != null && be.left != null && be.operatorToken.kind === ts.SyntaxKind.FirstAssignment && be.left.kind === ts.SyntaxKind.Identifier) {
+                            if (
+                                be.operatorToken != null &&
+                                be.left != null &&
+                                be.operatorToken.kind === ts.SyntaxKind.FirstAssignment &&
+                                be.left.kind === ts.SyntaxKind.Identifier
+                            ) {
                                 item.name = (<ts.Identifier>be.left).text;
                             }
                         }

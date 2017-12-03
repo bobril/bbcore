@@ -13,7 +13,10 @@ namespace Lib.DiskCache
         public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
         {
             var res = new List<FsItemInfo>();
-            foreach (var fi in new DirectoryInfo(path).EnumerateFileSystemInfos())
+            var di = new DirectoryInfo(path);
+            if (!di.Exists)
+                return res;
+            foreach (var fi in di.EnumerateFileSystemInfos())
             {
                 if ((fi.Attributes & FileAttributes.Directory) != 0)
                 {

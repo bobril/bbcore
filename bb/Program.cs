@@ -13,7 +13,7 @@ namespace bb
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             var composition = new Lib.Composition.Composition();
             composition.ParseCommandLineArgs(args);
-            composition.InitTools("2.6.1");
+            composition.InitTools("2.6.2");
             composition.InitDiskCache();
             composition.InitTestServer();
             composition.InitMainServer();

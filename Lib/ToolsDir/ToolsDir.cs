@@ -38,6 +38,7 @@ namespace Lib.ToolsDir
             WebtIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.webt_index.html");
             WebAJs = ResourceUtils.GetText("Lib.ToolsDir.web_a.js");
             WebIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.web_index.html");
+            _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
         }
 
         public string Path { get; }
@@ -55,6 +56,18 @@ namespace Lib.ToolsDir
 
                     // Patch TypeScript compiler to never generate useless __esmodule = true
                     _typeScriptJsContent = _typeScriptJsContent.Replace("(shouldEmitUnderscoreUnderscoreESModule())", "(false)");
+                    // Patch https://github.com/Microsoft/TypeScript/commit/c557131cac4379fc3e685514d44b6b82f1f642fb
+                    var bugPos = _typeScriptJsContent.IndexOf("// As the type information we would attempt to lookup to perform ellision is potentially unavailable for the synthesized nodes");
+                    if (bugPos > 0)
+                    {
+                        var bugPos3 = _typeScriptJsContent.IndexOf("visitEachChild", bugPos);
+                        var bugPos2 = _typeScriptJsContent.IndexOf("return node;", bugPos);
+                        // but only when it is already not fixed
+                        if (bugPos3 < 0 || bugPos3 > bugPos2)
+                        {
+                            _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos2, "if (node.transformFlags & 2) { return ts.visitEachChild(node, visitor, context); };");
+                        }
+                    }
                 }
                 return _typeScriptJsContent;
             }
@@ -73,6 +86,9 @@ namespace Lib.ToolsDir
         public string WebtIndexHtml { get; }
         public string WebAJs { get; }
         public string WebIndexHtml { get; }
+
+        private readonly JObject _localeDefs;
+
         public string WebtAJs { get; }
 
         public string GetTypeScriptVersion()
@@ -122,6 +138,20 @@ namespace Lib.ToolsDir
         {
             var jsEngineSwitcher = JsEngineSwitcher.Current;
             return jsEngineSwitcher.CreateDefaultEngine();
+        }
+
+        public string GetLocaleDef(string locale)
+        {
+            while (true)
+            {
+                if (_localeDefs.TryGetValue(locale, StringComparison.InvariantCultureIgnoreCase, out var val))
+                {
+                    return val.ToString();
+                }
+                var dashIndex = locale.IndexOf('-');
+                if (dashIndex < 0) return null;
+                locale = locale.Substring(0, dashIndex);
+            }
         }
     }
 }

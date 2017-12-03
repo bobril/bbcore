@@ -125,7 +125,7 @@ namespace Lib.TSCompiler
             ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
             ProjectOptions.Example = GetStringProperty(bobrilSection, "example", "");
             ProjectOptions.BobrilJsx = true;
-            ProjectOptions.CompilerOptions = TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject);
+            ProjectOptions.CompilerOptions = bobrilSection != null ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject) : null;
             if (bobrilSection == null)
             {
                 return;

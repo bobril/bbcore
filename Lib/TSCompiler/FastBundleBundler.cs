@@ -162,10 +162,11 @@ namespace Lib.TSCompiler
         {
             if (!Project.Localize)
                 return "";
+            Project.TranslationDb.BuildTranslationJs(_tools, FilesContent);
             var res = "<script>";
             if (Project.Localize)
             {
-                res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s+\".js\"}};";
+                res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
                 if (Project.DefaultLanguage != null)
                 {
                     res += $"var g11nLoc=\"{Project.DefaultLanguage}\";";
@@ -218,7 +219,7 @@ namespace Lib.TSCompiler
                 var module = source.Value.ImportedAsModule;
                 if (module != null)
                 {
-                    res.Add(module, PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root));
+                    res.Add(module.ToLowerInvariant(), PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root));
                 }
             }
             return $"R.map = {Newtonsoft.Json.JsonConvert.SerializeObject(res)};";

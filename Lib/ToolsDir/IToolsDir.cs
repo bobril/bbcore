@@ -19,6 +19,7 @@ namespace Lib.ToolsDir
         string WebIndexHtml { get; }
         string WebAJs { get; }
         string JasmineDtsPath { get; }
+        string GetLocaleDef(string locale);
 
         IJsEngine CreateJsEngine();
     }

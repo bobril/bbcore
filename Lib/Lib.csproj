@@ -11,6 +11,7 @@
     <None Remove="ToolsDir\jasmine.js" />
     <None Remove="ToolsDir\liveReload.js" />
     <None Remove="ToolsDir\loader.js" />
+    <None Remove="ToolsDir\localeDefs.json" />
     <None Remove="ToolsDir\webt_a.js" />
     <None Remove="ToolsDir\webt_index.html" />
     <None Remove="ToolsDir\web_a.js" />
@@ -25,6 +26,7 @@
     <EmbeddedResource Include="ToolsDir\jasmine.js" />
     <EmbeddedResource Include="ToolsDir\liveReload.js" />
     <EmbeddedResource Include="ToolsDir\loader.js" />
+    <EmbeddedResource Include="ToolsDir\localeDefs.json" />
     <EmbeddedResource Include="ToolsDir\webt_a.js" />
     <EmbeddedResource Include="ToolsDir\webt_index.html" />
     <EmbeddedResource Include="ToolsDir\web_a.js" />
@@ -35,7 +37,9 @@
   <ItemGroup>
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.0.0-alpha8" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.0.0-alpha7" />
-    <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-alpha6" />
+		<PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.0.0-alpha6" />
+		<PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.0.0-alpha6" />
+		<PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-alpha6" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.0.1" />

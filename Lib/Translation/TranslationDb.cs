@@ -1,37 +1,13 @@
 ﻿using Lib.DiskCache;
+using Lib.ToolsDir;
 using Lib.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Lib.Translation
 {
-    public struct TranslationKey : IEquatable<TranslationKey>
-    {
-        public TranslationKey(string message, string hint, bool withParams)
-        {
-            Message = message;
-            Hint = hint;
-            WithParams = withParams;
-        }
-
-        public readonly string Message;
-        public readonly string Hint;
-        public readonly bool WithParams;
-
-        public bool Equals(TranslationKey other)
-        {
-            return Message == other.Message && Hint == other.Hint && WithParams == other.WithParams;
-        }
-
-        public override int GetHashCode()
-        {
-            return Message.GetHashCode() * 31 + (Hint != null ? Hint.Length : 0) * 2 + (WithParams ? 1 : 0);
-        }
-    }
-
     public class TranslationDb
     {
         public TranslationDb(IFsAbstraction fsAbstraction)
@@ -45,15 +21,25 @@ namespace Lib.Translation
         List<uint> UsedIds = new List<uint>();
         Dictionary<string, List<string>> Lang2ValueList = new Dictionary<string, List<string>>();
         readonly IFsAbstraction _fsAbstraction;
+        bool _changed;
+        Dictionary<string, string> _outputJsCache = new Dictionary<string, string>();
 
         public void LoadLangDbs(string dir)
         {
-            foreach (var info in _fsAbstraction.GetDirectoryContent(dir))
+            try
             {
-                if (info.IsDirectory) continue;
-                if (!info.Name.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase)) continue;
-                LoadLangDb(PathUtils.Join(dir, info.Name));
+                foreach (var info in _fsAbstraction.GetDirectoryContent(dir))
+                {
+                    if (info.IsDirectory) continue;
+                    if (!info.Name.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase)) continue;
+                    LoadLangDb(PathUtils.Join(dir, info.Name));
+                }
             }
+            catch
+            {
+                // ignore any errors
+            }
+            _changed = true;
         }
 
         enum LoaderState
@@ -194,11 +180,45 @@ namespace Lib.Translation
         public uint MapId(uint id)
         {
             if (UsedIdMap.TryGetValue(id, out var res))
+            {
                 return res;
+            }
+            _changed = true;
             res = (uint)UsedIds.Count;
             UsedIds.Add(id);
             UsedIdMap.Add(id, res);
             return res;
+        }
+
+        public void BuildTranslationJs(IToolsDir tools, Dictionary<string, object> filesContent)
+        {
+            if (_changed)
+            {
+                _outputJsCache.Clear();
+                foreach (var p in Lang2ValueList)
+                {
+                    var langInit = tools.GetLocaleDef(p.Key);
+                    if (langInit == null) continue;
+                    var sw = new StringWriter();
+                    sw.Write(langInit);
+                    var jw = new JsonTextWriter(sw);
+                    jw.WriteStartArray();
+                    for (var i = 0; i < UsedIds.Count; i++)
+                    {
+                        var idx = (int)UsedIds[i];
+                        if (idx < p.Value.Count)
+                            jw.WriteValue((idx < p.Value.Count) ? p.Value[idx] : Id2Key[idx].Message);
+                    }
+                    jw.WriteEndArray();
+                    sw.Write(")");
+                    _outputJsCache[p.Key.ToLowerInvariant() + ".js"] = sw.ToString();
+                }
+                _changed = false;
+            }
+            foreach (var i in _outputJsCache)
+            {
+                filesContent[i.Key] = i.Value;
+            }
         }
     }
 }
