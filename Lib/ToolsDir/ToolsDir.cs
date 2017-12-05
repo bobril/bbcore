@@ -112,6 +112,9 @@ namespace Lib.ToolsDir
         public void InstallTypeScriptVersion(string version = "*")
         {
             _typeScriptJsContent = null;
+            var tspackage = PathUtils.Join(Path, "package.json");
+            if (!File.Exists(tspackage))
+                RunYarn(Path, "init -y");
             RunYarn(Path, "add typescript@" + version + " --no-emoji --non-interactive");
         }
 
