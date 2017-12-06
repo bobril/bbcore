@@ -206,8 +206,7 @@ namespace Lib.Translation
                     for (var i = 0; i < UsedIds.Count; i++)
                     {
                         var idx = (int)UsedIds[i];
-                        if (idx < p.Value.Count)
-                            jw.WriteValue((idx < p.Value.Count) ? p.Value[idx] : Id2Key[idx].Message);
+                        jw.WriteValue((idx < p.Value.Count) ? p.Value[idx] : Id2Key[idx].Message);
                     }
                     jw.WriteEndArray();
                     sw.Write(")");
