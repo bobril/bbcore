@@ -90,7 +90,7 @@ namespace Lib.TSCompiler
                     {
                         if (!(child is IFileCache)) continue;
                         if (child.IsInvalid) continue;
-                        res.Add(item.FullPath);
+                        res.Add(child.FullPath);
                     }
                 }
                 else if (item is IFileCache)

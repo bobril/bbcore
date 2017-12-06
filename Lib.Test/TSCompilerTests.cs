@@ -155,7 +155,7 @@ namespace Lib.Test
         [Fact]
         public void LatestTypeScriptVersionDidntChanged()
         {
-            Assert.Equal("2.5.3", _tools.GetTypeScriptVersion());
+            Assert.Equal("2.6.2", _tools.GetTypeScriptVersion());
         }
 
         [Fact]
