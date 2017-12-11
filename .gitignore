@@ -18,6 +18,6 @@ TestResults
 *.crunchsolution.cache
 *.DotSettings
 /BTDB.sln.ide
-/.vs
+.vs/
 .bbcore/
 /bb/Properties/launchSettings.json
