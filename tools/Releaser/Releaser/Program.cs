@@ -129,9 +129,11 @@ namespace Releaser
                 release.Name = newVersion;
                 release.Body = string.Join("", releaseLogLines.Select(s => s + '\n'));
                 var release2 = await client.Repository.Release.Create(bbcoreRepo.Id, release);
-                Console.WriteLine("release url: " + release2.Url);
+                Console.WriteLine("release url:");
+                Console.WriteLine(release2.HtmlUrl);
                 var uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("win-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/win-x64.zip"), null));
-                Console.WriteLine("win-x64 url: "+ uploadAsset.BrowserDownloadUrl);
+                Console.WriteLine("win-x64 url:");
+                Console.WriteLine(uploadAsset.BrowserDownloadUrl);
                 Console.ReadLine();
                 return 0;
             }
