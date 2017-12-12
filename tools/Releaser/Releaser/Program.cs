@@ -94,7 +94,7 @@ namespace Releaser
                 process.WaitForExit();
                 if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish/ru-ru"))
                     Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish/ru-ru", true);
-                System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
+                System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.0/win-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
                 var client = new GitHubClient(new ProductHeaderValue("bobril-bbcore-releaser"));
                 var fileNameOfToken = Environment.GetEnvironmentVariable("USERPROFILE") + "/.github/token.txt";
                 string token;
@@ -115,6 +115,7 @@ namespace Releaser
                 var author = new LibGit2Sharp.Signature("Releaser", "releaser@bobril.com", DateTime.Now);
                 var committer = author;
                 var commit = gitrepo.Commit("Released " + newVersion, author, committer);
+                gitrepo.ApplyTag(newVersion);
                 var options = new PushOptions();
                 options.CredentialsProvider = new CredentialsHandler(
                     (url, usernameFromUrl, types) =>
@@ -123,9 +124,14 @@ namespace Releaser
                             Username = token,
                             Password = ""
                         });
-                //gitrepo.Network.Push(gitrepo.Head, options);
+                gitrepo.Network.Push(gitrepo.Head, options);
                 var release = new NewRelease(newVersion);
-                //client.Repository.Release.Create(bbcoreRepo.Id, release);
+                release.Name = newVersion;
+                release.Body = string.Join("", releaseLogLines.Select(s => s + '\n'));
+                var release2 = await client.Repository.Release.Create(bbcoreRepo.Id, release);
+                Console.WriteLine("release url: " + release2.Url);
+                var uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("win-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/win-x64.zip"), null));
+                Console.WriteLine("win-x64 url: "+ uploadAsset.BrowserDownloadUrl);
                 Console.ReadLine();
                 return 0;
             }
