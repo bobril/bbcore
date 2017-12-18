@@ -147,7 +147,9 @@ namespace Lib.TSCompiler
             if (ProjectOptions.Localize)
             {
                 ProjectOptions.TranslationDb = new Translation.TranslationDb(DiskCache.FsAbstraction);
+                ProjectOptions.TranslationDb.AddLanguage(ProjectOptions.DefaultLanguage ?? "en-us");
                 ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
+
             }
         }
 

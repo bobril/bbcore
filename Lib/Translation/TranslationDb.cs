@@ -87,11 +87,7 @@ namespace Lib.Translation
                         {
                             case LoaderState.LangString:
                                 lang = (string)reader.Value;
-                                if (!Lang2ValueList.TryGetValue(lang, out valueList))
-                                {
-                                    valueList = new List<string>();
-                                    Lang2ValueList.Add(lang, valueList);
-                                }
+                                valueList = AddLanguage(lang);
                                 state = LoaderState.BeforeItem;
                                 break;
                             case LoaderState.Message:
@@ -162,6 +158,16 @@ namespace Lib.Translation
             {
                 throw new Exception("Unexpected end of file when in state " + state);
             }
+        }
+
+        public List<string> AddLanguage(string lang)
+        {
+            if (!Lang2ValueList.TryGetValue(lang, out List<string> valueList))
+            {
+                valueList = new List<string>();
+                Lang2ValueList.Add(lang, valueList);
+            }
+            return valueList;
         }
 
         public uint AddToDB(string message, string hint, bool withParams)

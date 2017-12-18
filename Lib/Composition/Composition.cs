@@ -16,6 +16,7 @@ using System.Globalization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Lib.Chrome;
+using System.Reflection;
 
 namespace Lib.Composition
 {
@@ -61,7 +62,16 @@ namespace Lib.Composition
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
+            var location = new Uri(Assembly.GetEntryAssembly().GetName().CodeBase);
+            var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory.FullName);
             _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)), ".bbcore");
+            if (runningFrom.StartsWith(_bbdir))
+            {
+                _bbdir = runningFrom;
+            } else
+            {
+                _bbdir = PathUtils.Join(_bbdir, "dev");
+            }
             _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"));
             if (_tools.GetTypeScriptVersion() != version)
             {
