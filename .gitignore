@@ -1,6 +1,6 @@
 *~
-bin
-obj
+obj/
+bin/
 *.user
 *.suo
 *.bak
@@ -21,3 +21,5 @@ TestResults
 .vs/
 .bbcore/
 /bb/Properties/launchSettings.json
+/tools/bbcorenpm/node_modules
+!/tools/bbcorenpm/bin/
