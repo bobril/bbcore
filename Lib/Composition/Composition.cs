@@ -388,7 +388,8 @@ namespace Lib.Composition
         {
             if (_chromeProcessFactory == null)
             {
-                _chromeProcessFactory = new ChromeProcessFactory();
+                var chromePath = ChromePathFinder.GetChromePath(PathUtils.IsUnixFs);
+                _chromeProcessFactory = new ChromeProcessFactory(chromePath);
             }
             if (_chromeProcess == null)
             {
