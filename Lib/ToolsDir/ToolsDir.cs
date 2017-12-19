@@ -11,6 +11,7 @@ namespace Lib.ToolsDir
 {
     public class ToolsDir : IToolsDir
     {
+        const string YarnExecutableName = "yarn";
         static object _lock = new object();
 
         public ToolsDir(string dir)
@@ -119,8 +120,8 @@ namespace Lib.ToolsDir
         }
 
         public void RunYarn(string dir, string aParams)
-        {
-            var yarnPath = Environment.GetEnvironmentVariable("PATH").Split(System.IO.Path.PathSeparator).Select((p) => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), "yarn.cmd")).First((p) => File.Exists(p));
+        {            
+            var yarnPath = GetYarnPath();
             var start = new ProcessStartInfo(yarnPath, aParams)
             {
                 UseShellExecute = false,
@@ -135,6 +136,14 @@ namespace Lib.ToolsDir
             };
             process.BeginOutputReadLine();
             process.WaitForExit();
+        }
+
+        string GetYarnPath() {
+            string yarnExecName = YarnExecutableName;
+            if (!PathUtils.IsUnixFs) {
+                yarnExecName += ".cmd";                    
+            }
+            return Environment.GetEnvironmentVariable("PATH").Split(System.IO.Path.PathSeparator).Select((p) => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), yarnExecName)).First((p) => File.Exists(p));
         }
 
         public IJsEngine CreateJsEngine()
