@@ -188,6 +188,7 @@ const fsStat = util.promisify(fs.stat);
 const fsWriteFile = util.promisify(fs.writeFile);
 const fsReadFile = util.promisify(fs.readFile);
 const fsMkdir = util.promisify(fs.mkdir);
+const fsChmod = util.promisify(fs.chmod);
 function checkFreshnessOfCachedLastVersion() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -232,6 +233,11 @@ function checkFreshnessOfCachedLastVersion() {
             var zip = yield downloadAsset(asset);
             console.log("Unzipping");
             yield unzip(zip, path.join(homeDir, requestedVersion));
+            let bbName = path.join(homeDir, requestedVersion, "bb");
+            if (yield fsExists(bbName)) {
+                var stat = yield fsStat(bbName);
+                yield fsChmod(bbName, stat.mode | parseInt("110", 8));
+            }
         }
         else {
             console.log("Bobril-build core is currently not available on your platform. Please help with porting it.");

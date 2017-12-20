@@ -20,11 +20,11 @@ function get(url: string, options: http.RequestOptions): Promise<IResponse> {
         https
             .get(options, response => {
                 var str: Buffer[] = [];
-                response.on("data", function(chunk: Buffer) {
+                response.on("data", function (chunk: Buffer) {
                     str.push(chunk);
                 });
 
-                response.on("end", function() {
+                response.on("end", function () {
                     var res = Object.assign({}, response, {
                         body: Buffer.concat(str)
                     });
@@ -82,9 +82,9 @@ function getDownloadOptions(url: string) {
 
     var headers = isGitHubUrl
         ? {
-              accept: "application/octet-stream",
-              "user-agent": "bobril-build-core/1.0.0"
-          }
+            accept: "application/octet-stream",
+            "user-agent": "bobril-build-core/1.0.0"
+        }
         : {};
 
     return {
@@ -96,11 +96,11 @@ function getDownloadOptions(url: string) {
 
 function mkdirp(dir: string, cb: () => void) {
     if (dir === ".") return cb();
-    fs.stat(dir, function(err: any) {
+    fs.stat(dir, function (err: any) {
         if (err == null) return cb(); // already exists
 
         var parent = path.dirname(dir);
-        mkdirp(parent, function() {
+        mkdirp(parent, function () {
             fs.mkdir(dir, cb);
         });
     });
@@ -130,16 +130,16 @@ function unzip(buffer: Buffer, targetDir: string): Promise<void> {
                 }
 
                 incrementHandleCount();
-                zipfile.on("end", function() {
+                zipfile.on("end", function () {
                     decrementHandleCount();
                 });
 
-                zipfile.on("entry", function(entry: any) {
+                zipfile.on("entry", function (entry: any) {
                     if (/\/$/.test(entry.fileName)) {
                         // directory file names end with '/'
                         mkdirp(
                             path.join(targetDir, entry.fileName),
-                            function() {
+                            function () {
                                 if (err) throw err;
                                 zipfile.readEntry();
                             }
@@ -148,8 +148,8 @@ function unzip(buffer: Buffer, targetDir: string): Promise<void> {
                         // ensure parent directory exists
                         mkdirp(
                             path.join(targetDir, path.dirname(entry.fileName)),
-                            function() {
-                                zipfile.openReadStream(entry, function(
+                            function () {
+                                zipfile.openReadStream(entry, function (
                                     err: any,
                                     readStream: any
                                 ) {
@@ -213,6 +213,7 @@ const fsStat = util.promisify(fs.stat);
 const fsWriteFile = util.promisify(fs.writeFile);
 const fsReadFile = util.promisify(fs.readFile);
 const fsMkdir = util.promisify(fs.mkdir);
+const fsChmod = util.promisify(fs.chmod);
 
 async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     try {
@@ -257,15 +258,20 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
             var zip = await downloadAsset(asset);
             console.log("Unzipping");
             await unzip(zip, path.join(homeDir, requestedVersion));
+            let bbName = path.join(homeDir, requestedVersion, "bb");
+            if (await fsExists(bbName)) {
+                var stat = await fsStat(bbName);
+                await fsChmod(bbName, stat.mode | parseInt("110", 8));
+            }
         } else {
             console.log(
                 "Bobril-build core is currently not available on your platform. Please help with porting it."
             );
             console.log(
                 "Not found " +
-                    platformAssetName +
-                    " in " +
-                    assets.map(a => a.name).join(", ")
+                platformAssetName +
+                " in " +
+                assets.map(a => a.name).join(", ")
             );
             process.exit(1);
         }
@@ -275,9 +281,9 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     } catch (err) {
         console.log(
             "Ignoring failure to update " +
-                path.join(toRun, ".success") +
-                " " +
-                err
+            path.join(toRun, ".success") +
+            " " +
+            err
         );
     }
     console.log("Bobril-build core running " + toRun);
