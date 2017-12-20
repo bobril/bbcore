@@ -258,6 +258,7 @@ namespace Lib.Composition
                     int warnings = 0;
                     var messages = new List<CompilationResultMessage>();
                     var messagesFromFiles = new HashSet<string>();
+                    var totalFiles = 0;
                     foreach (var proj in toBuild)
                     {
                         proj.Owner.LoadProjectJson();
@@ -312,11 +313,12 @@ namespace Lib.Composition
                             proj.TestProjFastBundle = null;
                         }
                         proj.FilesContent = filesContent;
+                        totalFiles += filesContent.Count;
                     }
                     var duration = DateTime.UtcNow - start;
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
                     Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning"));
+                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning")+" and has "+Plural(totalFiles, "file"));
                     Console.ForegroundColor = ConsoleColor.Gray;
                 }
             });

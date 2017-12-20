@@ -47,11 +47,27 @@ namespace Lib.Utils
             };
         }
 
+        static int CountNL(string content)
+        {
+            var result = 0;
+            for (var i = 0; i < content.Length; i++)
+            {
+                if (content[i] == '\n') result++;
+            }
+            return result;
+        }
+
+        static bool EndsWithNL(string content)
+        {
+            if (content.Length == 0) return false;
+            return content[content.Length - 1] == '\n';
+        }
+
         public void AddText(string content)
         {
             _content.Append(content);
-            var lines = content.Count(ch => ch == '\n');
-            if (!content.EndsWith('\n'))
+            var lines = CountNL(content);
+            if (!EndsWithNL(content))
             {
                 lines++;
                 _content.Append('\n');
@@ -85,8 +101,8 @@ namespace Lib.Utils
         {
             if (sourceMap == null) sourceMap = SourceMap.Empty();
             _content.Append(content);
-            var sourceLines = content.Count(ch => ch == '\n');
-            if (!content.EndsWith('\n'))
+            var sourceLines = CountNL(content);
+            if (!EndsWithNL(content))
             {
                 sourceLines++;
                 _content.Append('\n');

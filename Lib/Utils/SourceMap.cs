@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,9 +21,30 @@ namespace Lib.Utils
         public List<string> names { get; set; }
         public string mappings { get; set; }
 
+        public const uint CacheLineSkip = 64;
+        [JsonIgnore]
+        /// cache for every multiply of CacheLineSkip output lines
+        SourceMapPositionTrinity[] _searchCache;
+
+        struct SourceMapPositionTrinity
+        {
+            public SourceMapPositionTrinity(int pos, int index, int line, int col)
+            {
+                Pos = pos;
+                Index = index;
+                Line = line;
+                Col = col;
+            }
+
+            public readonly int Pos;
+            public readonly int Index;
+            public readonly int Line;
+            public readonly int Col;
+        }
+
         public override string ToString()
         {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(this);
+            return JsonConvert.SerializeObject(this);
         }
 
         public static SourceMap Empty()
@@ -74,8 +96,75 @@ namespace Lib.Utils
             return content;
         }
 
+        public void BuildSearchCache()
+        {
+            var inputMappings = this.mappings;
+            var outputLineCount = 1;
+            for (var i = 0; i < inputMappings.Length; i++)
+            {
+                if (inputMappings[i] == ';') outputLineCount++;
+            }
+            _searchCache = new SourceMapPositionTrinity[outputLineCount / CacheLineSkip];
+            var ip = 0;
+            var inSourceIndex = 0;
+            var inSourceLine = 0;
+            var inSourceCol = 0;
+            var outputLine = 1;
+            var shift = 0;
+            var value = 0;
+            var valpos = 0;
+            var cachePos = 0;
+            while (ip < inputMappings.Length)
+            {
+                var ch = inputMappings[ip++];
+                if (ch == ';')
+                {
+                    valpos = 0;
+                    outputLine++;
+                    if (outputLine % CacheLineSkip == 0)
+                    {
+                        _searchCache[cachePos] = new SourceMapPositionTrinity(ip, inSourceIndex, inSourceLine, inSourceCol);
+                        cachePos++;
+                    }
+                }
+                else if (ch == ',')
+                {
+                    valpos = 0;
+                }
+                else
+                {
+                    var b = (int)SourceMapBuilder.char2int[ch];
+                    if (b == 255) throw new Exception("Invalid sourceMap");
+                    value += (b & 31) << shift;
+                    if ((b & 32) != 0)
+                    {
+                        shift += 5;
+                    }
+                    else
+                    {
+                        var shouldNegate = value & 1;
+                        value >>= 1;
+                        if (shouldNegate != 0) value = -value;
+                        switch (valpos)
+                        {
+                            case 1: inSourceIndex += value; break;
+                            case 2: inSourceLine += value; break;
+                            case 3: inSourceCol += value; break;
+                        }
+                        valpos++;
+                        value = shift = 0;
+                    }
+                }
+            }
+
+        }
+
         public SourceCodePosition FindPosition(int line, int col)
         {
+            if (_searchCache == null)
+            {
+                BuildSearchCache();
+            }
             var inputMappings = this.mappings;
             var outputLine = 1;
             var ip = 0;
@@ -91,6 +180,19 @@ namespace Lib.Utils
             var lastSourceLine = 0;
             var lastSourceCol = 0;
             var res = new SourceCodePosition();
+            if (line > CacheLineSkip)
+            {
+                var pos = (uint)(line - 1) / CacheLineSkip - 1;
+                ref var entry = ref _searchCache[pos-1];
+                outputLine = (int)(pos * CacheLineSkip);
+                ip = entry.Pos;
+                inSourceIndex = entry.Index;
+                inSourceLine = entry.Line;
+                inSourceCol = entry.Col;
+                lastSourceIndex = inSourceIndex;
+                lastSourceLine = inSourceLine;
+                lastSourceCol = inSourceCol;
+            }
             void commit()
             {
                 if (valpos == 0) return;
@@ -129,6 +231,7 @@ namespace Lib.Utils
                 {
                     commit();
                     inOutputCol = 0;
+                    lastOutputCol = 0;
                     outputLine++;
                 }
                 else if (ch == ',')

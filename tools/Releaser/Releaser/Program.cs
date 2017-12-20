@@ -85,16 +85,8 @@ namespace Releaser
                 outputLogLines.Insert(topVersionLine + 1, "");
                 if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0"))
                     Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0", true);
-                var start = new ProcessStartInfo("dotnet", "publish -c Release -r win10-x64 /p:ShowLinkerSizeComparison=true /p:Version=" + newVersion + ".0")
-                {
-                    UseShellExecute = true,
-                    WorkingDirectory = projDir + "/bb"
-                };
-                var process = Process.Start(start);
-                process.WaitForExit();
-                if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish/ru-ru"))
-                    Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish/ru-ru", true);
-                System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.0/win-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
+                BuildWinX64(projDir, newVersion);
+                BuildLinuxX64(projDir, newVersion);
                 var client = new GitHubClient(new ProductHeaderValue("bobril-bbcore-releaser"));
                 var fileNameOfToken = Environment.GetEnvironmentVariable("USERPROFILE") + "/.github/token.txt";
                 string token;
@@ -134,9 +126,41 @@ namespace Releaser
                 var uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("win-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/win-x64.zip"), null));
                 Console.WriteLine("win-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
+                uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("linux-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64.zip"), null));
+                Console.WriteLine("linux-x64 url:");
+                Console.WriteLine(uploadAsset.BrowserDownloadUrl);
                 Console.ReadLine();
                 return 0;
             }
         }
+
+        static void BuildWinX64(string projDir, string newVersion)
+        {
+            var start = new ProcessStartInfo("dotnet", "publish -c Release -r win10-x64 /p:ShowLinkerSizeComparison=true /p:Version=" + newVersion + ".0")
+            {
+                UseShellExecute = true,
+                WorkingDirectory = projDir + "/bb"
+            };
+            var process = Process.Start(start);
+            process.WaitForExit();
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish/ru-ru"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish/ru-ru", true);
+            System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.0/win10-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.0/win-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
+        }
+
+        static void BuildLinuxX64(string projDir, string newVersion)
+        {
+            var start = new ProcessStartInfo("dotnet", "publish -c Release -r linux-x64 /p:ShowLinkerSizeComparison=true /p:Version=" + newVersion + ".0")
+            {
+                UseShellExecute = true,
+                WorkingDirectory = projDir + "/bb"
+            };
+            var process = Process.Start(start);
+            process.WaitForExit();
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/ru-ru"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/ru-ru", true);
+            System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
+        }
+
     }
 }
