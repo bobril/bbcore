@@ -10,6 +10,11 @@ namespace Lib.DiskCache
     {
         public bool IsUnixFs => PathUtils.IsUnixFs;
 
+        public bool FileExists(string path)
+        {
+            return File.Exists(path);
+        }
+
         public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
         {
             var res = new List<FsItemInfo>();
