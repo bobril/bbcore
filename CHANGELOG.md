@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.2.0
+
 ### Added
 
 * Support for bobril.additionalResourcesDirectory
