@@ -29,9 +29,8 @@ namespace Lib.TSCompiler
         public ProjectOptions Project;
         public BuildResult BuildResult;
 
-        // value could be string or byte[]
+        // value could be string or byte[] or Lazy<string|byte[]>
         public Dictionary<string, object> FilesContent;
-
 
         public void Build(string sourceRoot, string mapUrl, bool testProj = false)
         {

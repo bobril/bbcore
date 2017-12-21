@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+## 0.2.0
+
+### Added
+
+* Support for bobril.additionalResourcesDirectory
+* Added workaround for clients requesting files with wrong casing
+* New console message about compilation starting
+
 ## 0.1.0
 
 ### Added

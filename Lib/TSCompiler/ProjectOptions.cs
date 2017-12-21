@@ -25,6 +25,8 @@ namespace Lib.TSCompiler
         public string PrefixStyleNames { get; set; }
         public string Example { get; set; }
         public bool BobrilJsx { get; set; }
+        public TSCompilerOptions CompilerOptions;
+        public string AdditionalResourcesDirectory;
 
         public string HtmlHeadExpanded { get; set; }
         public string MainFile { get; set; }
@@ -43,7 +45,6 @@ namespace Lib.TSCompiler
 
         // value could be string or byte[]
         public Dictionary<string, object> FilesContent;
-        internal TSCompilerOptions CompilerOptions;
 
         public void RefreshMainFile()
         {
@@ -86,7 +87,7 @@ namespace Lib.TSCompiler
                 if (item is IDirectoryCache)
                 {
                     Owner.DiskCache.UpdateIfNeeded(item);
-                    foreach(var child in (IDirectoryCache)item)
+                    foreach (var child in (IDirectoryCache)item)
                     {
                         if (!(child is IFileCache)) continue;
                         if (child.IsInvalid) continue;
@@ -129,6 +130,34 @@ namespace Lib.TSCompiler
                         res.Add(item.FullPath);
                     }
                 }
+            }
+        }
+
+        public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, object> filesContent)
+        {
+            if (AdditionalResourcesDirectory == null) return;
+            var resourcesPath = PathUtils.Join(Owner.Owner.FullPath, AdditionalResourcesDirectory);
+            var item = Owner.DiskCache.TryGetItem(resourcesPath);
+            if (item is IDirectoryCache)
+            {
+                RecursiveFillOutputByAdditionalResourcesDirectory(item as IDirectoryCache, resourcesPath, filesContent);
+            }
+        }
+
+        void RecursiveFillOutputByAdditionalResourcesDirectory(IDirectoryCache directoryCache, string resourcesPath, Dictionary<string, object> filesContent)
+        {
+            Owner.DiskCache.UpdateIfNeeded(directoryCache);
+            foreach (var child in directoryCache)
+            {
+                if (child is IDirectoryCache)
+                {
+                    RecursiveFillOutputByAdditionalResourcesDirectory(child as IDirectoryCache, resourcesPath, filesContent);
+                }
+                if (child.IsInvalid) continue;
+                filesContent[PathUtils.Subtract(child.FullPath, resourcesPath)] = new Lazy<object>(() =>
+                {
+                    return (child as IFileCache).ByteContent;
+                });
             }
         }
     }
