@@ -133,6 +133,11 @@ namespace Lib.Test
                 AddTextFile(PathUtils.Join(path, f.Name), nfs.ReadAllUtf8(PathUtils.Join(path, f.Name)));
             }
         }
+
+        public bool FileExists(string path)
+        {
+            return true;
+        }
     }
 
     public class CompilerTests

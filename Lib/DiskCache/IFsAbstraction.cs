@@ -9,5 +9,6 @@ namespace Lib.DiskCache
         IReadOnlyList<FsItemInfo> GetDirectoryContent(string path);
         byte[] ReadAllBytes(string path);
         string ReadAllUtf8(string path);
+        bool FileExists(string path);
     }
 }
