@@ -203,9 +203,14 @@ namespace Lib.Composition
             }
             var pathWithoutFirstSlash = path.Value.Substring(1);
             var filesContentFromCurrentProjectBuildResult = _currentProject.FilesContent;
-            if (filesContentFromCurrentProjectBuildResult != null && filesContentFromCurrentProjectBuildResult.TryGetValue(pathWithoutFirstSlash, out var content))
+            object content;
+            if (FindInFilesContent(pathWithoutFirstSlash, filesContentFromCurrentProjectBuildResult, out content))
             {
                 context.Response.ContentType = PathUtils.PathToMimeType(pathWithoutFirstSlash);
+                if (content is Lazy<object>)
+                {
+                    content = ((Lazy<object>)content).Value;
+                }
                 if (content is string)
                 {
                     await context.Response.WriteAsync((string)content);
@@ -218,6 +223,24 @@ namespace Lib.Composition
             }
             context.Response.StatusCode = 404;
             await context.Response.WriteAsync("Not found " + path);
+        }
+
+        static bool FindInFilesContent(string pathWithoutFirstSlash, Dictionary<string, object> filesContentFromCurrentProjectBuildResult, out object content)
+        {
+            content = null;
+            if (filesContentFromCurrentProjectBuildResult == null) return false;
+            if (filesContentFromCurrentProjectBuildResult.TryGetValue(pathWithoutFirstSlash, out content))
+                return true;
+            // This should be very rare so it could be slow linear search
+            foreach(var p in filesContentFromCurrentProjectBuildResult)
+            {
+                if (p.Key.Equals(pathWithoutFirstSlash, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    content = p.Value;
+                    return true;
+                }
+            }
+            return false;
         }
 
         public void InitTestServer()
@@ -261,6 +284,9 @@ namespace Lib.Composition
                     var totalFiles = 0;
                     foreach (var proj in toBuild)
                     {
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                        Console.WriteLine("Build started "+proj.Owner.Owner.FullPath);
+                        Console.ForegroundColor = ConsoleColor.Gray;
                         proj.Owner.LoadProjectJson();
                         proj.Owner.FirstInitialize();
                         proj.RefreshMainFile();
@@ -277,6 +303,7 @@ namespace Lib.Composition
                         proj.Owner.Build(ctx);
                         var buildResult = ctx.BuildResult;
                         var filesContent = new Dictionary<string, object>();
+                        proj.FillOutputByAdditionalResourcesDirectory(filesContent);
                         var fastBundle = new FastBundleBundler(_tools);
                         fastBundle.FilesContent = filesContent;
                         fastBundle.Project = proj;

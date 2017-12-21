@@ -124,6 +124,7 @@ namespace Lib.TSCompiler
             ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
             ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
             ProjectOptions.Example = GetStringProperty(bobrilSection, "example", "");
+            ProjectOptions.AdditionalResourcesDirectory = GetStringProperty(bobrilSection, "additionalResourcesDirectory", null);
             ProjectOptions.BobrilJsx = true;
             ProjectOptions.CompilerOptions = bobrilSection != null ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject) : null;
             if (bobrilSection == null)
@@ -149,7 +150,6 @@ namespace Lib.TSCompiler
                 ProjectOptions.TranslationDb = new Translation.TranslationDb(DiskCache.FsAbstraction);
                 ProjectOptions.TranslationDb.AddLanguage(ProjectOptions.DefaultLanguage ?? "en-us");
                 ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
-
             }
         }
 
