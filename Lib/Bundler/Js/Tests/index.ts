@@ -3,6 +3,7 @@ import * as path from "path";
 import { mkdirSync } from "fs";
 
 const tslibSourceContent = fs.readFileSync("../../../TSCompiler/tslib.js", "utf-8");
+const importSourceContent = fs.readFileSync("../../../TSCompiler/import.js", "utf-8");
 
 let prefix = "";
 let currentTestDir = "";
@@ -16,12 +17,20 @@ function mkdir(dir: string) {
     fs.mkdirSync(dir);
 }
 
+interface IBB {
+    readContent(name: string): string;
+    writeBundle(name: string, content: string): void;
+    generateBundleName(forName: string): string;
+    resolveRequire(name: string, from: string): string;
+    tslibSource(withImport: boolean): string;
+}
+
 const bb: IBB = {
     readContent(name: string): string {
         return fs.readFileSync(path.join("Inputs", currentTestDir, name), "utf-8");
     },
-    writeBundle(content: string): void {
-        const outputName: string = prefix + "-bundle.js";
+    writeBundle(name: string, content: string): void {
+        const outputName: string = prefix + "-" + name + ".js";
         fs.writeFileSync(path.join("Outputs", currentTestDir, outputName), content);
         if (fs.existsSync(path.join("Expected", currentTestDir, outputName))) {
             let expected = fs.readFileSync(path.join("Expected", currentTestDir, outputName), "utf-8");
@@ -33,21 +42,18 @@ const bb: IBB = {
             console.log("New file " + path.join("Outputs", currentTestDir, outputName));
         }
     },
+    generateBundleName(forName: string): string {
+        if (forName === "") return "bundle";
+        return forName.replace(/[\/\\]/g, "_");
+    },
     resolveRequire(name: string, from: string): string {
         if (name.substr(0, 2) == "./") return name.substr(2) + ".js";
         return name + ".js";
     },
-    tslibSource() {
-        return tslibSourceContent;
+    tslibSource(withImport: boolean) {
+        return tslibSourceContent + (withImport ? importSourceContent : "");
     }
 };
-
-interface IBB {
-    readContent(name: string): string;
-    writeBundle(content: string): void;
-    resolveRequire(name: string, from: string): string;
-    tslibSource(): string;
-}
 
 interface IBundleProject {
     mainFiles: string[];
@@ -67,6 +73,12 @@ var bundleImp = eval(uglifyJsContent + bundlerJsContent + 'bundle;') as (project
 let tests = fs.readdirSync("Inputs");
 mkdir("Expected");
 
+currentTestDir = "Split";
+mkdir(path.join("Outputs", currentTestDir));
+prefix = "cb";
+bundleImp({ mainFiles: ["index.js"], compress: true, beautify: true, mangle: false, defines: { DEBUG: false } });
+
+/*
 for (let i = 0; i < tests.length; i++) {
     currentTestDir = tests[i];
     mkdir(path.join("Outputs", currentTestDir));
@@ -81,3 +93,4 @@ for (let i = 0; i < tests.length; i++) {
 }
 
 console.log("Total " + tests.length + " tests with " + errors + " errors");
+*/
