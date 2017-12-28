@@ -460,12 +460,15 @@ function bundle(project) {
         check(val, order, visited, cache, "");
     });
     let bundleNames = [""];
-    let bundleOutputNames = [bb.generateBundleName("")];
+    let bundleShortenMap = Object.create(null);
+    bundleShortenMap[""] = bb.generateBundleName("");
     order.forEach(f => {
+        let fullBundleName = f.partOfBundle;
         if (bundleNames.indexOf(f.partOfBundle) >= 0)
             return;
-        bundleNames.push(f.partOfBundle);
-        bundleOutputNames.push(bb.generateBundleName(f.partOfBundle));
+        let shortenedBundleName = bb.generateBundleName(fullBundleName);
+        bundleNames.push(fullBundleName);
+        bundleShortenMap[fullBundleName] = shortenedBundleName;
     });
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
         let bundleAst = parse('(function(){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + "})()");
@@ -499,7 +502,6 @@ function bundle(project) {
                             return;
                         let newname = symb.bbRename || name;
                         if (topLevelNames[name] !== undefined &&
-                            name !== "__extends" &&
                             (node === f.ast ||
                                 node.enclosed.some(enclSymb => topLevelNames[enclSymb.name] !==
                                     undefined))) {
@@ -606,6 +608,9 @@ function bundle(project) {
                 if (node instanceof AST_Toplevel) {
                     let topLevel = node;
                     bodyAst.push(...topLevel.body);
+                    if (bundleIndex > 0 && f.name.toLowerCase() == f.partOfBundle) {
+                        appendExportedFromLazyBundle(bodyAst, f, bundleShortenMap);
+                    }
                 }
                 else if (node instanceof AST_Var) {
                     let varn = node;
@@ -651,67 +656,103 @@ function bundle(project) {
                     }
                 }
                 else if (req = detectLazyRequireCall(node)) {
-                    req = bb.resolveRequire(req, f.name).toLowerCase();
-                    let idx = bundleNames.indexOf(req);
-                    req = bundleOutputNames[idx];
+                    req = bundleShortenMap[bb.resolveRequire(req, f.name).toLowerCase()];
                     return new AST_Call({ args: [new AST_String({ value: req }), new AST_String({ value: req })], expression: new AST_SymbolRef({ name: "__import", start: {} }) });
                 }
                 return undefined;
             });
             f.ast.transform(transformer);
         });
-        if (project.compress !== false) {
-            bundleAst.figure_out_scope();
-            let compressor = Compressor({
-                hoist_funs: false,
-                warnings: false,
-                unsafe: true,
-                global_defs: project.defines,
-                pure_funcs: call => {
-                    if (call.expression instanceof AST_SymbolRef) {
-                        let symb = call.expression;
-                        if (symb.thedef.scope.parent_scope != undefined &&
-                            symb.thedef.scope.parent_scope.parent_scope == null) {
-                            if (symb.name in pureFuncs)
-                                return false;
-                        }
-                        return true;
-                    }
-                    return true;
-                }
-            });
-            bundleAst = bundleAst.transform(compressor);
-            // in future to make another pass with removing function calls with empty body
-        }
-        if (project.mangle !== false) {
-            bundleAst.figure_out_scope();
-            let rootScope = undefined;
-            let walker = new TreeWalker(n => {
-                if (n !== bundleAst && n instanceof AST_Scope) {
-                    rootScope = n;
-                    return true;
-                }
-                return false;
-            });
-            bundleAst.walk(walker);
-            rootScope.uses_eval = false;
-            rootScope.uses_with = false;
-            base54.reset();
-            bundleAst.compute_char_frequency();
-            bundleAst.mangle_names();
-        }
-        let os = OutputStream({
-            beautify: project.beautify === true
-        });
-        bundleAst.print(os);
-        let out = os.toString();
-        if (project.compress === false) {
-            out = emitGlobalDefines(project.defines) + out;
-        }
+        bundleAst = compressAst(project, bundleAst, pureFuncs);
+        mangleNames(project, bundleAst);
+        let out = printAst(project, bundleAst);
+        out = prependGlobalDefines(project, out);
         if (bundleNames.length > 1 && bundleIndex === 0) {
             out = "var __bbb={};" + out;
         }
-        bb.writeBundle(bundleOutputNames[bundleIndex], out);
+        bb.writeBundle(bundleShortenMap[bundleNames[bundleIndex]], out);
+    }
+}
+function appendExportedFromLazyBundle(bodyAst, file, bundleShortenMap) {
+    let properties = [];
+    let keys = Object.keys(file.exports);
+    keys.forEach(key => {
+        properties.push(new AST_ObjectKeyVal({
+            quote: "'",
+            key,
+            value: renameSymbol(file.exports[key])
+        }));
+    });
+    bodyAst.push(new AST_SimpleStatement({
+        body: new AST_Assign({
+            operator: "=",
+            left: new AST_Sub({
+                expression: new AST_SymbolRef({
+                    name: "__bbb"
+                }),
+                property: new AST_String({ value: bundleShortenMap[file.partOfBundle] })
+            }),
+            right: new AST_Object({ properties })
+        })
+    }));
+}
+function prependGlobalDefines(project, out) {
+    if (project.compress === false) {
+        out = emitGlobalDefines(project.defines) + out;
+    }
+    return out;
+}
+function printAst(project, bundleAst) {
+    let os = OutputStream({
+        beautify: project.beautify === true
+    });
+    bundleAst.print(os);
+    let out = os.toString();
+    return out;
+}
+function compressAst(project, bundleAst, pureFuncs) {
+    if (project.compress !== false) {
+        bundleAst.figure_out_scope();
+        let compressor = Compressor({
+            hoist_funs: false,
+            warnings: false,
+            unsafe: true,
+            global_defs: project.defines,
+            pure_funcs: call => {
+                if (call.expression instanceof AST_SymbolRef) {
+                    let symb = call.expression;
+                    if (symb.thedef.scope.parent_scope != undefined &&
+                        symb.thedef.scope.parent_scope.parent_scope == null) {
+                        if (symb.name in pureFuncs)
+                            return false;
+                    }
+                    return true;
+                }
+                return true;
+            }
+        });
+        bundleAst = bundleAst.transform(compressor);
+        // in future to make another pass with removing function calls with empty body
+    }
+    return bundleAst;
+}
+function mangleNames(project, bundleAst) {
+    if (project.mangle !== false) {
+        bundleAst.figure_out_scope();
+        let rootScope = undefined;
+        let walker = new TreeWalker(n => {
+            if (n !== bundleAst && n instanceof AST_Scope) {
+                rootScope = n;
+                return true;
+            }
+            return false;
+        });
+        bundleAst.walk(walker);
+        rootScope.uses_eval = false;
+        rootScope.uses_with = false;
+        base54.reset();
+        bundleAst.compute_char_frequency();
+        bundleAst.mangle_names();
     }
 }
 function bbBundle(params) {

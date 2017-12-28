@@ -53,12 +53,13 @@ var bundlerJsContent = fs.readFileSync("../bundler.js", "utf-8");
 var bundleImp = eval(uglifyJsContent + bundlerJsContent + 'bundle;');
 var tests = fs.readdirSync("Inputs");
 mkdir("Expected");
+/*
 currentTestDir = "Split";
 mkdir(path.join("Outputs", currentTestDir));
 prefix = "cb";
 bundleImp({ mainFiles: ["index.js"], compress: true, beautify: true, mangle: false, defines: { DEBUG: false } });
-/*
-for (let i = 0; i < tests.length; i++) {
+*/
+for (var i = 0; i < tests.length; i++) {
     currentTestDir = tests[i];
     mkdir(path.join("Outputs", currentTestDir));
     prefix = "cm";
@@ -70,6 +71,4 @@ for (let i = 0; i < tests.length; i++) {
     prefix = "b";
     bundleImp({ mainFiles: ["index.js"], compress: false, beautify: true, mangle: false, defines: { DEBUG: false } });
 }
-
 console.log("Total " + tests.length + " tests with " + errors + " errors");
-*/ 

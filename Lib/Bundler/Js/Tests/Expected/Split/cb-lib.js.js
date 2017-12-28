@@ -3,5 +3,7 @@
     function hello() {
         return "Hello";
     }
-    console.log(hello());
+    __bbb["lib.js"] = {
+        hello: hello
+    };
 }();
