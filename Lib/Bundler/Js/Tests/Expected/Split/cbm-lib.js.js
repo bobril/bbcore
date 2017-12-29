@@ -1,9 +1,9 @@
 !function() {
     "use strict";
-    function l() {
+    function n() {
         return "Hello";
     }
-    __bbb["lib.js"] = {
-        hello: l
+    __bbb.a = {
+        hello: n
     };
 }();

@@ -1,1 +1,1 @@
-!function(){"use strict";function l(){return"Hello"}__bbb["lib.js"]={hello:l}}();
+!function(){"use strict";function n(){return"Hello"}__bbb.a={hello:n}}();

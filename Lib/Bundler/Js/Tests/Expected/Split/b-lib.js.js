@@ -272,7 +272,7 @@ var DEBUG = false;
     function hello() {
         return "Hello";
     }
-    __bbb["lib.js"] = {
+    __bbb.a = {
         hello: hello
     };
 })();

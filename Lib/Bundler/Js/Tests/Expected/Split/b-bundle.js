@@ -269,7 +269,7 @@ var __bbb={};var DEBUG = false;
             document.head.appendChild(script);
         });
     };
-    __import("lib.js", "lib.js").then(function(lib) {
+    __import("lib.js", "a").then(function(lib) {
         console.log(lib.hello());
     });
 })();

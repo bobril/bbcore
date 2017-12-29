@@ -534,6 +534,36 @@ function captureTopLevelVarsFromTslibSource(bundleAst: IAstToplevel, topLevelNam
         });
 }
 
+interface ISplitInfo {
+    /// lowercased file path
+    fullName: string;
+    /// created by bb.generateBundleName(this.fullName)
+    shortName: string;
+    /// name for __bbb property
+    propName: string;
+}
+
+type SplitMap = { [name: string]: ISplitInfo };
+
+var generateIdent = (function () {
+    var leading = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".split("");
+    var digits = "0123456789".split("");
+    var chars = leading.concat(digits);
+    function base54(num: number) {
+        var ret = "", base = 54;
+        num++;
+        do {
+            num--;
+            ret += chars[num % base];
+            num = Math.floor(num / base);
+            base = 64;
+        } while (num > 0);
+        return ret;
+    };
+    return base54;
+})();
+
+
 function bundle(project: IBundleProject) {
     let order = <IFileForBundle[]>[];
     let visited: string[] = [];
@@ -549,14 +579,22 @@ function bundle(project: IBundleProject) {
         check(val, order, visited, cache, "");
     });
     let bundleNames = [""];
-    let bundleShortenMap = Object.create(null);
-    bundleShortenMap[""] = bb.generateBundleName("");
+    let splitMap: SplitMap = Object.create(null);
+    splitMap[""] = {
+        fullName: "",
+        shortName: bb.generateBundleName(""),
+        propName: "ERROR"
+    }
     order.forEach(f => {
         let fullBundleName = f.partOfBundle;
-        if (bundleNames.indexOf(f.partOfBundle) >= 0) return;
+        if (bundleNames.indexOf(fullBundleName) >= 0) return;
         let shortenedBundleName = bb.generateBundleName(fullBundleName);
         bundleNames.push(fullBundleName);
-        bundleShortenMap[fullBundleName] = shortenedBundleName;
+        splitMap[fullBundleName] = {
+            fullName: fullBundleName,
+            shortName: shortenedBundleName,
+            propName: generateIdent(bundleNames.length - 2)
+        };
     });
 
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
@@ -708,7 +746,7 @@ function bundle(project: IBundleProject) {
                         let topLevel = <IAstToplevel>node;
                         bodyAst.push(...topLevel.body!);
                         if (bundleIndex > 0 && f.name.toLowerCase() == f.partOfBundle) {
-                            appendExportedFromLazyBundle(bodyAst, f, bundleShortenMap);
+                            appendExportedFromLazyBundle(bodyAst, f, splitMap);
                         }
                     } else if (node instanceof AST_Var) {
                         let varn = <IAstVar>node;
@@ -755,8 +793,8 @@ function bundle(project: IBundleProject) {
                             }
                         }
                     } else if (req = detectLazyRequireCall(node)) {
-                        req = bundleShortenMap[bb.resolveRequire(req, f.name).toLowerCase()];
-                        return new AST_Call({ args: [new AST_String({ value: req }), new AST_String({ value: req })], expression: new AST_SymbolRef({ name: "__import", start: <IAstToken>{} }) })
+                        let splitInfo = splitMap[bb.resolveRequire(req, f.name).toLowerCase()];
+                        return new AST_Call({ args: [new AST_String({ value: splitInfo.shortName }), new AST_String({ value: splitInfo.propName })], expression: new AST_SymbolRef({ name: "__import", start: <IAstToken>{} }) })
                     }
                     return undefined;
                 }
@@ -770,11 +808,11 @@ function bundle(project: IBundleProject) {
         if (bundleNames.length > 1 && bundleIndex === 0) {
             out = "var __bbb={};" + out;
         }
-        bb.writeBundle(bundleShortenMap[bundleNames[bundleIndex]], out);
+        bb.writeBundle(splitMap[bundleNames[bundleIndex]].shortName, out);
     }
 }
 
-function appendExportedFromLazyBundle(bodyAst: IAstStatement[], file: IFileForBundle, bundleShortenMap: { [name: string]: string }) {
+function appendExportedFromLazyBundle(bodyAst: IAstStatement[], file: IFileForBundle, splitMap: SplitMap) {
     let properties: IAstObjectKeyVal[] = [];
     let keys = Object.keys(file.exports!);
     keys.forEach(key => {
@@ -789,11 +827,11 @@ function appendExportedFromLazyBundle(bodyAst: IAstStatement[], file: IFileForBu
     bodyAst.push(new AST_SimpleStatement({
         body: new AST_Assign({
             operator: "=",
-            left: new AST_Sub({
+            left: new AST_Dot({
                 expression: new AST_SymbolRef({
                     name: "__bbb"
                 }),
-                property: new AST_String({ value: bundleShortenMap[file.partOfBundle] })
+                property: splitMap[file.partOfBundle].propName
             }),
             right: new AST_Object({ properties })
         })

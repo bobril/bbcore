@@ -445,6 +445,24 @@ function captureTopLevelVarsFromTslibSource(bundleAst, topLevelNames) {
             topLevelNames[key] = true;
     });
 }
+var generateIdent = (function () {
+    var leading = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".split("");
+    var digits = "0123456789".split("");
+    var chars = leading.concat(digits);
+    function base54(num) {
+        var ret = "", base = 54;
+        num++;
+        do {
+            num--;
+            ret += chars[num % base];
+            num = Math.floor(num / base);
+            base = 64;
+        } while (num > 0);
+        return ret;
+    }
+    ;
+    return base54;
+})();
 function bundle(project) {
     let order = [];
     let visited = [];
@@ -460,15 +478,23 @@ function bundle(project) {
         check(val, order, visited, cache, "");
     });
     let bundleNames = [""];
-    let bundleShortenMap = Object.create(null);
-    bundleShortenMap[""] = bb.generateBundleName("");
+    let splitMap = Object.create(null);
+    splitMap[""] = {
+        fullName: "",
+        shortName: bb.generateBundleName(""),
+        propName: "ERROR"
+    };
     order.forEach(f => {
         let fullBundleName = f.partOfBundle;
-        if (bundleNames.indexOf(f.partOfBundle) >= 0)
+        if (bundleNames.indexOf(fullBundleName) >= 0)
             return;
         let shortenedBundleName = bb.generateBundleName(fullBundleName);
         bundleNames.push(fullBundleName);
-        bundleShortenMap[fullBundleName] = shortenedBundleName;
+        splitMap[fullBundleName] = {
+            fullName: fullBundleName,
+            shortName: shortenedBundleName,
+            propName: generateIdent(bundleNames.length - 2)
+        };
     });
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
         let bundleAst = parse('(function(){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + "})()");
@@ -609,7 +635,7 @@ function bundle(project) {
                     let topLevel = node;
                     bodyAst.push(...topLevel.body);
                     if (bundleIndex > 0 && f.name.toLowerCase() == f.partOfBundle) {
-                        appendExportedFromLazyBundle(bodyAst, f, bundleShortenMap);
+                        appendExportedFromLazyBundle(bodyAst, f, splitMap);
                     }
                 }
                 else if (node instanceof AST_Var) {
@@ -656,8 +682,8 @@ function bundle(project) {
                     }
                 }
                 else if (req = detectLazyRequireCall(node)) {
-                    req = bundleShortenMap[bb.resolveRequire(req, f.name).toLowerCase()];
-                    return new AST_Call({ args: [new AST_String({ value: req }), new AST_String({ value: req })], expression: new AST_SymbolRef({ name: "__import", start: {} }) });
+                    let splitInfo = splitMap[bb.resolveRequire(req, f.name).toLowerCase()];
+                    return new AST_Call({ args: [new AST_String({ value: splitInfo.shortName }), new AST_String({ value: splitInfo.propName })], expression: new AST_SymbolRef({ name: "__import", start: {} }) });
                 }
                 return undefined;
             });
@@ -670,10 +696,10 @@ function bundle(project) {
         if (bundleNames.length > 1 && bundleIndex === 0) {
             out = "var __bbb={};" + out;
         }
-        bb.writeBundle(bundleShortenMap[bundleNames[bundleIndex]], out);
+        bb.writeBundle(splitMap[bundleNames[bundleIndex]].shortName, out);
     }
 }
-function appendExportedFromLazyBundle(bodyAst, file, bundleShortenMap) {
+function appendExportedFromLazyBundle(bodyAst, file, splitMap) {
     let properties = [];
     let keys = Object.keys(file.exports);
     keys.forEach(key => {
@@ -686,11 +712,11 @@ function appendExportedFromLazyBundle(bodyAst, file, bundleShortenMap) {
     bodyAst.push(new AST_SimpleStatement({
         body: new AST_Assign({
             operator: "=",
-            left: new AST_Sub({
+            left: new AST_Dot({
                 expression: new AST_SymbolRef({
                     name: "__bbb"
                 }),
-                property: new AST_String({ value: bundleShortenMap[file.partOfBundle] })
+                property: splitMap[file.partOfBundle].propName
             }),
             right: new AST_Object({ properties })
         })

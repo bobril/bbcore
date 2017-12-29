@@ -10,7 +10,7 @@ var __bbb={};!function() {
                 e("Failed to load " + url);
             }, script.src = url, document.head.appendChild(script);
         });
-    })("lib.js", "lib.js").then(function(lib) {
+    })("lib.js", "a").then(function(lib) {
         console.log(lib.hello());
     });
 }();
