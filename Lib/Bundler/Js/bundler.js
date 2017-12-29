@@ -227,8 +227,7 @@ __bbe['${name}']=module.exports; }).call(window);`);
                         }
                         if (isConstantSymbolRef(pea.value)) {
                             selfExpNames[pea.name] = true;
-                            let def = pea.value
-                                .thedef;
+                            let def = pea.value.thedef;
                             def.bbAlwaysClone = true;
                             cached.selfexports.push({
                                 name: pea.name,
@@ -268,8 +267,7 @@ __bbe['${name}']=module.exports; }).call(window);`);
                         if (patternDefinePropertyExportsEsModule(call))
                             return undefined;
                         if (call.args.length === 1 &&
-                            call.expression instanceof
-                                AST_SymbolRef) {
+                            call.expression instanceof AST_SymbolRef) {
                             let symb = call.expression;
                             if (symb.thedef === reexportDef) {
                                 let req = detectRequireCall(call.args[0]);
@@ -286,25 +284,15 @@ __bbe['${name}']=module.exports; }).call(window);`);
                         }
                     }
                 }
-                else if (stm instanceof AST_Defun) {
-                    let fnc = stm;
-                    if (fnc.name.name === "__export") {
-                        reexportDef = fnc.name.thedef;
-                        return undefined;
-                    }
-                }
                 return stm;
             })
-                .filter(stm => {
-                return stm != null;
-            });
+                .filter(stm => { return stm != null; });
             descend();
             return true;
         }
         if (node instanceof AST_PropAccess) {
             if (!(walker.parent() instanceof AST_Assign) ||
-                !(walker.parent(1) instanceof
-                    AST_SimpleStatement)) {
+                !(walker.parent(1) instanceof AST_SimpleStatement)) {
                 let propAccess = node;
                 if (isExports(propAccess.expression)) {
                     let key = matchPropKey(propAccess);
@@ -466,7 +454,6 @@ var generateIdent = (function () {
 function bundle(project) {
     let order = [];
     let visited = [];
-    let pureFuncs = Object.create(null);
     let cache = Object.create(null);
     project.mainFiles.forEach(val => {
         const lowerVal = val.toLowerCase();
@@ -500,63 +487,14 @@ function bundle(project) {
         let bundleAst = parse('(function(){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + "})()");
         let bodyAst = bundleAst
             .body[0].body.expression.body;
+        let pureFuncs = Object.create(null);
         let topLevelNames = Object.create(null);
         captureTopLevelVarsFromTslibSource(bundleAst, topLevelNames);
-        let wasSomeDifficult = false;
+        let currentBundleName = bundleNames[bundleIndex];
+        addAllDifficultFiles(order, currentBundleName, bodyAst);
+        renameGlobalVarsAndBuildPureFuncList(order, currentBundleName, topLevelNames, pureFuncs);
         order.forEach(f => {
-            if (f.partOfBundle !== bundleNames[bundleIndex])
-                return;
-            if (f.difficult) {
-                if (!wasSomeDifficult) {
-                    let ast = parse("var __bbe={};");
-                    bodyAst.push(...ast.body);
-                    wasSomeDifficult = true;
-                }
-                bodyAst.push(...f.ast.body);
-                return;
-            }
-            let suffix = f.name;
-            if (suffix.lastIndexOf("/") >= 0)
-                suffix = suffix.substr(suffix.lastIndexOf("/") + 1);
-            if (suffix.indexOf(".") >= 0)
-                suffix = suffix.substr(0, suffix.indexOf("."));
-            suffix = suffix.replace(/-/g, "_");
-            let walker = new TreeWalker((node, descend) => {
-                if (node instanceof AST_Scope) {
-                    node.variables.each((symb, name) => {
-                        if (symb.bbRequirePath)
-                            return;
-                        let newname = symb.bbRename || name;
-                        if (topLevelNames[name] !== undefined &&
-                            (node === f.ast ||
-                                node.enclosed.some(enclSymb => topLevelNames[enclSymb.name] !==
-                                    undefined))) {
-                            let index = 0;
-                            do {
-                                index++;
-                                newname = name + "_" + suffix;
-                                if (index > 1)
-                                    newname += "" + index;
-                            } while (topLevelNames[newname] !== undefined);
-                            symb.bbRename = newname;
-                        }
-                        else {
-                            symb.bbRename = undefined;
-                        }
-                        if (node === f.ast) {
-                            if (name in f.pureFuncs) {
-                                pureFuncs[newname] = true;
-                            }
-                            topLevelNames[newname] = true;
-                        }
-                    });
-                }
-                return false;
-            });
-            f.ast.walk(walker);
-        });
-        order.forEach(f => {
-            if (f.partOfBundle !== bundleNames[bundleIndex])
+            if (f.partOfBundle !== currentBundleName)
                 return;
             if (f.difficult)
                 return;
@@ -696,8 +634,70 @@ function bundle(project) {
         if (bundleNames.length > 1 && bundleIndex === 0) {
             out = "var __bbb={};" + out;
         }
-        bb.writeBundle(splitMap[bundleNames[bundleIndex]].shortName, out);
+        bb.writeBundle(splitMap[currentBundleName].shortName, out);
     }
+}
+function renameGlobalVarsAndBuildPureFuncList(order, currentBundleName, topLevelNames, pureFuncs) {
+    order.forEach(f => {
+        if (f.partOfBundle !== currentBundleName)
+            return;
+        if (f.difficult)
+            return;
+        let suffix = f.name;
+        if (suffix.lastIndexOf("/") >= 0)
+            suffix = suffix.substr(suffix.lastIndexOf("/") + 1);
+        if (suffix.indexOf(".") >= 0)
+            suffix = suffix.substr(0, suffix.indexOf("."));
+        suffix = suffix.replace(/-/g, "_");
+        let walker = new TreeWalker((node, descend) => {
+            if (node instanceof AST_Scope) {
+                node.variables.each((symb, name) => {
+                    if (symb.bbRequirePath)
+                        return;
+                    let newname = symb.bbRename || name;
+                    if (topLevelNames[name] !== undefined &&
+                        (node === f.ast ||
+                            node.enclosed.some(enclSymb => topLevelNames[enclSymb.name] !==
+                                undefined))) {
+                        let index = 0;
+                        do {
+                            index++;
+                            newname = name + "_" + suffix;
+                            if (index > 1)
+                                newname += "" + index;
+                        } while (topLevelNames[newname] !== undefined);
+                        symb.bbRename = newname;
+                    }
+                    else {
+                        symb.bbRename = undefined;
+                    }
+                    if (node === f.ast) {
+                        if (name in f.pureFuncs) {
+                            pureFuncs[newname] = true;
+                        }
+                        topLevelNames[newname] = true;
+                    }
+                });
+            }
+            return false;
+        });
+        f.ast.walk(walker);
+    });
+}
+function addAllDifficultFiles(order, currentBundleName, bodyAst) {
+    let wasSomeDifficult = false;
+    order.forEach(f => {
+        if (f.partOfBundle !== currentBundleName)
+            return;
+        if (!f.difficult)
+            return;
+        if (!wasSomeDifficult) {
+            let ast = parse("var __bbe={};");
+            bodyAst.push(...ast.body);
+            wasSomeDifficult = true;
+        }
+        bodyAst.push(...f.ast.body);
+    });
 }
 function appendExportedFromLazyBundle(bodyAst, file, splitMap) {
     let properties = [];

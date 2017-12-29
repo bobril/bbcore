@@ -285,17 +285,14 @@ __bbe['${name}']=module.exports; }).call(window);`);
                                     (<IAstAssign>stmbody).left = new AST_SymbolRef(
                                         {
                                             name: newName,
-                                            thedef: ast.variables!.get(
-                                                newName
-                                            )
+                                            thedef: ast.variables!.get(newName)
                                         }
                                     );
                                     return stm;
                                 }
                                 if (isConstantSymbolRef(pea.value)) {
                                     selfExpNames[pea.name] = true;
-                                    let def = <ISymbolDefEx>(<IAstSymbolRef>pea.value)
-                                        .thedef;
+                                    let def = <ISymbolDefEx>(<IAstSymbolRef>pea.value).thedef;
                                     def.bbAlwaysClone = true;
                                     cached.selfexports.push({
                                         name: pea.name,
@@ -334,32 +331,18 @@ __bbe['${name}']=module.exports; }).call(window);`);
                             }
                             if (stmbody instanceof AST_Call) {
                                 let call = <IAstCall>stmbody;
-                                if (
-                                    patternDefinePropertyExportsEsModule(
-                                        call
-                                    )
-                                )
+                                if (patternDefinePropertyExportsEsModule(call))
                                     return undefined;
                                 if (
                                     call.args!.length === 1 &&
-                                    call.expression instanceof
-                                    AST_SymbolRef
+                                    call.expression instanceof AST_SymbolRef
                                 ) {
                                     let symb = <IAstSymbolRef>call.expression;
                                     if (symb.thedef === reexportDef) {
-                                        let req = detectRequireCall(
-                                            call.args![0]
-                                        );
+                                        let req = detectRequireCall(call.args![0]);
                                         if (req != null) {
-                                            let reqr = bb.resolveRequire(
-                                                req,
-                                                name
-                                            );
-                                            if (
-                                                cached.requires.indexOf(
-                                                    reqr
-                                                ) < 0
-                                            )
+                                            let reqr = bb.resolveRequire(req, name);
+                                            if (cached.requires.indexOf(reqr) < 0)
                                                 cached.requires.push(reqr);
                                             cached.selfexports.push({
                                                 reexport: reqr
@@ -369,28 +352,17 @@ __bbe['${name}']=module.exports; }).call(window);`);
                                     }
                                 }
                             }
-                        } else if (stm instanceof AST_Defun) {
-                            let fnc = <IAstFunction>stm;
-                            if (fnc.name!.name === "__export") {
-                                reexportDef = fnc.name!.thedef;
-                                return undefined;
-                            }
                         }
                         return stm;
                     })
-                    .filter(stm => {
-                        return stm != null;
-                    }) as IAstStatement[];
+                    .filter(stm => { return stm != null; }) as IAstStatement[];
                 descend();
                 return true;
             }
             if (node instanceof AST_PropAccess) {
                 if (
                     !(walker.parent() instanceof AST_Assign) ||
-                    !(
-                        walker.parent(1) instanceof
-                        AST_SimpleStatement
-                    )
+                    !(walker.parent(1) instanceof AST_SimpleStatement)
                 ) {
                     let propAccess = <IAstPropAccess>node;
                     if (isExports(propAccess.expression)) {
@@ -567,7 +539,6 @@ var generateIdent = (function () {
 function bundle(project: IBundleProject) {
     let order = <IFileForBundle[]>[];
     let visited: string[] = [];
-    let pureFuncs: { [name: string]: true } = Object.create(null);
     let cache: FileForBundleCache = Object.create(null);
     project.mainFiles.forEach(val => {
         const lowerVal = val.toLowerCase();
@@ -603,67 +574,14 @@ function bundle(project: IBundleProject) {
         );
         let bodyAst = (<IAstFunction>(<IAstCall>(<IAstSimpleStatement>bundleAst
             .body![0]).body).expression).body!;
+        let pureFuncs: { [name: string]: true } = Object.create(null);
         let topLevelNames = Object.create(null);
         captureTopLevelVarsFromTslibSource(bundleAst, topLevelNames);
-        let wasSomeDifficult = false;
+        let currentBundleName = bundleNames[bundleIndex];
+        addAllDifficultFiles(order, currentBundleName, bodyAst);
+        renameGlobalVarsAndBuildPureFuncList(order, currentBundleName, topLevelNames, pureFuncs);
         order.forEach(f => {
-            if (f.partOfBundle !== bundleNames[bundleIndex])
-                return;
-            if (f.difficult) {
-                if (!wasSomeDifficult) {
-                    let ast = parse("var __bbe={};");
-                    bodyAst.push(...ast.body!);
-                    wasSomeDifficult = true;
-                }
-                bodyAst.push(...f.ast.body!);
-                return;
-            }
-            let suffix = f.name;
-            if (suffix.lastIndexOf("/") >= 0)
-                suffix = suffix.substr(suffix.lastIndexOf("/") + 1);
-            if (suffix.indexOf(".") >= 0)
-                suffix = suffix.substr(0, suffix.indexOf("."));
-            suffix = suffix.replace(/-/g, "_");
-            let walker = new TreeWalker(
-                (node: IAstNode, descend: () => void) => {
-                    if (node instanceof AST_Scope) {
-                        node.variables!.each((symb, name) => {
-                            if ((<ISymbolDefEx>symb).bbRequirePath) return;
-                            let newname = (<ISymbolDefEx>symb).bbRename || name;
-                            if (
-                                topLevelNames[name] !== undefined &&
-                                (node === f.ast ||
-                                    node.enclosed!.some(
-                                        enclSymb =>
-                                            topLevelNames[enclSymb.name] !==
-                                            undefined
-                                    ))
-                            ) {
-                                let index = 0;
-                                do {
-                                    index++;
-                                    newname = name + "_" + suffix;
-                                    if (index > 1) newname += "" + index;
-                                } while (topLevelNames[newname] !== undefined);
-                                (<ISymbolDefEx>symb).bbRename = newname;
-                            } else {
-                                (<ISymbolDefEx>symb).bbRename = undefined;
-                            }
-                            if (node === f.ast) {
-                                if (name in f.pureFuncs) {
-                                    pureFuncs[newname] = true;
-                                }
-                                topLevelNames[newname] = true;
-                            }
-                        });
-                    }
-                    return false;
-                }
-            );
-            f.ast.walk!(walker);
-        });
-        order.forEach(f => {
-            if (f.partOfBundle !== bundleNames[bundleIndex])
+            if (f.partOfBundle !== currentBundleName)
                 return;
             if (f.difficult) return;
             let transformer = new TreeTransformer(
@@ -808,8 +726,72 @@ function bundle(project: IBundleProject) {
         if (bundleNames.length > 1 && bundleIndex === 0) {
             out = "var __bbb={};" + out;
         }
-        bb.writeBundle(splitMap[bundleNames[bundleIndex]].shortName, out);
+        bb.writeBundle(splitMap[currentBundleName].shortName, out);
     }
+}
+
+function renameGlobalVarsAndBuildPureFuncList(order: IFileForBundle[], currentBundleName: string, topLevelNames: any, pureFuncs: { [name: string]: true; }) {
+    order.forEach(f => {
+        if (f.partOfBundle !== currentBundleName)
+            return;
+        if (f.difficult)
+            return;
+        let suffix = f.name;
+        if (suffix.lastIndexOf("/") >= 0)
+            suffix = suffix.substr(suffix.lastIndexOf("/") + 1);
+        if (suffix.indexOf(".") >= 0)
+            suffix = suffix.substr(0, suffix.indexOf("."));
+        suffix = suffix.replace(/-/g, "_");
+        let walker = new TreeWalker((node: IAstNode, descend: () => void) => {
+            if (node instanceof AST_Scope) {
+                node.variables!.each((symb, name) => {
+                    if ((<ISymbolDefEx>symb).bbRequirePath)
+                        return;
+                    let newname = (<ISymbolDefEx>symb).bbRename || name;
+                    if (topLevelNames[name] !== undefined &&
+                        (node === f.ast ||
+                            node.enclosed!.some(enclSymb => topLevelNames[enclSymb.name] !==
+                                undefined))) {
+                        let index = 0;
+                        do {
+                            index++;
+                            newname = name + "_" + suffix;
+                            if (index > 1)
+                                newname += "" + index;
+                        } while (topLevelNames[newname] !== undefined);
+                        (<ISymbolDefEx>symb).bbRename = newname;
+                    }
+                    else {
+                        (<ISymbolDefEx>symb).bbRename = undefined;
+                    }
+                    if (node === f.ast) {
+                        if (name in f.pureFuncs) {
+                            pureFuncs[newname] = true;
+                        }
+                        topLevelNames[newname] = true;
+                    }
+                });
+            }
+            return false;
+        });
+        f.ast.walk!(walker);
+    });
+}
+
+function addAllDifficultFiles(order: IFileForBundle[], currentBundleName: string, bodyAst: IAstStatement[]) {
+    let wasSomeDifficult = false;
+    order.forEach(f => {
+        if (f.partOfBundle !== currentBundleName)
+            return;
+        if (!f.difficult)
+            return;
+        if (!wasSomeDifficult) {
+            let ast = parse("var __bbe={};");
+            bodyAst.push(...ast.body!);
+            wasSomeDifficult = true;
+        }
+        bodyAst.push(...f.ast.body!);
+    });
 }
 
 function appendExportedFromLazyBundle(bodyAst: IAstStatement[], file: IFileForBundle, splitMap: SplitMap) {
