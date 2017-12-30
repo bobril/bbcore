@@ -48,7 +48,7 @@ interface IAstNode {
     /// The last token of this node
     end?: IAstToken;
 
-    clone?(): IAstNode;
+    clone?(): this;
     walk?(walker: IWalker): void;
     transform?(transformer: ITransformer): IAstNode;
     TYPE?: string;

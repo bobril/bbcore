@@ -37,10 +37,15 @@ interface IBundleProject {
     defines?: { [name: string]: any };
 }
 
+/// bbRequirePath and bbExportedFrom cannot be used together.
 interface ISymbolDefEx extends ISymbolDef {
+    /// symbol of variable which was created by require(xxx) and bbRequirePath is resolved xxx
     bbRequirePath?: string;
+    /// new name
     bbRename?: string;
     bbAlwaysClone?: boolean;
+    /// symbol exported from cache[bbExportedFrom] (it means it is already lower cased)
+    bbExportedFrom?: string;
 }
 
 function isRequire(symbolDef?: ISymbolDef) {
@@ -58,6 +63,15 @@ function isPromise(symbolDef?: ISymbolDef) {
         symbolDef.undeclared &&
         symbolDef.global &&
         symbolDef.name === "Promise"
+    );
+}
+
+function isReexport(symbolDef?: ISymbolDef) {
+    return (
+        symbolDef != null &&
+        symbolDef.undeclared &&
+        symbolDef.global &&
+        symbolDef.name === "__export"
     );
 }
 
@@ -136,7 +150,7 @@ function matchPropKey(propAccess: IAstPropAccess): string | undefined {
     return undefined;
 }
 
-function paternAssignExports(
+function patternAssignExports(
     node: IAstNode
 ): { name: string; value?: IAstNode } | undefined {
     if (node instanceof AST_Assign) {
@@ -216,7 +230,6 @@ function check(
     if (cached !== undefined)
         return cached;
 
-    let reexportDef: ISymbolDefEx | undefined = undefined;
     let fileContent: string = bb.readContent(name);
     //console.log("============== START " + name);
     //console.log(fileContent);
@@ -234,7 +247,8 @@ function check(
         exports: undefined,
         pureFuncs: Object.create(null)
     };
-    cache[name.toLowerCase()] = cached;
+    const cachedName = name.toLowerCase();
+    cache[cachedName] = cached;
     let pureMatch = fileContent.match(/^\/\/ PureFuncs:.+/gm);
     if (pureMatch) {
         pureMatch.forEach(m => {
@@ -275,7 +289,7 @@ __bbe['${name}']=module.exports; }).call(window);`);
                         ) {
                             let stmbody = (<IAstSimpleStatement>stm)
                                 .body!;
-                            let pea = paternAssignExports(stmbody);
+                            let pea = patternAssignExports(stmbody);
                             if (pea) {
                                 let newName = "__export_" + pea.name;
                                 if (
@@ -294,6 +308,7 @@ __bbe['${name}']=module.exports; }).call(window);`);
                                     selfExpNames[pea.name] = true;
                                     let def = <ISymbolDefEx>(<IAstSymbolRef>pea.value).thedef;
                                     def.bbAlwaysClone = true;
+                                    def.bbExportedFrom = cachedName;
                                     cached.selfexports.push({
                                         name: pea.name,
                                         node: pea.value
@@ -319,6 +334,7 @@ __bbe['${name}']=module.exports; }).call(window);`);
                                 );
                                 symb.undeclared = false;
                                 (<ISymbolDefEx>symb).bbAlwaysClone = true;
+                                (<ISymbolDefEx>symb).bbExportedFrom = cachedName;
                                 selfExpNames[pea.name] = true;
                                 cached.selfexports.push({
                                     name: pea.name,
@@ -338,7 +354,7 @@ __bbe['${name}']=module.exports; }).call(window);`);
                                     call.expression instanceof AST_SymbolRef
                                 ) {
                                     let symb = <IAstSymbolRef>call.expression;
-                                    if (symb.thedef === reexportDef) {
+                                    if (isReexport(symb.thedef)) {
                                         let req = detectRequireCall(call.args![0]);
                                         if (req != null) {
                                             let reqr = bb.resolveRequire(req, name);
@@ -507,17 +523,20 @@ function captureTopLevelVarsFromTslibSource(bundleAst: IAstToplevel, topLevelNam
 }
 
 interface ISplitInfo {
-    /// lowercased file path
+    /// lower cased file path
     fullName: string;
     /// created by bb.generateBundleName(this.fullName)
     shortName: string;
     /// name for __bbb property
     propName: string;
+    /// __bbb.Value = Key;
+    exportsUsedFromLazyBundles: Map<IAstNode, string>;
+    importsFromOtherBundles: Map<IAstNode, IAstNode | undefined>;
 }
 
 type SplitMap = { [name: string]: ISplitInfo };
 
-var generateIdent = (function () {
+var number2Ident = (function () {
     var leading = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".split("");
     var digits = "0123456789".split("");
     var chars = leading.concat(digits);
@@ -554,7 +573,13 @@ function bundle(project: IBundleProject) {
     splitMap[""] = {
         fullName: "",
         shortName: bb.generateBundleName(""),
-        propName: "ERROR"
+        propName: "ERROR",
+        exportsUsedFromLazyBundles: new Map(),
+        importsFromOtherBundles: new Map()
+    }
+    let lastGeneratedIdentId = 0;
+    function generateIdent(): string {
+        return number2Ident(lastGeneratedIdentId++);
     }
     order.forEach(f => {
         let fullBundleName = f.partOfBundle;
@@ -564,10 +589,13 @@ function bundle(project: IBundleProject) {
         splitMap[fullBundleName] = {
             fullName: fullBundleName,
             shortName: shortenedBundleName,
-            propName: generateIdent(bundleNames.length - 2)
+            propName: generateIdent(),
+            exportsUsedFromLazyBundles: new Map(),
+            importsFromOtherBundles: new Map()
         };
     });
-
+    if (bundleNames.length > 1)
+        detectBundleExportsImports(order, splitMap, cache, generateIdent);
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
         let bundleAst = <IAstToplevel>parse(
             '(function(){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + "})()"
@@ -597,7 +625,7 @@ function bundle(project: IBundleProject) {
                             rename !== undefined ||
                             (<ISymbolDefEx>symb.thedef).bbAlwaysClone
                         ) {
-                            symb = <IAstSymbol>symb.clone!();
+                            symb = symb.clone!();
                             if (rename !== undefined) symb.name = rename;
                             symb.thedef = undefined;
                             symb.scope = undefined;
@@ -609,10 +637,8 @@ function bundle(project: IBundleProject) {
                             !(transformer.parent() instanceof AST_PropAccess)
                         ) {
                             let p = transformer.parent();
-                            if (
-                                p instanceof AST_VarDef &&
-                                (<IAstVarDef>p).name === symb
-                            )
+                            // don't touch declaration of symbol it will be removed in after function
+                            if (p instanceof AST_VarDef && (<IAstVarDef>p).name === symb)
                                 return undefined;
                             let properties: IAstObjectKeyVal[] = [];
                             let extf = cache[reqPath.toLowerCase()];
@@ -663,9 +689,6 @@ function bundle(project: IBundleProject) {
                     if (node instanceof AST_Toplevel) {
                         let topLevel = <IAstToplevel>node;
                         bodyAst.push(...topLevel.body!);
-                        if (bundleIndex > 0 && f.name.toLowerCase() == f.partOfBundle) {
-                            appendExportedFromLazyBundle(bodyAst, f, splitMap);
-                        }
                     } else if (node instanceof AST_Var) {
                         let varn = <IAstVar>node;
                         varn.definitions = varn.definitions!.filter(vd => {
@@ -719,6 +742,7 @@ function bundle(project: IBundleProject) {
             );
             f.ast.transform!(transformer);
         });
+        appendExportedFromLazyBundle(bodyAst, splitMap[currentBundleName], cache);
         bundleAst = compressAst(project, bundleAst, pureFuncs);
         mangleNames(project, bundleAst);
         let out = printAst(project, bundleAst);
@@ -728,6 +752,48 @@ function bundle(project: IBundleProject) {
         }
         bb.writeBundle(splitMap[currentBundleName].shortName, out);
     }
+}
+
+function addSplitImportExport(usesSplit: ISplitInfo, exportingFile: IFileForBundle, exportName: string, splitMap: SplitMap, generateIdent: () => string) {
+    if (usesSplit.fullName === exportingFile.partOfBundle)
+        return;
+    let exportingSplit = splitMap[exportingFile.partOfBundle];
+    let astNode = exportingFile.exports![exportName];
+    usesSplit.importsFromOtherBundles.set(astNode, undefined);
+    exportingSplit.exportsUsedFromLazyBundles.set(astNode, generateIdent());
+}
+
+function detectBundleExportsImports(order: IFileForBundle[], splitMap: SplitMap, cache: FileForBundleCache, generateIdent: () => string) {
+    order.forEach(f => {
+        if (f.difficult) return;
+        const fSplit = splitMap[f.partOfBundle];
+        let walker = new TreeWalker(
+            (node: IAstNode): boolean => {
+                if (node instanceof AST_Symbol) {
+                    let symb = <IAstSymbol>node;
+                    if (symb.thedef == null) return false;
+                    let reqPath = (<ISymbolDefEx>symb.thedef).bbRequirePath;
+                    if (reqPath === undefined) return false;
+                    let extf = cache[reqPath.toLowerCase()];
+                    if (extf.difficult) return false;
+                    let p = walker.parent();
+                    if (p instanceof AST_PropAccess && typeof p.property === "string") {
+                        addSplitImportExport(fSplit, extf, p.property, splitMap, generateIdent);
+                    } else if (p instanceof AST_VarDef && (<IAstVarDef>p).name === symb) {
+                        return false;
+                    } else {
+                        let keys = Object.keys(extf.exports!);
+                        keys.forEach(key => {
+                            addSplitImportExport(fSplit, extf, key, splitMap, generateIdent);
+                        });
+                    }
+                    return false;
+                }
+                return false;
+            }
+        );
+        f.ast.walk!(walker);
+    });
 }
 
 function renameGlobalVarsAndBuildPureFuncList(order: IFileForBundle[], currentBundleName: string, topLevelNames: any, pureFuncs: { [name: string]: true; }) {
@@ -794,30 +860,47 @@ function addAllDifficultFiles(order: IFileForBundle[], currentBundleName: string
     });
 }
 
-function appendExportedFromLazyBundle(bodyAst: IAstStatement[], file: IFileForBundle, splitMap: SplitMap) {
-    let properties: IAstObjectKeyVal[] = [];
-    let keys = Object.keys(file.exports!);
-    keys.forEach(key => {
-        properties.push(
-            new AST_ObjectKeyVal({
-                quote: "'",
-                key,
-                value: renameSymbol(file.exports![key])
-            })
-        );
-    });
-    bodyAst.push(new AST_SimpleStatement({
-        body: new AST_Assign({
-            operator: "=",
-            left: new AST_Dot({
-                expression: new AST_SymbolRef({
-                    name: "__bbb"
+function appendExportedFromLazyBundle(bodyAst: IAstStatement[], split: ISplitInfo, cache: FileForBundleCache) {
+    if (split.fullName != "") {
+        let file = cache[split.fullName];
+        let properties: IAstObjectKeyVal[] = [];
+        let keys = Object.keys(file.exports!);
+        keys.forEach(key => {
+            properties.push(
+                new AST_ObjectKeyVal({
+                    quote: "'",
+                    key,
+                    value: renameSymbol(file.exports![key])
+                })
+            );
+        });
+        bodyAst.push(new AST_SimpleStatement({
+            body: new AST_Assign({
+                operator: "=",
+                left: new AST_Dot({
+                    expression: new AST_SymbolRef({
+                        name: "__bbb"
+                    }),
+                    property: split.propName
                 }),
-                property: splitMap[file.partOfBundle].propName
-            }),
-            right: new AST_Object({ properties })
-        })
-    }));
+                right: new AST_Object({ properties })
+            })
+        }));
+    }
+    split.exportsUsedFromLazyBundles.forEach((propName, valueNode) => {
+        bodyAst.push(new AST_SimpleStatement({
+            body: new AST_Assign({
+                operator: "=",
+                left: new AST_Dot({
+                    expression: new AST_SymbolRef({
+                        name: "__bbb"
+                    }),
+                    property: propName
+                }),
+                right: renameSymbol(valueNode)
+            })
+        }));
+    });
 }
 
 function prependGlobalDefines(project: IBundleProject, out: string) {
