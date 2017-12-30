@@ -503,6 +503,14 @@ function renameSymbol(node: IAstNode): IAstNode {
     return node;
 }
 
+function renameSymbolWithReplace(node: IAstNode, split: ISplitInfo): IAstNode {
+    let imp = split.importsFromOtherBundles.get(node);
+    if (imp !== undefined) {
+        return imp[3]!.clone!();
+    }
+    return renameSymbol(node);
+}
+
 function emitGlobalDefines(defines: { [name: string]: any } | undefined): string {
     let res = "";
     if (defines == null) return res;
@@ -531,10 +539,12 @@ interface ISplitInfo {
     propName: string;
     /// __bbb.Value = Key;
     exportsUsedFromLazyBundles: Map<IAstNode, string>;
-    importsFromOtherBundles: Map<IAstNode, IAstNode | undefined>;
+    /// from split, from file, export name, new AST_SymbolRef
+    importsFromOtherBundles: Map<IAstNode, [ISplitInfo, IFileForBundle, string, IAstNode | undefined]>;
 }
 
 type SplitMap = { [name: string]: ISplitInfo };
+type NamesSet = { [name: string]: true };
 
 var number2Ident = (function () {
     var leading = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".split("");
@@ -602,12 +612,13 @@ function bundle(project: IBundleProject) {
         );
         let bodyAst = (<IAstFunction>(<IAstCall>(<IAstSimpleStatement>bundleAst
             .body![0]).body).expression).body!;
-        let pureFuncs: { [name: string]: true } = Object.create(null);
-        let topLevelNames = Object.create(null);
+        let pureFuncs: NamesSet = Object.create(null);
+        let topLevelNames: NamesSet = Object.create(null);
         captureTopLevelVarsFromTslibSource(bundleAst, topLevelNames);
         let currentBundleName = bundleNames[bundleIndex];
         addAllDifficultFiles(order, currentBundleName, bodyAst);
         renameGlobalVarsAndBuildPureFuncList(order, currentBundleName, topLevelNames, pureFuncs);
+        addExternallyImportedFromOtherBundles(bodyAst, splitMap[currentBundleName], topLevelNames);
         order.forEach(f => {
             if (f.partOfBundle !== currentBundleName)
                 return;
@@ -649,7 +660,7 @@ function bundle(project: IBundleProject) {
                                         new AST_ObjectKeyVal({
                                             quote: "'",
                                             key,
-                                            value: renameSymbol(extf.exports![key])
+                                            value: renameSymbolWithReplace(extf.exports![key], splitMap[currentBundleName])
                                         })
                                     );
                                 });
@@ -663,7 +674,7 @@ function bundle(project: IBundleProject) {
                             let key = matchPropKey(propAccess);
                             if (key) {
                                 let symb = f.exports![key];
-                                if (symb) return renameSymbol(symb);
+                                if (symb) return renameSymbolWithReplace(symb, splitMap[currentBundleName]);
                             }
                         }
                     }
@@ -721,7 +732,7 @@ function bundle(project: IBundleProject) {
                                     if (extn) {
                                         let asts = extf.exports![extn];
                                         if (asts) {
-                                            return renameSymbol(asts);
+                                            return renameSymbolWithReplace(asts, splitMap[currentBundleName]);
                                         }
                                         throw new Error(
                                             "In " +
@@ -759,7 +770,7 @@ function addSplitImportExport(usesSplit: ISplitInfo, exportingFile: IFileForBund
         return;
     let exportingSplit = splitMap[exportingFile.partOfBundle];
     let astNode = exportingFile.exports![exportName];
-    usesSplit.importsFromOtherBundles.set(astNode, undefined);
+    usesSplit.importsFromOtherBundles.set(astNode, [exportingSplit, exportingFile, exportName, undefined]);
     exportingSplit.exportsUsedFromLazyBundles.set(astNode, generateIdent());
 }
 
@@ -796,18 +807,58 @@ function detectBundleExportsImports(order: IFileForBundle[], splitMap: SplitMap,
     });
 }
 
-function renameGlobalVarsAndBuildPureFuncList(order: IFileForBundle[], currentBundleName: string, topLevelNames: any, pureFuncs: { [name: string]: true; }) {
+function fileNameToIdent(fn: string): string {
+    if (fn.lastIndexOf("/") >= 0)
+        fn = fn.substr(fn.lastIndexOf("/") + 1);
+    if (fn.indexOf(".") >= 0)
+        fn = fn.substr(0, fn.indexOf("."));
+    fn = fn.replace(/-/g, "_");
+    return fn;
+}
+
+function newSymbolRef(name: string): IAstSymbolRef {
+    return new AST_SymbolRef({ name, thedef: undefined, scope: undefined, start: <any>{} });
+}
+
+function addExternallyImportedFromOtherBundles(bodyAst: IAstStatement[], split: ISplitInfo, topLevelNames: NamesSet) {
+    const importsMap = split.importsFromOtherBundles;
+    let imports = Array.from(importsMap.keys());
+    for (let i = 0; i < imports.length; i++) {
+        let imp = importsMap.get(imports[i])!;
+        let name = "__" + imp[2] + "_" + fileNameToIdent(imp[1].name);
+        name = makeUniqueIdent(topLevelNames, name);
+        imp[3] = newSymbolRef(name);
+        let shortenedPropertyName = imp[0].exportsUsedFromLazyBundles.get(imports[i])!;
+        bodyAst.push(new AST_Var({
+            definitions: [new AST_VarDef({
+                name: new AST_SymbolVar({ name, thedef: undefined, scope: undefined, init: undefined, start: <any>{} }),
+                value: new AST_Dot({
+                    expression: newSymbolRef("__bbb"),
+                    property: shortenedPropertyName
+                })
+            })]
+        }));
+    }
+}
+
+function makeUniqueIdent(topLevelNames: NamesSet, name: string) {
+    let suffix = "";
+    let iteration = 0;
+    while (topLevelNames[name + suffix] !== undefined) {
+        suffix = "" + (++iteration);
+    }
+    name += suffix;
+    topLevelNames[name] = true;
+    return name;
+}
+
+function renameGlobalVarsAndBuildPureFuncList(order: IFileForBundle[], currentBundleName: string, topLevelNames: NamesSet, pureFuncs: NamesSet) {
     order.forEach(f => {
         if (f.partOfBundle !== currentBundleName)
             return;
         if (f.difficult)
             return;
-        let suffix = f.name;
-        if (suffix.lastIndexOf("/") >= 0)
-            suffix = suffix.substr(suffix.lastIndexOf("/") + 1);
-        if (suffix.indexOf(".") >= 0)
-            suffix = suffix.substr(0, suffix.indexOf("."));
-        suffix = suffix.replace(/-/g, "_");
+        let suffix = fileNameToIdent(f.name);
         let walker = new TreeWalker((node: IAstNode, descend: () => void) => {
             if (node instanceof AST_Scope) {
                 node.variables!.each((symb, name) => {
@@ -815,9 +866,7 @@ function renameGlobalVarsAndBuildPureFuncList(order: IFileForBundle[], currentBu
                         return;
                     let newname = (<ISymbolDefEx>symb).bbRename || name;
                     if (topLevelNames[name] !== undefined &&
-                        (node === f.ast ||
-                            node.enclosed!.some(enclSymb => topLevelNames[enclSymb.name] !==
-                                undefined))) {
+                        (node === f.ast || node.enclosed!.some(enclSymb => topLevelNames[enclSymb.name] !== undefined))) {
                         let index = 0;
                         do {
                             index++;
@@ -926,6 +975,7 @@ function compressAst(project: IBundleProject, bundleAst: IAstToplevel, pureFuncs
             hoist_funs: false,
             warnings: false,
             unsafe: true,
+            passes: 2,
             global_defs: project.defines,
             pure_funcs: call => {
                 if (call.expression instanceof AST_SymbolRef) {

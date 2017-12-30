@@ -423,6 +423,13 @@ function renameSymbol(node) {
     }
     return node;
 }
+function renameSymbolWithReplace(node, split) {
+    let imp = split.importsFromOtherBundles.get(node);
+    if (imp !== undefined) {
+        return imp[3].clone();
+    }
+    return renameSymbol(node);
+}
 function emitGlobalDefines(defines) {
     let res = "";
     if (defines == null)
@@ -511,6 +518,7 @@ function bundle(project) {
         let currentBundleName = bundleNames[bundleIndex];
         addAllDifficultFiles(order, currentBundleName, bodyAst);
         renameGlobalVarsAndBuildPureFuncList(order, currentBundleName, topLevelNames, pureFuncs);
+        addExternallyImportedFromOtherBundles(bodyAst, splitMap[currentBundleName], topLevelNames);
         order.forEach(f => {
             if (f.partOfBundle !== currentBundleName)
                 return;
@@ -549,7 +557,7 @@ function bundle(project) {
                                 properties.push(new AST_ObjectKeyVal({
                                     quote: "'",
                                     key,
-                                    value: renameSymbol(extf.exports[key])
+                                    value: renameSymbolWithReplace(extf.exports[key], splitMap[currentBundleName])
                                 }));
                             });
                             return new AST_Object({ properties });
@@ -563,7 +571,7 @@ function bundle(project) {
                         if (key) {
                             let symb = f.exports[key];
                             if (symb)
-                                return renameSymbol(symb);
+                                return renameSymbolWithReplace(symb, splitMap[currentBundleName]);
                         }
                     }
                 }
@@ -623,7 +631,7 @@ function bundle(project) {
                                 if (extn) {
                                     let asts = extf.exports[extn];
                                     if (asts) {
-                                        return renameSymbol(asts);
+                                        return renameSymbolWithReplace(asts, splitMap[currentBundleName]);
                                     }
                                     throw new Error("In " +
                                         thedef.bbRequirePath +
@@ -658,7 +666,7 @@ function addSplitImportExport(usesSplit, exportingFile, exportName, splitMap, ge
         return;
     let exportingSplit = splitMap[exportingFile.partOfBundle];
     let astNode = exportingFile.exports[exportName];
-    usesSplit.importsFromOtherBundles.set(astNode, undefined);
+    usesSplit.importsFromOtherBundles.set(astNode, [exportingSplit, exportingFile, exportName, undefined]);
     exportingSplit.exportsUsedFromLazyBundles.set(astNode, generateIdent());
 }
 function detectBundleExportsImports(order, splitMap, cache, generateIdent) {
@@ -697,18 +705,54 @@ function detectBundleExportsImports(order, splitMap, cache, generateIdent) {
         f.ast.walk(walker);
     });
 }
+function fileNameToIdent(fn) {
+    if (fn.lastIndexOf("/") >= 0)
+        fn = fn.substr(fn.lastIndexOf("/") + 1);
+    if (fn.indexOf(".") >= 0)
+        fn = fn.substr(0, fn.indexOf("."));
+    fn = fn.replace(/-/g, "_");
+    return fn;
+}
+function newSymbolRef(name) {
+    return new AST_SymbolRef({ name, thedef: undefined, scope: undefined, start: {} });
+}
+function addExternallyImportedFromOtherBundles(bodyAst, split, topLevelNames) {
+    const importsMap = split.importsFromOtherBundles;
+    let imports = Array.from(importsMap.keys());
+    for (let i = 0; i < imports.length; i++) {
+        let imp = importsMap.get(imports[i]);
+        let name = "__" + imp[2] + "_" + fileNameToIdent(imp[1].name);
+        name = makeUniqueIdent(topLevelNames, name);
+        imp[3] = newSymbolRef(name);
+        let shortenedPropertyName = imp[0].exportsUsedFromLazyBundles.get(imports[i]);
+        bodyAst.push(new AST_Var({
+            definitions: [new AST_VarDef({
+                    name: new AST_SymbolVar({ name, thedef: undefined, scope: undefined, init: undefined, start: {} }),
+                    value: new AST_Dot({
+                        expression: newSymbolRef("__bbb"),
+                        property: shortenedPropertyName
+                    })
+                })]
+        }));
+    }
+}
+function makeUniqueIdent(topLevelNames, name) {
+    let suffix = "";
+    let iteration = 0;
+    while (topLevelNames[name + suffix] !== undefined) {
+        suffix = "" + (++iteration);
+    }
+    name += suffix;
+    topLevelNames[name] = true;
+    return name;
+}
 function renameGlobalVarsAndBuildPureFuncList(order, currentBundleName, topLevelNames, pureFuncs) {
     order.forEach(f => {
         if (f.partOfBundle !== currentBundleName)
             return;
         if (f.difficult)
             return;
-        let suffix = f.name;
-        if (suffix.lastIndexOf("/") >= 0)
-            suffix = suffix.substr(suffix.lastIndexOf("/") + 1);
-        if (suffix.indexOf(".") >= 0)
-            suffix = suffix.substr(0, suffix.indexOf("."));
-        suffix = suffix.replace(/-/g, "_");
+        let suffix = fileNameToIdent(f.name);
         let walker = new TreeWalker((node, descend) => {
             if (node instanceof AST_Scope) {
                 node.variables.each((symb, name) => {
@@ -716,9 +760,7 @@ function renameGlobalVarsAndBuildPureFuncList(order, currentBundleName, topLevel
                         return;
                     let newname = symb.bbRename || name;
                     if (topLevelNames[name] !== undefined &&
-                        (node === f.ast ||
-                            node.enclosed.some(enclSymb => topLevelNames[enclSymb.name] !==
-                                undefined))) {
+                        (node === f.ast || node.enclosed.some(enclSymb => topLevelNames[enclSymb.name] !== undefined))) {
                         let index = 0;
                         do {
                             index++;
@@ -820,6 +862,7 @@ function compressAst(project, bundleAst, pureFuncs) {
             hoist_funs: false,
             warnings: false,
             unsafe: true,
+            passes: 2,
             global_defs: project.defines,
             pure_funcs: call => {
                 if (call.expression instanceof AST_SymbolRef) {
