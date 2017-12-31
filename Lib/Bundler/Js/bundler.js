@@ -322,7 +322,9 @@ __bbe['${name}']=module.exports; }).call(window);`);
                         });
                         varDecls.push(new AST_VarDef({
                             name: symbVar,
-                            value: undefined
+                            value: undefined,
+                            start: node.start,
+                            end: node.end
                         }));
                         let symb = ast.def_variable(symbVar);
                         symb.undeclared = false;
@@ -332,7 +334,9 @@ __bbe['${name}']=module.exports; }).call(window);`);
                             name: key,
                             node: new AST_SymbolRef({
                                 name: newName,
-                                thedef: symb
+                                thedef: symb,
+                                start: node.start,
+                                end: node.end
                             })
                         });
                         return false;
@@ -418,6 +422,7 @@ function renameSymbol(node) {
             }
             symb.thedef = undefined;
             symb.scope = undefined;
+            symb.start = {};
         }
         return symb;
     }
