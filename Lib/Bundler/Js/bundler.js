@@ -16,7 +16,7 @@ function isReexport(symbolDef) {
     return (symbolDef != null &&
         symbolDef.undeclared &&
         symbolDef.global &&
-        symbolDef.name === "__export");
+        symbolDef.name === "__exportStar");
 }
 function detectRequireCall(node) {
     if (node instanceof AST_Call) {
@@ -864,6 +864,12 @@ function compressAst(project, bundleAst, pureFuncs) {
             unsafe: true,
             global_defs: project.defines,
             pure_funcs: call => {
+                if (call.start !== undefined && call.start.comments_before != null && call.start.comments_before.length === 1) {
+                    let c = call.start.comments_before[0];
+                    if (c.type === "comment2" && c.value.indexOf("@class") >= 0) {
+                        return false;
+                    }
+                }
                 if (call.expression instanceof AST_SymbolRef) {
                     let symb = call.expression;
                     if (symb.thedef.scope.parent_scope != undefined &&

@@ -71,7 +71,7 @@ function isReexport(symbolDef?: ISymbolDef) {
         symbolDef != null &&
         symbolDef.undeclared &&
         symbolDef.global &&
-        symbolDef.name === "__export"
+        symbolDef.name === "__exportStar"
     );
 }
 
@@ -977,6 +977,12 @@ function compressAst(project: IBundleProject, bundleAst: IAstToplevel, pureFuncs
             unsafe: true,
             global_defs: project.defines,
             pure_funcs: call => {
+                if (call.start !== undefined && call.start.comments_before != null && call.start.comments_before.length === 1) {
+                    let c = call.start.comments_before[0];
+                    if (c.type === "comment2" && (<string>c.value).indexOf("@class") >= 0) {
+                        return false;
+                    }
+                }
                 if (call.expression instanceof AST_SymbolRef) {
                     let symb = <IAstSymbolRef>call.expression;
                     if (
