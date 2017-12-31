@@ -1,9 +1,9 @@
-!function() {
+!function(n) {
     "use strict";
-    function n() {
+    function t() {
         return "Hello";
     }
     __bbb.a = {
-        hello: n
+        hello: t
     };
 }();

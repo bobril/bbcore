@@ -1,5 +1,5 @@
 var __bbb={};var DEBUG = false;
-(function() {
+(function(undefined) {
     "use strict";
     var __extendStatics = Object.setPrototypeOf || {
         __proto__: []

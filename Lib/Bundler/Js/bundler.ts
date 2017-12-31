@@ -608,7 +608,7 @@ function bundle(project: IBundleProject) {
         detectBundleExportsImports(order, splitMap, cache, generateIdent);
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
         let bundleAst = <IAstToplevel>parse(
-            '(function(){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + "})()"
+            '(function(undefined){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + "})()"
         );
         let bodyAst = (<IAstFunction>(<IAstCall>(<IAstSimpleStatement>bundleAst
             .body![0]).body).expression).body!;
@@ -975,7 +975,6 @@ function compressAst(project: IBundleProject, bundleAst: IAstToplevel, pureFuncs
             hoist_funs: false,
             warnings: false,
             unsafe: true,
-            passes: 2,
             global_defs: project.defines,
             pure_funcs: call => {
                 if (call.expression instanceof AST_SymbolRef) {

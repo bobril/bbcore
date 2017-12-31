@@ -1,4 +1,4 @@
-!function() {
+!function(undefined) {
     "use strict";
     (0, __bbb.b)();
     function hello() {

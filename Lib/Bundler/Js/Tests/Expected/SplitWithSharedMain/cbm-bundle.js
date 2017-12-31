@@ -1,20 +1,20 @@
-var __bbb={};!function() {
+var __bbb={};!function(e) {
     "use strict";
-    var o = function(o, e) {
-        var n = __bbb[e];
-        return void 0 !== n ? n instanceof Promise ? n : Promise.resolve(n) : __bbb[e] = new Promise(function(n, t) {
+    var n = function(n, o) {
+        var t = __bbb[o];
+        return t !== e ? t instanceof Promise ? t : Promise.resolve(t) : __bbb[o] = new Promise(function(e, t) {
             var r = document.createElement("script");
             r.type = "text/javascript", r.charset = "utf-8", r.onload = function() {
-                n(__bbb[e]);
+                e(__bbb[o]);
             }, r.onerror = function(e) {
-                t("Failed to load " + o);
-            }, r.src = o, document.head.appendChild(r);
+                t("Failed to load " + n);
+            }, r.src = n, document.head.appendChild(r);
         });
     };
-    function e() {
+    function o() {
         console.log("shared");
     }
-    e(), o("lib.js", "a").then(function(o) {
-        console.log(o.hello());
-    }), __bbb.b = e;
+    o(), n("lib.js", "a").then(function(e) {
+        console.log(e.hello());
+    }), __bbb.b = o;
 }();

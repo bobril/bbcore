@@ -1,10 +1,10 @@
-!function() {
+!function(b) {
     "use strict";
     (0, __bbb.b)();
-    function b() {
+    function n() {
         return "Hello";
     }
     __bbb.a = {
-        hello: b
+        hello: n
     };
 }();

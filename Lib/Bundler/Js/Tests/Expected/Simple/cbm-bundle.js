@@ -1,7 +1,7 @@
-!function() {
+!function(n) {
     "use strict";
-    function n() {
+    function o() {
         return "Hello";
     }
-    console.log(n());
+    console.log(o());
 }();

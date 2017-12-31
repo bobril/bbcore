@@ -1,4 +1,4 @@
-var __bbb={};var DEBUG = false;
+var DEBUG = false;
 (function(undefined) {
     "use strict";
     var __extendStatics = Object.setPrototypeOf || {
@@ -249,35 +249,10 @@ var __bbb={};var DEBUG = false;
         var m = o[Symbol.asyncIterator];
         return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
     };
-    var __import = function(url, prop) {
-        var res = __bbb[prop];
-        if (res !== undefined) {
-            if (res instanceof Promise) return res;
-            return Promise.resolve(res);
-        }
-        return __bbb[prop] = new Promise(function(r, e) {
-            var script = document.createElement("script");
-            script.type = "text/javascript";
-            script.charset = "utf-8";
-            script.onload = function() {
-                r(__bbb[prop]);
-            };
-            script.onerror = function(_ev) {
-                e("Failed to load " + url);
-            };
-            script.src = url;
-            document.head.appendChild(script);
-        });
-    };
-    function shared() {
-        console.log("shared");
+    var __export_ddd = undefined;
+    function setDdd(addd) {
+        __export_ddd = addd;
     }
-    function unused() {
-        return "unused";
-    }
-    shared();
-    __import("lib.js", "a").then(function(lib) {
-        console.log(lib.hello());
-    });
-    __bbb.b = shared;
+    setDdd(function() {});
+    if (__export_ddd) __export_ddd();
 })();

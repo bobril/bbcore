@@ -509,7 +509,7 @@ function bundle(project) {
     if (bundleNames.length > 1)
         detectBundleExportsImports(order, splitMap, cache, generateIdent);
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
-        let bundleAst = parse('(function(){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + "})()");
+        let bundleAst = parse('(function(undefined){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + "})()");
         let bodyAst = bundleAst
             .body[0].body.expression.body;
         let pureFuncs = Object.create(null);
@@ -862,7 +862,6 @@ function compressAst(project, bundleAst, pureFuncs) {
             hoist_funs: false,
             warnings: false,
             unsafe: true,
-            passes: 2,
             global_defs: project.defines,
             pure_funcs: call => {
                 if (call.expression instanceof AST_SymbolRef) {
