@@ -210,6 +210,7 @@ __bbe['${name}']=module.exports; }).call(window);`);
     let unshiftToBody = [];
     let selfExpNames = Object.create(null);
     let varDecls = null;
+    let reexportDef;
     let walker = new TreeWalker((node, descend) => {
         if (node instanceof AST_Block) {
             node.body = node.body
@@ -277,7 +278,7 @@ __bbe['${name}']=module.exports; }).call(window);`);
                         if (call.args.length === 1 &&
                             call.expression instanceof AST_SymbolRef) {
                             let symb = call.expression;
-                            if (isReexport(symb.thedef)) {
+                            if (symb.thedef === reexportDef || isReexport(symb.thedef)) {
                                 let req = detectRequireCall(call.args[0]);
                                 if (req != null) {
                                     let reqr = bb.resolveRequire(req, name);
@@ -290,6 +291,13 @@ __bbe['${name}']=module.exports; }).call(window);`);
                                 }
                             }
                         }
+                    }
+                }
+                else if (stm instanceof AST_Defun) {
+                    let fnc = stm;
+                    if (fnc.name.name === "__export") {
+                        reexportDef = fnc.name.thedef;
+                        return undefined;
                     }
                 }
                 return stm;

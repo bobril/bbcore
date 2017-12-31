@@ -82,6 +82,7 @@ bundleImp({ mainFiles: ["index.js"], compress: true, beautify: true, mangle: fal
 
 for (let i = 0; i < tests.length; i++) {
     currentTestDir = tests[i];
+    console.log(currentTestDir);
     mkdir(path.join("Outputs", currentTestDir));
     prefix = "cm";
     bundleImp({ mainFiles: ["index.js"], compress: true, beautify: false, mangle: true, defines: { DEBUG: false } });
