@@ -553,6 +553,8 @@ interface ISplitInfo {
     exportsUsedFromLazyBundles: Map<IAstNode, string>;
     /// from split, from file, export name, new AST_SymbolRef
     importsFromOtherBundles: Map<IAstNode, [ISplitInfo, IFileForBundle, string, IAstNode | undefined]>;
+    /// map from fileName lower cased to __bbb property name
+    exportsAllUsedFromLazyBundles: Map<string, string>;
 }
 
 type SplitMap = { [name: string]: ISplitInfo };
@@ -597,7 +599,8 @@ function bundle(project: IBundleProject) {
         shortName: bb.generateBundleName(""),
         propName: "ERROR",
         exportsUsedFromLazyBundles: new Map(),
-        importsFromOtherBundles: new Map()
+        importsFromOtherBundles: new Map(),
+        exportsAllUsedFromLazyBundles: new Map()
     }
     let lastGeneratedIdentId = 0;
     function generateIdent(): string {
@@ -613,7 +616,8 @@ function bundle(project: IBundleProject) {
             shortName: shortenedBundleName,
             propName: generateIdent(),
             exportsUsedFromLazyBundles: new Map(),
-            importsFromOtherBundles: new Map()
+            importsFromOtherBundles: new Map(),
+            exportsAllUsedFromLazyBundles: new Map()
         };
     });
     if (bundleNames.length > 1)
@@ -757,8 +761,13 @@ function bundle(project: IBundleProject) {
                             }
                         }
                     } else if (req = detectLazyRequireCall(node)) {
-                        let splitInfo = splitMap[bb.resolveRequire(req, f.name).toLowerCase()];
-                        return new AST_Call({ args: [new AST_String({ value: splitInfo.shortName }), new AST_String({ value: splitInfo.propName })], expression: new AST_SymbolRef({ name: "__import", start: <IAstToken>{} }) })
+                        let lowerCasedFullName = bb.resolveRequire(req, f.name).toLowerCase();
+                        let file = cache[lowerCasedFullName];
+                        let splitInfo = splitMap[file.partOfBundle];
+                        let propName = splitInfo.exportsAllUsedFromLazyBundles.get(lowerCasedFullName);
+                        if (splitInfo.fullName == "")
+                            return new AST_Call({ args: [newSymbolRef("undefined"), new AST_String({ value: propName })], expression: new AST_SymbolRef({ name: "__import", start: <IAstToken>{} }) });
+                        return new AST_Call({ args: [new AST_String({ value: splitInfo.shortName }), new AST_String({ value: propName })], expression: new AST_SymbolRef({ name: "__import", start: <IAstToken>{} }) });
                     }
                     return undefined;
                 }
@@ -790,6 +799,17 @@ function detectBundleExportsImports(order: IFileForBundle[], splitMap: SplitMap,
     order.forEach(f => {
         if (f.difficult) return;
         const fSplit = splitMap[f.partOfBundle];
+        f.lazyRequires.forEach(lazyRequire => {
+            let lowerCasedName = lazyRequire.toLowerCase();
+            let targetSplit = splitMap[cache[lowerCasedName].partOfBundle];
+            if (targetSplit.exportsAllUsedFromLazyBundles.get(lowerCasedName) !== undefined)
+                return;
+            if (targetSplit.fullName == lowerCasedName) {
+                targetSplit.exportsAllUsedFromLazyBundles.set(lowerCasedName, targetSplit.propName);
+            } else if (targetSplit.fullName == "") {
+                targetSplit.exportsAllUsedFromLazyBundles.set(lowerCasedName, generateIdent());
+            }
+        });
         let walker = new TreeWalker(
             (node: IAstNode): boolean => {
                 if (node instanceof AST_Symbol) {
@@ -922,8 +942,8 @@ function addAllDifficultFiles(order: IFileForBundle[], currentBundleName: string
 }
 
 function appendExportedFromLazyBundle(bodyAst: IAstStatement[], split: ISplitInfo, cache: FileForBundleCache) {
-    if (split.fullName != "") {
-        let file = cache[split.fullName];
+    split.exportsAllUsedFromLazyBundles.forEach((propName, lowerCasedFullName) => {
+        let file = cache[lowerCasedFullName];
         let properties: IAstObjectKeyVal[] = [];
         let keys = Object.keys(file.exports!);
         keys.forEach(key => {
@@ -942,12 +962,12 @@ function appendExportedFromLazyBundle(bodyAst: IAstStatement[], split: ISplitInf
                     expression: new AST_SymbolRef({
                         name: "__bbb"
                     }),
-                    property: split.propName
+                    property: propName
                 }),
                 right: new AST_Object({ properties })
             })
         }));
-    }
+    });
     split.exportsUsedFromLazyBundles.forEach((propName, valueNode) => {
         bodyAst.push(new AST_SimpleStatement({
             body: new AST_Assign({
