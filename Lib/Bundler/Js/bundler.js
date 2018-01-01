@@ -870,7 +870,7 @@ function printAst(project, bundleAst) {
 }
 function compressAst(project, bundleAst, pureFuncs) {
     if (project.compress !== false) {
-        bundleAst.figure_out_scope();
+        buildScopesAndLieAboutEval(bundleAst);
         let compressor = Compressor({
             hoist_funs: false,
             warnings: false,
@@ -902,22 +902,27 @@ function compressAst(project, bundleAst, pureFuncs) {
 }
 function mangleNames(project, bundleAst) {
     if (project.mangle !== false) {
-        bundleAst.figure_out_scope();
-        let rootScope = undefined;
-        let walker = new TreeWalker(n => {
-            if (n !== bundleAst && n instanceof AST_Scope) {
-                rootScope = n;
-                return true;
-            }
-            return false;
-        });
-        bundleAst.walk(walker);
-        rootScope.uses_eval = false;
-        rootScope.uses_with = false;
+        buildScopesAndLieAboutEval(bundleAst);
         base54.reset();
         bundleAst.compute_char_frequency();
         bundleAst.mangle_names();
     }
+}
+function buildScopesAndLieAboutEval(bundleAst) {
+    bundleAst.figure_out_scope();
+    let rootScope = undefined;
+    let walker = new TreeWalker(n => {
+        if (n !== bundleAst && n instanceof AST_Scope) {
+            rootScope = n;
+            return true;
+        }
+        return false;
+    });
+    bundleAst.walk(walker);
+    rootScope.uses_eval = false;
+    rootScope.uses_with = false;
+    bundleAst.uses_eval = false;
+    bundleAst.uses_with = false;
 }
 function bbBundle(params) {
     bundle(JSON.parse(params));
