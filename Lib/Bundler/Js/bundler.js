@@ -500,7 +500,9 @@ function bundle(project) {
         propName: "ERROR",
         exportsUsedFromLazyBundles: new Map(),
         importsFromOtherBundles: new Map(),
-        exportsAllUsedFromLazyBundles: new Map()
+        exportsAllUsedFromLazyBundles: new Map(),
+        directSplitsForcedLazy: new Set(),
+        expandedSplitsForcedLazy: []
     };
     let lastGeneratedIdentId = 0;
     function generateIdent() {
@@ -518,7 +520,9 @@ function bundle(project) {
             propName: generateIdent(),
             exportsUsedFromLazyBundles: new Map(),
             importsFromOtherBundles: new Map(),
-            exportsAllUsedFromLazyBundles: new Map()
+            exportsAllUsedFromLazyBundles: new Map(),
+            directSplitsForcedLazy: new Set(),
+            expandedSplitsForcedLazy: []
         };
     });
     if (bundleNames.length > 1)
@@ -663,8 +667,18 @@ function bundle(project) {
                     let splitInfo = splitMap[file.partOfBundle];
                     let propName = splitInfo.exportsAllUsedFromLazyBundles.get(lowerCasedFullName);
                     if (splitInfo.fullName == "")
-                        return new AST_Call({ args: [newSymbolRef("undefined"), new AST_String({ value: propName })], expression: new AST_SymbolRef({ name: "__import", start: {} }) });
-                    return new AST_Call({ args: [new AST_String({ value: splitInfo.shortName }), new AST_String({ value: propName })], expression: new AST_SymbolRef({ name: "__import", start: {} }) });
+                        return new AST_Call({ args: [newSymbolRef("undefined"), new AST_String({ value: propName })], expression: newSymbolRef("__import") });
+                    let resultAst = new AST_Call({ args: [new AST_String({ value: splitInfo.shortName }), new AST_String({ value: propName })], expression: newSymbolRef("__import") });
+                    for (let i = splitInfo.expandedSplitsForcedLazy.length - 1; i >= 0; i--) {
+                        let usedSplit = splitInfo.expandedSplitsForcedLazy[i];
+                        resultAst = new AST_Call({
+                            args: [new AST_Function({ argnames: [], body: [new AST_Return({ value: resultAst })] })], expression: new AST_Dot({
+                                property: "then",
+                                expression: new AST_Call({ args: [new AST_String({ value: usedSplit.shortName }), new AST_String({ value: usedSplit.propName })], expression: newSymbolRef("__import") })
+                            })
+                        });
+                    }
+                    return resultAst;
                 }
                 return undefined;
             });
@@ -693,7 +707,7 @@ function detectBundleExportsImports(order, splitMap, cache, generateIdent) {
     order.forEach(f => {
         if (f.difficult)
             return;
-        const fSplit = splitMap[f.partOfBundle];
+        const sourceSplit = splitMap[f.partOfBundle];
         f.lazyRequires.forEach(lazyRequire => {
             let lowerCasedName = lazyRequire.toLowerCase();
             let targetSplit = splitMap[cache[lowerCasedName].partOfBundle];
@@ -704,6 +718,13 @@ function detectBundleExportsImports(order, splitMap, cache, generateIdent) {
             }
             else if (targetSplit.fullName == "") {
                 targetSplit.exportsAllUsedFromLazyBundles.set(lowerCasedName, generateIdent());
+            }
+        });
+        f.requires.forEach(require => {
+            let lowerCasedName = require.toLowerCase();
+            let targetSplit = splitMap[cache[lowerCasedName].partOfBundle];
+            if (targetSplit !== sourceSplit && targetSplit.fullName !== "") {
+                sourceSplit.directSplitsForcedLazy.add(targetSplit);
             }
         });
         let walker = new TreeWalker((node) => {
@@ -719,7 +740,7 @@ function detectBundleExportsImports(order, splitMap, cache, generateIdent) {
                     return false;
                 let p = walker.parent();
                 if (p instanceof AST_PropAccess && typeof p.property === "string") {
-                    addSplitImportExport(fSplit, extf, p.property, splitMap, generateIdent);
+                    addSplitImportExport(sourceSplit, extf, p.property, splitMap, generateIdent);
                 }
                 else if (p instanceof AST_VarDef && p.name === symb) {
                     return false;
@@ -727,7 +748,7 @@ function detectBundleExportsImports(order, splitMap, cache, generateIdent) {
                 else {
                     let keys = Object.keys(extf.exports);
                     keys.forEach(key => {
-                        addSplitImportExport(fSplit, extf, key, splitMap, generateIdent);
+                        addSplitImportExport(sourceSplit, extf, key, splitMap, generateIdent);
                     });
                 }
                 return false;
@@ -736,6 +757,23 @@ function detectBundleExportsImports(order, splitMap, cache, generateIdent) {
         });
         f.ast.walk(walker);
     });
+    var splitKeys = Object.keys(splitMap);
+    for (let i = 0; i < splitKeys.length; i++) {
+        let split = splitMap[splitKeys[i]];
+        if (split.fullName == "")
+            continue;
+        expandDirectSplitsForcedLazy(split, split, new Set().add(split));
+    }
+}
+function expandDirectSplitsForcedLazy(split, rootSplit, visited) {
+    split.directSplitsForcedLazy.forEach((targetSplit) => {
+        if (visited.has(targetSplit))
+            return;
+        visited.add(targetSplit);
+        expandDirectSplitsForcedLazy(targetSplit, rootSplit, visited);
+    });
+    if (split !== rootSplit)
+        rootSplit.expandedSplitsForcedLazy.push(split);
 }
 function fileNameToIdent(fn) {
     if (fn.lastIndexOf("/") >= 0)

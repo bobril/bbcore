@@ -151,7 +151,7 @@ interface IAstScope extends IAstBlock {
     /// current index for mangling variables (used internally by the mangler) (After Scope)
     cname?: number;
 
-    def_variable(symb: IAstSymbolRef): ISymbolDef;
+    def_variable?(symb: IAstSymbolRef): ISymbolDef;
 }
 
 interface IAST_Scope {
