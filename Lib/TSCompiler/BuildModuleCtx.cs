@@ -119,7 +119,14 @@ namespace Lib.TSCompiler
             parentInfo.ImportingLocal(itemInfo);
             if (IsDts(item.FullPath))
             {
-                // implementation for .d.ts file currently needs to be added to build by b.asset("lib.js") and cannot have dependencies
+                var jsItem = dc.TryGetChild(fileOnly + ".js") as IFileCache;
+                if (jsItem != null)
+                {
+                    var jsItemInfo = TSFileAdditionalInfo.Get(jsItem, _owner.DiskCache);
+                    jsItemInfo.Type = FileCompilationType.JavaScript;
+                    CheckAdd(jsItem.FullPath);
+                }
+                // implementation for .d.ts file does not have same name, it needs to be added to build by b.asset("lib.js") and cannot have dependencies
             }
             else
             {
