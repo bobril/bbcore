@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.3.0
+
 ### Added
 
 * Js file is added to compilation when locally importing its d.ts file.
