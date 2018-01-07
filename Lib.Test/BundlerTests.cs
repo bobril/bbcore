@@ -6,6 +6,7 @@ using Lib.Bundler;
 
 namespace Lib.Test
 {
+    [CollectionDefinition("Serial", DisableParallelization = true)]
     public class BundlerTests
     {
         string _bbdir;

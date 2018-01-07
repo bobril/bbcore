@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Lib.Test
 {
+    [CollectionDefinition("Serial", DisableParallelization = true)]
     public class CssProcessorTests
     {
         string _bbdir;

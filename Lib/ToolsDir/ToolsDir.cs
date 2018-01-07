@@ -11,37 +11,42 @@ namespace Lib.ToolsDir
 {
     public class ToolsDir : IToolsDir
     {
+        static object lockInitialization = new object();
+
         const string YarnExecutableName = "yarn";
         static object _lock = new object();
 
         public ToolsDir(string dir)
         {
-            Path = dir;
-            if (!new DirectoryInfo(dir).Exists)
-                Directory.CreateDirectory(Path);
-            TypeScriptLibDir = PathUtils.Join(Path, "node_modules/typescript/lib");
-            lock (_lock)
+            lock (lockInitialization)
             {
-                var jsEngineSwitcher = JsEngineSwitcher.Current;
-                if (!jsEngineSwitcher.EngineFactories.Any())
+                Path = dir;
+                if (!new DirectoryInfo(dir).Exists)
+                    Directory.CreateDirectory(Path);
+                TypeScriptLibDir = PathUtils.Join(Path, "node_modules/typescript/lib");
+                lock (_lock)
                 {
-                    jsEngineSwitcher.EngineFactories.Add(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory());
-                    jsEngineSwitcher.DefaultEngineName = JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;
+                    var jsEngineSwitcher = JsEngineSwitcher.Current;
+                    if (!jsEngineSwitcher.EngineFactories.Any())
+                    {
+                        jsEngineSwitcher.EngineFactories.Add(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory());
+                        jsEngineSwitcher.DefaultEngineName = JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;
+                    }
                 }
+                LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js");
+                JasmineCoreJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine.js");
+                JasmineDts = ResourceUtils.GetText("Lib.ToolsDir.jasmine.d.ts");
+                JasmineDtsPath = PathUtils.Join(Path, "jasmine.d.ts");
+                File.WriteAllText(JasmineDtsPath, JasmineDts);
+                JasmineBootJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot.js");
+                WebtAJs = ResourceUtils.GetText("Lib.ToolsDir.webt_a.js");
+                WebtIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.webt_index.html");
+                WebAJs = ResourceUtils.GetText("Lib.ToolsDir.web_a.js");
+                WebIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.web_index.html");
+                _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
+                TsLibSource = ResourceUtils.GetText("Lib.TSCompiler.tslib.js");
+                ImportSource = ResourceUtils.GetText("Lib.TSCompiler.import.js");
             }
-            LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js");
-            JasmineCoreJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine.js");
-            JasmineDts = ResourceUtils.GetText("Lib.ToolsDir.jasmine.d.ts");
-            JasmineDtsPath = PathUtils.Join(Path, "jasmine.d.ts");
-            File.WriteAllText(JasmineDtsPath, JasmineDts);
-            JasmineBootJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot.js");
-            WebtAJs = ResourceUtils.GetText("Lib.ToolsDir.webt_a.js");
-            WebtIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.webt_index.html");
-            WebAJs = ResourceUtils.GetText("Lib.ToolsDir.web_a.js");
-            WebIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.web_index.html");
-            _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
-            TsLibSource = ResourceUtils.GetText("Lib.TSCompiler.tslib.js");
-            ImportSource = ResourceUtils.GetText("Lib.TSCompiler.import.js");
         }
 
         public string Path { get; }

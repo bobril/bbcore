@@ -140,6 +140,7 @@ namespace Lib.Test
         }
     }
 
+    [CollectionDefinition("Serial", DisableParallelization = true)]
     public class CompilerTests
     {
         string _bbdir;
