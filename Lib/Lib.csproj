@@ -41,11 +41,11 @@
     <EmbeddedResource Include="TSCompiler\tslib.js" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.0.0-alpha8" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.0.0-alpha7" />
-		<PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.0.0-alpha6" />
-		<PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.0.0-alpha6" />
-		<PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-alpha6" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.0.0-alpha9" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.0.0-alpha9" />
+		<PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.0.0-alpha9" />
+		<PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.0.0-alpha9" />
+		<PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-alpha9" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.0.1" />
