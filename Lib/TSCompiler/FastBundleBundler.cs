@@ -9,17 +9,11 @@ namespace Lib.TSCompiler
 {
     public class FastBundleBundler
     {
-        static string tslibSource;
         SourceMap _sourceMap;
         string _sourceMapString;
         string _bundleJs;
         string _indexHtml;
         readonly IToolsDir _tools;
-
-        static FastBundleBundler()
-        {
-            tslibSource = ResourceUtils.GetText("Lib.TSCompiler.tslib.js");
-        }
 
         public FastBundleBundler(IToolsDir tools)
         {
@@ -37,7 +31,7 @@ namespace Lib.TSCompiler
             var diskCache = Project.Owner.DiskCache;
             var root = Project.Owner.Owner.FullPath;
             var sourceMapBuilder = new SourceMapBuilder();
-            sourceMapBuilder.AddText(tslibSource);
+            sourceMapBuilder.AddText(_tools.TsLibSource);
             var cssLink = "";
             foreach (var source in BuildResult.Path2FileInfo)
             {

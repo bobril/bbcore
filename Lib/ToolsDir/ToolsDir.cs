@@ -40,6 +40,8 @@ namespace Lib.ToolsDir
             WebAJs = ResourceUtils.GetText("Lib.ToolsDir.web_a.js");
             WebIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.web_index.html");
             _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
+            TsLibSource = ResourceUtils.GetText("Lib.TSCompiler.tslib.js");
+            ImportSource = ResourceUtils.GetText("Lib.TSCompiler.import.js");
         }
 
         public string Path { get; }
@@ -92,6 +94,10 @@ namespace Lib.ToolsDir
 
         public string WebtAJs { get; }
 
+        public string TsLibSource { get; }
+
+        public string ImportSource { get; }
+
         public string GetTypeScriptVersion()
         {
             var tspackage = PathUtils.Join(Path, "node_modules/typescript/package.json");
@@ -117,6 +123,7 @@ namespace Lib.ToolsDir
             if (!File.Exists(tspackage))
                 RunYarn(Path, "init -y");
             RunYarn(Path, "add typescript@" + version + " --no-emoji --non-interactive");
+            if (version=="*") RunYarn(Path, "upgrade --no-emoji --non-interactive");
         }
 
         public void RunYarn(string dir, string aParams)

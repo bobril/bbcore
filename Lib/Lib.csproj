@@ -4,6 +4,8 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Bundler\Js\bundler.js" />
+    <None Remove="Bundler\Js\uglify.js" />
     <None Remove="CSSProcessor\bbcss.js" />
     <None Remove="CSSProcessor\bundle.min.js" />
     <None Remove="ToolsDir\jasmine-boot.js" />
@@ -16,9 +18,12 @@
     <None Remove="ToolsDir\webt_index.html" />
     <None Remove="ToolsDir\web_a.js" />
     <None Remove="ToolsDir\web_index.html" />
+    <None Remove="TSCompiler\import.js" />
     <None Remove="TSCompiler\tslib.js" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Bundler\Js\bundler.js" />
+    <EmbeddedResource Include="Bundler\Js\uglify.js" />
     <EmbeddedResource Include="CSSProcessor\bbcss.js" />
     <EmbeddedResource Include="CSSProcessor\bundle.min.js" />
     <EmbeddedResource Include="ToolsDir\jasmine-boot.js" />
@@ -32,6 +37,7 @@
     <EmbeddedResource Include="ToolsDir\web_a.js" />
     <EmbeddedResource Include="ToolsDir\web_index.html" />
     <EmbeddedResource Include="TSCompiler\bbtsc.js" />
+    <EmbeddedResource Include="TSCompiler\import.js" />
     <EmbeddedResource Include="TSCompiler\tslib.js" />
   </ItemGroup>
   <ItemGroup>
