@@ -39,14 +39,19 @@ namespace Lib.Composition
         IChromeProcessFactory _chromeProcessFactory;
         IChromeProcess _chromeProcess;
 
-        public void ParseCommandLineArgs(string[] args)
+        public Composition()
+        {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        }
+
+        public void ParseCommandLine(string[] args)
         {
             _command = CommandLineParser.Parse
             (
                 args: args,
                 commands: new List<CommandLineCommand>()
                 {
-                    new MainCommand(),
                     new BuildCommand(),
                     new TranslationCommand(),
                     new TestCommand(),
@@ -54,6 +59,37 @@ namespace Lib.Composition
                     new BuildInteractiveNoUpdateCommand()
                 }
             );
+        }
+
+        public void RunCommand()
+        {
+            if (_command == null)
+                return;
+            if (_command is BuildInteractiveCommand iCommand)
+            {
+                RunInteractive(iCommand.Port.Value, allowedUpdateDependencies: true);
+            }
+            else if (_command is BuildInteractiveNoUpdateCommand yCommand)
+            {
+                RunInteractive(yCommand.Port.Value, allowedUpdateDependencies: false);
+            }
+        }
+
+        void RunInteractive(string portInString, bool allowedUpdateDependencies)
+        {
+            int? port = null;
+            if (int.TryParse(portInString, out var portInInt))
+            {
+                port = portInInt;
+            }
+            InitTools("2.6.2");
+            InitDiskCache();
+            InitTestServer();
+            InitMainServer();
+            AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            StartWebServer(port);
+            InitInteractiveMode();
+            WaitForStop();
         }
 
         public void InitTools(string version)
@@ -68,7 +104,8 @@ namespace Lib.Composition
             if (runningFrom.StartsWith(_bbdir))
             {
                 _bbdir = runningFrom;
-            } else
+            }
+            else
             {
                 _bbdir = PathUtils.Join(_bbdir, "dev");
             }
@@ -93,7 +130,8 @@ namespace Lib.Composition
             var dirCache = _dc.TryGetItem(projectDir) as IDirectoryCache;
             var proj = TSProject.Get(dirCache, _dc);
             proj.IsRootProject = true;
-            if (proj.ProjectOptions != null) return proj.ProjectOptions;
+            if (proj.ProjectOptions != null)
+                return proj.ProjectOptions;
             proj.ProjectOptions = new ProjectOptions
             {
                 Tools = _tools,
@@ -228,11 +266,12 @@ namespace Lib.Composition
         static bool FindInFilesContent(string pathWithoutFirstSlash, Dictionary<string, object> filesContentFromCurrentProjectBuildResult, out object content)
         {
             content = null;
-            if (filesContentFromCurrentProjectBuildResult == null) return false;
+            if (filesContentFromCurrentProjectBuildResult == null)
+                return false;
             if (filesContentFromCurrentProjectBuildResult.TryGetValue(pathWithoutFirstSlash, out content))
                 return true;
             // This should be very rare so it could be slow linear search
-            foreach(var p in filesContentFromCurrentProjectBuildResult)
+            foreach (var p in filesContentFromCurrentProjectBuildResult)
             {
                 if (p.Key.Equals(pathWithoutFirstSlash, StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -285,7 +324,7 @@ namespace Lib.Composition
                     foreach (var proj in toBuild)
                     {
                         Console.ForegroundColor = ConsoleColor.Blue;
-                        Console.WriteLine("Build started "+proj.Owner.Owner.FullPath);
+                        Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
                         Console.ForegroundColor = ConsoleColor.Gray;
                         proj.Owner.LoadProjectJson();
                         proj.Owner.FirstInitialize();
@@ -345,7 +384,7 @@ namespace Lib.Composition
                     var duration = DateTime.UtcNow - start;
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
                     Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning")+" and has "+Plural(totalFiles, "file"));
+                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
                     Console.ForegroundColor = ConsoleColor.Gray;
                 }
             });
@@ -353,7 +392,8 @@ namespace Lib.Composition
 
         string Plural(int number, string word)
         {
-            if (number == 0) return "no " + word + "s";
+            if (number == 0)
+                return "no " + word + "s";
             return number + " " + word + (number > 1 ? "s" : "");
         }
 
@@ -374,7 +414,10 @@ namespace Lib.Composition
                     continue;
                 foreach (var d in diag)
                 {
-                    if (d.isError) errors++; else warnings++;
+                    if (d.isError)
+                        errors++;
+                    else
+                        warnings++;
                     messages.Add(new CompilationResultMessage
                     {
                         FileName = pathInfoPair.Key,

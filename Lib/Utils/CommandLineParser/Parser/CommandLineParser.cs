@@ -24,7 +24,7 @@ namespace Lib.Utils.CommandLineParser.Parser
 
             // first argument
             string firstArg = args?.Length > 0 ? args[0].Trim() : null;
-            if (firstArg != null)
+            if (firstArg != null && !firstArg.StartsWith('-'))
             {
                 // help
                 if (HelpWords.Contains(firstArg))
@@ -37,8 +37,7 @@ namespace Lib.Utils.CommandLineParser.Parser
                 command = commands?.FirstOrDefault(c => c.Words?.Contains(firstArg) ?? false);
 
                 // remove first argument
-                commandArgs = new string[args.Length - 1];
-                Array.Copy(sourceArray: args, sourceIndex: 1, destinationArray: commandArgs, destinationIndex: 0, length: commandArgs.Length);
+                commandArgs = args.Skip(1).ToArray();
             }
             else
             {

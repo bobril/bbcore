@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+* Parsing commandline and running commands implemented. Interactive command is now true default command, so all its parameters works without specifying it too.
+* Listening port in iteractive mode selectable from command line.
+
 ## 0.3.1
 
 ### Fixed

@@ -10,7 +10,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
         /// <summary>
         /// Command aliases
         /// </summary>
-        public override string[] Words => new[] { "i", "interactive" };
+        public override string[] Words => new[] { "", "i", "interactive" };
 
         /// <summary>
         /// Command description
