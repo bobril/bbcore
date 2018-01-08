@@ -124,6 +124,7 @@ namespace Lib.TSCompiler
                 {
                     var jsItemInfo = TSFileAdditionalInfo.Get(jsItem, _owner.DiskCache);
                     jsItemInfo.Type = FileCompilationType.JavaScript;
+                    parentInfo.ImportingLocal(jsItemInfo);
                     CheckAdd(jsItem.FullPath);
                 }
                 // implementation for .d.ts file does not have same name, it needs to be added to build by b.asset("lib.js") and cannot have dependencies
