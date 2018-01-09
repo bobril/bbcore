@@ -113,11 +113,19 @@ namespace Lib.TSCompiler
                     }
                 }
             }
+            else
+            {
+                MainFile = "index.js";
+                if (ProjectOptions != null)
+                {
+                    FillProjectOptionsFromPackageJson(new JObject());
+                }
+            }
         }
 
         void FillProjectOptionsFromPackageJson(JObject parsed)
         {
-            ProjectOptions.Localize = Dependencies.Contains("bobril-g11n");
+            ProjectOptions.Localize = Dependencies?.Contains("bobril-g11n") ?? false;
             ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec\\.ts(?:x)?$";
             var bobrilSection = parsed.GetValue("bobril") as JObject;
             ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
@@ -193,7 +201,7 @@ namespace Lib.TSCompiler
                     buildModuleCtx.Crawl();
                     if (buildModuleCtx.ToCompile.Count != 0)
                     {
-                        compiler.MeasurePerformance = true;
+                        if (buildCtx.Verbose) compiler.MeasurePerformance = true;
                         compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
                             break;

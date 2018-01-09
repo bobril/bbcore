@@ -7,10 +7,11 @@ namespace Lib.Composition
 {
     public class BuildCtx
     {
-        public BuildCtx(ICompilerPool compilerPool)
+        public BuildCtx(ICompilerPool compilerPool, bool verbose)
         {
             _cts = new CancellationTokenSource();
             _cancelationToken = _cts.Token;
+            Verbose = verbose;
             CompilerPool = compilerPool;
         }
 
@@ -26,6 +27,7 @@ namespace Lib.Composition
 
         CancellationTokenSource _cts;
         public CancellationToken _cancelationToken;
+        public bool Verbose;
         public ICompilerPool CompilerPool;
     }
 }

@@ -106,8 +106,11 @@ namespace Lib.TSCompiler
         {
             JasmineDts = Tools.JasmineDtsPath;
             var res = new List<string>(TestSources?.Count ?? 4);
-            var fileRegex = new Regex(TestSourcesRegExp, RegexOptions.CultureInvariant);
-            RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);
+            if (TestSourcesRegExp != null)
+            {
+                var fileRegex = new Regex(TestSourcesRegExp, RegexOptions.CultureInvariant);
+                RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);
+            }
             TestSources = res;
         }
 

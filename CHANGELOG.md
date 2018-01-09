@@ -6,6 +6,11 @@
 
 * Parsing commandline and running commands implemented. Interactive command is now true default command, so all its parameters works without specifying it too.
 * Listening port in iteractive mode selectable from command line.
+* New --verbose parameter for interactive commands (it logs all first chance exceptions). Shortened output without --verbose.
+
+### Fixed
+
+* Crashes when started in directory without package.json. Automatically compiling index.ts(x)
 
 ## 0.3.1
 

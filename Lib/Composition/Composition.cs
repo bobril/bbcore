@@ -38,6 +38,7 @@ namespace Lib.Composition
         ILongPollingServer _mainServerLongPollingHandler;
         IChromeProcessFactory _chromeProcessFactory;
         IChromeProcess _chromeProcess;
+        private bool _verbose;
 
         public Composition()
         {
@@ -67,16 +68,34 @@ namespace Lib.Composition
                 return;
             if (_command is BuildInteractiveCommand iCommand)
             {
+                if (iCommand.Verbose.Value)
+                    _verbose = true;
                 RunInteractive(iCommand.Port.Value, allowedUpdateDependencies: true);
             }
             else if (_command is BuildInteractiveNoUpdateCommand yCommand)
             {
+                if (yCommand.Verbose.Value)
+                    _verbose = true;
                 RunInteractive(yCommand.Port.Value, allowedUpdateDependencies: false);
             }
         }
 
+        void IfEnabledStartVerbosive()
+        {
+            if (!_verbose)
+                return;
+            Console.WriteLine("Verbose output enabled");
+            AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
+        }
+
+        void CurrentDomain_FirstChanceException(object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+        {
+            Console.WriteLine("First chance exception: "+ e.Exception);
+        }
+
         void RunInteractive(string portInString, bool allowedUpdateDependencies)
         {
+            IfEnabledStartVerbosive();
             int? port = null;
             if (int.TryParse(portInString, out var portInInt))
             {
@@ -149,7 +168,7 @@ namespace Lib.Composition
 
         public void Build(ProjectOptions project)
         {
-            var ctx = new BuildCtx(_compilerPool);
+            var ctx = new BuildCtx(_compilerPool, false);
             project.Owner.Build(ctx);
         }
 
@@ -315,6 +334,13 @@ namespace Lib.Composition
                     {
                         toBuild = _projects.ToArray();
                     }
+                    if (toBuild.Length == 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Change detected, but no project to build");
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        continue;
+                    }
                     _mainServer.NotifyCompilationStarted();
                     int errors = 0;
                     int warnings = 0;
@@ -332,7 +358,7 @@ namespace Lib.Composition
                         proj.RefreshTestSources();
                         proj.DetectBobrilJsxDts();
                         proj.RefreshExampleSources();
-                        var ctx = new BuildCtx(_compilerPool);
+                        var ctx = new BuildCtx(_compilerPool, _verbose);
                         ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
                         ctx.Sources = new HashSet<string>();
                         ctx.Sources.Add(proj.MainFile);
@@ -352,7 +378,7 @@ namespace Lib.Composition
                         IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
                         if (proj.TestSources != null && proj.TestSources.Count > 0)
                         {
-                            ctx = new BuildCtx(_compilerPool);
+                            ctx = new BuildCtx(_compilerPool, _verbose);
                             ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
                             ctx.Sources = new HashSet<string>();
                             ctx.Sources.Add(proj.JasmineDts);
@@ -495,6 +521,7 @@ namespace Lib.Composition
                 if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.C)
                     break;
             }
+            Console.WriteLine("Stopping by starting to killing Chrome");
             StopChromeTest();
         }
     }
