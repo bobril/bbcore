@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.4.0
+
 ### Added
 
 * Parsing commandline and running commands implemented. Interactive command is now true default command, so all its parameters works without specifying it too.
