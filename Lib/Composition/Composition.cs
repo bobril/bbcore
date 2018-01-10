@@ -17,6 +17,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Lib.Chrome;
 using System.Reflection;
+using System.Text;
 
 namespace Lib.Composition
 {
@@ -78,6 +79,10 @@ namespace Lib.Composition
                     _verbose = true;
                 RunInteractive(yCommand.Port.Value, allowedUpdateDependencies: false);
             }
+            else if (_command is BuildCommand bCommand)
+            {
+                RunBuild(bCommand);
+            }
         }
 
         void IfEnabledStartVerbosive()
@@ -90,7 +95,78 @@ namespace Lib.Composition
 
         void CurrentDomain_FirstChanceException(object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
-            Console.WriteLine("First chance exception: "+ e.Exception);
+            Console.WriteLine("First chance exception: " + e.Exception);
+        }
+
+        void RunBuild(BuildCommand bCommand)
+        {
+            InitTools("2.6.2");
+            InitDiskCache();
+            AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            DateTime start = DateTime.UtcNow;
+            int errors = 0;
+            int warnings = 0;
+            var messages = new List<CompilationResultMessage>();
+            var messagesFromFiles = new HashSet<string>();
+            var totalFiles = 0;
+            foreach (var proj in _projects)
+            {
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
+                Console.ForegroundColor = ConsoleColor.Gray;
+                proj.Owner.LoadProjectJson();
+                proj.Owner.FirstInitialize();
+                proj.RefreshMainFile();
+                proj.DetectBobrilJsxDts();
+                proj.RefreshExampleSources();
+                var ctx = new BuildCtx(_compilerPool, _verbose);
+                ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
+                ctx.Sources = new HashSet<string>();
+                ctx.Sources.Add(proj.MainFile);
+                proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
+                if (proj.BobrilJsxDts != null)
+                    ctx.Sources.Add(proj.BobrilJsxDts);
+                proj.Owner.Build(ctx);
+                var buildResult = ctx.BuildResult;
+                var filesContent = new Dictionary<string, object>();
+                proj.FillOutputByAdditionalResourcesDirectory(filesContent);
+                var fastBundle = new FastBundleBundler(_tools);
+                fastBundle.FilesContent = filesContent;
+                fastBundle.Project = proj;
+                fastBundle.BuildResult = buildResult;
+                fastBundle.Build("bb/base", "bundle.js.map");
+                proj.MainProjFastBundle = fastBundle;
+                IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
+                totalFiles += filesContent.Count;
+            }
+            var duration = DateTime.UtcNow - start;
+            Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+            Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
+            Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
+        void SaveFilesContentToDisk(Dictionary<string, object> filesContent, string dir)
+        {
+            dir = PathUtils.Normalize(dir);
+            foreach (var nameAndContent in filesContent)
+            {
+                var content = nameAndContent.Value;
+                var fileName = PathUtils.Join(dir, nameAndContent.Key);
+                filesContent[nameAndContent.Key] = null;
+                if (content is Lazy<object>)
+                {
+                    content = ((Lazy<object>)content).Value;
+                }
+                if (content is string)
+                {
+                    File.WriteAllText(fileName, (string)content, Encoding.UTF8);
+                }
+                else
+                {
+                    File.WriteAllBytes(fileName, (byte[])content);
+                }
+            }
         }
 
         void RunInteractive(string portInString, bool allowedUpdateDependencies)

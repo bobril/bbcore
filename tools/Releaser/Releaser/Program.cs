@@ -129,6 +129,7 @@ namespace Releaser
                 uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("linux-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64.zip"), null));
                 Console.WriteLine("linux-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
+                Console.WriteLine("Press Enter for finish");
                 Console.ReadLine();
                 return 0;
             }

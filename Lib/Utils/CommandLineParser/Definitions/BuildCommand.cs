@@ -8,7 +8,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         protected override string Description => "just build and stop";
 
-        public CommandLineArgumentString Dir { get; private set; } = new CommandLineArgumentString(description: "define where to put build result", words: new[] { "-d", "--dir" }, defaultValue: "./dist");
+        public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString(description: "define where to put build result", words: new[] { "-d", "--dir" }, defaultValue: "./dist");
 
         public CommandLineArgumentBool Fast { get; } = new CommandLineArgumentBool(description: "quick debuggable bundling", words: new[] { "-f", "--fast" });
 
@@ -28,6 +28,6 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         public CommandLineArgumentString VersionDir { get; } = new CommandLineArgumentString(description: "store all resources except index.html in this directory", words: new[] { "-v", "--versiondir" });
 
-        public CommandLineArgumentSwitch NoUpdate { get; } = new CommandLineArgumentSwitch(description: "update translations", words: new[] { "-n", "--noupdate" });
+        public CommandLineArgumentSwitch NoUpdate { get; } = new CommandLineArgumentSwitch(description: "do not install dependencies at start", words: new[] { "-n", "--noupdate" });
     }
 }
