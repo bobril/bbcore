@@ -91,7 +91,11 @@ namespace Lib.TSCompiler
                     {
                         if (!(child is IFileCache)) continue;
                         if (child.IsInvalid) continue;
-                        res.Add(child.FullPath);
+                        var fn = child.FullPath;
+                        if (fn.EndsWith(".d.ts"))
+                            continue;
+                        if (fn.EndsWith(".ts") || fn.EndsWith(".tsx") || fn.EndsWith(".js") || fn.EndsWith(".jsx"))
+                            res.Add(fn);
                     }
                 }
                 else if (item is IFileCache)

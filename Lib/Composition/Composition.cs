@@ -590,15 +590,25 @@ namespace Lib.Composition
 
         public void WaitForStop()
         {
-            Console.TreatControlCAsInput = true;
+            Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs args) =>
+            {
+                args.Cancel = true;
+                ExitWithCleanUp();
+            };
             while (true)
             {
-                var key = Console.ReadKey(true);
-                if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.C)
+                var line = Console.ReadLine();
+                if (line == "q" || line == "quit")
                     break;
             }
+            ExitWithCleanUp();
+        }
+
+        public void ExitWithCleanUp()
+        {
             Console.WriteLine("Stopping by starting to killing Chrome");
             StopChromeTest();
+            Environment.Exit(0);
         }
     }
 }

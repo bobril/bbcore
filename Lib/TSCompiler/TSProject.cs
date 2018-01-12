@@ -210,6 +210,7 @@ namespace Lib.TSCompiler
                         if (!compiler.EmitProgram())
                             break;
                         buildModuleCtx.UpdateCacheIds();
+                        buildModuleCtx.Crawl();
                     }
                 } while (buildModuleCtx.ChangedDts || buildModuleCtx.TrullyCompiledCount < buildModuleCtx.ToCompile.Count);
                 buildCtx.BuildResult = buildModuleCtx._result;

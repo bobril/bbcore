@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Fixed
+
+* Exit by Ctrl+C improved
+* Missing resources after rebuild
+* Example files list after rebuild
+
 ## 0.4.0
 
 ### Added
