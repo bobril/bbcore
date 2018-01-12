@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.4.1
+
 ### Fixed
 
 * Exit by Ctrl+C improved
