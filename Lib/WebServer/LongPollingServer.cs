@@ -170,7 +170,7 @@ namespace Lib.WebServer
                 }
             }
 
-            internal void ReceivedMessage(string message, object data)
+            internal void ReceivedMessage(string message, JToken data)
             {
                 _handler.OnMessage(this, message, data);
             }
@@ -246,7 +246,7 @@ namespace Lib.WebServer
                 for (var i = 0; i < ms.Count; i++)
                 {
                     var msi = ms[i] as JObject;
-                    c.ReceivedMessage(msi["m"].ToString(), (object)msi["d"]);
+                    c.ReceivedMessage(msi["m"].ToString(), msi.Value<JToken>("d"));
                 }
             }
             await c.PollResponse(context, waitAllowed, firstResponse);

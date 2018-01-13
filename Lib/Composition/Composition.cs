@@ -593,7 +593,7 @@ namespace Lib.Composition
             Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs args) =>
             {
                 args.Cancel = true;
-                ExitWithCleanUp();
+                Task.Run((Action)ExitWithCleanUp);
             };
             while (true)
             {

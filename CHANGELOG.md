@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+* Removed all dynamic staff so code runs after ILLinker
+* Killing of Chrome on Ctrl+C more reliable
+
 ## 0.4.1
 
 ### Fixed

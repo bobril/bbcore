@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System;
 using Lib.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Lib.Composition
 {
@@ -34,13 +35,13 @@ namespace Lib.Composition
             _connection.Send(message, data);
         }
 
-        public void OnMessage(ILongPollingConnection connection, string message, dynamic data)
+        public void OnMessage(ILongPollingConnection connection, string message, JToken data)
         {
             switch (message)
             {
                 case "focusPlace":
                     {
-                        var position = new Dictionary<string, object> { { "fn", PathUtils.Join(_mainServer.ProjectDir, (string)data.fn) }, { "pos", data.pos } };
+                        var position = new Dictionary<string, object> { { "fn", PathUtils.Join(_mainServer.ProjectDir, data.Value<string>("fn")) }, { "pos", data.Value<JArray>("pos") } };
                         _mainServer.SendToAll(message, position);
                         break;
                     }
@@ -51,7 +52,7 @@ namespace Lib.Composition
                     }*/
                 case "setLiveReload":
                     {
-                        _mainServer.Project.LiveReloadEnabled = (bool)data.value;
+                        _mainServer.Project.LiveReloadEnabled = data.Value<bool>("value");
                         // TODO: force recompile
                         _mainServer.SendToAll("setLiveReload", data);
                         break;
