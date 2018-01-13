@@ -51,12 +51,7 @@ namespace Lib.Chrome
             {
                 Console.Write(d.Data);
             };
-            EventHandler disposeHandler = (s, e) => chromeProcess.Kill();
-            UnhandledExceptionEventHandler unhandledExceptionHandler = (s, e) => chromeProcess.Kill();
-            AppDomain.CurrentDomain.DomainUnload += disposeHandler;
-            AppDomain.CurrentDomain.ProcessExit += disposeHandler;
-            AppDomain.CurrentDomain.UnhandledException += unhandledExceptionHandler;
-            return new LocalChromeProcess(directoryInfo, chromeProcess, disposeHandler, unhandledExceptionHandler);
+            return new LocalChromeProcess(directoryInfo, chromeProcess);
         }
 
         public class LocalChromeProcess : IChromeProcess
@@ -65,20 +60,18 @@ namespace Lib.Chrome
             private readonly EventHandler _disposeHandler;
             private readonly UnhandledExceptionEventHandler _unhandledExceptionHandler;
 
-            public LocalChromeProcess(DirectoryInfo userDirectory, Process process, EventHandler disposeHandler, UnhandledExceptionEventHandler unhandledExceptionHandler)
+            public LocalChromeProcess(DirectoryInfo userDirectory, Process process)
             {
                 Process = process;
                 _userDirectory = userDirectory;
-                _disposeHandler = disposeHandler;
-                _unhandledExceptionHandler = unhandledExceptionHandler;
+                _disposeHandler = (s, e) => Dispose();
+                _unhandledExceptionHandler = (s, e) => Dispose();
+                AppDomain.CurrentDomain.DomainUnload += _disposeHandler;
+                AppDomain.CurrentDomain.ProcessExit += _disposeHandler;
+                AppDomain.CurrentDomain.UnhandledException += _unhandledExceptionHandler;
             }
 
             public Process Process { get; set; }
-
-            ~LocalChromeProcess()
-            {
-                Dispose();
-            }
 
             public void Dispose()
             {
@@ -91,18 +84,18 @@ namespace Lib.Chrome
                     // On Windows Chrome locks pma file with some child process, so we have to kill whole process tree
                     try
                     {
-                        ProcessStartInfo processStartInfo = new ProcessStartInfo("taskkill", "/F /T /pid "+Process.Id)
+                        var processStartInfo = new ProcessStartInfo("taskkill", "/F /T /pid " + this.Process.Id)
                         {
                             WindowStyle = ProcessWindowStyle.Hidden,
                             CreateNoWindow = true,
                             UseShellExecute = false,
                             WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true
+                            //RedirectStandardOutput = true,
+                            //RedirectStandardError = true
                         };
-                        Process.Start(processStartInfo);
+                        Process.Start(processStartInfo).WaitForExit();
                     }
-                    catch { }
+                    catch (Exception ex) { Console.WriteLine(ex); }
                 }
                 else
                 {

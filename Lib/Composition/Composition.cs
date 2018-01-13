@@ -379,7 +379,7 @@ namespace Lib.Composition
 
         public void InitTestServer()
         {
-            _testServer = new TestServer();
+            _testServer = new TestServer(_verbose);
             _testServerLongPollingHandler = new LongPollingServer(_testServer.NewConnectionHandler);
             _testServer.OnTestResults.Subscribe((results) =>
             {
@@ -592,8 +592,8 @@ namespace Lib.Composition
         {
             Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs args) =>
             {
+                ExitWithCleanUp();
                 args.Cancel = true;
-                Task.Run((Action)ExitWithCleanUp);
             };
             while (true)
             {
@@ -606,7 +606,6 @@ namespace Lib.Composition
 
         public void ExitWithCleanUp()
         {
-            Console.WriteLine("Stopping by starting to killing Chrome");
             StopChromeTest();
             Environment.Exit(0);
         }

@@ -17,11 +17,13 @@ namespace Lib.Composition
         private int _suiteId;
         private Stack<SuiteOrTest> _suiteStack;
         private TestResultsHolder _oldResults;
-        object _lock = new object();
+        readonly object _lock = new object();
+        readonly bool _verbose;
 
         public TestServerConnectionHandler(TestServer testServer)
         {
             _testServer = testServer;
+            _verbose = testServer.Verbose;
         }
 
         public void OnConnect(ILongPollingConnection connection)
@@ -45,7 +47,8 @@ namespace Lib.Composition
                 {
                     case "newClient":
                         {
-                            Console.WriteLine("NewClient " + data.Value<string>("userAgent"));
+                            if (_verbose)
+                                Console.WriteLine("New Test Client: " + data.Value<string>("userAgent"));
                             var client = UAParser.Parser.GetDefault().Parse(data.Value<string>("userAgent"));
                             lock (_lock)
                             {

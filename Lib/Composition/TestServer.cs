@@ -17,9 +17,11 @@ namespace Lib.Composition
         public Subject<Unit> OnTestingStarted = new Subject<Unit>();
         public Subject<TestResultsHolder> OnTestResults = new Subject<TestResultsHolder>();
         internal Subject<Unit> OnChangeRaw = new Subject<Unit>();
+        public bool Verbose;
 
-        public TestServer()
+        public TestServer(bool verbose)
         {
+            Verbose = verbose;
             OnChangeRaw.Throttle(TimeSpan.FromMilliseconds(500)).Subscribe(OnChange);
         }
 

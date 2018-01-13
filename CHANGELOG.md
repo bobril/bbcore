@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+* Killing of Chrome even more reliable, but upgrade of bobril-build-core is needed.
+
 ## 0.4.2
 
 ### Fixed

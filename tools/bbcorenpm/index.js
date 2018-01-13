@@ -69,7 +69,7 @@ function callRepoApi(path) {
             proxy: process.env.http_proxy || process.env.https_proxy,
             headers: {
                 accept: "application/vnd.github.v3.json",
-                "user-agent": "bobril-build-core/1.0.0"
+                "user-agent": "bobril-build-core/1.1.0"
             }
         };
         var binary = yield get(`https://api.github.com/repos/bobril/bbcore/${path}`, options);
@@ -84,7 +84,7 @@ function getDownloadOptions(url) {
     var headers = isGitHubUrl
         ? {
             accept: "application/octet-stream",
-            "user-agent": "bobril-build-core/1.0.0"
+            "user-agent": "bobril-build-core/1.1.0"
         }
         : {};
     return {
@@ -258,8 +258,15 @@ function checkFreshnessOfCachedLastVersion() {
             err);
     }
     console.log("Bobril-build core running " + toRun);
-    let proc = child_process.spawn(path.join(toRun, "bb"), process.argv.slice(2), { stdio: "inherit" });
+    let proc = child_process.spawn(path.join(toRun, "bb"), process.argv.slice(2), { stdio: ["pipe", process.stdout, process.stderr] });
     proc.on("exit", (code) => {
         process.exit(code);
     });
+    process.stdin.pipe(proc.stdin, { end: true });
+    function endBBCore() {
+        proc.stdin.write("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" + os.EOL + "quit" + os.EOL);
+    }
+    process.on("SIGINT", endBBCore);
+    process.on("SIGTERM", endBBCore);
+    process.on("SIGBREAK", endBBCore);
 }))();
