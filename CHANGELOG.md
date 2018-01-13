@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.4.2
+
 ### Fixed
 
 * Removed all dynamic staff so code runs after ILLinker
