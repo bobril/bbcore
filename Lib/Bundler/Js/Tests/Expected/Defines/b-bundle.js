@@ -1,4 +1,4 @@
-var __bbb={};(function(undefined) {
+(function(undefined) {
     "use strict";
     var __extendStatics = Object.setPrototypeOf || {
         __proto__: []
@@ -248,39 +248,9 @@ var __bbb={};(function(undefined) {
         var m = o[Symbol.asyncIterator];
         return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
     };
-    var __import = function(url, prop) {
-        var res = __bbb[prop];
-        if (res !== undefined) {
-            if (res instanceof Promise) return res;
-            return Promise.resolve(res);
-        }
-        return __bbb[prop] = new Promise(function(r, e) {
-            var script = document.createElement("script");
-            script.type = "text/javascript";
-            script.charset = "utf-8";
-            script.onload = function() {
-                r(__bbb[prop]);
-            };
-            script.onerror = function(_ev) {
-                e("Failed to load " + url);
-            };
-            script.src = url;
-            document.head.appendChild(script);
-        });
-    };
     var DEBUG = false;
-    function shared() {
-        console.log("shared");
+    function assert(shouldBeTrue, messageIfFalse) {
+        if (DEBUG && !shouldBeTrue) throw Error(messageIfFalse || "assertion failed");
     }
-    function unused() {
-        return "unused";
-    }
-    shared();
-    __import("lib.js", "a").then(function(lib) {
-        console.log(lib.hello());
-    });
-    __bbb.b = {
-        shared: shared,
-        unused: unused
-    };
+    assert(false, "bad");
 })();

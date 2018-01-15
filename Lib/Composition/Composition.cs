@@ -130,13 +130,23 @@ namespace Lib.Composition
                 var buildResult = ctx.BuildResult;
                 var filesContent = new Dictionary<string, object>();
                 proj.FillOutputByAdditionalResourcesDirectory(filesContent);
-                var fastBundle = new FastBundleBundler(_tools);
-                fastBundle.FilesContent = filesContent;
-                fastBundle.Project = proj;
-                fastBundle.BuildResult = buildResult;
-                fastBundle.Build("bb/base", "bundle.js.map");
-                proj.MainProjFastBundle = fastBundle;
-                IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                if (bCommand.Fast.Value)
+                {
+                    var fastBundle = new FastBundleBundler(_tools);
+                    fastBundle.FilesContent = filesContent;
+                    fastBundle.Project = proj;
+                    fastBundle.BuildResult = buildResult;
+                    fastBundle.Build("bb/base", "bundle.js.map");
+                }
+                else
+                {
+                    var bundle = new BundleBundler(_tools);
+                    bundle.FilesContent = filesContent;
+                    bundle.Project = proj;
+                    bundle.BuildResult = buildResult;
+                    bundle.Build(bCommand.Compress.Value,bCommand.Mangle.Value,bCommand.Beautify.Value);
+                }
+                IncludeMessages(buildResult, ref errors, ref warnings, messages, messagesFromFiles);
                 SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
                 totalFiles += filesContent.Count;
             }
@@ -153,7 +163,6 @@ namespace Lib.Composition
             {
                 var content = nameAndContent.Value;
                 var fileName = PathUtils.Join(dir, nameAndContent.Key);
-                filesContent[nameAndContent.Key] = null;
                 if (content is Lazy<object>)
                 {
                     content = ((Lazy<object>)content).Value;
@@ -238,7 +247,8 @@ namespace Lib.Composition
                 _projects.Add(proj.ProjectOptions);
             }
             _currentProject = proj.ProjectOptions;
-            _mainServer.Project = _currentProject;
+            if (_mainServer!=null)
+                _mainServer.Project = _currentProject;
             return proj.ProjectOptions;
         }
 

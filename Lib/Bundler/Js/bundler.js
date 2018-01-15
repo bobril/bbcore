@@ -528,7 +528,7 @@ function bundle(project) {
     if (bundleNames.length > 1)
         detectBundleExportsImports(order, splitMap, cache, generateIdent);
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
-        let bundleAst = parse('(function(undefined){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + "})()");
+        let bundleAst = parse('(function(undefined){"use strict";\n' + bb.tslibSource(bundleNames.length > 1) + ((project.compress === false) ? emitGlobalDefines(project.defines) : "") + "})()");
         let bodyAst = bundleAst
             .body[0].body.expression.body;
         let pureFuncs = Object.create(null);
@@ -688,7 +688,6 @@ function bundle(project) {
         bundleAst = compressAst(project, bundleAst, pureFuncs);
         mangleNames(project, bundleAst);
         let out = printAst(project, bundleAst);
-        out = prependGlobalDefines(project, out);
         if (bundleNames.length > 1 && bundleIndex === 0) {
             out = "var __bbb={};" + out;
         }

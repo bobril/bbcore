@@ -1,5 +1,4 @@
-var __bbb={};var DEBUG = false;
-(function(undefined) {
+var __bbb={};(function(undefined) {
     "use strict";
     var __extendStatics = Object.setPrototypeOf || {
         __proto__: []
@@ -269,6 +268,7 @@ var __bbb={};var DEBUG = false;
             document.head.appendChild(script);
         });
     };
+    var DEBUG = false;
     __import("shared.js", "a").then(function() {
         return __import("lib.js", "b");
     }).then(function(lib) {

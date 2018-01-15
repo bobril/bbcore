@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+* Some part of build command. Needs a lot of work.
+
 ### Fixed
 
 * Killing of Chrome even more reliable, but upgrade of bobril-build-core is needed.

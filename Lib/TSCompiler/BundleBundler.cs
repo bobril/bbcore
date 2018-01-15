@@ -1,0 +1,141 @@
+﻿using System.Collections.Generic;
+using Lib.Utils;
+using Lib.ToolsDir;
+using Lib.Bundler;
+using System.Linq;
+
+namespace Lib.TSCompiler
+{
+    public class BundleBundler: IBundlerCallback
+    {
+        string _mainJsBundleUrl;
+        string _indexHtml;
+        readonly IToolsDir _tools;
+
+        public BundleBundler(IToolsDir tools)
+        {
+            _tools = tools;
+        }
+
+        public ProjectOptions Project;
+        public BuildResult BuildResult;
+
+        // value could be string or byte[] or Lazy<string|byte[]>
+        public Dictionary<string, object> FilesContent;
+
+        public void Build(bool compress, bool mangle, bool beautify)
+        {
+            var diskCache = Project.Owner.DiskCache;
+            var root = Project.Owner.Owner.FullPath;
+            var cssLink = "";
+            foreach (var source in BuildResult.Path2FileInfo)
+            {
+                if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript)
+                {
+                    if (source.Value.Output == null)
+                        continue; // Skip d.ts
+                }
+                else if (source.Value.Type == FileCompilationType.Css)
+                {
+                    string cssPath = PathUtils.Subtract(source.Value.Owner.FullPath, root);
+                    FilesContent[cssPath] = source.Value.Owner.ByteContent;
+                    cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
+                }
+                else if (source.Value.Type == FileCompilationType.Resource)
+                {
+                    FilesContent[PathUtils.Subtract(source.Value.Owner.FullPath, root)] = source.Value.Owner.ByteContent;
+                }
+            }
+            var bundler = new BundlerImpl(_tools);
+            bundler.Callbacks = this;
+            if (Project.ExampleSources.Count > 0)
+            {
+                bundler.MainFiles = new[] { Project.ExampleSources[0] };
+            }
+            else
+            {
+                bundler.MainFiles = new[] { Project.MainFile };
+            }
+            _mainJsBundleUrl = "bundle.js";
+            bundler.Compress = compress;
+            bundler.Mangle = mangle;
+            bundler.Beautify = beautify;
+            var defines = new Dictionary<string, object>();
+            foreach(var p in Project.Defines)
+            {
+                defines.Add(p.Key, p.Value);
+            }
+            bundler.Defines = defines;
+            bundler.Bundle();
+            BuildFastBundlerIndexHtml(cssLink);
+            FilesContent["index.html"] = _indexHtml;
+        }
+
+        void BuildFastBundlerIndexHtml(string cssLink)
+        {
+            _indexHtml = $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{Project.HtmlHeadExpanded}<title>{Project.Title}</title>{cssLink}</head><body>{InitG11n()}<script type=""text/javascript"" src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
+        }
+
+        string InitG11n()
+        {
+            if (!Project.Localize)
+                return "";
+            Project.TranslationDb.BuildTranslationJs(_tools, FilesContent);
+            var res = "<script>";
+            if (Project.Localize)
+            {
+                res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
+                if (Project.DefaultLanguage != null)
+                {
+                    res += $"var g11nLoc=\"{Project.DefaultLanguage}\";";
+                }
+            }
+            //if (Project.bundlePng)
+            //{
+            //    res += $"var bobrilBPath=\"{Project.bundlePng}\";";
+            //}
+            res += "</script>";
+            return res;
+        }
+
+        public string ReadContent(string name)
+        {
+            if (BuildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
+            {
+                return fileInfo.Output;
+            }
+            throw new System.InvalidOperationException("Bundler Read Content does not exists:"+name);
+        }
+
+        public void WriteBundle(string name, string content)
+        {
+            FilesContent[name] = content;
+        }
+
+        public string GenerateBundleName(string forName)
+        {
+            if (forName == "")
+                return _mainJsBundleUrl;
+            return forName.Replace("/", "_")+".js";
+        }
+
+        public string ResolveRequire(string name, string from)
+        {
+            if (name.StartsWith("./") || name.StartsWith("../"))
+            {
+                return PathUtils.Join(PathUtils.Parent(from), name) + ".js";
+            }
+            var diskCache = Project.Owner.DiskCache;
+            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache, name, out var diskName);
+            if (moduleInfo == null)
+                return null;
+            var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
+            return mainFile;
+        }
+
+        public string TslibSource(bool withImport)
+        {
+            return _tools.TsLibSource + (withImport ? _tools.ImportSource : "");
+        }
+    }
+}

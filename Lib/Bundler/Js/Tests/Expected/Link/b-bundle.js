@@ -1,4 +1,3 @@
-var DEBUG = false;
 (function(undefined) {
     "use strict";
     var __extendStatics = Object.setPrototypeOf || {
@@ -249,6 +248,7 @@ var DEBUG = false;
         var m = o[Symbol.asyncIterator];
         return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
     };
+    var DEBUG = false;
     function link(name) {
         return name;
     }

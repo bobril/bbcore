@@ -1,4 +1,3 @@
-var DEBUG = false;
 (function(undefined) {
     "use strict";
     var __extendStatics = Object.setPrototypeOf || {
@@ -269,6 +268,7 @@ var DEBUG = false;
             document.head.appendChild(script);
         });
     };
+    var DEBUG = false;
     __import(undefined, "b").then(function(shared) {
         return shared.shared();
     });
