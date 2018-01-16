@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Lib.TSCompiler
 {
-    public class BundleBundler: IBundlerCallback
+    public class BundleBundler : IBundlerCallback
     {
         string _mainJsBundleUrl;
         string _indexHtml;
@@ -22,18 +22,21 @@ namespace Lib.TSCompiler
 
         // value could be string or byte[] or Lazy<string|byte[]>
         public Dictionary<string, object> FilesContent;
+        Dictionary<string, string> _jsFilesContent;
 
         public void Build(bool compress, bool mangle, bool beautify)
         {
             var diskCache = Project.Owner.DiskCache;
             var root = Project.Owner.Owner.FullPath;
             var cssLink = "";
+            _jsFilesContent = new Dictionary<string, string>();
             foreach (var source in BuildResult.Path2FileInfo)
             {
                 if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript)
                 {
                     if (source.Value.Output == null)
                         continue; // Skip d.ts
+                    _jsFilesContent[PathUtils.ChangeExtension(source.Key, "js")] = source.Value.Output;
                 }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
@@ -50,18 +53,18 @@ namespace Lib.TSCompiler
             bundler.Callbacks = this;
             if (Project.ExampleSources.Count > 0)
             {
-                bundler.MainFiles = new[] { Project.ExampleSources[0] };
+                bundler.MainFiles = new[] { PathUtils.ChangeExtension(Project.ExampleSources[0], "js") };
             }
             else
             {
-                bundler.MainFiles = new[] { Project.MainFile };
+                bundler.MainFiles = new[] { PathUtils.ChangeExtension(Project.MainFile, "js") };
             }
             _mainJsBundleUrl = "bundle.js";
             bundler.Compress = compress;
             bundler.Mangle = mangle;
             bundler.Beautify = beautify;
             var defines = new Dictionary<string, object>();
-            foreach(var p in Project.Defines)
+            foreach (var p in Project.Defines)
             {
                 defines.Add(p.Key, p.Value);
             }
@@ -100,11 +103,11 @@ namespace Lib.TSCompiler
 
         public string ReadContent(string name)
         {
-            if (BuildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
+            if (_jsFilesContent.TryGetValue(name, out var content))
             {
-                return fileInfo.Output;
+                return content;
             }
-            throw new System.InvalidOperationException("Bundler Read Content does not exists:"+name);
+            throw new System.InvalidOperationException("Bundler Read Content does not exists:" + name);
         }
 
         public void WriteBundle(string name, string content)
@@ -116,7 +119,7 @@ namespace Lib.TSCompiler
         {
             if (forName == "")
                 return _mainJsBundleUrl;
-            return forName.Replace("/", "_")+".js";
+            return forName.Replace("/", "_") + ".js";
         }
 
         public string ResolveRequire(string name, string from)
@@ -129,7 +132,7 @@ namespace Lib.TSCompiler
             var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache, name, out var diskName);
             if (moduleInfo == null)
                 return null;
-            var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
+            var mainFile = PathUtils.ChangeExtension(PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile), "js");
             return mainFile;
         }
 

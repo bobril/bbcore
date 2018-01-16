@@ -130,25 +130,28 @@ namespace Lib.Composition
                 var buildResult = ctx.BuildResult;
                 var filesContent = new Dictionary<string, object>();
                 proj.FillOutputByAdditionalResourcesDirectory(filesContent);
-                if (bCommand.Fast.Value)
-                {
-                    var fastBundle = new FastBundleBundler(_tools);
-                    fastBundle.FilesContent = filesContent;
-                    fastBundle.Project = proj;
-                    fastBundle.BuildResult = buildResult;
-                    fastBundle.Build("bb/base", "bundle.js.map");
-                }
-                else
-                {
-                    var bundle = new BundleBundler(_tools);
-                    bundle.FilesContent = filesContent;
-                    bundle.Project = proj;
-                    bundle.BuildResult = buildResult;
-                    bundle.Build(bCommand.Compress.Value,bCommand.Mangle.Value,bCommand.Beautify.Value);
-                }
                 IncludeMessages(buildResult, ref errors, ref warnings, messages, messagesFromFiles);
-                SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
-                totalFiles += filesContent.Count;
+                if (errors == 0)
+                {
+                    if (bCommand.Fast.Value)
+                    {
+                        var fastBundle = new FastBundleBundler(_tools);
+                        fastBundle.FilesContent = filesContent;
+                        fastBundle.Project = proj;
+                        fastBundle.BuildResult = buildResult;
+                        fastBundle.Build("bb/base", "bundle.js.map");
+                    }
+                    else
+                    {
+                        var bundle = new BundleBundler(_tools);
+                        bundle.FilesContent = filesContent;
+                        bundle.Project = proj;
+                        bundle.BuildResult = buildResult;
+                        bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
+                    }
+                    SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
+                    totalFiles += filesContent.Count;
+                }
             }
             var duration = DateTime.UtcNow - start;
             Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
@@ -167,6 +170,7 @@ namespace Lib.Composition
                 {
                     content = ((Lazy<object>)content).Value;
                 }
+                Directory.CreateDirectory(PathUtils.Parent(fileName));
                 if (content is string)
                 {
                     File.WriteAllText(fileName, (string)content, Encoding.UTF8);
@@ -247,7 +251,7 @@ namespace Lib.Composition
                 _projects.Add(proj.ProjectOptions);
             }
             _currentProject = proj.ProjectOptions;
-            if (_mainServer!=null)
+            if (_mainServer != null)
                 _mainServer.Project = _currentProject;
             return proj.ProjectOptions;
         }

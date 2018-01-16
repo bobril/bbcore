@@ -1,6 +1,7 @@
 ﻿using JavaScriptEngineSwitcher.Core;
 using Lib.ToolsDir;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -51,7 +52,8 @@ namespace Lib.Bundler
 
         IJsEngine GetJSEnviroment()
         {
-            if (_engine != null) return _engine;
+            if (_engine != null)
+                return _engine;
             var engine = _toolsDir.CreateJsEngine();
             var assembly = typeof(BundlerImpl).Assembly;
             engine.ExecuteResource("Lib.Bundler.Js.uglify.js", assembly);
@@ -70,7 +72,7 @@ namespace Lib.Bundler
                 { "mangle", Mangle },
                 { "beautify", Beautify },
                 { "defines", Defines }
-            }, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+            }, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, ContractResolver = new DefaultContractResolver { NamingStrategy = new DefaultNamingStrategy() } }));
         }
     }
 }
