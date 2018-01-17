@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.6.0
+
 ### Added
 
 * Error reporting of missing binary dependencies.
