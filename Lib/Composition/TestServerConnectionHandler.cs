@@ -234,6 +234,14 @@ namespace Lib.Composition
 
         MessageAndStack ConvertMessageAndStack(string message, string rawStack)
         {
+            if (rawStack == null)
+            {
+                return new MessageAndStack
+                {
+                    Message = message,
+                    Stack = new List<StackFrame>()
+                };
+            }
             var stack = StackFrame.Parse(rawStack);
             foreach (var frame in stack)
             {

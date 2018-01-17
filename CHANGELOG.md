@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+* Testing crash when throwing string from test method. You should throws Error objects instead, because there is no way to get stack trace from it.
+
 ## 0.5.0
 
 ### Added
