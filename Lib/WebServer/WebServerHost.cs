@@ -33,7 +33,6 @@ namespace Lib.WebServer
                         socket.EndConnect(result);
                         socket.Close();
                         _webHost = BuildWebHost(0);
-                        _webHost.Start();
                     }
                     else
                     {
@@ -43,15 +42,42 @@ namespace Lib.WebServer
                 }
                 catch (Exception)
                 {
-                    _webHost.Dispose();
-                    _webHost = BuildWebHost(0);
-                    _webHost.Start();
+                    try
+                    {
+                        _webHost.Dispose();
+                        _webHost = BuildWebHost(0);
+                        _webHost.Start();
+                    }
+                    catch (Exception)
+                    {
+                        for (int i = 1; i < 20; i++)
+                        {
+                            try
+                            {
+                                if (_webHost != null)
+                                {
+                                    _webHost.Dispose();
+                                    _webHost = null;
+                                }
+                                _webHost = BuildWebHost(Port + i);
+                                _webHost.Start();
+                                break;
+                            }
+                            catch (Exception)
+                            {
+                                _webHost.Dispose();
+                                _webHost = null;
+                            }
+                        }
+                    }
                 }
             }
             else
             {
                 _webHost.Start();
             }
+            if (_webHost == null)
+                throw new Exception("Cannot find empty port to be allowed to listen on. Started on " + Port);
             Port = new Uri(_webHost.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First()).Port;
         }
 
