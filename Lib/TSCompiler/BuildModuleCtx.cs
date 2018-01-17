@@ -76,7 +76,8 @@ namespace Lib.TSCompiler
             if (!_result.Path2FileInfo.TryGetValue(sourceName2, out source))
                 _result.Path2FileInfo.TryGetValue(sourceName2 + "x", out source);
             source.DtsLink = outputInfo;
-            if (wasChange) ChangedDts = true;
+            if (wasChange)
+                ChangedDts = true;
         }
 
         static string[] ExtensionsToImport = new string[] { ".tsx", ".ts", ".d.ts", ".jsx", ".js" };
@@ -90,13 +91,15 @@ namespace Lib.TSCompiler
 
         static bool IsDts(string name)
         {
-            if (name == null) return false;
+            if (name == null)
+                return false;
             return name.EndsWith(".d.ts");
         }
 
         static bool IsTsOrTsx(string name)
         {
-            if (name == null) return false;
+            if (name == null)
+                return false;
             return name.EndsWith(".ts") || name.EndsWith(".tsx");
         }
 
@@ -146,7 +149,8 @@ namespace Lib.TSCompiler
         public string resolveModuleMain(string name, TSFileAdditionalInfo parentInfo)
         {
             var moduleInfo = TSProject.FindInfoForModule(_owner.Owner, _owner.DiskCache, name, out var diskName);
-            if (moduleInfo == null) return null;
+            if (moduleInfo == null)
+                return null;
             if (name != diskName)
             {
                 parentInfo.ReportDiag(false, 2, "Module import has wrong casing '" + name + "' on disk '" + diskName + "'", 0, 0, 0, 0);
@@ -214,7 +218,7 @@ namespace Lib.TSCompiler
         {
             return new Regex("<<[^>]+>>").Replace(htmlHead, (Match m) =>
             {
-                return ShortenPathAddVersionDir(AutodetectAndAddDependency(_owner.DiskCache, PathUtils.Join(_owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4))).Owner.FullPath);
+                return ShortenPathAddVersionDir(AutodetectAndAddDependency(_owner.DiskCache, PathUtils.Join(_owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)), _owner.Owner.TryGetChild("package.json") as IFileCache).Owner.FullPath);
             });
         }
 
@@ -233,7 +237,9 @@ namespace Lib.TSCompiler
                 var fileCache = _owner.DiskCache.TryGetItem(fileName) as IFileCache;
                 if (fileCache == null || fileCache.IsInvalid)
                 {
-                    continue; // skip missing files
+                    if (_buildCtx.Verbose)
+                        Console.WriteLine("Crawl skipping missing file " + fileName);
+                    continue;
                 }
                 var fileAdditional = TSFileAdditionalInfo.Get(fileCache, _owner.DiskCache);
                 AddSource(fileAdditional);
@@ -278,7 +284,7 @@ namespace Lib.TSCompiler
                                 {
                                     var full = PathUtils.Join(from, url);
                                     var fullJustName = full.Split('?', '#')[0];
-                                    fileAdditional.ImportingLocal(AutodetectAndAddDependency(fileAdditional.DiskCache, fullJustName));
+                                    fileAdditional.ImportingLocal(AutodetectAndAddDependency(fileAdditional.DiskCache, fullJustName, fileAdditional.Owner));
                                     return full;
                                 }).Result;
                             }
@@ -296,14 +302,16 @@ namespace Lib.TSCompiler
                     foreach (var localAdditional in fileAdditional.LocalImports)
                     {
                         var localName = localAdditional.Owner.FullPath;
-                        if (localName.EndsWith(".d.ts")) continue; // we cannot handle change in .d.ts without source
+                        if (localName.EndsWith(".d.ts"))
+                            continue; // we cannot handle change in .d.ts without source
                         CheckAdd(localName);
                     }
                     foreach (var moduleInfo in fileAdditional.ModuleImports)
                     {
                         moduleInfo.LoadProjectJson();
                         var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
-                        if (mainFile.EndsWith(".d.ts")) continue; // we cannot handle change in .d.ts without source
+                        if (mainFile.EndsWith(".d.ts"))
+                            continue; // we cannot handle change in .d.ts without source
                         CheckAdd(mainFile);
                     }
                     AddDependenciesFromSourceInfo(fileAdditional);
@@ -314,19 +322,23 @@ namespace Lib.TSCompiler
         public IDictionary<long, object[]> getPreEmitTransformations(string fileName)
         {
             var fc = _owner.DiskCache.TryGetItem(fileName) as IFileCache;
-            if (fc == null) return null;
+            if (fc == null)
+                return null;
             var fai = TSFileAdditionalInfo.Get(fc, _owner.DiskCache);
             var sourceInfo = fai.SourceInfo;
-            if (sourceInfo == null) return null;
+            if (sourceInfo == null)
+                return null;
             var res = new Dictionary<long, object[]>();
             sourceInfo.assets.ForEach(a =>
             {
-                if (a.name == null) return;
+                if (a.name == null)
+                    return;
                 res[a.nodeId] = new object[] { 0, PathUtils.Subtract(a.name, _owner.Owner.FullPath) };
             });
             sourceInfo.sprites.ForEach(s =>
             {
-                if (s.name == null) return;
+                if (s.name == null)
+                    return;
                 res[s.nodeId] = new object[] { 0, PathUtils.Subtract(s.name, _owner.Owner.FullPath) };
             });
             var trdb = _owner.ProjectOptions.TranslationDb;
@@ -334,8 +346,10 @@ namespace Lib.TSCompiler
             {
                 sourceInfo.translations.ForEach(t =>
                 {
-                    if (t.justFormat) return;
-                    if (t.message == null) return;
+                    if (t.justFormat)
+                        return;
+                    if (t.message == null)
+                        return;
                     var id = trdb.AddToDB(t.message, t.hint, t.withParams);
                     var finalId = trdb.MapId(id);
                     res[t.nodeId] = new object[] { 2, 0, finalId, 1 + (t.withParams ? 1 : 0) };
@@ -376,35 +390,50 @@ namespace Lib.TSCompiler
                     }
                 }
             });
-            if (res.Count == 0) return null;
+            if (res.Count == 0)
+                return null;
             return res;
         }
 
         public void AddDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo)
         {
             var sourceInfo = fileInfo.SourceInfo;
-            if (sourceInfo == null) return;
+            if (sourceInfo == null)
+                return;
             sourceInfo.assets.ForEach(a =>
             {
-                if (a.name == null) return;
+                if (a.name == null)
+                    return;
                 var assetName = a.name;
-                AutodetectAndAddDependency(fileInfo.DiskCache, assetName);
+                AutodetectAndAddDependency(fileInfo.DiskCache, assetName, fileInfo.Owner);
             });
             sourceInfo.sprites.ForEach(s =>
             {
-                if (s.name == null) return;
+                if (s.name == null)
+                    return;
                 var assetName = s.name;
-                AutodetectAndAddDependency(fileInfo.DiskCache, assetName);
+                AutodetectAndAddDependency(fileInfo.DiskCache, assetName, fileInfo.Owner);
             });
         }
 
-        TSFileAdditionalInfo AutodetectAndAddDependency(IDiskCache dc, string depName)
+        TSFileAdditionalInfo AutodetectAndAddDependency(IDiskCache dc, string depName, IFileCache usedFrom)
         {
             var extension = PathUtils.GetExtension(depName);
             var depFile = dc.TryGetItem(depName) as IFileCache;
             if (depFile == null)
             {
-                // TODO: show error about not found
+                if (usedFrom != null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("In " + usedFrom.FullPath + " missing dependency " + depName);
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    TSFileAdditionalInfo.Get(usedFrom, dc).ReportDiag(true, -3, "Missing dependency " + depName, 0, 0, 0, 0);
+                } else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Somethere missing dependency " + depName);
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                }
                 return null;
             }
             var assetFileInfo = TSFileAdditionalInfo.Get(depFile, dc);

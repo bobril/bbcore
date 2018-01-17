@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+* Error reporting of missing binary dependencies.
+
 ### Fixed
 
 * Testing crash when throwing string from test method. You should throws Error objects instead, because there is no way to get stack trace from it.
