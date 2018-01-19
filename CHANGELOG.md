@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.6.1
+
 ### Fixed
 
 * When asset path starts with node_modules/ it should be relative to project root.
