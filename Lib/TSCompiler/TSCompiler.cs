@@ -201,6 +201,10 @@ namespace Lib.TSCompiler
 
             public string resolvePathStringLiteral(string sourcePath, string text)
             {
+                if (text.StartsWith("node_modules/"))
+                {
+                    return PathUtils.Join(_owner._currentDirectory, text);
+                }
                 return PathUtils.Join(PathUtils.Parent(sourcePath), text);
             }
 
