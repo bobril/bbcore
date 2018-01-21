@@ -128,11 +128,12 @@ namespace Lib.ToolsDir
             if (!File.Exists(tspackage))
                 RunYarn(Path, "init -y");
             RunYarn(Path, "add typescript@" + version + " --no-emoji --non-interactive");
-            if (version=="*") RunYarn(Path, "upgrade --no-emoji --non-interactive");
+            if (version == "*")
+                RunYarn(Path, "upgrade --no-emoji --non-interactive");
         }
 
         public void RunYarn(string dir, string aParams)
-        {            
+        {
             var yarnPath = GetYarnPath();
             var start = new ProcessStartInfo(yarnPath, aParams)
             {
@@ -150,10 +151,12 @@ namespace Lib.ToolsDir
             process.WaitForExit();
         }
 
-        string GetYarnPath() {
+        string GetYarnPath()
+        {
             string yarnExecName = YarnExecutableName;
-            if (!PathUtils.IsUnixFs) {
-                yarnExecName += ".cmd";                    
+            if (!PathUtils.IsUnixFs)
+            {
+                yarnExecName += ".cmd";
             }
             return Environment.GetEnvironmentVariable("PATH").Split(System.IO.Path.PathSeparator).Select((p) => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), yarnExecName)).First((p) => File.Exists(p));
         }
@@ -173,9 +176,26 @@ namespace Lib.ToolsDir
                     return val.ToString();
                 }
                 var dashIndex = locale.IndexOf('-');
-                if (dashIndex < 0) return null;
+                if (dashIndex < 0)
+                    return null;
                 locale = locale.Substring(0, dashIndex);
             }
+        }
+
+        public void UpdateDependencies(string dir, bool upgrade, string npmRegistry)
+        {
+            if (npmRegistry != null)
+            {
+                if (!File.Exists(PathUtils.Join(dir, ".npmrc")))
+                {
+                    File.WriteAllText(PathUtils.Join(dir, ".npmrc"), "registry =" + npmRegistry);
+                }
+            }
+            if (upgrade && !File.Exists(PathUtils.Join(dir, "yarn.lock")))
+            {
+                upgrade = false;
+            }
+            RunYarn(dir, (upgrade ? "upgrade" : "install") + " --flat");
         }
     }
 }

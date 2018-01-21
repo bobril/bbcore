@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+* Updating dependencies like original bobril-build. It uses just yarn.
+
+### Fixed
+
+* Choosing of free port to listen to.
+
 ## 0.6.1
 
 ### Fixed

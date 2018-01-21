@@ -39,7 +39,8 @@ namespace Lib.Composition
         ILongPollingServer _mainServerLongPollingHandler;
         IChromeProcessFactory _chromeProcessFactory;
         IChromeProcess _chromeProcess;
-        private bool _verbose;
+        bool _verbose;
+        bool _forbiddenDependencyUpdate;
 
         public Composition()
         {
@@ -71,13 +72,14 @@ namespace Lib.Composition
             {
                 if (iCommand.Verbose.Value)
                     _verbose = true;
-                RunInteractive(iCommand.Port.Value, allowedUpdateDependencies: true);
+                RunInteractive(iCommand.Port.Value);
             }
             else if (_command is BuildInteractiveNoUpdateCommand yCommand)
             {
                 if (yCommand.Verbose.Value)
                     _verbose = true;
-                RunInteractive(yCommand.Port.Value, allowedUpdateDependencies: false);
+                _forbiddenDependencyUpdate = true;
+                RunInteractive(yCommand.Port.Value);
             }
             else if (_command is BuildCommand bCommand)
             {
@@ -103,6 +105,7 @@ namespace Lib.Composition
             InitTools("2.6.2");
             InitDiskCache();
             AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            _forbiddenDependencyUpdate = bCommand.NoUpdate.Value;
             DateTime start = DateTime.UtcNow;
             int errors = 0;
             int warnings = 0;
@@ -114,7 +117,7 @@ namespace Lib.Composition
                 Console.ForegroundColor = ConsoleColor.Blue;
                 Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
                 Console.ForegroundColor = ConsoleColor.Gray;
-                proj.Owner.LoadProjectJson();
+                proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
                 proj.Owner.FirstInitialize();
                 proj.RefreshMainFile();
                 proj.DetectBobrilJsxDts();
@@ -182,10 +185,10 @@ namespace Lib.Composition
             }
         }
 
-        void RunInteractive(string portInString, bool allowedUpdateDependencies)
+        void RunInteractive(string portInString)
         {
             IfEnabledStartVerbosive();
-            int? port = null;
+            int port = 8080;
             if (int.TryParse(portInString, out var portInInt))
             {
                 port = portInInt;
@@ -262,19 +265,11 @@ namespace Lib.Composition
             project.Owner.Build(ctx);
         }
 
-        public void StartWebServer(int? port)
+        public void StartWebServer(int port)
         {
             _webServer = new WebServerHost();
-            if (port.HasValue)
-            {
-                _webServer.Port = port.Value;
-                _webServer.FallbackToRandomPort = false;
-            }
-            else
-            {
-                _webServer.Port = 8080;
-                _webServer.FallbackToRandomPort = true;
-            }
+            _webServer.FallbackToRandomPort = true;
+            _webServer.Port = port;
             _webServer.Handler = Handler;
             _webServer.Start();
             Console.WriteLine($"Listening on http://localhost:{_webServer.Port}/");
@@ -442,7 +437,7 @@ namespace Lib.Composition
                         Console.ForegroundColor = ConsoleColor.Blue;
                         Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
                         Console.ForegroundColor = ConsoleColor.Gray;
-                        proj.Owner.LoadProjectJson();
+                        proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
                         proj.Owner.FirstInitialize();
                         proj.RefreshMainFile();
                         proj.RefreshTestSources();

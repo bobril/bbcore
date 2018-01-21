@@ -155,7 +155,7 @@ namespace Lib.TSCompiler
             {
                 parentInfo.ReportDiag(false, 2, "Module import has wrong casing '" + name + "' on disk '" + diskName + "'", 0, 0, 0, 0);
             }
-            moduleInfo.LoadProjectJson();
+            moduleInfo.LoadProjectJson(true);
             parentInfo.ImportingModule(moduleInfo);
             var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
             var item = _owner.DiskCache.TryGetItem(mainFile) as IFileCache;
@@ -308,7 +308,7 @@ namespace Lib.TSCompiler
                     }
                     foreach (var moduleInfo in fileAdditional.ModuleImports)
                     {
-                        moduleInfo.LoadProjectJson();
+                        moduleInfo.LoadProjectJson(true);
                         var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
                         if (mainFile.EndsWith(".d.ts"))
                             continue; // we cannot handle change in .d.ts without source

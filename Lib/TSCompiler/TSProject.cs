@@ -22,7 +22,7 @@ namespace Lib.TSCompiler
         public bool IsRootProject { get; set; }
         public HashSet<string> Dependencies { get; set; }
 
-        public void LoadProjectJson()
+        public void LoadProjectJson(bool forbiddenDependencyUpdate)
         {
             DiskCache.UpdateIfNeeded(Owner);
             var packageJsonFile = Owner.TryGetChild("package.json");
@@ -110,6 +110,10 @@ namespace Lib.TSCompiler
                     if (ProjectOptions != null)
                     {
                         FillProjectOptionsFromPackageJson(parsed);
+                        if (!forbiddenDependencyUpdate)
+                        {
+                            ProjectOptions.Tools.UpdateDependencies(Owner.FullPath, ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade, ProjectOptions.NpmRegistry);
+                        }
                     }
                 }
             }
@@ -127,6 +131,11 @@ namespace Lib.TSCompiler
         {
             ProjectOptions.Localize = Dependencies?.Contains("bobril-g11n") ?? false;
             ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec\\.ts(?:x)?$";
+            var publishConfigSection = parsed.GetValue("publishConfig") as JObject;
+            if (publishConfigSection != null)
+            {
+                ProjectOptions.NpmRegistry = publishConfigSection.Value<string>("registry");
+            }
             var bobrilSection = parsed.GetValue("bobril") as JObject;
             ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
             ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
@@ -135,9 +144,25 @@ namespace Lib.TSCompiler
             ProjectOptions.AdditionalResourcesDirectory = GetStringProperty(bobrilSection, "additionalResourcesDirectory", null);
             ProjectOptions.BobrilJsx = true;
             ProjectOptions.CompilerOptions = bobrilSection != null ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject) : null;
+            ProjectOptions.DependencyUpdate = String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
             if (bobrilSection == null)
             {
                 return;
+            }
+        }
+
+        DepedencyUpdate String2DependencyUpdate(string value)
+        {
+            switch (value.ToLowerInvariant())
+            {
+                case "disable":
+                case "disabled":
+                    return DepedencyUpdate.Disabled;
+                case "update":
+                case "upgrade":
+                    return DepedencyUpdate.Upgrade;
+                default:
+                    return DepedencyUpdate.Install;
             }
         }
 
@@ -201,7 +226,8 @@ namespace Lib.TSCompiler
                     buildModuleCtx.Crawl();
                     if (buildModuleCtx.ToCompile.Count != 0)
                     {
-                        if (buildCtx.Verbose) compiler.MeasurePerformance = true;
+                        if (buildCtx.Verbose)
+                            compiler.MeasurePerformance = true;
                         compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
                             break;
@@ -217,7 +243,8 @@ namespace Lib.TSCompiler
             }
             finally
             {
-                if (compiler != null) buildCtx.CompilerPool.ReleaseTs(compiler);
+                if (compiler != null)
+                    buildCtx.CompilerPool.ReleaseTs(compiler);
             }
         }
 
@@ -246,7 +273,8 @@ namespace Lib.TSCompiler
 
         public static TSProject Get(IDirectoryCache dir, IDiskCache diskCache)
         {
-            if (dir == null) return null;
+            if (dir == null)
+                return null;
             if (dir.AdditionalInfo == null)
                 dir.AdditionalInfo = new TSProject { Owner = dir, DiskCache = diskCache };
             return (TSProject)dir.AdditionalInfo;

@@ -8,6 +8,7 @@ namespace Lib.ToolsDir
         string GetTypeScriptVersion();
         void InstallTypeScriptVersion(string version = "*");
         void RunYarn(string dir, string aParams);
+        void UpdateDependencies(string dir, bool upgrade, string npmRegistry);
         string TypeScriptLibDir { get; }
         string TypeScriptJsContent { get; }
         string LoaderJs { get; }
@@ -22,7 +23,6 @@ namespace Lib.ToolsDir
         string GetLocaleDef(string locale);
         string TsLibSource { get; }
         string ImportSource { get;  }
-
         IJsEngine CreateJsEngine();
     }
 }

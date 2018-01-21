@@ -282,7 +282,7 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
                     Owner = proj,
                     Defines = new Dictionary<string, bool> { { "DEBUG", true } }
                 };
-                proj.LoadProjectJson();
+                proj.LoadProjectJson(true);
                 proj.ProjectOptions.RefreshMainFile();
                 proj.ProjectOptions.RefreshTestSources();
                 proj.ProjectOptions.DetectBobrilJsxDts();

@@ -6,13 +6,6 @@ using Lib.Utils;
 
 namespace Lib.TSCompiler
 {
-    public enum StyleDefNamingStyle
-    {
-        AddNames,
-        PreserveNames,
-        RemoveNames
-    }
-
     public class ProjectOptions
     {
         public ToolsDir.IToolsDir Tools { get; set; }
@@ -40,11 +33,13 @@ namespace Lib.TSCompiler
         public bool Localize;
         public string DefaultLanguage;
         public string OutputSubDir;
+        public DepedencyUpdate DependencyUpdate;
 
         public Translation.TranslationDb TranslationDb;
 
         // value could be string or byte[]
         public Dictionary<string, object> FilesContent;
+        internal string NpmRegistry;
 
         public void RefreshMainFile()
         {
