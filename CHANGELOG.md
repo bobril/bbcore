@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.7.0
+
 ### Added
 
 * Updating dependencies like original bobril-build. It uses just yarn.
