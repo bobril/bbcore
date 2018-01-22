@@ -35,6 +35,13 @@ namespace Lib.TSCompiler
             var cssLink = "";
             foreach (var source in BuildResult.Path2FileInfo)
             {
+                if (source.Value.Type == FileCompilationType.JavaScriptAsset)
+                {
+                    sourceMapBuilder.AddSource(source.Value.Output, source.Value.MapLink);
+                }
+            }
+            foreach (var source in BuildResult.Path2FileInfo)
+            {
                 if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript)
                 {
                     if (source.Value.Output == null) continue; // Skip d.ts

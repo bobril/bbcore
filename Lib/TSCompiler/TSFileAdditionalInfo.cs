@@ -11,7 +11,8 @@ namespace Lib.TSCompiler
         TypeScript,
         JavaScript,
         Css,
-        Resource
+        Resource,
+        JavaScriptAsset
     }
 
     public class TSFileAdditionalInfo

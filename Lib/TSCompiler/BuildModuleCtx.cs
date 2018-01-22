@@ -264,6 +264,7 @@ namespace Lib.TSCompiler
                                 ToCompile.Add(fileName);
                             break;
                         case FileCompilationType.JavaScript:
+                        case FileCompilationType.JavaScriptAsset:
                             fileAdditional.StartCompiling();
                             fileAdditional.Output = fileAdditional.Owner.Utf8Content;
                             fileAdditional.MapLink = SourceMap.Identity(fileAdditional.Output, fileAdditional.Owner.FullPath);
@@ -444,7 +445,7 @@ namespace Lib.TSCompiler
                     CheckAdd(depName);
                     break;
                 case "js":
-                    assetFileInfo.Type = FileCompilationType.JavaScript;
+                    assetFileInfo.Type = FileCompilationType.JavaScriptAsset;
                     CheckAdd(depName);
                     break;
                 default:

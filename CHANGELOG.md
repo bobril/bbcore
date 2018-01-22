@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+* Javascript assets are correctly placed at start of fast bundle. Full bundle is left broken for this to be fixed later.  
+
 ## 0.7.0
 
 ### Added
