@@ -19,11 +19,9 @@ namespace Lib.DiskCache
         readonly Dictionary<string, IDirectoryWatcher> _watchers = new Dictionary<string, IDirectoryWatcher>();
         readonly IDirectoryCache _root;
         readonly object _lock = new object();
-
-        readonly IFsAbstraction _fsAbstraction;
         readonly bool IsUnixFs;
 
-        public IFsAbstraction FsAbstraction { get => _fsAbstraction; }
+        public IFsAbstraction FsAbstraction { get; }
 
         class DirectoryCache : IDirectoryCache
         {
@@ -132,7 +130,8 @@ namespace Lib.DiskCache
                     {
                         if (item.Name == name)
                         {
-                            if (((VirtualFileCache)item).Utf8Content == data) return false;
+                            if (((VirtualFileCache)item).Utf8Content == data)
+                                return false;
                             ((VirtualFileCache)item).SetContent(data);
                             return true;
                         }
@@ -148,7 +147,7 @@ namespace Lib.DiskCache
         public IObservable<Unit> ChangeObservable { get => _changeSubject; }
 
         Subject<Unit> _changeSubject = new Subject<Unit>();
-            
+
         private void NotifyChange()
         {
             _changeSubject.OnNext(Unit.Default);
@@ -156,7 +155,7 @@ namespace Lib.DiskCache
 
         public DiskCache(IFsAbstraction fsAbstraction, Func<IDirectoryWatcher> directoryWatcherFactory)
         {
-            _fsAbstraction = fsAbstraction;
+            FsAbstraction = fsAbstraction;
             _directoryWatcherFactory = directoryWatcherFactory;
             _root = new DirectoryCache(this);
             _root.IsFake = true;
@@ -175,7 +174,8 @@ namespace Lib.DiskCache
             {
                 if (tuple.isDir)
                 {
-                    if (tuple.name == ".git" || tuple.name == ".hg") return false;
+                    if (tuple.name == ".git" || tuple.name == ".hg")
+                        return false;
                 }
                 return true;
             };
@@ -209,11 +209,12 @@ namespace Lib.DiskCache
                 var p = rootPath;
                 while (p != null)
                 {
-                    if (trueRoots.Contains(p)) goto skip;
+                    if (trueRoots.Contains(p))
+                        goto skip;
                     p = PathUtils.Parent(p);
                 }
                 trueRoots.Add(rootPath);
-            skip:
+                skip:
                 ;
             }
             if (_watchedPaths.SetEquals(trueRoots))
@@ -232,7 +233,8 @@ namespace Lib.DiskCache
                     directory.IsInvalid = true;
                     var parent = directory.Parent;
                     ((DirectoryCache)parent).Remove(directory);
-                    if (((DirectoryCache)parent).Items.Count != 0) break;
+                    if (((DirectoryCache)parent).Items.Count != 0)
+                        break;
                     directory = parent;
                 }
             }
@@ -277,7 +279,8 @@ namespace Lib.DiskCache
 
         void WatcherFileChanged(string path)
         {
-            var fi = _fsAbstraction.GetItemInfo(path);
+            Console.WriteLine("Change: " + path);
+            var fi = FsAbstraction.GetItemInfo(path);
             if (fi.Exists && !fi.IsDirectory)
             {
                 lock (_lock)
@@ -504,11 +507,49 @@ namespace Lib.DiskCache
                 get => _isStale;
                 set
                 {
+                    if (_contentBytes != null || _contentUtf8 != null)
+                    {
+                        if (_contentBytes != null)
+                        {
+                            byte[] newBytes = null;
+                            try
+                            {
+                                newBytes = ((DiskCache)Owner).FsAbstraction.ReadAllBytes(FullPath);
+                            }
+                            catch
+                            {
+                                // ignore
+                            }
+                            if (newBytes != null && newBytes.SequenceEqual(_contentBytes))
+                            {
+                                _isStale = false;
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            string newUtf8 = null;
+                            try
+                            {
+                                newUtf8 = ((DiskCache)Owner).FsAbstraction.ReadAllUtf8(FullPath);
+                            }
+                            catch
+                            {
+                                // ignore
+                            }
+                            if (newUtf8 != null && newUtf8 == _contentUtf8)
+                            {
+                                _isStale = false;
+                                return;
+                            }
+                        }
+                    }
                     _isStale = value;
                     _contentBytes = null;
                     _contentUtf8 = null;
                     _changeId++;
-                    if (Parent != null) ((DirectoryCache)Parent).NoteChange();
+                    if (Parent != null)
+                        ((DirectoryCache)Parent).NoteChange();
                 }
             }
 
@@ -601,6 +642,7 @@ namespace Lib.DiskCache
         {
             if (!directory.IsStale)
                 return;
+            directory.IsFake = false;
             var fsis = FsAbstraction.GetDirectoryContent(directory.FullPath);
             var origItems = ((DirectoryCache)directory).Items;
             var items = origItems;
@@ -618,7 +660,8 @@ namespace Lib.DiskCache
                 if (!names.Contains(item.Name))
                 {
                     item.IsInvalid = true;
-                    if (items == origItems) items = origItems.ToList();
+                    if (items == origItems)
+                        items = origItems.ToList();
                     items.RemoveAt(i);
                 }
             }

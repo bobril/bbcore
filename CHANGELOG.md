@@ -4,7 +4,8 @@
 
 ### Fixed
 
-* Javascript assets are correctly placed at start of fast bundle. Full bundle is left broken for this to be fixed later.  
+* Javascript assets are correctly placed at start of fast bundle. Full bundle is left broken for this to be fixed later.
+* Quick fix for compilation endless cycle due to yarn touching package.json
 
 ## 0.7.0
 
