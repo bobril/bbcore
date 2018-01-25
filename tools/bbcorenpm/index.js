@@ -217,20 +217,43 @@ function checkFreshnessOfCachedLastVersion() {
     if (requestedVersion == "*") {
         if (!(yield checkFreshnessOfCachedLastVersion())) {
             console.log("Updating latest version information from Github");
-            var rel = yield getRelease();
-            yield fsWriteFile(lastVersionFileName, JSON.stringify(rel));
+            try {
+                var rel = yield getRelease();
+                yield fsWriteFile(lastVersionFileName, JSON.stringify(rel));
+            }
+            catch (ex) {
+                console.log("Update latest version information failed ignoring");
+                console.log(ex.stack);
+            }
         }
         var last = JSON.parse(yield fsReadFile(lastVersionFileName, "utf-8"));
         requestedVersion = last.tag_name;
     }
     let toRun = path.join(homeDir, requestedVersion);
     if (!(yield fsExists(path.join(toRun, ".success")))) {
-        var rel = yield getRelease(requestedVersion);
+        var rel;
+        try {
+            rel = yield getRelease(requestedVersion);
+        }
+        catch (ex) {
+            console.log("Failed to retrieve information about version " +
+                requestedVersion);
+            console.log(ex.stack);
+            process.exit(1);
+        }
         var assets = rel.assets;
         var asset = assets.find(a => a.name == platformAssetName);
         if (asset) {
             console.log("Downloading " + asset.name + " from " + rel.tag_name);
-            var zip = yield downloadAsset(asset);
+            var zip;
+            try {
+                zip = yield downloadAsset(asset);
+            }
+            catch (ex) {
+                console.log("Failed to download version " + requestedVersion);
+                console.log(ex.stack);
+                process.exit(1);
+            }
             console.log("Unzipping");
             yield unzip(zip, path.join(homeDir, requestedVersion));
             let bbName = path.join(homeDir, requestedVersion, "bb");
@@ -264,7 +287,10 @@ function checkFreshnessOfCachedLastVersion() {
     });
     process.stdin.pipe(proc.stdin, { end: true });
     function endBBCore() {
-        proc.stdin.write("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" + os.EOL + "quit" + os.EOL);
+        proc.stdin.write("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
+            os.EOL +
+            "quit" +
+            os.EOL);
     }
     process.on("SIGINT", endBBCore);
     process.on("SIGTERM", endBBCore);

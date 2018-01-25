@@ -1,6 +1,6 @@
 {
     "name": "bobril-build-core",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Bobril-build core npm downloader and runner",
     "main": "index.js",
     "repository": "https://github.com/bobril/bbcore.git",

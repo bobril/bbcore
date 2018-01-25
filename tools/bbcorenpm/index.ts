@@ -20,11 +20,11 @@ function get(url: string, options: http.RequestOptions): Promise<IResponse> {
         https
             .get(options, response => {
                 var str: Buffer[] = [];
-                response.on("data", function (chunk: Buffer) {
+                response.on("data", function(chunk: Buffer) {
                     str.push(chunk);
                 });
 
-                response.on("end", function () {
+                response.on("end", function() {
                     var res = Object.assign({}, response, {
                         body: Buffer.concat(str)
                     });
@@ -82,9 +82,9 @@ function getDownloadOptions(url: string) {
 
     var headers = isGitHubUrl
         ? {
-            accept: "application/octet-stream",
-            "user-agent": "bobril-build-core/1.1.0"
-        }
+              accept: "application/octet-stream",
+              "user-agent": "bobril-build-core/1.1.0"
+          }
         : {};
 
     return {
@@ -96,11 +96,11 @@ function getDownloadOptions(url: string) {
 
 function mkdirp(dir: string, cb: () => void) {
     if (dir === ".") return cb();
-    fs.stat(dir, function (err: any) {
+    fs.stat(dir, function(err: any) {
         if (err == null) return cb(); // already exists
 
         var parent = path.dirname(dir);
-        mkdirp(parent, function () {
+        mkdirp(parent, function() {
             fs.mkdir(dir, cb);
         });
     });
@@ -130,16 +130,16 @@ function unzip(buffer: Buffer, targetDir: string): Promise<void> {
                 }
 
                 incrementHandleCount();
-                zipfile.on("end", function () {
+                zipfile.on("end", function() {
                     decrementHandleCount();
                 });
 
-                zipfile.on("entry", function (entry: any) {
+                zipfile.on("entry", function(entry: any) {
                     if (/\/$/.test(entry.fileName)) {
                         // directory file names end with '/'
                         mkdirp(
                             path.join(targetDir, entry.fileName),
-                            function () {
+                            function() {
                                 if (err) throw err;
                                 zipfile.readEntry();
                             }
@@ -148,8 +148,8 @@ function unzip(buffer: Buffer, targetDir: string): Promise<void> {
                         // ensure parent directory exists
                         mkdirp(
                             path.join(targetDir, path.dirname(entry.fileName)),
-                            function () {
-                                zipfile.openReadStream(entry, function (
+                            function() {
+                                zipfile.openReadStream(entry, function(
                                     err: any,
                                     readStream: any
                                 ) {
@@ -240,9 +240,16 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     if (requestedVersion == "*") {
         if (!await checkFreshnessOfCachedLastVersion()) {
             console.log("Updating latest version information from Github");
-            var rel = await getRelease();
+            try {
+                var rel = await getRelease();
 
-            await fsWriteFile(lastVersionFileName, JSON.stringify(rel));
+                await fsWriteFile(lastVersionFileName, JSON.stringify(rel));
+            } catch (ex) {
+                console.log(
+                    "Update latest version information failed ignoring"
+                );
+                console.log(ex.stack);
+            }
         }
         var last = JSON.parse(await fsReadFile(lastVersionFileName, "utf-8"));
         requestedVersion = last.tag_name;
@@ -250,14 +257,31 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
 
     let toRun = path.join(homeDir, requestedVersion);
     if (!await fsExists(path.join(toRun, ".success"))) {
-        var rel = await getRelease(requestedVersion);
+        var rel: any;
+        try {
+            rel = await getRelease(requestedVersion);
+        } catch (ex) {
+            console.log(
+                "Failed to retrieve information about version " +
+                    requestedVersion
+            );
+            console.log(ex.stack);
+            process.exit(1);
+        }
         var assets = rel.assets as { url: string; name: string }[];
         var asset = assets.find(a => a.name == platformAssetName);
         if (asset) {
             console.log("Downloading " + asset.name + " from " + rel.tag_name);
-            var zip = await downloadAsset(asset);
+            var zip: Buffer;
+            try {
+                zip = await downloadAsset(asset);
+            } catch (ex) {
+                console.log("Failed to download version " + requestedVersion);
+                console.log(ex.stack);
+                process.exit(1);
+            }
             console.log("Unzipping");
-            await unzip(zip, path.join(homeDir, requestedVersion));
+            await unzip(zip!, path.join(homeDir, requestedVersion));
             let bbName = path.join(homeDir, requestedVersion, "bb");
             if (await fsExists(bbName)) {
                 var stat = await fsStat(bbName);
@@ -269,9 +293,9 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
             );
             console.log(
                 "Not found " +
-                platformAssetName +
-                " in " +
-                assets.map(a => a.name).join(", ")
+                    platformAssetName +
+                    " in " +
+                    assets.map(a => a.name).join(", ")
             );
             process.exit(1);
         }
@@ -281,9 +305,9 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     } catch (err) {
         console.log(
             "Ignoring failure to update " +
-            path.join(toRun, ".success") +
-            " " +
-            err
+                path.join(toRun, ".success") +
+                " " +
+                err
         );
     }
     console.log("Bobril-build core running " + toRun);
@@ -297,7 +321,12 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     });
     process.stdin.pipe(proc.stdin, { end: true });
     function endBBCore() {
-        proc.stdin.write("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" + os.EOL + "quit" + os.EOL);
+        proc.stdin.write(
+            "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
+                os.EOL +
+                "quit" +
+                os.EOL
+        );
     }
     process.on("SIGINT", endBBCore);
     process.on("SIGTERM", endBBCore);
