@@ -126,7 +126,7 @@ namespace Lib.ToolsDir
             _typeScriptJsContent = null;
             var tspackage = PathUtils.Join(Path, "package.json");
             if (!File.Exists(tspackage))
-                RunYarn(Path, "init -y");
+                RunYarn(Path, "init -y --no-emoji --non-interactive");
             RunYarn(Path, "add typescript@" + version + " --no-emoji --non-interactive");
             if (version == "*")
                 RunYarn(Path, "upgrade --no-emoji --non-interactive");
@@ -138,17 +138,25 @@ namespace Lib.ToolsDir
             var start = new ProcessStartInfo(yarnPath, aParams)
             {
                 UseShellExecute = false,
-                RedirectStandardOutput = true,
                 WorkingDirectory = dir,
-                StandardOutputEncoding = Encoding.UTF8
+                StandardErrorEncoding = Encoding.UTF8,
+                StandardOutputEncoding = Encoding.UTF8,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true
             };
+
             var process = Process.Start(start);
-            process.OutputDataReceived += (object sendingProcess, DataReceivedEventArgs outLine) =>
-            {
-                Console.WriteLine(outLine.Data);
-            };
+            process.OutputDataReceived += Process_OutputDataReceived;
+            process.ErrorDataReceived += Process_OutputDataReceived;
+            process.BeginErrorReadLine();
             process.BeginOutputReadLine();
             process.WaitForExit();
+        }
+
+        void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            Console.WriteLine(e.Data);
         }
 
         string GetYarnPath()
@@ -195,7 +203,7 @@ namespace Lib.ToolsDir
             {
                 upgrade = false;
             }
-            RunYarn(dir, (upgrade ? "upgrade" : "install") + " --flat");
+            RunYarn(dir, (upgrade ? "upgrade" : "install") + " --flat --no-emoji --non-interactive");
         }
     }
 }
