@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.7.2
+
 ### Fixed
 
 * Lock due to yarn had strange std output.
