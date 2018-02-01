@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Modified
+
+* Uses TypeScript 2.7.1
+
 ## 0.7.2
 
 ### Fixed

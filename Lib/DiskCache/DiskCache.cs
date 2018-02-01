@@ -279,7 +279,7 @@ namespace Lib.DiskCache
 
         void WatcherFileChanged(string path)
         {
-            Console.WriteLine("Change: " + path);
+            //Console.WriteLine("Change: " + path);
             var fi = FsAbstraction.GetItemInfo(path);
             if (fi.Exists && !fi.IsDirectory)
             {
