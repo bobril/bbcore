@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.8.0
+
 ### Modified
 
 * Uses TypeScript 2.7.1
