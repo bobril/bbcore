@@ -100,7 +100,6 @@ namespace Lib.TSCompiler
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
                 var dc = _owner._diskCache.TryGetItem(fullPath) as IDirectoryCache;
-                _owner._diskCache.UpdateIfNeeded(dc);
                 var sb = new StringBuilder();
                 foreach (var item in dc)
                 {

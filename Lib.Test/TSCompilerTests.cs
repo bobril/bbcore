@@ -35,7 +35,7 @@ namespace Lib.Test
             {
                 if (kv.Key.Key != path) continue;
                 if (kv.Value == null)
-                    res.Add(FsItemInfo.Directory(kv.Key.Value));
+                    res.Add(FsItemInfo.Directory(kv.Key.Value, false));
                 else
                     res.Add(FsItemInfo.Existing(kv.Key.Value, kv.Value._length, kv.Value._lastWriteTimeUtc));
             }
@@ -48,7 +48,7 @@ namespace Lib.Test
             if (_content.TryGetValue(new KeyValuePair<string, string>(fad.Item1, fad.Item2), out var file))
             {
                 if (file == null)
-                    return FsItemInfo.Directory(fad.Item2);
+                    return FsItemInfo.Directory(fad.Item2, false);
                 return FsItemInfo.Existing(fad.Item2, file._length, file._lastWriteTimeUtc);
             }
             return FsItemInfo.Missing();
@@ -154,14 +154,14 @@ namespace Lib.Test
         {
             _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore");
             _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"));
-            _tools.InstallTypeScriptVersion();
+            _tools.SetTypeScriptVersion("2.6.2");
             _compilerPool = new CompilerPool(_tools);
         }
 
         [Fact]
         public void LatestTypeScriptVersionDidntChanged()
         {
-            Assert.Equal("2.6.2", _tools.GetTypeScriptVersion());
+            Assert.Equal("2.6.2", _tools.TypeScriptVersion);
         }
 
         [Fact]
@@ -321,8 +321,6 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
             projdir = PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), "proj");
             fs.AddNativeDir(_tools.TypeScriptLibDir);
             dc = new DiskCache.DiskCache(fs, () => fs);
-            dc.AddRoot(_tools.TypeScriptLibDir);
-            dc.AddRoot(projdir);
         }
 
         void AddBobrilWithStyleDef()

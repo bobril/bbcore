@@ -110,7 +110,6 @@ namespace Lib.TSCompiler
             var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
             if (dc == null || dc.IsInvalid)
                 return null;
-            _owner.DiskCache.UpdateIfNeeded(dc);
             var item = ExtensionsToImport.Select(ext => dc.TryGetChild(fileOnly + ext) as IFileCache).FirstOrDefault(i => i != null && !i.IsInvalid);
             if (item == null)
                 return null;

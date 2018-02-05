@@ -10,7 +10,9 @@ namespace Lib.TSCompiler
 {
     public class TSProject
     {
-        private bool WasFirstInitialize;
+        bool WasFirstInitialize;
+
+        const string DefaultTypeScriptVersion = "2.7.1";
 
         public IDiskCache DiskCache { get; set; }
         public IDirectoryCache Owner { get; set; }
@@ -137,6 +139,7 @@ namespace Lib.TSCompiler
                 ProjectOptions.NpmRegistry = publishConfigSection.Value<string>("registry");
             }
             var bobrilSection = parsed.GetValue("bobril") as JObject;
+            ProjectOptions.TypeScriptVersion = GetStringProperty(bobrilSection, "tsVersion", DefaultTypeScriptVersion);
             ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
             ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
             ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
@@ -208,6 +211,7 @@ namespace Lib.TSCompiler
                 compOpt.outDir = "_virtual";
                 compOpt.module = ModuleKind.CommonJS;
                 compOpt.declaration = true;
+                ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
                 compiler.MergeCompilerOptions(compOpt);
                 compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
                 do

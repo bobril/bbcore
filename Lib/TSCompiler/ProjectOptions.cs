@@ -30,6 +30,8 @@ namespace Lib.TSCompiler
         public FastBundleBundler MainProjFastBundle { get; set; }
         public FastBundleBundler TestProjFastBundle { get; internal set; }
         public bool LiveReloadEnabled { get; internal set; }
+        public string TypeScriptVersion { get; internal set; }
+
         public bool Localize;
         public string DefaultLanguage;
         public string OutputSubDir;
@@ -81,7 +83,6 @@ namespace Lib.TSCompiler
                 var item = Owner.DiskCache.TryGetItem(examplePath);
                 if (item is IDirectoryCache)
                 {
-                    Owner.DiskCache.UpdateIfNeeded(item);
                     foreach (var child in (IDirectoryCache)item)
                     {
                         if (!(child is IFileCache)) continue;

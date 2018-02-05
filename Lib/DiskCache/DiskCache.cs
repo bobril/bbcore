@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Subjects;
@@ -14,12 +13,11 @@ namespace Lib.DiskCache
     public class DiskCache : IDiskCache
     {
         readonly Func<IDirectoryWatcher> _directoryWatcherFactory;
-        readonly List<string> _rootPaths = new List<string>();
-        HashSet<string> _watchedPaths = new HashSet<string>();
         readonly Dictionary<string, IDirectoryWatcher> _watchers = new Dictionary<string, IDirectoryWatcher>();
         readonly IDirectoryCache _root;
         readonly object _lock = new object();
         readonly bool IsUnixFs;
+        bool Changed;
 
         public IFsAbstraction FsAbstraction { get; }
 
@@ -32,7 +30,34 @@ namespace Lib.DiskCache
             public bool IsDirectory => true;
             public bool IsInvalid { get => _isInvalid; set { _isInvalid = value; NoteChange(); } }
             public bool IsStale { get; set; }
+
             public bool IsFake { get; set; }
+            public bool IsLink { get; set; }
+            public bool IsWatcherRoot
+            {
+                get { return _isWatcherRoot; }
+                set
+                {
+                    if (_isWatcherRoot == value)
+                        return;
+                    _isWatcherRoot = value;
+                    if (value)
+                    {
+                        var w = _owner._directoryWatcherFactory();
+                        w.OnError = _owner.WatcherError;
+                        w.OnFileChange = _owner.WatcherFileChanged;
+                        w.WatchedDirectory = FullPath;
+                        _owner._watchers.Add(FullPath, w);
+                    }
+                    else
+                    {
+                        if (_owner._watchers.Remove(FullPath, out var w))
+                        {
+                            w.Dispose();
+                        }
+                    }
+                }
+            }
             public Func<(IDirectoryCache parent, string name, bool isDir), bool> Filter { get; set; }
 
             public int ChangeId => _changeId;
@@ -41,9 +66,10 @@ namespace Lib.DiskCache
 
             public List<IItemCache> Items = new List<IItemCache>();
             public List<IFileCache> VirtualFiles = new List<IFileCache>();
-            private int _changeId;
-            private bool _isInvalid;
-            private DiskCache _owner;
+            int _changeId;
+            bool _isInvalid;
+            DiskCache _owner;
+            private bool _isWatcherRoot;
 
             public DirectoryCache(DiskCache owner)
             {
@@ -142,15 +168,27 @@ namespace Lib.DiskCache
                     return true;
                 }
             }
+
+            public IItemCache TryGetChildNoVirtual(string name)
+            {
+                foreach (var item in Items)
+                {
+                    if (item.Name == name)
+                    {
+                        return item;
+                    }
+                }
+                return null;
+            }
         }
 
         public IObservable<Unit> ChangeObservable { get => _changeSubject; }
 
         Subject<Unit> _changeSubject = new Subject<Unit>();
 
-        private void NotifyChange()
+        void NotifyChange()
         {
-            _changeSubject.OnNext(Unit.Default);
+            Changed = true;
         }
 
         public DiskCache(IFsAbstraction fsAbstraction, Func<IDirectoryWatcher> directoryWatcherFactory)
@@ -181,230 +219,18 @@ namespace Lib.DiskCache
             };
         }
 
-        public IDisposable AddRoot(string path)
-        {
-            path = PathUtils.Normalize(path);
-            lock (_lock)
-            {
-                _rootPaths.Add(path);
-                RebuildWatchers();
-                return new Disposer(() => RemoveRoot(path));
-            }
-        }
-
-        void RemoveRoot(string path)
-        {
-            lock (_lock)
-            {
-                _rootPaths.Remove(path);
-                RebuildWatchers();
-            }
-        }
-
-        void RebuildWatchers()
-        {
-            var trueRoots = new HashSet<string>();
-            foreach (var rootPath in _rootPaths.OrderBy(s => s.Length))
-            {
-                var p = rootPath;
-                while (p != null)
-                {
-                    if (trueRoots.Contains(p))
-                        goto skip;
-                    p = PathUtils.Parent(p);
-                }
-                trueRoots.Add(rootPath);
-                skip:
-                ;
-            }
-            if (_watchedPaths.SetEquals(trueRoots))
-                return;
-            foreach (var watchedPath in _watchedPaths)
-            {
-                if (trueRoots.Contains(watchedPath))
-                    continue;
-                _watchers.TryGetValue(watchedPath, out var w);
-                Debug.Assert(w != null, "_watchers and _watchedPaths got unsynced with " + watchedPath);
-                w.Dispose();
-                _watchers.Remove(watchedPath);
-                var directory = (IDirectoryCache)TryGetItemNoLock(watchedPath);
-                while (directory.Parent != null)
-                {
-                    directory.IsInvalid = true;
-                    var parent = directory.Parent;
-                    ((DirectoryCache)parent).Remove(directory);
-                    if (((DirectoryCache)parent).Items.Count != 0)
-                        break;
-                    directory = parent;
-                }
-            }
-            foreach (var trueRoot in trueRoots)
-            {
-                if (!_watchedPaths.Add(trueRoot))
-                    continue;
-                var w = _directoryWatcherFactory();
-                w.OnError = WatcherError;
-                w.OnFileChange = WatcherFileChanged;
-                w.WatchedDirectory = trueRoot;
-                _watchers.Add(trueRoot, w);
-                var directory = _root;
-                foreach ((string name, bool isDir) in PathUtils.EnumParts(trueRoot))
-                {
-                    var subDir = directory.TryGetChild(name);
-                    if (!isDir)
-                    {
-                        Debug.Assert(subDir == null);
-                        AddDirectoryFromName(name, directory);
-                    }
-                    else
-                    {
-                        if (subDir == null)
-                        {
-                            var subDir2 = AddDirectoryFromName(name, directory);
-                            subDir2.IsFake = true;
-                            subDir2.IsStale = false;
-                            subDir = subDir2;
-                        }
-                        directory = (IDirectoryCache)subDir;
-                    }
-                }
-            }
-            _watchedPaths = trueRoots;
-        }
-
         void WatcherError()
         {
-            Console.WriteLine("Watcher error. Restarting.");
+            //Console.WriteLine("Watcher error. Restarting.");
         }
 
         void WatcherFileChanged(string path)
         {
             //Console.WriteLine("Change: " + path);
-            var fi = FsAbstraction.GetItemInfo(path);
-            if (fi.Exists && !fi.IsDirectory)
-            {
-                lock (_lock)
-                {
-                    var directory = _root;
-                    foreach ((string name, bool isDir) in PathUtils.EnumParts(path))
-                    {
-                        if (isDir)
-                        {
-                            var subDir = directory.TryGetChild(name);
-                            if (subDir == null)
-                            {
-                                if (!directory.Filter((directory, name, true)))
-                                    return;
-                                subDir = AddDirectoryFromName(name, directory);
-                            }
-                            else
-                            {
-                                if (!subDir.IsDirectory)
-                                {
-                                    subDir.IsInvalid = true;
-                                    ((DirectoryCache)directory).Remove(subDir);
-                                    if (!directory.Filter((directory, name, true)))
-                                        return;
-                                    subDir = AddDirectoryFromName(name, directory);
-                                }
-                            }
-                            directory = (IDirectoryCache)subDir;
-                        }
-                        else
-                        {
-                            var subFile = directory.TryGetChild(name);
-                            if (subFile == null)
-                            {
-                                if (!directory.Filter((directory, name, false)))
-                                    return;
-                                AddFileFromFileInfo(name, directory, fi);
-                            }
-                            else
-                            {
-                                if (!subFile.IsFile)
-                                {
-                                    subFile.IsInvalid = true;
-                                    ((DirectoryCache)directory).Remove(subFile);
-                                    if (!directory.Filter((directory, name, false)))
-                                        return;
-                                    AddFileFromFileInfo(name, directory, fi);
-                                }
-                                else
-                                {
-                                    subFile.IsStale = true;
-                                }
-                            }
-                        }
-                    }
-                }
-                return;
-            }
-            if (fi.Exists && fi.IsDirectory)
-            {
-                lock (_lock)
-                {
-                    var directory = _root;
-                    foreach ((var name, _) in PathUtils.EnumParts(path))
-                    {
-                        var subDir = directory.TryGetChild(name);
-                        if (subDir == null)
-                        {
-                            if (!directory.Filter((directory, name, true)))
-                                return;
-                            subDir = AddDirectoryFromName(name, directory);
-                        }
-                        else
-                        {
-                            if (!subDir.IsDirectory)
-                            {
-                                subDir.IsInvalid = true;
-                                ((DirectoryCache)directory).Remove(subDir);
-                                if (!directory.Filter((directory, name, true)))
-                                    return;
-                                subDir = AddDirectoryFromName(name, directory);
-                            }
-                        }
-                        directory = (IDirectoryCache)subDir;
-                    }
-                }
-            }
-            else
-            {
-                lock (_lock)
-                {
-                    var directory = _root;
-                    foreach ((string name, bool isDir) in PathUtils.EnumParts(path))
-                    {
-                        if (isDir)
-                        {
-                            var subDir = directory.TryGetChild(name);
-                            if (subDir == null)
-                            {
-                                return;
-                            }
-                            if (!subDir.IsDirectory)
-                            {
-                                ((DirectoryCache)directory).Remove(subDir);
-                                directory.IsStale = true;
-                                return;
-                            }
-                            directory = (IDirectoryCache)subDir;
-                        }
-                        else
-                        {
-                            var subDir = directory.TryGetChild(name);
-                            if (subDir != null)
-                            {
-                                subDir.IsInvalid = true;
-                                ((DirectoryCache)directory).Remove(subDir);
-                            }
-                        }
-                    }
-                }
-            }
+            _changeSubject.OnNext(Unit.Default);
         }
 
-        IDirectoryCache AddDirectoryFromName(string name, IDirectoryCache parent)
+        IDirectoryCache AddDirectoryFromName(string name, IDirectoryCache parent, bool isLink)
         {
             var subDir = new DirectoryCache(this)
             {
@@ -412,9 +238,11 @@ namespace Lib.DiskCache
                 FullPath = parent.FullPath + (parent != _root ? "/" : "") + name,
                 Parent = parent,
                 Filter = DefaultFilter,
-                IsStale = true
+                IsStale = true,
+                IsLink = isLink
             };
             ((DirectoryCache)parent).Add(subDir);
+            ((DirectoryCache)parent).NoteChange();
             return subDir;
         }
 
@@ -430,6 +258,7 @@ namespace Lib.DiskCache
                 Length = fi.Length
             };
             ((DirectoryCache)directory).Add(subFile);
+            ((DirectoryCache)directory).NoteChange();
         }
 
         class VirtualFileCache : IFileCache
@@ -461,7 +290,7 @@ namespace Lib.DiskCache
 
             public DateTime Modified => _modified;
 
-            public long Length => _length;
+            public ulong Length => (ulong)_length;
 
             public byte[] ByteContent => Encoding.UTF8.GetBytes(_content);
 
@@ -543,13 +372,13 @@ namespace Lib.DiskCache
                                 return;
                             }
                         }
+                        _contentBytes = null;
+                        _contentUtf8 = null;
+                        _changeId++;
+                        if (Parent != null)
+                            ((DirectoryCache)Parent).NoteChange();
                     }
                     _isStale = value;
-                    _contentBytes = null;
-                    _contentUtf8 = null;
-                    _changeId++;
-                    if (Parent != null)
-                        ((DirectoryCache)Parent).NoteChange();
                 }
             }
 
@@ -583,8 +412,6 @@ namespace Lib.DiskCache
             public int ChangeId => _changeId;
 
             public object AdditionalInfo { get; set; }
-
-            long IFileCache.Length => throw new NotImplementedException();
         }
 
         public IItemCache TryGetItem(string path)
@@ -605,21 +432,45 @@ namespace Lib.DiskCache
                 {
                     if (subItem == null || !subItem.IsDirectory)
                     {
-                        return null;
+                        if (!directory.IsFake)
+                        {
+                            return null;
+                        }
+                        subItem = AddDirectoryFromName(name, directory, false);
+                        ((IDirectoryCache)subItem).IsFake = true;
                     }
                     directory = (IDirectoryCache)subItem;
-                    UpdateIfNeededNoLock(directory);
+                    if (!directory.IsFake) UpdateIfNeededNoLock(directory);
                 }
                 else
                 {
                     if (subItem is IDirectoryCache)
                     {
                         UpdateIfNeededNoLock((IDirectoryCache)subItem);
+                        return subItem;
+                    }
+                    if (subItem != null || !directory.IsFake)
+                        return subItem;
+                    var info = FsAbstraction.GetItemInfo(path);
+                    if (info.Exists && !info.IsDirectory)
+                    {
+                        UpdateIfNeededNoLock(directory);
+                        subItem = directory.TryGetChild(name);
+                    }
+                    else
+                    {
+                        subItem = AddDirectoryFromName(name, directory, false);
+                        CheckUpdateIfNeededNoLock((IDirectoryCache)subItem);
                     }
                     return subItem;
                 }
             }
             return directory;
+        }
+
+        public void ResetChange()
+        {
+            Changed = false;
         }
 
         public IDirectoryCache Root()
@@ -674,12 +525,12 @@ namespace Lib.DiskCache
             {
                 if (!directory.Filter((directory, fsi.Name, fsi.IsDirectory)))
                     continue;
-                var item = directory.TryGetChild(fsi.Name);
+                var item = directory.TryGetChildNoVirtual(fsi.Name);
                 if (item == null)
                 {
                     if (fsi.IsDirectory)
                     {
-                        AddDirectoryFromName(fsi.Name, directory);
+                        AddDirectoryFromName(fsi.Name, directory, fsi.IsLink);
                     }
                     else
                     {
@@ -694,7 +545,11 @@ namespace Lib.DiskCache
                         {
                             item.IsInvalid = true;
                             ((DirectoryCache)directory).Remove(item);
-                            AddDirectoryFromName(fsi.Name, directory);
+                            AddDirectoryFromName(fsi.Name, directory, fsi.IsLink);
+                        }
+                        else
+                        {
+                            ((IDirectoryCache)item).IsLink = fsi.IsLink;
                         }
                     }
                     else
@@ -717,8 +572,60 @@ namespace Lib.DiskCache
                         }
                     }
                 }
-                directory.IsStale = false;
             }
+            directory.IsWatcherRoot = directory.IsLink || (directory.Parent != null && directory.Parent.IsFake);
+            directory.IsStale = false;
+        }
+
+        public bool CheckForTrueChange()
+        {
+            lock (_lock)
+            {
+                CheckUpdateIfNeededNoLock(_root);
+                return Changed;
+            }
+        }
+
+        void CheckUpdateIfNeededNoLock(IDirectoryCache directory)
+        {
+            if (directory.IsFake)
+            {
+                foreach (var item in directory)
+                {
+                    CheckUpdateIfNeededNoLock((IDirectoryCache)item);
+                }
+            }
+            else
+            {
+                var info = FsAbstraction.GetItemInfo(directory.FullPath);
+                if (info.Exists)
+                {
+                    if (info.IsDirectory)
+                    {
+                        directory.IsLink = info.IsLink;
+                        directory.IsStale = true;
+                        UpdateIfNeededNoLock(directory);
+                        foreach (var item in directory)
+                        {
+                            if (item is IDirectoryCache && !((IDirectoryCache)item).IsStale)
+                                CheckUpdateIfNeededNoLock((IDirectoryCache)item);
+                        }
+                    }
+                    else
+                    {
+                        directory.IsInvalid = true;
+                    }
+                }
+                else
+                {
+                    directory.IsInvalid = true;
+                }
+            }
+        }
+
+        public void UpdateIfNeeded(IDirectoryCache dir)
+        {
+            UpdateIfNeeded((IItemCache)dir);
         }
     }
 }

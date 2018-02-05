@@ -102,7 +102,7 @@ namespace Lib.Composition
 
         void RunBuild(BuildCommand bCommand)
         {
-            InitTools("2.6.2");
+            InitTools();
             InitDiskCache();
             AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
             _forbiddenDependencyUpdate = bCommand.NoUpdate.Value;
@@ -193,7 +193,7 @@ namespace Lib.Composition
             {
                 port = portInInt;
             }
-            InitTools("2.6.2");
+            InitTools();
             InitDiskCache();
             InitTestServer();
             InitMainServer();
@@ -203,7 +203,7 @@ namespace Lib.Composition
             WaitForStop();
         }
 
-        public void InitTools(string version)
+        public void InitTools()
         {
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings
             {
@@ -214,30 +214,24 @@ namespace Lib.Composition
             _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)), ".bbcore");
             if (runningFrom.StartsWith(_bbdir))
             {
-                _bbdir = runningFrom;
+                _bbdir = PathUtils.Join(_bbdir, "tools");
             }
             else
             {
                 _bbdir = PathUtils.Join(_bbdir, "dev");
             }
-            _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"));
-            if (_tools.GetTypeScriptVersion() != version)
-            {
-                _tools.InstallTypeScriptVersion(version);
-            }
+            _tools = new ToolsDir.ToolsDir(_bbdir);
             _compilerPool = new CompilerPool(_tools);
         }
 
         public void InitDiskCache()
         {
-            _dc = new DiskCache.DiskCache(new NativeFsAbstraction(), () => new ModulesLinksOsWatcher());
-            _dc.AddRoot(_tools.Path);
+            _dc = new DiskCache.DiskCache(new NativeFsAbstraction(), () => new OsWatcher());
         }
 
         public ProjectOptions AddProject(string path)
         {
             var projectDir = PathUtils.Normalize(new DirectoryInfo(path).FullName);
-            _dc.AddRoot(projectDir);
             var dirCache = _dc.TryGetItem(projectDir) as IDirectoryCache;
             var proj = TSProject.Get(dirCache, _dc);
             proj.IsRootProject = true;
@@ -413,6 +407,10 @@ namespace Lib.Composition
             {
                 while (_hasBuildWork.WaitOne())
                 {
+                    if (!_dc.CheckForTrueChange())
+                        continue;
+                    _dc.ResetChange();
+                    _hasBuildWork.Set();
                     DateTime start = DateTime.UtcNow;
                     ProjectOptions[] toBuild;
                     lock (_projectsLock)
@@ -497,6 +495,7 @@ namespace Lib.Composition
                     Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
                     Console.ForegroundColor = ConsoleColor.Gray;
+                    _dc.ResetChange();
                 }
             });
         }

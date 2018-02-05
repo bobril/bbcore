@@ -5,11 +5,11 @@ namespace Lib.ToolsDir
     public interface IToolsDir
     {
         string Path { get; }
-        string GetTypeScriptVersion();
-        void InstallTypeScriptVersion(string version = "*");
+        void SetTypeScriptVersion(string version);
         void RunYarn(string dir, string aParams);
         void UpdateDependencies(string dir, bool upgrade, string npmRegistry);
         string TypeScriptLibDir { get; }
+        string TypeScriptVersion { get; }
         string TypeScriptJsContent { get; }
         string LoaderJs { get; }
         string JasmineCoreJs { get; }

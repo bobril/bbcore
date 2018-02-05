@@ -25,7 +25,7 @@ namespace Lib.DiskCache
             {
                 if ((fi.Attributes & FileAttributes.Directory) != 0)
                 {
-                    res.Add(FsItemInfo.Directory(fi.Name));
+                    res.Add(FsItemInfo.Directory(fi.Name, (fi.Attributes & FileAttributes.ReparsePoint) != 0));
                 }
                 else
                 {
@@ -45,7 +45,7 @@ namespace Lib.DiskCache
             var di = new DirectoryInfo(path);
             if (di.Exists)
             {
-                return FsItemInfo.Directory(di.Name);
+                return FsItemInfo.Directory(di.Name, (di.Attributes & FileAttributes.ReparsePoint) != 0);
             }
             return FsItemInfo.Missing();
         }

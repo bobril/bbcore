@@ -22,8 +22,7 @@ namespace Lib.ToolsDir
             {
                 Path = dir;
                 if (!new DirectoryInfo(dir).Exists)
-                    Directory.CreateDirectory(Path);
-                TypeScriptLibDir = PathUtils.Join(Path, "node_modules/typescript/lib");
+                    Directory.CreateDirectory(dir);
                 lock (_lock)
                 {
                     var jsEngineSwitcher = JsEngineSwitcher.Current;
@@ -50,7 +49,8 @@ namespace Lib.ToolsDir
         }
 
         public string Path { get; }
-        public string TypeScriptLibDir { get; }
+        public string TypeScriptLibDir { get; private set; }
+        public string TypeScriptVersion { get; private set; }
 
         string _typeScriptJsContent;
 
@@ -103,33 +103,24 @@ namespace Lib.ToolsDir
 
         public string ImportSource { get; }
 
-        public string GetTypeScriptVersion()
+        public void SetTypeScriptVersion(string version)
         {
-            var tspackage = PathUtils.Join(Path, "node_modules/typescript/package.json");
-            if (!File.Exists(tspackage))
-                return null;
-            try
-            {
-                var package = JObject.Parse(File.ReadAllText(tspackage));
-                var version = package.Property("version").Value.ToString();
-                return version;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                return null;
-            }
-        }
-
-        public void InstallTypeScriptVersion(string version = "*")
-        {
+            if (TypeScriptVersion == version)
+                return;
             _typeScriptJsContent = null;
-            var tspackage = PathUtils.Join(Path, "package.json");
-            if (!File.Exists(tspackage))
-                RunYarn(Path, "init -y --no-emoji --non-interactive");
-            RunYarn(Path, "add typescript@" + version + " --no-emoji --non-interactive");
-            if (version == "*")
-                RunYarn(Path, "upgrade --no-emoji --non-interactive");
+            var tsVerDir = PathUtils.Join(Path, version);
+            var tspackage = PathUtils.Join(tsVerDir, "package.json");
+            lock(_lock)
+            {
+                if (!File.Exists(tspackage))
+                {
+                    Directory.CreateDirectory(tsVerDir);
+                    RunYarn(tsVerDir, "init -y --no-emoji --non-interactive");
+                    RunYarn(tsVerDir, "add typescript@" + version + " --no-emoji --non-interactive");
+                }
+            }
+            TypeScriptLibDir = PathUtils.Join(tsVerDir, "node_modules/typescript/lib");
+            TypeScriptVersion = version;
         }
 
         public void RunYarn(string dir, string aParams)

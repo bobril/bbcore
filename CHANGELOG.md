@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Modified
+
+* Rewritten DiskCache and Watching
+
+### Added
+
+* Allow override TypeScript version
+
 ## 0.8.0
 
 ### Modified
