@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.9.0
+
 ### Modified
 
 * Rewritten DiskCache and Watching
