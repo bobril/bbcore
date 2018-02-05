@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.9.1
+
 ### Fixed
 
 * @types resolving does not crash build.
