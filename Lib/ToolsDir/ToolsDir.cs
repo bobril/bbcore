@@ -76,6 +76,14 @@ namespace Lib.ToolsDir
                             _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos2, "if (node.transformFlags & 2) { return ts.visitEachChild(node, visitor, context); };");
                         }
                     }
+                    // Patch 
+                    bugPos = _typeScriptJsContent.IndexOf("function checkUnusedClassMembers(");
+                    var bugPos22 = _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos);
+                    var bugPos33 = _typeScriptJsContent.IndexOf("case 207", bugPos22);
+                    if (bugPos33<0 || bugPos33>bugPos22+200)
+                    {
+                        _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos22, "case 207:");
+                    }
                 }
                 return _typeScriptJsContent;
             }

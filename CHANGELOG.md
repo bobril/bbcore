@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+* Workaround for crashing bug in TypeScript 2.7.1
+
 ## 0.9.1
 
 ### Fixed

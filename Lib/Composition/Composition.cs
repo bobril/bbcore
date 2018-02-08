@@ -435,60 +435,70 @@ namespace Lib.Composition
                         Console.ForegroundColor = ConsoleColor.Blue;
                         Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
                         Console.ForegroundColor = ConsoleColor.Gray;
-                        proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
-                        proj.Owner.FirstInitialize();
-                        proj.RefreshMainFile();
-                        proj.RefreshTestSources();
-                        proj.DetectBobrilJsxDts();
-                        proj.RefreshExampleSources();
-                        var ctx = new BuildCtx(_compilerPool, _verbose);
-                        ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
-                        ctx.Sources = new HashSet<string>();
-                        ctx.Sources.Add(proj.MainFile);
-                        proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
-                        if (proj.BobrilJsxDts != null)
-                            ctx.Sources.Add(proj.BobrilJsxDts);
-                        proj.Owner.Build(ctx);
-                        var buildResult = ctx.BuildResult;
-                        var filesContent = new Dictionary<string, object>();
-                        proj.FillOutputByAdditionalResourcesDirectory(filesContent);
-                        var fastBundle = new FastBundleBundler(_tools);
-                        fastBundle.FilesContent = filesContent;
-                        fastBundle.Project = proj;
-                        fastBundle.BuildResult = buildResult;
-                        fastBundle.Build("bb/base", "bundle.js.map");
-                        proj.MainProjFastBundle = fastBundle;
-                        IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
-                        if (proj.TestSources != null && proj.TestSources.Count > 0)
+                        try
                         {
-                            ctx = new BuildCtx(_compilerPool, _verbose);
+                            proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
+                            proj.Owner.FirstInitialize();
+                            proj.RefreshMainFile();
+                            proj.RefreshTestSources();
+                            proj.DetectBobrilJsxDts();
+                            proj.RefreshExampleSources();
+                            var ctx = new BuildCtx(_compilerPool, _verbose);
                             ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
                             ctx.Sources = new HashSet<string>();
-                            ctx.Sources.Add(proj.JasmineDts);
-                            proj.TestSources.ForEach(s => ctx.Sources.Add(s));
+                            ctx.Sources.Add(proj.MainFile);
+                            proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
                             if (proj.BobrilJsxDts != null)
                                 ctx.Sources.Add(proj.BobrilJsxDts);
                             proj.Owner.Build(ctx);
-                            var testBuildResult = ctx.BuildResult;
-                            fastBundle = new FastBundleBundler(_tools);
+                            var buildResult = ctx.BuildResult;
+                            var filesContent = new Dictionary<string, object>();
+                            proj.FillOutputByAdditionalResourcesDirectory(filesContent);
+                            var fastBundle = new FastBundleBundler(_tools);
                             fastBundle.FilesContent = filesContent;
                             fastBundle.Project = proj;
-                            fastBundle.BuildResult = testBuildResult;
-                            fastBundle.Build("bb/base", "testbundle.js.map", true);
-                            proj.TestProjFastBundle = fastBundle;
-                            IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
-                            if (errors == 0)
+                            fastBundle.BuildResult = buildResult;
+                            fastBundle.Build("bb/base", "bundle.js.map");
+                            proj.MainProjFastBundle = fastBundle;
+                            IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                            if (proj.TestSources != null && proj.TestSources.Count > 0)
                             {
-                                _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
-                                StartChromeTest();
+                                ctx = new BuildCtx(_compilerPool, _verbose);
+                                ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
+                                ctx.Sources = new HashSet<string>();
+                                ctx.Sources.Add(proj.JasmineDts);
+                                proj.TestSources.ForEach(s => ctx.Sources.Add(s));
+                                if (proj.BobrilJsxDts != null)
+                                    ctx.Sources.Add(proj.BobrilJsxDts);
+                                proj.Owner.Build(ctx);
+                                var testBuildResult = ctx.BuildResult;
+                                fastBundle = new FastBundleBundler(_tools);
+                                fastBundle.FilesContent = filesContent;
+                                fastBundle.Project = proj;
+                                fastBundle.BuildResult = testBuildResult;
+                                fastBundle.Build("bb/base", "testbundle.js.map", true);
+                                proj.TestProjFastBundle = fastBundle;
+                                IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                                if (errors == 0)
+                                {
+                                    _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
+                                    StartChromeTest();
+                                }
                             }
+                            else
+                            {
+                                proj.TestProjFastBundle = null;
+                            }
+                            proj.FilesContent = filesContent;
+                            totalFiles += filesContent.Count;
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            proj.TestProjFastBundle = null;
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Fatal Error: " + ex);
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            errors++;
                         }
-                        proj.FilesContent = filesContent;
-                        totalFiles += filesContent.Count;
                     }
                     var duration = DateTime.UtcNow - start;
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
