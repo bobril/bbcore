@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.9.2
+
 ### Fixed
 
 * Workaround for crashing bug in TypeScript 2.7.1
