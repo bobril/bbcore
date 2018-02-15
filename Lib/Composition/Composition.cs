@@ -97,7 +97,10 @@ namespace Lib.Composition
 
         void CurrentDomain_FirstChanceException(object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
-            Console.WriteLine("First chance exception: " + e.Exception);
+            string s = e.Exception.ToString();
+            if (s.Contains("KestrelConnectionReset"))
+                return;
+            Console.WriteLine("First chance exception: " + s);
         }
 
         void RunBuild(BuildCommand bCommand)

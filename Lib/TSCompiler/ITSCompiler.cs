@@ -13,6 +13,7 @@ namespace Lib.TSCompiler
 
         void CreateProgram(string currentDirectory, string[] mainFiles);
         bool CompileProgram();
+        string CommonSourceDirectory { get; }
         void GatherSourceInfo();
         bool EmitProgram();
     }

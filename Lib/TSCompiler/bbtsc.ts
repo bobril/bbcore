@@ -188,7 +188,7 @@ function reportDiagnostics(diagnostics: ReadonlyArray<ts.Diagnostic>) {
     }
 }
 
-function bbCompileProgram(): void {
+function bbCompileProgram(): string {
     let diagnostics = program.getSyntacticDiagnostics();
     reportDiagnostics(diagnostics);
     if (diagnostics.length === 0) {
@@ -199,6 +199,7 @@ function bbCompileProgram(): void {
             reportDiagnostics(diagnostics);
         }
     }
+    return (<any>program).getCommonSourceDirectory();
 }
 
 const sourceInfos: { [name: string]: SourceInfo } = Object.create(null);

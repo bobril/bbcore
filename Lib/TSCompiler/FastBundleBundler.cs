@@ -29,7 +29,7 @@ namespace Lib.TSCompiler
         public void Build(string sourceRoot, string mapUrl, bool testProj = false)
         {
             var diskCache = Project.Owner.DiskCache;
-            var root = Project.Owner.Owner.FullPath;
+            var root = Project.CommonSourceDirectory;
             var sourceMapBuilder = new SourceMapBuilder();
             sourceMapBuilder.AddText(_tools.TsLibSource);
             var cssLink = "";
@@ -212,7 +212,7 @@ namespace Lib.TSCompiler
 
         string GetModuleMap()
         {
-            var root = Project.Owner.Owner.FullPath;
+            var root = Project.CommonSourceDirectory;
             var res = new Dictionary<string, string>();
             foreach (var source in BuildResult.Path2FileInfo)
             {

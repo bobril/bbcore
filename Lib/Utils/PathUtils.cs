@@ -36,26 +36,37 @@ namespace Lib.Utils
 
         public static string Parent(string path)
         {
-            if (path.Length == 0) return null;
+            if (path.Length == 0)
+                return null;
             var p = path.Length - 1;
             if (path[0] == '/')
             {
-                if (p == 0) return null;
+                if (p == 0)
+                    return null;
                 if (p > 1 && path[1] == '/')
                 {
-                    if (path[p] == '/') p--;
-                    while (path[p] != '/') p--;
-                    if (p == 1) return null;
+                    if (path[p] == '/')
+                        p--;
+                    while (path[p] != '/')
+                        p--;
+                    if (p == 1)
+                        return null;
                     return path.Substring(0, p);
                 }
-                if (path[p] == '/') p--;
-                while (path[p] != '/') p--;
-                if (p == 0) return "/";
+                if (path[p] == '/')
+                    p--;
+                while (path[p] != '/')
+                    p--;
+                if (p == 0)
+                    return "/";
                 return path.Substring(0, p);
             }
-            if (p <= 2) return null;
-            if (path[p] == '/') p--;
-            while (path[p] != '/') p--;
+            if (p <= 2)
+                return null;
+            if (path[p] == '/')
+                p--;
+            while (path[p] != '/')
+                p--;
             if (p == 2)
             {
                 return path.Substring(0, 3);
@@ -73,7 +84,8 @@ namespace Lib.Utils
             while (true)
             {
                 var slash = pathA.IndexOf('/', commonStart);
-                if (slash < 0) break;
+                if (slash < 0 || pathB.Length <= slash)
+                    break;
                 if (pathB.Substring(commonStart, slash - commonStart + 1) != pathA.Substring(commonStart, slash - commonStart + 1))
                 {
                     break;
@@ -94,7 +106,8 @@ namespace Lib.Utils
         public static (string, string) SplitDirAndFile(string path)
         {
             var dir = Parent(path);
-            if (dir == null) return (null, path);
+            if (dir == null)
+                return (null, path);
             return (dir, path.Substring(dir.Length + 1));
         }
 
@@ -144,7 +157,8 @@ namespace Lib.Utils
         {
             var pos = 0;
             var len = path.Length;
-            if (pos < len && path[pos] == '/') pos++;
+            if (pos < len && path[pos] == '/')
+                pos++;
             if (pos < len && path[pos] == '/')
             {
                 int pos2 = path.IndexOf('/', 2);
@@ -172,14 +186,16 @@ namespace Lib.Utils
         public static string GetExtension(string path)
         {
             var lastDotIndex = path.LastIndexOf('.');
-            if (lastDotIndex < 0) return "";
+            if (lastDotIndex < 0)
+                return "";
             return path.Substring(lastDotIndex + 1);
         }
 
         public static string PathToMimeType(string path)
         {
             var lastDotIndex = path.LastIndexOf('.');
-            if (lastDotIndex < 0) return "application/unknown";
+            if (lastDotIndex < 0)
+                return "application/unknown";
             var extension = path.Substring(lastDotIndex + 1);
             return ExtensionToMimeType(extension);
         }
@@ -188,20 +204,29 @@ namespace Lib.Utils
         {
             switch (extension)
             {
-                case "png": return "image/png";
+                case "png":
+                    return "image/png";
                 case "jpg":
-                case "jpeg": return "image/jpeg";
-                case "gif": return "image/gif";
-                case "svg": return "image/svg+xml";
-                case "css": return "text/css";
+                case "jpeg":
+                    return "image/jpeg";
+                case "gif":
+                    return "image/gif";
+                case "svg":
+                    return "image/svg+xml";
+                case "css":
+                    return "text/css";
                 case "html":
-                case "htm": return "text/html";
+                case "htm":
+                    return "text/html";
                 case "jsx":
-                case "js": return "application/javascript";
+                case "js":
+                    return "application/javascript";
                 case "tsx":
-                case "ts": return "text/plain";
+                case "ts":
+                    return "text/plain";
                 case "map":
-                case "json": return "application/json";
+                case "json":
+                    return "application/json";
             }
             return "application/unknown";
         }

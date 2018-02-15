@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+* Support for "sandbox" type of projects.
+
 ## 0.9.2
 
 ### Fixed

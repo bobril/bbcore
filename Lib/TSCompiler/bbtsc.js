@@ -148,6 +148,7 @@ function bbCompileProgram() {
             reportDiagnostics(diagnostics_2);
         }
     }
+    return program.getCommonSourceDirectory();
 }
 var sourceInfos = Object.create(null);
 function bbGatherSourceInfo() {

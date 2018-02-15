@@ -235,6 +235,7 @@ namespace Lib.TSCompiler
                         compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
                             break;
+                        ProjectOptions.CommonSourceDirectory = compiler.CommonSourceDirectory;
                         compiler.GatherSourceInfo();
 
                         if (!compiler.EmitProgram())

@@ -149,13 +149,6 @@ namespace Lib.TSCompiler
                 return TSProject.Get(dir, _owner.DiskCache);
             }
 
-            TSProject GetDirectoryInfo(string name)
-            {
-                var fullPath = PathUtils.Join(_owner._currentDirectory, name);
-                var dir = _owner._diskCache.TryGetItem(fullPath) as IDirectoryCache;
-                return GetDirectoryInfo(dir);
-            }
-
             TSFileAdditionalInfo GetFileInfo(IFileCache file)
             {
                 return TSFileAdditionalInfo.Get(file, _owner.DiskCache);
@@ -265,14 +258,19 @@ namespace Lib.TSCompiler
 
         bool _wasError;
         string _currentDirectory;
+        string _commonSourceDirectory;
         private TimeSpan _gatherTime;
 
         public bool CompileProgram()
         {
             var engine = getJSEnviroment();
-            engine.CallFunction("bbCompileProgram");
+            _commonSourceDirectory = (string)engine.CallFunction("bbCompileProgram");
+            if (_commonSourceDirectory.EndsWith("/"))
+                _commonSourceDirectory = _commonSourceDirectory.Substring(0, _commonSourceDirectory.Length - 1);
             return !_wasError;
         }
+
+        public string CommonSourceDirectory { get => _commonSourceDirectory; }
 
         public void GatherSourceInfo()
         {

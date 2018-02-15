@@ -20,6 +20,7 @@ namespace Lib.TSCompiler
         public bool BobrilJsx { get; set; }
         public TSCompilerOptions CompilerOptions;
         public string AdditionalResourcesDirectory;
+        public string CommonSourceDirectory;
 
         public string HtmlHeadExpanded { get; set; }
         public string MainFile { get; set; }
