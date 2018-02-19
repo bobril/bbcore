@@ -314,7 +314,6 @@ namespace Lib.TSCompiler
                             continue; // we cannot handle change in .d.ts without source
                         CheckAdd(mainFile);
                     }
-                    AddDependenciesFromSourceInfo(fileAdditional);
                 }
             }
         }
@@ -335,12 +334,46 @@ namespace Lib.TSCompiler
                     return;
                 res[a.nodeId] = new object[] { 0, PathUtils.Subtract(a.name, _owner.Owner.FullPath) };
             });
-            sourceInfo.sprites.ForEach(s =>
+            if (_owner.ProjectOptions.SpriteGeneration)
             {
-                if (s.name == null)
-                    return;
-                res[s.nodeId] = new object[] { 0, PathUtils.Subtract(s.name, _owner.Owner.FullPath) };
-            });
+                var spriteHolder = _owner.ProjectOptions.SpriteGenerator;
+                spriteHolder.Retrieve(sourceInfo.sprites);
+                sourceInfo.sprites.ForEach(s =>
+                {
+                    if (s.name == null)
+                        return;
+                    if (s.hasColor == true)
+                    {
+                        res[s.nodeId] = new object[] {
+                            5,
+                            2, 1, s.owidth, 5,
+                            2, 2, s.oheight, 5,
+                            2, 3, s.ox, 5,
+                            2, 4, s.oy, 5,
+                            4, "spritebc"
+                        };
+                    }
+                    else
+                    {
+                        res[s.nodeId] = new object[] {
+                            2, 0, s.owidth, 4,
+                            2, 1, s.oheight, 4,
+                            2, 2, s.ox, 4,
+                            2, 3, s.oy, 4,
+                            4, "spriteb"
+                        };
+                    }
+                });
+            }
+            else
+            {
+                sourceInfo.sprites.ForEach(s =>
+                {
+                    if (s.name == null)
+                        return;
+                    res[s.nodeId] = new object[] { 0, PathUtils.Subtract(s.name, _owner.Owner.FullPath) };
+                });
+            }
             var trdb = _owner.ProjectOptions.TranslationDb;
             if (trdb != null)
             {
@@ -407,13 +440,21 @@ namespace Lib.TSCompiler
                 var assetName = a.name;
                 AutodetectAndAddDependency(fileInfo.DiskCache, assetName, fileInfo.Owner);
             });
-            sourceInfo.sprites.ForEach(s =>
+            if (_owner.ProjectOptions.SpriteGeneration)
             {
-                if (s.name == null)
-                    return;
-                var assetName = s.name;
-                AutodetectAndAddDependency(fileInfo.DiskCache, assetName, fileInfo.Owner);
-            });
+                var spriteHolder = _owner.ProjectOptions.SpriteGenerator;
+                spriteHolder.Process(sourceInfo.sprites);
+            }
+            else
+            {
+                sourceInfo.sprites.ForEach(s =>
+                {
+                    if (s.name == null)
+                        return;
+                    var assetName = s.name;
+                    AutodetectAndAddDependency(fileInfo.DiskCache, assetName, fileInfo.Owner);
+                });
+            }
         }
 
         TSFileAdditionalInfo AutodetectAndAddDependency(IDiskCache dc, string depName, IFileCache usedFrom)
@@ -428,7 +469,8 @@ namespace Lib.TSCompiler
                     Console.WriteLine("In " + usedFrom.FullPath + " missing dependency " + depName);
                     Console.ForegroundColor = ConsoleColor.Gray;
                     TSFileAdditionalInfo.Get(usedFrom, dc).ReportDiag(true, -3, "Missing dependency " + depName, 0, 0, 0, 0);
-                } else
+                }
+                else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Somethere missing dependency " + depName);

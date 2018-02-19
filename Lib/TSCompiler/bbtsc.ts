@@ -227,6 +227,7 @@ function toJsonableSourceInfo(sourceInfo: SourceInfo) {
             nodeId: ts.getNodeId(s.callExpression),
             name: s.name,
             color: s.color,
+            hasColor: s.hasColor,
             width: s.width,
             height: s.height,
             x: s.x,
@@ -278,78 +279,98 @@ const transformers: ts.CustomTransformers = {
                     let modification = modifications[id];
                     if (Array.isArray(modification)) {
                         let callEx = node as ts.CallExpression;
-                        switch (modification[0] as number) {
-                            case 0: // change first parameter to constant in modification[1]
-                                node = ts.setTextRange(
-                                    ts.createCall(callEx.expression, undefined, [
-                                        ts.createLiteral(modification[1] as
-                                            | string
-                                            | number
-                                            | boolean),
-                                        ...callEx.arguments.slice(1)
-                                    ]),
-                                    callEx
-                                );
-                                break;
-                            case 1: // set argument count to modification[1]
-                                node = ts.setTextRange(
-                                    ts.createCall(
-                                        callEx.expression,
-                                        undefined,
-                                        sliceAndPad(callEx.arguments, 0, modification[1] as number)
-                                    ),
-                                    callEx
-                                );
-                                break;
-                            case 2: // set parameter with index modification[1] to modification[2] and set argument count to modification[3]
-                                node = ts.setTextRange(
-                                    ts.createCall(callEx.expression, undefined, [
-                                        ...sliceAndPad(
-                                            callEx.arguments,
-                                            0,
-                                            modification[1] as number
+                        while (modification.length > 0) {
+                            switch (modification[0] as number) {
+                                case 0: // change first parameter to constant in modification[1]
+                                    node = ts.setTextRange(
+                                        ts.createCall(callEx.expression, undefined, [
+                                            ts.createLiteral(modification[1] as
+                                                | string
+                                                | number
+                                                | boolean),
+                                            ...callEx.arguments.slice(1)
+                                        ]),
+                                        callEx
+                                    );
+                                    modification = modification.slice(2);
+                                    break;
+                                case 1: // set argument count to modification[1]
+                                    node = ts.setTextRange(
+                                        ts.createCall(
+                                            callEx.expression,
+                                            undefined,
+                                            sliceAndPad(callEx.arguments, 0, modification[1] as number)
                                         ),
-                                        ts.createLiteral(modification[2] as
-                                            | string
-                                            | number
-                                            | boolean),
-                                        ...sliceAndPad(
-                                            callEx.arguments,
-                                            (modification[1] as number) + 1,
-                                            modification[3] as number
-                                        )
-                                    ]),
-                                    callEx
-                                );
-                                break;
-                            case 3: // set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
-                                node = ts.setTextRange(
-                                    ts.createCall(callEx.expression, undefined, [
-                                        ...sliceAndPad(
-                                            callEx.arguments,
-                                            0,
-                                            modification[1] as number
-                                        ),
-                                        ts.createAdd(
+                                        callEx
+                                    );
+                                    modification = modification.slice(2);
+                                    break;
+                                case 2: // set parameter with index modification[1] to modification[2] and set argument count to modification[3]
+                                    node = ts.setTextRange(
+                                        ts.createCall(callEx.expression, undefined, [
+                                            ...sliceAndPad(
+                                                callEx.arguments,
+                                                0,
+                                                modification[1] as number
+                                            ),
                                             ts.createLiteral(modification[2] as
                                                 | string
                                                 | number
                                                 | boolean),
-                                            callEx.arguments[modification[1] as number]
-                                        ),
-                                        ...sliceAndPad(
-                                            callEx.arguments,
-                                            (modification[1] as number) + 1,
-                                            modification[3] as number
-                                        )
-                                    ]),
-                                    callEx
-                                );
-                                break;
-                            default:
-                                throw new Error(
-                                    "Unknown modification type " + modification[0] + " for " + id
-                                );
+                                            ...sliceAndPad(
+                                                callEx.arguments,
+                                                (modification[1] as number) + 1,
+                                                modification[3] as number
+                                            )
+                                        ]),
+                                        callEx
+                                    );
+                                    modification = modification.slice(4);
+                                    break;
+                                case 3: // set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
+                                    node = ts.setTextRange(
+                                        ts.createCall(callEx.expression, undefined, [
+                                            ...sliceAndPad(
+                                                callEx.arguments,
+                                                0,
+                                                modification[1] as number
+                                            ),
+                                            ts.createAdd(
+                                                ts.createLiteral(modification[2] as
+                                                    | string
+                                                    | number
+                                                    | boolean),
+                                                callEx.arguments[modification[1] as number]
+                                            ),
+                                            ...sliceAndPad(
+                                                callEx.arguments,
+                                                (modification[1] as number) + 1,
+                                                modification[3] as number
+                                            )
+                                        ]),
+                                        callEx
+                                    );
+                                    modification = modification.slice(4);
+                                    break;
+                                case 4: // set function name to modification[1]
+                                    node = ts.setTextRange(
+                                        ts.createCall(ts.createPropertyAccess((<ts.PropertyAccessExpression>callEx.expression).expression, <string>modification[1]), undefined, callEx.arguments),
+                                        callEx
+                                    );
+                                    modification = modification.slice(2);
+                                    break;
+                                case 5: // remove first parameter
+                                    node = ts.setTextRange(
+                                        ts.createCall(callEx.expression, undefined, callEx.arguments.slice(1)),
+                                        callEx
+                                    );
+                                    modification = modification.slice(1);
+                                    break;
+                                default:
+                                    throw new Error(
+                                        "Unknown modification type " + modification[0] + " for " + id
+                                    );
+                            }
                         }
                     }
                 }
@@ -588,6 +609,7 @@ interface SpriteInfo {
     callExpression: ts.CallExpression;
     name?: string;
     color?: string;
+    hasColor?: boolean;
     x?: number;
     y?: number;
     width?: number;
@@ -690,6 +712,7 @@ function gatherSourceInfo(
                 });
             } else if (isBobrilFunction("sprite", ce, result)) {
                 let si: SpriteInfo = { callExpression: ce };
+                si.hasColor = ce.arguments.length >= 2;
                 for (let i = 0; i < ce.arguments.length; i++) {
                     let res = evalNode(
                         ce.arguments[i],

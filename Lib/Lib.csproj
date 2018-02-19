@@ -3,6 +3,12 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
   <ItemGroup>
     <None Remove="Bundler\Js\bundler.js" />
     <None Remove="Bundler\Js\uglify.js" />
@@ -51,6 +57,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0002" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta0002" />
     <PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
     <PackageReference Include="System.Reactive" Version="4.0.0-preview00001" />
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />

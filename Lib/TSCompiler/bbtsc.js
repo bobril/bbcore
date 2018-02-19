@@ -175,6 +175,7 @@ function toJsonableSourceInfo(sourceInfo) {
             nodeId: ts.getNodeId(s.callExpression),
             name: s.name,
             color: s.color,
+            hasColor: s.hasColor,
             width: s.width,
             height: s.height,
             x: s.x,
@@ -222,27 +223,41 @@ var transformers = {
                     var modification = modifications[id];
                     if (Array.isArray(modification)) {
                         var callEx = node;
-                        switch (modification[0]) {
-                            case 0:// change first parameter to constant in modification[1]
-                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread([
-                                    ts.createLiteral(modification[1])
-                                ], callEx.arguments.slice(1))), callEx);
-                                break;
-                            case 1:// set argument count to modification[1]
-                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, sliceAndPad(callEx.arguments, 0, modification[1])), callEx);
-                                break;
-                            case 2:// set parameter with index modification[1] to modification[2] and set argument count to modification[3]
-                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [
-                                    ts.createLiteral(modification[2])
-                                ], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
-                                break;
-                            case 3:// set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
-                                node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [
-                                    ts.createAdd(ts.createLiteral(modification[2]), callEx.arguments[modification[1]])
-                                ], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
-                                break;
-                            default:
-                                throw new Error("Unknown modification type " + modification[0] + " for " + id);
+                        while (modification.length > 0) {
+                            switch (modification[0]) {
+                                case 0:// change first parameter to constant in modification[1]
+                                    node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread([
+                                        ts.createLiteral(modification[1])
+                                    ], callEx.arguments.slice(1))), callEx);
+                                    modification = modification.slice(2);
+                                    break;
+                                case 1:// set argument count to modification[1]
+                                    node = ts.setTextRange(ts.createCall(callEx.expression, undefined, sliceAndPad(callEx.arguments, 0, modification[1])), callEx);
+                                    modification = modification.slice(2);
+                                    break;
+                                case 2:// set parameter with index modification[1] to modification[2] and set argument count to modification[3]
+                                    node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [
+                                        ts.createLiteral(modification[2])
+                                    ], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
+                                    modification = modification.slice(4);
+                                    break;
+                                case 3:// set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
+                                    node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [
+                                        ts.createAdd(ts.createLiteral(modification[2]), callEx.arguments[modification[1]])
+                                    ], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
+                                    modification = modification.slice(4);
+                                    break;
+                                case 4:// set function name to modification[1]
+                                    node = ts.setTextRange(ts.createCall(ts.createPropertyAccess(callEx.expression.expression, modification[1]), undefined, callEx.arguments), callEx);
+                                    modification = modification.slice(2);
+                                    break;
+                                case 5:// remove first parameter
+                                    node = ts.setTextRange(ts.createCall(callEx.expression, undefined, callEx.arguments.slice(1)), callEx);
+                                    modification = modification.slice(1);
+                                    break;
+                                default:
+                                    throw new Error("Unknown modification type " + modification[0] + " for " + id);
+                            }
                         }
                     }
                 }
@@ -493,6 +508,7 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
             }
             else if (isBobrilFunction("sprite", ce, result)) {
                 var si = { callExpression: ce };
+                si.hasColor = ce.arguments.length >= 2;
                 for (var i = 0; i < ce.arguments.length; i++) {
                     var res = evalNode(ce.arguments[i], tc, i === 0 ? resolvePathStringLiteral : undefined); // first argument is path
                     if (res !== undefined)

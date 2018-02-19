@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Lib.DiskCache;
 using Lib.Utils;
 
 namespace Lib.TSCompiler

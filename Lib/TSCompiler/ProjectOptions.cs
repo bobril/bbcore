@@ -21,6 +21,8 @@ namespace Lib.TSCompiler
         public TSCompilerOptions CompilerOptions;
         public string AdditionalResourcesDirectory;
         public string CommonSourceDirectory;
+        public bool SpriteGeneration;
+        public SpriteHolder SpriteGenerator;
 
         public string HtmlHeadExpanded { get; set; }
         public string MainFile { get; set; }
@@ -47,6 +49,14 @@ namespace Lib.TSCompiler
         public void RefreshMainFile()
         {
             MainFile = PathUtils.Join(Owner.Owner.FullPath, Owner.MainFile);
+        }
+
+        public void SpriterInitialization()
+        {
+            if (SpriteGeneration && SpriteGenerator==null)
+            {
+                SpriteGenerator = new SpriteHolder(Owner.DiskCache);
+            }
         }
 
         public void DetectBobrilJsxDts()

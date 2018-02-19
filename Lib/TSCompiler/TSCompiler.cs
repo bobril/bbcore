@@ -218,6 +218,7 @@ namespace Lib.TSCompiler
                 }
                 var fileInfo = GetFileInfo(file);
                 fileInfo.SourceInfo = JsonConvert.DeserializeObject<SourceInfo>(info);
+                _owner.Ctx.AddDependenciesFromSourceInfo(fileInfo);
             }
 
             public string getModifications(string fileName)

@@ -1,5 +1,6 @@
 ﻿using Lib.DiskCache;
 using Lib.Utils;
+using SixLabors.ImageSharp;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -25,6 +26,7 @@ namespace Lib.TSCompiler
         public string Output { get; set; }
         public SourceMap MapLink { get; set; }
         public SourceInfo SourceInfo { get; set; }
+        public Image<Rgba32> Image { get; set; }
 
         List<TSProject> _moduleImports;
 

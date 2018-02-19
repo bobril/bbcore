@@ -20,7 +20,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         public CommandLineArgumentEnumValues Style { get; } = new CommandLineArgumentEnumValues(description: "override styleDef className preservation level", words: new[] { "-s", "--style" }, enumValues: new[] { "0", "1", "2" });
 
-        public CommandLineArgumentBool Sprite { get; } = new CommandLineArgumentBool(description: "enable/disable creation of sprites", words: new[] { "-p", "--sprite" });
+        public CommandLineArgumentBool Sprite { get; } = new CommandLineArgumentBool(description: "enable/disable creation of sprites", words: new[] { "-p", "--sprite" }, defaultValue: true);
 
         public CommandLineArgumentBoolNullable Localize { get; } = new CommandLineArgumentBoolNullable(description: "create localized resources (default: autodetect)", words: new[] { "-l", "--localize" });
 

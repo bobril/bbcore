@@ -5,6 +5,7 @@
 ### Added
 
 * Support for "sandbox" type of projects.
+* Support for sprite generation.
 
 ## 0.9.2
 

@@ -3,12 +3,14 @@ using Lib.Utils;
 using Lib.ToolsDir;
 using Lib.Bundler;
 using System.Linq;
+using System.IO;
 
 namespace Lib.TSCompiler
 {
     public class BundleBundler : IBundlerCallback
     {
         string _mainJsBundleUrl;
+        string _bundlePng;
         string _indexHtml;
         readonly IToolsDir _tools;
 
@@ -48,6 +50,17 @@ namespace Lib.TSCompiler
                 {
                     FilesContent[PathUtils.Subtract(source.Value.Owner.FullPath, root)] = source.Value.Owner.ByteContent;
                 }
+            }
+            if (Project.SpriteGeneration)
+            {
+                var image = Project.SpriteGenerator.BuildImage();
+                var ms = new MemoryStream();
+                image.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
+                ms.Position = 0;
+                var buffer = new byte[(int)ms.Length];
+                ms.Read(buffer, 0, (int)ms.Length);
+                _bundlePng = "bundle.png";
+                FilesContent[_bundlePng] = buffer;
             }
             var bundler = new BundlerImpl(_tools);
             bundler.Callbacks = this;
@@ -93,10 +106,10 @@ namespace Lib.TSCompiler
                     res += $"var g11nLoc=\"{Project.DefaultLanguage}\";";
                 }
             }
-            //if (Project.bundlePng)
-            //{
-            //    res += $"var bobrilBPath=\"{Project.bundlePng}\";";
-            //}
+            if (_bundlePng != null)
+            {
+                res += $"var bobrilBPath=\"{_bundlePng}\";";
+            }
             res += "</script>";
             return res;
         }

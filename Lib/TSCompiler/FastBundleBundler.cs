@@ -4,6 +4,7 @@ using Lib.Utils;
 using Lib.ToolsDir;
 using System;
 using System.Linq;
+using System.IO;
 
 namespace Lib.TSCompiler
 {
@@ -25,6 +26,7 @@ namespace Lib.TSCompiler
 
         // value could be string or byte[] or Lazy<string|byte[]>
         public Dictionary<string, object> FilesContent;
+        private string _bundlePng;
 
         public void Build(string sourceRoot, string mapUrl, bool testProj = false)
         {
@@ -44,7 +46,8 @@ namespace Lib.TSCompiler
             {
                 if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript)
                 {
-                    if (source.Value.Output == null) continue; // Skip d.ts
+                    if (source.Value.Output == null)
+                        continue; // Skip d.ts
                     sourceMapBuilder.AddText($"R('{PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root)}',function(require, module, exports, global){{");
                     sourceMapBuilder.AddSource(source.Value.Output, source.Value.MapLink);
                     sourceMapBuilder.AddText("});");
@@ -59,6 +62,17 @@ namespace Lib.TSCompiler
                 {
                     FilesContent[PathUtils.Subtract(source.Value.Owner.FullPath, root)] = source.Value.Owner.ByteContent;
                 }
+            }
+            if (Project.SpriteGeneration)
+            {
+                var image = Project.SpriteGenerator.BuildImage();
+                var ms = new MemoryStream();
+                image.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
+                ms.Position = 0;
+                var buffer = new byte[(int)ms.Length];
+                ms.Read(buffer, 0, (int)ms.Length);
+                _bundlePng = "bundle.png";
+                FilesContent[_bundlePng] = buffer;
             }
             sourceMapBuilder.AddText("//# sourceMappingURL=" + mapUrl);
             _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
@@ -160,7 +174,7 @@ namespace Lib.TSCompiler
 
         string InitG11n()
         {
-            if (!Project.Localize)
+            if (!Project.Localize || _bundlePng != null)
                 return "";
             Project.TranslationDb.BuildTranslationJs(_tools, FilesContent);
             var res = "<script>";
@@ -172,10 +186,10 @@ namespace Lib.TSCompiler
                     res += $"var g11nLoc=\"{Project.DefaultLanguage}\";";
                 }
             }
-            //if (Project.bundlePng)
-            //{
-            //    res += $"var bobrilBPath=\"{Project.bundlePng}\";";
-            //}
+            if (_bundlePng != null)
+            {
+                res += $"var bobrilBPath=\"{_bundlePng}\";";
+            }
             res += "</script>";
             return res;
         }
@@ -202,7 +216,8 @@ namespace Lib.TSCompiler
         string GetGlobalDefines()
         {
             var res = new StringBuilder();
-            if (Project.Defines != null) foreach (var def in Project.Defines)
+            if (Project.Defines != null)
+                foreach (var def in Project.Defines)
                 {
                     var val = def.Value ? "true" : "false";
                     res.Append($"var {def.Key} = {val};");

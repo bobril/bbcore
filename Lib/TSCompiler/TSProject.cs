@@ -237,7 +237,8 @@ namespace Lib.TSCompiler
                             break;
                         ProjectOptions.CommonSourceDirectory = compiler.CommonSourceDirectory;
                         compiler.GatherSourceInfo();
-
+                        if (ProjectOptions.SpriteGeneration)
+                            ProjectOptions.SpriteGenerator.ProcessNew();
                         if (!compiler.EmitProgram())
                             break;
                         buildModuleCtx.UpdateCacheIds();

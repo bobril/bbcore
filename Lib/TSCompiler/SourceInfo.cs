@@ -16,10 +16,15 @@ namespace Lib.TSCompiler
             public long nodeId;
             public string name;
             public string color;
+            public bool? hasColor;
             public int? width;
             public int? height;
             public int? x;
             public int? y;
+            public int owidth;
+            public int oheight;
+            public int ox;
+            public int oy;
         }
         public List<Sprite> sprites { get; set; }
 

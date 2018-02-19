@@ -122,6 +122,8 @@ namespace Lib.Composition
                 Console.ForegroundColor = ConsoleColor.Gray;
                 proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
                 proj.Owner.FirstInitialize();
+                proj.SpriteGeneration = bCommand.Sprite.Value;
+                proj.SpriterInitialization();
                 proj.RefreshMainFile();
                 proj.DetectBobrilJsxDts();
                 proj.RefreshExampleSources();
@@ -444,6 +446,7 @@ namespace Lib.Composition
                             proj.Owner.FirstInitialize();
                             proj.RefreshMainFile();
                             proj.RefreshTestSources();
+                            proj.SpriterInitialization();
                             proj.DetectBobrilJsxDts();
                             proj.RefreshExampleSources();
                             var ctx = new BuildCtx(_compilerPool, _verbose);
