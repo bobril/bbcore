@@ -54,25 +54,19 @@ namespace Lib.TSCompiler
                 }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
-                    string cssPath = PathUtils.Subtract(source.Value.Owner.FullPath, root);
+                    string cssPath = Project.AllocateName(PathUtils.Subtract(source.Value.Owner.FullPath, root));
                     FilesContent[cssPath] = source.Value.Owner.ByteContent;
                     cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
                 }
                 else if (source.Value.Type == FileCompilationType.Resource)
                 {
-                    FilesContent[PathUtils.Subtract(source.Value.Owner.FullPath, root)] = source.Value.Owner.ByteContent;
+                    FilesContent[Project.AllocateName(PathUtils.Subtract(source.Value.Owner.FullPath, root))] = source.Value.Owner.ByteContent;
                 }
             }
             if (Project.SpriteGeneration)
             {
-                var image = Project.SpriteGenerator.BuildImage();
-                var ms = new MemoryStream();
-                image.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
-                ms.Position = 0;
-                var buffer = new byte[(int)ms.Length];
-                ms.Read(buffer, 0, (int)ms.Length);
-                _bundlePng = "bundle.png";
-                FilesContent[_bundlePng] = buffer;
+                _bundlePng = Project.BundlePngUrl;
+                FilesContent[_bundlePng] = Project.SpriteGenerator.BuildImage(false);
             }
             sourceMapBuilder.AddText("//# sourceMappingURL=" + mapUrl);
             _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
@@ -174,12 +168,12 @@ namespace Lib.TSCompiler
 
         string InitG11n()
         {
-            if (!Project.Localize || _bundlePng != null)
+            if (!Project.Localize && _bundlePng == null)
                 return "";
-            Project.TranslationDb.BuildTranslationJs(_tools, FilesContent);
             var res = "<script>";
             if (Project.Localize)
             {
+                Project.TranslationDb.BuildTranslationJs(_tools, FilesContent);
                 res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
                 if (Project.DefaultLanguage != null)
                 {

@@ -42,7 +42,7 @@ namespace Lib.TSCompiler
                 }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
-                    string cssPath = PathUtils.Subtract(source.Value.Owner.FullPath, root);
+                    string cssPath = Project.AllocateName(".css");
                     FilesContent[cssPath] = source.Value.Owner.ByteContent;
                     cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
                 }
@@ -53,14 +53,8 @@ namespace Lib.TSCompiler
             }
             if (Project.SpriteGeneration)
             {
-                var image = Project.SpriteGenerator.BuildImage();
-                var ms = new MemoryStream();
-                image.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder());
-                ms.Position = 0;
-                var buffer = new byte[(int)ms.Length];
-                ms.Read(buffer, 0, (int)ms.Length);
-                _bundlePng = "bundle.png";
-                FilesContent[_bundlePng] = buffer;
+                _bundlePng = Project.BundlePngUrl;
+                FilesContent[_bundlePng] = Project.SpriteGenerator.BuildImage(true);
             }
             var bundler = new BundlerImpl(_tools);
             bundler.Callbacks = this;
@@ -72,7 +66,7 @@ namespace Lib.TSCompiler
             {
                 bundler.MainFiles = new[] { PathUtils.ChangeExtension(Project.MainFile, "js") };
             }
-            _mainJsBundleUrl = "bundle.js";
+            _mainJsBundleUrl = Project.BundleJsUrl;
             bundler.Compress = compress;
             bundler.Mangle = mangle;
             bundler.Beautify = beautify;
@@ -94,12 +88,12 @@ namespace Lib.TSCompiler
 
         string InitG11n()
         {
-            if (!Project.Localize)
+            if (!Project.Localize && _bundlePng == null)
                 return "";
-            Project.TranslationDb.BuildTranslationJs(_tools, FilesContent);
             var res = "<script>";
             if (Project.Localize)
             {
+                Project.TranslationDb.BuildTranslationJs(_tools, FilesContent);
                 res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
                 if (Project.DefaultLanguage != null)
                 {
@@ -132,7 +126,7 @@ namespace Lib.TSCompiler
         {
             if (forName == "")
                 return _mainJsBundleUrl;
-            return forName.Replace("/", "_") + ".js";
+            return Project.AllocateName(forName.Replace("/", "_") + ".js");
         }
 
         public string ResolveRequire(string name, string from)

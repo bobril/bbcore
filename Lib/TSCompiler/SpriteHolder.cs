@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using Lib.DiskCache;
 using Lib.Spriter;
 using SixLabors.ImageSharp;
@@ -13,7 +14,8 @@ namespace Lib.TSCompiler
         Sprite2dPlacer _placer;
         List<SourceInfo.Sprite> _allSprites;
         List<SourceInfo.Sprite> _newSprites;
-        Image<Rgba32> _result;
+        byte[] _result;
+        bool _wasChange;
 
         public SpriteHolder(IDiskCache dc)
         {
@@ -55,6 +57,9 @@ namespace Lib.TSCompiler
 
         public void ProcessNew()
         {
+            if (_newSprites.Count == 0)
+                return;
+            _wasChange = true;
             for (int i = 0; i < _newSprites.Count; i++)
             {
                 var sprite = _newSprites[i];
@@ -110,10 +115,14 @@ namespace Lib.TSCompiler
             }
         }
 
-        public Image<Rgba32> BuildImage()
+        public byte[] BuildImage(bool maxCompression)
         {
-            _result = new Image<Rgba32>(_placer.Dim.Width, _placer.Dim.Height);
-            _result.Mutate(c =>
+            if (!_wasChange)
+            {
+
+            }
+            var resultImage = new Image<Rgba32>(_placer.Dim.Width, _placer.Dim.Height);
+            resultImage.Mutate(c =>
             {
                 c.Fill(Rgba32.Transparent);
                 for (int i = 0; i < _allSprites.Count; i++)
@@ -137,6 +146,10 @@ namespace Lib.TSCompiler
                     }
                 }
             });
+            var ms = new MemoryStream();
+            resultImage.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder { CompressionLevel=maxCompression?9:1 });
+            _result = ms.ToArray();
+            _wasChange = false;
             return _result;
         }
 

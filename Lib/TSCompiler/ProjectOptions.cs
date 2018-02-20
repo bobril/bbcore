@@ -23,6 +23,8 @@ namespace Lib.TSCompiler
         public string CommonSourceDirectory;
         public bool SpriteGeneration;
         public SpriteHolder SpriteGenerator;
+        public string BundlePngUrl;
+        public string BundleJsUrl;
 
         public string HtmlHeadExpanded { get; set; }
         public string MainFile { get; set; }
@@ -37,8 +39,9 @@ namespace Lib.TSCompiler
 
         public bool Localize;
         public string DefaultLanguage;
-        public string OutputSubDir;
         public DepedencyUpdate DependencyUpdate;
+        public string OutputSubDir;
+        public bool CompressFileNames;
 
         public Translation.TranslationDb TranslationDb;
 
@@ -46,17 +49,72 @@ namespace Lib.TSCompiler
         public Dictionary<string, object> FilesContent;
         internal string NpmRegistry;
 
+        public Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();
+        public HashSet<string> TakenNames = new HashSet<string>();
+
         public void RefreshMainFile()
         {
             MainFile = PathUtils.Join(Owner.Owner.FullPath, Owner.MainFile);
         }
 
+        string ToShortName(int idx)
+        {
+            var res = "";
+            do
+            {
+                res += (char)(97 + idx % 26);
+                idx = idx / 26 - 1;
+            } while (idx >= 0);
+            return res;
+        }
+
+        public string AllocateName(string niceName)
+        {
+            if (CompressFileNames)
+            {
+                string extension = PathUtils.GetExtension(niceName);
+                if (extension != "")
+                    extension = "." + extension;
+                int idx = 0;
+                Extension2LastNameIdx.TryGetValue(extension, out idx);
+                do
+                {
+                    niceName = ToShortName(idx) + extension;
+                    idx++;
+                    if (OutputSubDir != null)
+                        niceName = OutputSubDir + "/" + niceName;
+                }
+                while (TakenNames.Contains(niceName));
+                Extension2LastNameIdx[extension] = idx;
+            }
+            else
+            {
+                if (OutputSubDir != null)
+                    niceName = OutputSubDir + "/" + niceName;
+                int counter = 0;
+                string extension = PathUtils.GetExtension(niceName);
+                if (extension != "")
+                    extension = "." + extension;
+                string prefix = niceName.Substring(0, niceName.Length - extension.Length);
+                while (TakenNames.Contains(niceName))
+                {
+                    counter++;
+                    niceName = prefix + counter.ToString() + extension;
+                }
+            }
+            TakenNames.Add(niceName);
+            return niceName;
+        }
+
         public void SpriterInitialization()
         {
-            if (SpriteGeneration && SpriteGenerator==null)
+            if (SpriteGeneration && SpriteGenerator == null)
             {
                 SpriteGenerator = new SpriteHolder(Owner.DiskCache);
+                BundlePngUrl = AllocateName("bundle.png");
             }
+            if (BundleJsUrl == null)
+                BundleJsUrl = AllocateName("bundle.js");
         }
 
         public void DetectBobrilJsxDts()
@@ -96,8 +154,10 @@ namespace Lib.TSCompiler
                 {
                     foreach (var child in (IDirectoryCache)item)
                     {
-                        if (!(child is IFileCache)) continue;
-                        if (child.IsInvalid) continue;
+                        if (!(child is IFileCache))
+                            continue;
+                        if (child.IsInvalid)
+                            continue;
                         var fn = child.FullPath;
                         if (fn.EndsWith(".d.ts"))
                             continue;
@@ -128,13 +188,16 @@ namespace Lib.TSCompiler
         void RecursiveFileSearch(IDirectoryCache owner, IDiskCache diskCache, Regex fileRegex, List<string> res)
         {
             diskCache.UpdateIfNeeded(owner);
-            if (owner.IsInvalid) return;
+            if (owner.IsInvalid)
+                return;
             foreach (var item in owner)
             {
                 if (item is IDirectoryCache)
                 {
-                    if (item.Name == "node_modules") continue;
-                    if (item.IsInvalid) continue;
+                    if (item.Name == "node_modules")
+                        continue;
+                    if (item.IsInvalid)
+                        continue;
                     RecursiveFileSearch(item as IDirectoryCache, diskCache, fileRegex, res);
                 }
                 else if (item is IFileCache)
@@ -149,7 +212,8 @@ namespace Lib.TSCompiler
 
         public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, object> filesContent)
         {
-            if (AdditionalResourcesDirectory == null) return;
+            if (AdditionalResourcesDirectory == null)
+                return;
             var resourcesPath = PathUtils.Join(Owner.Owner.FullPath, AdditionalResourcesDirectory);
             var item = Owner.DiskCache.TryGetItem(resourcesPath);
             if (item is IDirectoryCache)
@@ -167,8 +231,11 @@ namespace Lib.TSCompiler
                 {
                     RecursiveFillOutputByAdditionalResourcesDirectory(child as IDirectoryCache, resourcesPath, filesContent);
                 }
-                if (child.IsInvalid) continue;
-                filesContent[PathUtils.Subtract(child.FullPath, resourcesPath)] = new Lazy<object>(() =>
+                if (child.IsInvalid)
+                    continue;
+                var outPathFileName = PathUtils.Subtract(child.FullPath, resourcesPath);
+                TakenNames.Add(outPathFileName);
+                filesContent[outPathFileName] = new Lazy<object>(() =>
                 {
                     return (child as IFileCache).ByteContent;
                 });

@@ -123,6 +123,8 @@ namespace Lib.Composition
                 proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
                 proj.Owner.FirstInitialize();
                 proj.SpriteGeneration = bCommand.Sprite.Value;
+                proj.OutputSubDir = bCommand.VersionDir.Value;
+                proj.CompressFileNames = !bCommand.Fast.Value;
                 proj.SpriterInitialization();
                 proj.RefreshMainFile();
                 proj.DetectBobrilJsxDts();
