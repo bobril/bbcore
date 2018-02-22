@@ -82,7 +82,7 @@ namespace Lib.CSSProcessor
             var engine = getJSEnviroment();
             var serializerSettings = new JsonSerializerSettings();
             serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-            engine.CallFunction("bbConcatAndMinify", Newtonsoft.Json.JsonConvert.SerializeObject(inputs, serializerSettings));
+            engine.CallFunction("bbConcatAndMinify", JsonConvert.SerializeObject(inputs, serializerSettings));
             return _tcs.Task;
         }
     }

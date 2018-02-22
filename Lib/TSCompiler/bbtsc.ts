@@ -278,8 +278,8 @@ const transformers: ts.CustomTransformers = {
                 if (typeof id === "number") {
                     let modification = modifications[id];
                     if (Array.isArray(modification)) {
-                        let callEx = node as ts.CallExpression;
                         while (modification.length > 0) {
+                            let callEx = node as ts.CallExpression;
                             switch (modification[0] as number) {
                                 case 0: // change first parameter to constant in modification[1]
                                     node = ts.setTextRange(

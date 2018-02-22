@@ -206,6 +206,9 @@ namespace Lib.Translation
                     var langInit = tools.GetLocaleDef(p.Key);
                     if (langInit == null) continue;
                     var sw = new StringWriter();
+                    var posLoc1 = langInit.IndexOf("bobrilRegisterTranslations(") + "bobrilRegisterTranslations(".Length;
+                    var posLoc2 = langInit.IndexOf(",", posLoc1);
+                    langInit = langInit.Substring(0, posLoc1) + "\'" + p.Key + "\'" + langInit.Substring(posLoc2);
                     sw.Write(langInit);
                     var jw = new JsonTextWriter(sw);
                     jw.WriteStartArray();

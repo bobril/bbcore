@@ -217,14 +217,8 @@ namespace Lib.TSCompiler
         {
             return new Regex("<<[^>]+>>").Replace(htmlHead, (Match m) =>
             {
-                return ShortenPathAddVersionDir(AutodetectAndAddDependency(_owner.DiskCache, PathUtils.Join(_owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)), _owner.Owner.TryGetChild("package.json") as IFileCache).Owner.FullPath);
+                return AutodetectAndAddDependency(_owner.DiskCache, PathUtils.Join(_owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)), _owner.Owner.TryGetChild("package.json") as IFileCache).OutputUrl;
             });
-        }
-
-        public string ShortenPathAddVersionDir(string fullPath)
-        {
-            // TODO: finish this ...
-            return PathUtils.Subtract(fullPath, _owner.Owner.FullPath);
         }
 
         public void Crawl()
@@ -284,8 +278,9 @@ namespace Lib.TSCompiler
                                 {
                                     var full = PathUtils.Join(from, url);
                                     var fullJustName = full.Split('?', '#')[0];
-                                    fileAdditional.ImportingLocal(AutodetectAndAddDependency(fileAdditional.DiskCache, fullJustName, fileAdditional.Owner));
-                                    return full;
+                                    var fileAdditionalInfo = AutodetectAndAddDependency(fileAdditional.DiskCache, fullJustName, fileAdditional.Owner);
+                                    fileAdditional.ImportingLocal(fileAdditionalInfo);
+                                    return fileAdditionalInfo.OutputUrl + full.Substring(fullJustName.Length);
                                 }).Result;
                             }
                             finally
@@ -318,6 +313,14 @@ namespace Lib.TSCompiler
             }
         }
 
+        public string ToOutputUrl(string fileName)
+        {
+            var assetFileInfo = TSFileAdditionalInfo.Get(_owner.DiskCache.TryGetItem(fileName) as IFileCache, _owner.DiskCache);
+            if (assetFileInfo.OutputUrl == null)
+                assetFileInfo.OutputUrl = _owner.ProjectOptions.AllocateName(PathUtils.Subtract(fileName, _owner.Owner.FullPath));
+            return assetFileInfo.OutputUrl;
+        }
+
         public IDictionary<long, object[]> getPreEmitTransformations(string fileName)
         {
             var fc = _owner.DiskCache.TryGetItem(fileName) as IFileCache;
@@ -332,7 +335,7 @@ namespace Lib.TSCompiler
             {
                 if (a.name == null)
                     return;
-                res[a.nodeId] = new object[] { 0, PathUtils.Subtract(a.name, _owner.Owner.FullPath) };
+                res[a.nodeId] = new object[] { 0, ToOutputUrl(a.name) };
             });
             if (_owner.ProjectOptions.SpriteGeneration)
             {
@@ -342,7 +345,7 @@ namespace Lib.TSCompiler
                 {
                     if (s.name == null)
                         return;
-                    if (s.hasColor == true)
+                    if (s.hasColor == true && s.color == null)
                     {
                         res[s.nodeId] = new object[] {
                             5,
@@ -371,7 +374,7 @@ namespace Lib.TSCompiler
                 {
                     if (s.name == null)
                         return;
-                    res[s.nodeId] = new object[] { 0, PathUtils.Subtract(s.name, _owner.Owner.FullPath) };
+                    res[s.nodeId] = new object[] { 0, ToOutputUrl(s.name) };
                 });
             }
             var trdb = _owner.ProjectOptions.TranslationDb;
@@ -479,6 +482,8 @@ namespace Lib.TSCompiler
                 return null;
             }
             var assetFileInfo = TSFileAdditionalInfo.Get(depFile, dc);
+            if (assetFileInfo.OutputUrl == null)
+                assetFileInfo.OutputUrl = _owner.ProjectOptions.AllocateName(PathUtils.Subtract(depFile.FullPath, _owner.Owner.FullPath));
             switch (extension)
             {
                 case "css":

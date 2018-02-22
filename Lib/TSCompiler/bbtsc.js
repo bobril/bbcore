@@ -222,8 +222,8 @@ var transformers = {
                 if (typeof id === "number") {
                     var modification = modifications[id];
                     if (Array.isArray(modification)) {
-                        var callEx = node;
                         while (modification.length > 0) {
+                            var callEx = node;
                             switch (modification[0]) {
                                 case 0:// change first parameter to constant in modification[1]
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread([

@@ -54,13 +54,13 @@ namespace Lib.TSCompiler
                 }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
-                    string cssPath = Project.AllocateName(PathUtils.Subtract(source.Value.Owner.FullPath, root));
-                    FilesContent[cssPath] = source.Value.Owner.ByteContent;
+                    string cssPath = source.Value.OutputUrl;
+                    FilesContent[cssPath] = source.Value.Output;
                     cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
                 }
                 else if (source.Value.Type == FileCompilationType.Resource)
                 {
-                    FilesContent[Project.AllocateName(PathUtils.Subtract(source.Value.Owner.FullPath, root))] = source.Value.Owner.ByteContent;
+                    FilesContent[source.Value.OutputUrl] = source.Value.Owner.ByteContent;
                 }
             }
             if (Project.SpriteGeneration)
