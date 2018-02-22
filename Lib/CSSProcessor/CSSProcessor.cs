@@ -1,5 +1,4 @@
 ﻿using System;
-using Lib.DiskCache;
 using Lib.ToolsDir;
 using JavaScriptEngineSwitcher.Core;
 using System.Threading.Tasks;

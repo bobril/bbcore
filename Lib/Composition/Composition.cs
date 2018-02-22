@@ -125,6 +125,7 @@ namespace Lib.Composition
                 proj.SpriteGeneration = bCommand.Sprite.Value;
                 proj.OutputSubDir = bCommand.VersionDir.Value;
                 proj.CompressFileNames = !bCommand.Fast.Value;
+                proj.BundleCss = !bCommand.Fast.Value;
                 proj.SpriterInitialization();
                 proj.RefreshMainFile();
                 proj.DetectBobrilJsxDts();

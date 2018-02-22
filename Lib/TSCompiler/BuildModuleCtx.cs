@@ -217,7 +217,7 @@ namespace Lib.TSCompiler
         {
             return new Regex("<<[^>]+>>").Replace(htmlHead, (Match m) =>
             {
-                return AutodetectAndAddDependency(_owner.DiskCache, PathUtils.Join(_owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)), _owner.Owner.TryGetChild("package.json") as IFileCache).OutputUrl;
+                return AutodetectAndAddDependency(PathUtils.Join(_owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)), _owner.Owner.TryGetChild("package.json") as IFileCache).OutputUrl;
             });
         }
 
@@ -271,23 +271,26 @@ namespace Lib.TSCompiler
                             break;
                         case FileCompilationType.Css:
                             fileAdditional.StartCompiling();
-                            var cssProcessor = _buildCtx.CompilerPool.GetCss();
-                            try
+                            if (!_owner.ProjectOptions.BundleCss)
                             {
-                                fileAdditional.Output = cssProcessor.ProcessCss(fileAdditional.Owner.Utf8Content, fileAdditional.Owner.FullPath, (string url, string from) =>
+                                var cssProcessor = _buildCtx.CompilerPool.GetCss();
+                                try
                                 {
-                                    var full = PathUtils.Join(from, url);
-                                    var fullJustName = full.Split('?', '#')[0];
-                                    var fileAdditionalInfo = AutodetectAndAddDependency(fileAdditional.DiskCache, fullJustName, fileAdditional.Owner);
-                                    fileAdditional.ImportingLocal(fileAdditionalInfo);
-                                    return fileAdditionalInfo.OutputUrl + full.Substring(fullJustName.Length);
-                                }).Result;
+                                    fileAdditional.Output = cssProcessor.ProcessCss(fileAdditional.Owner.Utf8Content, fileAdditional.Owner.FullPath, (string url, string from) =>
+                                    {
+                                        var full = PathUtils.Join(from, url);
+                                        var fullJustName = full.Split('?', '#')[0];
+                                        var fileAdditionalInfo = AutodetectAndAddDependency(fullJustName, fileAdditional.Owner);
+                                        fileAdditional.ImportingLocal(fileAdditionalInfo);
+                                        return fileAdditionalInfo.OutputUrl + full.Substring(fullJustName.Length);
+                                    }).Result;
+                                }
+                                finally
+                                {
+                                    _buildCtx.CompilerPool.ReleaseCss(cssProcessor);
+                                }
+                                _result.RecompiledLast.Add(fileAdditional);
                             }
-                            finally
-                            {
-                                _buildCtx.CompilerPool.ReleaseCss(cssProcessor);
-                            }
-                            _result.RecompiledLast.Add(fileAdditional);
                             TrullyCompiledCount++;
                             break;
                     }
@@ -316,6 +319,10 @@ namespace Lib.TSCompiler
         public string ToOutputUrl(string fileName)
         {
             var assetFileInfo = TSFileAdditionalInfo.Get(_owner.DiskCache.TryGetItem(fileName) as IFileCache, _owner.DiskCache);
+            if (_owner.ProjectOptions.BundleCss && assetFileInfo.Type==FileCompilationType.Css)
+            {
+                return fileName;
+            }
             if (assetFileInfo.OutputUrl == null)
                 assetFileInfo.OutputUrl = _owner.ProjectOptions.AllocateName(PathUtils.Subtract(fileName, _owner.Owner.FullPath));
             return assetFileInfo.OutputUrl;
@@ -441,7 +448,7 @@ namespace Lib.TSCompiler
                 if (a.name == null)
                     return;
                 var assetName = a.name;
-                AutodetectAndAddDependency(fileInfo.DiskCache, assetName, fileInfo.Owner);
+                AutodetectAndAddDependency(assetName, fileInfo.Owner);
             });
             if (_owner.ProjectOptions.SpriteGeneration)
             {
@@ -455,13 +462,14 @@ namespace Lib.TSCompiler
                     if (s.name == null)
                         return;
                     var assetName = s.name;
-                    AutodetectAndAddDependency(fileInfo.DiskCache, assetName, fileInfo.Owner);
+                    AutodetectAndAddDependency(assetName, fileInfo.Owner);
                 });
             }
         }
 
-        TSFileAdditionalInfo AutodetectAndAddDependency(IDiskCache dc, string depName, IFileCache usedFrom)
+        public static TSFileAdditionalInfo AutodetectAndAddDependencyCore(ProjectOptions projectOptions, string depName, IFileCache usedFrom)
         {
+            var dc = projectOptions.Owner.DiskCache;
             var extension = PathUtils.GetExtension(depName);
             var depFile = dc.TryGetItem(depName) as IFileCache;
             if (depFile == null)
@@ -482,24 +490,34 @@ namespace Lib.TSCompiler
                 return null;
             }
             var assetFileInfo = TSFileAdditionalInfo.Get(depFile, dc);
+            if (projectOptions.BundleCss && extension == "css")
+            {
+                assetFileInfo.Type = FileCompilationType.Css;
+                return assetFileInfo;
+            }
             if (assetFileInfo.OutputUrl == null)
-                assetFileInfo.OutputUrl = _owner.ProjectOptions.AllocateName(PathUtils.Subtract(depFile.FullPath, _owner.Owner.FullPath));
+                assetFileInfo.OutputUrl = projectOptions.AllocateName(PathUtils.Subtract(depFile.FullPath, projectOptions.Owner.Owner.FullPath));
             switch (extension)
             {
                 case "css":
                     assetFileInfo.Type = FileCompilationType.Css;
-                    CheckAdd(depName);
                     break;
                 case "js":
                     assetFileInfo.Type = FileCompilationType.JavaScriptAsset;
-                    CheckAdd(depName);
                     break;
                 default:
                     assetFileInfo.Type = FileCompilationType.Resource;
-                    CheckAdd(depName);
                     break;
             }
             return assetFileInfo;
+        }
+
+        TSFileAdditionalInfo AutodetectAndAddDependency(string depName, IFileCache usedFrom)
+        {
+            var fai = AutodetectAndAddDependencyCore(_owner.ProjectOptions, depName, usedFrom);
+            if (fai != null)
+                CheckAdd(depName);
+            return fai;
         }
     }
 }

@@ -4,6 +4,8 @@ using Lib.ToolsDir;
 using Lib.Bundler;
 using System.Linq;
 using System.IO;
+using Lib.CSSProcessor;
+using Lib.DiskCache;
 
 namespace Lib.TSCompiler
 {
@@ -32,6 +34,7 @@ namespace Lib.TSCompiler
             var root = Project.Owner.Owner.FullPath;
             var cssLink = "";
             _jsFilesContent = new Dictionary<string, string>();
+            var cssToBundle = new List<SourceFromPair>();
             foreach (var source in BuildResult.Path2FileInfo)
             {
                 if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript)
@@ -42,14 +45,26 @@ namespace Lib.TSCompiler
                 }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
-                    string cssPath = source.Value.OutputUrl;
-                    FilesContent[cssPath] = source.Value.Output;
-                    cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
+                    cssToBundle.Add(new SourceFromPair(source.Value.Owner.Utf8Content, source.Value.Owner.FullPath));
                 }
                 else if (source.Value.Type == FileCompilationType.Resource)
                 {
                     FilesContent[source.Value.OutputUrl] = source.Value.Owner.ByteContent;
                 }
+            }
+            if (cssToBundle.Count > 0)
+            {
+                string cssPath = Project.AllocateName("bundle.css");
+                var cssProcessor = new CssProcessor(Project.Tools);
+                FilesContent[cssPath] = cssProcessor.ConcatenateAndMinifyCss(cssToBundle, (string url, string from) =>
+                {
+                    var full = PathUtils.Join(from, url);
+                    var fullJustName = full.Split('?', '#')[0];
+                    var fileAdditionalInfo = BuildModuleCtx.AutodetectAndAddDependencyCore(Project, fullJustName, diskCache.TryGetItem(from) as IFileCache);
+                    FilesContent[fileAdditionalInfo.OutputUrl] = fileAdditionalInfo.Owner.ByteContent;
+                    return PathUtils.SplitDirAndFile(fileAdditionalInfo.OutputUrl).Item2 + full.Substring(fullJustName.Length);
+                }).Result;
+                cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
             }
             if (Project.SpriteGeneration)
             {
@@ -93,7 +108,7 @@ namespace Lib.TSCompiler
             var res = "<script>";
             if (Project.Localize)
             {
-                Project.TranslationDb.BuildTranslationJs(_tools, FilesContent);
+                Project.TranslationDb.BuildTranslationJs(_tools, FilesContent, Project.OutputSubDir);
                 res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
                 if (Project.DefaultLanguage != null)
                 {
@@ -102,7 +117,7 @@ namespace Lib.TSCompiler
             }
             if (_bundlePng != null)
             {
-                res += $"var bobrilBPath=\"{_bundlePng}\";";
+                res += $"var bobrilBPath=\"{_bundlePng}\"";
             }
             res += "</script>";
             return res;

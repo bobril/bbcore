@@ -173,7 +173,7 @@ namespace Lib.TSCompiler
             var res = "<script>";
             if (Project.Localize)
             {
-                Project.TranslationDb.BuildTranslationJs(_tools, FilesContent);
+                Project.TranslationDb.BuildTranslationJs(_tools, FilesContent, Project.OutputSubDir);
                 res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
                 if (Project.DefaultLanguage != null)
                 {
@@ -182,7 +182,7 @@ namespace Lib.TSCompiler
             }
             if (_bundlePng != null)
             {
-                res += $"var bobrilBPath=\"{_bundlePng}\";";
+                res += $"var bobrilBPath=\"{_bundlePng}\"";
             }
             res += "</script>";
             return res;

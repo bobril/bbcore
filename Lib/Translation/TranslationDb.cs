@@ -196,7 +196,7 @@ namespace Lib.Translation
             return res;
         }
 
-        public void BuildTranslationJs(IToolsDir tools, Dictionary<string, object> filesContent)
+        public void BuildTranslationJs(IToolsDir tools, Dictionary<string, object> filesContent, string versionDir)
         {
             if (_changed)
             {
@@ -225,7 +225,10 @@ namespace Lib.Translation
             }
             foreach (var i in _outputJsCache)
             {
-                filesContent[i.Key] = i.Value;
+                var outfn = i.Key;
+                if (versionDir != null)
+                    outfn = versionDir + "/" + outfn;
+                filesContent[outfn] = i.Value;
             }
         }
     }

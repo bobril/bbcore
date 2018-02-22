@@ -42,6 +42,7 @@ namespace Lib.TSCompiler
         public DepedencyUpdate DependencyUpdate;
         public string OutputSubDir;
         public bool CompressFileNames;
+        public bool BundleCss;
 
         public Translation.TranslationDb TranslationDb;
 
