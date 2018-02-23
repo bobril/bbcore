@@ -282,7 +282,7 @@ namespace Lib.TSCompiler
                                         var fullJustName = full.Split('?', '#')[0];
                                         var fileAdditionalInfo = AutodetectAndAddDependency(fullJustName, fileAdditional.Owner);
                                         fileAdditional.ImportingLocal(fileAdditionalInfo);
-                                        return fileAdditionalInfo.OutputUrl + full.Substring(fullJustName.Length);
+                                        return PathUtils.Subtract(fileAdditionalInfo.OutputUrl, PathUtils.Parent(fileAdditional.OutputUrl)) + full.Substring(fullJustName.Length);
                                     }).Result;
                                 }
                                 finally
@@ -319,7 +319,7 @@ namespace Lib.TSCompiler
         public string ToOutputUrl(string fileName)
         {
             var assetFileInfo = TSFileAdditionalInfo.Get(_owner.DiskCache.TryGetItem(fileName) as IFileCache, _owner.DiskCache);
-            if (_owner.ProjectOptions.BundleCss && assetFileInfo.Type==FileCompilationType.Css)
+            if (_owner.ProjectOptions.BundleCss && assetFileInfo.Type == FileCompilationType.Css)
             {
                 return fileName;
             }
