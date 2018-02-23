@@ -44,7 +44,7 @@ namespace Lib.Utils
 
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonConvert.SerializeObject(this,new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
         }
 
         public static SourceMap Empty()
@@ -71,7 +71,7 @@ namespace Lib.Utils
 
         public static SourceMap Parse(string content, string dir)
         {
-            var res = Newtonsoft.Json.JsonConvert.DeserializeObject<SourceMap>(content);
+            var res = JsonConvert.DeserializeObject<SourceMap>(content);
             if (res.version != 3) throw new Exception("Invalid Source Map version " + res.version);
             if (dir != null)
             {

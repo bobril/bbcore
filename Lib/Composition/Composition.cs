@@ -173,6 +173,7 @@ namespace Lib.Composition
         void SaveFilesContentToDisk(Dictionary<string, object> filesContent, string dir)
         {
             dir = PathUtils.Normalize(dir);
+            var utf8WithoutBom = new UTF8Encoding(false);
             foreach (var nameAndContent in filesContent)
             {
                 var content = nameAndContent.Value;
@@ -184,7 +185,7 @@ namespace Lib.Composition
                 Directory.CreateDirectory(PathUtils.Parent(fileName));
                 if (content is string)
                 {
-                    File.WriteAllText(fileName, (string)content, Encoding.UTF8);
+                    File.WriteAllText(fileName, (string)content, utf8WithoutBom);
                 }
                 else
                 {
