@@ -121,10 +121,13 @@ namespace Lib.Composition
                 Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
                 Console.ForegroundColor = ConsoleColor.Gray;
                 proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
+                if (bCommand.Localize.Value != null)
+                    proj.Localize = bCommand.Localize.Value ?? false;
                 proj.Owner.FirstInitialize();
                 proj.SpriteGeneration = bCommand.Sprite.Value;
                 proj.OutputSubDir = bCommand.VersionDir.Value;
                 proj.CompressFileNames = !bCommand.Fast.Value;
+                proj.StyleDefNaming = ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
                 proj.BundleCss = !bCommand.Fast.Value;
                 proj.SpriterInitialization();
                 proj.RefreshMainFile();
@@ -168,6 +171,21 @@ namespace Lib.Composition
             Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
             Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
             Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
+        StyleDefNamingStyle ParseStyleDefNaming(string value)
+        {
+            switch (value)
+            {
+                case "0":
+                    return StyleDefNamingStyle.RemoveNames;
+                case "1":
+                    return StyleDefNamingStyle.PreserveNames;
+                case "2":
+                    return StyleDefNamingStyle.AddNames;
+                default:
+                    return StyleDefNamingStyle.PreserveNames;
+            }
         }
 
         void SaveFilesContentToDisk(Dictionary<string, object> filesContent, string dir)

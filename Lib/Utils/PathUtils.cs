@@ -65,8 +65,10 @@ namespace Lib.Utils
                 return null;
             if (path[p] == '/')
                 p--;
-            while (path[p] != '/')
+            while (p>=0 && path[p] != '/')
                 p--;
+            if (p < 0)
+                return null;
             if (p == 2)
             {
                 return path.Substring(0, 3);
