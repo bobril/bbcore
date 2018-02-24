@@ -14,6 +14,8 @@ namespace Lib.TSCompiler
         string _sourceMapString;
         string _bundleJs;
         string _indexHtml;
+        string _versionDirPrefix;
+
         readonly IToolsDir _tools;
 
         public FastBundleBundler(IToolsDir tools)
@@ -30,6 +32,9 @@ namespace Lib.TSCompiler
 
         public void Build(string sourceRoot, string mapUrl, bool testProj = false)
         {
+            _versionDirPrefix = "";
+            if (Project.OutputSubDir != null)
+                _versionDirPrefix = Project.OutputSubDir + "/";
             var diskCache = Project.Owner.DiskCache;
             var root = Project.CommonSourceDirectory;
             var sourceMapBuilder = new SourceMapBuilder();
@@ -105,14 +110,15 @@ namespace Lib.TSCompiler
                 FilesContent["test.html"] = _indexHtml;
                 FilesContent["jasmine-core.js"] = _tools.JasmineCoreJs;
                 FilesContent["jasmine-boot.js"] = _tools.JasmineBootJs;
+                FilesContent["loader.js"] = _tools.LoaderJs;
             }
             else
             {
                 FilesContent["index.html"] = _indexHtml;
-                FilesContent["loader.js"] = _tools.LoaderJs;
+                FilesContent[_versionDirPrefix+"loader.js"] = _tools.LoaderJs;
             }
-            FilesContent[PathUtils.WithoutExtension(mapUrl)] = _bundleJs;
-            FilesContent[mapUrl] = _sourceMapString;
+            FilesContent[_versionDirPrefix+PathUtils.WithoutExtension(mapUrl)] = _bundleJs;
+            FilesContent[_versionDirPrefix+mapUrl] = _sourceMapString;
             BuildResult.SourceMap = _sourceMap;
         }
 
@@ -151,12 +157,12 @@ namespace Lib.TSCompiler
         <title>{Project.Title}</title>{cssLink}
     </head>
     <body>{InitG11n()}
-        <script type=""text/javascript"" src=""loader.js"" charset=""utf-8""></script>
+        <script type=""text/javascript"" src=""{_versionDirPrefix}loader.js"" charset=""utf-8""></script>
         <script type=""text/javascript"">
             {GetGlobalDefines()}
             {GetModuleMap()}
         </script>
-        <script type=""text/javascript"" src=""bundle.js"" charset=""utf-8""></script>
+        <script type=""text/javascript"" src=""{_versionDirPrefix}bundle.js"" charset=""utf-8""></script>
         <script type=""text/javascript"">
             {RequireBobril()}
             R.r('{mainModule}');
