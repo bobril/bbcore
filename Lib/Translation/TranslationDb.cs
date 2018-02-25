@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace Lib.Translation
 {
@@ -20,6 +21,7 @@ namespace Lib.Translation
         Dictionary<uint, uint> UsedIdMap = new Dictionary<uint, uint>();
         List<uint> UsedIds = new List<uint>();
         Dictionary<string, List<string>> Lang2ValueList = new Dictionary<string, List<string>>();
+        HashSet<string> _loadedLanguages = new HashSet<string>();
         readonly IFsAbstraction _fsAbstraction;
         bool _changed;
         Dictionary<string, string> _outputJsCache = new Dictionary<string, string>();
@@ -87,6 +89,7 @@ namespace Lib.Translation
                         {
                             case LoaderState.LangString:
                                 lang = (string)reader.Value;
+                                _loadedLanguages.Add(lang);
                                 valueList = AddLanguage(lang);
                                 state = LoaderState.BeforeItem;
                                 break;
@@ -157,6 +160,34 @@ namespace Lib.Translation
             if (state != LoaderState.End)
             {
                 throw new Exception("Unexpected end of file when in state " + state);
+            }
+        }
+
+        public void SaveLangDbs(string dir)
+        {
+            foreach(var p in Lang2ValueList)
+            {
+                if (!_loadedLanguages.Contains(p.Key))
+                    continue;
+                var tw = new StringWriter();
+                var jw = new JsonTextWriter(tw);
+                jw.Formatting = Formatting.Indented;
+                jw.WriteStartArray();
+                jw.WriteValue(p.Key);
+                for (var i = 0; i < UsedIds.Count; i++)
+                {
+                    jw.WriteStartArray();
+                    var idx = (int)UsedIds[i];
+                    jw.WriteValue(Id2Key[idx].Message);
+                    jw.WriteValue(Id2Key[idx].Hint);
+                    jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
+                    if (idx < p.Value.Count)
+                        jw.WriteValue(p.Value[idx]);
+                    jw.WriteEndArray();
+                }
+                jw.WriteEndArray();
+                jw.Flush();
+                File.WriteAllText(PathUtils.Join(dir, p.Key + ".json"), tw.ToString(), new UTF8Encoding(false));
             }
         }
 

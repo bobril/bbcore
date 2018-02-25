@@ -147,6 +147,10 @@ namespace Lib.Composition
                 IncludeMessages(buildResult, ref errors, ref warnings, messages, messagesFromFiles);
                 if (errors == 0)
                 {
+                    if (proj.Localize && bCommand.UpdateTranslations.Value)
+                    {
+                        proj.TranslationDb.SaveLangDbs(PathUtils.Join(proj.Owner.Owner.FullPath, "translations"));
+                    }
                     if (bCommand.Fast.Value)
                     {
                         var fastBundle = new FastBundleBundler(_tools);
