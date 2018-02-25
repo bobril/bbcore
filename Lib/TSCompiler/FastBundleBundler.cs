@@ -37,6 +37,8 @@ namespace Lib.TSCompiler
                 _versionDirPrefix = Project.OutputSubDir + "/";
             var diskCache = Project.Owner.DiskCache;
             var root = Project.CommonSourceDirectory;
+            if (root == null)
+                return;
             var sourceMapBuilder = new SourceMapBuilder();
             sourceMapBuilder.AddText(_tools.TsLibSource);
             var cssLink = "";

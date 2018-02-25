@@ -9,5 +9,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
         protected override string Description => "runs tests once in Chrome";
 
         public CommandLineArgumentString Out { get; } = new CommandLineArgumentString(description: "filename for test result as JUnit XML", words: new[] { "-o", "--out" });
+
+        public CommandLineArgumentSwitch Verbose { get; } = new CommandLineArgumentSwitch(description: "enable spamming console output", words: new[] { "--verbose" });
     }
 }

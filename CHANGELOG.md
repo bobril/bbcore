@@ -4,6 +4,7 @@
 
 ### Added
 
+* Build and test commands finished.
 * Support for "sandbox" type of projects.
 * Support for sprite generation.
 

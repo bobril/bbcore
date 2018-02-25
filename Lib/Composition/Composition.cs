@@ -83,7 +83,15 @@ namespace Lib.Composition
             }
             else if (_command is BuildCommand bCommand)
             {
+                if (bCommand.Verbose.Value)
+                    _verbose = true;
                 RunBuild(bCommand);
+            }
+            else if (_command is TestCommand testCommand)
+            {
+                if (testCommand.Verbose.Value)
+                    _verbose = true;
+                RunTest(testCommand);
             }
         }
 
@@ -117,64 +125,160 @@ namespace Lib.Composition
             var totalFiles = 0;
             foreach (var proj in _projects)
             {
-                Console.ForegroundColor = ConsoleColor.Blue;
-                Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
-                Console.ForegroundColor = ConsoleColor.Gray;
-                proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
-                if (bCommand.Localize.Value != null)
-                    proj.Localize = bCommand.Localize.Value ?? false;
-                proj.Owner.FirstInitialize();
-                proj.SpriteGeneration = bCommand.Sprite.Value;
-                proj.OutputSubDir = bCommand.VersionDir.Value;
-                proj.CompressFileNames = !bCommand.Fast.Value;
-                proj.StyleDefNaming = ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
-                proj.BundleCss = !bCommand.Fast.Value;
-                proj.SpriterInitialization();
-                proj.RefreshMainFile();
-                proj.DetectBobrilJsxDts();
-                proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _verbose);
-                ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
-                ctx.Sources = new HashSet<string>();
-                ctx.Sources.Add(proj.MainFile);
-                proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
-                if (proj.BobrilJsxDts != null)
-                    ctx.Sources.Add(proj.BobrilJsxDts);
-                proj.Owner.Build(ctx);
-                var buildResult = ctx.BuildResult;
-                var filesContent = new Dictionary<string, object>();
-                proj.FillOutputByAdditionalResourcesDirectory(filesContent);
-                IncludeMessages(buildResult, ref errors, ref warnings, messages, messagesFromFiles);
-                if (errors == 0)
+                try
                 {
-                    if (proj.Localize && bCommand.UpdateTranslations.Value)
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
+                    if (bCommand.Localize.Value != null)
+                        proj.Localize = bCommand.Localize.Value ?? false;
+                    proj.Owner.FirstInitialize();
+                    proj.SpriteGeneration = bCommand.Sprite.Value;
+                    proj.OutputSubDir = bCommand.VersionDir.Value;
+                    proj.CompressFileNames = !bCommand.Fast.Value;
+                    proj.StyleDefNaming = ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
+                    proj.BundleCss = !bCommand.Fast.Value;
+                    proj.SpriterInitialization();
+                    proj.RefreshMainFile();
+                    proj.DetectBobrilJsxDts();
+                    proj.RefreshExampleSources();
+                    var ctx = new BuildCtx(_compilerPool, _verbose);
+                    ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
+                    ctx.Sources = new HashSet<string>();
+                    ctx.Sources.Add(proj.MainFile);
+                    proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
+                    if (proj.BobrilJsxDts != null)
+                        ctx.Sources.Add(proj.BobrilJsxDts);
+                    proj.Owner.Build(ctx);
+                    var buildResult = ctx.BuildResult;
+                    var filesContent = new Dictionary<string, object>();
+                    proj.FillOutputByAdditionalResourcesDirectory(filesContent);
+                    IncludeMessages(buildResult, ref errors, ref warnings, messages, messagesFromFiles);
+                    if (errors == 0)
                     {
-                        proj.TranslationDb.SaveLangDbs(PathUtils.Join(proj.Owner.Owner.FullPath, "translations"));
+                        if (proj.Localize && bCommand.UpdateTranslations.Value)
+                        {
+                            proj.TranslationDb.SaveLangDbs(PathUtils.Join(proj.Owner.Owner.FullPath, "translations"));
+                        }
+                        if (bCommand.Fast.Value)
+                        {
+                            var fastBundle = new FastBundleBundler(_tools);
+                            fastBundle.FilesContent = filesContent;
+                            fastBundle.Project = proj;
+                            fastBundle.BuildResult = buildResult;
+                            fastBundle.Build("bb/base", "bundle.js.map");
+                        }
+                        else
+                        {
+                            var bundle = new BundleBundler(_tools);
+                            bundle.FilesContent = filesContent;
+                            bundle.Project = proj;
+                            bundle.BuildResult = buildResult;
+                            bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
+                        }
+                        SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
+                        totalFiles += filesContent.Count;
                     }
-                    if (bCommand.Fast.Value)
-                    {
-                        var fastBundle = new FastBundleBundler(_tools);
-                        fastBundle.FilesContent = filesContent;
-                        fastBundle.Project = proj;
-                        fastBundle.BuildResult = buildResult;
-                        fastBundle.Build("bb/base", "bundle.js.map");
-                    }
-                    else
-                    {
-                        var bundle = new BundleBundler(_tools);
-                        bundle.FilesContent = filesContent;
-                        bundle.Project = proj;
-                        bundle.BuildResult = buildResult;
-                        bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
-                    }
-                    SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
-                    totalFiles += filesContent.Count;
+                }
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Fatal Error: " + ex);
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    errors++;
                 }
             }
             var duration = DateTime.UtcNow - start;
             Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-            Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
+            Console.WriteLine("Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
             Console.ForegroundColor = ConsoleColor.Gray;
+            Environment.ExitCode = errors != 0 ? 1 : 0;
+        }
+
+        void RunTest(TestCommand testCommand)
+        {
+            InitTools();
+            InitDiskCache();
+            InitTestServer();
+            InitMainServer();
+            AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            StartWebServer(0);
+            DateTime start = DateTime.UtcNow;
+            int errors = 0;
+            int testFailures = 0;
+            int warnings = 0;
+            var messages = new List<CompilationResultMessage>();
+            var messagesFromFiles = new HashSet<string>();
+            var totalFiles = 0;
+            foreach (var proj in _projects)
+            {
+                try
+                {
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    proj.Owner.LoadProjectJson(true);
+                    proj.Owner.FirstInitialize();
+                    proj.StyleDefNaming = StyleDefNamingStyle.PreserveNames;
+                    proj.SpriterInitialization();
+                    proj.RefreshMainFile();
+                    proj.DetectBobrilJsxDts();
+                    proj.RefreshTestSources();
+                    if (proj.TestSources != null && proj.TestSources.Count > 0)
+                    {
+                        var ctx = new BuildCtx(_compilerPool, _verbose);
+                        ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
+                        ctx.Sources = new HashSet<string>();
+                        ctx.Sources.Add(proj.JasmineDts);
+                        proj.TestSources.ForEach(s => ctx.Sources.Add(s));
+                        if (proj.BobrilJsxDts != null)
+                            ctx.Sources.Add(proj.BobrilJsxDts);
+                        proj.Owner.Build(ctx);
+                        var testBuildResult = ctx.BuildResult;
+                        var fastBundle = new FastBundleBundler(_tools);
+                        var filesContent = new Dictionary<string, object>();
+                        proj.FillOutputByAdditionalResourcesDirectory(filesContent);
+                        fastBundle.FilesContent = filesContent;
+                        fastBundle.Project = proj;
+                        fastBundle.BuildResult = testBuildResult;
+                        fastBundle.Build("bb/base", "testbundle.js.map", true);
+                        proj.TestProjFastBundle = fastBundle;
+                        proj.FilesContent = filesContent;
+                        IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                        if (errors == 0)
+                        {
+                            var wait = new Semaphore(0, 1);
+                            _testServer.OnTestResults.Subscribe((results) =>
+                            {
+                                testFailures = results.TestsFailed;
+                                File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(), new UTF8Encoding(false));
+                                wait.Release();
+                            });
+                            var durationb = DateTime.UtcNow - start;
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture));
+                            Console.ForegroundColor = ConsoleColor.Gray;
+                            _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
+                            StartChromeTest();
+                            wait.WaitOne();
+                            StopChromeTest();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Fatal Error: " + ex);
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    errors++;
+                }
+            }
+            var duration = DateTime.UtcNow - start;
+            Console.ForegroundColor = (errors + testFailures) != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+            Console.WriteLine("Test done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure"));
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Environment.ExitCode = (errors + testFailures) != 0 ? 1 : 0;
         }
 
         StyleDefNamingStyle ParseStyleDefNaming(string value)
