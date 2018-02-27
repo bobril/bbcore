@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Added
+
+* Allow to enable spritting in interactive and test mode.
+
+### Fixed
+
+* Fixed crash on test command without defined -o
+* Fixed crash on build with enabled spritting, but without any sprite.
+
 ## 0.10.0
 
 ### Added

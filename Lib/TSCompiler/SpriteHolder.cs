@@ -57,6 +57,24 @@ namespace Lib.TSCompiler
 
         public void ProcessNew()
         {
+            for (int i = 0; i < _allSprites.Count; i++)
+            {
+                var sprite = _allSprites[i];
+                var fn = sprite.name;
+                var f = _dc.TryGetItem(fn);
+                if (f is IFileCache)
+                {
+                    var fi = TSFileAdditionalInfo.Get(f as IFileCache, _dc);
+                    if (fi.ImageCacheId != f.ChangeId)
+                    {
+                        fi.Image = Image.Load((f as IFileCache).ByteContent);
+                        fi.ImageCacheId = f.ChangeId;
+                    }
+                    sprite.owidth = fi.Image.Width;
+                    sprite.oheight = fi.Image.Height;
+                    _allSprites[i] = sprite;
+                }
+            }
             if (_newSprites.Count == 0)
                 return;
             _wasChange = true;
@@ -71,6 +89,7 @@ namespace Lib.TSCompiler
                     if (fi.Image == null)
                     {
                         fi.Image = Image.Load((f as IFileCache).ByteContent);
+                        fi.ImageCacheId = f.ChangeId;
                     }
                     sprite.owidth = fi.Image.Width;
                     sprite.oheight = fi.Image.Height;
@@ -119,7 +138,7 @@ namespace Lib.TSCompiler
         {
             if (!_wasChange)
             {
-
+                return _result;
             }
             var resultImage = new Image<Rgba32>(_placer.Dim.Width, _placer.Dim.Height);
             resultImage.Mutate(c =>
@@ -147,7 +166,7 @@ namespace Lib.TSCompiler
                 }
             });
             var ms = new MemoryStream();
-            resultImage.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder { CompressionLevel=maxCompression?9:1 });
+            resultImage.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder { CompressionLevel = maxCompression ? 9 : 1 });
             _result = ms.ToArray();
             _wasChange = false;
             return _result;

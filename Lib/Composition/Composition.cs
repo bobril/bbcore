@@ -72,14 +72,14 @@ namespace Lib.Composition
             {
                 if (iCommand.Verbose.Value)
                     _verbose = true;
-                RunInteractive(iCommand.Port.Value);
+                RunInteractive(iCommand.Port.Value,iCommand.Sprite.Value);
             }
             else if (_command is BuildInteractiveNoUpdateCommand yCommand)
             {
                 if (yCommand.Verbose.Value)
                     _verbose = true;
                 _forbiddenDependencyUpdate = true;
-                RunInteractive(yCommand.Port.Value);
+                RunInteractive(yCommand.Port.Value, yCommand.Sprite.Value);
             }
             else if (_command is BuildCommand bCommand)
             {
@@ -115,7 +115,7 @@ namespace Lib.Composition
         {
             InitTools();
             InitDiskCache();
-            AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            AddProject(PathUtils.Normalize(Environment.CurrentDirectory), bCommand.Sprite.Value);
             _forbiddenDependencyUpdate = bCommand.NoUpdate.Value;
             DateTime start = DateTime.UtcNow;
             int errors = 0;
@@ -134,7 +134,6 @@ namespace Lib.Composition
                     if (bCommand.Localize.Value != null)
                         proj.Localize = bCommand.Localize.Value ?? false;
                     proj.Owner.FirstInitialize();
-                    proj.SpriteGeneration = bCommand.Sprite.Value;
                     proj.OutputSubDir = bCommand.VersionDir.Value;
                     proj.CompressFileNames = !bCommand.Fast.Value;
                     proj.StyleDefNaming = ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
@@ -202,7 +201,7 @@ namespace Lib.Composition
             InitDiskCache();
             InitTestServer();
             InitMainServer();
-            AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            AddProject(PathUtils.Normalize(Environment.CurrentDirectory), testCommand.Sprite.Value);
             StartWebServer(0);
             DateTime start = DateTime.UtcNow;
             int errors = 0;
@@ -252,12 +251,13 @@ namespace Lib.Composition
                             _testServer.OnTestResults.Subscribe((results) =>
                             {
                                 testFailures = results.TestsFailed;
-                                File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(), new UTF8Encoding(false));
+                                if (testCommand.Out.Value!=null)
+                                    File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(), new UTF8Encoding(false));
                                 wait.Release();
                             });
                             var durationb = DateTime.UtcNow - start;
                             Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture));
+                            Console.WriteLine("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)+"s");
                             Console.ForegroundColor = ConsoleColor.Gray;
                             _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
                             StartChromeTest();
@@ -320,7 +320,7 @@ namespace Lib.Composition
             }
         }
 
-        void RunInteractive(string portInString)
+        void RunInteractive(string portInString, bool enableSpritting)
         {
             IfEnabledStartVerbosive();
             int port = 8080;
@@ -332,7 +332,7 @@ namespace Lib.Composition
             InitDiskCache();
             InitTestServer();
             InitMainServer();
-            AddProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            AddProject(PathUtils.Normalize(Environment.CurrentDirectory), enableSpritting);
             StartWebServer(port);
             InitInteractiveMode();
             WaitForStop();
@@ -364,7 +364,7 @@ namespace Lib.Composition
             _dc = new DiskCache.DiskCache(new NativeFsAbstraction(), () => new OsWatcher());
         }
 
-        public ProjectOptions AddProject(string path)
+        public ProjectOptions AddProject(string path, bool enableSpritting)
         {
             var projectDir = PathUtils.Normalize(new DirectoryInfo(path).FullName);
             var dirCache = _dc.TryGetItem(projectDir) as IDirectoryCache;
@@ -376,7 +376,8 @@ namespace Lib.Composition
             {
                 Tools = _tools,
                 Owner = proj,
-                Defines = new Dictionary<string, bool> { { "DEBUG", true } }
+                Defines = new Dictionary<string, bool> { { "DEBUG", true } },
+                SpriteGeneration = enableSpritting
             };
             lock (_projectsLock)
             {

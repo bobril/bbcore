@@ -27,6 +27,7 @@ namespace Lib.TSCompiler
         public SourceMap MapLink { get; set; }
         public SourceInfo SourceInfo { get; set; }
         public Image<Rgba32> Image { get; set; }
+        public int ImageCacheId;
         public string OutputUrl { get; set; }
 
         List<TSProject> _moduleImports;
