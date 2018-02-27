@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.11.0
+
 ### Added
 
 * Allow to enable spritting in interactive and test mode.
