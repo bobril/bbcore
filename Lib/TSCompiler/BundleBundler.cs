@@ -69,7 +69,15 @@ namespace Lib.TSCompiler
             if (Project.SpriteGeneration)
             {
                 _bundlePng = Project.BundlePngUrl;
-                FilesContent[_bundlePng] = Project.SpriteGenerator.BuildImage(true);
+                var bundlePngContent = Project.SpriteGenerator.BuildImage(true);
+                if (bundlePngContent != null)
+                {
+                    FilesContent[_bundlePng] = bundlePngContent;
+                }
+                else
+                {
+                    _bundlePng = null;
+                }
             }
             var bundler = new BundlerImpl(_tools);
             bundler.Callbacks = this;

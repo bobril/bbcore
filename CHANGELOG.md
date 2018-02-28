@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+* Fixed crash on build with enabled spritting, but without any sprite. Now for real :-)
+
 ## 0.11.0
 
 ### Added

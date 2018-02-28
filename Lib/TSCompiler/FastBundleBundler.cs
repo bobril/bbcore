@@ -73,7 +73,15 @@ namespace Lib.TSCompiler
             if (Project.SpriteGeneration)
             {
                 _bundlePng = Project.BundlePngUrl;
-                FilesContent[_bundlePng] = Project.SpriteGenerator.BuildImage(false);
+                var bundlePngContent = Project.SpriteGenerator.BuildImage(false);
+                if (bundlePngContent != null)
+                {
+                    FilesContent[_bundlePng] = bundlePngContent;
+                }
+                else
+                {
+                    _bundlePng = null;
+                }
             }
             sourceMapBuilder.AddText("//# sourceMappingURL=" + mapUrl);
             _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
