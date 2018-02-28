@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+* Livereload
+
 ### Changed default
 
 * Default version of Typescript set to 2.7.2

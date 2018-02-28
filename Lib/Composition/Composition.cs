@@ -18,6 +18,7 @@ using Newtonsoft.Json.Serialization;
 using Lib.Chrome;
 using System.Reflection;
 using System.Text;
+using System.Reactive;
 
 namespace Lib.Composition
 {
@@ -461,6 +462,17 @@ namespace Lib.Composition
                 await context.Response.WriteAsync(_currentProject.Owner.Owner.FullPath);
                 return;
             }
+            if (path.StartsWithSegments("/bb/api/liveReload", out var liveIdx))
+            {
+                while (_currentProject.LiveReloadIdx == int.Parse(liveIdx.Value.Substring(1)))
+                {
+                    await _currentProject.LiveReloadAwaiter.Task;
+                    _currentProject.LiveReloadAwaiter = new TaskCompletionSource<Unit>();
+                }
+                context.Response.StatusCode = 200;
+                await context.Response.WriteAsync("Reload");
+                return;
+            }
 
             if (path.StartsWithSegments("/bb/base", out var src))
             {
@@ -598,6 +610,11 @@ namespace Lib.Composition
                             fastBundle.Build("bb/base", "bundle.js.map");
                             proj.MainProjFastBundle = fastBundle;
                             IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                            if (errors == 0 && proj.LiveReloadEnabled)
+                            {
+                                proj.LiveReloadIdx++;
+                                proj.LiveReloadAwaiter.TrySetResult(Unit.Default);
+                            }
                             if (proj.TestSources != null && proj.TestSources.Count > 0)
                             {
                                 ctx = new BuildCtx(_compilerPool, _verbose);

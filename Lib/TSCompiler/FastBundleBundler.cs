@@ -125,10 +125,14 @@ namespace Lib.TSCompiler
             else
             {
                 FilesContent["index.html"] = _indexHtml;
-                FilesContent[_versionDirPrefix+"loader.js"] = _tools.LoaderJs;
+                FilesContent[_versionDirPrefix + "loader.js"] = _tools.LoaderJs;
+                if (Project.LiveReloadEnabled)
+                {
+                    FilesContent[_versionDirPrefix + "liveReload.js"] = _tools.LiveReloadJs.Replace("##Idx##", (Project.LiveReloadIdx+1).ToString());
+                }
             }
-            FilesContent[_versionDirPrefix+PathUtils.WithoutExtension(mapUrl)] = _bundleJs;
-            FilesContent[_versionDirPrefix+mapUrl] = _sourceMapString;
+            FilesContent[_versionDirPrefix + PathUtils.WithoutExtension(mapUrl)] = _bundleJs;
+            FilesContent[_versionDirPrefix + mapUrl] = _sourceMapString;
             BuildResult.SourceMap = _sourceMap;
         }
 
@@ -160,14 +164,19 @@ namespace Lib.TSCompiler
 
         void BuildFastBundlerIndexHtml(string mainModule, string cssLink)
         {
-            _indexHtml = $@"<!DOCTYPE html>
+            var liveReloadInclude = "";
+            if (Project.LiveReloadEnabled)
+            {
+                liveReloadInclude = $@"<script type=""text/javascript"" src=""{_versionDirPrefix}liveReload.js"" charset=""utf-8""></script>";
+            }
+                _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
         <meta charset=""utf-8"">{Project.HtmlHeadExpanded}
         <title>{Project.Title}</title>{cssLink}
     </head>
     <body>{InitG11n()}
-        <script type=""text/javascript"" src=""{_versionDirPrefix}loader.js"" charset=""utf-8""></script>
+        <script type=""text/javascript"" src=""{_versionDirPrefix}loader.js"" charset=""utf-8""></script>{liveReloadInclude}
         <script type=""text/javascript"">
             {GetGlobalDefines()}
             {GetModuleMap()}

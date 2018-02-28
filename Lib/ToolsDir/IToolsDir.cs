@@ -12,6 +12,7 @@ namespace Lib.ToolsDir
         string TypeScriptVersion { get; }
         string TypeScriptJsContent { get; }
         string LoaderJs { get; }
+        string LiveReloadJs { get; }
         string JasmineCoreJs { get; }
         string JasmineBootJs { get; }
         string JasmineDts { get; }

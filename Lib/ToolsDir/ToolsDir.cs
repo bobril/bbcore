@@ -45,6 +45,7 @@ namespace Lib.ToolsDir
                 _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
                 TsLibSource = ResourceUtils.GetText("Lib.TSCompiler.tslib.js");
                 ImportSource = ResourceUtils.GetText("Lib.TSCompiler.import.js");
+                LiveReloadJs = ResourceUtils.GetText("Lib.ToolsDir.liveReload.js");
             }
         }
 
@@ -110,6 +111,8 @@ namespace Lib.ToolsDir
         public string TsLibSource { get; }
 
         public string ImportSource { get; }
+
+        public string LiveReloadJs { get; }
 
         public void SetTypeScriptVersion(string version)
         {

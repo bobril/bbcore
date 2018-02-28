@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Lib.DiskCache;
 using Lib.Utils;
 
@@ -43,6 +45,7 @@ namespace Lib.TSCompiler
         public string OutputSubDir;
         public bool CompressFileNames;
         public bool BundleCss;
+        public int LiveReloadIdx;
 
         public Translation.TranslationDb TranslationDb;
 
@@ -52,6 +55,7 @@ namespace Lib.TSCompiler
 
         public Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();
         public HashSet<string> TakenNames = new HashSet<string>();
+        public TaskCompletionSource<Unit> LiveReloadAwaiter = new TaskCompletionSource<Unit>();
 
         public void RefreshMainFile()
         {
