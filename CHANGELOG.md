@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed default
+
+* Default version of Typescript set to 2.7.2
+
 ### Fixed
 
 * Fixed crash on build with enabled spritting, but without any sprite. Now for real :-)
