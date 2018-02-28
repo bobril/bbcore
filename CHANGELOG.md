@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.12.0
+
 ### Added
 
 * Livereload
