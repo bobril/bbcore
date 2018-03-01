@@ -64,4 +64,7 @@
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
     <PackageReference Include="UAParser" Version="3.0.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BTDB\BTDB.csproj" />
+  </ItemGroup>
 </Project>
