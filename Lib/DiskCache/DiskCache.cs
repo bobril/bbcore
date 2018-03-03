@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Subjects;
+using System.Security.Cryptography;
 using System.Text;
 using Lib.Utils;
 using Lib.Watcher;
@@ -261,15 +262,22 @@ namespace Lib.DiskCache
             ((DirectoryCache)directory).NoteChange();
         }
 
+        static SHA1 _hashFunction = new SHA1Managed();
+
+        static byte[] CalcHash(byte[] value)
+        {
+            return _hashFunction.ComputeHash(value);
+        }
+
         class VirtualFileCache : IFileCache
         {
             string _name;
             string _fullName;
             DateTime _modified;
             int _changeId;
-            bool _isInvalid;
             int _length;
             string _content;
+            byte[] _hash;
             IDirectoryCache _parent;
 
             public VirtualFileCache(IDirectoryCache parent, string name)
@@ -283,6 +291,7 @@ namespace Lib.DiskCache
             {
                 _length = Encoding.UTF8.GetByteCount(content);
                 _content = content;
+                _hash = null;
                 _modified = DateTime.UtcNow;
                 _changeId++; // It is called always under lock
                 // don't NoteChange to parent because that's not really user modified input file
@@ -310,8 +319,20 @@ namespace Lib.DiskCache
 
             public bool IsDirectory => false;
 
-            public bool IsInvalid { get => _isInvalid; set => _isInvalid = value; }
-            public bool IsStale { get => _isInvalid; set => throw new InvalidOperationException(); }
+            public bool IsInvalid { get; set; }
+            public bool IsStale { get => IsInvalid; set => throw new InvalidOperationException(); }
+
+            public byte[] HashOfContent
+            {
+                get
+                {
+                    if (_hash == null)
+                    {
+                        _hash = CalcHash(ByteContent);
+                    }
+                    return _hash;
+                }
+            }
         }
 
         class FileCache : IFileCache
@@ -321,6 +342,7 @@ namespace Lib.DiskCache
 
             byte[] _contentBytes;
             string _contentUtf8;
+            byte[] _contentHash;
             bool _isStale;
             int _changeId = 1;
             bool _isInvalid;
@@ -412,6 +434,25 @@ namespace Lib.DiskCache
             public int ChangeId => _changeId;
 
             public object AdditionalInfo { get; set; }
+
+            public byte[] HashOfContent
+            {
+                get
+                {
+                    if (_contentHash == null)
+                    {
+                        if (_contentUtf8 != null && _contentBytes == null)
+                        {
+                            _contentHash = CalcHash(Encoding.UTF8.GetBytes(_contentUtf8));
+                        }
+                        else
+                        {
+                            _contentHash = CalcHash(ByteContent);
+                        }
+                    }
+                    return _contentHash;
+                }
+            }
         }
 
         public IItemCache TryGetItem(string path)
@@ -440,7 +481,8 @@ namespace Lib.DiskCache
                         ((IDirectoryCache)subItem).IsFake = true;
                     }
                     directory = (IDirectoryCache)subItem;
-                    if (!directory.IsFake) UpdateIfNeededNoLock(directory);
+                    if (!directory.IsFake)
+                        UpdateIfNeededNoLock(directory);
                 }
                 else
                 {

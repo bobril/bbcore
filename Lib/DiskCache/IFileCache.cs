@@ -7,6 +7,7 @@ namespace Lib.DiskCache
         DateTime Modified { get; }
         ulong Length { get; }
         byte[] ByteContent { get; }
+        byte[] HashOfContent { get; }
         string Utf8Content { get; }
         object AdditionalInfo { get; set; }
     }

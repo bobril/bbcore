@@ -19,6 +19,7 @@ using Lib.Chrome;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
+using Lib.BuildCache;
 
 namespace Lib.Composition
 {
@@ -40,6 +41,7 @@ namespace Lib.Composition
         ILongPollingServer _mainServerLongPollingHandler;
         IChromeProcessFactory _chromeProcessFactory;
         IChromeProcess _chromeProcess;
+        IBuildCache _buildCache;
         bool _verbose;
         bool _forbiddenDependencyUpdate;
 
@@ -47,6 +49,7 @@ namespace Lib.Composition
         {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            InitTools();
         }
 
         public void ParseCommandLine(string[] args)
@@ -69,29 +72,30 @@ namespace Lib.Composition
         {
             if (_command == null)
                 return;
+            if (_command is CommonParametersBaseCommand commonParams)
+            {
+                if (commonParams.Verbose.Value)
+                    _verbose = true;
+                if (commonParams.NoBuildCache.Value)
+                    _buildCache = new DummyBuildCache();
+                else
+                    _buildCache = new PersistentBuildCache(_tools.Path);
+            }
             if (_command is BuildInteractiveCommand iCommand)
             {
-                if (iCommand.Verbose.Value)
-                    _verbose = true;
                 RunInteractive(iCommand.Port.Value,iCommand.Sprite.Value);
             }
             else if (_command is BuildInteractiveNoUpdateCommand yCommand)
             {
-                if (yCommand.Verbose.Value)
-                    _verbose = true;
                 _forbiddenDependencyUpdate = true;
                 RunInteractive(yCommand.Port.Value, yCommand.Sprite.Value);
             }
             else if (_command is BuildCommand bCommand)
             {
-                if (bCommand.Verbose.Value)
-                    _verbose = true;
                 RunBuild(bCommand);
             }
             else if (_command is TestCommand testCommand)
             {
-                if (testCommand.Verbose.Value)
-                    _verbose = true;
                 RunTest(testCommand);
             }
         }
@@ -114,7 +118,6 @@ namespace Lib.Composition
 
         void RunBuild(BuildCommand bCommand)
         {
-            InitTools();
             InitDiskCache();
             AddProject(PathUtils.Normalize(Environment.CurrentDirectory), bCommand.Sprite.Value);
             _forbiddenDependencyUpdate = bCommand.NoUpdate.Value;
@@ -139,6 +142,7 @@ namespace Lib.Composition
                     proj.CompressFileNames = !bCommand.Fast.Value;
                     proj.StyleDefNaming = ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
                     proj.BundleCss = !bCommand.Fast.Value;
+                    proj.Defines["DEBUG"] = bCommand.Fast.Value;
                     proj.SpriterInitialization();
                     proj.RefreshMainFile();
                     proj.DetectBobrilJsxDts();
@@ -198,7 +202,6 @@ namespace Lib.Composition
 
         void RunTest(TestCommand testCommand)
         {
-            InitTools();
             InitDiskCache();
             InitTestServer();
             InitMainServer();
@@ -329,7 +332,6 @@ namespace Lib.Composition
             {
                 port = portInInt;
             }
-            InitTools();
             InitDiskCache();
             InitTestServer();
             InitMainServer();
@@ -376,6 +378,7 @@ namespace Lib.Composition
             proj.ProjectOptions = new ProjectOptions
             {
                 Tools = _tools,
+                BuildCache = _buildCache,
                 Owner = proj,
                 Defines = new Dictionary<string, bool> { { "DEBUG", true } },
                 SpriteGeneration = enableSpritting

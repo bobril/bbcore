@@ -2,7 +2,7 @@
 
 namespace Lib.Utils.CommandLineParser.Definitions
 {
-    public class BuildCommand : CommandLineCommand
+    public class BuildCommand : CommonParametersBaseCommand
     {
         public override string[] Words => new[] { "b", "build" };
 
@@ -29,7 +29,5 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentString VersionDir { get; } = new CommandLineArgumentString(description: "store all resources except index.html in this directory", words: new[] { "-v", "--versiondir" });
 
         public CommandLineArgumentSwitch NoUpdate { get; } = new CommandLineArgumentSwitch(description: "do not install dependencies at start", words: new[] { "-n", "--noupdate" });
-
-        public CommandLineArgumentSwitch Verbose { get; } = new CommandLineArgumentSwitch(description: "enable spamming console output", words: new[] { "--verbose" });
     }
 }

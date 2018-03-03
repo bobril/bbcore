@@ -1,6 +1,7 @@
 ﻿using Lib.Composition;
 using Lib.DiskCache;
 using Lib.Utils;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -203,6 +204,7 @@ namespace Lib.TSCompiler
             ITSCompiler compiler = null;
             try
             {
+                ProjectOptions.BuildCache.StartTransaction();
                 compiler = buildCtx.CompilerPool.GetTs();
                 compiler.DiskCache = DiskCache;
                 compiler.Ctx = buildModuleCtx;
@@ -214,6 +216,7 @@ namespace Lib.TSCompiler
                 ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
                 compiler.MergeCompilerOptions(compOpt);
                 compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
+                ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(ProjectOptions.TypeScriptVersion, JsonConvert.SerializeObject(compiler.CompilerOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
                 do
                 {
                     buildModuleCtx.ChangedDts = false;
@@ -251,6 +254,7 @@ namespace Lib.TSCompiler
             {
                 if (compiler != null)
                     buildCtx.CompilerPool.ReleaseTs(compiler);
+                ProjectOptions.BuildCache.EndTransaction();
             }
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reactive;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Lib.BuildCache;
 using Lib.DiskCache;
 using Lib.Utils;
 
@@ -56,6 +57,8 @@ namespace Lib.TSCompiler
         public Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();
         public HashSet<string> TakenNames = new HashSet<string>();
         public TaskCompletionSource<Unit> LiveReloadAwaiter = new TaskCompletionSource<Unit>();
+        public IBuildCache BuildCache;
+        internal uint ConfigurationBuildCacheId;
 
         public void RefreshMainFile()
         {

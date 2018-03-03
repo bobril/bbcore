@@ -2,7 +2,7 @@
 
 namespace Lib.Utils.CommandLineParser.Definitions
 {
-    public class TestCommand : CommandLineCommand
+    public class TestCommand : CommonParametersBaseCommand
     {
         public override string[] Words => new[] { "test" };
 
@@ -11,7 +11,5 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentString Out { get; } = new CommandLineArgumentString(description: "filename for test result as JUnit XML", words: new[] { "-o", "--out" });
 
         public CommandLineArgumentBool Sprite { get; } = new CommandLineArgumentBool(description: "enable/disable creation of sprites", words: new[] { "--sprite" }, defaultValue: false);
-
-        public CommandLineArgumentSwitch Verbose { get; } = new CommandLineArgumentSwitch(description: "enable spamming console output", words: new[] { "--verbose" });
     }
 }
