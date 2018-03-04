@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.13.0
+
 ### Added
 
 *   Build cache which speed up cold build. Currently just modules without dependencies.
