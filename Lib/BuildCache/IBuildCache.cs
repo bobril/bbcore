@@ -10,6 +10,7 @@ namespace Lib.BuildCache
 {
     public interface IBuildCache: IDisposable
     {
+        bool IsEnabled { get; }
         void StartTransaction();
         void EndTransaction();
 

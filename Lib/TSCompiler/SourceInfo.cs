@@ -9,7 +9,7 @@ namespace Lib.TSCompiler
             public long nodeId;
             public string name;
         }
-        public List<Asset> assets { get; set; }
+        public List<Asset> assets;
 
         public struct Sprite
         {
@@ -26,7 +26,7 @@ namespace Lib.TSCompiler
             public int ox;
             public int oy;
         }
-        public List<Sprite> sprites { get; set; }
+        public List<Sprite> sprites;
 
         public struct Translation
         {
@@ -47,5 +47,21 @@ namespace Lib.TSCompiler
             public bool isEx;
         }
         public List<StyleDef> styleDefs;
+
+        public bool IsEmpty
+        {
+            get
+            {
+                if (assets?.Count > 0)
+                    return false;
+                if (sprites?.Count > 0)
+                    return false;
+                if (styleDefs?.Count > 0)
+                    return false;
+                if (translations?.Count > 0)
+                    return false;
+                return true;
+            }
+        }
     }
 }

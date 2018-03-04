@@ -137,12 +137,43 @@ namespace Lib.TSCompiler
                 AddSource(itemInfo);
             }
             CheckAdd(item.FullPath);
+            TryToResolveFromBuildCache(itemInfo);
             Crawl();
             if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath))
             {
                 return itemInfo.DtsLink.Owner.FullPath;
             }
             return item.FullPath;
+        }
+
+        void TryToResolveFromBuildCache(TSFileAdditionalInfo itemInfo)
+        {
+            var bc = _owner.ProjectOptions.BuildCache;
+            if (bc.IsEnabled)
+            {
+                var fbc = bc.FindTSFileBuildCache(itemInfo.Owner.HashOfContent, _owner.ProjectOptions.ConfigurationBuildCacheId);
+                if (fbc != null)
+                {
+                    if ((fbc.LocalImports?.Count ?? 0) == 0 && (fbc.ModuleImports?.Count ?? 0) == 0)
+                    {
+                        itemInfo.StartCompiling();
+                        itemInfo.Output = fbc.JsOutput;
+                        itemInfo.MapLink = fbc.MapLink;
+                        var fullPath = PathUtils.ChangeExtension(itemInfo.Owner.FullPath, "d.ts");
+                        var dirPath = PathUtils.Parent(fullPath);
+                        var fileOnly = fullPath.Substring(dirPath.Length + 1);
+                        var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
+                        var wasChange = dc.WriteVirtualFile(fileOnly, fbc.DtsOutput);
+                        var output = dc.TryGetChild(fileOnly) as IFileCache;
+                        itemInfo.DtsLink = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
+                        if (wasChange)
+                        {
+                            ChangedDts = true;
+                        }
+                        itemInfo.RememberLastCompilationCacheIds();
+                    }
+                }
+            }
         }
 
         public string resolveModuleMain(string name, TSFileAdditionalInfo parentInfo)
@@ -183,6 +214,7 @@ namespace Lib.TSCompiler
             }
             itemInfo.Type = FileCompilationType.TypeScript;
             CheckAdd(item.FullPath);
+            TryToResolveFromBuildCache(itemInfo);
             Crawl();
             if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath))
             {

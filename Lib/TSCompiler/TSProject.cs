@@ -248,6 +248,8 @@ namespace Lib.TSCompiler
                         buildModuleCtx.Crawl();
                     }
                 } while (buildModuleCtx.ChangedDts || buildModuleCtx.TrullyCompiledCount < buildModuleCtx.ToCompile.Count);
+                if (ProjectOptions.BuildCache.IsEnabled)
+                    StoreResultToBuildCache(buildModuleCtx._result);
                 buildCtx.BuildResult = buildModuleCtx._result;
             }
             finally
@@ -255,6 +257,27 @@ namespace Lib.TSCompiler
                 if (compiler != null)
                     buildCtx.CompilerPool.ReleaseTs(compiler);
                 ProjectOptions.BuildCache.EndTransaction();
+            }
+        }
+
+        void StoreResultToBuildCache(BuildResult result)
+        {
+            var bc = ProjectOptions.BuildCache;
+            foreach (var f in result.RecompiledLast)
+            {
+                if (f.Type == FileCompilationType.TypeScript && (f.SourceInfo == null || f.SourceInfo.IsEmpty) && f.LocalImports.Count == 0 && f.ModuleImports.Count == 0 && (f.Diagnostic == null || f.Diagnostic.Count == 0))
+                {
+                    if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ProjectOptions.ConfigurationBuildCacheId) == null)
+                    {
+                        var fbc = new BuildCache.TSFileBuildCache();
+                        fbc.ConfigurationId = ProjectOptions.ConfigurationBuildCacheId;
+                        fbc.ContentHash = f.Owner.HashOfContent;
+                        fbc.DtsOutput = f.DtsLink.Owner.Utf8Content;
+                        fbc.JsOutput = f.Output;
+                        fbc.MapLink = f.MapLink;
+                        bc.Store(fbc);
+                    }
+                }
             }
         }
 

@@ -10,6 +10,8 @@ namespace Lib.BuildCache
 {
     public class DummyBuildCache : IBuildCache
     {
+        public bool IsEnabled => false;
+
         public void Dispose()
         {
         }

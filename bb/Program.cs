@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-
-namespace bb
+﻿namespace bb
 {
     class Program
     {

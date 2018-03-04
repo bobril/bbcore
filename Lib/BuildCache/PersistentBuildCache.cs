@@ -8,7 +8,6 @@ using Lib.Utils;
 
 namespace Lib.BuildCache
 {
-
     public class PersistentBuildCache : IBuildCache
     {
         string _dir;
@@ -40,6 +39,8 @@ namespace Lib.BuildCache
                 tr.Commit();
             }
         }
+
+        public bool IsEnabled => true;
 
         public void Dispose()
         {
