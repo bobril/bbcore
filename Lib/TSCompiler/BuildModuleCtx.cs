@@ -148,6 +148,7 @@ namespace Lib.TSCompiler
 
         void TryToResolveFromBuildCache(TSFileAdditionalInfo itemInfo)
         {
+            itemInfo.TakenFromBuildCache = false;
             var bc = _owner.ProjectOptions.BuildCache;
             if (bc.IsEnabled)
             {
@@ -171,6 +172,7 @@ namespace Lib.TSCompiler
                             ChangedDts = true;
                         }
                         itemInfo.RememberLastCompilationCacheIds();
+                        itemInfo.TakenFromBuildCache = true;
                     }
                 }
             }

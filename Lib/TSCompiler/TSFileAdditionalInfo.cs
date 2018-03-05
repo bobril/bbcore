@@ -29,6 +29,7 @@ namespace Lib.TSCompiler
         public Image<Rgba32> Image { get; set; }
         public int ImageCacheId;
         public string OutputUrl { get; set; }
+        public bool TakenFromBuildCache;
 
         List<TSProject> _moduleImports;
 

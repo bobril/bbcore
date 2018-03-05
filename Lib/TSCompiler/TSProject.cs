@@ -265,6 +265,8 @@ namespace Lib.TSCompiler
             var bc = ProjectOptions.BuildCache;
             foreach (var f in result.RecompiledLast)
             {
+                if (f.TakenFromBuildCache)
+                    continue;
                 if (f.Type == FileCompilationType.TypeScript && (f.SourceInfo == null || f.SourceInfo.IsEmpty) && f.LocalImports.Count == 0 && f.ModuleImports.Count == 0 && (f.Diagnostic == null || f.Diagnostic.Count == 0))
                 {
                     if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ProjectOptions.ConfigurationBuildCacheId) == null)
