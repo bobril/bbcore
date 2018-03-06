@@ -37,7 +37,7 @@ namespace Lib.TSCompiler
             var cssToBundle = new List<SourceFromPair>();
             foreach (var source in BuildResult.Path2FileInfo)
             {
-                if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript)
+                if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript || source.Value.Type == FileCompilationType.JavaScriptAsset)
                 {
                     if (source.Value.Output == null)
                         continue; // Skip d.ts
