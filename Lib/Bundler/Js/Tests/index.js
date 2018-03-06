@@ -20,6 +20,16 @@ var bb = {
     readContent: function (name) {
         return fs.readFileSync(path.join("Inputs", currentTestDir, name), "utf-8");
     },
+    getPlainJsDependencies: function (name) {
+        var dirName = name.substr(0, name.length - 3);
+        name = path.join("Inputs", currentTestDir, dirName);
+        if (fs.existsSync(name))
+            return fs
+                .readdirSync(name)
+                .map(function (s) { return dirName + "/" + s; })
+                .join("|");
+        return "";
+    },
     writeBundle: function (name, content) {
         var outputName = prefix + "-" + name + ".js";
         fs.writeFileSync(path.join("Outputs", currentTestDir, outputName), content);
@@ -50,7 +60,7 @@ var bb = {
 };
 var uglifyJsContent = fs.readFileSync("../uglify.js", "utf-8");
 var bundlerJsContent = fs.readFileSync("../bundler.js", "utf-8");
-var bundleImp = eval(uglifyJsContent + bundlerJsContent + 'bundle;');
+var bundleImp = eval(uglifyJsContent + bundlerJsContent + "bundle;");
 var tests = fs.readdirSync("Inputs");
 mkdir("Expected");
 /*

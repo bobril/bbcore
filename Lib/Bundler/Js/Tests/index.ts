@@ -19,6 +19,8 @@ function mkdir(dir: string) {
 
 interface IBB {
     readContent(name: string): string;
+    /// returns pipe delimited list of file names
+    getPlainJsDependencies(name: string): string;
     writeBundle(name: string, content: string): void;
     generateBundleName(forName: string): string;
     resolveRequire(name: string, from: string): string;
@@ -28,6 +30,16 @@ interface IBB {
 const bb: IBB = {
     readContent(name: string): string {
         return fs.readFileSync(path.join("Inputs", currentTestDir, name), "utf-8");
+    },
+    getPlainJsDependencies(name: string): string {
+        let dirName = name.substr(0, name.length - 3);
+        name = path.join("Inputs", currentTestDir, dirName);
+        if (fs.existsSync(name))
+            return fs
+                .readdirSync(name)
+                .map(s => dirName + "/" + s)
+                .join("|");
+        return "";
     },
     writeBundle(name: string, content: string): void {
         const outputName: string = prefix + "-" + name + ".js";
@@ -68,7 +80,7 @@ interface IBundleProject {
 
 const uglifyJsContent = fs.readFileSync("../uglify.js", "utf-8");
 const bundlerJsContent = fs.readFileSync("../bundler.js", "utf-8");
-var bundleImp = eval(uglifyJsContent + bundlerJsContent + 'bundle;') as (project: IBundleProject) => void;
+var bundleImp = eval(uglifyJsContent + bundlerJsContent + "bundle;") as (project: IBundleProject) => void;
 
 let tests = fs.readdirSync("Inputs");
 mkdir("Expected");

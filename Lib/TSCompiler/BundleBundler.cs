@@ -170,5 +170,22 @@ namespace Lib.TSCompiler
         {
             return _tools.TsLibSource + (withImport ? _tools.ImportSource : "");
         }
+
+        public IList<string> GetPlainJsDependencies(string name)
+        {
+            var diskCache = Project.Owner.DiskCache;
+            var file = diskCache.TryGetItem(PathUtils.ChangeExtension(name, "ts")) as IFileCache;
+            if (file == null)
+            {
+                file = diskCache.TryGetItem(PathUtils.ChangeExtension(name, "tsx")) as IFileCache;
+            }
+            if (file == null)
+                return new List<string>();
+            var fileInfo = TSFileAdditionalInfo.Get(file, diskCache);
+            var sourceInfo = fileInfo.SourceInfo;
+            if (sourceInfo == null || sourceInfo.assets == null)
+                return new List<string>();
+            return sourceInfo.assets.Select(i => i.name).Where(i => i.EndsWith(".js")).ToList();
+        }
     }
 }

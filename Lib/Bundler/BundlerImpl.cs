@@ -41,6 +41,7 @@ namespace Lib.Bundler
 
 #pragma warning disable IDE1006 // Naming Styles
             public string readContent(string name) => _owner.Callbacks.ReadContent(name);
+            public string getPlainJsDependencies(string name) => string.Join('|', _owner.Callbacks.GetPlainJsDependencies(name));
             public void writeBundle(string name, string content) => _owner.Callbacks.WriteBundle(name, content);
             public string generateBundleName(string forName) => _owner.Callbacks.GenerateBundleName(forName);
             public string resolveRequire(string name, string from) => _owner.Callbacks.ResolveRequire(name, from);

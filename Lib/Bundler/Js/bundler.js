@@ -170,6 +170,9 @@ function check(name, order, visited, cache, requiredAs) {
     let ast = parse(fileContent);
     //console.log(ast.print_to_string({ beautify: true }));
     ast.figure_out_scope();
+    let jsdeps = bb.getPlainJsDependencies(name).split("|");
+    if (jsdeps.length == 1 && jsdeps[0] == "")
+        jsdeps = [];
     cached = {
         name,
         ast,
@@ -179,7 +182,8 @@ function check(name, order, visited, cache, requiredAs) {
         partOfBundle: requiredAs,
         selfexports: [],
         exports: undefined,
-        pureFuncs: Object.create(null)
+        pureFuncs: Object.create(null),
+        plainJsDependencies: jsdeps
     };
     const cachedName = name.toLowerCase();
     cache[cachedName] = cached;
@@ -214,8 +218,8 @@ __bbe['${cached.shortname}']=module.exports; }).call(window);`);
     let reexportDef;
     let walker = new TreeWalker((node, descend) => {
         if (node instanceof AST_Block) {
-            node.body = node.body
-                .map((stm) => {
+            node.body = node
+                .body.map((stm) => {
                 if (stm instanceof AST_Directive && stm.value === "use strict") {
                     return undefined;
                 }
@@ -500,7 +504,8 @@ function bundle(project) {
         importsFromOtherBundles: new Map(),
         exportsAllUsedFromLazyBundles: new Map(),
         directSplitsForcedLazy: new Set(),
-        expandedSplitsForcedLazy: []
+        expandedSplitsForcedLazy: [],
+        plainJsDependencies: new Set()
     };
     let lastGeneratedIdentId = 0;
     function generateIdent() {
@@ -508,20 +513,23 @@ function bundle(project) {
     }
     order.forEach(f => {
         let fullBundleName = f.partOfBundle;
-        if (bundleNames.indexOf(fullBundleName) >= 0)
-            return;
-        let shortenedBundleName = bb.generateBundleName(fullBundleName);
-        bundleNames.push(fullBundleName);
-        splitMap[fullBundleName] = {
-            fullName: fullBundleName,
-            shortName: shortenedBundleName,
-            propName: generateIdent(),
-            exportsUsedFromLazyBundles: new Map(),
-            importsFromOtherBundles: new Map(),
-            exportsAllUsedFromLazyBundles: new Map(),
-            directSplitsForcedLazy: new Set(),
-            expandedSplitsForcedLazy: []
-        };
+        if (bundleNames.indexOf(fullBundleName) < 0) {
+            let shortenedBundleName = bb.generateBundleName(fullBundleName);
+            bundleNames.push(fullBundleName);
+            splitMap[fullBundleName] = {
+                fullName: fullBundleName,
+                shortName: shortenedBundleName,
+                propName: generateIdent(),
+                exportsUsedFromLazyBundles: new Map(),
+                importsFromOtherBundles: new Map(),
+                exportsAllUsedFromLazyBundles: new Map(),
+                directSplitsForcedLazy: new Set(),
+                expandedSplitsForcedLazy: [],
+                plainJsDependencies: new Set()
+            };
+        }
+        let jsDeps = splitMap[fullBundleName].plainJsDependencies;
+        f.plainJsDependencies.forEach(v => jsDeps.add(v));
     });
     if (bundleNames.length > 1)
         detectBundleExportsImports(order, splitMap, cache, generateIdent);
@@ -693,7 +701,16 @@ function bundle(project) {
             });
             f.ast.transform(transformer);
         });
-        appendExportedFromLazyBundle(bodyAst, splitMap[currentBundleName], cache);
+        let currentSplit = splitMap[currentBundleName];
+        appendExportedFromLazyBundle(bodyAst, currentSplit, cache);
+        let jsDepAsts = [];
+        for (const jsDep of currentSplit.plainJsDependencies.keys()) {
+            let depAst = parse(bb.readContent(jsDep));
+            jsDepAsts = jsDepAsts.concat(depAst.body);
+        }
+        if (jsDepAsts.length > 0) {
+            bundleAst.body.unshift(...jsDepAsts);
+        }
         bundleAst = compressAst(project, bundleAst, pureFuncs);
         mangleNames(project, bundleAst);
         let out = printAst(project, bundleAst);
