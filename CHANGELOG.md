@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.14.0
+
 ### Fixed
 
 *   Added missing support in slow bundle for js assets.
