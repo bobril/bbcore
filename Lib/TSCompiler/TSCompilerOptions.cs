@@ -38,6 +38,7 @@ namespace Lib.TSCompiler
         public bool? noEmitOnError { get; set; }
         public bool? noErrorTruncation { get; set; }
         public bool? noFallthroughCasesInSwitch { get; set; }
+        public bool? noStrictGenericChecks { get; set; }
         public bool? noImplicitAny { get; set; }
         public bool? noImplicitReturns { get; set; }
         public bool? noImplicitThis { get; set; }
@@ -61,7 +62,9 @@ namespace Lib.TSCompiler
         public bool? sourceMap { get; set; }
         public string sourceRoot { get; set; }
         public bool? strict { get; set; }
+        public bool? strictFunctionTypes { get; set; }
         public bool? strictNullChecks { get; set; }
+        public bool? strictPropertyInitialization { get; set; }
         public bool? suppressExcessPropertyErrors { get; set; }
         public bool? suppressImplicitAnyIndexErrors { get; set; }
         public ScriptTarget? target { get; set; }
@@ -113,6 +116,7 @@ namespace Lib.TSCompiler
                 noEmitOnError = this.noEmitOnError,
                 noErrorTruncation = this.noErrorTruncation,
                 noFallthroughCasesInSwitch = this.noFallthroughCasesInSwitch,
+                noStrictGenericChecks = this.noStrictGenericChecks,
                 noImplicitAny = this.noImplicitAny,
                 noImplicitReturns = this.noImplicitReturns,
                 noImplicitThis = this.noImplicitThis,
@@ -135,7 +139,9 @@ namespace Lib.TSCompiler
                 sourceMap = this.sourceMap,
                 sourceRoot = this.sourceRoot,
                 strict = this.strict,
+                strictFunctionTypes = this.strictFunctionTypes,
                 strictNullChecks = this.strictNullChecks,
+                strictPropertyInitialization = this.strictPropertyInitialization,
                 suppressExcessPropertyErrors = this.suppressExcessPropertyErrors,
                 suppressImplicitAnyIndexErrors = this.suppressImplicitAnyIndexErrors,
                 target = this.target,

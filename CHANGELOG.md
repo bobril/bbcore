@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Added missing TS compiler options (strictFunctionTypes, strictPropertyInitialization)
+
 ## 0.14.0
 
 ### Fixed
