@@ -8,11 +8,15 @@ using System.Text;
 using System.Linq;
 using Lib.TSCompiler;
 using Lib.Composition;
+using System.Runtime.InteropServices;
 
 namespace Lib.Test
 {
     public class FakeFsAbstraction : IFsAbstraction, IDirectoryWatcher
     {
+        public bool IsMac => RuntimeInformation
+                                   .IsOSPlatform(OSPlatform.OSX);
+        
         public bool IsUnixFs => PathUtils.IsUnixFs;
 
         public string WatchedDirectory { get; set; }

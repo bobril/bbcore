@@ -10,12 +10,17 @@ namespace Lib.Test
     class FakeFs : IFsAbstraction
     {
         private bool _isUnix;
+        private bool _isMac;
         private string _chromPath;
-        public FakeFs(bool isUnix, string chromePath = null)
+        public FakeFs(bool isUnix, string chromePath = null, bool isMac = false)
         {
             _isUnix = isUnix;
+            _isMac = isMac;
             _chromPath = chromePath;
         }
+
+        public bool IsMac => _isMac;
+
         public bool IsUnixFs => _isUnix;
 
         public bool FileExists(string path)

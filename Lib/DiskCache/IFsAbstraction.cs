@@ -4,6 +4,7 @@ namespace Lib.DiskCache
 {
     public interface IFsAbstraction
     {
+        bool IsMac { get; }
         bool IsUnixFs { get; }
         FsItemInfo GetItemInfo(string path);
         IReadOnlyList<FsItemInfo> GetDirectoryContent(string path);
