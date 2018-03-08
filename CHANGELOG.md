@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.15.0
+
 ### Added
 
 *   OSX version
