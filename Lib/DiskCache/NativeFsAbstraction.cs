@@ -1,6 +1,7 @@
 ﻿using Lib.Utils;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -8,6 +9,9 @@ namespace Lib.DiskCache
 {
     public class NativeFsAbstraction : IFsAbstraction
     {
+        public bool IsMac => RuntimeInformation
+                                   .IsOSPlatform(OSPlatform.OSX);
+
         public bool IsUnixFs => PathUtils.IsUnixFs;
 
         public bool FileExists(string path)
