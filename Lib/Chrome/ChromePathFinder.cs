@@ -13,15 +13,15 @@ namespace Lib.Chrome
         static readonly string[] LinuxChromiumPaths = { "/usr/bin/chromium", "/usr/bin/chromium-browser" };
         static readonly string[] MacChromePaths = { "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/Applications/Chromium.app/Contents/MacOS/Chromium" };
 
-        public static string GetChromePath(IFsAbstraction fsAbstratction)
+        public static string GetChromePath(IFsAbstraction fsAbstraction)
         {
-            if (fsAbstratction.IsMac)
+            if (fsAbstraction.IsMac)
             {
-                return GetMacChromePath(fsAbstratction);
+                return GetMacChromePath(fsAbstraction);
             }
-            if (fsAbstratction.IsUnixFs)
+            if (fsAbstraction.IsUnixFs)
             {
-                return GetLinuxChromePath(fsAbstratction);
+                return GetLinuxChromePath(fsAbstraction);
             }
             else
             {
@@ -29,11 +29,11 @@ namespace Lib.Chrome
             }
         }
 
-        static string GetMacChromePath(IFsAbstraction fsAbstratction)
+        static string GetMacChromePath(IFsAbstraction fsAbstraction)
         {
             foreach (string chromePaths in MacChromePaths)
             {
-                if (fsAbstratction.FileExists(chromePaths))
+                if (fsAbstraction.FileExists(chromePaths))
                 {
                     return chromePaths;
                 }
@@ -41,16 +41,16 @@ namespace Lib.Chrome
             throw new Exception("Chrome not found. Install Google Chrome or Chromium.");
         }
 
-        static string GetLinuxChromePath(IFsAbstraction fsAbstratction)
+        static string GetLinuxChromePath(IFsAbstraction fsAbstraction)
         {
-            if (fsAbstratction.FileExists(LinuxChromePath))
+            if (fsAbstraction.FileExists(LinuxChromePath))
             {
                 return LinuxChromePath;
             }
 
             foreach (string chromiumPath in LinuxChromiumPaths)
             {
-                if (fsAbstratction.FileExists(chromiumPath))
+                if (fsAbstraction.FileExists(chromiumPath))
                 {
                     return chromiumPath;
                 }
