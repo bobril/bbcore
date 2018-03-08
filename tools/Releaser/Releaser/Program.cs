@@ -5,7 +5,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Releaser
@@ -87,6 +86,7 @@ namespace Releaser
                     Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0", true);
                 BuildWinX64(projDir, newVersion);
                 BuildLinuxX64(projDir, newVersion);
+                BuildOsxX64(projDir, newVersion);
                 var client = new GitHubClient(new ProductHeaderValue("bobril-bbcore-releaser"));
                 var fileNameOfToken = Environment.GetEnvironmentVariable("USERPROFILE") + "/.github/token.txt";
                 string token;
@@ -129,6 +129,9 @@ namespace Releaser
                 uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("linux-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64.zip"), null));
                 Console.WriteLine("linux-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
+                uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("osx-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64.zip"), null));
+                Console.WriteLine("osx-x64 url:");
+                Console.WriteLine(uploadAsset.BrowserDownloadUrl);
                 Console.WriteLine("Press Enter for finish");
                 Console.ReadLine();
                 return 0;
@@ -163,5 +166,18 @@ namespace Releaser
             System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
         }
 
+        static void BuildOsxX64(string projDir, string newVersion)
+        {
+            var start = new ProcessStartInfo("dotnet", "publish -c Release -r osx-x64 /p:ShowLinkerSizeComparison=true /p:Version=" + newVersion + ".0")
+            {
+                UseShellExecute = true,
+                WorkingDirectory = projDir + "/bb"
+            };
+            var process = Process.Start(start);
+            process.WaitForExit();
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/ru-ru"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/ru-ru", true);
+            System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
+        }
     }
 }
