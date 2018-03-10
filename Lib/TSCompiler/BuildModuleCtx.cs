@@ -115,7 +115,7 @@ namespace Lib.TSCompiler
                 return null;
             if (item.FullPath.Substring(0, name.Length) != name)
             {
-                parentInfo.ReportDiag(false, 1, "Local import has wrong casing '" + name + "' on disk '" + item.FullPath + "'", 0, 0, 0, 0);
+                parentInfo.ReportDiag(false, -1, "Local import has wrong casing '" + name + "' on disk '" + item.FullPath + "'", 0, 0, 0, 0);
             }
             var itemInfo = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
             parentInfo.ImportingLocal(itemInfo);
@@ -185,7 +185,7 @@ namespace Lib.TSCompiler
                 return null;
             if (name != diskName)
             {
-                parentInfo.ReportDiag(false, 2, "Module import has wrong casing '" + name + "' on disk '" + diskName + "'", 0, 0, 0, 0);
+                parentInfo.ReportDiag(false, -2, "Module import has wrong casing '" + name + "' on disk '" + diskName + "'", 0, 0, 0, 0);
             }
             moduleInfo.LoadProjectJson(true);
             parentInfo.ImportingModule(moduleInfo);
