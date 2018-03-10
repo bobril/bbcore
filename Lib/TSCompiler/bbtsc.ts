@@ -86,8 +86,7 @@ function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
     return {
         getSourceFile,
         getDefaultLibLocation: () => bbDefaultLibLocation,
-        getDefaultLibFileName: options =>
-            bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options),
+        getDefaultLibFileName: options => bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options),
         writeFile,
         getCurrentDirectory: () => bbCurrentDirectory,
         useCaseSensitiveFileNames: () => true,
@@ -160,9 +159,7 @@ function bbCreateProgram(rootNames: string) {
 function reportDiagnostic(diagnostic: ts.Diagnostic) {
     if (diagnostic.file) {
         var locStart = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
-        var locEnd = diagnostic.file.getLineAndCharacterOfPosition(
-            diagnostic.start! + diagnostic.length!
-        );
+        var locEnd = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start! + diagnostic.length!);
         bb.reportTypeScriptDiagFile(
             diagnostic.category === ts.DiagnosticCategory.Error,
             diagnostic.code,
@@ -284,10 +281,7 @@ const transformers: ts.CustomTransformers = {
                                 case 0: // change first parameter to constant in modification[1]
                                     node = ts.setTextRange(
                                         ts.createCall(callEx.expression, undefined, [
-                                            ts.createLiteral(modification[1] as
-                                                | string
-                                                | number
-                                                | boolean),
+                                            ts.createLiteral(modification[1] as string | number | boolean),
                                             ...callEx.arguments.slice(1)
                                         ]),
                                         callEx
@@ -308,15 +302,8 @@ const transformers: ts.CustomTransformers = {
                                 case 2: // set parameter with index modification[1] to modification[2] and set argument count to modification[3]
                                     node = ts.setTextRange(
                                         ts.createCall(callEx.expression, undefined, [
-                                            ...sliceAndPad(
-                                                callEx.arguments,
-                                                0,
-                                                modification[1] as number
-                                            ),
-                                            ts.createLiteral(modification[2] as
-                                                | string
-                                                | number
-                                                | boolean),
+                                            ...sliceAndPad(callEx.arguments, 0, modification[1] as number),
+                                            ts.createLiteral(modification[2] as string | number | boolean),
                                             ...sliceAndPad(
                                                 callEx.arguments,
                                                 (modification[1] as number) + 1,
@@ -330,16 +317,9 @@ const transformers: ts.CustomTransformers = {
                                 case 3: // set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
                                     node = ts.setTextRange(
                                         ts.createCall(callEx.expression, undefined, [
-                                            ...sliceAndPad(
-                                                callEx.arguments,
-                                                0,
-                                                modification[1] as number
-                                            ),
+                                            ...sliceAndPad(callEx.arguments, 0, modification[1] as number),
                                             ts.createAdd(
-                                                ts.createLiteral(modification[2] as
-                                                    | string
-                                                    | number
-                                                    | boolean),
+                                                ts.createLiteral(modification[2] as string | number | boolean),
                                                 callEx.arguments[modification[1] as number]
                                             ),
                                             ...sliceAndPad(
@@ -354,7 +334,14 @@ const transformers: ts.CustomTransformers = {
                                     break;
                                 case 4: // set function name to modification[1]
                                     node = ts.setTextRange(
-                                        ts.createCall(ts.createPropertyAccess((<ts.PropertyAccessExpression>callEx.expression).expression, <string>modification[1]), undefined, callEx.arguments),
+                                        ts.createCall(
+                                            ts.createPropertyAccess(
+                                                (<ts.PropertyAccessExpression>callEx.expression).expression,
+                                                <string>modification[1]
+                                            ),
+                                            undefined,
+                                            callEx.arguments
+                                        ),
                                         callEx
                                     );
                                     modification = modification.slice(2);
@@ -367,9 +354,7 @@ const transformers: ts.CustomTransformers = {
                                     modification = modification.slice(1);
                                     break;
                                 default:
-                                    throw new Error(
-                                        "Unknown modification type " + modification[0] + " for " + id
-                                    );
+                                    throw new Error("Unknown modification type " + modification[0] + " for " + id);
                             }
                         }
                     }
@@ -390,11 +375,7 @@ function sliceAndPad(args: ts.NodeArray<ts.Expression>, start: number, end: numb
     return res;
 }
 
-function evalNode(
-    n: ts.Node,
-    tc: ts.TypeChecker,
-    resolveStringLiteral?: (sl: ts.StringLiteral) => string
-): any {
+function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts.StringLiteral) => string): any {
     switch (n.kind) {
         case ts.SyntaxKind.StringLiteral: {
             let nn = <ts.StringLiteral>n;
@@ -494,17 +475,11 @@ function evalNode(
         case ts.SyntaxKind.PropertyAccessExpression: {
             let s = tc.getSymbolAtLocation(n);
             if (s == null) return undefined;
-            if (
-                (s.flags & ts.SymbolFlags.Alias) !== 0 &&
-                n.kind === ts.SyntaxKind.PropertyAccessExpression
-            ) {
+            if ((s.flags & ts.SymbolFlags.Alias) !== 0 && n.kind === ts.SyntaxKind.PropertyAccessExpression) {
                 if (s.declarations == null || s.declarations.length !== 1) return undefined;
                 let decl = <ts.ImportSpecifier>s.declarations[0];
                 return evalNode(decl, tc, resolveStringLiteral);
-            } else if (
-                (s.flags & ts.SymbolFlags.Alias) !== 0 &&
-                n.kind === ts.SyntaxKind.Identifier
-            ) {
+            } else if ((s.flags & ts.SymbolFlags.Alias) !== 0 && n.kind === ts.SyntaxKind.Identifier) {
                 if (s.declarations == null || s.declarations.length !== 1) return undefined;
                 let decl = <ts.ImportSpecifier>s.declarations[0];
                 if (decl.kind !== ts.SyntaxKind.ImportSpecifier) return undefined;
@@ -523,20 +498,16 @@ function evalNode(
                         return evalNode(exportAssign, tc, resolveStringLiteral);
                     }
                 }
-            } else if (
-                (s.flags & ts.SymbolFlags.Property) !== 0 &&
-                n.kind === ts.SyntaxKind.PropertyAccessExpression
-            ) {
-                let obj = evalNode(
-                    (<ts.PropertyAccessExpression>n).expression,
-                    tc,
-                    resolveStringLiteral
-                );
+            } else if ((s.flags & ts.SymbolFlags.Property) !== 0 && n.kind === ts.SyntaxKind.PropertyAccessExpression) {
+                let obj = evalNode((<ts.PropertyAccessExpression>n).expression, tc, resolveStringLiteral);
                 if (typeof obj !== "object") return undefined;
                 let name = (<ts.PropertyAccessExpression>n).name.text;
                 return obj[name];
             } else if (s.flags & ts.SymbolFlags.Variable) {
-                if (s.valueDeclaration!.parent!.flags & ts.NodeFlags.Const) {
+                if (
+                    (s.valueDeclaration!.parent!.flags & ts.NodeFlags.Const) !== 0 &&
+                    (<ts.VariableDeclaration>s.valueDeclaration).initializer != null
+                ) {
                     return evalNode(
                         (<ts.VariableDeclaration>s.valueDeclaration).initializer!,
                         tc,
@@ -557,18 +528,13 @@ function evalNode(
                 let prop = ole.properties[i];
                 if (
                     prop.kind === ts.SyntaxKind.PropertyAssignment &&
-                    (prop.name.kind === ts.SyntaxKind.Identifier ||
-                        prop.name.kind === ts.SyntaxKind.StringLiteral)
+                    (prop.name.kind === ts.SyntaxKind.Identifier || prop.name.kind === ts.SyntaxKind.StringLiteral)
                 ) {
                     let name =
                         prop.name.kind === ts.SyntaxKind.Identifier
                             ? (<ts.Identifier>prop.name).text
                             : (<ts.StringLiteral>prop.name).text;
-                    res[name] = evalNode(
-                        (<ts.PropertyAssignment>prop).initializer,
-                        tc,
-                        resolveStringLiteral
-                    );
+                    res[name] = evalNode((<ts.PropertyAssignment>prop).initializer, tc, resolveStringLiteral);
                 }
             }
             return res;
@@ -625,27 +591,14 @@ interface TranslationMessage {
     justFormat: boolean;
 }
 
-function isBobrilFunction(
-    name: string,
-    callExpression: ts.CallExpression,
-    sourceInfo: SourceInfo
-): boolean {
+function isBobrilFunction(name: string, callExpression: ts.CallExpression, sourceInfo: SourceInfo): boolean {
     let text = callExpression.expression.getText();
-    return (
-        text === sourceInfo.bobrilNamespace + "." + name || text === sourceInfo.bobrilImports[name]
-    );
+    return text === sourceInfo.bobrilNamespace + "." + name || text === sourceInfo.bobrilImports[name];
 }
 
-function isBobrilG11NFunction(
-    name: string,
-    callExpression: ts.CallExpression,
-    sourceInfo: SourceInfo
-): boolean {
+function isBobrilG11NFunction(name: string, callExpression: ts.CallExpression, sourceInfo: SourceInfo): boolean {
     let text = callExpression.expression.getText();
-    return (
-        text === sourceInfo.bobrilG11NNamespace + "." + name ||
-        text === sourceInfo.bobrilG11NImports[name]
-    );
+    return text === sourceInfo.bobrilG11NNamespace + "." + name || text === sourceInfo.bobrilG11NImports[name];
 }
 
 function extractBindings(
@@ -690,11 +643,7 @@ function gatherSourceInfo(
             if (id.importClause) {
                 let bindings = id.importClause.namedBindings!;
                 if (/bobriln?\/index\.(?:d\.)?ts$/i.test(fn)) {
-                    result.bobrilNamespace = extractBindings(
-                        bindings,
-                        result.bobrilNamespace,
-                        result.bobrilImports
-                    );
+                    result.bobrilNamespace = extractBindings(bindings, result.bobrilNamespace, result.bobrilImports);
                 } else if (/bobril-g11n\/index\.(?:d\.)?ts$/i.test(fn)) {
                     result.bobrilG11NNamespace = extractBindings(
                         bindings,
@@ -706,19 +655,19 @@ function gatherSourceInfo(
         } else if (n.kind === ts.SyntaxKind.CallExpression) {
             let ce = <ts.CallExpression>n;
             if (isBobrilFunction("asset", ce, result)) {
+                let res = evalNode(ce.arguments[0], tc, resolvePathStringLiteral);
                 result.assets.push({
                     callExpression: ce,
-                    name: evalNode(ce.arguments[0], tc, resolvePathStringLiteral)
+                    name: res
                 });
+                if (res === undefined) {
+                    reportErrorInTSNode(ce, -5, "First parameter of b.asset must be resolved as constant string");
+                }
             } else if (isBobrilFunction("sprite", ce, result)) {
                 let si: SpriteInfo = { callExpression: ce };
                 si.hasColor = ce.arguments.length >= 2;
                 for (let i = 0; i < ce.arguments.length; i++) {
-                    let res = evalNode(
-                        ce.arguments[i],
-                        tc,
-                        i === 0 ? resolvePathStringLiteral : undefined
-                    ); // first argument is path
+                    let res = evalNode(ce.arguments[i], tc, i === 0 ? resolvePathStringLiteral : undefined); // first argument is path
                     if (res !== undefined)
                         switch (i) {
                             case 0:
@@ -740,8 +689,11 @@ function gatherSourceInfo(
                                 if (typeof res === "number") si.y = res;
                                 break;
                             default:
-                                throw new Error("b.sprite cannot have more than 6 parameters");
+                                reportErrorInTSNode(ce, -6, "b.sprite cannot have more than 6 parameters");
                         }
+                    else if (i === 0) {
+                        reportErrorInTSNode(ce, -4, "First parameter of b.sprite must be resolved as constant string");
+                    }
                 }
                 result.sprites.push(si);
             } else if (isBobrilG11NFunction("t", ce, result)) {
@@ -757,10 +709,7 @@ function gatherSourceInfo(
                 if (ce.arguments.length >= 2) {
                     item.withParams = true;
                     let params = evalNode(ce.arguments[1], tc);
-                    item.knownParams =
-                        params != undefined && typeof params === "object"
-                            ? Object.keys(params)
-                            : [];
+                    item.knownParams = params != undefined && typeof params === "object" ? Object.keys(params) : [];
                 }
                 if (ce.arguments.length >= 3) {
                     item.hint = evalNode(ce.arguments[2], tc);
@@ -779,10 +728,7 @@ function gatherSourceInfo(
                 if (ce.arguments.length >= 2) {
                     item.withParams = true;
                     let params = evalNode(ce.arguments[1], tc);
-                    item.knownParams =
-                        params !== undefined && typeof params === "object"
-                            ? Object.keys(params)
-                            : [];
+                    item.knownParams = params !== undefined && typeof params === "object" ? Object.keys(params) : [];
                 }
                 result.trs.push(item);
             } else {
@@ -820,4 +766,20 @@ function gatherSourceInfo(
     }
     visit(source);
     return result;
+}
+
+function reportErrorInTSNode(node: ts.Node, code: number, message: string) {
+    let sf = node.getSourceFile();
+    let locStart = sf.getLineAndCharacterOfPosition(node.getStart());
+    let locEnd = sf.getLineAndCharacterOfPosition(node.getEnd());
+    bb.reportTypeScriptDiagFile(
+        true,
+        code,
+        message,
+        sf.fileName,
+        locStart.line,
+        locStart.character,
+        locEnd.line,
+        locEnd.character
+    );
 }

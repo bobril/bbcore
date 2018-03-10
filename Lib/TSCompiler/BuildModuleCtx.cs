@@ -353,6 +353,8 @@ namespace Lib.TSCompiler
         public string ToOutputUrl(string fileName)
         {
             var assetFileInfo = TSFileAdditionalInfo.Get(_owner.DiskCache.TryGetItem(fileName) as IFileCache, _owner.DiskCache);
+            if (assetFileInfo == null)
+                return fileName;
             if (_owner.ProjectOptions.BundleCss && assetFileInfo.Type == FileCompilationType.Css)
             {
                 return fileName;

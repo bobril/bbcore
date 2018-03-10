@@ -57,9 +57,7 @@ function createCompilerHost(setParentNodes) {
     return {
         getSourceFile: getSourceFile,
         getDefaultLibLocation: function () { return bbDefaultLibLocation; },
-        getDefaultLibFileName: function (options) {
-            return bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options);
-        },
+        getDefaultLibFileName: function (options) { return bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options); },
         writeFile: writeFile,
         getCurrentDirectory: function () { return bbCurrentDirectory; },
         useCaseSensitiveFileNames: function () { return true; },
@@ -377,15 +375,13 @@ function evalNode(n, tc, resolveStringLiteral) {
             var s = tc.getSymbolAtLocation(n);
             if (s == null)
                 return undefined;
-            if ((s.flags & ts.SymbolFlags.Alias) !== 0 &&
-                n.kind === ts.SyntaxKind.PropertyAccessExpression) {
+            if ((s.flags & ts.SymbolFlags.Alias) !== 0 && n.kind === ts.SyntaxKind.PropertyAccessExpression) {
                 if (s.declarations == null || s.declarations.length !== 1)
                     return undefined;
                 var decl = s.declarations[0];
                 return evalNode(decl, tc, resolveStringLiteral);
             }
-            else if ((s.flags & ts.SymbolFlags.Alias) !== 0 &&
-                n.kind === ts.SyntaxKind.Identifier) {
+            else if ((s.flags & ts.SymbolFlags.Alias) !== 0 && n.kind === ts.SyntaxKind.Identifier) {
                 if (s.declarations == null || s.declarations.length !== 1)
                     return undefined;
                 var decl = s.declarations[0];
@@ -406,8 +402,7 @@ function evalNode(n, tc, resolveStringLiteral) {
                     }
                 }
             }
-            else if ((s.flags & ts.SymbolFlags.Property) !== 0 &&
-                n.kind === ts.SyntaxKind.PropertyAccessExpression) {
+            else if ((s.flags & ts.SymbolFlags.Property) !== 0 && n.kind === ts.SyntaxKind.PropertyAccessExpression) {
                 var obj = evalNode(n.expression, tc, resolveStringLiteral);
                 if (typeof obj !== "object")
                     return undefined;
@@ -415,7 +410,8 @@ function evalNode(n, tc, resolveStringLiteral) {
                 return obj[name];
             }
             else if (s.flags & ts.SymbolFlags.Variable) {
-                if (s.valueDeclaration.parent.flags & ts.NodeFlags.Const) {
+                if ((s.valueDeclaration.parent.flags & ts.NodeFlags.Const) !== 0 &&
+                    s.valueDeclaration.initializer != null) {
                     return evalNode(s.valueDeclaration.initializer, tc, resolveStringLiteral);
                 }
             }
@@ -431,8 +427,7 @@ function evalNode(n, tc, resolveStringLiteral) {
             for (var i = 0; i < ole.properties.length; i++) {
                 var prop = ole.properties[i];
                 if (prop.kind === ts.SyntaxKind.PropertyAssignment &&
-                    (prop.name.kind === ts.SyntaxKind.Identifier ||
-                        prop.name.kind === ts.SyntaxKind.StringLiteral)) {
+                    (prop.name.kind === ts.SyntaxKind.Identifier || prop.name.kind === ts.SyntaxKind.StringLiteral)) {
                     var name = prop.name.kind === ts.SyntaxKind.Identifier
                         ? prop.name.text
                         : prop.name.text;
@@ -449,12 +444,11 @@ function evalNode(n, tc, resolveStringLiteral) {
 }
 function isBobrilFunction(name, callExpression, sourceInfo) {
     var text = callExpression.expression.getText();
-    return (text === sourceInfo.bobrilNamespace + "." + name || text === sourceInfo.bobrilImports[name]);
+    return text === sourceInfo.bobrilNamespace + "." + name || text === sourceInfo.bobrilImports[name];
 }
 function isBobrilG11NFunction(name, callExpression, sourceInfo) {
     var text = callExpression.expression.getText();
-    return (text === sourceInfo.bobrilG11NNamespace + "." + name ||
-        text === sourceInfo.bobrilG11NImports[name]);
+    return text === sourceInfo.bobrilG11NNamespace + "." + name || text === sourceInfo.bobrilG11NImports[name];
 }
 function extractBindings(bindings, ns, ims) {
     if (bindings.kind === ts.SyntaxKind.NamedImports) {
@@ -501,10 +495,14 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
         else if (n.kind === ts.SyntaxKind.CallExpression) {
             var ce = n;
             if (isBobrilFunction("asset", ce, result)) {
+                var res = evalNode(ce.arguments[0], tc, resolvePathStringLiteral);
                 result.assets.push({
                     callExpression: ce,
-                    name: evalNode(ce.arguments[0], tc, resolvePathStringLiteral)
+                    name: res
                 });
+                if (res === undefined) {
+                    reportErrorInTSNode(ce, -5, "First parameter of b.asset must be resolved as constant string");
+                }
             }
             else if (isBobrilFunction("sprite", ce, result)) {
                 var si = { callExpression: ce };
@@ -538,8 +536,11 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                                     si.y = res;
                                 break;
                             default:
-                                throw new Error("b.sprite cannot have more than 6 parameters");
+                                reportErrorInTSNode(ce, -6, "b.sprite cannot have more than 6 parameters");
                         }
+                    else if (i === 0) {
+                        reportErrorInTSNode(ce, -4, "First parameter of b.sprite must be resolved as constant string");
+                    }
                 }
                 result.sprites.push(si);
             }
@@ -556,10 +557,7 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                 if (ce.arguments.length >= 2) {
                     item.withParams = true;
                     var params = evalNode(ce.arguments[1], tc);
-                    item.knownParams =
-                        params != undefined && typeof params === "object"
-                            ? Object.keys(params)
-                            : [];
+                    item.knownParams = params != undefined && typeof params === "object" ? Object.keys(params) : [];
                 }
                 if (ce.arguments.length >= 3) {
                     item.hint = evalNode(ce.arguments[2], tc);
@@ -579,10 +577,7 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                 if (ce.arguments.length >= 2) {
                     item.withParams = true;
                     var params = evalNode(ce.arguments[1], tc);
-                    item.knownParams =
-                        params !== undefined && typeof params === "object"
-                            ? Object.keys(params)
-                            : [];
+                    item.knownParams = params !== undefined && typeof params === "object" ? Object.keys(params) : [];
                 }
                 result.trs.push(item);
             }
@@ -621,4 +616,10 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
     }
     visit(source);
     return result;
+}
+function reportErrorInTSNode(node, code, message) {
+    var sf = node.getSourceFile();
+    var locStart = sf.getLineAndCharacterOfPosition(node.getStart());
+    var locEnd = sf.getLineAndCharacterOfPosition(node.getEnd());
+    bb.reportTypeScriptDiagFile(true, code, message, sf.fileName, locStart.line, locStart.character, locEnd.line, locEnd.character);
 }

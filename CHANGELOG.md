@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+*   Showing error if first parameter of b.asset or b.sprite is not constant.
+
 ## 0.15.0
 
 ### Added
