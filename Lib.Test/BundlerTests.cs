@@ -59,6 +59,11 @@ namespace Lib.Test
             {
                 Result[name] = content;
             }
+
+            public IList<string> GetPlainJsDependencies(string name)
+            {
+                return new string[0];
+            }
         }
 
         [Fact]

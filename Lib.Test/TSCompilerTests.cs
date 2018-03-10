@@ -9,6 +9,7 @@ using System.Linq;
 using Lib.TSCompiler;
 using Lib.Composition;
 using System.Runtime.InteropServices;
+using Lib.BuildCache;
 
 namespace Lib.Test
 {
@@ -96,7 +97,6 @@ namespace Lib.Test
                 file._lastWriteTimeUtc = DateTime.UtcNow;
                 file._content = content;
                 file._length = (ulong)Encoding.UTF8.GetByteCount(content);
-                OnFileChange?.Invoke(path);
                 return;
             }
             CreateDir(fad.Item1);
@@ -158,14 +158,14 @@ namespace Lib.Test
         {
             _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore");
             _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"));
-            _tools.SetTypeScriptVersion("2.6.2");
+            _tools.SetTypeScriptVersion("2.7.2");
             _compilerPool = new CompilerPool(_tools);
         }
 
         [Fact]
         public void LatestTypeScriptVersionDidntChanged()
         {
-            Assert.Equal("2.6.2", _tools.TypeScriptVersion);
+            Assert.Equal("2.7.2", _tools.TypeScriptVersion);
         }
 
         [Fact]
@@ -274,6 +274,7 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
 
         BuildResult BuildProject(Action<ProjectOptions> configure = null)
         {
+            dc.CheckForTrueChange();
             var ctx = new BuildCtx(_compilerPool, false);
             var dirCache = dc.TryGetItem(projdir) as IDirectoryCache;
             var proj = TSProject.Get(dirCache, dc);
@@ -284,7 +285,8 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
                 {
                     Tools = _tools,
                     Owner = proj,
-                    Defines = new Dictionary<string, bool> { { "DEBUG", true } }
+                    Defines = new Dictionary<string, bool> { { "DEBUG", true } },
+                    BuildCache = new DummyBuildCache()
                 };
                 proj.LoadProjectJson(true);
                 proj.ProjectOptions.RefreshMainFile();
