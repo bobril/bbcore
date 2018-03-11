@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.16.0
+
 ### Added
 
 *   Creating tsconfig.json
