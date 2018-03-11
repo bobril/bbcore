@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reactive;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Lib.BuildCache;
 using Lib.DiskCache;
 using Lib.Utils;
+using Newtonsoft.Json;
 
 namespace Lib.TSCompiler
 {
@@ -247,6 +250,75 @@ namespace Lib.TSCompiler
                 {
                     return (child as IFileCache).ByteContent;
                 });
+            }
+        }
+
+        public TSCompilerOptions GetDefaultTSCompilerOptions()
+        {
+            return new TSCompilerOptions
+            {
+                sourceMap = true,
+                skipLibCheck = true,
+                skipDefaultLibCheck = true,
+                target = ScriptTarget.ES5,
+                module = ModuleKind.CommonJS,
+                declaration = true,
+                preserveConstEnums = false,
+                jsx = JsxEmit.React,
+                reactNamespace = BobrilJsx ? "b" : "React",
+                experimentalDecorators = true,
+                noEmitHelpers = true,
+                allowJs = true,
+                checkJs = false,
+                removeComments = false,
+                types = new string[0],
+                lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
+            };
+        }
+
+        string _originalContent;
+
+        public void UpdateTSConfigJson()
+        {
+            var fsAbstration = Owner.DiskCache.FsAbstraction;
+            var tsConfigPath = PathUtils.Join(Owner.Owner.FullPath, "tsconfig.json");
+            if (_originalContent == null && fsAbstration.FileExists(tsConfigPath))
+            {
+                try
+                {
+                    _originalContent = fsAbstration.ReadAllUtf8(tsConfigPath);
+                }
+                catch { }
+            }
+            var newConfigObject = new TSConfigJson
+            {
+                compilerOptions = GetDefaultTSCompilerOptions().Merge(CompilerOptions),
+                files = new List<string>(2),
+                include = new List<string> { "**/*" }
+            };
+            if (BobrilJsx)
+            {
+                newConfigObject.files.Add(PathUtils.Subtract(this.BobrilJsxDts, Owner.Owner.FullPath));
+            }
+            if (TestSources.Count>0)
+            {
+                newConfigObject.files.Add(Tools.JasmineDtsPath);
+            }
+            var ss = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
+            ss.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+            var newContent = JsonConvert.SerializeObject(newConfigObject, Formatting.Indented, ss);
+            if (newContent != _originalContent)
+            {
+                try
+                {
+                    File.WriteAllText(tsConfigPath, newContent, new UTF8Encoding(false));
+                }
+                catch {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Writting to " + tsConfigPath + " failed");
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                }
+                _originalContent = newContent;
             }
         }
     }

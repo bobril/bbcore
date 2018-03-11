@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 
 namespace Lib.TSCompiler
@@ -149,6 +150,143 @@ namespace Lib.TSCompiler
                 typeRoots = this.typeRoots,
                 types = this.types
             };
+        }
+
+        public TSCompilerOptions Merge(TSCompilerOptions with)
+        {
+            if (with.allowJs != null)
+                allowJs = with.allowJs;
+            if (with.allowSyntheticDefaultImports != null)
+                allowSyntheticDefaultImports = with.allowSyntheticDefaultImports;
+            if (with.allowUnreachableCode != null)
+                allowUnreachableCode = with.allowUnreachableCode;
+            if (with.allowUnusedLabels != null)
+                allowUnusedLabels = with.allowUnusedLabels;
+            if (with.alwaysStrict != null)
+                alwaysStrict = with.alwaysStrict;
+            if (with.baseUrl != null)
+                baseUrl = with.baseUrl;
+            if (with.charset != null)
+                charset = with.charset;
+            if (with.checkJs != null)
+                checkJs = with.checkJs;
+            if (with.declaration != null)
+                declaration = with.declaration;
+            if (with.declarationDir != null)
+                declarationDir = with.declarationDir;
+            if (with.disableSizeLimit != null)
+                disableSizeLimit = with.disableSizeLimit;
+            if (with.downlevelIteration != null)
+                downlevelIteration = with.downlevelIteration;
+            if (with.emitBOM != null)
+                emitBOM = with.emitBOM;
+            if (with.emitDecoratorMetadata != null)
+                emitDecoratorMetadata = with.emitDecoratorMetadata;
+            if (with.experimentalDecorators != null)
+                experimentalDecorators = with.experimentalDecorators;
+            if (with.forceConsistentCasingInFileNames != null)
+                forceConsistentCasingInFileNames = with.forceConsistentCasingInFileNames;
+            if (with.importHelpers != null)
+                importHelpers = with.importHelpers;
+            if (with.inlineSourceMap != null)
+                inlineSourceMap = with.inlineSourceMap;
+            if (with.inlineSources != null)
+                inlineSources = with.inlineSources;
+            if (with.isolatedModules != null)
+                isolatedModules = with.isolatedModules;
+            if (with.jsx != null)
+                jsx = with.jsx;
+            if (with.jsxFactory != null)
+                jsxFactory = with.jsxFactory;
+            if (with.lib != null)
+                lib = with.lib;
+            if (with.locale != null)
+                locale = with.locale;
+            if (with.mapRoot != null)
+                mapRoot = with.mapRoot;
+            if (with.maxNodeModuleJsDepth != null)
+                maxNodeModuleJsDepth = with.maxNodeModuleJsDepth;
+            if (with.module != null)
+                module = with.module;
+            if (with.moduleResolution != null)
+                moduleResolution = with.moduleResolution;
+            if (with.newLine != null)
+                newLine = with.newLine;
+            if (with.noEmit != null)
+                noEmit = with.noEmit;
+            if (with.noEmitHelpers != null)
+                noEmitHelpers = with.noEmitHelpers;
+            if (with.noEmitOnError != null)
+                noEmitOnError = with.noEmitOnError;
+            if (with.noErrorTruncation != null)
+                noErrorTruncation = with.noErrorTruncation;
+            if (with.noFallthroughCasesInSwitch != null)
+                noFallthroughCasesInSwitch = with.noFallthroughCasesInSwitch;
+            if (with.noImplicitAny != null)
+                noImplicitAny = with.noImplicitAny;
+            if (with.noImplicitReturns != null)
+                noImplicitReturns = with.noImplicitReturns;
+            if (with.noImplicitThis != null)
+                noImplicitThis = with.noImplicitThis;
+            if (with.noImplicitUseStrict != null)
+                noImplicitUseStrict = with.noImplicitUseStrict;
+            if (with.noLib != null)
+                noLib = with.noLib;
+            if (with.noResolve != null)
+                noResolve = with.noResolve;
+            if (with.noStrictGenericChecks != null)
+                noStrictGenericChecks = with.noStrictGenericChecks;
+            if (with.noUnusedLocals != null)
+                noUnusedLocals = with.noUnusedLocals;
+            if (with.noUnusedParameters != null)
+                noUnusedParameters = with.noUnusedParameters;
+            if (with.outDir != null)
+                outDir = with.outDir;
+            if (with.outFile != null)
+                outFile = with.outFile;
+            if (with.paths != null)
+                paths = with.paths;
+            if (with.preserveConstEnums != null)
+                preserveConstEnums = with.preserveConstEnums;
+            if (with.project != null)
+                project = with.project;
+            if (with.reactNamespace != null)
+                reactNamespace = with.reactNamespace;
+            if (with.removeComments != null)
+                removeComments = with.removeComments;
+            if (with.rootDir != null)
+                rootDir = with.rootDir;
+            if (with.rootDirs != null)
+                rootDirs = with.rootDirs;
+            if (with.skipDefaultLibCheck != null)
+                skipDefaultLibCheck = with.skipDefaultLibCheck;
+            if (with.skipLibCheck != null)
+                skipLibCheck = with.skipLibCheck;
+            if (with.sourceMap != null)
+                sourceMap = with.sourceMap;
+            if (with.sourceRoot != null)
+                sourceRoot = with.sourceRoot;
+            if (with.strict != null)
+                strict = with.strict;
+            if (with.strictFunctionTypes != null)
+                strictFunctionTypes = with.strictFunctionTypes;
+            if (with.strictNullChecks != null)
+                strictNullChecks = with.strictNullChecks;
+            if (with.strictPropertyInitialization != null)
+                strictPropertyInitialization = with.strictPropertyInitialization;
+            if (with.suppressExcessPropertyErrors != null)
+                suppressExcessPropertyErrors = with.suppressExcessPropertyErrors;
+            if (with.suppressImplicitAnyIndexErrors != null)
+                suppressImplicitAnyIndexErrors = with.suppressImplicitAnyIndexErrors;
+            if (with.target != null)
+                target = with.target;
+            if (with.traceResolution != null)
+                traceResolution = with.traceResolution;
+            if (with.typeRoots != null)
+                typeRoots = with.typeRoots;
+            if (with.types != null)
+                types = with.types;
+            return this;
         }
     }
 }

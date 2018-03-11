@@ -4,6 +4,7 @@
 
 ### Added
 
+*   Creating tsconfig.json
 *   Showing error if first parameter of b.asset or b.sprite is not constant.
 *   Fixed consistency of bobril-build specific diagnostic messages and made list of them in README
 

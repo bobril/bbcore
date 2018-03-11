@@ -148,7 +148,7 @@ namespace Lib.Composition
                     proj.DetectBobrilJsxDts();
                     proj.RefreshExampleSources();
                     var ctx = new BuildCtx(_compilerPool, _verbose);
-                    ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
+                    ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
                     ctx.Sources = new HashSet<string>();
                     ctx.Sources.Add(proj.MainFile);
                     proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
@@ -231,7 +231,7 @@ namespace Lib.Composition
                     if (proj.TestSources != null && proj.TestSources.Count > 0)
                     {
                         var ctx = new BuildCtx(_compilerPool, _verbose);
-                        ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
+                        ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
                         ctx.Sources = new HashSet<string>();
                         ctx.Sources.Add(proj.JasmineDts);
                         proj.TestSources.ForEach(s => ctx.Sources.Add(s));
@@ -595,8 +595,9 @@ namespace Lib.Composition
                             proj.SpriterInitialization();
                             proj.DetectBobrilJsxDts();
                             proj.RefreshExampleSources();
+                            proj.UpdateTSConfigJson();
                             var ctx = new BuildCtx(_compilerPool, _verbose);
-                            ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
+                            ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
                             ctx.Sources = new HashSet<string>();
                             ctx.Sources.Add(proj.MainFile);
                             proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
@@ -621,7 +622,7 @@ namespace Lib.Composition
                             if (proj.TestSources != null && proj.TestSources.Count > 0)
                             {
                                 ctx = new BuildCtx(_compilerPool, _verbose);
-                                ctx.TSCompilerOptions = GetDefaultTSCompilerOptions(proj);
+                                ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
                                 ctx.Sources = new HashSet<string>();
                                 ctx.Sources.Add(proj.JasmineDts);
                                 proj.TestSources.ForEach(s => ctx.Sources.Add(s));
@@ -710,27 +711,6 @@ namespace Lib.Composition
                     });
                 }
             }
-        }
-
-        static TSCompilerOptions GetDefaultTSCompilerOptions(ProjectOptions proj)
-        {
-            return new TSCompilerOptions
-            {
-                sourceMap = true,
-                skipLibCheck = true,
-                skipDefaultLibCheck = true,
-                target = ScriptTarget.ES5,
-                preserveConstEnums = false,
-                jsx = JsxEmit.React,
-                reactNamespace = proj.BobrilJsx ? "b" : "React",
-                experimentalDecorators = true,
-                noEmitHelpers = true,
-                allowJs = true,
-                checkJs = false,
-                removeComments = false,
-                types = new string[0],
-                lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
-            };
         }
 
         public void StartChromeTest()

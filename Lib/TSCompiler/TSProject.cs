@@ -13,7 +13,7 @@ namespace Lib.TSCompiler
     {
         bool WasFirstInitialize;
 
-        const string DefaultTypeScriptVersion = "2.7.2";
+        public const string DefaultTypeScriptVersion = "2.7.2";
 
         public IDiskCache DiskCache { get; set; }
         public IDirectoryCache Owner { get; set; }
@@ -149,10 +149,6 @@ namespace Lib.TSCompiler
             ProjectOptions.BobrilJsx = true;
             ProjectOptions.CompilerOptions = bobrilSection != null ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject) : null;
             ProjectOptions.DependencyUpdate = String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
-            if (bobrilSection == null)
-            {
-                return;
-            }
         }
 
         DepedencyUpdate String2DependencyUpdate(string value)
