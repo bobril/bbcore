@@ -24,6 +24,5 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
 | -1     | Warn     | Local import has wrong casing                                   |
 | -2     | Warn     | Module import has wrong casing                                  |
 | -3     | Error    | Missing dependency                                              |
-| -4     | Error    | First parameter of b.sprite must be resolved as constant string |
 | -5     | Error    | First parameter of b.asset must be resolved as constant string  |
 | -6     | Error    | b.sprite cannot have more than 6 parameters                     |

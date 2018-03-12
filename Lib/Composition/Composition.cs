@@ -76,10 +76,10 @@ namespace Lib.Composition
             {
                 if (commonParams.Verbose.Value)
                     _verbose = true;
-                if (commonParams.NoBuildCache.Value)
+                //if (commonParams.NoBuildCache.Value)
                     _buildCache = new DummyBuildCache();
-                else
-                    _buildCache = new PersistentBuildCache(_tools.Path);
+                //else
+                //    _buildCache = new PersistentBuildCache(_tools.Path);
             }
             if (_command is BuildInteractiveCommand iCommand)
             {

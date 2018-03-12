@@ -538,9 +538,6 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                             default:
                                 reportErrorInTSNode(ce, -6, "b.sprite cannot have more than 6 parameters");
                         }
-                    else if (i === 0) {
-                        reportErrorInTSNode(ce, -4, "First parameter of b.sprite must be resolved as constant string");
-                    }
                 }
                 result.sprites.push(si);
             }

@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   First parameter of b.sprite does not need to be constant.
+*   Temporary disabling build cache to workaround problem with const evaluation across modules.
+
 ## 0.16.0
 
 ### Added
