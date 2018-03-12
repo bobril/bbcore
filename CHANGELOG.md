@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.17.0
+
 ### Fixed
 
 *   First parameter of b.sprite does not need to be constant.
