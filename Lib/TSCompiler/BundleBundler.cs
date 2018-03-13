@@ -41,7 +41,7 @@ namespace Lib.TSCompiler
                 {
                     if (source.Value.Output == null)
                         continue; // Skip d.ts
-                    _jsFilesContent[PathUtils.ChangeExtension(source.Key, "js")] = source.Value.Output;
+                    _jsFilesContent[PathUtils.ChangeExtension(source.Key, "js").ToLowerInvariant()] = source.Value.Output;
                 }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
@@ -133,7 +133,7 @@ namespace Lib.TSCompiler
 
         public string ReadContent(string name)
         {
-            if (_jsFilesContent.TryGetValue(name, out var content))
+            if (_jsFilesContent.TryGetValue(name.ToLowerInvariant(), out var content))
             {
                 return content;
             }
