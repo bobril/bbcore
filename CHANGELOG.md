@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Off by one error in SourceMap resolver
+*   Source code could be js(x) and not just ts(x)
+
 ## 0.17.2
 
 ## 0.17.1

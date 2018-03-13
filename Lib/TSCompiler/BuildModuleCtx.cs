@@ -50,6 +50,11 @@ namespace Lib.TSCompiler
                 TSFileAdditionalInfo sourceForJs = null;
                 if (!_result.Path2FileInfo.TryGetValue(sourceName, out sourceForJs))
                     _result.Path2FileInfo.TryGetValue(sourceName + "x", out sourceForJs);
+                if (sourceForJs == null)
+                {
+                    if (!_result.Path2FileInfo.TryGetValue(fullPath, out sourceForJs))
+                        _result.Path2FileInfo.TryGetValue(fullPath + "x", out sourceForJs);
+                }
                 sourceForJs.Output = data;
                 _result.RecompiledLast.Add(sourceForJs);
                 TrullyCompiledCount++;

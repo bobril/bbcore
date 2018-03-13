@@ -44,7 +44,7 @@ namespace Lib.Utils
 
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this,new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+            return JsonConvert.SerializeObject(this, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
         }
 
         public static SourceMap Empty()
@@ -61,7 +61,8 @@ namespace Lib.Utils
             var sb = new StringBuilder();
             sb.Append("AAAA");
             for (var i = 0; i < content.Length; i++)
-                if (content[i] == '\n') sb.Append(";AACA");
+                if (content[i] == '\n')
+                    sb.Append(";AACA");
             return new SourceMap
             {
                 sources = new List<string> { fileName },
@@ -72,7 +73,8 @@ namespace Lib.Utils
         public static SourceMap Parse(string content, string dir)
         {
             var res = JsonConvert.DeserializeObject<SourceMap>(content);
-            if (res.version != 3) throw new Exception("Invalid Source Map version " + res.version);
+            if (res.version != 3)
+                throw new Exception("Invalid Source Map version " + res.version);
             if (dir != null)
             {
                 res.sources = res.sources.Select(s => PathUtils.Join(dir, s)).ToList();
@@ -85,7 +87,8 @@ namespace Lib.Utils
             var pos = content.Length - 3;
             while (pos >= 0)
             {
-                if (content[pos] == 10) break;
+                if (content[pos] == 10)
+                    break;
                 pos--;
             }
             if (pos < content.Length - 5)
@@ -102,7 +105,8 @@ namespace Lib.Utils
             var outputLineCount = 1;
             for (var i = 0; i < inputMappings.Length; i++)
             {
-                if (inputMappings[i] == ';') outputLineCount++;
+                if (inputMappings[i] == ';')
+                    outputLineCount++;
             }
             _searchCache = new SourceMapPositionTrinity[outputLineCount / CacheLineSkip];
             var ip = 0;
@@ -134,7 +138,8 @@ namespace Lib.Utils
                 else
                 {
                     var b = (int)SourceMapBuilder.char2int[ch];
-                    if (b == 255) throw new Exception("Invalid sourceMap");
+                    if (b == 255)
+                        throw new Exception("Invalid sourceMap");
                     value += (b & 31) << shift;
                     if ((b & 32) != 0)
                     {
@@ -144,12 +149,19 @@ namespace Lib.Utils
                     {
                         var shouldNegate = value & 1;
                         value >>= 1;
-                        if (shouldNegate != 0) value = -value;
+                        if (shouldNegate != 0)
+                            value = -value;
                         switch (valpos)
                         {
-                            case 1: inSourceIndex += value; break;
-                            case 2: inSourceLine += value; break;
-                            case 3: inSourceCol += value; break;
+                            case 1:
+                                inSourceIndex += value;
+                                break;
+                            case 2:
+                                inSourceLine += value;
+                                break;
+                            case 3:
+                                inSourceCol += value;
+                                break;
                         }
                         valpos++;
                         value = shift = 0;
@@ -182,8 +194,8 @@ namespace Lib.Utils
             var res = new SourceCodePosition();
             if (line > CacheLineSkip)
             {
-                var pos = (uint)(line - 1) / CacheLineSkip - 1;
-                ref var entry = ref _searchCache[pos-1];
+                var pos = (uint)(line - 1) / CacheLineSkip;
+                ref var entry = ref _searchCache[pos - 1];
                 outputLine = (int)(pos * CacheLineSkip);
                 ip = entry.Pos;
                 inSourceIndex = entry.Index;
@@ -195,10 +207,12 @@ namespace Lib.Utils
             }
             void commit()
             {
-                if (valpos == 0) return;
+                if (valpos == 0)
+                    return;
                 if (outputLine == line && lastOutputCol <= col && col <= inOutputCol)
                 {
-                    if (lastSourceIndex < 0) return;
+                    if (lastSourceIndex < 0)
+                        return;
                     res.SourceName = sources[inSourceIndex];
                     res.Line = lastSourceLine + 1;
                     res.Col = lastSourceCol + col - lastOutputCol;
@@ -241,7 +255,8 @@ namespace Lib.Utils
                 else
                 {
                     var b = (int)SourceMapBuilder.char2int[ch];
-                    if (b == 255) throw new Exception("Invalid sourceMap");
+                    if (b == 255)
+                        throw new Exception("Invalid sourceMap");
                     value += (b & 31) << shift;
                     if ((b & 32) != 0)
                     {
@@ -251,13 +266,22 @@ namespace Lib.Utils
                     {
                         var shouldNegate = value & 1;
                         value >>= 1;
-                        if (shouldNegate != 0) value = -value;
+                        if (shouldNegate != 0)
+                            value = -value;
                         switch (valpos)
                         {
-                            case 0: inOutputCol += value; break;
-                            case 1: inSourceIndex += value; break;
-                            case 2: inSourceLine += value; break;
-                            case 3: inSourceCol += value; break;
+                            case 0:
+                                inOutputCol += value;
+                                break;
+                            case 1:
+                                inSourceIndex += value;
+                                break;
+                            case 2:
+                                inSourceLine += value;
+                                break;
+                            case 3:
+                                inSourceCol += value;
+                                break;
                         }
                         valpos++;
                         value = shift = 0;
