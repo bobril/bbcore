@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.18.0
+
 ### Fixed
 
 *   Off by one error in SourceMap resolver
