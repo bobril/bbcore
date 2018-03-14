@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.18.1
+
 ### Fixed
 
 *   Bundling should ignore filename casing errors
