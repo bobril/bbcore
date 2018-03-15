@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.19.0
+
 ### Added
 
 *   Eval const node works across d.ts -> ts transition.
