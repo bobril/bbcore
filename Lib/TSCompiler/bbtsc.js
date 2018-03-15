@@ -120,7 +120,10 @@ function bbCreateProgram(rootNames) {
     program = ts.createProgram(rootNames.split("|"), compilerOptions, createCompilerHost());
     typeChecker = program.getTypeChecker();
 }
+var wasError = false;
 function reportDiagnostic(diagnostic) {
+    if (diagnostic.category === ts.DiagnosticCategory.Error)
+        wasError = true;
     if (diagnostic.file) {
         var locStart = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
         var locEnd = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start + diagnostic.length);
@@ -273,7 +276,70 @@ function sliceAndPad(args, start, end) {
     }
     return res;
 }
+var evalSourceCache = new Map();
+function evalTrueSourceByExportName(dtsFileName, varName, resolveStringLiteral) {
+    if (!dtsFileName.endsWith(".d.ts"))
+        return undefined;
+    dtsFileName = dtsFileName.substr(0, dtsFileName.length - 4);
+    var changeId;
+    var ext = ["ts", "tsx", "jsx", "js"].find(function (ext) { return (changeId = bb.getChangeId(dtsFileName + ext)) != null; });
+    if (ext === undefined)
+        return undefined;
+    var sourceName = dtsFileName + ext;
+    var sc = evalSourceCache.get(sourceName);
+    if (sc !== undefined) {
+        if (sc.changeId !== changeId)
+            sc = undefined;
+    }
+    if (sc === undefined) {
+        var program_1 = ts.createProgram([sourceName], compilerOptions, createCompilerHost());
+        var typeChecker_1 = program_1.getTypeChecker();
+        var diagnostics = program_1.getSyntacticDiagnostics();
+        wasError = false;
+        reportDiagnostics(diagnostics);
+        if (diagnostics.length === 0) {
+            var diagnostics_3 = program_1.getGlobalDiagnostics();
+            reportDiagnostics(diagnostics_3);
+            if (diagnostics_3.length === 0) {
+                var diagnostics_4 = program_1.getSemanticDiagnostics();
+                reportDiagnostics(diagnostics_4);
+            }
+        }
+        if (wasError) {
+            bb.trace("Should not happen but compiling " + sourceName + " we got errors export name:" + varName);
+            return undefined;
+        }
+        sc = {
+            changeId: changeId,
+            program: program_1,
+            typeChecker: typeChecker_1
+        };
+        evalSourceCache.set(sourceName, sc);
+    }
+    var program = sc.program;
+    var typeChecker = sc.typeChecker;
+    var sourceAst = program.getSourceFile(sourceName);
+    var s = typeChecker.tryGetMemberInModuleExports(varName, typeChecker.getSymbolAtLocation(sourceAst));
+    if (s == null)
+        return undefined;
+    if (s.flags & ts.SymbolFlags.Variable) {
+        var varDecl = s.valueDeclaration;
+        if ((varDecl.parent.flags & ts.NodeFlags.Const) !== 0) {
+            if (varDecl.initializer != null) {
+                return evalNode(varDecl.initializer, typeChecker, resolveStringLiteral);
+            }
+            else {
+                bb.trace("initializer null in evalTrueSourceByExportName " + dtsFileName + " " + varName);
+            }
+        }
+    }
+    return undefined;
+}
+function traceNode(n) {
+    bb.trace(n.getSourceFile().fileName + " " + ts.SyntaxKind[n.kind]);
+}
 function evalNode(n, tc, resolveStringLiteral) {
+    //traceNode(n);
     switch (n.kind) {
         case ts.SyntaxKind.StringLiteral: {
             var nn = n;
@@ -410,9 +476,16 @@ function evalNode(n, tc, resolveStringLiteral) {
                 return obj[name];
             }
             else if (s.flags & ts.SymbolFlags.Variable) {
-                if ((s.valueDeclaration.parent.flags & ts.NodeFlags.Const) !== 0 &&
-                    s.valueDeclaration.initializer != null) {
-                    return evalNode(s.valueDeclaration.initializer, tc, resolveStringLiteral);
+                var varDecl = s.valueDeclaration;
+                if ((varDecl.parent.flags & ts.NodeFlags.Const) !== 0) {
+                    if (varDecl.initializer != null) {
+                        return evalNode(varDecl.initializer, tc, resolveStringLiteral);
+                    }
+                    else {
+                        var dtsFileName = varDecl.getSourceFile().fileName;
+                        var varName = varDecl.name.text;
+                        return evalTrueSourceByExportName(dtsFileName, varName, resolveStringLiteral);
+                    }
                 }
             }
             return undefined;

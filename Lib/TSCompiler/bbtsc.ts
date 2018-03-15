@@ -156,7 +156,10 @@ function bbCreateProgram(rootNames: string) {
     typeChecker = program.getTypeChecker();
 }
 
+let wasError = false;
+
 function reportDiagnostic(diagnostic: ts.Diagnostic) {
+    if (diagnostic.category === ts.DiagnosticCategory.Error) wasError = true;
     if (diagnostic.file) {
         var locStart = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
         var locEnd = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start! + diagnostic.length!);
@@ -375,7 +378,78 @@ function sliceAndPad(args: ts.NodeArray<ts.Expression>, start: number, end: numb
     return res;
 }
 
+interface SourceCache {
+    changeId: number;
+    program: ts.Program;
+    typeChecker: ts.TypeChecker;
+}
+
+let evalSourceCache = new Map<string, SourceCache>();
+
+function evalTrueSourceByExportName(
+    dtsFileName: string,
+    varName: string,
+    resolveStringLiteral?: (sl: ts.StringLiteral) => string
+): any {
+    if (!dtsFileName.endsWith(".d.ts")) return undefined;
+    dtsFileName = dtsFileName.substr(0, dtsFileName.length - 4);
+    let changeId: number | undefined;
+    let ext = ["ts", "tsx", "jsx", "js"].find(ext => (changeId = bb.getChangeId(dtsFileName + ext)) != null);
+    if (ext === undefined) return undefined;
+    let sourceName = dtsFileName + ext;
+    var sc = evalSourceCache.get(sourceName);
+    if (sc !== undefined) {
+        if (sc.changeId !== changeId) sc = undefined;
+    }
+    if (sc === undefined) {
+        let program = ts.createProgram([sourceName], compilerOptions, createCompilerHost());
+        let typeChecker = program.getTypeChecker();
+        let diagnostics = program.getSyntacticDiagnostics();
+        wasError = false;
+        reportDiagnostics(diagnostics);
+        if (diagnostics.length === 0) {
+            let diagnostics = program.getGlobalDiagnostics();
+            reportDiagnostics(diagnostics);
+            if (diagnostics.length === 0) {
+                let diagnostics = program.getSemanticDiagnostics();
+                reportDiagnostics(diagnostics);
+            }
+        }
+        if (wasError) {
+            bb.trace("Should not happen but compiling " + sourceName + " we got errors export name:" + varName);
+            return undefined;
+        }
+        sc = {
+            changeId: changeId!,
+            program,
+            typeChecker
+        };
+        evalSourceCache.set(sourceName, sc);
+    }
+    let program = sc.program;
+    let typeChecker = sc.typeChecker;
+    let sourceAst = program.getSourceFile(sourceName);
+    let s = typeChecker.tryGetMemberInModuleExports(varName, typeChecker.getSymbolAtLocation(sourceAst)!);
+    if (s == null) return undefined;
+    if (s.flags & ts.SymbolFlags.Variable) {
+        let varDecl = <ts.VariableDeclaration>s.valueDeclaration;
+        if ((varDecl.parent!.flags & ts.NodeFlags.Const) !== 0) {
+            if (varDecl.initializer != null) {
+                return evalNode(varDecl.initializer, typeChecker, resolveStringLiteral);
+            } else {
+                bb.trace("initializer null in evalTrueSourceByExportName " + dtsFileName + " " + varName);
+            }
+        }
+    }
+    return undefined;
+}
+
+function traceNode(n: ts.Node) {
+    bb.trace(n.getSourceFile().fileName + " " + (<any>ts).SyntaxKind[n.kind]);
+}
+
 function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts.StringLiteral) => string): any {
+    //traceNode(n);
     switch (n.kind) {
         case ts.SyntaxKind.StringLiteral: {
             let nn = <ts.StringLiteral>n;
@@ -504,15 +578,15 @@ function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts
                 let name = (<ts.PropertyAccessExpression>n).name.text;
                 return obj[name];
             } else if (s.flags & ts.SymbolFlags.Variable) {
-                if (
-                    (s.valueDeclaration!.parent!.flags & ts.NodeFlags.Const) !== 0 &&
-                    (<ts.VariableDeclaration>s.valueDeclaration).initializer != null
-                ) {
-                    return evalNode(
-                        (<ts.VariableDeclaration>s.valueDeclaration).initializer!,
-                        tc,
-                        resolveStringLiteral
-                    );
+                let varDecl = <ts.VariableDeclaration>s.valueDeclaration;
+                if ((varDecl.parent!.flags & ts.NodeFlags.Const) !== 0) {
+                    if (varDecl.initializer != null) {
+                        return evalNode(varDecl.initializer, tc, resolveStringLiteral);
+                    } else {
+                        let dtsFileName = varDecl.getSourceFile().fileName;
+                        let varName = (<ts.Identifier>varDecl.name).text;
+                        return evalTrueSourceByExportName(dtsFileName, varName, resolveStringLiteral);
+                    }
                 }
             }
             return undefined;

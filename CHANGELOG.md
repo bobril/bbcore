@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Added
+
+*   Eval const node works across d.ts -> ts transition.
+*   Reenabled build cache.
+
+### Fixed
+
+*   Crash when package.json does not have compiler options.
+
 ## 0.18.1
 
 ### Fixed

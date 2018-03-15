@@ -154,6 +154,8 @@ namespace Lib.TSCompiler
 
         public TSCompilerOptions Merge(TSCompilerOptions with)
         {
+            if (with == null)
+                return this;
             if (with.allowJs != null)
                 allowJs = with.allowJs;
             if (with.allowSyntheticDefaultImports != null)
