@@ -106,7 +106,7 @@ namespace Lib.TSCompiler
 
         void BuildFastBundlerIndexHtml(string cssLink)
         {
-            _indexHtml = $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{Project.HtmlHeadExpanded}<title>{Project.Title}</title>{cssLink}</head><body>{InitG11n()}<script type=""text/javascript"" src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
+            _indexHtml = $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{Project.HtmlHeadExpanded}<title>{Project.Title}</title>{cssLink}</head><body>{InitG11n()}<script src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
         }
 
         string InitG11n()

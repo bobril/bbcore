@@ -1,20 +1,19 @@
-var __bbb={};!function(e) {
+var __bbb={};!function(o) {
     "use strict";
-    var n = function(n, o) {
-        var t = __bbb[o];
-        return t !== e ? t instanceof Promise ? t : Promise.resolve(t) : __bbb[o] = new Promise(function(e, t) {
-            var r = document.createElement("script");
-            r.type = "text/javascript", r.charset = "utf-8", r.onload = function() {
-                e(__bbb[o]);
-            }, r.onerror = function(e) {
-                t("Failed to load " + n);
-            }, r.src = n, document.head.appendChild(r);
-        });
+    var e = function(e, n) {
+        var r = __bbb, t = r[n];
+        return t !== o ? t instanceof Promise ? t : Promise.resolve(t) : (t = new Promise(function(c, i) {
+            var a = document.createElement("script"), l = setTimeout(s, 12e4);
+            function s() {
+                a.onload = a.onerror = o, clearTimeout(l), r[n] === t ? (r[n] = o, i(Error("Fail to load " + e))) : c(r[n]);
+            }
+            a.charset = "utf-8", a.onload = a.onerror = s, a.src = e, document.head.appendChild(a);
+        }), r[n] = t);
     };
-    function o() {
+    function n() {
         console.log("shared");
     }
-    o(), n("lib.js", "a").then(function(e) {
-        console.log(e.hello());
-    }), __bbb.b = o;
+    n(), e("lib.js", "a").then(function(o) {
+        console.log(o.hello());
+    }), __bbb.b = n;
 }();

@@ -146,15 +146,15 @@ namespace Lib.TSCompiler
         <title>{Project.Title}</title>{cssLink}
     </head>
     <body>{InitG11n()}
-        <script type=""text/javascript"" src=""jasmine-core.js"" charset=""utf-8""></script>
-        <script type=""text/javascript"" src=""jasmine-boot.js"" charset=""utf-8""></script>
-        <script type=""text/javascript"" src=""loader.js"" charset=""utf-8""></script>
-        <script type=""text/javascript"">
+        <script src=""jasmine-core.js"" charset=""utf-8""></script>
+        <script src=""jasmine-boot.js"" charset=""utf-8""></script>
+        <script src=""loader.js"" charset=""utf-8""></script>
+        <script>
             {GetGlobalDefines()}
             {GetModuleMap()}
         </script>
-        <script type=""text/javascript"" src=""testbundle.js"" charset=""utf-8""></script>
-        <script type=""text/javascript"">
+        <script src=""testbundle.js"" charset=""utf-8""></script>
+        <script>
             {RequireBobril()} {reqSpec}
         </script>
     </body>
@@ -167,7 +167,7 @@ namespace Lib.TSCompiler
             var liveReloadInclude = "";
             if (Project.LiveReloadEnabled)
             {
-                liveReloadInclude = $@"<script type=""text/javascript"" src=""{_versionDirPrefix}liveReload.js"" charset=""utf-8""></script>";
+                liveReloadInclude = $@"<script src=""{_versionDirPrefix}liveReload.js"" charset=""utf-8""></script>";
             }
                 _indexHtml = $@"<!DOCTYPE html>
 <html>
@@ -176,13 +176,13 @@ namespace Lib.TSCompiler
         <title>{Project.Title}</title>{cssLink}
     </head>
     <body>{InitG11n()}
-        <script type=""text/javascript"" src=""{_versionDirPrefix}loader.js"" charset=""utf-8""></script>{liveReloadInclude}
-        <script type=""text/javascript"">
+        <script src=""{_versionDirPrefix}loader.js"" charset=""utf-8""></script>{liveReloadInclude}
+        <script>
             {GetGlobalDefines()}
             {GetModuleMap()}
         </script>
-        <script type=""text/javascript"" src=""{_versionDirPrefix}bundle.js"" charset=""utf-8""></script>
-        <script type=""text/javascript"">
+        <script src=""{_versionDirPrefix}bundle.js"" charset=""utf-8""></script>
+        <script>
             {RequireBobril()}
             R.r('{mainModule}');
         </script>

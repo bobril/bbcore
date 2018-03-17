@@ -1,15 +1,16 @@
 var __bbb={};!function(undefined) {
     "use strict";
     (function(url, prop) {
-        var res = __bbb[prop];
-        return res !== undefined ? res instanceof Promise ? res : Promise.resolve(res) : __bbb[prop] = new Promise(function(r, e) {
-            var script = document.createElement("script");
-            script.type = "text/javascript", script.charset = "utf-8", script.onload = function() {
-                r(__bbb[prop]);
-            }, script.onerror = function(_ev) {
-                e("Failed to load " + url);
-            }, script.src = url, document.head.appendChild(script);
-        });
+        var bbb = __bbb, res = bbb[prop];
+        return res !== undefined ? res instanceof Promise ? res : Promise.resolve(res) : (res = new Promise(function(r, e) {
+            var script = document.createElement("script"), timeout = setTimeout(handle, 12e4);
+            function handle() {
+                script.onload = script.onerror = undefined, clearTimeout(timeout), bbb[prop] === res ? (bbb[prop] = undefined, 
+                e(Error("Fail to load " + url))) : r(bbb[prop]);
+            }
+            script.charset = "utf-8", script.onload = script.onerror = handle, script.src = url, 
+            document.head.appendChild(script);
+        }), bbb[prop] = res);
     })("lib.js", "a").then(function(lib) {
         console.log(lib.hello());
     });

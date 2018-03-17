@@ -249,24 +249,29 @@ var __bbb={};(function(undefined) {
         return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
     };
     var __import = function(url, prop) {
-        var res = __bbb[prop];
+        var bbb = __bbb;
+        var res = bbb[prop];
         if (res !== undefined) {
             if (res instanceof Promise) return res;
             return Promise.resolve(res);
         }
-        return __bbb[prop] = new Promise(function(r, e) {
+        res = new Promise(function(r, e) {
             var script = document.createElement("script");
-            script.type = "text/javascript";
+            var timeout = setTimeout(handle, 12e4);
+            function handle() {
+                script.onload = script.onerror = undefined;
+                clearTimeout(timeout);
+                if (bbb[prop] === res) {
+                    bbb[prop] = undefined;
+                    e(new Error("Fail to load " + url));
+                } else r(bbb[prop]);
+            }
             script.charset = "utf-8";
-            script.onload = function() {
-                r(__bbb[prop]);
-            };
-            script.onerror = function(_ev) {
-                e("Failed to load " + url);
-            };
+            script.onload = script.onerror = handle;
             script.src = url;
             document.head.appendChild(script);
         });
+        return bbb[prop] = res;
     };
     var DEBUG = false;
     __import("lib.js", "a").then(function(lib) {
