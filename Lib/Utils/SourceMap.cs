@@ -205,18 +205,22 @@ namespace Lib.Utils
                 lastSourceLine = inSourceLine;
                 lastSourceCol = inSourceCol;
             }
-            void commit()
+            bool commit()
             {
+                if (outputLine > line)
+                    return true;
                 if (valpos == 0)
-                    return;
+                {
+                    return false;
+                }
                 if (outputLine == line && lastOutputCol <= col && col <= inOutputCol)
                 {
                     if (lastSourceIndex < 0)
-                        return;
-                    res.SourceName = sources[inSourceIndex];
+                        return false;
+                    res.SourceName = sources[lastSourceIndex];
                     res.Line = lastSourceLine + 1;
                     res.Col = lastSourceCol + col - lastOutputCol;
-                    return;
+                    return true;
                 }
                 if (valpos == 1)
                 {
@@ -232,25 +236,28 @@ namespace Lib.Utils
                         res.SourceName = sources[inSourceIndex];
                         res.Line = inSourceLine + 1;
                         res.Col = inSourceCol;
-                        return;
+                        return true;
                     }
                 }
                 lastOutputCol = inOutputCol;
                 valpos = 0;
+                return false;
             }
             while (ip < inputMappings.Length)
             {
                 var ch = inputMappings[ip++];
                 if (ch == ';')
                 {
-                    commit();
+                    if (commit())
+                        return res;
                     inOutputCol = 0;
                     lastOutputCol = 0;
                     outputLine++;
                 }
                 else if (ch == ',')
                 {
-                    commit();
+                    if (commit())
+                        return res;
                 }
                 else
                 {
@@ -291,7 +298,6 @@ namespace Lib.Utils
             commit();
             return res;
         }
-
     }
 }
 

@@ -6,6 +6,7 @@
 
 *   import lazy load script now inspired by Webpack (supports timeout, allows retry on failure, does not memory leak)
 *   html output made smaller.
+*   speed of resolving sourcemaps
 
 ## 0.19.0
 
