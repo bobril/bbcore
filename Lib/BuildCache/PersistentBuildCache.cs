@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using BTDB.KVDBLayer;
 using BTDB.ODBLayer;
 using Lib.Utils;
@@ -17,15 +18,26 @@ namespace Lib.BuildCache
         Func<IObjectDBTransaction, ITSConfigurationTable> _tsConfiguration;
         Func<IObjectDBTransaction, ITSFileBuildCacheTable> _tsRelation;
         IObjectDBTransaction _tr;
+        Mutex _mutex;
 
         public PersistentBuildCache(string dir)
         {
-            _dir = dir + "/cache";
+            var cacheIndex = 0;
+            while (_mutex == null)
+            {
+                _mutex = new Mutex(false, @"Global\bbcoreCache" + cacheIndex);
+                if (_mutex.WaitOne(10))
+                    break;
+                _mutex.Dispose();
+                cacheIndex++;
+            }
+            _dir = dir + "/cache" + (cacheIndex == 0 ? "" : cacheIndex.ToString());
             if (!new DirectoryInfo(_dir).Exists)
                 Directory.CreateDirectory(_dir);
 
             _diskFileCollection = new OnDiskFileCollection(_dir);
-            _kvdb = new KeyValueDB(new KeyValueDBOptions {
+            _kvdb = new KeyValueDB(new KeyValueDBOptions
+            {
                 FileCollection = _diskFileCollection,
                 Compression = new SnappyCompressionStrategy(),
                 FileSplitSize = 100000000
@@ -47,6 +59,11 @@ namespace Lib.BuildCache
             _odb.Dispose();
             _kvdb.Dispose();
             _diskFileCollection.Dispose();
+            if (_mutex != null)
+            {
+                _mutex.ReleaseMutex();
+                _mutex.Dispose();
+            }
         }
 
         public void EndTransaction()

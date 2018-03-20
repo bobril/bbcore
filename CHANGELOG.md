@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Allow to start again multiple instances by not sharing build cache.
+
 ### Improved
 
 *   import lazy load script now inspired by Webpack (supports timeout, allows retry on failure, does not memory leak)
