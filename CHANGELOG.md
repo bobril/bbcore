@@ -5,6 +5,7 @@
 ### Fixed
 
 *   Allow to start again multiple instances by not sharing build cache.
+*   Test command now adds names in b.styleDefs to have identical behavior as old bobril-build.
 
 ### Improved
 

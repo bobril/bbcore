@@ -223,7 +223,7 @@ namespace Lib.Composition
                     Console.ForegroundColor = ConsoleColor.Gray;
                     proj.Owner.LoadProjectJson(true);
                     proj.Owner.FirstInitialize();
-                    proj.StyleDefNaming = StyleDefNamingStyle.PreserveNames;
+                    proj.StyleDefNaming = StyleDefNamingStyle.AddNames;
                     proj.SpriterInitialization();
                     proj.RefreshMainFile();
                     proj.DetectBobrilJsxDts();
