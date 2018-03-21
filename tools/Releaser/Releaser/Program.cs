@@ -72,14 +72,18 @@ namespace Releaser
                     Console.WriteLine("Not pressed 1, 2 or 3. Exiting.");
                     return 1;
                 }
-                if (choice == '1') lastVersionNumber = majorVersionNumber;
-                if (choice == '2') lastVersionNumber = minorVersionNumber;
-                if (choice == '3') lastVersionNumber = patchVersionNumber;
+                if (choice == '1')
+                    lastVersionNumber = majorVersionNumber;
+                if (choice == '2')
+                    lastVersionNumber = minorVersionNumber;
+                if (choice == '3')
+                    lastVersionNumber = patchVersionNumber;
                 var newVersion = lastVersionNumber.ToString(3);
                 Console.WriteLine("Building version " + newVersion);
                 var outputLogLines = logLines.ToList();
                 var releaseLogLines = logLines.Skip(topVersionLine + 1).SkipWhile(s => string.IsNullOrWhiteSpace(s)).TakeWhile(s => !s.StartsWith("## ")).ToList();
-                while (releaseLogLines.Count > 0 && string.IsNullOrWhiteSpace(releaseLogLines[releaseLogLines.Count - 1])) releaseLogLines.RemoveAt(releaseLogLines.Count - 1);
+                while (releaseLogLines.Count > 0 && string.IsNullOrWhiteSpace(releaseLogLines[releaseLogLines.Count - 1]))
+                    releaseLogLines.RemoveAt(releaseLogLines.Count - 1);
                 outputLogLines.Insert(topVersionLine + 1, "## " + newVersion);
                 outputLogLines.Insert(topVersionLine + 1, "");
                 if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0"))
@@ -123,19 +127,35 @@ namespace Releaser
                 var release2 = await client.Repository.Release.Create(bbcoreRepo.Id, release);
                 Console.WriteLine("release url:");
                 Console.WriteLine(release2.HtmlUrl);
-                var uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("win-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/win-x64.zip"), TimeSpan.FromMinutes(14)));
+                var uploadAsset = await UploadWithRetry(projDir, client, release2, "win-x64.zip");
                 Console.WriteLine("win-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
-                uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("linux-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64.zip"), TimeSpan.FromMinutes(14)));
+                uploadAsset = await UploadWithRetry(projDir, client, release2, "linux-x64.zip");
                 Console.WriteLine("linux-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
-                uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("osx-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64.zip"), TimeSpan.FromMinutes(14)));
+                uploadAsset = await UploadWithRetry(projDir, client, release2, "osx-x64.zip");
                 Console.WriteLine("osx-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
                 Console.WriteLine("Press Enter for finish");
                 Console.ReadLine();
                 return 0;
             }
+        }
+
+        private static async Task<ReleaseAsset> UploadWithRetry(string projDir, GitHubClient client, Release release2, string fileName)
+        {
+            for(var i = 0;i<5;i++)
+            {
+                try
+                {
+                    return await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload(fileName, "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/" + fileName), TimeSpan.FromMinutes(14)));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+            }
+            throw new OperationCanceledException("Upload Asset " + fileName + " failed");
         }
 
         static void BuildWinX64(string projDir, string newVersion)
