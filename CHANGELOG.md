@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.20.7
+
 ### Fixed
 
 *   Interactive mode missed assets after small change in code.
