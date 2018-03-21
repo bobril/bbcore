@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.20.0
+
 ### Fixed
 
 *   Allow to start again multiple instances by not sharing build cache.
