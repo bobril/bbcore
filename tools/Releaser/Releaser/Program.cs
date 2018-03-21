@@ -92,6 +92,7 @@ namespace Releaser
                 BuildLinuxX64(projDir, newVersion);
                 BuildOsxX64(projDir, newVersion);
                 var client = new GitHubClient(new ProductHeaderValue("bobril-bbcore-releaser"));
+                client.SetRequestTimeout(TimeSpan.FromMinutes(15));
                 var fileNameOfToken = Environment.GetEnvironmentVariable("USERPROFILE") + "/.github/token.txt";
                 string token;
                 try
@@ -142,17 +143,17 @@ namespace Releaser
             }
         }
 
-        private static async Task<ReleaseAsset> UploadWithRetry(string projDir, GitHubClient client, Release release2, string fileName)
+        static async Task<ReleaseAsset> UploadWithRetry(string projDir, GitHubClient client, Release release2, string fileName)
         {
-            for(var i = 0;i<5;i++)
+            for (var i = 0; i < 5; i++)
             {
                 try
                 {
                     return await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload(fileName, "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/" + fileName), TimeSpan.FromMinutes(14)));
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Console.WriteLine(ex);
+                    Console.WriteLine("Upload Asset " + fileName + " failed " + i);
                 }
             }
             throw new OperationCanceledException("Upload Asset " + fileName + " failed");
