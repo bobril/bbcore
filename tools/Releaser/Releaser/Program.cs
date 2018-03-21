@@ -123,13 +123,13 @@ namespace Releaser
                 var release2 = await client.Repository.Release.Create(bbcoreRepo.Id, release);
                 Console.WriteLine("release url:");
                 Console.WriteLine(release2.HtmlUrl);
-                var uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("win-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/win-x64.zip"), null));
+                var uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("win-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/win-x64.zip"), TimeSpan.FromMinutes(14)));
                 Console.WriteLine("win-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
-                uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("linux-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64.zip"), null));
+                uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("linux-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64.zip"), TimeSpan.FromMinutes(14)));
                 Console.WriteLine("linux-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
-                uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("osx-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64.zip"), null));
+                uploadAsset = await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload("osx-x64.zip", "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64.zip"), TimeSpan.FromMinutes(14)));
                 Console.WriteLine("osx-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
                 Console.WriteLine("Press Enter for finish");
