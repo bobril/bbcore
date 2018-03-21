@@ -351,6 +351,7 @@ namespace Lib.TSCompiler
                             continue; // we cannot handle change in .d.ts without source
                         CheckAdd(mainFile);
                     }
+                    RefreshDependenciesFromSourceInfo(fileAdditional);
                 }
             }
         }
@@ -477,6 +478,28 @@ namespace Lib.TSCompiler
             if (res.Count == 0)
                 return null;
             return res;
+        }
+
+        public void RefreshDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo)
+        {
+            var sourceInfo = fileInfo.SourceInfo;
+            if (sourceInfo == null)
+                return;
+            sourceInfo.assets.ForEach(a =>
+            {
+                if (a.name == null)
+                    return;
+                CheckAdd(a.name);
+            });
+            if (!_owner.ProjectOptions.SpriteGeneration)
+            {
+                sourceInfo.sprites.ForEach(s =>
+                {
+                    if (s.name == null)
+                        return;
+                    CheckAdd(s.name);
+                });
+            }
         }
 
         public void AddDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo)

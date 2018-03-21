@@ -2,19 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Interactive mode missed assets after small change in code.
+
 ## 0.20.6
-
-## 0.20.5
-
-## 0.20.4
-
-## 0.20.3
-
-## 0.20.2
-
-## 0.20.1
-
-## 0.20.0
 
 ### Fixed
 

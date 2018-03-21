@@ -219,7 +219,7 @@ namespace Lib.Composition
                 try
                 {
                     Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
+                    Console.WriteLine("Test build started " + proj.Owner.Owner.FullPath);
                     Console.ForegroundColor = ConsoleColor.Gray;
                     proj.Owner.LoadProjectJson(true);
                     proj.Owner.FirstInitialize();
