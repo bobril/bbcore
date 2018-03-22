@@ -40,9 +40,9 @@ namespace Lib.TSCompiler
             }
             if (!fileName.StartsWith("_virtual/"))
                 throw new Exception("writeFile does not start with _virtual");
-            var fullPathWithVirtual = PathUtils.Join(_owner.ProjectOptions.CommonSourceDirectory, fileName);
+            var fullPathWithVirtual = PathUtils.Join(_owner.ProjectOptions.CurrentBuildCommonSourceDirectory, fileName);
             fileName = fileName.Substring(9);
-            var fullPath = PathUtils.Join(_owner.ProjectOptions.CommonSourceDirectory, fileName);
+            var fullPath = PathUtils.Join(_owner.ProjectOptions.CurrentBuildCommonSourceDirectory, fileName);
             if (fullPath.EndsWith(".js"))
             {
                 data = SourceMap.RemoveLinkToSourceMap(data);

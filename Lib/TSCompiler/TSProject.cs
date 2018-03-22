@@ -234,7 +234,13 @@ namespace Lib.TSCompiler
                         compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
                             break;
-                        ProjectOptions.CommonSourceDirectory = compiler.CommonSourceDirectory;
+                        ProjectOptions.CurrentBuildCommonSourceDirectory = compiler.CommonSourceDirectory;
+                        if (ProjectOptions.CommonSourceDirectory == null)
+                            ProjectOptions.CommonSourceDirectory = compiler.CommonSourceDirectory;
+                        else
+                        {
+                            ProjectOptions.CommonSourceDirectory = PathUtils.CommonDir(ProjectOptions.CommonSourceDirectory, compiler.CommonSourceDirectory);
+                        }
                         compiler.GatherSourceInfo();
                         if (ProjectOptions.SpriteGeneration)
                             ProjectOptions.SpriteGenerator.ProcessNew();

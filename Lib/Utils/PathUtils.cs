@@ -65,7 +65,7 @@ namespace Lib.Utils
                 return null;
             if (path[p] == '/')
                 p--;
-            while (p>=0 && path[p] != '/')
+            while (p >= 0 && path[p] != '/')
                 p--;
             if (p < 0)
                 return null;
@@ -231,6 +231,24 @@ namespace Lib.Utils
                     return "application/json";
             }
             return "application/unknown";
+        }
+
+        public static string CommonDir(string p1, string p2)
+        {
+            var len = Math.Min(p1.Length, p2.Length);
+            var pos = 0;
+
+            while (pos < len)
+            {
+                var pos1 = p1.IndexOf('/', pos + 1);
+                var pos2 = p2.IndexOf('/', pos + 1);
+                if (pos1 < 0) pos1 = p1.Length;
+                if (pos2 < 0) pos2 = p2.Length;
+                if (pos1 != pos2 || p1.Substring(0, pos1) != p2.Substring(0, pos2))
+                    return p1.Substring(0, pos);
+                pos = pos1;    
+            }
+            return p1.Substring(0, pos);
         }
     }
 }
