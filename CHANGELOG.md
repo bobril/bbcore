@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.20.8
+
 ### Fixed
 
 *   Tests in sandbox mode works now even when they don't reference files outside of project.
