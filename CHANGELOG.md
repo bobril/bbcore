@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Implemented
+
+*   If module missing types search in node_modules/@types/name/index.d.ts
+
 ## 0.20.8
 
 ### Fixed

@@ -93,6 +93,14 @@ namespace Lib.TSCompiler
                     if (TypesMainFile == null)
                     {
                         TypesMainFile = PathUtils.ChangeExtension(MainFile, "d.ts");
+                        if (!this.IsRootProject && !(DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, TypesMainFile)) is IFileCache))
+                        {
+                            var typesDts = PathUtils.Join(Owner.FullPath, "../@types/" + Owner.Name + "/index.d.ts");
+                            if (DiskCache.TryGetItem(typesDts) is IFileCache)
+                            {
+                                TypesMainFile = typesDts;
+                            }
+                        }
                     }
                     if (parsed.GetValue("dependencies") is JObject parsedV)
                     {
