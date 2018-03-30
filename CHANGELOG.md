@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Improved
+
+*   TypeScript parsing AST cache is now enabled only for d.ts files. Decreasing needed memory.
+
 ### Implemented
 
 *   If module missing types search in node_modules/@types/name/index.d.ts

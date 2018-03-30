@@ -44,7 +44,8 @@ function createCompilerHost(setParentNodes) {
             throw new Error("Cannot getSourceFile " + fileName);
         }
         var res = ts.createSourceFile(fileName, text, languageVersion, setParentNodes);
-        parseCache[fileName] = [version, res];
+        if (fileName.endsWith(".d.ts"))
+            parseCache[fileName] = [version, res];
         return res;
     }
     function writeFile(fileName, data, _writeByteOrderMark, onError) {

@@ -66,7 +66,8 @@ function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
             throw new Error("Cannot getSourceFile " + fileName);
         }
         let res = ts.createSourceFile(fileName, text, languageVersion, setParentNodes);
-        parseCache[fileName] = [version, res];
+        if (fileName.endsWith(".d.ts"))
+            parseCache[fileName] = [version, res];
         return res;
     }
 
