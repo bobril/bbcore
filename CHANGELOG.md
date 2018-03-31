@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.21.0
+
 ### Improved
 
 *   TypeScript parsing AST cache is now enabled only for d.ts files. Decreasing needed memory.
