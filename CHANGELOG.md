@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+*   Auto patching of TypeScript 2.8.1 to make it possible to use. Still left TS 2.7.2 as default, due to new errors occurring in large code bases.
+
 ## 0.21.0
 
 ### Improved

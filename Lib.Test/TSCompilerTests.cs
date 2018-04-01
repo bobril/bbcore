@@ -15,8 +15,7 @@ namespace Lib.Test
 {
     public class FakeFsAbstraction : IFsAbstraction, IDirectoryWatcher
     {
-        public bool IsMac => RuntimeInformation
-                                   .IsOSPlatform(OSPlatform.OSX);
+        public bool IsMac => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         
         public bool IsUnixFs => PathUtils.IsUnixFs;
 

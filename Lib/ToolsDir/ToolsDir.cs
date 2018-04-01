@@ -79,11 +79,22 @@ namespace Lib.ToolsDir
                     }
                     // Patch 
                     bugPos = _typeScriptJsContent.IndexOf("function checkUnusedClassMembers(");
-                    var bugPos22 = _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos);
-                    var bugPos33 = _typeScriptJsContent.IndexOf("case 207", bugPos22);
-                    if (bugPos33<0 || bugPos33>bugPos22+200)
+                    var bugPos22 = bugPos < 0 ? -1 : _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos);
+                    var bugPos33 = bugPos22 < 0 ? -1 : _typeScriptJsContent.IndexOf("case 207", bugPos22);
+                    if (bugPos22 > 0 && (bugPos33 < 0 || bugPos33 > bugPos22 + 200))
                     {
                         _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos22, "case 207:");
+                    }
+                    // Patch https://github.com/Microsoft/TypeScript/issues/22403 in 2.8.1
+                    bugPos = _typeScriptJsContent.IndexOf("if (links.target && links.target !== unknownSymbol && links.target !== resolvingSymbol) {");
+                    if (bugPos > 0)
+                    {
+                        var bugPos2a = _typeScriptJsContent.IndexOf("links.nameType = getLiteralTypeFromPropertyName(links.target);", bugPos);
+                        if (bugPos2a > 0 && bugPos2a - bugPos < 400)
+                        {
+                            _typeScriptJsContent = _typeScriptJsContent.Remove(bugPos, bugPos2a - bugPos);
+                            _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos, "if (links.target && links.target !== unknownSymbol && links.target !== resolvingSymbol && links.target.escapedName === prop.escapedName) {");
+                        }
                     }
                 }
                 return _typeScriptJsContent;
@@ -121,7 +132,7 @@ namespace Lib.ToolsDir
             _typeScriptJsContent = null;
             var tsVerDir = PathUtils.Join(Path, version);
             var tspackage = PathUtils.Join(tsVerDir, "package.json");
-            lock(_lock)
+            lock (_lock)
             {
                 if (!File.Exists(tspackage))
                 {
