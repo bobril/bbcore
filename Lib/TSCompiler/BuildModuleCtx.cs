@@ -157,7 +157,12 @@ namespace Lib.TSCompiler
             var bc = _owner.ProjectOptions.BuildCache;
             if (bc.IsEnabled)
             {
-                var fbc = bc.FindTSFileBuildCache(itemInfo.Owner.HashOfContent, _owner.ProjectOptions.ConfigurationBuildCacheId);
+                var hashOfContent = itemInfo.Owner.HashOfContent;
+                var confId = _owner.ProjectOptions.ConfigurationBuildCacheId;
+                var fbc = (itemInfo.BuildCacheHash == hashOfContent && itemInfo.BuildCacheConfId== confId) ? itemInfo.BuildCacheValue : bc.FindTSFileBuildCache(hashOfContent, confId);
+                itemInfo.BuildCacheHash = hashOfContent;
+                itemInfo.BuildCacheConfId = confId;
+                itemInfo.BuildCacheValue = fbc;
                 if (fbc != null)
                 {
                     if ((fbc.LocalImports?.Count ?? 0) == 0 && (fbc.ModuleImports?.Count ?? 0) == 0)

@@ -1,4 +1,5 @@
-﻿using Lib.DiskCache;
+﻿using Lib.BuildCache;
+using Lib.DiskCache;
 using Lib.Utils;
 using SixLabors.ImageSharp;
 using System.Collections.Generic;
@@ -29,7 +30,11 @@ namespace Lib.TSCompiler
         public Image<Rgba32> Image { get; set; }
         public int ImageCacheId;
         public string OutputUrl { get; set; }
+
         public bool TakenFromBuildCache;
+        public byte[] BuildCacheHash;
+        public uint BuildCacheConfId;
+        public TSFileBuildCache BuildCacheValue;
 
         List<TSProject> _moduleImports;
 
