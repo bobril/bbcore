@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Removed
+
+*   Not using IL Linker anymore, it too buggy.
+
 ## 0.22.0
 
 ### Fixed
