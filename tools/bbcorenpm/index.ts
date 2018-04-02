@@ -59,14 +59,22 @@ async function downloadAssetOfUrl(url: string): Promise<Buffer> {
     return binary.body;
 }
 
+let githubToken: string | undefined;
+
+function addAuthorization(headers: http.OutgoingHttpHeaders) {
+    if (githubToken) {
+        headers["Authorization"] = "token " + githubToken;
+    }
+}
+
 async function callRepoApi(path: string) {
-    var options = {
-        proxy: process.env.http_proxy || process.env.https_proxy,
+    var options: http.RequestOptions = {
         headers: {
             accept: "application/vnd.github.v3.json",
             "user-agent": "bobril-build-core/1.1.0"
         }
     };
+    addAuthorization(options.headers!);
 
     var binary = await get(
         `https://api.github.com/repos/bobril/bbcore/${path}`,
@@ -77,19 +85,18 @@ async function callRepoApi(path: string) {
     return data;
 }
 
-function getDownloadOptions(url: string) {
+function getDownloadOptions(url: string): http.RequestOptions {
     var isGitHubUrl = urlmodule.parse(url).hostname === "api.github.com";
 
-    var headers = isGitHubUrl
+    var headers: http.OutgoingHttpHeaders = isGitHubUrl
         ? {
               accept: "application/octet-stream",
               "user-agent": "bobril-build-core/1.1.0"
           }
         : {};
+    if (isGitHubUrl) addAuthorization(headers);
 
     return {
-        followRedirect: false,
-        proxy: process.env.http_proxy || process.env.https_proxy,
         headers: headers
     };
 }
@@ -208,6 +215,22 @@ if (fs.existsSync("package.json")) {
     }
 }
 
+if (process.env.GITHUB_TOKEN) {
+    githubToken = "" + process.env.GITHUB_TOKEN;
+} else {
+    let githubTokenFile = path.join(os.homedir(), ".github", "token.txt");
+    if (fs.existsSync(githubTokenFile)) {
+        try {
+            githubToken = fs
+                .readFileSync(githubTokenFile)
+                .toString("utf-8")
+                .split(/\r?\n/)[0];
+        } catch {
+            // ignore
+        }
+    }
+}
+
 const fsExists = util.promisify(fs.exists);
 const fsStat = util.promisify(fs.stat);
 const fsWriteFile = util.promisify(fs.writeFile);
@@ -251,8 +274,18 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
                 console.log(ex.stack);
             }
         }
-        var last = JSON.parse(await fsReadFile(lastVersionFileName, "utf-8"));
-        requestedVersion = last.tag_name;
+        try {
+            var last = JSON.parse(
+                await fsReadFile(lastVersionFileName, "utf-8")
+            );
+            requestedVersion = last.tag_name;
+        } catch {
+            console.log(
+                "Github does not returned latest version information\nplease read https://github.com/bobril/bbcore"
+            );
+            process.exit(1);
+            return;
+        }
     }
 
     let toRun = path.join(homeDir, requestedVersion);

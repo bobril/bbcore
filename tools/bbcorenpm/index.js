@@ -63,15 +63,21 @@ function downloadAssetOfUrl(url) {
         return binary.body;
     });
 }
+let githubToken;
+function addAuthorization(headers) {
+    if (githubToken) {
+        headers["Authorization"] = "token " + githubToken;
+    }
+}
 function callRepoApi(path) {
     return __awaiter(this, void 0, void 0, function* () {
         var options = {
-            proxy: process.env.http_proxy || process.env.https_proxy,
             headers: {
                 accept: "application/vnd.github.v3.json",
                 "user-agent": "bobril-build-core/1.1.0"
             }
         };
+        addAuthorization(options.headers);
         var binary = yield get(`https://api.github.com/repos/bobril/bbcore/${path}`, options);
         var data = JSON.parse(binary.body.toString("utf-8"));
         if (binary.statusCode !== 200)
@@ -87,9 +93,9 @@ function getDownloadOptions(url) {
             "user-agent": "bobril-build-core/1.1.0"
         }
         : {};
+    if (isGitHubUrl)
+        addAuthorization(headers);
     return {
-        followRedirect: false,
-        proxy: process.env.http_proxy || process.env.https_proxy,
         headers: headers
     };
 }
@@ -183,6 +189,23 @@ if (fs.existsSync("package.json")) {
         // ignore
     }
 }
+if (process.env.GITHUB_TOKEN) {
+    githubToken = "" + process.env.GITHUB_TOKEN;
+}
+else {
+    let githubTokenFile = path.join(os.homedir(), ".github", "token.txt");
+    if (fs.existsSync(githubTokenFile)) {
+        try {
+            githubToken = fs
+                .readFileSync(githubTokenFile)
+                .toString("utf-8")
+                .split(/\r?\n/)[0];
+        }
+        catch (_b) {
+            // ignore
+        }
+    }
+}
 const fsExists = util.promisify(fs.exists);
 const fsStat = util.promisify(fs.stat);
 const fsWriteFile = util.promisify(fs.writeFile);
@@ -226,8 +249,15 @@ function checkFreshnessOfCachedLastVersion() {
                 console.log(ex.stack);
             }
         }
-        var last = JSON.parse(yield fsReadFile(lastVersionFileName, "utf-8"));
-        requestedVersion = last.tag_name;
+        try {
+            var last = JSON.parse(yield fsReadFile(lastVersionFileName, "utf-8"));
+            requestedVersion = last.tag_name;
+        }
+        catch (_c) {
+            console.log("Github does not returned latest version information\nplease read https://github.com/bobril/bbcore");
+            process.exit(1);
+            return;
+        }
     }
     let toRun = path.join(homeDir, requestedVersion);
     if (!(yield fsExists(path.join(toRun, ".success")))) {

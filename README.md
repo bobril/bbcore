@@ -8,6 +8,10 @@ Rewrite of bobril-build to .Net Core. Mainly for speed reasons. Massive work in 
 
     bb2
 
+# What to do when bb2 failing to start for first time because Github rate limit
+
+Github by default has limit of 60 anonymous requests per hour from one IP. So if it fails you have 2 options, wait or provide token to authenticate as yourself. First read [https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/] how to create your token. Token can have just read only rights, you don't need to select any scopes. Then you can either store it into your user profile directory in .github/token.txt file or set environment variable GITHUB_TOKEN.
+
 # How to override used version
 
 In `package.json` create `bobril` section and set `bbVersion` to specific version you need. By setting `tsVersion` you can override used TypeScript for compilation.
@@ -19,10 +23,10 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
 
 # List of bobril-build specific warnings and errors
 
-| Number | Severity | Message                                                         |
-| ------ | -------- | --------------------------------------------------------------- |
-| -1     | Warn     | Local import has wrong casing                                   |
-| -2     | Warn     | Module import has wrong casing                                  |
-| -3     | Error    | Missing dependency                                              |
-| -5     | Error    | First parameter of b.asset must be resolved as constant string  |
-| -6     | Error    | b.sprite cannot have more than 6 parameters                     |
+| Number | Severity | Message                                                        |
+| ------ | -------- | -------------------------------------------------------------- |
+| -1     | Warn     | Local import has wrong casing                                  |
+| -2     | Warn     | Module import has wrong casing                                 |
+| -3     | Error    | Missing dependency                                             |
+| -5     | Error    | First parameter of b.asset must be resolved as constant string |
+| -6     | Error    | b.sprite cannot have more than 6 parameters                    |
