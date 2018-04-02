@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.23.0
+
 ### Removed
 
 *   Not using IL Linker anymore, it too buggy.
