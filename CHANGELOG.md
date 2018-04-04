@@ -5,6 +5,7 @@
 ### Fixed
 
 *   Disabling dependencies update from package.json didn't worked.
+*   More then doubled stack size for ChakraCore by forking JavaScriptEngineSwitcher.ChakraCore preventing stack overflows for complex TypeScript code.
 
 ## 0.23.0
 
