@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Disabling dependencies update from package.json didn't worked.
+
 ## 0.23.0
 
 ### Removed

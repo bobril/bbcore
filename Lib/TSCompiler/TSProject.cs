@@ -121,7 +121,7 @@ namespace Lib.TSCompiler
                     if (ProjectOptions != null)
                     {
                         FillProjectOptionsFromPackageJson(parsed);
-                        if (!forbiddenDependencyUpdate)
+                        if (!forbiddenDependencyUpdate && ProjectOptions.DependencyUpdate != DepedencyUpdate.Disabled)
                         {
                             ProjectOptions.Tools.UpdateDependencies(Owner.FullPath, ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade, ProjectOptions.NpmRegistry);
                         }

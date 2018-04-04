@@ -159,7 +159,7 @@ namespace Lib.TSCompiler
             {
                 var hashOfContent = itemInfo.Owner.HashOfContent;
                 var confId = _owner.ProjectOptions.ConfigurationBuildCacheId;
-                var fbc = (itemInfo.BuildCacheHash == hashOfContent && itemInfo.BuildCacheConfId== confId) ? itemInfo.BuildCacheValue : bc.FindTSFileBuildCache(hashOfContent, confId);
+                var fbc = (itemInfo.BuildCacheHash == hashOfContent && itemInfo.BuildCacheConfId == confId) ? itemInfo.BuildCacheValue : bc.FindTSFileBuildCache(hashOfContent, confId);
                 itemInfo.BuildCacheHash = hashOfContent;
                 itemInfo.BuildCacheConfId = confId;
                 itemInfo.BuildCacheValue = fbc;

@@ -134,14 +134,16 @@ namespace Lib.TSCompiler
             public void reportTypeScriptDiag(bool isError, int code, string text)
             {
                 if (isError) _owner._wasError = true;
-                Trace.WriteLine((isError ? "Error:" : "Warn:") + code + " " + text);
+                if (_owner.MeasurePerformance)
+                    Trace.WriteLine((isError ? "Error:" : "Warn:") + code + " " + text);
             }
 
             public void reportTypeScriptDiagFile(bool isError, int code, string text, string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
             {
                 if (isError) _owner._wasError = true;
                 _owner.Ctx.reportDiag(isError, code, text, fileName, startLine, startCharacter, endLine, endCharacter);
-                Trace.WriteLine((isError ? "Error:" : "Warn:") + code + " " + text + " " + fileName + ":" + startLine);
+                if (_owner.MeasurePerformance)
+                    Trace.WriteLine((isError ? "Error:" : "Warn:") + code + " " + text + " " + fileName + ":" + startLine);
             }
 
             TSProject GetDirectoryInfo(IDirectoryCache dir)
