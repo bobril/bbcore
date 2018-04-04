@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.24.0
+
 ### Fixed
 
 *   Disabling dependencies update from package.json didn't worked.
