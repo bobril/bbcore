@@ -246,10 +246,13 @@ namespace Lib.TSCompiler
                     continue;
                 var outPathFileName = PathUtils.Subtract(child.FullPath, resourcesPath);
                 TakenNames.Add(outPathFileName);
-                filesContent[outPathFileName] = new Lazy<object>(() =>
+                if (child is IFileCache)
                 {
-                    return (child as IFileCache).ByteContent;
-                });
+                    filesContent[outPathFileName] = new Lazy<object>(() =>
+                    {
+                        return (child as IFileCache).ByteContent;
+                    });
+                }
             }
         }
 
@@ -301,7 +304,7 @@ namespace Lib.TSCompiler
             {
                 newConfigObject.files.Add(PathUtils.Subtract(this.BobrilJsxDts, Owner.Owner.FullPath));
             }
-            if (TestSources.Count>0)
+            if (TestSources.Count > 0)
             {
                 newConfigObject.files.Add(Tools.JasmineDtsPath);
             }
@@ -314,7 +317,8 @@ namespace Lib.TSCompiler
                 {
                     File.WriteAllText(tsConfigPath, newContent, new UTF8Encoding(false));
                 }
-                catch {
+                catch
+                {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Writting to " + tsConfigPath + " failed");
                     Console.ForegroundColor = ConsoleColor.Gray;

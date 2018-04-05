@@ -2,6 +2,13 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   g.t("x",null,"hint") is now detected as without params.
+*   Upgraded to Chakra Core 1.8.2
+*   Fixed parsing of translation files
+*   And many more ...
+
 ## 0.24.0
 
 ### Fixed

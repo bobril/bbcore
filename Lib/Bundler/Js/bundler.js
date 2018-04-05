@@ -165,7 +165,7 @@ function check(name, order, visited, cache, requiredAs) {
     if (cached !== undefined)
         return cached;
     let fileContent = bb.readContent(name);
-    //console.log("============== START " + name);
+    //bb.log("============== START " + name);
     //console.log(fileContent);
     let ast = parse(fileContent);
     //console.log(ast.print_to_string({ beautify: true }));

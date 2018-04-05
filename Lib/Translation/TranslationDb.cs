@@ -127,6 +127,10 @@ namespace Lib.Translation
                                 hint = null;
                                 state = LoaderState.Flags;
                                 break;
+                            case LoaderState.Value:
+                                value = null;
+                                state = LoaderState.AfterValue;
+                                break;
                             default:
                                 throw new Exception("Unexpected token " + reader.TokenType + " Line:" + reader.LineNumber + " Pos:" + reader.LinePosition);
                         }

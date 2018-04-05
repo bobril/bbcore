@@ -66,8 +66,7 @@ function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
             throw new Error("Cannot getSourceFile " + fileName);
         }
         let res = ts.createSourceFile(fileName, text, languageVersion, setParentNodes);
-        if (fileName.endsWith(".d.ts"))
-            parseCache[fileName] = [version, res];
+        if (fileName.endsWith(".d.ts")) parseCache[fileName] = [version, res];
         return res;
     }
 
@@ -779,9 +778,12 @@ function gatherSourceInfo(
                 };
                 item.message = evalNode(ce.arguments[0], tc);
                 if (ce.arguments.length >= 2) {
-                    item.withParams = true;
-                    let params = evalNode(ce.arguments[1], tc);
-                    item.knownParams = params != undefined && typeof params === "object" ? Object.keys(params) : [];
+                    let parArg = ce.arguments[1];
+                    item.withParams = parArg.kind != ts.SyntaxKind.NullKeyword && parArg.getText() != "undefined";
+                    if (item.withParams) {
+                        let params = evalNode(ce.arguments[1], tc);
+                        item.knownParams = params != undefined && typeof params === "object" ? Object.keys(params) : [];
+                    }
                 }
                 if (ce.arguments.length >= 3) {
                     item.hint = evalNode(ce.arguments[2], tc);

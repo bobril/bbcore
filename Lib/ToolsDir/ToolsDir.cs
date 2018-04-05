@@ -25,7 +25,7 @@ namespace Lib.ToolsDir
                     Directory.CreateDirectory(dir);
                 lock (_lock)
                 {
-                    var jsEngineSwitcher = JsEngineSwitcher.Current;
+                    var jsEngineSwitcher = JsEngineSwitcher.Instance;
                     if (!jsEngineSwitcher.EngineFactories.Any())
                     {
                         jsEngineSwitcher.EngineFactories.Add(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory());
@@ -184,7 +184,7 @@ namespace Lib.ToolsDir
 
         public IJsEngine CreateJsEngine()
         {
-            var jsEngineSwitcher = JsEngineSwitcher.Current;
+            var jsEngineSwitcher = JsEngineSwitcher.Instance;
             return jsEngineSwitcher.CreateDefaultEngine();
         }
 

@@ -10,6 +10,7 @@ interface IBB {
     generateBundleName(forName: string): string;
     resolveRequire(name: string, from: string): string;
     tslibSource(withImport: boolean): string;
+    log(text: string): void;
 }
 
 interface IFileForBundle {
@@ -225,7 +226,7 @@ function check(
     if (cached !== undefined) return cached;
 
     let fileContent: string = bb.readContent(name);
-    //console.log("============== START " + name);
+    //bb.log("============== START " + name);
     //console.log(fileContent);
     let ast = parse(fileContent);
     //console.log(ast.print_to_string({ beautify: true }));

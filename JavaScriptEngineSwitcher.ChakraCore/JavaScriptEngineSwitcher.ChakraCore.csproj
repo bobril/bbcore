@@ -12,7 +12,7 @@
 		<DefineConstants>$(DefineConstants);NETSTANDARD</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-alpha9" />
+		<PackageReference Include="JavaScriptEngineSwitcher.Core" Version="2.4.10" />
 		<PackageReference Include="MSBuild.Sdk.Extras" Version="1.1.0" PrivateAssets="All" />
 		<PackageReference Include="ResxToCs.MSBuild" Version="1.0.0-alpha5" PrivateAssets="All" />
 	</ItemGroup>

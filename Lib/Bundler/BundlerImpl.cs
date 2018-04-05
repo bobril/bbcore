@@ -46,6 +46,7 @@ namespace Lib.Bundler
             public string generateBundleName(string forName) => _owner.Callbacks.GenerateBundleName(forName);
             public string resolveRequire(string name, string from) => _owner.Callbacks.ResolveRequire(name, from);
             public string tslibSource(bool withImport) => _owner.Callbacks.TslibSource(withImport);
+            public void log(string text) => Console.WriteLine(text);
 #pragma warning restore IDE1006 // Naming Styles
         }
 

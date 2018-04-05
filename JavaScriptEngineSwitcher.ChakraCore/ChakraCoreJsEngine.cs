@@ -11,7 +11,6 @@ using JavaScriptEngineSwitcher.Core.Utilities;
 using CoreStrings = JavaScriptEngineSwitcher.Core.Resources.Strings;
 using HostException = JavaScriptEngineSwitcher.Core.JsException;
 using HostExtendedException = JavaScriptEngineSwitcher.Core.JsRuntimeException;
-using HostInterruptedException = JavaScriptEngineSwitcher.Core.JsScriptInterruptedException;
 
 using JavaScriptEngineSwitcher.ChakraCore.Helpers;
 using JavaScriptEngineSwitcher.ChakraCore.JsRt;
@@ -34,7 +33,7 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 		/// <summary>
 		/// Version of original JS engine
 		/// </summary>
-		private const string EngineVersion = "1.7.5";
+		private const string EngineVersion = "1.8.2";
 
 		/// <summary>
 		/// Instance of JS runtime
@@ -866,94 +865,86 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 			string category = string.Empty;
 			JsErrorCode errorCode = scriptException.ErrorCode;
 
-			if (errorCode == JsErrorCode.ScriptTerminated)
-			{
-				hostException = new HostInterruptedException(CoreStrings.Runtime_ScriptInterrupted,
-					EngineName, EngineVersion, scriptException);
-			}
-			else
-			{
-				string documentName = string.Empty;
-				int lineNumber = 0;
-				int columnNumber = 0;
-				string sourceFragment = string.Empty;
+			string documentName = string.Empty;
+			int lineNumber = 0;
+			int columnNumber = 0;
+			string sourceFragment = string.Empty;
 
-				var scriptExtendedException = scriptException as ScriptExtendedException;
-				if (scriptExtendedException != null)
+			var scriptExtendedException = scriptException as ScriptExtendedException;
+			if (scriptExtendedException != null)
+			{
+				category = "Script error";
+				JsValue metadataValue = scriptExtendedException.Metadata;
+
+				if (metadataValue.IsValid)
 				{
-					category = "Script error";
-					JsValue metadataValue = scriptExtendedException.Metadata;
+					JsValue errorValue = metadataValue.GetProperty("exception");
 
-					if (metadataValue.IsValid)
+					JsPropertyId urlPropertyId = JsPropertyId.FromString("url");
+					if (metadataValue.HasProperty(urlPropertyId))
 					{
-						JsValue errorValue = metadataValue.GetProperty("exception");
+						JsValue urlPropertyValue = metadataValue.GetProperty(urlPropertyId);
+						documentName = urlPropertyValue.ConvertToString().ToString();
+					}
 
-						JsPropertyId urlPropertyId = JsPropertyId.FromString("url");
-						if (metadataValue.HasProperty(urlPropertyId))
-						{
-							JsValue urlPropertyValue = metadataValue.GetProperty(urlPropertyId);
-							documentName = urlPropertyValue.ConvertToString().ToString();
-						}
+					JsPropertyId linePropertyId = JsPropertyId.FromString("line");
+					if (metadataValue.HasProperty(linePropertyId))
+					{
+						JsValue linePropertyValue = metadataValue.GetProperty(linePropertyId);
+						lineNumber = linePropertyValue.ConvertToNumber().ToInt32() + 1;
+					}
 
-						JsPropertyId linePropertyId = JsPropertyId.FromString("line");
-						if (metadataValue.HasProperty(linePropertyId))
-						{
-							JsValue linePropertyValue = metadataValue.GetProperty(linePropertyId);
-							lineNumber = linePropertyValue.ConvertToNumber().ToInt32() + 1;
-						}
+					JsPropertyId columnPropertyId = JsPropertyId.FromString("column");
+					if (metadataValue.HasProperty(columnPropertyId))
+					{
+						JsValue columnPropertyValue = metadataValue.GetProperty(columnPropertyId);
+						columnNumber = columnPropertyValue.ConvertToNumber().ToInt32() + 1;
+					}
 
-						JsPropertyId columnPropertyId = JsPropertyId.FromString("column");
-						if (metadataValue.HasProperty(columnPropertyId))
-						{
-							JsValue columnPropertyValue = metadataValue.GetProperty(columnPropertyId);
-							columnNumber = columnPropertyValue.ConvertToNumber().ToInt32() + 1;
-						}
+					JsPropertyId sourcePropertyId = JsPropertyId.FromString("source");
+					if (metadataValue.HasProperty(sourcePropertyId))
+					{
+						JsValue sourcePropertyValue = metadataValue.GetProperty(sourcePropertyId);
+						sourceFragment = sourcePropertyValue.ConvertToString().ToString();
+					}
 
-						JsPropertyId sourcePropertyId = JsPropertyId.FromString("source");
-						if (metadataValue.HasProperty(sourcePropertyId))
-						{
-							JsValue sourcePropertyValue = metadataValue.GetProperty(sourcePropertyId);
-							sourceFragment = sourcePropertyValue.ConvertToString().ToString();
-						}
-
-						JsPropertyId stackPropertyId = JsPropertyId.FromString("stack");
-						if (errorValue.HasProperty(stackPropertyId))
-						{
-							JsValue stackPropertyValue = errorValue.GetProperty(stackPropertyId);
-							message = stackPropertyValue.ConvertToString().ToString();
-						}
-						else
-						{
-							JsValue messagePropertyValue = errorValue.GetProperty("message");
-							string scriptMessage = messagePropertyValue.ConvertToString().ToString();
-							message = GenerateErrorMessageWithLocation(message.TrimEnd('.'), scriptMessage,
-								documentName, lineNumber, columnNumber);
-						}
+					JsPropertyId stackPropertyId = JsPropertyId.FromString("stack");
+					if (errorValue.HasProperty(stackPropertyId))
+					{
+						JsValue stackPropertyValue = errorValue.GetProperty(stackPropertyId);
+						message = stackPropertyValue.ConvertToString().ToString();
+					}
+					else
+					{
+						JsValue messagePropertyValue = errorValue.GetProperty("message");
+						string scriptMessage = messagePropertyValue.ConvertToString().ToString();
+						message = GenerateErrorMessageWithLocation(message.TrimEnd('.'), scriptMessage,
+							documentName, lineNumber, columnNumber);
 					}
 				}
-				else if (scriptException is JsUsageException)
-				{
-					category = "Usage error";
-				}
-				else if (scriptException is JsEngineException)
-				{
-					category = "Engine error";
-				}
-				else if (scriptException is JsFatalException)
-				{
-					category = "Fatal error";
-				}
-
-				hostException = new HostExtendedException(message, EngineName, EngineVersion,
-					scriptException)
-				{
-					ErrorCode = ((uint)errorCode).ToString(CultureInfo.InvariantCulture),
-					Category = category,
-					LineNumber = lineNumber,
-					ColumnNumber = columnNumber,
-					SourceFragment = sourceFragment
-				};
 			}
+			else if (scriptException is JsUsageException)
+			{
+				category = "Usage error";
+			}
+			else if (scriptException is JsEngineException)
+			{
+				category = "Engine error";
+			}
+			else if (scriptException is JsFatalException)
+			{
+				category = "Fatal error";
+			}
+
+			hostException = new HostExtendedException(message, EngineName, EngineVersion,
+				scriptException)
+			{
+				ErrorCode = ((uint)errorCode).ToString(CultureInfo.InvariantCulture),
+				Category = category,
+				LineNumber = lineNumber,
+				ColumnNumber = columnNumber,
+				SourceFragment = sourceFragment
+			};
 
 			return hostException;
 		}
@@ -1272,11 +1263,6 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 			});
 		}
 
-		protected override void InnerInterrupt()
-		{
-			_jsRuntime.Disabled = true;
-		}
-
 		protected override void InnerCollectGarbage()
 		{
 			_jsRuntime.CollectGarbage();
@@ -1298,14 +1284,6 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 		public override string Version
 		{
 			get { return EngineVersion; }
-		}
-
-		/// <summary>
-		/// Gets a value that indicates if the JS engine supports script interruption
-		/// </summary>
-		public override bool SupportsScriptInterruption
-		{
-			get { return true; }
 		}
 
 		/// <summary>
