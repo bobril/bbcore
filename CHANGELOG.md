@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.25.0
+
 ### Fixed
 
 *   g.t("x",null,"hint") is now detected as without params.
