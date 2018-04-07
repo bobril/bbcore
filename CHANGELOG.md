@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Again rewritten file watching.
+
 ## 0.25.0
 
 ### Fixed

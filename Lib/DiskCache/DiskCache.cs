@@ -29,7 +29,14 @@ namespace Lib.DiskCache
             public IDirectoryCache Parent { get; set; }
             public bool IsFile => false;
             public bool IsDirectory => true;
-            public bool IsInvalid { get => _isInvalid; set { _isInvalid = value; NoteChange(); } }
+            public bool IsInvalid
+            {
+                get => _isInvalid;
+                set
+                {
+                    _isInvalid = value; if (!value) IsWatcherRoot = false; NoteChange();
+                }
+            }
             public bool IsStale { get; set; }
 
             public bool IsFake { get; set; }
@@ -59,6 +66,7 @@ namespace Lib.DiskCache
                     }
                 }
             }
+
             public Func<(IDirectoryCache parent, string name, bool isDir), bool> Filter { get; set; }
 
             public int ChangeId => _changeId;
@@ -70,7 +78,7 @@ namespace Lib.DiskCache
             int _changeId;
             bool _isInvalid;
             DiskCache _owner;
-            private bool _isWatcherRoot;
+            bool _isWatcherRoot;
 
             public DirectoryCache(DiskCache owner)
             {
@@ -615,7 +623,7 @@ namespace Lib.DiskCache
                     }
                 }
             }
-            directory.IsWatcherRoot = directory.IsLink || (directory.Parent != null && directory.Parent.IsFake);
+            directory.IsWatcherRoot = true;
             directory.IsStale = false;
         }
 
@@ -649,7 +657,7 @@ namespace Lib.DiskCache
                         UpdateIfNeededNoLock(directory);
                         foreach (var item in directory)
                         {
-                            if (item is IDirectoryCache && !((IDirectoryCache)item).IsStale)
+                            if (item is IDirectoryCache && (!((IDirectoryCache)item).IsStale || ((IDirectoryCache)item).IsFake))
                                 CheckUpdateIfNeededNoLock((IDirectoryCache)item);
                         }
                     }
