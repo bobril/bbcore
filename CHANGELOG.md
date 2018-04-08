@@ -4,6 +4,7 @@
 
 ### Fixed
 
+*   Crash of minification with very complex files by using custom build of ChakraCore.dll (only for Windows)
 *   Again rewritten file watching.
 
 ## 0.25.0
