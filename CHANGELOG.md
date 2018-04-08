@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.27.0
+
 ### Fixed
 
 *   Wrong source maps when js source ended with new line.
