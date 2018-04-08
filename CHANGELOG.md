@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.26.0
+
 ### Fixed
 
 *   Crash of minification with very complex files by using custom build of ChakraCore.dll (only for Windows)
