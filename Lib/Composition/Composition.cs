@@ -165,24 +165,27 @@ namespace Lib.Composition
                         {
                             proj.TranslationDb.SaveLangDbs(PathUtils.Join(proj.Owner.Owner.FullPath, "translations"));
                         }
-                        if (bCommand.Fast.Value)
-                        {
-                            var fastBundle = new FastBundleBundler(_tools);
-                            fastBundle.FilesContent = filesContent;
-                            fastBundle.Project = proj;
-                            fastBundle.BuildResult = buildResult;
-                            fastBundle.Build("bb/base", "bundle.js.map");
-                        }
                         else
                         {
-                            var bundle = new BundleBundler(_tools);
-                            bundle.FilesContent = filesContent;
-                            bundle.Project = proj;
-                            bundle.BuildResult = buildResult;
-                            bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
+                            if (bCommand.Fast.Value)
+                            {
+                                var fastBundle = new FastBundleBundler(_tools);
+                                fastBundle.FilesContent = filesContent;
+                                fastBundle.Project = proj;
+                                fastBundle.BuildResult = buildResult;
+                                fastBundle.Build("bb/base", "bundle.js.map");
+                            }
+                            else
+                            {
+                                var bundle = new BundleBundler(_tools);
+                                bundle.FilesContent = filesContent;
+                                bundle.Project = proj;
+                                bundle.BuildResult = buildResult;
+                                bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
+                            }
+                            SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
+                            totalFiles += filesContent.Count;
                         }
-                        SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
-                        totalFiles += filesContent.Count;
                     }
                 }
                 catch (Exception ex)

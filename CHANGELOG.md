@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+*   build -u 1 command now just update translations, but does not output any build files making it much faster.
+
 ## 0.26.0
 
 ### Fixed
