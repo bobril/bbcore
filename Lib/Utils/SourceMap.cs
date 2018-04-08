@@ -60,9 +60,13 @@ namespace Lib.Utils
         {
             var sb = new StringBuilder();
             sb.Append("AAAA");
-            for (var i = 0; i < content.Length; i++)
+            var endsWithNL = SourceMapBuilder.EndsWithNL(content);
+            var len = content.Length - (endsWithNL ? 1 : 0);
+            for (var i = 0; i < len; i++)
                 if (content[i] == '\n')
                     sb.Append(";AACA");
+            if (endsWithNL)
+                sb.Append(";");
             return new SourceMap
             {
                 sources = new List<string> { fileName },

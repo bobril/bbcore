@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Wrong source maps when js source ended with new line.
+
 ### Changed
 
 *   build -u 1 command now just update translations, but does not output any build files making it much faster.

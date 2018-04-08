@@ -1,4 +1,7 @@
+import * as b from 'bobril';
 import * as test from "./lib";
+
+b.asset("jslib.js");
 
 let value: number = 0;
 value = 1

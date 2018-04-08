@@ -24,3 +24,4 @@ TestResults
 /tools/bbcorenpm/node_modules
 !/tools/bbcorenpm/bin/
 /Lib/Bundler/Js/Tests/Outputs/
+/TestProjects/LongSourceCode/node_modules

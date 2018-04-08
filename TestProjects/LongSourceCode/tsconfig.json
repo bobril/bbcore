@@ -16,7 +16,7 @@
     "module": "CommonJS",
     "noEmitHelpers": true,
     "preserveConstEnums": false,
-    "reactNamespace": "React",
+    "reactNamespace": "b",
     "removeComments": false,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
@@ -24,7 +24,9 @@
     "target": "ES5",
     "types": []
   },
-  "files": [],
+  "files": [
+    "node_modules/bobril/jsx.d.ts"
+  ],
   "include": [
     "**/*"
   ]

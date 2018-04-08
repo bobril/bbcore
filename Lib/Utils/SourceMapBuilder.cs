@@ -57,7 +57,7 @@ namespace Lib.Utils
             return result;
         }
 
-        static bool EndsWithNL(string content)
+        public static bool EndsWithNL(string content)
         {
             if (content.Length == 0) return false;
             return content[content.Length - 1] == '\n';
