@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.27.1
+
 ### Fixed
 
 *   Translations in some cases are null instead of default language fallback.
