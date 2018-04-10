@@ -482,7 +482,7 @@ namespace Lib.Composition
 
             if (path.StartsWithSegments("/bb/base", out var src))
             {
-                var srcPath = PathUtils.Join(_currentProject.Owner.Owner.FullPath, src.Value.Substring(1));
+                var srcPath = PathUtils.Join(_currentProject.CommonSourceDirectory, src.Value.Substring(1));
                 var srcFileCache = _dc.TryGetItem(srcPath) as IFileCache;
                 if (srcFileCache != null)
                 {

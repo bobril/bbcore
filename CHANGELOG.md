@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Hosting source code in case of sandboxes projects. In `TestProjects/Sandbox/piskoviste` there is example of setup how to enable debugging from VS Code.
+
 ## 0.27.1
 
 ### Fixed
