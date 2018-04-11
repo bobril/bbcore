@@ -98,7 +98,7 @@ namespace Lib.Utils
             if (pos < content.Length - 5)
             {
                 if (content.Substring(pos + 1, 3) == "//#")
-                    return content.Substring(0, pos);
+                    return content.Substring(0, pos < 0 ? 0 : pos);
             }
             return content;
         }

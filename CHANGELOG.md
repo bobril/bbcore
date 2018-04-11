@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Build exeption with empty ts file.
+
 ## 0.27.2
 
 ### Fixed
