@@ -17,7 +17,7 @@
         return Base_lib.prototype.hello = function() {
             console.log("Base");
         }, Base_lib;
-    }(), __export_Base = Base;
+    }();
     new (function(_super) {
         function Main_index() {
             return null !== _super && _super.apply(this, arguments) || this;
@@ -25,5 +25,5 @@
         return __extends(Main_index, _super), Main_index.prototype.hello = function() {
             console.log("Main");
         }, Main_index;
-    }(__export_Base))().hello();
+    }(Base))().hello();
 }();
