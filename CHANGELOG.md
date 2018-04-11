@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.27.3
+
 ### Fixed
 
 *   Extreamly slow build compression with a lot of unused constants. And even improved compression size!
