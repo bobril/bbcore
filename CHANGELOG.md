@@ -4,6 +4,7 @@
 
 ### Fixed
 
+*   Extreamly slow build compression with a lot of unused constants. And even improved compression size!
 *   Build exeption with empty ts file.
 
 ## 0.27.2

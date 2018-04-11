@@ -543,7 +543,7 @@ interface ISplitInfo {
 type SplitMap = { [name: string]: ISplitInfo };
 type NamesSet = { [name: string]: true };
 
-var number2Ident = (function() {
+var number2Ident = (function () {
     var leading = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".split("");
     var digits = "0123456789".split("");
     var chars = leading.concat(digits);
@@ -617,9 +617,9 @@ function bundle(project: IBundleProject) {
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
         let bundleAst = <IAstToplevel>parse(
             '(function(undefined){"use strict";\n' +
-                bb.tslibSource(bundleNames.length > 1) +
-                (project.compress === false ? emitGlobalDefines(project.defines) : "") +
-                "})()"
+            bb.tslibSource(bundleNames.length > 1) +
+            (project.compress === false ? emitGlobalDefines(project.defines) : "") +
+            "})()"
         );
         let bodyAst = (<IAstFunction>(<IAstCall>(<IAstSimpleStatement>bundleAst.body![0]).body).expression).body!;
         let pureFuncs: NamesSet = Object.create(null);
@@ -1064,6 +1064,7 @@ function compressAst(
             hoist_funs: false,
             warnings: false,
             unsafe: true,
+            collapse_vars: false, // Too slow
             global_defs: project.defines,
             pure_funcs: call => {
                 if (
@@ -1089,6 +1090,43 @@ function compressAst(
                 return true;
             }
         });
+        bundleAst = <IAstToplevel>bundleAst.transform!(compressor);
+        compressor = Compressor({
+            hoist_funs: false,
+            warnings: false,
+            unsafe: true,
+            collapse_vars: true,
+            global_defs: project.defines,
+            pure_funcs: call => {
+                if (
+                    call.start !== undefined &&
+                    call.start.comments_before != null &&
+                    call.start.comments_before.length === 1
+                ) {
+                    let c = call.start.comments_before[0];
+                    if (c.type === "comment2" && (<string>c.value).indexOf("@class") >= 0) {
+                        return false;
+                    }
+                }
+                if (call.expression instanceof AST_SymbolRef) {
+                    let symb = <IAstSymbolRef>call.expression;
+                    if (
+                        symb.thedef!.scope!.parent_scope != undefined &&
+                        symb.thedef!.scope!.parent_scope!.parent_scope == null
+                    ) {
+                        if (symb.name! in pureFuncs) return false;
+                    }
+                    return true;
+                }
+                return true;
+            }
+        });
+        var tw = new TreeWalker(function (node, descend) {
+            (<any>node)._squeezed = false;
+            (<any>node)._optimized = false;
+            return false;
+        });
+        bundleAst.walk!(tw);
         bundleAst = <IAstToplevel>bundleAst.transform!(compressor);
         // in future to make another pass with removing function calls with empty body
     }

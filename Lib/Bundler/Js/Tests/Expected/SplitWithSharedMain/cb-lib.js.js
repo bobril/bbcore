@@ -1,10 +1,9 @@
 !function(undefined) {
     "use strict";
-    (0, __bbb.b)();
     function hello() {
         return "Hello";
     }
-    __bbb.a = {
+    (0, __bbb.b)(), __bbb.a = {
         hello: hello
     };
 }();

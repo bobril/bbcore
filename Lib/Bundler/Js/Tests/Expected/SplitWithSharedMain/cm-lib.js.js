@@ -1,1 +1,1 @@
-!function(b){"use strict";(0,__bbb.b)();function n(){return"Hello"}__bbb.a={hello:n}}();
+!function(b){"use strict";function n(){return"Hello"}(0,__bbb.b)(),__bbb.a={hello:n}}();

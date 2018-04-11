@@ -7,11 +7,11 @@
     } || function(o, t) {
         for (var n in t) t.hasOwnProperty(n) && (o[n] = t[n]);
     }, n = function(o, n) {
-        t(o, n);
         function e() {
             this.constructor = o;
         }
-        o.prototype = null === n ? Object.create(n) : (e.prototype = n.prototype, new e());
+        t(o, n), o.prototype = null === n ? Object.create(n) : (e.prototype = n.prototype, 
+        new e());
     }, e = function() {
         function o() {}
         return o.prototype.hello = function() {
@@ -19,11 +19,10 @@
         }, o;
     }(), r = e;
     new (function(o) {
-        n(t, o);
         function t() {
             return null !== o && o.apply(this, arguments) || this;
         }
-        return t.prototype.hello = function() {
+        return n(t, o), t.prototype.hello = function() {
             console.log("Main");
         }, t;
     }(r))().hello();

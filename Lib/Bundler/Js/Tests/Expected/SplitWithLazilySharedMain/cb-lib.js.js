@@ -1,5 +1,8 @@
 !function(undefined) {
     "use strict";
+    function hello() {
+        return "Hello";
+    }
     (function(url, prop) {
         var bbb = __bbb, res = bbb[prop];
         return res !== undefined ? res instanceof Promise ? res : Promise.resolve(res) : (res = new Promise(function(r, e) {
@@ -13,11 +16,7 @@
         }), bbb[prop] = res);
     })(undefined, "b").then(function(shared) {
         return shared.shared();
-    });
-    function hello() {
-        return "Hello";
-    }
-    __bbb.a = {
+    }), __bbb.a = {
         hello: hello
     };
 }();
