@@ -141,7 +141,7 @@ namespace Lib.TSCompiler
         void FillProjectOptionsFromPackageJson(JObject parsed)
         {
             ProjectOptions.Localize = Dependencies?.Contains("bobril-g11n") ?? false;
-            ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec\\.ts(?:x)?$";
+            ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec(?:\\.d)?\\.ts(?:x)?$";
             var publishConfigSection = parsed.GetValue("publishConfig") as JObject;
             if (publishConfigSection != null)
             {
