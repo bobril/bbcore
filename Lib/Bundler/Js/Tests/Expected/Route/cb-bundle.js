@@ -7,9 +7,10 @@
         return name;
     }
     var __export_page = "OK";
+    route("KO");
     function doit() {
         var link_index = link("hello");
         console.log(link_index);
     }
-    route("KO"), doit(), console.log(__export_page);
+    doit(), console.log(__export_page);
 }();

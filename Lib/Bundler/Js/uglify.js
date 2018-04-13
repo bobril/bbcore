@@ -8847,6 +8847,7 @@ merge(Compressor.prototype, {
                     if (!member(expr.name, def.orig)) return;
                     var declared = def.orig.length - def.eliminated;
                     var referenced = def.references.length - def.replaced;
+                    if (!referenced) return;
                     if (declared > 1 && !(expr.name instanceof AST_SymbolFunarg)
                         || (referenced > 1 ? mangleable_var(expr) : !compressor.exposed(def))) {
                         return make_node(AST_SymbolRef, expr.name, expr.name);

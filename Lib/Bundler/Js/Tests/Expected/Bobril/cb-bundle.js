@@ -34,7 +34,8 @@
         }
         return target;
     });
-    var __export_assign = Object.assign, inSvg = !1, inNotFocusable = !1, updateCall = [], updateInstance = [], setValueCallback = function(el, _node, newValue, oldValue) {
+    var __export_assign = Object.assign;
+    var inSvg = !1, inNotFocusable = !1, updateCall = [], updateInstance = [], setValueCallback = function(el, _node, newValue, oldValue) {
         newValue !== oldValue && (el[tValue] = newValue);
     };
     function setSetValue(callback) {
@@ -120,10 +121,12 @@
         if (isObject(newStyle)) if (shimStyle(newStyle), isObject(oldStyle)) {
             for (rule in oldStyle) rule in newStyle || removeProperty(s, rule);
             for (rule in newStyle) {
-                var v = newStyle[rule];
-                v !== undefined ? oldStyle[rule] !== v && setStyleProperty(s, rule, v) : removeProperty(s, rule);
+                (v = newStyle[rule]) !== undefined ? oldStyle[rule] !== v && setStyleProperty(s, rule, v) : removeProperty(s, rule);
             }
-        } else for (rule in oldStyle && (s.cssText = ""), newStyle) (v = newStyle[rule]) !== undefined && setStyleProperty(s, rule, v); else if (newStyle) s.cssText = newStyle; else if (isObject(oldStyle)) for (rule in oldStyle) removeProperty(s, rule); else oldStyle && (s.cssText = "");
+        } else for (rule in oldStyle && (s.cssText = ""), newStyle) {
+            var v;
+            (v = newStyle[rule]) !== undefined && setStyleProperty(s, rule, v);
+        } else if (newStyle) s.cssText = newStyle; else if (isObject(oldStyle)) for (rule in oldStyle) removeProperty(s, rule); else oldStyle && (s.cssText = "");
     }
     function setClassName(el, className) {
         inSvg ? el.setAttribute("class", className) : el.className = className;
@@ -211,7 +214,7 @@
             ctx: undefined,
             orig: n
         }, backupInSvg = inSvg, backupInNotFocusable = inNotFocusable, component = c.component;
-        setRef(c.ref, c), component && (component.ctxClass ? ((ctx = new component.ctxClass(c.data || {}, c)).data === undefined && (ctx.data = c.data || {}), 
+        (setRef(c.ref, c), component) && (component.ctxClass ? ((ctx = new component.ctxClass(c.data || {}, c)).data === undefined && (ctx.data = c.data || {}), 
         ctx.me === undefined && (ctx.me = c)) : ctx = {
             data: c.data || {},
             me: c,
@@ -335,14 +338,14 @@
         for (j_bobril = 0; j_bobril < rootElements.length; j_bobril++) if (n === rootElements[j_bobril]) {
             var rn = roots[rootIds_bobril[j_bobril]].n;
             if (rn === undefined) continue;
-            var findResult = nodeContainsNode(rn, currentNode, res.length, res);
-            if (findResult !== undefined) {
+            if ((findResult = nodeContainsNode(rn, currentNode, res.length, res)) !== undefined) {
                 currentCacheArray = findResult;
                 break;
             }
         }
         subtreeSearch: for (;nodeStack_bobril.length; ) {
             if (currentNode = nodeStack_bobril.pop(), currentCacheArray && currentCacheArray.length) for (var i_bobril = 0, l = currentCacheArray.length; i_bobril < l; i_bobril++) {
+                var findResult;
                 if ((findResult = nodeContainsNode(currentCacheArray[i_bobril], currentNode, res.length, res)) !== undefined) {
                     currentCacheArray = findResult;
                     continue subtreeSearch;
@@ -398,17 +401,16 @@
         } else if (tag === c.tag) {
             if (tag === undefined) {
                 if (isString(newChildren) && isString(cachedChildren)) {
-                    if (newChildren !== cachedChildren) {
-                        var el = c.element;
-                        el.textContent = newChildren, c.children = newChildren;
-                    }
+                    if (newChildren !== cachedChildren) (el = c.element).textContent = newChildren, 
+                    c.children = newChildren;
                 } else inNotFocusable && focusRootTop === c && (inNotFocusable = !1), deepness <= 0 ? __export_isArray(cachedChildren) && selectedUpdate(c.children, createInto, createBefore) : c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1), 
                 inSvg = backupInSvg, inNotFocusable = backupInNotFocusable;
                 return finishUpdateNode(n, c, component), c;
             }
             var inSvgForeignObject = !1;
             "svg" === tag ? inSvg = !0 : inSvg && "foreignObject" === tag && (inSvgForeignObject = !0, 
-            inSvg = !1), inNotFocusable && focusRootTop === c && (inNotFocusable = !1), el = c.element, 
+            inSvg = !1), inNotFocusable && focusRootTop === c && (inNotFocusable = !1);
+            var el = c.element;
             isString(newChildren) && !__export_isArray(cachedChildren) ? newChildren !== cachedChildren && (el.textContent = newChildren, 
             cachedChildren = newChildren) : deepness <= 0 ? __export_isArray(cachedChildren) && selectedUpdate(c.children, el, createBefore) : cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1), 
             c.children = cachedChildren, inSvgForeignObject && (inSvg = !0), finishUpdateNode(n, c, component), 
@@ -580,7 +582,7 @@
             }, delay);
         }
     }
-    var registryEvents, ctxInvalidated = "$invalidated", ctxDeepness = "$deepness", fullRecreateRequested = !0, scheduled = !1, initializing = !0, uptimeMs = 0, frameCounter = 0, regEvents = {};
+    var registryEvents, ctxInvalidated = "$invalidated", ctxDeepness = "$deepness", fullRecreateRequested = !0, scheduled = !1, initializing = !0, uptimeMs = 0, frameCounter = 0, renderFrameBegin = 0, regEvents = {};
     function addEvent(name_bobril, priority, callback) {
         null == registryEvents && (registryEvents = {});
         var list = registryEvents[name_bobril] || [];
@@ -669,8 +671,9 @@
         }
     });
     function internalUpdate(time) {
-        __export_now(), initEvents(), reallyBeforeFrameCallback(), frameCounter++, ignoringShouldChange = nextIgnoreShouldChange, 
-        nextIgnoreShouldChange = !1, uptimeMs = time, beforeFrameCallback(), focusRootTop = 0 === focusRootStack.length ? null : focusRootStack[focusRootStack.length - 1], 
+        renderFrameBegin = __export_now(), initEvents(), reallyBeforeFrameCallback(), frameCounter++, 
+        ignoringShouldChange = nextIgnoreShouldChange, nextIgnoreShouldChange = !1, uptimeMs = time, 
+        beforeFrameCallback(), focusRootTop = 0 === focusRootStack.length ? null : focusRootStack[focusRootStack.length - 1], 
         inNotFocusable = !1;
         var fullRefresh = !1;
         fullRecreateRequested && (fullRecreateRequested = !1, fullRefresh = !0), rootIds = Object.keys(roots);
@@ -682,17 +685,14 @@
                     if (rafter !== undefined && null != (insertBefore = getDomNode(rafter.n))) break;
                 }
                 if (focusRootTop && (inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds)), 
-                r.e === undefined && (r.e = document.body), rc) if (fullRefresh || rc.ctx[ctxInvalidated] === frameCounter) {
-                    var node = RootComponent(r);
-                    updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : rc.ctx[ctxDeepness]);
-                } else __export_isArray(r.c) && selectedUpdate(r.c, r.e, insertBefore); else rc = createNode(node = RootComponent(r), undefined, r.e, insertBefore), 
+                r.e === undefined && (r.e = document.body), rc) if (fullRefresh || rc.ctx[ctxInvalidated] === frameCounter) updateNode(RootComponent(r), rc, r.e, insertBefore, fullRefresh ? 1e6 : rc.ctx[ctxDeepness]); else __export_isArray(r.c) && selectedUpdate(r.c, r.e, insertBefore); else rc = createNode(RootComponent(r), undefined, r.e, insertBefore), 
                 r.n = rc;
                 r.c = rc.children;
             }
         }
         rootIds = undefined, callPostCallbacks();
         var r0 = roots[0];
-        afterFrameCallback(r0 ? r0.c : null), __export_now();
+        afterFrameCallback(r0 ? r0.c : null), __export_now() - renderFrameBegin;
     }
     var nextIgnoreShouldChange = !1, ignoringShouldChange = !1;
     function ignoreShouldChange() {
@@ -1042,7 +1042,7 @@
             } else {
                 var isCombobox = isSelect && el.size < 2, currentValue = el[tValue];
                 newValue !== currentValue && (oldValue === undefined || currentValue === oldValue || newValue !== node.ctx[bValue] ? isSelect ? ("" === newValue ? el.selectedIndex = isCombobox ? 0 : -1 : el[tValue] = newValue, 
-                ("" !== newValue || isCombobox) && (newValue !== (currentValue = el[tValue]) && (emitDiff = !0))) : el[tValue] = newValue : emitDiff = !0);
+                ("" !== newValue || isCombobox) && newValue !== (currentValue = el[tValue]) && (emitDiff = !0)) : el[tValue] = newValue : emitDiff = !0);
             }
             emitDiff ? emitOnChange(undefined, el, node) : node.ctx[bValue] = newValue;
         } else prevSetValueCallback(el, node, newValue, oldValue);
@@ -1135,7 +1135,10 @@
     function invokeMouseOwner(handlerName, param) {
         if (null == ownerCtx) return !1;
         var handler = ownerCtx.me.component[handlerName];
-        return !!handler && handler(ownerCtx, param);
+        if (!handler) return !1;
+        !0;
+        var stop = handler(ownerCtx, param);
+        return !1, stop;
     }
     function hasPointerEventsNoneB(node) {
         for (;node; ) {
@@ -1181,8 +1184,10 @@
         addEvent(name_bobril, 5, callback);
     }
     var pointersEventNames = [ "PointerDown", "PointerMove", "PointerUp", "PointerCancel" ];
-    if (ieVersion() && ieVersion() < 11) for (mouseEvents = [ "click", "dblclick", "drag", "dragend", "dragenter", "dragleave", "dragover", "dragstart", "drop", "mousedown", "mousemove", "mouseout", "mouseover", "mouseup", "mousewheel", "scroll", "wheel" ], 
-    i = 0; i < mouseEvents.length; ++i) addEvent(mouseEvents[i], 1, pointerThroughIE);
+    if (ieVersion() && ieVersion() < 11) {
+        mouseEvents = [ "click", "dblclick", "drag", "dragend", "dragenter", "dragleave", "dragover", "dragstart", "drop", "mousedown", "mousemove", "mouseout", "mouseover", "mouseup", "mousewheel", "scroll", "wheel" ];
+        for (i = 0; i < mouseEvents.length; ++i) addEvent(mouseEvents[i], 1, pointerThroughIE);
+    }
     function type2Bobril(t) {
         return "mouse" === t || 4 === t ? 0 : "pen" === t || 3 === t ? 2 : 1;
     }
@@ -1267,9 +1272,11 @@
     if (window.ontouchstart !== undefined) addEvent5("touchstart", buildHandlerTouch(pointersEventNames[0])), 
     addEvent5("touchmove", buildHandlerTouch(pointersEventNames[1])), addEvent5("touchend", buildHandlerTouch(pointersEventNames[2])), 
     addEvent5("touchcancel", buildHandlerTouch(pointersEventNames[3])), listenMouse(); else if (window.onpointerdown !== undefined) for (i = 0; i < 4; i++) {
-        var name = pointersEventNames[i];
-        addEvent5(name.toLowerCase(), buildHandlerPointer(name));
-    } else if (window.onmspointerdown !== undefined) for (i = 0; i < 4; i++) addEvent5("@MS" + (name = pointersEventNames[i]), buildHandlerPointer(name)); else listenMouse();
+        addEvent5((name = pointersEventNames[i]).toLowerCase(), buildHandlerPointer(name));
+    } else if (window.onmspointerdown !== undefined) for (i = 0; i < 4; i++) {
+        var name;
+        addEvent5("@MS" + (name = pointersEventNames[i]), buildHandlerPointer(name));
+    } else listenMouse();
     for (var j = 0; j < 4; j++) !function(name_bobril) {
         var onName = "on" + name_bobril;
         addEvent("!" + name_bobril, 50, function(ev, _target, node) {
@@ -1282,15 +1289,16 @@
     }
     var prevMousePath = [];
     function mouseEnterAndLeave(ev) {
+        ev;
         var t = document.elementFromPoint(ev.x, ev.y), toPath = vdomPath(t), node = 0 == toPath.length ? undefined : toPath[toPath.length - 1];
         hasPointerEventsNoneB(node) && (toPath = vdomPath(t = pointerEventsNoneFix(ev.x, ev.y, t, null == node ? undefined : node)[0]));
         bubble(node, "onMouseOver", ev);
         for (var n, c, common = 0; common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common]; ) common++;
         var i_bobril = prevMousePath.length;
-        for (i_bobril > 0 && ((n = prevMousePath[i_bobril - 1]) && ((c = n.component) && c.onMouseOut && c.onMouseOut(n.ctx, ev))); i_bobril > common; ) (n = prevMousePath[--i_bobril]) && ((c = n.component) && c.onMouseLeave && c.onMouseLeave(n.ctx, ev));
-        for (;i_bobril < toPath.length; ) (n = toPath[i_bobril]) && ((c = n.component) && c.onMouseEnter && c.onMouseEnter(n.ctx, ev)), 
+        for (i_bobril > 0 && (n = prevMousePath[i_bobril - 1]) && (c = n.component) && c.onMouseOut && c.onMouseOut(n.ctx, ev); i_bobril > common; ) (n = prevMousePath[--i_bobril]) && (c = n.component) && c.onMouseLeave && c.onMouseLeave(n.ctx, ev);
+        for (;i_bobril < toPath.length; ) (n = toPath[i_bobril]) && (c = n.component) && c.onMouseEnter && c.onMouseEnter(n.ctx, ev), 
         i_bobril++;
-        return prevMousePath = toPath, i_bobril > 0 && ((n = prevMousePath[i_bobril - 1]) && ((c = n.component) && c.onMouseIn && c.onMouseIn(n.ctx, ev))), 
+        return prevMousePath = toPath, i_bobril > 0 && (n = prevMousePath[i_bobril - 1]) && (c = n.component) && c.onMouseIn && c.onMouseIn(n.ctx, ev), 
         !1;
     }
     function noPointersDown() {
@@ -1340,7 +1348,7 @@
     for (i = 0; i < 5; i++) addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
     function createHandlerMouse(handlerName) {
         return function(ev, _target, node) {
-            return !(firstPointerDown != ev.id && !noPointersDown() || !invokeMouseOwner(handlerName, ev) && !bubble(node, handlerName, ev));
+            return !(firstPointerDown != ev.id && !noPointersDown()) && !(!invokeMouseOwner(handlerName, ev) && !bubble(node, handlerName, ev));
         };
     }
     var mouseHandlerNames = [ "Down", "Move", "Up", "Up" ];
@@ -1412,8 +1420,8 @@
             meta: ev.metaKey || !1,
             count: ev.detail
         };
-        return !(!invokeMouseOwner("onMouseWheel", param) && !bubble(node, "onMouseWheel", param) || (preventDefault(ev), 
-        0));
+        return !(!invokeMouseOwner("onMouseWheel", param) && !bubble(node, "onMouseWheel", param)) && (preventDefault(ev), 
+        !0);
     }
     addEvent5(wheelSupport, handleMouseWheel);
     var __export_ignoreClick = function(x, y) {
@@ -1425,12 +1433,12 @@
         if (newActiveElement !== currentActiveElement) {
             for (var newStack = vdomPath(currentActiveElement = newActiveElement), common = 0; common < nodeStack.length && common < newStack.length && nodeStack[common] === newStack[common]; ) common++;
             var n, c, i_bobril = nodeStack.length - 1;
-            for (i_bobril >= common && ((n = nodeStack[i_bobril]) && ((c = n.component) && c.onBlur && c.onBlur(n.ctx)), 
-            i_bobril--); i_bobril >= common; ) (n = nodeStack[i_bobril]) && ((c = n.component) && c.onFocusOut && c.onFocusOut(n.ctx)), 
+            for (i_bobril >= common && ((n = nodeStack[i_bobril]) && (c = n.component) && c.onBlur && c.onBlur(n.ctx), 
+            i_bobril--); i_bobril >= common; ) (n = nodeStack[i_bobril]) && (c = n.component) && c.onFocusOut && c.onFocusOut(n.ctx), 
             i_bobril--;
-            for (i_bobril = common; i_bobril + 1 < newStack.length; ) (n = newStack[i_bobril]) && ((c = n.component) && c.onFocusIn && c.onFocusIn(n.ctx)), 
+            for (i_bobril = common; i_bobril + 1 < newStack.length; ) (n = newStack[i_bobril]) && (c = n.component) && c.onFocusIn && c.onFocusIn(n.ctx), 
             i_bobril++;
-            i_bobril < newStack.length && ((n = newStack[i_bobril]) && ((c = n.component) && c.onFocus && c.onFocus(n.ctx)), 
+            i_bobril < newStack.length && ((n = newStack[i_bobril]) && (c = n.component) && c.onFocus && c.onFocus(n.ctx), 
             i_bobril++), currentFocusedNode = 0 == (nodeStack = newStack).length ? undefined : null2undefined(nodeStack[nodeStack.length - 1]);
         }
         return !1;
@@ -1510,11 +1518,11 @@
         render: function(_ctx, me) {
             for (var res = [], i_bobril = 0; i_bobril < dnds.length; i_bobril++) {
                 var dnd = dnds[i_bobril];
-                dnd.beforeDrag || null == dnd.dragView || 0 == dnd.x && 0 == dnd.y || res.push({
+                dnd.beforeDrag || (null == dnd.dragView || 0 == dnd.x && 0 == dnd.y || res.push({
                     key: "" + dnd.id,
                     data: dnd,
                     component: DndComp
-                });
+                }));
             }
             me.tag = "div", me.style = {
                 position: "fixed",
@@ -1620,8 +1628,8 @@
     }
     function handlePointerCancel(ev, _target, _node) {
         var dnd = pointer2Dnd[ev.id];
-        return !!dnd && !dnd.system && (dnd.beforeDrag ? dnd.destroy() : dnd.cancelDnd(), 
-        !1);
+        return !!dnd && (!dnd.system && (dnd.beforeDrag ? dnd.destroy() : dnd.cancelDnd(), 
+        !1));
     }
     function updateFromNative(dnd, ev) {
         dnd.shift = ev.shiftKey, dnd.ctrl = ev.ctrlKey, dnd.alt = ev.altKey, dnd.meta = ev.metaKey, 
@@ -1667,7 +1675,9 @@
         for (var data = dnd.data, dataKeys = Object.keys(data), i_bobril = 0; i_bobril < dataKeys.length; i_bobril++) try {
             var k = dataKeys[i_bobril], d = data[k];
             isString(d) || (d = JSON.stringify(d)), ev.dataTransfer.setData(k, d);
-        } catch (e) {}
+        } catch (e) {
+            0;
+        }
         return updateFromNative(dnd, ev), !1;
     }
     function setDropEffect(ev, op) {
@@ -1732,7 +1742,8 @@
         return waitingForPopHashChange >= 0 && clearTimeout(waitingForPopHashChange), waitingForPopHashChange = -1, 
         __export_invalidate(), !1;
     }
-    addEvent("hashchange", 10, emitOnHashChange), newHashObj();
+    addEvent("hashchange", 10, emitOnHashChange);
+    newHashObj();
     var allStyles = newHashObj(), dynamicSprites = (newHashObj(), newHashObj(), []), imageCache = newHashObj(), injectedCss = "", rebuildStyles = !1, htmlStyle = null, isIE9 = 9 === ieVersion(), chainedBeforeFrame = setBeforeFrame(beforeFrame), cssSubRuleDelimiter = /\:|\ |\>/;
     function buildCssSubRule(parent) {
         var matchSplit = cssSubRuleDelimiter.exec(parent);
@@ -1839,12 +1850,10 @@
         cAlpha = Math.round(255 * parseFloat(rgba[4]))) : (cRed = parseInt(colorStr.substr(1, 2), 16), 
         cGreen = parseInt(colorStr.substr(3, 2), 16), cBlue = parseInt(colorStr.substr(5, 2), 16), 
         cAlpha = parseInt(colorStr.substr(7, 2), 16) || 255), 255 === cAlpha) for (var i_bobril = 0; i_bobril < imgDataData.length; i_bobril += 4) {
-            var red = imgDataData[i_bobril];
-            red === imgDataData[i_bobril + 1] && red === imgDataData[i_bobril + 2] && (128 === red || imgDataData[i_bobril + 3] < 255 && red > 112) && (imgDataData[i_bobril] = cRed, 
+            (red = imgDataData[i_bobril]) === imgDataData[i_bobril + 1] && red === imgDataData[i_bobril + 2] && (128 === red || imgDataData[i_bobril + 3] < 255 && red > 112) && (imgDataData[i_bobril] = cRed, 
             imgDataData[i_bobril + 1] = cGreen, imgDataData[i_bobril + 2] = cBlue);
         } else for (i_bobril = 0; i_bobril < imgDataData.length; i_bobril += 4) {
-            red = imgDataData[i_bobril];
-            var alpha = imgDataData[i_bobril + 3];
+            var red = imgDataData[i_bobril], alpha = imgDataData[i_bobril + 3];
             red === imgDataData[i_bobril + 1] && red === imgDataData[i_bobril + 2] && (128 === red || alpha < 255 && red > 112) && (255 === alpha ? (imgDataData[i_bobril] = cRed, 
             imgDataData[i_bobril + 1] = cGreen, imgDataData[i_bobril + 2] = cBlue, imgDataData[i_bobril + 3] = cAlpha) : (alpha *= 1 / 255, 
             imgDataData[i_bobril] = Math.round(cRed * alpha), imgDataData[i_bobril + 1] = Math.round(cGreen * alpha), 
@@ -1852,6 +1861,7 @@
         }
         return ctx.putImageData(imgData, 0, 0), canvas.toDataURL();
     }
+    window.bobrilBPath;
     function createVirtualComponent(component) {
         return function(data, children) {
             return children !== undefined && (null == data && (data = {}), data.children = children), 
@@ -1861,7 +1871,7 @@
             };
         };
     }
-    window.bobrilBPath, window.b || (window.b = {
+    window.b || (window.b = {
         deref: deref,
         getRoots: getRoots,
         setInvalidate: setInvalidate,
@@ -1871,7 +1881,8 @@
         setBeforeFrame: setBeforeFrame,
         getDnds: __export_getDnds,
         setBeforeInit: setBeforeInit
-    }), init(function() {
+    });
+    init(function() {
         return "hello";
     });
 }();

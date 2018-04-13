@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Improved
+
+*   Bundling speed due to fix in uglify-es.
+
 ### Changed
 
 *   Default regex for test sources now includes also spec.d.ts files allowing easily extend build in jasmine matchers.

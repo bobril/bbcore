@@ -17,7 +17,7 @@
         return o.prototype.hello = function() {
             console.log("Base");
         }, o;
-    }();
+    }(), r = e;
     new (function(o) {
         function t() {
             return null !== o && o.apply(this, arguments) || this;
@@ -25,5 +25,5 @@
         return n(t, o), t.prototype.hello = function() {
             console.log("Main");
         }, t;
-    }(e))().hello();
+    }(r))().hello();
 }();

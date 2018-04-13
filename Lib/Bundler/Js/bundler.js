@@ -965,34 +965,6 @@ function compressAst(project, bundleAst, pureFuncs) {
             hoist_funs: false,
             warnings: false,
             unsafe: true,
-            collapse_vars: false,
-            global_defs: project.defines,
-            pure_funcs: call => {
-                if (call.start !== undefined &&
-                    call.start.comments_before != null &&
-                    call.start.comments_before.length === 1) {
-                    let c = call.start.comments_before[0];
-                    if (c.type === "comment2" && c.value.indexOf("@class") >= 0) {
-                        return false;
-                    }
-                }
-                if (call.expression instanceof AST_SymbolRef) {
-                    let symb = call.expression;
-                    if (symb.thedef.scope.parent_scope != undefined &&
-                        symb.thedef.scope.parent_scope.parent_scope == null) {
-                        if (symb.name in pureFuncs)
-                            return false;
-                    }
-                    return true;
-                }
-                return true;
-            }
-        });
-        bundleAst = bundleAst.transform(compressor);
-        compressor = Compressor({
-            hoist_funs: false,
-            warnings: false,
-            unsafe: true,
             collapse_vars: true,
             global_defs: project.defines,
             pure_funcs: call => {
@@ -1016,12 +988,6 @@ function compressAst(project, bundleAst, pureFuncs) {
                 return true;
             }
         });
-        var tw = new TreeWalker(function (node, descend) {
-            node._squeezed = false;
-            node._optimized = false;
-            return false;
-        });
-        bundleAst.walk(tw);
         bundleAst = bundleAst.transform(compressor);
         // in future to make another pass with removing function calls with empty body
     }

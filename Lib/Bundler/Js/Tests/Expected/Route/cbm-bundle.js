@@ -7,9 +7,10 @@
         return n;
     }
     var c = "OK";
+    o("KO");
     function r() {
         var n = t("hello");
         console.log(n);
     }
-    o("KO"), r(), console.log(c);
+    r(), console.log(c);
 }();
