@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.28.0
+
 ### Improved
 
 *   Bundling speed due to fix in uglify-es.
