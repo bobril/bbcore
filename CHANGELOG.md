@@ -10,6 +10,10 @@
 
 *   Default regex for test sources now includes also spec.d.ts files allowing easily extend build in jasmine matchers.
 
+### Fixed
+
+*   BuildCache with JavaScript source without d.ts crashed.
+
 ## 0.27.3
 
 ### Fixed

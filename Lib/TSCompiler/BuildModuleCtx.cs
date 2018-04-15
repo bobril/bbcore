@@ -174,9 +174,17 @@ namespace Lib.TSCompiler
                         var dirPath = PathUtils.Parent(fullPath);
                         var fileOnly = fullPath.Substring(dirPath.Length + 1);
                         var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
-                        var wasChange = dc.WriteVirtualFile(fileOnly, fbc.DtsOutput);
-                        var output = dc.TryGetChild(fileOnly) as IFileCache;
-                        itemInfo.DtsLink = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
+                        bool wasChange = false;
+                        if (fbc.DtsOutput != null)
+                        {
+                            wasChange = dc.WriteVirtualFile(fileOnly, fbc.DtsOutput);
+                            var output = dc.TryGetChild(fileOnly) as IFileCache;
+                            itemInfo.DtsLink = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
+                        }
+                        else
+                        {
+                            itemInfo.DtsLink = null;
+                        }
                         if (wasChange)
                         {
                             ChangedDts = true;

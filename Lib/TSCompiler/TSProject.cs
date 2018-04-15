@@ -284,7 +284,7 @@ namespace Lib.TSCompiler
                         var fbc = new BuildCache.TSFileBuildCache();
                         fbc.ConfigurationId = ProjectOptions.ConfigurationBuildCacheId;
                         fbc.ContentHash = f.Owner.HashOfContent;
-                        fbc.DtsOutput = f.DtsLink.Owner.Utf8Content;
+                        fbc.DtsOutput = f.DtsLink?.Owner.Utf8Content;
                         fbc.JsOutput = f.Output;
                         fbc.MapLink = f.MapLink;
                         bc.Store(fbc);
