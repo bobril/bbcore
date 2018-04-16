@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.29.0
+
 ### Added
 
 *   Interactive modes now supports --versionDir parameter from build command.
