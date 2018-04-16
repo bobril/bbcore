@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+*   AllowJs is false in tsconfig.json, even through it is still true in build.
+
 ### Fixed
 
 *   Regression with failing tests after recompilation. Do not include virtual d.ts files to list of files to automatically compile.

@@ -296,7 +296,9 @@ namespace Lib.TSCompiler
             }
             var newConfigObject = new TSConfigJson
             {
-                compilerOptions = GetDefaultTSCompilerOptions().Merge(CompilerOptions),
+                compilerOptions = GetDefaultTSCompilerOptions()
+                    .Merge(new TSCompilerOptions { allowJs = false })
+                    .Merge(CompilerOptions),
                 files = new List<string>(2),
                 include = new List<string> { "**/*" }
             };
