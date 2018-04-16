@@ -83,12 +83,12 @@ namespace Lib.Composition
             }
             if (_command is BuildInteractiveCommand iCommand)
             {
-                RunInteractive(iCommand.Port.Value,iCommand.Sprite.Value);
+                RunInteractive(iCommand.Port.Value, iCommand.Sprite.Value, iCommand.VersionDir.Value);
             }
             else if (_command is BuildInteractiveNoUpdateCommand yCommand)
             {
                 _forbiddenDependencyUpdate = true;
-                RunInteractive(yCommand.Port.Value, yCommand.Sprite.Value);
+                RunInteractive(yCommand.Port.Value, yCommand.Sprite.Value, yCommand.VersionDir.Value);
             }
             else if (_command is BuildCommand bCommand)
             {
@@ -258,13 +258,13 @@ namespace Lib.Composition
                             _testServer.OnTestResults.Subscribe((results) =>
                             {
                                 testFailures = results.TestsFailed;
-                                if (testCommand.Out.Value!=null)
+                                if (testCommand.Out.Value != null)
                                     File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(), new UTF8Encoding(false));
                                 wait.Release();
                             });
                             var durationb = DateTime.UtcNow - start;
                             Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)+"s");
+                            Console.WriteLine("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
                             Console.ForegroundColor = ConsoleColor.Gray;
                             _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
                             StartChromeTest();
@@ -327,7 +327,7 @@ namespace Lib.Composition
             }
         }
 
-        void RunInteractive(string portInString, bool enableSpritting)
+        void RunInteractive(string portInString, bool enableSpritting, string versionDir)
         {
             IfEnabledStartVerbosive();
             int port = 8080;
@@ -340,7 +340,7 @@ namespace Lib.Composition
             InitMainServer();
             AddProject(PathUtils.Normalize(Environment.CurrentDirectory), enableSpritting);
             StartWebServer(port);
-            InitInteractiveMode();
+            InitInteractiveMode(versionDir);
             WaitForStop();
         }
 
@@ -553,7 +553,7 @@ namespace Lib.Composition
             _testServer.OnChange.Subscribe((_) => { _mainServer.NotifyTestServerChange(); });
         }
 
-        public void InitInteractiveMode()
+        public void InitInteractiveMode(string versionDir)
         {
             _hasBuildWork.Set();
             _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200)).Subscribe((_) => _hasBuildWork.Set());
@@ -593,6 +593,7 @@ namespace Lib.Composition
                         {
                             proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
                             proj.Owner.FirstInitialize();
+                            proj.OutputSubDir = versionDir;
                             proj.RefreshMainFile();
                             proj.RefreshTestSources();
                             proj.SpriterInitialization();

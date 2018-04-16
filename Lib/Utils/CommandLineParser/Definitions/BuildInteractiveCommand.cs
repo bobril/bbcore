@@ -2,7 +2,7 @@
 
 namespace Lib.Utils.CommandLineParser.Definitions
 {
-    public class BuildInteractiveCommand : CommonParametersBaseCommand
+    public class BuildInteractiveCommand : CommonInteractiveCommand
     {
         public override string[] Words => new[] { "", "i", "interactive" };
 

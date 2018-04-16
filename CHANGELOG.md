@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+*   Interactive modes now supports --versionDir parameter from build command.
+
 ### Changed
 
 *   AllowJs is false in tsconfig.json, even through it is still true in build.
