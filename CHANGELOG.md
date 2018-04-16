@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Regression with failing tests after recompilation. Do not include virtual d.ts files to list of files to automatically compile.
+
 ## 0.28.0
 
 ### Improved

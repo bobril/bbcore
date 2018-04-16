@@ -73,6 +73,8 @@ namespace Lib.DiskCache
 
             public object AdditionalInfo { get; set; }
 
+            public bool IsVirtual => false;
+
             public List<IItemCache> Items = new List<IItemCache>();
             public List<IFileCache> VirtualFiles = new List<IFileCache>();
             int _changeId;
@@ -341,6 +343,8 @@ namespace Lib.DiskCache
                     return _hash;
                 }
             }
+
+            public bool IsVirtual => true;
         }
 
         class FileCache : IFileCache
@@ -461,6 +465,8 @@ namespace Lib.DiskCache
                     return _contentHash;
                 }
             }
+
+            public bool IsVirtual => false;
         }
 
         public IItemCache TryGetItem(string path)

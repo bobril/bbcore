@@ -211,7 +211,7 @@ namespace Lib.TSCompiler
                         continue;
                     RecursiveFileSearch(item as IDirectoryCache, diskCache, fileRegex, res);
                 }
-                else if (item is IFileCache)
+                else if (item is IFileCache && !item.IsVirtual)
                 {
                     if (fileRegex.IsMatch(item.Name))
                     {
