@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Xml;
 
 namespace Lib.Composition
@@ -112,9 +113,17 @@ namespace Lib.Composition
             }
         }
 
+        public sealed class StringWriterWithUtf8Encoding : StringWriter
+        {
+            public override Encoding Encoding
+            {
+                get { return Encoding.UTF8; }
+            }
+        }
+
         public string ToJUnitXml()
         {
-            var sw = new StringWriter();
+            var sw = new StringWriterWithUtf8Encoding();
             var w = new XmlTextWriter(sw);
             w.WriteStartDocument();
             w.WriteStartElement("testsuites");

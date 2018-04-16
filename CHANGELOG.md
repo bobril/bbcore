@@ -9,6 +9,7 @@
 ### Fixed
 
 *   Regression with failing tests after recompilation. Do not include virtual d.ts files to list of files to automatically compile.
+*   JUnit xml correctly specify utf-8 encoding.
 
 ## 0.28.0
 
