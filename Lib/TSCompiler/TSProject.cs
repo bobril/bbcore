@@ -221,6 +221,7 @@ namespace Lib.TSCompiler
                 compiler.MergeCompilerOptions(compOpt);
                 compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
                 ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(ProjectOptions.TypeScriptVersion, JsonConvert.SerializeObject(compiler.CompilerOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                var wasSomeError = false;
                 do
                 {
                     buildModuleCtx.ChangedDts = false;
@@ -241,7 +242,10 @@ namespace Lib.TSCompiler
                             compiler.MeasurePerformance = true;
                         compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
+                        {
+                            wasSomeError = true;
                             break;
+                        }
                         ProjectOptions.CurrentBuildCommonSourceDirectory = compiler.CommonSourceDirectory;
                         if (ProjectOptions.CommonSourceDirectory == null)
                             ProjectOptions.CommonSourceDirectory = compiler.CommonSourceDirectory;
@@ -253,12 +257,15 @@ namespace Lib.TSCompiler
                         if (ProjectOptions.SpriteGeneration)
                             ProjectOptions.SpriteGenerator.ProcessNew();
                         if (!compiler.EmitProgram())
+                        {
+                            wasSomeError = true;
                             break;
+                        }
                         buildModuleCtx.UpdateCacheIds();
                         buildModuleCtx.Crawl();
                     }
                 } while (buildModuleCtx.ChangedDts || buildModuleCtx.TrullyCompiledCount < buildModuleCtx.ToCompile.Count);
-                if (ProjectOptions.BuildCache.IsEnabled)
+                if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError)
                     StoreResultToBuildCache(buildModuleCtx._result);
                 buildCtx.BuildResult = buildModuleCtx._result;
             }
@@ -277,7 +284,7 @@ namespace Lib.TSCompiler
             {
                 if (f.TakenFromBuildCache)
                     continue;
-                if (f.Type == FileCompilationType.TypeScript && (f.SourceInfo == null || f.SourceInfo.IsEmpty) && f.LocalImports.Count == 0 && f.ModuleImports.Count == 0 && (f.Diagnostic == null || f.Diagnostic.Count == 0))
+                if (f.Type == FileCompilationType.TypeScript && (f.SourceInfo == null || f.SourceInfo.IsEmpty) && f.LocalImports.Count == 0 && f.ModuleImports.Count == 0)
                 {
                     if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ProjectOptions.ConfigurationBuildCacheId) == null)
                     {

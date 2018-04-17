@@ -7,6 +7,7 @@ using JavaScriptEngineSwitcher.Core;
 using System.Linq;
 using System.Diagnostics;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace Lib.TSCompiler
 {
@@ -75,6 +76,15 @@ namespace Lib.TSCompiler
                 {
                     return null;
                 }
+                /*
+                var testPath = PathUtils.Subtract(fullPath, _owner._currentDirectory);
+                if (!testPath.StartsWith("../"))
+                {
+                    testPath = PathUtils.Join("DUMP_PATH", testPath);
+                    Directory.CreateDirectory(PathUtils.Parent(testPath));
+                    File.WriteAllText(testPath, file.Utf8Content);
+                }
+                */
                 return file.Utf8Content;
             }
 

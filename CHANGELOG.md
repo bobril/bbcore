@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Prevent build cache poisoning in case of error in any file not just one storing to cache.
+
 ## 0.29.0
 
 ### Added
