@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.30.0
+
 ### Fixed
 
 *   Prevent build cache poisoning in case of error in any file not just one storing to cache.
