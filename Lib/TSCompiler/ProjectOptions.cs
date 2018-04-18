@@ -281,6 +281,7 @@ namespace Lib.TSCompiler
 
         string _originalContent;
         internal string CurrentBuildCommonSourceDirectory;
+        internal string[] IncludeSources;
 
         public void UpdateTSConfigJson()
         {

@@ -157,6 +157,8 @@ namespace Lib.TSCompiler
             ProjectOptions.BobrilJsx = true;
             ProjectOptions.CompilerOptions = bobrilSection != null ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject) : null;
             ProjectOptions.DependencyUpdate = String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
+            var includeSources = bobrilSection?.GetValue("includeSources") as JArray;
+            ProjectOptions.IncludeSources = includeSources?.Select(i => i.ToString()).ToArray();
         }
 
         DepedencyUpdate String2DependencyUpdate(string value)
@@ -234,6 +236,13 @@ namespace Lib.TSCompiler
                     foreach (var src in buildCtx.Sources)
                     {
                         buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
+                    }
+                    if (ProjectOptions.IncludeSources != null)
+                    {
+                        foreach (var src in ProjectOptions.IncludeSources)
+                        {
+                            buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
+                        }
                     }
                     buildModuleCtx.Crawl();
                     if (buildModuleCtx.ToCompile.Count != 0)
