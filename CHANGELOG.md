@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.31.0
+
 ### Added
 
 *   IncludeSources feature mainly for including d.ts files into compilation. See TestProjects/IncludeSources/package.json for example.
