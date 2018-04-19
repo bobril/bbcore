@@ -52,10 +52,38 @@ namespace Lib.Composition
             w.WriteEndElement();
         }
 
-        static void RecursiveWriteJUnit(XmlWriter w, SuiteOrTest suite, string name)
+        static void WriteTestCases(XmlWriter w, SuiteOrTest suite)
+        {
+            suite.Nested.ForEach(test =>
+            {
+                if (test.IsSuite)
+                    return;
+                w.WriteStartElement("testcase");
+                w.WriteAttributeString("name", test.Name);
+                w.WriteAttributeString("time", (test.Duration * 0.001).ToString("F4", CultureInfo.InvariantCulture));
+                if (test.Skipped)
+                {
+                    w.WriteStartElement("skipped");
+                    w.WriteEndElement();
+                }
+                else if (test.Failure)
+                {
+                    test.Failures.ForEach(fail =>
+                    {
+                        w.WriteStartElement("failure");
+                        w.WriteAttributeString("message", fail.Message + "\n" + string.Join("\n", fail.Stack));
+                        w.WriteEndElement();
+                    });
+                }
+                WriteJUnitSystemOut(w, test);
+                w.WriteEndElement();
+            });
+        }
+
+        static void RecursiveWriteJUnit(XmlWriter w, SuiteOrTest suite, string name, bool isWritingFlatTestSuites)
         {
             var duration = 0d;
-            var count = 0;
+            var testCaseCount = 0;
             var flat = true;
             suite.Nested.ForEach(n =>
             {
@@ -64,50 +92,40 @@ namespace Lib.Composition
                     flat = false;
                     return;
                 }
-                count++;
+                testCaseCount++;
                 duration += n.Duration;
             });
-            if (flat)
+            if (flat || !isWritingFlatTestSuites)
                 duration = suite.Duration;
-            if (count > 0)
+            var isRecursiveTestCaseToWrite = !isWritingFlatTestSuites && !string.IsNullOrEmpty(name);
+            if (testCaseCount > 0 || isRecursiveTestCaseToWrite)
             {
                 w.WriteStartElement("testsuite");
                 w.WriteAttributeString("name", string.IsNullOrEmpty(name) ? "root" : name);
                 w.WriteAttributeString("time", (duration * 0.001).ToString("F4", CultureInfo.InvariantCulture));
-                suite.Nested.ForEach(test =>
+
+                WriteTestCases(w, suite);
+
+                if (!flat && !isWritingFlatTestSuites)
                 {
-                    if (test.IsSuite)
-                        return;
-                    w.WriteStartElement("testcase");
-                    w.WriteAttributeString("name", test.Name);
-                    w.WriteAttributeString("time", (test.Duration * 0.001).ToString("F4", CultureInfo.InvariantCulture));
-                    if (test.Skipped)
+                    suite.Nested.ForEach(n =>
                     {
-                        w.WriteStartElement("skipped");
-                        w.WriteEndElement();
-                    }
-                    else if (test.Failure)
-                    {
-                        test.Failures.ForEach(fail =>
+                        if (n.IsSuite)
                         {
-                            w.WriteStartElement("failure");
-                            w.WriteAttributeString("message", fail.Message + "\n" + string.Join("\n", fail.Stack));
-                            w.WriteEndElement();
-                        });
-                    }
-                    WriteJUnitSystemOut(w, test);
-                    w.WriteEndElement();
-                });
+                            RecursiveWriteJUnit(w, n, n.Name, false);
+                        }
+                    });
+                }
                 WriteJUnitSystemOut(w, suite);
                 w.WriteEndElement();
             }
-            if (!flat)
+            if (!flat && (isWritingFlatTestSuites || !isRecursiveTestCaseToWrite))
             {
                 suite.Nested.ForEach(n =>
                 {
                     if (n.IsSuite)
                     {
-                        RecursiveWriteJUnit(w, n, (!string.IsNullOrEmpty(name) ? name + "." : "") + n.Name);
+                        RecursiveWriteJUnit(w, n, (!string.IsNullOrEmpty(name) ? name + "." : "") + n.Name, isWritingFlatTestSuites);
                     }
                 });
             }
@@ -121,7 +139,7 @@ namespace Lib.Composition
             }
         }
 
-        public string ToJUnitXml()
+        public string ToJUnitXml(bool flatTestSuites)
         {
             var sw = new StringWriterWithUtf8Encoding();
             var w = new XmlTextWriter(sw);
@@ -131,7 +149,7 @@ namespace Lib.Composition
             w.WriteAttributeString("failures", "" + TestsFailed);
             w.WriteAttributeString("tests", "" + TotalTests);
             w.WriteAttributeString("time", (Duration * 0.001).ToString("F4", CultureInfo.InvariantCulture));
-            RecursiveWriteJUnit(w, this, "");
+            RecursiveWriteJUnit(w, this, "", flatTestSuites);
             w.WriteEndElement();
             w.WriteEndDocument();
             return sw.ToString();
