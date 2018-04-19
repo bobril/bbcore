@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.32.0
+
 ### Added
 
 *   Option for tests to generate hierarchical output XML. (Contributed by https://github.com/pstovik)
