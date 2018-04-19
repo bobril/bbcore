@@ -10,6 +10,12 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         public CommandLineArgumentString Out { get; } = new CommandLineArgumentString(description: "filename for test result as JUnit XML", words: new[] { "-o", "--out" });
 
+        public CommandLineArgumentBool FlatTestSuites { get; } = new CommandLineArgumentBool(
+            description: "use flat structure of testsuites (to increase viewer compatibility)",
+            words: new[] {"--flat"},
+            defaultValue: true
+        );
+
         public CommandLineArgumentBool Sprite { get; } = new CommandLineArgumentBool(description: "enable/disable creation of sprites", words: new[] { "--sprite" }, defaultValue: false);
     }
 }

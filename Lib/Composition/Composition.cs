@@ -259,7 +259,7 @@ namespace Lib.Composition
                             {
                                 testFailures = results.TestsFailed;
                                 if (testCommand.Out.Value != null)
-                                    File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(), new UTF8Encoding(false));
+                                    File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(testCommand.FlatTestSuites.Value), new UTF8Encoding(false));
                                 wait.Release();
                             });
                             var durationb = DateTime.UtcNow - start;
