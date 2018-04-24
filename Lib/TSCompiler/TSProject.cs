@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Lib.TSCompiler
@@ -193,6 +194,19 @@ namespace Lib.TSCompiler
                 ProjectOptions.TranslationDb = new Translation.TranslationDb(DiskCache.FsAbstraction);
                 ProjectOptions.TranslationDb.AddLanguage(ProjectOptions.DefaultLanguage ?? "en-us");
                 ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
+            }
+            var bbTslint = Dependencies.FirstOrDefault(s => s.StartsWith("bb-tslint"));
+            if (bbTslint != null)
+            {
+                var srcTsLint = PathUtils.Join(Owner.FullPath, "node_modules/" + bbTslint + "/tslint.json");
+                var srcFile = DiskCache.TryGetItem(srcTsLint) as IFileCache;
+                var dstTsLint = PathUtils.Join(Owner.FullPath, "tslint.json");
+                var dstFile = DiskCache.TryGetItem(dstTsLint) as IFileCache;
+                if (srcFile != null && (dstFile == null || !dstFile.HashOfContent.SequenceEqual(srcFile.HashOfContent)))
+                {
+                    File.WriteAllBytes(dstTsLint, srcFile.ByteContent);
+                    Console.WriteLine("Updated tslint.json from " + srcTsLint);
+                }
             }
         }
 

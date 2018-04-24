@@ -8,7 +8,12 @@
     },
     "author": "",
     "bobril": {
-        "includeSources": ["include1.d.ts"]
+        "includeSources": [
+            "include1.d.ts"
+        ]
     },
-    "license": "ISC"
+    "license": "ISC",
+    "devDependencies": {
+        "bb-tslint-plugin": "^1.1.1"
+    }
 }

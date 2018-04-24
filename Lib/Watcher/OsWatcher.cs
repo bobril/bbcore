@@ -66,15 +66,23 @@ namespace Lib.Watcher
                     _fileSystemWatcher.Renamed -= WatcherRenameHandler;
                     _fileSystemWatcher.Error -= WatcherErrorHandler;
                     _fileSystemWatcher.Dispose();
+                    _fileSystemWatcher = null;
                 }
-                _fileSystemWatcher = new FileSystemWatcher(WatchedDirectory);
-                _fileSystemWatcher.IncludeSubdirectories = false;
-                _fileSystemWatcher.Created += WatcherChangeHandler;
-                _fileSystemWatcher.Deleted += WatcherChangeHandler;
-                _fileSystemWatcher.Changed += WatcherChangeHandler;
-                _fileSystemWatcher.Renamed += WatcherRenameHandler;
-                _fileSystemWatcher.Error += WatcherErrorHandler;
-                _fileSystemWatcher.EnableRaisingEvents = true;
+                try
+                {
+                    _fileSystemWatcher = new FileSystemWatcher(WatchedDirectory);
+                    _fileSystemWatcher.IncludeSubdirectories = false;
+                    _fileSystemWatcher.Created += WatcherChangeHandler;
+                    _fileSystemWatcher.Deleted += WatcherChangeHandler;
+                    _fileSystemWatcher.Changed += WatcherChangeHandler;
+                    _fileSystemWatcher.Renamed += WatcherRenameHandler;
+                    _fileSystemWatcher.Error += WatcherErrorHandler;
+                    _fileSystemWatcher.EnableRaisingEvents = true;
+                }
+                catch
+                {
+                    _fileSystemWatcher = null;
+                }
             }
         }
 

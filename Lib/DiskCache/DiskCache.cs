@@ -34,7 +34,7 @@ namespace Lib.DiskCache
                 get => _isInvalid;
                 set
                 {
-                    _isInvalid = value; if (!value) IsWatcherRoot = false; NoteChange();
+                    _isInvalid = value; if (value) IsWatcherRoot = false; NoteChange();
                 }
             }
             public bool IsStale { get; set; }

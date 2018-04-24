@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+*   Autoupdating tslint.json from bb-tslint-plugin when is in devDependencies.
+
+### Fixed
+
+*   Watcher does not crash build when directory is deleted.
+
 ## 0.32.0
 
 ### Added
