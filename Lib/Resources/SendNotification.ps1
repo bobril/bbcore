@@ -43,10 +43,10 @@ else
 }
 
 $Template = @"
-<toast duration="short">
+<toast>
 	<visual>
-		<binding template="ToastImageAndText04" baseUri="file:///$($PSScriptRoot)/">
-			<image id="1" src="$($Icon)" />
+		<binding template="ToastImageAndText04">
+			<image id="1" src="file:///$($PSScriptRoot)/$($Icon)" />
 			<text id="1">$($Result)</text>
 			<text id="2">Errors: $($Errors), Warnings: $($Warnings)</text>
 			<text id="3">Build done in: $($Time)$($TimeUnit)</text>

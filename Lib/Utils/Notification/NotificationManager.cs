@@ -10,7 +10,7 @@ namespace Lib.Utils.Notification
             void SendWindowsNotification()
             {
                 const string SendNotificationPath = @"Resources\SendNotification.ps1";
-                var p = Process.Start("Powershell.exe", $"{SendNotificationPath} -Errors {errors} -Warnings {warnings} -Time {time}");
+                var p = Process.Start("Powershell.exe", $"{SendNotificationPath} {errors} {warnings} {time}");
                 p.WaitForExit();
             }
 
