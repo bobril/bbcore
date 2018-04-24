@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.33.0
+
 ### Added
 
 *   Autoupdating tslint.json from bb-tslint-plugin when is in devDependencies.
