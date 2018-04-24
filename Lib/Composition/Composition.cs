@@ -20,7 +20,6 @@ using System.Reflection;
 using System.Text;
 using System.Reactive;
 using Lib.BuildCache;
-using Lib.Utils.Notification;
 
 namespace Lib.Composition
 {
@@ -45,7 +44,6 @@ namespace Lib.Composition
         IBuildCache _buildCache;
         bool _verbose;
         bool _forbiddenDependencyUpdate;
-        NotificationManager _notificationManager;
 
         public Composition()
         {
@@ -365,7 +363,6 @@ namespace Lib.Composition
             }
             _tools = new ToolsDir.ToolsDir(_bbdir);
             _compilerPool = new CompilerPool(_tools);
-            _notificationManager = new NotificationManager();
         }
 
         public void InitDiskCache()
@@ -667,7 +664,6 @@ namespace Lib.Composition
                     }
                     var duration = DateTime.UtcNow - start;
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
-                    _notificationManager.SendNotification(errors, warnings, duration.TotalSeconds);
                     Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
                     Console.ForegroundColor = ConsoleColor.Gray;
