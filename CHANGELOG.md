@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.33.1
+
 ### Fixed
 
 *   Another bug fixed in Watcher.
