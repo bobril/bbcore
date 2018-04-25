@@ -34,6 +34,11 @@ namespace Lib.DiskCache
                 get => _isInvalid;
                 set
                 {
+                    if (!_isInvalid && value)
+                    {
+                        foreach (var i in Items) i.IsInvalid = true;
+                        foreach (var i in VirtualFiles) i.IsInvalid = true;
+                    }
                     _isInvalid = value; if (value) IsWatcherRoot = false; NoteChange();
                 }
             }

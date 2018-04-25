@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Another bug fixed in Watcher.
+
 ## 0.33.0
 
 ### Added
