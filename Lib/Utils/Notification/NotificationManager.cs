@@ -16,7 +16,7 @@ namespace Lib.Utils.Notification
             {
                 const string SendNotificationRelativePath = @"Resources\SendNotification.ps1";
                 string sendNotificationFullPath = Path.Combine(GetCurrentDirectory(), SendNotificationRelativePath);
-                var p = Process.Start("Powershell.exe", $"{sendNotificationFullPath} -Errors {errors} -Warnings {warnings} -Time {time}");
+                var p = Process.Start("Powershell.exe", $"-ExecutionPolicy ByPass -File {sendNotificationFullPath} -Errors {errors} -Warnings {warnings} -Time {time}");
                 p.WaitForExit();
             }
 
