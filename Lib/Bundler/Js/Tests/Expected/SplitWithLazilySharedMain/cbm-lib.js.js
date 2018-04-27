@@ -1,5 +1,8 @@
 !function(e) {
     "use strict";
+    function o() {
+        return "Hello";
+    }
     (function(o, r) {
         var n = __bbb, t = n[r];
         return t !== e ? t instanceof Promise ? t : Promise.resolve(t) : (t = new Promise(function(i, c) {
@@ -11,11 +14,7 @@
         }), n[r] = t);
     })(e, "b").then(function(e) {
         return e.shared();
-    });
-    function o() {
-        return "Hello";
-    }
-    __bbb.a = {
+    }), __bbb.a = {
         hello: o
     };
 }();

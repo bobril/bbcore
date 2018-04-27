@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Lib.TSCompiler
@@ -141,7 +142,7 @@ namespace Lib.TSCompiler
         void FillProjectOptionsFromPackageJson(JObject parsed)
         {
             ProjectOptions.Localize = Dependencies?.Contains("bobril-g11n") ?? false;
-            ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec\\.ts(?:x)?$";
+            ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec(?:\\.d)?\\.ts(?:x)?$";
             var publishConfigSection = parsed.GetValue("publishConfig") as JObject;
             if (publishConfigSection != null)
             {
@@ -157,6 +158,8 @@ namespace Lib.TSCompiler
             ProjectOptions.BobrilJsx = true;
             ProjectOptions.CompilerOptions = bobrilSection != null ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject) : null;
             ProjectOptions.DependencyUpdate = String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
+            var includeSources = bobrilSection?.GetValue("includeSources") as JArray;
+            ProjectOptions.IncludeSources = includeSources?.Select(i => i.ToString()).ToArray();
         }
 
         DepedencyUpdate String2DependencyUpdate(string value)
@@ -192,6 +195,19 @@ namespace Lib.TSCompiler
                 ProjectOptions.TranslationDb.AddLanguage(ProjectOptions.DefaultLanguage ?? "en-us");
                 ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
             }
+            var bbTslint = Dependencies.FirstOrDefault(s => s.StartsWith("bb-tslint"));
+            if (bbTslint != null)
+            {
+                var srcTsLint = PathUtils.Join(Owner.FullPath, "node_modules/" + bbTslint + "/tslint.json");
+                var srcFile = DiskCache.TryGetItem(srcTsLint) as IFileCache;
+                var dstTsLint = PathUtils.Join(Owner.FullPath, "tslint.json");
+                var dstFile = DiskCache.TryGetItem(dstTsLint) as IFileCache;
+                if (srcFile != null && (dstFile == null || !dstFile.HashOfContent.SequenceEqual(srcFile.HashOfContent)))
+                {
+                    File.WriteAllBytes(dstTsLint, srcFile.ByteContent);
+                    Console.WriteLine("Updated tslint.json from " + srcTsLint);
+                }
+            }
         }
 
         public void Build(BuildCtx buildCtx)
@@ -221,6 +237,7 @@ namespace Lib.TSCompiler
                 compiler.MergeCompilerOptions(compOpt);
                 compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
                 ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(ProjectOptions.TypeScriptVersion, JsonConvert.SerializeObject(compiler.CompilerOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                var wasSomeError = false;
                 do
                 {
                     buildModuleCtx.ChangedDts = false;
@@ -234,6 +251,13 @@ namespace Lib.TSCompiler
                     {
                         buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
                     }
+                    if (ProjectOptions.IncludeSources != null)
+                    {
+                        foreach (var src in ProjectOptions.IncludeSources)
+                        {
+                            buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
+                        }
+                    }
                     buildModuleCtx.Crawl();
                     if (buildModuleCtx.ToCompile.Count != 0)
                     {
@@ -241,7 +265,10 @@ namespace Lib.TSCompiler
                             compiler.MeasurePerformance = true;
                         compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
+                        {
+                            wasSomeError = true;
                             break;
+                        }
                         ProjectOptions.CurrentBuildCommonSourceDirectory = compiler.CommonSourceDirectory;
                         if (ProjectOptions.CommonSourceDirectory == null)
                             ProjectOptions.CommonSourceDirectory = compiler.CommonSourceDirectory;
@@ -253,12 +280,15 @@ namespace Lib.TSCompiler
                         if (ProjectOptions.SpriteGeneration)
                             ProjectOptions.SpriteGenerator.ProcessNew();
                         if (!compiler.EmitProgram())
+                        {
+                            wasSomeError = true;
                             break;
+                        }
                         buildModuleCtx.UpdateCacheIds();
                         buildModuleCtx.Crawl();
                     }
                 } while (buildModuleCtx.ChangedDts || buildModuleCtx.TrullyCompiledCount < buildModuleCtx.ToCompile.Count);
-                if (ProjectOptions.BuildCache.IsEnabled)
+                if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError)
                     StoreResultToBuildCache(buildModuleCtx._result);
                 buildCtx.BuildResult = buildModuleCtx._result;
             }
@@ -277,14 +307,14 @@ namespace Lib.TSCompiler
             {
                 if (f.TakenFromBuildCache)
                     continue;
-                if (f.Type == FileCompilationType.TypeScript && (f.SourceInfo == null || f.SourceInfo.IsEmpty) && f.LocalImports.Count == 0 && f.ModuleImports.Count == 0 && (f.Diagnostic == null || f.Diagnostic.Count == 0))
+                if (f.Type == FileCompilationType.TypeScript && (f.SourceInfo == null || f.SourceInfo.IsEmpty) && f.LocalImports.Count == 0 && f.ModuleImports.Count == 0)
                 {
                     if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ProjectOptions.ConfigurationBuildCacheId) == null)
                     {
                         var fbc = new BuildCache.TSFileBuildCache();
                         fbc.ConfigurationId = ProjectOptions.ConfigurationBuildCacheId;
                         fbc.ContentHash = f.Owner.HashOfContent;
-                        fbc.DtsOutput = f.DtsLink.Owner.Utf8Content;
+                        fbc.DtsOutput = f.DtsLink?.Owner.Utf8Content;
                         fbc.JsOutput = f.Output;
                         fbc.MapLink = f.MapLink;
                         bc.Store(fbc);

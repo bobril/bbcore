@@ -211,7 +211,7 @@ namespace Lib.TSCompiler
                         continue;
                     RecursiveFileSearch(item as IDirectoryCache, diskCache, fileRegex, res);
                 }
-                else if (item is IFileCache)
+                else if (item is IFileCache && !item.IsVirtual)
                 {
                     if (fileRegex.IsMatch(item.Name))
                     {
@@ -281,6 +281,7 @@ namespace Lib.TSCompiler
 
         string _originalContent;
         internal string CurrentBuildCommonSourceDirectory;
+        internal string[] IncludeSources;
 
         public void UpdateTSConfigJson()
         {
@@ -296,7 +297,9 @@ namespace Lib.TSCompiler
             }
             var newConfigObject = new TSConfigJson
             {
-                compilerOptions = GetDefaultTSCompilerOptions().Merge(CompilerOptions),
+                compilerOptions = GetDefaultTSCompilerOptions()
+                    .Merge(new TSCompilerOptions { allowJs = false })
+                    .Merge(CompilerOptions),
                 files = new List<string>(2),
                 include = new List<string> { "**/*" }
             };

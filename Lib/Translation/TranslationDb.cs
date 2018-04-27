@@ -169,7 +169,7 @@ namespace Lib.Translation
 
         public void SaveLangDbs(string dir)
         {
-            foreach(var p in Lang2ValueList)
+            foreach (var p in Lang2ValueList)
             {
                 if (!_loadedLanguages.Contains(p.Key))
                     continue;
@@ -185,7 +185,7 @@ namespace Lib.Translation
                     jw.WriteValue(Id2Key[idx].Message);
                     jw.WriteValue(Id2Key[idx].Hint);
                     jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
-                    if (idx < p.Value.Count)
+                    if (idx < p.Value.Count && p.Value[idx] != null)
                         jw.WriteValue(p.Value[idx]);
                     jw.WriteEndArray();
                 }
@@ -250,7 +250,7 @@ namespace Lib.Translation
                     for (var i = 0; i < UsedIds.Count; i++)
                     {
                         var idx = (int)UsedIds[i];
-                        jw.WriteValue((idx < p.Value.Count) ? p.Value[idx] : Id2Key[idx].Message);
+                        jw.WriteValue(((idx < p.Value.Count) ? p.Value[idx] : null) ?? Id2Key[idx].Message);
                     }
                     jw.WriteEndArray();
                     sw.Write(")");

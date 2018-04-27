@@ -10,5 +10,6 @@
         bool IsDirectory { get; }
         bool IsInvalid { get; set; }
         bool IsStale { get; set; }
+        bool IsVirtual { get; }
     }
 }

@@ -1,6 +1,6 @@
 !function(undefined) {
     "use strict";
-    var __export_ddd = undefined;
+    var __export_ddd = void 0;
     function setDdd(addd) {
         __export_ddd = addd;
     }

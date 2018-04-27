@@ -9,13 +9,16 @@ namespace Lib.Watcher
         public string WatchedDirectory
         {
             get => _watchedDirectory;
-            set { _watchedDirectory = value; RecreateFileSystemWatcher(); }
+            set
+            {
+                _watchedDirectory = value;
+                RecreateFileSystemWatcher();
+            }
         }
 
         string _watchedDirectory;
-
         FileSystemWatcher _fileSystemWatcher;
-
+        bool _disposed;
         readonly object _createLock = new object();
 
         public OsWatcher()
@@ -36,17 +39,6 @@ namespace Lib.Watcher
         {
             NotifyChange(e.OldFullPath);
             NotifyChange(e.FullPath);
-
-            if (Directory.Exists(e.FullPath))
-            {
-                foreach (var newLocation in Directory.EnumerateFileSystemEntries(e.FullPath, "*", SearchOption.AllDirectories))
-                {
-                    // Calculated previous path of this moved item.
-                    var oldLocation = Path.Combine(e.OldFullPath, newLocation.Substring(e.FullPath.Length + 1));
-                    NotifyChange(oldLocation);
-                    NotifyChange(newLocation);
-                }
-            }
         }
 
         void WatcherChangeHandler(object sender, FileSystemEventArgs e)
@@ -63,6 +55,8 @@ namespace Lib.Watcher
         {
             lock (_createLock)
             {
+                if (_disposed)
+                    return;
                 if (_fileSystemWatcher != null)
                 {
                     _fileSystemWatcher.EnableRaisingEvents = false;
@@ -72,21 +66,34 @@ namespace Lib.Watcher
                     _fileSystemWatcher.Renamed -= WatcherRenameHandler;
                     _fileSystemWatcher.Error -= WatcherErrorHandler;
                     _fileSystemWatcher.Dispose();
+                    _fileSystemWatcher = null;
                 }
-                _fileSystemWatcher = new FileSystemWatcher(WatchedDirectory);
-                _fileSystemWatcher.IncludeSubdirectories = true;
-                _fileSystemWatcher.Created += WatcherChangeHandler;
-                _fileSystemWatcher.Deleted += WatcherChangeHandler;
-                _fileSystemWatcher.Changed += WatcherChangeHandler;
-                _fileSystemWatcher.Renamed += WatcherRenameHandler;
-                _fileSystemWatcher.Error += WatcherErrorHandler;
-                _fileSystemWatcher.EnableRaisingEvents = true;
+                try
+                {
+                    _fileSystemWatcher = new FileSystemWatcher(WatchedDirectory);
+                    _fileSystemWatcher.IncludeSubdirectories = false;
+                    _fileSystemWatcher.Created += WatcherChangeHandler;
+                    _fileSystemWatcher.Deleted += WatcherChangeHandler;
+                    _fileSystemWatcher.Changed += WatcherChangeHandler;
+                    _fileSystemWatcher.Renamed += WatcherRenameHandler;
+                    _fileSystemWatcher.Error += WatcherErrorHandler;
+                    _fileSystemWatcher.EnableRaisingEvents = true;
+                }
+                catch
+                {
+                    _fileSystemWatcher = null;
+                }
             }
         }
 
         public void Dispose()
         {
-            _fileSystemWatcher.Dispose();
+            lock (_createLock)
+            {
+                _disposed = true;
+                if (_fileSystemWatcher != null)
+                    _fileSystemWatcher.Dispose();
+            }
         }
     }
 }

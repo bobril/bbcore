@@ -117,22 +117,15 @@
         s[name_bobril] = value;
     }
     function updateStyle(el, newStyle, oldStyle) {
-        var s = el.style;
-        if (isObject(newStyle)) {
-            shimStyle(newStyle);
-            var rule;
-            if (isObject(oldStyle)) {
-                for (rule in oldStyle) rule in newStyle || removeProperty(s, rule);
-                for (rule in newStyle) {
-                    (v = newStyle[rule]) !== undefined ? oldStyle[rule] !== v && setStyleProperty(s, rule, v) : removeProperty(s, rule);
-                }
-            } else {
-                oldStyle && (s.cssText = "");
-                for (rule in newStyle) {
-                    var v;
-                    (v = newStyle[rule]) !== undefined && setStyleProperty(s, rule, v);
-                }
+        var rule, s = el.style;
+        if (isObject(newStyle)) if (shimStyle(newStyle), isObject(oldStyle)) {
+            for (rule in oldStyle) rule in newStyle || removeProperty(s, rule);
+            for (rule in newStyle) {
+                (v = newStyle[rule]) !== undefined ? oldStyle[rule] !== v && setStyleProperty(s, rule, v) : removeProperty(s, rule);
             }
+        } else for (rule in oldStyle && (s.cssText = ""), newStyle) {
+            var v;
+            (v = newStyle[rule]) !== undefined && setStyleProperty(s, rule, v);
         } else if (newStyle) s.cssText = newStyle; else if (isObject(oldStyle)) for (rule in oldStyle) removeProperty(s, rule); else oldStyle && (s.cssText = "");
     }
     function setClassName(el, className) {
@@ -203,10 +196,9 @@
             null == refs && (refs = newHashObj(), ctx.refs = refs), refs[ref[1]] = value;
         }
     }
-    var focusRootStack = [], focusRootTop = null;
-    var currentCtx;
+    var currentCtx, focusRootStack = [], focusRootTop = null;
     function createNode(n, parentNode, createInto, createBefore) {
-        var el, c = {
+        var el, ctx, c = {
             tag: n.tag,
             key: n.key,
             ref: n.ref,
@@ -222,17 +214,14 @@
             ctx: undefined,
             orig: n
         }, backupInSvg = inSvg, backupInNotFocusable = inNotFocusable, component = c.component;
-        if (setRef(c.ref, c), component) {
-            var ctx;
-            component.ctxClass ? ((ctx = new component.ctxClass(c.data || {}, c)).data === undefined && (ctx.data = c.data || {}), 
-            ctx.me === undefined && (ctx.me = c)) : ctx = {
-                data: c.data || {},
-                me: c,
-                cfg: undefined
-            }, ctx.cfg = n.cfg === undefined ? findCfg(parentNode) : n.cfg, c.ctx = ctx, currentCtx = ctx, 
-            component.init && component.init(ctx, c), beforeRenderCallback !== emptyBeforeRenderCallback && beforeRenderCallback(n, 0), 
-            component.render && component.render(ctx, c), currentCtx = undefined;
-        } else 0;
+        (setRef(c.ref, c), component) && (component.ctxClass ? ((ctx = new component.ctxClass(c.data || {}, c)).data === undefined && (ctx.data = c.data || {}), 
+        ctx.me === undefined && (ctx.me = c)) : ctx = {
+            data: c.data || {},
+            me: c,
+            cfg: undefined
+        }, ctx.cfg = n.cfg === undefined ? findCfg(parentNode) : n.cfg, c.ctx = ctx, currentCtx = ctx, 
+        component.init && component.init(ctx, c), beforeRenderCallback !== emptyBeforeRenderCallback && beforeRenderCallback(n, 0), 
+        component.render && component.render(ctx, c), currentCtx = undefined);
         var tag = c.tag;
         if ("-" === tag) return c.tag = undefined, c.children = undefined, c;
         var children = c.children, inSvgForeignObject = !1;
@@ -412,9 +401,8 @@
         } else if (tag === c.tag) {
             if (tag === undefined) {
                 if (isString(newChildren) && isString(cachedChildren)) {
-                    if (newChildren !== cachedChildren) {
-                        (el = c.element).textContent = newChildren, c.children = newChildren;
-                    }
+                    if (newChildren !== cachedChildren) (el = c.element).textContent = newChildren, 
+                    c.children = newChildren;
                 } else inNotFocusable && focusRootTop === c && (inNotFocusable = !1), deepness <= 0 ? __export_isArray(cachedChildren) && selectedUpdate(c.children, createInto, createBefore) : c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1), 
                 inSvg = backupInSvg, inNotFocusable = backupInNotFocusable;
                 return finishUpdateNode(n, c, component), c;
@@ -498,8 +486,8 @@
     function updateChildrenCore(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
         for (var newEnd = newChildren.length, cachedLength = cachedChildren.length, cachedEnd = cachedLength, newIndex = 0, cachedIndex = 0; newIndex < newEnd && cachedIndex < cachedEnd; ) {
             if (newChildren[newIndex].key !== cachedChildren[cachedIndex].key) {
-                for (;newChildren[newEnd - 1].key === cachedChildren[cachedEnd - 1].key && (newEnd--, 
-                cachedEnd--, updateNodeInUpdateChildren(newChildren[newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element, deepness), 
+                for (;newChildren[newEnd - 1].key === cachedChildren[cachedEnd - 1].key && (cachedEnd--, 
+                updateNodeInUpdateChildren(newChildren[--newEnd], cachedChildren, cachedEnd, cachedLength, createBefore, element, deepness), 
                 newIndex < newEnd && cachedIndex < cachedEnd); ) ;
                 if (newIndex < newEnd && cachedIndex < cachedEnd) {
                     if (newChildren[newIndex].key === cachedChildren[cachedEnd - 1].key) {
@@ -532,9 +520,8 @@
         for (var key, cachedKeys = newHashObj(), newKeys = newHashObj(), backupNewIndex = newIndex, backupCachedIndex = cachedIndex, deltaKeyless = 0; cachedIndex < cachedEnd; cachedIndex++) null != (key = cachedChildren[cachedIndex].key) ? cachedKeys[key] = cachedIndex : deltaKeyless--;
         for (var keyLess = -deltaKeyless - deltaKeyless; newIndex < newEnd; newIndex++) null != (key = newChildren[newIndex].key) ? newKeys[key] = newIndex : deltaKeyless++;
         keyLess += deltaKeyless;
-        var delta = 0;
-        newIndex = backupNewIndex, cachedIndex = backupCachedIndex;
-        for (var cachedKey; cachedIndex < cachedEnd && newIndex < newEnd; ) if (null !== cachedChildren[cachedIndex]) if (null != (cachedKey = cachedChildren[cachedIndex].key)) {
+        var cachedKey, delta = 0;
+        for (newIndex = backupNewIndex, cachedIndex = backupCachedIndex; cachedIndex < cachedEnd && newIndex < newEnd; ) if (null !== cachedChildren[cachedIndex]) if (null != (cachedKey = cachedChildren[cachedIndex].key)) {
             if (null == (key = newChildren[newIndex].key)) {
                 for (newIndex++; newIndex < newEnd && null == (key = newChildren[newIndex].key); ) newIndex++;
                 if (null == key) break;
@@ -670,14 +657,14 @@
         }
         return !1;
     }
-    var deferSyncUpdateRequested = !1;
+    var rootIds, deferSyncUpdateRequested = !1;
     function syncUpdate() {
         deferSyncUpdateRequested = !1, internalUpdate(__export_now() - startTime);
     }
     function update(time) {
         scheduled = !1, internalUpdate(time);
     }
-    var rootIds, RootComponent = createVirtualComponent({
+    var RootComponent = createVirtualComponent({
         render: function(ctx, me) {
             var r = ctx.data, c = r.f(r);
             c === undefined ? me.tag = "-" : me.children = c;
@@ -698,11 +685,8 @@
                     if (rafter !== undefined && null != (insertBefore = getDomNode(rafter.n))) break;
                 }
                 if (focusRootTop && (inNotFocusable = !isLogicalParent(focusRootTop, r.p, rootIds)), 
-                r.e === undefined && (r.e = document.body), rc) if (fullRefresh || rc.ctx[ctxInvalidated] === frameCounter) {
-                    updateNode(RootComponent(r), rc, r.e, insertBefore, fullRefresh ? 1e6 : rc.ctx[ctxDeepness]);
-                } else __export_isArray(r.c) && selectedUpdate(r.c, r.e, insertBefore); else {
-                    rc = createNode(RootComponent(r), undefined, r.e, insertBefore), r.n = rc;
-                }
+                r.e === undefined && (r.e = document.body), rc) if (fullRefresh || rc.ctx[ctxInvalidated] === frameCounter) updateNode(RootComponent(r), rc, r.e, insertBefore, fullRefresh ? 1e6 : rc.ctx[ctxDeepness]); else __export_isArray(r.c) && selectedUpdate(r.c, r.e, insertBefore); else rc = createNode(RootComponent(r), undefined, r.e, insertBefore), 
+                r.n = rc;
                 r.c = rc.children;
             }
         }
@@ -830,14 +814,14 @@
         }
         return media;
     }
-    var __export_asap = function() {
+    var testStyle, __export_asap = function() {
         var callbacks_bobril = [];
         function executeCallbacks() {
             var cbList = callbacks_bobril;
             callbacks_bobril = [];
             for (var i_bobril = 0, len = cbList.length; i_bobril < len; i_bobril++) cbList[i_bobril]();
         }
-        var onreadystatechange = "onreadystatechange";
+        var scriptEl, onreadystatechange = "onreadystatechange";
         if (window.MutationObserver) {
             var hiddenDiv = document.createElement("div");
             return new MutationObserver(executeCallbacks).observe(hiddenDiv, {
@@ -855,15 +839,12 @@
                 callbacks_bobril.push(fn), hasPostMessage || (hasPostMessage = !0, window.postMessage(MESSAGE_PREFIX, "*"));
             };
         }
-        if (!window.setImmediate && onreadystatechange in document.createElement("script")) {
-            var scriptEl;
-            return function(callback) {
-                callbacks_bobril.push(callback), scriptEl || ((scriptEl = document.createElement("script"))[onreadystatechange] = function() {
-                    scriptEl[onreadystatechange] = null, scriptEl.parentNode.removeChild(scriptEl), 
-                    scriptEl = null, executeCallbacks();
-                }, document.body.appendChild(scriptEl));
-            };
-        }
+        if (!window.setImmediate && onreadystatechange in document.createElement("script")) return function(callback) {
+            callbacks_bobril.push(callback), scriptEl || ((scriptEl = document.createElement("script"))[onreadystatechange] = function() {
+                scriptEl[onreadystatechange] = null, scriptEl.parentNode.removeChild(scriptEl), 
+                scriptEl = null, executeCallbacks();
+            }, document.body.appendChild(scriptEl));
+        };
         var timeout, timeoutFn = window.setImmediate || setTimeout;
         return function(callback) {
             callbacks_bobril.push(callback), timeout || (timeout = timeoutFn(function() {
@@ -999,32 +980,30 @@
                 s[oldName] = "none", addFilter(s, "progid:DXImageTransform.Microsoft.gradient(startColorstr='" + color1 + "',endColorstr='" + color2 + "', gradientType='" + dir + "')");
             }
         });
-    }() : function() {
-        var testStyle = document.createElement("div").style;
-        testStyle.cssText = "background:-webkit-linear-gradient(top,red,red)", testStyle.background.length > 0 && function() {
-            var startsWithGradient = /^(?:repeating\-)?(?:linear|radial)\-gradient/gi, revDirs = {
-                top: "bottom",
-                bottom: "top",
-                left: "right",
-                right: "left"
-            };
-            function gradientWebkitConvertor(style_bobril, value, name_bobril) {
-                if (startsWithGradient.test(value)) {
-                    var pos = value.indexOf("(to ");
-                    if (pos > 0) {
-                        pos += 4;
-                        var posEnd = value.indexOf(",", pos), dir = value.slice(pos, posEnd);
-                        dir = dir.split(" ").map(function(v) {
-                            return revDirs[v] || v;
-                        }).join(" "), value = value.slice(0, pos - 3) + dir + value.slice(posEnd);
-                    }
-                    value = "-webkit-" + value;
+    }() : ((testStyle = document.createElement("div").style).cssText = "background:-webkit-linear-gradient(top,red,red)", 
+    testStyle.background.length > 0 && function() {
+        var startsWithGradient = /^(?:repeating\-)?(?:linear|radial)\-gradient/gi, revDirs = {
+            top: "bottom",
+            bottom: "top",
+            left: "right",
+            right: "left"
+        };
+        function gradientWebkitConvertor(style_bobril, value, name_bobril) {
+            if (startsWithGradient.test(value)) {
+                var pos = value.indexOf("(to ");
+                if (pos > 0) {
+                    pos += 4;
+                    var posEnd = value.indexOf(",", pos), dir = value.slice(pos, posEnd);
+                    dir = dir.split(" ").map(function(v) {
+                        return revDirs[v] || v;
+                    }).join(" "), value = value.slice(0, pos - 3) + dir + value.slice(posEnd);
                 }
-                style_bobril[name_bobril] = value;
+                value = "-webkit-" + value;
             }
-            setStyleShim("background", gradientWebkitConvertor);
-        }();
-    }();
+            style_bobril[name_bobril] = value;
+        }
+        setStyleShim("background", gradientWebkitConvertor);
+    }());
     var bValue = "b$value", bSelectionStart = "b$selStart", bSelectionEnd = "b$selEnd", tValue = "value";
     function isCheckboxLike(el) {
         var t = el.type;
@@ -1139,19 +1118,17 @@
         };
     }
     function emitOnKeyDown(ev, _target, node) {
-        if (!node) return !1;
-        return !!bubble(node, "onKeyDown", buildParam(ev)) && (preventDefault(ev), !0);
+        return !!node && (!!bubble(node, "onKeyDown", buildParam(ev)) && (preventDefault(ev), 
+        !0));
     }
     function emitOnKeyUp(ev, _target, node) {
-        if (!node) return !1;
-        return !!bubble(node, "onKeyUp", buildParam(ev)) && (preventDefault(ev), !0);
+        return !!node && (!!bubble(node, "onKeyUp", buildParam(ev)) && (preventDefault(ev), 
+        !0));
     }
     function emitOnKeyPress(ev, _target, node) {
-        if (!node) return !1;
-        if (0 === ev.which) return !1;
-        return !!bubble(node, "onKeyPress", {
+        return !!node && (0 !== ev.which && (!!bubble(node, "onKeyPress", {
             charCode: ev.which || ev.keyCode
-        }) && (preventDefault(ev), !0);
+        }) && (preventDefault(ev), !0)));
     }
     addEvent("keydown", 50, emitOnKeyDown), addEvent("keyup", 50, emitOnKeyUp), addEvent("keypress", 50, emitOnKeyPress);
     var MoveOverIsNotTap = 13, TapShouldBeShorterThanMs = 750, MaxBustDelay = 500, MaxBustDelayForIE = 800, BustDistance = 50, ownerCtx = null, onClickText = "onClick", onDoubleClickText = "onDoubleClick";
@@ -1268,8 +1245,7 @@
     }
     function buildHandlerMouse(name_bobril) {
         return function(ev, target, node) {
-            if (target = document.elementFromPoint(ev.clientX, ev.clientY), node = deref(target), 
-            hasPointerEventsNoneB(node)) {
+            if (hasPointerEventsNoneB(node = deref(target = document.elementFromPoint(ev.clientX, ev.clientY)))) {
                 var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
                 target = fixed[0], node = fixed[1];
             }
@@ -1315,12 +1291,10 @@
     function mouseEnterAndLeave(ev) {
         ev;
         var t = document.elementFromPoint(ev.x, ev.y), toPath = vdomPath(t), node = 0 == toPath.length ? undefined : toPath[toPath.length - 1];
-        if (hasPointerEventsNoneB(node)) {
-            toPath = vdomPath(t = pointerEventsNoneFix(ev.x, ev.y, t, null == node ? undefined : node)[0]);
-        }
+        hasPointerEventsNoneB(node) && (toPath = vdomPath(t = pointerEventsNoneFix(ev.x, ev.y, t, null == node ? undefined : node)[0]));
         bubble(node, "onMouseOver", ev);
-        for (var common = 0; common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common]; ) common++;
-        var n, c, i_bobril = prevMousePath.length;
+        for (var n, c, common = 0; common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common]; ) common++;
+        var i_bobril = prevMousePath.length;
         for (i_bobril > 0 && (n = prevMousePath[i_bobril - 1]) && (c = n.component) && c.onMouseOut && c.onMouseOut(n.ctx, ev); i_bobril > common; ) (n = prevMousePath[--i_bobril]) && (c = n.component) && c.onMouseLeave && c.onMouseLeave(n.ctx, ev);
         for (;i_bobril < toPath.length; ) (n = toPath[i_bobril]) && (c = n.component) && c.onMouseEnter && c.onMouseEnter(n.ctx, ev), 
         i_bobril++;
@@ -1384,8 +1358,7 @@
     }
     function createHandler(handlerName, allButtons) {
         return function(ev, target, node) {
-            if (1 == listeningEventDeepness && ("INPUT" != target.nodeName || 0 != ev.clientX || 0 != ev.clientY) && (target = document.elementFromPoint(ev.clientX, ev.clientY), 
-            node = deref(target), hasPointerEventsNoneB(node))) {
+            if (1 == listeningEventDeepness && ("INPUT" != target.nodeName || 0 != ev.clientX || 0 != ev.clientY) && hasPointerEventsNoneB(node = deref(target = document.elementFromPoint(ev.clientX, ev.clientY)))) {
                 var fixed = pointerEventsNoneFix(ev.clientX, ev.clientY, target, node);
                 target = fixed[0], node = fixed[1];
             }
@@ -1407,9 +1380,7 @@
     }
     function nodeOnPoint(x, y) {
         var target = document.elementFromPoint(x, y), node = deref(target);
-        if (hasPointerEventsNoneB(node)) {
-            node = pointerEventsNoneFix(x, y, target, node)[1];
-        }
+        hasPointerEventsNoneB(node) && (node = pointerEventsNoneFix(x, y, target, node)[1]);
         return node;
     }
     function handleSelectStart(ev, _target, node) {
@@ -1477,12 +1448,12 @@
             return emitOnFocusChange(!1);
         }, 10), !1;
     }
-    addEvent("^focus", 50, function() {
-        return emitOnFocusChange(!0);
-    }), addEvent("^blur", 50, emitOnFocusChangeDelayed);
     function focused() {
         return currentFocusedNode;
     }
+    addEvent("^focus", 50, function() {
+        return emitOnFocusChange(!0);
+    }), addEvent("^blur", 50, emitOnFocusChangeDelayed);
     var callbacks = [];
     function emitOnScroll(_ev, _target, node) {
         for (var info = {
@@ -1663,8 +1634,8 @@
     function updateFromNative(dnd, ev) {
         dnd.shift = ev.shiftKey, dnd.ctrl = ev.ctrlKey, dnd.alt = ev.altKey, dnd.meta = ev.metaKey, 
         dnd.x = ev.clientX, dnd.y = ev.clientY, dnd.totalX += Math.abs(dnd.x - dnd.lastX), 
-        dnd.totalY += Math.abs(dnd.y - dnd.lastY);
-        dndMoved(nodeOnPoint(dnd.x, dnd.y), dnd), dnd.lastX = dnd.x, dnd.lastY = dnd.y;
+        dnd.totalY += Math.abs(dnd.y - dnd.lastY), dndMoved(nodeOnPoint(dnd.x, dnd.y), dnd), 
+        dnd.lastX = dnd.x, dnd.lastY = dnd.y;
     }
     var effectAllowedTable = [ "none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all" ];
     function handleDragStart(ev, _target, node) {
@@ -1803,7 +1774,7 @@
     }
     var firstStyles = !1;
     function beforeFrame() {
-        var dbs = document.body.style;
+        var _a, dbs = document.body.style;
         if (firstStyles && uptimeMs >= 150 && (dbs.opacity = "1", firstStyles = !1), rebuildStyles) {
             1 === frameCounter && "webkitAnimation" in dbs && (firstStyles = !0, dbs.opacity = "0", 
             setTimeout(__export_invalidate, 200));
@@ -1838,8 +1809,8 @@
                     extractedInlStyle.userSelect = style_1.userSelect, delete style_1.userSelect), ss.inlStyle = extractedInlStyle, 
                     shimStyle(style_1);
                     var cssStyle = inlineStyleToCssDeclaration(style_1);
-                    cssStyle.length > 0 && (styleStr += (null == name_1 ? parent_1 : buildCssRule(parent_1, name_1)) + " {" + cssStyle + "}\n");
-                    for (var key2 in flattenPseudo) {
+                    for (var key2 in cssStyle.length > 0 && (styleStr += (null == name_1 ? parent_1 : buildCssRule(parent_1, name_1)) + " {" + cssStyle + "}\n"), 
+                    flattenPseudo) {
                         var item = flattenPseudo[key2];
                         shimStyle(item), styleStr += (null == name_1 ? parent_1 + ":" + key2 : buildCssRule(parent_1, name_1 + ":" + key2)) + " {" + inlineStyleToCssDeclaration(item) + "}\n";
                     }
@@ -1852,7 +1823,6 @@
             htmlStyle = styleElement, rebuildStyles = !1;
         }
         chainedBeforeFrame();
-        var _a;
     }
     var uppercasePattern = /([A-Z])/g, msPattern = /^ms-/;
     function hyphenateStyle(s) {

@@ -85,12 +85,12 @@ namespace Lib.Composition
             }
             if (_command is BuildInteractiveCommand iCommand)
             {
-                RunInteractive(iCommand.Port.Value, iCommand.Sprite.Value);
+                RunInteractive(iCommand.Port.Value, iCommand.Sprite.Value, iCommand.VersionDir.Value);
             }
             else if (_command is BuildInteractiveNoUpdateCommand yCommand)
             {
                 _forbiddenDependencyUpdate = true;
-                RunInteractive(yCommand.Port.Value, yCommand.Sprite.Value);
+                RunInteractive(yCommand.Port.Value, yCommand.Sprite.Value, yCommand.VersionDir.Value);
             }
             else if (_command is BuildCommand bCommand)
             {
@@ -167,24 +167,27 @@ namespace Lib.Composition
                         {
                             proj.TranslationDb.SaveLangDbs(PathUtils.Join(proj.Owner.Owner.FullPath, "translations"));
                         }
-                        if (bCommand.Fast.Value)
-                        {
-                            var fastBundle = new FastBundleBundler(_tools);
-                            fastBundle.FilesContent = filesContent;
-                            fastBundle.Project = proj;
-                            fastBundle.BuildResult = buildResult;
-                            fastBundle.Build("bb/base", "bundle.js.map");
-                        }
                         else
                         {
-                            var bundle = new BundleBundler(_tools);
-                            bundle.FilesContent = filesContent;
-                            bundle.Project = proj;
-                            bundle.BuildResult = buildResult;
-                            bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
+                            if (bCommand.Fast.Value)
+                            {
+                                var fastBundle = new FastBundleBundler(_tools);
+                                fastBundle.FilesContent = filesContent;
+                                fastBundle.Project = proj;
+                                fastBundle.BuildResult = buildResult;
+                                fastBundle.Build("bb/base", "bundle.js.map");
+                            }
+                            else
+                            {
+                                var bundle = new BundleBundler(_tools);
+                                bundle.FilesContent = filesContent;
+                                bundle.Project = proj;
+                                bundle.BuildResult = buildResult;
+                                bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
+                            }
+                            SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
+                            totalFiles += filesContent.Count;
                         }
-                        SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
-                        totalFiles += filesContent.Count;
                     }
                 }
                 catch (Exception ex)
@@ -258,7 +261,7 @@ namespace Lib.Composition
                             {
                                 testFailures = results.TestsFailed;
                                 if (testCommand.Out.Value != null)
-                                    File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(), new UTF8Encoding(false));
+                                    File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(testCommand.FlatTestSuites.Value), new UTF8Encoding(false));
                                 wait.Release();
                             });
                             var durationb = DateTime.UtcNow - start;
@@ -326,7 +329,7 @@ namespace Lib.Composition
             }
         }
 
-        void RunInteractive(string portInString, bool enableSpritting)
+        void RunInteractive(string portInString, bool enableSpritting, string versionDir)
         {
             IfEnabledStartVerbosive();
             int port = 8080;
@@ -339,7 +342,7 @@ namespace Lib.Composition
             InitMainServer();
             AddProject(PathUtils.Normalize(Environment.CurrentDirectory), enableSpritting);
             StartWebServer(port);
-            InitInteractiveMode();
+            InitInteractiveMode(versionDir);
             WaitForStop();
         }
 
@@ -482,7 +485,7 @@ namespace Lib.Composition
 
             if (path.StartsWithSegments("/bb/base", out var src))
             {
-                var srcPath = PathUtils.Join(_currentProject.Owner.Owner.FullPath, src.Value.Substring(1));
+                var srcPath = PathUtils.Join(_currentProject.CommonSourceDirectory, src.Value.Substring(1));
                 var srcFileCache = _dc.TryGetItem(srcPath) as IFileCache;
                 if (srcFileCache != null)
                 {
@@ -554,7 +557,7 @@ namespace Lib.Composition
             _testServer.OnChange.Subscribe((_) => { _mainServer.NotifyTestServerChange(); });
         }
 
-        public void InitInteractiveMode()
+        public void InitInteractiveMode(string versionDir)
         {
             _hasBuildWork.Set();
             _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200)).Subscribe((_) => _hasBuildWork.Set());
@@ -594,6 +597,7 @@ namespace Lib.Composition
                         {
                             proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
                             proj.Owner.FirstInitialize();
+                            proj.OutputSubDir = versionDir;
                             proj.RefreshMainFile();
                             proj.RefreshTestSources();
                             proj.SpriterInitialization();

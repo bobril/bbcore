@@ -1,8 +1,8 @@
 !function(n) {
     "use strict";
-    var t = n;
-    function c(n) {
-        t = n;
+    var i = void 0;
+    function t(n) {
+        i = n;
     }
-    c(function() {}), t && t();
+    t(function() {}), i && i();
 }();

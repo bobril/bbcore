@@ -2,6 +2,105 @@
 
 ## [unreleased]
 
+## 0.33.1
+
+### Fixed
+
+*   Another bug fixed in Watcher.
+
+## 0.33.0
+
+### Added
+
+*   Autoupdating tslint.json from bb-tslint-plugin when is in devDependencies.
+
+### Fixed
+
+*   Watcher does not crash build when directory is deleted.
+
+## 0.32.0
+
+### Added
+
+*   Option for tests to generate hierarchical output XML. (Contributed by https://github.com/pstovik)
+
+## 0.31.0
+
+### Added
+
+*   IncludeSources feature mainly for including d.ts files into compilation. See TestProjects/IncludeSources/package.json for example.
+
+## 0.30.0
+
+### Fixed
+
+*   Prevent build cache poisoning in case of error in any file not just one storing to cache.
+
+## 0.29.0
+
+### Added
+
+*   Interactive modes now supports --versionDir parameter from build command.
+
+### Changed
+
+*   AllowJs is false in tsconfig.json, even through it is still true in build.
+
+### Fixed
+
+*   Regression with failing tests after recompilation. Do not include virtual d.ts files to list of files to automatically compile.
+*   JUnit xml correctly specify utf-8 encoding.
+
+## 0.28.0
+
+### Improved
+
+*   Bundling speed due to fix in uglify-es.
+
+### Changed
+
+*   Default regex for test sources now includes also spec.d.ts files allowing easily extend build in jasmine matchers.
+
+### Fixed
+
+*   BuildCache with JavaScript source without d.ts crashed.
+
+## 0.27.3
+
+### Fixed
+
+*   Extreamly slow build compression with a lot of unused constants. And even improved compression size!
+*   Build exeption with empty ts file.
+
+## 0.27.2
+
+### Fixed
+
+*   Hosting source code in case of sandboxes projects. In `TestProjects/Sandbox/piskoviste` there is example of setup how to enable debugging from VS Code.
+
+## 0.27.1
+
+### Fixed
+
+*   Translations in some cases are null instead of default language fallback.
+
+## 0.27.0
+
+### Fixed
+
+*   Wrong source maps when js source ended with new line.
+
+### Changed
+
+*   build -u 1 command now just update translations, but does not output any build files making it much faster.
+
+## 0.26.0
+
+### Fixed
+
+*   Crash of minification with very complex files by using custom build of ChakraCore.dll (only for Windows)
+*   Again rewritten file watching.
+
 ## 0.25.0
 
 ### Fixed

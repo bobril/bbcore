@@ -32,6 +32,11 @@
 			<Visible>false</Visible>
 		</Content>
 	</ItemGroup>
+	<ItemGroup>
+		<Content Include="ChakraCore.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 	<Target Name="СonvertResxToCs" BeforeTargets="BeforeCompile">
 		<ResxToCsTask InputDirectory="./Resources/" Namespace="$(RootNamespace).Resources" InternalAccessModifier="true" />
 	</Target>

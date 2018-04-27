@@ -118,9 +118,9 @@ namespace Lib.TSCompiler
             if (testProj)
             {
                 FilesContent["test.html"] = _indexHtml;
-                FilesContent["jasmine-core.js"] = _tools.JasmineCoreJs;
-                FilesContent["jasmine-boot.js"] = _tools.JasmineBootJs;
-                FilesContent["loader.js"] = _tools.LoaderJs;
+                FilesContent[_versionDirPrefix + "jasmine-core.js"] = _tools.JasmineCoreJs;
+                FilesContent[_versionDirPrefix + "jasmine-boot.js"] = _tools.JasmineBootJs;
+                FilesContent[_versionDirPrefix + "loader.js"] = _tools.LoaderJs;
             }
             else
             {
@@ -128,7 +128,7 @@ namespace Lib.TSCompiler
                 FilesContent[_versionDirPrefix + "loader.js"] = _tools.LoaderJs;
                 if (Project.LiveReloadEnabled)
                 {
-                    FilesContent[_versionDirPrefix + "liveReload.js"] = _tools.LiveReloadJs.Replace("##Idx##", (Project.LiveReloadIdx+1).ToString());
+                    FilesContent[_versionDirPrefix + "liveReload.js"] = _tools.LiveReloadJs.Replace("##Idx##", (Project.LiveReloadIdx + 1).ToString());
                 }
             }
             FilesContent[_versionDirPrefix + PathUtils.WithoutExtension(mapUrl)] = _bundleJs;
@@ -138,7 +138,7 @@ namespace Lib.TSCompiler
 
         void BuildFastBundlerTestHtml(List<string> testSources, string root, string cssLink)
         {
-            var reqSpec = string.Join(' ', testSources.Select(src => "R.r(\'" + PathUtils.WithoutExtension(PathUtils.Subtract(src, root)) + "\');"));
+            var reqSpec = string.Join(' ', testSources.Where(src => !src.EndsWith(".d.ts")).Select(src => "R.r(\'" + PathUtils.WithoutExtension(PathUtils.Subtract(src, root)) + "\');"));
             _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
@@ -146,14 +146,14 @@ namespace Lib.TSCompiler
         <title>{Project.Title}</title>{cssLink}
     </head>
     <body>{InitG11n()}
-        <script src=""jasmine-core.js"" charset=""utf-8""></script>
-        <script src=""jasmine-boot.js"" charset=""utf-8""></script>
-        <script src=""loader.js"" charset=""utf-8""></script>
+        <script src=""{_versionDirPrefix}jasmine-core.js"" charset=""utf-8""></script>
+        <script src=""{_versionDirPrefix}jasmine-boot.js"" charset=""utf-8""></script>
+        <script src=""{_versionDirPrefix}loader.js"" charset=""utf-8""></script>
         <script>
             {GetGlobalDefines()}
             {GetModuleMap()}
         </script>
-        <script src=""testbundle.js"" charset=""utf-8""></script>
+        <script src=""{_versionDirPrefix}testbundle.js"" charset=""utf-8""></script>
         <script>
             {RequireBobril()} {reqSpec}
         </script>
@@ -169,7 +169,7 @@ namespace Lib.TSCompiler
             {
                 liveReloadInclude = $@"<script src=""{_versionDirPrefix}liveReload.js"" charset=""utf-8""></script>";
             }
-                _indexHtml = $@"<!DOCTYPE html>
+            _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
         <meta charset=""utf-8"">{Project.HtmlHeadExpanded}

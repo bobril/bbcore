@@ -543,7 +543,7 @@ interface ISplitInfo {
 type SplitMap = { [name: string]: ISplitInfo };
 type NamesSet = { [name: string]: true };
 
-var number2Ident = (function() {
+var number2Ident = (function () {
     var leading = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".split("");
     var digits = "0123456789".split("");
     var chars = leading.concat(digits);
@@ -617,9 +617,9 @@ function bundle(project: IBundleProject) {
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
         let bundleAst = <IAstToplevel>parse(
             '(function(undefined){"use strict";\n' +
-                bb.tslibSource(bundleNames.length > 1) +
-                (project.compress === false ? emitGlobalDefines(project.defines) : "") +
-                "})()"
+            bb.tslibSource(bundleNames.length > 1) +
+            (project.compress === false ? emitGlobalDefines(project.defines) : "") +
+            "})()"
         );
         let bodyAst = (<IAstFunction>(<IAstCall>(<IAstSimpleStatement>bundleAst.body![0]).body).expression).body!;
         let pureFuncs: NamesSet = Object.create(null);
@@ -1064,6 +1064,7 @@ function compressAst(
             hoist_funs: false,
             warnings: false,
             unsafe: true,
+            collapse_vars: true,
             global_defs: project.defines,
             pure_funcs: call => {
                 if (

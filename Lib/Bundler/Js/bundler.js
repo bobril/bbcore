@@ -965,6 +965,7 @@ function compressAst(project, bundleAst, pureFuncs) {
             hoist_funs: false,
             warnings: false,
             unsafe: true,
+            collapse_vars: true,
             global_defs: project.defines,
             pure_funcs: call => {
                 if (call.start !== undefined &&
