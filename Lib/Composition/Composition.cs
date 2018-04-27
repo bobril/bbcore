@@ -85,7 +85,7 @@ namespace Lib.Composition
             }
             if (_command is BuildInteractiveCommand iCommand)
             {
-                RunInteractive(iCommand.Port.Value,iCommand.Sprite.Value);
+                RunInteractive(iCommand.Port.Value, iCommand.Sprite.Value);
             }
             else if (_command is BuildInteractiveNoUpdateCommand yCommand)
             {
@@ -197,7 +197,7 @@ namespace Lib.Composition
             }
             var duration = DateTime.UtcNow - start;
             Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-            Console.WriteLine("Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
+            Console.WriteLine("Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
             Console.ForegroundColor = ConsoleColor.Gray;
             Environment.ExitCode = errors != 0 ? 1 : 0;
         }
@@ -257,13 +257,13 @@ namespace Lib.Composition
                             _testServer.OnTestResults.Subscribe((results) =>
                             {
                                 testFailures = results.TestsFailed;
-                                if (testCommand.Out.Value!=null)
+                                if (testCommand.Out.Value != null)
                                     File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(), new UTF8Encoding(false));
                                 wait.Release();
                             });
                             var durationb = DateTime.UtcNow - start;
                             Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)+"s");
+                            Console.WriteLine("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
                             Console.ForegroundColor = ConsoleColor.Gray;
                             _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
                             StartChromeTest();
@@ -542,6 +542,7 @@ namespace Lib.Composition
             {
                 Console.ForegroundColor = results.TestsFailed != 0 ? ConsoleColor.Red : results.TestsSkipped != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                 Console.WriteLine("Tests on {0} Failed: {1} Skipped: {2} Total: {3} Duration: {4:F1}s", results.UserAgent, results.TestsFailed, results.TestsSkipped, results.TotalTests, results.Duration * 0.001);
+                _notificationManager.SendNotification(results.ToNotificationParameters());
                 Console.ForegroundColor = ConsoleColor.Gray;
             });
         }
@@ -663,9 +664,9 @@ namespace Lib.Composition
                     }
                     var duration = DateTime.UtcNow - start;
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
-                    _notificationManager.SendNotification(errors, warnings, duration.TotalSeconds);
+                    _notificationManager.SendNotification(NotificationParameters.CreateBuildParameters(errors, warnings, duration.TotalSeconds));
                     Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
+                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
                     Console.ForegroundColor = ConsoleColor.Gray;
                     _dc.ResetChange();
                 }

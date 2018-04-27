@@ -1,18 +1,30 @@
 Param(
-	[parameter(Mandatory=$true)]
-	[ValidateRange(0,[int]::MaxValue)]
-	[int]
-	$Errors,
+    [parameter(Mandatory = $true)]
+    [String]
+    $Type,
 
-	[parameter(Mandatory=$true)]
-	[ValidateRange(0,[int]::MaxValue)]
-	[int]
-	$Warnings,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]
+    $Errors,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]
+    $Warnings,
+    [ValidateRange(0, [double]::MaxValue)]
+    [double]
+    $Time,
 
-	[parameter(Mandatory=$true)]
-	[ValidateRange(0,[int]::MaxValue)]
-	[double]
-	$Time
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]
+    $Failed,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]
+    $Skipped,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]
+    $Total,
+    [ValidateRange(0, [double]::MaxValue)]
+    [double]
+    $Duration
 )
 
 $_ = [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime]
@@ -21,39 +33,55 @@ $_ = [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notification
 
 $APP_ID = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe'
 
-if($Errors -eq 0)
-{
-	$Result = "Build was successful."
-	$Icon = "success.png"
-}
-else
-{
-	$Result = "Build failed."
-	$Icon = "error.png"
-}
+if ($Type -eq "build") {
+    if ($Errors -eq 0) {
+        $Result = "Build was successful."
+        $Icon = "success.png"
+    }
+    else {
+        $Result = "Build failed."
+        $Icon = "error.png"
+    }
 
-if ($Time -le 1)
-{
-	$TimeUnit = "ms"
-	$Time = $Time * 1000
-	$Time = [math]::Round($Time)
+    if ($Time -le 1) {
+        $TimeUnit = "ms"
+        $Time = $Time * 1000
+        $Time = [math]::Round($Time)
+    }
+    else {
+        $Time = [math]::Round($Time, 1)
+        $TimeUnit = "s"
+    }
+
+    $Line1 = $Result
+    $Line2 = "Errors: $($Errors), Warnings: $($Warnings)"
+    $Line3 = "Build done in: $($Time)$($TimeUnit)"
 }
-else
-{
-	$Time = [math]::Round($Time, 1)
-	$TimeUnit = "s"
+elseif ($Type -eq "tests") {
+    if($Failed -eq 0) {
+        $Result = "Tests finished."
+        $Icon = "success.png"
+    }
+    else {
+        $Result = "Tests failed."
+        $Icon = "error.png"
+    }
+
+    $Line1 = $Result
+    $Line2 = "Errors: $($Failed), Skipped: $($Skipped), Total: $($Total)"
+    $Line3 = "Duration: $($Duration)"
 }
 
 $Template = @"
 <toast duration="short">
-	<visual>
-		<binding template="ToastImageAndText04" baseUri="file:///$($PSScriptRoot)/">
-			<image id="1" src="$($Icon)" />
-			<text id="1">$($Result)</text>
-			<text id="2">Errors: $($Errors), Warnings: $($Warnings)</text>
-			<text id="3">Build done in: $($Time)$($TimeUnit)</text>
-		</binding>
-	</visual>
+    <visual>
+        <binding template="ToastImageAndText04" baseUri="file:///$($PSScriptRoot)/">
+            <image id="1" src="$($Icon)" />
+            <text id="1">$($Line1)</text>
+            <text id="2">$($Line2)</text>
+            <text id="3">$($Line3)</text>
+        </binding>
+    </visual>
 </toast>
 "@
 
