@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Text;
 using System.Reactive;
 using Lib.BuildCache;
+using Lib.Utils.Notification;
 
 namespace Lib.Composition
 {
@@ -44,6 +45,7 @@ namespace Lib.Composition
         IBuildCache _buildCache;
         bool _verbose;
         bool _forbiddenDependencyUpdate;
+        NotificationManager _notificationManager;
 
         public Composition()
         {
@@ -198,7 +200,7 @@ namespace Lib.Composition
             }
             var duration = DateTime.UtcNow - start;
             Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-            Console.WriteLine("Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
+            Console.WriteLine("Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
             Console.ForegroundColor = ConsoleColor.Gray;
             Environment.ExitCode = errors != 0 ? 1 : 0;
         }
@@ -363,6 +365,7 @@ namespace Lib.Composition
             }
             _tools = new ToolsDir.ToolsDir(_bbdir);
             _compilerPool = new CompilerPool(_tools);
+            _notificationManager = new NotificationManager();
         }
 
         public void InitDiskCache()
@@ -542,6 +545,7 @@ namespace Lib.Composition
             {
                 Console.ForegroundColor = results.TestsFailed != 0 ? ConsoleColor.Red : results.TestsSkipped != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                 Console.WriteLine("Tests on {0} Failed: {1} Skipped: {2} Total: {3} Duration: {4:F1}s", results.UserAgent, results.TestsFailed, results.TestsSkipped, results.TotalTests, results.Duration * 0.001);
+                _notificationManager.SendNotification(results.ToNotificationParameters());
                 Console.ForegroundColor = ConsoleColor.Gray;
             });
         }
@@ -664,8 +668,9 @@ namespace Lib.Composition
                     }
                     var duration = DateTime.UtcNow - start;
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
+                    _notificationManager.SendNotification(NotificationParameters.CreateBuildParameters(errors, warnings, duration.TotalSeconds));
                     Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
+                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
                     Console.ForegroundColor = ConsoleColor.Gray;
                     _dc.ResetChange();
                 }

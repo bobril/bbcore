@@ -180,7 +180,11 @@ namespace Lib.ToolsDir
             {
                 yarnExecName += ".cmd";
             }
-            return Environment.GetEnvironmentVariable("PATH").Split(System.IO.Path.PathSeparator).Select((p) => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), yarnExecName)).First((p) => File.Exists(p));
+            return Environment.GetEnvironmentVariable("PATH")
+                .Split(System.IO.Path.PathSeparator)
+                .Where(t => !string.IsNullOrEmpty(t))
+                .Select((p) => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), yarnExecName))
+                .First((p) => File.Exists(p));
         }
 
         public IJsEngine CreateJsEngine()
