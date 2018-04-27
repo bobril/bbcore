@@ -49,8 +49,8 @@ if ($Type -eq "build") {
         $Time = [math]::Round($Time)
     }
     else {
-        $Time = [math]::Round($Time, 1)
         $TimeUnit = "s"
+        $Time = [math]::Round($Time, 1)
     }
 
     $Line1 = $Result
@@ -59,7 +59,7 @@ if ($Type -eq "build") {
 }
 elseif ($Type -eq "tests") {
     if($Failed -eq 0) {
-        $Result = "Tests finished."
+		$Result = "Tests finished."
         $Icon = "success.png"
     }
     else {
@@ -67,13 +67,24 @@ elseif ($Type -eq "tests") {
         $Icon = "error.png"
     }
 
+    if ($Duration -le 1) {
+        $DurationUnit = "ms"
+        $Duration = $Duration * 1000
+        $Duration = [math]::Round($Duration)
+    }
+    else {
+        $DurationUnit = "s"
+        $Duration = [math]::Round($Duration, 1)
+    }
+
     $Line1 = $Result
     $Line2 = "Errors: $($Failed), Skipped: $($Skipped), Total: $($Total)"
-    $Line3 = "Duration: $($Duration)"
+    $Line3 = "Duration: $($Duration)$($DurationUnit)"
 }
 
 $Template = @"
 <toast duration="short">
+    <audio silent="true"/>
     <visual>
         <binding template="ToastImageAndText04" baseUri="file:///$($PSScriptRoot)/">
             <image id="1" src="$($Icon)" />
