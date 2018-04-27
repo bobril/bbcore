@@ -36,9 +36,11 @@ if ($Time -le 1)
 {
 	$TimeUnit = "ms"
 	$Time = $Time * 1000
+	$Time = [math]::Round($Time)
 }
 else
 {
+	$Time = [math]::Round($Time, 1)
 	$TimeUnit = "s"
 }
 
