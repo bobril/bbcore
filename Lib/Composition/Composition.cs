@@ -85,12 +85,12 @@ namespace Lib.Composition
             }
             if (_command is BuildInteractiveCommand iCommand)
             {
-                RunInteractive(iCommand.Port.Value, iCommand.Sprite.Value, iCommand.VersionDir.Value);
+                RunInteractive(_command as CommonInteractiveCommand);
             }
             else if (_command is BuildInteractiveNoUpdateCommand yCommand)
             {
                 _forbiddenDependencyUpdate = true;
-                RunInteractive(yCommand.Port.Value, yCommand.Sprite.Value, yCommand.VersionDir.Value);
+                RunInteractive(_command as CommonInteractiveCommand);
             }
             else if (_command is BuildCommand bCommand)
             {
@@ -211,7 +211,7 @@ namespace Lib.Composition
             InitTestServer();
             InitMainServer();
             AddProject(PathUtils.Normalize(Environment.CurrentDirectory), testCommand.Sprite.Value);
-            StartWebServer(0);
+            StartWebServer(0, false);
             DateTime start = DateTime.UtcNow;
             int errors = 0;
             int testFailures = 0;
@@ -329,20 +329,20 @@ namespace Lib.Composition
             }
         }
 
-        void RunInteractive(string portInString, bool enableSpritting, string versionDir)
+        void RunInteractive(CommonInteractiveCommand command)
         {
             IfEnabledStartVerbosive();
             int port = 8080;
-            if (int.TryParse(portInString, out var portInInt))
+            if (int.TryParse(command.Port.Value, out var portInInt))
             {
                 port = portInInt;
             }
             InitDiskCache();
             InitTestServer();
             InitMainServer();
-            AddProject(PathUtils.Normalize(Environment.CurrentDirectory), enableSpritting);
-            StartWebServer(port);
-            InitInteractiveMode(versionDir);
+            AddProject(PathUtils.Normalize(Environment.CurrentDirectory), command.Sprite.Value);
+            StartWebServer(port, command.BindToAny.Value);
+            InitInteractiveMode(command.VersionDir.Value);
             WaitForStop();
         }
 
@@ -405,14 +405,15 @@ namespace Lib.Composition
             project.Owner.Build(ctx);
         }
 
-        public void StartWebServer(int port)
+        public void StartWebServer(int port, bool bindToAny)
         {
             _webServer = new WebServerHost();
             _webServer.FallbackToRandomPort = true;
             _webServer.Port = port;
             _webServer.Handler = Handler;
+            _webServer.BindToAny = bindToAny;
             _webServer.Start();
-            Console.WriteLine($"Listening on http://localhost:{_webServer.Port}/");
+            Console.WriteLine($"Listening on http://{(bindToAny ? "*" : "localhost")}:{_webServer.Port}/");
         }
 
         async Task Handler(HttpContext context)

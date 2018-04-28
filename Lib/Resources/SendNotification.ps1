@@ -58,8 +58,8 @@ if ($Type -eq "build") {
     $Line3 = "Build done in: $($Time)$($TimeUnit)"
 }
 elseif ($Type -eq "tests") {
-    if($Failed -eq 0) {
-		$Result = "Tests finished."
+    if ($Failed -eq 0) {
+        $Result = "Tests finished."
         $Icon = "success.png"
     }
     else {
@@ -96,8 +96,13 @@ $Template = @"
 </toast>
 "@
 
-$Xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-$Xml.LoadXml($Template)
-$ToastNotification = [Windows.UI.Notifications.ToastNotification]::new($Xml)
-
-[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($APP_ID).Show($ToastNotification)
+try {
+    $Xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+    $Xml.LoadXml($Template)
+    $ToastNotification = [Windows.UI.Notifications.ToastNotification]::new($Xml)
+    
+    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($APP_ID).Show($ToastNotification)
+}
+catch {
+    # ignore   
+}

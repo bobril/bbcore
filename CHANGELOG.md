@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Added
+
+*   [Windows specific feature] Notifications about build and test. (Contributed by https://github.com/JanVargovsky)
+*   Added parameter --bindToAny to allow listen for external computers.
+
+### Fixed
+
+*   Crash when no dependencies in package.json.
+
 ## 0.33.1
 
 ### Fixed
