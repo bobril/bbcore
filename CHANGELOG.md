@@ -4,6 +4,8 @@
 
 ### Added
 
+*   Upgraded to ChakraCore 1.8.3
+*   Upgraded to .NetCore 2.1.0 Preview 2 nugets.
 *   [Windows specific feature] Notifications about build and test. (Contributed by https://github.com/JanVargovsky)
 *   Added parameter --bindToAny to allow listen for external computers.
 

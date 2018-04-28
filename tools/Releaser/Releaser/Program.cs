@@ -184,8 +184,8 @@ namespace Releaser
             process.WaitForExit();
             if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/ru-ru"))
                 Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/ru-ru", true);
-            if (File.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/ChakraCore.dll"))
-                File.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/ChakraCore.dll");
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/Resources"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/Resources", true);
             System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
         }
 
@@ -200,8 +200,8 @@ namespace Releaser
             process.WaitForExit();
             if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/ru-ru"))
                 Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/ru-ru", true);
-            if (File.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/ChakraCore.dll"))
-                File.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/ChakraCore.dll");
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/Resources"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/Resources", true);
             System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
         }
     }

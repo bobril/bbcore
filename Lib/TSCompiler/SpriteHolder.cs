@@ -4,6 +4,11 @@ using System.IO;
 using Lib.DiskCache;
 using Lib.Spriter;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Drawing;
+using SixLabors.ImageSharp.Processing.Processors;
+using SixLabors.ImageSharp.Processing.Transforms;
 using SixLabors.Primitives;
 
 namespace Lib.TSCompiler
@@ -161,7 +166,8 @@ namespace Lib.TSCompiler
                                 operation.ApplyProcessor(new Recolor(rgbColor));
                             });
                         }
-                        c.DrawImage(image, new Size(sprite.owidth, sprite.oheight), new Point(sprite.ox, sprite.oy), new GraphicsOptions());
+                        image = image.Clone(operation => operation.Crop(new Rectangle(new Point(sprite.ox, sprite.oy), new Size(sprite.owidth, sprite.oheight))));
+                        c.DrawImage(new GraphicsOptions(), image);
                     }
                 }
             });

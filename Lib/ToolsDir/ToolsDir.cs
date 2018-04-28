@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using JavaScriptEngineSwitcher.Core;
 using Lib.Utils;
@@ -26,10 +25,10 @@ namespace Lib.ToolsDir
                     Directory.CreateDirectory(dir);
                 lock (_lock)
                 {
-                    var jsEngineSwitcher = JsEngineSwitcher.Instance;
+                    var jsEngineSwitcher = JsEngineSwitcher.Current;
                     if (!jsEngineSwitcher.EngineFactories.Any())
                     {
-                        jsEngineSwitcher.EngineFactories.Add(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory());
+                        jsEngineSwitcher.EngineFactories.Add(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreSettings { MaxStackSize = 2000000 }));
                         jsEngineSwitcher.DefaultEngineName = JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;
                     }
                 }
@@ -189,7 +188,7 @@ namespace Lib.ToolsDir
 
         public IJsEngine CreateJsEngine()
         {
-            var jsEngineSwitcher = JsEngineSwitcher.Instance;
+            var jsEngineSwitcher = JsEngineSwitcher.Current;
             return jsEngineSwitcher.CreateDefaultEngine();
         }
 

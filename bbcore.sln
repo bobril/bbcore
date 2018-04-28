@@ -10,8 +10,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "bb", "bb\bb.csproj", "{B2F2
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BTDB", "BTDB\BTDB.csproj", "{41ACD94B-8E23-45B6-9850-F25A0B089218}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JavaScriptEngineSwitcher.ChakraCore", "JavaScriptEngineSwitcher.ChakraCore\JavaScriptEngineSwitcher.ChakraCore.csproj", "{D2A94228-A5B2-4767-9ECE-D4F276A2285F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,18 +68,6 @@ Global
 		{41ACD94B-8E23-45B6-9850-F25A0B089218}.Release|x64.Build.0 = Release|Any CPU
 		{41ACD94B-8E23-45B6-9850-F25A0B089218}.Release|x86.ActiveCfg = Release|Any CPU
 		{41ACD94B-8E23-45B6-9850-F25A0B089218}.Release|x86.Build.0 = Release|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Debug|x64.Build.0 = Debug|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Debug|x86.Build.0 = Debug|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Release|x64.ActiveCfg = Release|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Release|x64.Build.0 = Release|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Release|x86.ActiveCfg = Release|Any CPU
-		{D2A94228-A5B2-4767-9ECE-D4F276A2285F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

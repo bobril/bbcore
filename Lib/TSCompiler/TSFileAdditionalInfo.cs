@@ -2,6 +2,7 @@
 using Lib.DiskCache;
 using Lib.Utils;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Generic;
 using System.Linq;
 

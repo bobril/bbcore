@@ -11,5 +11,6 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Description>Key Value Database, Wrapped Dynamic IL generation with debugging + extensions, IOC Container, Object Database, RPC Library, Snappy Compression, Event Storage</Description>
     <PackageTags></PackageTags>
+    <WarningsAsErrors />
   </PropertyGroup>
 </Project>
