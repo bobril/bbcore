@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.DotNet.PlatformAbstractions;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -48,7 +49,7 @@ namespace Lib.Utils.Notification
 
         public static NotificationParameters CreateTestsParameters(int failed, int skipped, int total, double duration) =>
             new NotificationParameters(failed, skipped, total, duration);
-        
+
         public string ToPowershellArguments()
         {
             switch (Type)
@@ -65,11 +66,19 @@ namespace Lib.Utils.Notification
 
     public class NotificationManager
     {
+        static readonly Version WindowsMinimumVersionForToastNotificationManager = new Version(10, 0, 10240, 0);
+        static readonly Version OSVersion;
+
+        static NotificationManager()
+        {
+            Version.TryParse(RuntimeEnvironment.OperatingSystemVersion, out OSVersion);
+        }
+
         public void SendNotification(NotificationParameters parameters)
         {
             string GetCurrentDirectory() => Path.GetDirectoryName(Assembly.GetAssembly(typeof(NotificationManager)).Location);
 
-            void SendWindowsNotification()
+            void SendWindowsToastNotification()
             {
                 const string SendNotificationRelativePath = @"Resources\SendNotification.ps1";
                 string sendNotificationFullPath = Path.Combine(GetCurrentDirectory(), SendNotificationRelativePath);
@@ -78,16 +87,11 @@ namespace Lib.Utils.Notification
                 p.WaitForExit();
             }
 
-            switch (Environment.OSVersion.Platform)
+            switch (RuntimeEnvironment.OperatingSystemPlatform)
             {
-                case PlatformID.Win32NT:
-                    SendWindowsNotification();
-                    break;
-                case PlatformID.Unix:
-                    break;
-                case PlatformID.Xbox:
-                    break;
-                case PlatformID.MacOSX:
+                case Platform.Windows:
+                    if (OSVersion != null && OSVersion >= WindowsMinimumVersionForToastNotificationManager)
+                        SendWindowsToastNotification();
                     break;
                 default:
                     break;
