@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.34.0
+
 ### Added
 
 *   Upgraded to ChakraCore 1.8.3
