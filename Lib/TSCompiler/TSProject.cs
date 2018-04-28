@@ -195,7 +195,7 @@ namespace Lib.TSCompiler
                 ProjectOptions.TranslationDb.AddLanguage(ProjectOptions.DefaultLanguage ?? "en-us");
                 ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
             }
-            var bbTslint = Dependencies.FirstOrDefault(s => s.StartsWith("bb-tslint"));
+            var bbTslint = Dependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
             if (bbTslint != null)
             {
                 var srcTsLint = PathUtils.Join(Owner.FullPath, "node_modules/" + bbTslint + "/tslint.json");
