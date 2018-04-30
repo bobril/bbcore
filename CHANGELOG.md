@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.34.1
+
 ### Fixed
 
 *   Spritting didn't worked due to incompatibiity of nugets. Now whole project works on .NetCore 2.1 Preview 2. It means you need Visual Studio 15.7.0 Preview for development of bbcore.
