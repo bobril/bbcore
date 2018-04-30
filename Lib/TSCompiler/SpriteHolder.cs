@@ -166,8 +166,8 @@ namespace Lib.TSCompiler
                                 operation.ApplyProcessor(new Recolor(rgbColor));
                             });
                         }
-                        image = image.Clone(operation => operation.Crop(new Rectangle(new Point(sprite.ox, sprite.oy), new Size(sprite.owidth, sprite.oheight))));
-                        c.DrawImage(new GraphicsOptions(), image);
+                        image = image.Clone(operation => operation.Crop(new Rectangle(new Point(sprite.x??0, sprite.y??0), new Size(sprite.owidth, sprite.oheight))));
+                        c.DrawImage(new GraphicsOptions(), image, new Point(sprite.ox, sprite.oy));
                     }
                 }
             });
