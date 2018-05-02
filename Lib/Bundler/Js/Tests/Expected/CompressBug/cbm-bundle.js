@@ -1,18 +1,18 @@
-!function(r) {
+!function(n) {
     "use strict";
     var e = /([A-Z])/g, o = /^ms-/;
-    function a(r) {
+    function t(r) {
         return "cssFloat" === r ? "float" : r.replace(e, "-$1").toLowerCase().replace(o, "-ms-");
     }
-    function n(e) {
-        var o = "";
-        for (var n in e) {
-            var t = e[n];
-            t !== r && (o += a(n) + ":" + ("" === t ? '""' : t) + ";");
+    function r(r) {
+        var e = "";
+        for (var o in r) {
+            var a = r[o];
+            a !== n && (e += t(o) + ":" + ("" === a ? '""' : a) + ";");
         }
-        return o = o.slice(0, -1);
+        return e = e.slice(0, -1);
     }
-    console.log(n({
+    console.log(r({
         a: 1,
         b: 2
     }));

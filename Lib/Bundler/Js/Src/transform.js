@@ -93,7 +93,12 @@ TreeTransformer.prototype = new TreeWalker;
         self.body = do_list(self.body, tw);
     });
 
-    _(AST_DWLoop, function(self, tw){
+    _(AST_Do, function(self, tw){
+        self.body = self.body.transform(tw);
+        self.condition = self.condition.transform(tw);
+    });
+
+    _(AST_While, function(self, tw){
         self.condition = self.condition.transform(tw);
         self.body = self.body.transform(tw);
     });
@@ -160,18 +165,10 @@ TreeTransformer.prototype = new TreeWalker;
         if (self.value) self.value = self.value.transform(tw);
     });
 
-    _(AST_Destructuring, function(self, tw) {
-        self.names = do_list(self.names, tw);
-    });
-
     _(AST_Lambda, function(self, tw){
         if (self.name) self.name = self.name.transform(tw);
         self.argnames = do_list(self.argnames, tw);
-        if (self.body instanceof AST_Node) {
-            self.body = self.body.transform(tw);
-        } else {
-            self.body = do_list(self.body, tw);
-        }
+        self.body = do_list(self.body, tw);
     });
 
     _(AST_Call, function(self, tw){
@@ -190,14 +187,6 @@ TreeTransformer.prototype = new TreeWalker;
     _(AST_Sub, function(self, tw){
         self.expression = self.expression.transform(tw);
         self.property = self.property.transform(tw);
-    });
-
-    _(AST_Yield, function(self, tw){
-        if (self.expression) self.expression = self.expression.transform(tw);
-    });
-
-    _(AST_Await, function(self, tw){
-        self.expression = self.expression.transform(tw);
     });
 
     _(AST_Unary, function(self, tw){
@@ -224,46 +213,7 @@ TreeTransformer.prototype = new TreeWalker;
     });
 
     _(AST_ObjectProperty, function(self, tw){
-        if (self.key instanceof AST_Node) {
-            self.key = self.key.transform(tw);
-        }
         self.value = self.value.transform(tw);
-    });
-
-    _(AST_Class, function(self, tw){
-        if (self.name) self.name = self.name.transform(tw);
-        if (self.extends) self.extends = self.extends.transform(tw);
-        self.properties = do_list(self.properties, tw);
-    });
-
-    _(AST_Expansion, function(self, tw){
-        self.expression = self.expression.transform(tw);
-    });
-
-    _(AST_NameMapping, function(self, tw) {
-        self.foreign_name = self.foreign_name.transform(tw);
-        self.name = self.name.transform(tw);
-    });
-
-    _(AST_Import, function(self, tw) {
-        if (self.imported_name) self.imported_name = self.imported_name.transform(tw);
-        if (self.imported_names) do_list(self.imported_names, tw);
-        self.module_name = self.module_name.transform(tw);
-    });
-
-    _(AST_Export, function(self, tw) {
-        if (self.exported_definition) self.exported_definition = self.exported_definition.transform(tw);
-        if (self.exported_value) self.exported_value = self.exported_value.transform(tw);
-        if (self.exported_names) do_list(self.exported_names, tw);
-        if (self.module_name) self.module_name = self.module_name.transform(tw);
-    });
-
-    _(AST_TemplateString, function(self, tw) {
-        self.segments = do_list(self.segments, tw);
-    });
-
-    _(AST_PrefixedTemplateString, function(self, tw) {
-        self.template_string = self.template_string.transform(tw);
     });
 
 })();

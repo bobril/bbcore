@@ -112,7 +112,7 @@
     function setStyleProperty(s, name_bobril, value) {
         if (isString(value)) {
             var len = value.length;
-            if (len > 11 && " !important" === value.substr(len - 11, 11)) return void s.setProperty(name_bobril, value.substr(0, len - 11), "important");
+            if (11 < len && " !important" === value.substr(len - 11, 11)) return void s.setProperty(name_bobril, value.substr(0, len - 11), "important");
         }
         s[name_bobril] = value;
     }
@@ -137,7 +137,7 @@
         if (null != newAttrs) for (attrName in newAttrs) {
             if (newAttr = newAttrs[attrName], oldAttr = oldAttrs[attrName], notFocusable && attrName === tabindexStr) newAttr = -1, 
             wasTabindex = !0; else if (attrName === tValue && !inSvg) {
-                isFunction(newAttr) && (oldAttrs[bValue] = newAttr, newAttr = newAttr()), valueOldAttr = oldAttr, 
+                isFunction(newAttr) && (newAttr = (oldAttrs[bValue] = newAttr)()), valueOldAttr = oldAttr, 
                 valueNewAttr = newAttr, oldAttrs[attrName] = newAttr;
                 continue;
             }
@@ -236,8 +236,7 @@
                 for (createInto.insertAdjacentHTML("beforeend", htmlText), c.element = [], before = before ? before.nextSibling : createInto.firstChild; before; ) c.element.push(before), 
                 before = before.nextSibling;
             } else {
-                el = createBefore;
-                var elPrev = createBefore.previousSibling, removeEl = !1, parent = createInto;
+                var elPrev = (el = createBefore).previousSibling, removeEl = !1, parent = createInto;
                 el.insertAdjacentHTML || (el = parent.insertBefore(createEl("i"), el), removeEl = !0), 
                 el.insertAdjacentHTML("beforebegin", htmlText), elPrev = elPrev ? elPrev.nextSibling : parent.firstChild;
                 for (var newElements = []; elPrev !== el; ) newElements.push(elPrev), elPrev = elPrev.nextSibling;
@@ -288,7 +287,7 @@
             currentCtx = ctx, beforeRenderCallback !== emptyBeforeRenderCallback && beforeRenderCallback(c, 3), 
             component.destroy && component.destroy(ctx, c, c.element);
             var disposables = ctx.disposables;
-            if (__export_isArray(disposables)) for (var i_4 = disposables.length; i_4-- > 0; ) {
+            if (__export_isArray(disposables)) for (var i_4 = disposables.length; 0 < i_4--; ) {
                 var d = disposables[i_4];
                 isFunction(d) ? d(ctx) : d.dispose();
             }
@@ -408,11 +407,10 @@
                 return finishUpdateNode(n, c, component), c;
             }
             var inSvgForeignObject = !1;
-            "svg" === tag ? inSvg = !0 : inSvg && "foreignObject" === tag && (inSvgForeignObject = !0, 
-            inSvg = !1), inNotFocusable && focusRootTop === c && (inNotFocusable = !1);
+            "svg" === tag ? inSvg = !0 : inSvg && "foreignObject" === tag && (inSvg = !(inSvgForeignObject = !0)), 
+            inNotFocusable && focusRootTop === c && (inNotFocusable = !1);
             var el = c.element;
-            isString(newChildren) && !__export_isArray(cachedChildren) ? newChildren !== cachedChildren && (el.textContent = newChildren, 
-            cachedChildren = newChildren) : deepness <= 0 ? __export_isArray(cachedChildren) && selectedUpdate(c.children, el, createBefore) : cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1), 
+            isString(newChildren) && !__export_isArray(cachedChildren) ? newChildren !== cachedChildren && (cachedChildren = el.textContent = newChildren) : deepness <= 0 ? __export_isArray(cachedChildren) && selectedUpdate(c.children, el, createBefore) : cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1), 
             c.children = cachedChildren, inSvgForeignObject && (inSvg = !0), finishUpdateNode(n, c, component), 
             (c.attrs || n.attrs || inNotFocusable) && (c.attrs = updateElement(c, el, n.attrs, c.attrs || {}, inNotFocusable)), 
             updateStyle(el, n.style, c.style), c.style = n.style;
@@ -552,8 +550,8 @@
             keyLess--, cachedIndex = ++newIndex;
         } else if (null == key) cachedIndex < cachedEnd ? (cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]), 
         cachedChildren.splice(cachedIndex + 1, 1), reorderAndUpdateNodeInUpdateChildren(newChildren[newIndex], cachedChildren, newIndex, cachedLength, createBefore, element, deepness), 
-        keyLess--, newIndex++, cachedIndex++) : (cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, newIndex - 1, cachedLength, createBefore))), 
-        cachedEnd++, cachedLength++, newIndex++, cachedIndex++); else {
+        keyLess--) : (cachedChildren.splice(newIndex, 0, createNode(newChildren[newIndex], parentNode, element, findNextNode(cachedChildren, newIndex - 1, cachedLength, createBefore))), 
+        cachedEnd++, cachedLength++), newIndex++, cachedIndex++; else {
             if (0 === keyLess && deltaKeyless < 0) {
                 for (;removeNode(cachedChildren[cachedIndex]), cachedChildren.splice(cachedIndex, 1), 
                 cachedEnd--, cachedLength--, deltaKeyless++, null == cachedChildren[cachedIndex].key; ) ;
@@ -564,7 +562,7 @@
             cachedChildren.splice(cachedIndex + 1, 1), reorderInUpdateChildren(cachedChildren, newIndex, cachedLength, createBefore, element), 
             cachedIndex = ++newIndex;
         }
-        for (;cachedEnd > newIndex; ) removeNode(cachedChildren[--cachedEnd]), cachedChildren.splice(cachedEnd, 1);
+        for (;newIndex < cachedEnd; ) removeNode(cachedChildren[--cachedEnd]), cachedChildren.splice(cachedEnd, 1);
         return cachedChildren;
     }
     var hasNativeRaf = !1, nativeRaf = window.requestAnimationFrame;
@@ -673,10 +671,9 @@
     function internalUpdate(time) {
         renderFrameBegin = __export_now(), initEvents(), reallyBeforeFrameCallback(), frameCounter++, 
         ignoringShouldChange = nextIgnoreShouldChange, nextIgnoreShouldChange = !1, uptimeMs = time, 
-        beforeFrameCallback(), focusRootTop = 0 === focusRootStack.length ? null : focusRootStack[focusRootStack.length - 1], 
-        inNotFocusable = !1;
-        var fullRefresh = !1;
-        fullRecreateRequested && (fullRecreateRequested = !1, fullRefresh = !0), rootIds = Object.keys(roots);
+        beforeFrameCallback(), focusRootTop = 0 === focusRootStack.length ? null : focusRootStack[focusRootStack.length - 1];
+        var fullRefresh = inNotFocusable = !1;
+        fullRecreateRequested && (fullRefresh = !(fullRecreateRequested = !1)), rootIds = Object.keys(roots);
         for (var i_bobril = 0; i_bobril < rootIds.length; i_bobril++) {
             var r = roots[rootIds[i_bobril]];
             if (r) {
@@ -798,7 +795,7 @@
     var weirdPortrait, viewport = window.document.documentElement, isAndroid = /Android/i.test(navigator.userAgent);
     function getMedia() {
         if (null == media) {
-            var w = viewport.clientWidth, h = viewport.clientHeight, o = window.orientation, p = h >= w;
+            var w = viewport.clientWidth, h = viewport.clientHeight, o = window.orientation, p = w <= h;
             if (null == o && (o = p ? 0 : 90), isAndroid) {
                 var op = Math.abs(o) % 180 == 90;
                 null == weirdPortrait ? weirdPortrait = op === p : p = op === weirdPortrait;
@@ -981,7 +978,7 @@
             }
         });
     }() : ((testStyle = document.createElement("div").style).cssText = "background:-webkit-linear-gradient(top,red,red)", 
-    testStyle.background.length > 0 && function() {
+    0 < testStyle.background.length && function() {
         var startsWithGradient = /^(?:repeating\-)?(?:linear|radial)\-gradient/gi, revDirs = {
             top: "bottom",
             bottom: "top",
@@ -991,7 +988,7 @@
         function gradientWebkitConvertor(style_bobril, value, name_bobril) {
             if (startsWithGradient.test(value)) {
                 var pos = value.indexOf("(to ");
-                if (pos > 0) {
+                if (0 < pos) {
                     pos += 4;
                     var posEnd = value.indexOf(",", pos), dir = value.slice(pos, posEnd);
                     dir = dir.split(" ").map(function(v) {
@@ -1156,7 +1153,7 @@
     }
     function revertVisibilityChanges(hiddenEls) {
         if (hiddenEls.length) {
-            for (var i_bobril = hiddenEls.length - 1; i_bobril >= 0; --i_bobril) hiddenEls[i_bobril].t.style.visibility = hiddenEls[i_bobril].p;
+            for (var i_bobril = hiddenEls.length - 1; 0 <= i_bobril; --i_bobril) hiddenEls[i_bobril].t.style.visibility = hiddenEls[i_bobril].p;
             return !0;
         }
         return !1;
@@ -1295,10 +1292,10 @@
         bubble(node, "onMouseOver", ev);
         for (var n, c, common = 0; common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common]; ) common++;
         var i_bobril = prevMousePath.length;
-        for (i_bobril > 0 && (n = prevMousePath[i_bobril - 1]) && (c = n.component) && c.onMouseOut && c.onMouseOut(n.ctx, ev); i_bobril > common; ) (n = prevMousePath[--i_bobril]) && (c = n.component) && c.onMouseLeave && c.onMouseLeave(n.ctx, ev);
+        for (0 < i_bobril && (n = prevMousePath[i_bobril - 1]) && (c = n.component) && c.onMouseOut && c.onMouseOut(n.ctx, ev); common < i_bobril; ) (n = prevMousePath[--i_bobril]) && (c = n.component) && c.onMouseLeave && c.onMouseLeave(n.ctx, ev);
         for (;i_bobril < toPath.length; ) (n = toPath[i_bobril]) && (c = n.component) && c.onMouseEnter && c.onMouseEnter(n.ctx, ev), 
         i_bobril++;
-        return prevMousePath = toPath, i_bobril > 0 && (n = prevMousePath[i_bobril - 1]) && (c = n.component) && c.onMouseIn && c.onMouseIn(n.ctx, ev), 
+        return prevMousePath = toPath, 0 < i_bobril && (n = prevMousePath[i_bobril - 1]) && (c = n.component) && c.onMouseIn && c.onMouseIn(n.ctx, ev), 
         !1;
     }
     function noPointersDown() {
@@ -1320,7 +1317,7 @@
     function shouldPreventClickingSpree(clickCount) {
         if (0 == clickingSpreeCount) return !1;
         var n = __export_now();
-        return n < clickingSpreeStart + 1e3 && clickCount >= clickingSpreeCount ? (clickingSpreeStart = n, 
+        return n < clickingSpreeStart + 1e3 && clickingSpreeCount <= clickCount ? (clickingSpreeStart = n, 
         clickingSpreeCount = clickCount, !0) : (clickingSpreeCount = 0, !1);
     }
     function bustingPointerUp(ev, target, node) {
@@ -1433,8 +1430,8 @@
         if (newActiveElement !== currentActiveElement) {
             for (var newStack = vdomPath(currentActiveElement = newActiveElement), common = 0; common < nodeStack.length && common < newStack.length && nodeStack[common] === newStack[common]; ) common++;
             var n, c, i_bobril = nodeStack.length - 1;
-            for (i_bobril >= common && ((n = nodeStack[i_bobril]) && (c = n.component) && c.onBlur && c.onBlur(n.ctx), 
-            i_bobril--); i_bobril >= common; ) (n = nodeStack[i_bobril]) && (c = n.component) && c.onFocusOut && c.onFocusOut(n.ctx), 
+            for (common <= i_bobril && ((n = nodeStack[i_bobril]) && (c = n.component) && c.onBlur && c.onBlur(n.ctx), 
+            i_bobril--); common <= i_bobril; ) (n = nodeStack[i_bobril]) && (c = n.component) && c.onFocusOut && c.onFocusOut(n.ctx), 
             i_bobril--;
             for (i_bobril = common; i_bobril + 1 < newStack.length; ) (n = newStack[i_bobril]) && (c = n.component) && c.onFocusIn && c.onFocusIn(n.ctx), 
             i_bobril++;
@@ -1473,7 +1470,7 @@
         this.startX = 0, this.startY = 0, this.distanceToStart = 10, this.x = 0, this.y = 0, 
         this.deltaX = 0, this.deltaY = 0, this.totalX = 0, this.totalY = 0, this.lastX = 0, 
         this.lastY = 0, this.shift = !1, this.ctrl = !1, this.alt = !1, this.meta = !1, 
-        this.data = newHashObj(), pointerId >= 0 && (pointer2Dnd[pointerId] = this), dnds.push(this);
+        this.data = newHashObj(), 0 <= pointerId && (pointer2Dnd[pointerId] = this), dnds.push(this);
     };
     function lazyCreateRoot() {
         if (null == rootId) {
@@ -1628,8 +1625,8 @@
     }
     function handlePointerCancel(ev, _target, _node) {
         var dnd = pointer2Dnd[ev.id];
-        return !!dnd && (!dnd.system && (dnd.beforeDrag ? dnd.destroy() : dnd.cancelDnd(), 
-        !1));
+        return dnd && (dnd.system || (dnd.beforeDrag ? dnd.destroy() : dnd.cancelDnd())), 
+        !1;
     }
     function updateFromNative(dnd, ev) {
         dnd.shift = ev.shiftKey, dnd.ctrl = ev.ctrlKey, dnd.alt = ev.altKey, dnd.meta = ev.metaKey, 
@@ -1642,10 +1639,10 @@
         var dnd = systemDnd;
         null != dnd && dnd.destroy();
         var activePointerIds = Object.keys(pointer2Dnd);
-        if (activePointerIds.length > 0) (dnd = pointer2Dnd[activePointerIds[0]]).system = !0, 
+        if (0 < activePointerIds.length) (dnd = pointer2Dnd[activePointerIds[0]]).system = !0, 
         systemDnd = dnd; else {
             var startX = ev.clientX, startY = ev.clientY;
-            (dnd = new DndCtx(-1)).system = !0, systemDnd = dnd, dnd.x = startX, dnd.y = startY, 
+            (dnd = new DndCtx(-1)).system = !0, (systemDnd = dnd).x = startX, dnd.y = startY, 
             dnd.lastX = startX, dnd.lastY = startY, dnd.startX = startX, dnd.startY = startY;
             var sourceCtx = bubble(node, "onDragStart", dnd);
             if (!sourceCtx) return dnd.destroy(), !1;
@@ -1686,7 +1683,7 @@
     function handleDragOver(ev, _target, _node) {
         var dnd = systemDnd;
         if (null == dnd) {
-            (dnd = new DndCtx(-1)).system = !0, systemDnd = dnd, dnd.x = ev.clientX, dnd.y = ev.clientY, 
+            (dnd = new DndCtx(-1)).system = !0, (systemDnd = dnd).x = ev.clientX, dnd.y = ev.clientY, 
             dnd.startX = dnd.x, dnd.startY = dnd.y, dnd.local = !1;
             var dt = ev.dataTransfer, eff = 0, effectAllowed = undefined;
             try {
@@ -1739,7 +1736,7 @@
         return dnds;
     }, waitingForPopHashChange = -1;
     function emitOnHashChange() {
-        return waitingForPopHashChange >= 0 && clearTimeout(waitingForPopHashChange), waitingForPopHashChange = -1, 
+        return 0 <= waitingForPopHashChange && clearTimeout(waitingForPopHashChange), waitingForPopHashChange = -1, 
         __export_invalidate(), !1;
     }
     addEvent("hashchange", 10, emitOnHashChange);
@@ -1753,7 +1750,7 @@
     }
     function buildCssRule(parent, name_bobril) {
         var result = "";
-        if (parent) if (__export_isArray(parent)) for (var i_9 = 0; i_9 < parent.length; i_9++) i_9 > 0 && (result += ","), 
+        if (parent) if (__export_isArray(parent)) for (var i_9 = 0; i_9 < parent.length; i_9++) 0 < i_9 && (result += ","), 
         result += "." + buildCssSubRule(parent[i_9]) + "." + name_bobril; else result = "." + buildCssSubRule(parent) + "." + name_bobril; else result = "." + name_bobril;
         return result;
     }
@@ -1775,7 +1772,7 @@
     var firstStyles = !1;
     function beforeFrame() {
         var _a, dbs = document.body.style;
-        if (firstStyles && uptimeMs >= 150 && (dbs.opacity = "1", firstStyles = !1), rebuildStyles) {
+        if (firstStyles && 150 <= uptimeMs && (dbs.opacity = "1", firstStyles = !1), rebuildStyles) {
             1 === frameCounter && "webkitAnimation" in dbs && (firstStyles = !0, dbs.opacity = "0", 
             setTimeout(__export_invalidate, 200));
             for (var i_11 = 0; i_11 < dynamicSprites.length; i_11++) {
@@ -1809,7 +1806,7 @@
                     extractedInlStyle.userSelect = style_1.userSelect, delete style_1.userSelect), ss.inlStyle = extractedInlStyle, 
                     shimStyle(style_1);
                     var cssStyle = inlineStyleToCssDeclaration(style_1);
-                    for (var key2 in cssStyle.length > 0 && (styleStr += (null == name_1 ? parent_1 : buildCssRule(parent_1, name_1)) + " {" + cssStyle + "}\n"), 
+                    for (var key2 in 0 < cssStyle.length && (styleStr += (null == name_1 ? parent_1 : buildCssRule(parent_1, name_1)) + " {" + cssStyle + "}\n"), 
                     flattenPseudo) {
                         var item = flattenPseudo[key2];
                         shimStyle(item), styleStr += (null == name_1 ? parent_1 + ":" + key2 : buildCssRule(parent_1, name_1 + ":" + key2)) + " {" + inlineStyleToCssDeclaration(item) + "}\n";
@@ -1850,11 +1847,11 @@
         cAlpha = Math.round(255 * parseFloat(rgba[4]))) : (cRed = parseInt(colorStr.substr(1, 2), 16), 
         cGreen = parseInt(colorStr.substr(3, 2), 16), cBlue = parseInt(colorStr.substr(5, 2), 16), 
         cAlpha = parseInt(colorStr.substr(7, 2), 16) || 255), 255 === cAlpha) for (var i_bobril = 0; i_bobril < imgDataData.length; i_bobril += 4) {
-            (red = imgDataData[i_bobril]) === imgDataData[i_bobril + 1] && red === imgDataData[i_bobril + 2] && (128 === red || imgDataData[i_bobril + 3] < 255 && red > 112) && (imgDataData[i_bobril] = cRed, 
+            (red = imgDataData[i_bobril]) === imgDataData[i_bobril + 1] && red === imgDataData[i_bobril + 2] && (128 === red || imgDataData[i_bobril + 3] < 255 && 112 < red) && (imgDataData[i_bobril] = cRed, 
             imgDataData[i_bobril + 1] = cGreen, imgDataData[i_bobril + 2] = cBlue);
         } else for (i_bobril = 0; i_bobril < imgDataData.length; i_bobril += 4) {
             var red = imgDataData[i_bobril], alpha = imgDataData[i_bobril + 3];
-            red === imgDataData[i_bobril + 1] && red === imgDataData[i_bobril + 2] && (128 === red || alpha < 255 && red > 112) && (255 === alpha ? (imgDataData[i_bobril] = cRed, 
+            red === imgDataData[i_bobril + 1] && red === imgDataData[i_bobril + 2] && (128 === red || alpha < 255 && 112 < red) && (255 === alpha ? (imgDataData[i_bobril] = cRed, 
             imgDataData[i_bobril + 1] = cGreen, imgDataData[i_bobril + 2] = cBlue, imgDataData[i_bobril + 3] = cAlpha) : (alpha *= 1 / 255, 
             imgDataData[i_bobril] = Math.round(cRed * alpha), imgDataData[i_bobril + 1] = Math.round(cGreen * alpha), 
             imgDataData[i_bobril + 2] = Math.round(cBlue * alpha), imgDataData[i_bobril + 3] = Math.round(cAlpha * alpha)));

@@ -23,12 +23,16 @@ namespace Lib.Utils
             }
             path = path.Replace('\\', '/').Replace("/./", "/");
             int idx;
-            while ((idx = path.IndexOf("/../")) >= 0)
+            while ((idx = path.IndexOf("/../")) > 0)
             {
                 int diridx = path.LastIndexOf('/', idx - 1);
                 if (diridx >= 0)
                 {
                     path = path.Remove(diridx, idx + 3 - diridx);
+                }
+                else
+                {
+                    path = path.Remove(0, idx + 4);
                 }
             }
             return path;
@@ -78,6 +82,7 @@ namespace Lib.Utils
 
         public static string Subtract(string pathA, string pathB)
         {
+            if (pathB.EndsWith("/")) pathB = pathB.Substring(0, pathB.Length - 1);
             if (pathA.Length > pathB.Length + 1 && pathA.StartsWith(pathB) && pathA[pathB.Length] == '/')
             {
                 return pathA.Substring(pathB.Length + 1);

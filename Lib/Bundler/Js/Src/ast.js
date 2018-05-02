@@ -156,7 +156,7 @@ var AST_SimpleStatement = DEFNODE("SimpleStatement", "body", {
 
 function walk_body(node, visitor) {
     var body = node.body;
-    if (body instanceof AST_Node) {
+    if (body instanceof AST_Statement) {
         body._walk(visitor);
     }
     else for (var i = 0, len = body.length; i < len; i++) {
@@ -165,7 +165,7 @@ function walk_body(node, visitor) {
 };
 
 var AST_Block = DEFNODE("Block", "body", {
-    $documentation: "A body of statements (usually bracketed)",
+    $documentation: "A body of statements (usually braced)",
     $propdoc: {
         body: "[AST_Statement*] an array of statements"
     },
@@ -282,10 +282,6 @@ var AST_ForIn = DEFNODE("ForIn", "init object", {
     }
 }, AST_IterationStatement);
 
-var AST_ForOf = DEFNODE("ForOf", null, {
-    $documentation: "A `for ... of` statement",
-}, AST_ForIn);
-
 var AST_With = DEFNODE("With", "expression", {
     $documentation: "A `with` statement",
     $propdoc: {
@@ -311,13 +307,6 @@ var AST_Scope = DEFNODE("Scope", "variables functions uses_with uses_eval parent
         parent_scope: "[AST_Scope?/S] link to the parent scope",
         enclosed: "[SymbolDef*/S] a list of all symbol definitions that are accessed from this scope or any subscopes",
         cname: "[integer/S] current index for mangling variables (used internally by the mangler)",
-    },
-    get_defun_scope: function() {
-        var self = this;
-        while (self.is_block_scope()) {
-            self = self.parent_scope;
-        }
-        return self;
     },
     clone: function(deep) {
         var node = this._clone(deep);
@@ -346,38 +335,12 @@ var AST_Toplevel = DEFNODE("Toplevel", "globals", {
     }
 }, AST_Scope);
 
-var AST_Expansion = DEFNODE("Expansion", "expression", {
-    $documentation: "An expandible argument, such as ...rest, a splat, such as [1,2,...all], or an expansion in a variable declaration, such as var [first, ...rest] = list",
-    $propdoc: {
-        expression: "[AST_Node] the thing to be expanded"
-    },
-    _walk: function(visitor) {
-        var self = this;
-        return visitor._visit(this, function(){
-            self.expression.walk(visitor);
-        });
-    }
-});
-
-var AST_Lambda = DEFNODE("Lambda", "name argnames uses_arguments is_generator async", {
+var AST_Lambda = DEFNODE("Lambda", "name argnames uses_arguments", {
     $documentation: "Base class for functions",
     $propdoc: {
         name: "[AST_SymbolDeclaration?] the name of this function",
-        argnames: "[AST_SymbolFunarg|AST_Destructuring|AST_Expansion|AST_DefaultAssign*] array of function arguments, destructurings, or expanding arguments",
-        uses_arguments: "[boolean/S] tells whether this function accesses the arguments array",
-        is_generator: "[boolean] is this a generator method",
-        async: "[boolean] is this method async",
-    },
-    args_as_names: function () {
-        var out = [];
-        for (var i = 0; i < this.argnames.length; i++) {
-            if (this.argnames[i] instanceof AST_Destructuring) {
-                out = out.concat(this.argnames[i].all_symbols());
-            } else {
-                out.push(this.argnames[i]);
-            }
-        }
-        return out;
+        argnames: "[AST_SymbolFunarg*] array of function arguments",
+        uses_arguments: "[boolean/S] tells whether this function accesses the arguments array"
     },
     _walk: function(visitor) {
         return visitor._visit(this, function(){
@@ -399,75 +362,9 @@ var AST_Function = DEFNODE("Function", "inlined", {
     $documentation: "A function expression"
 }, AST_Lambda);
 
-var AST_Arrow = DEFNODE("Arrow", "inlined", {
-    $documentation: "An ES6 Arrow function ((a) => b)"
-}, AST_Lambda);
-
 var AST_Defun = DEFNODE("Defun", "inlined", {
     $documentation: "A function definition"
 }, AST_Lambda);
-
-/* -----[ DESTRUCTURING ]----- */
-var AST_Destructuring = DEFNODE("Destructuring", "names is_array", {
-    $documentation: "A destructuring of several names. Used in destructuring assignment and with destructuring function argument names",
-    $propdoc: {
-        "names": "[AST_Node*] Array of properties or elements",
-        "is_array": "[Boolean] Whether the destructuring represents an object or array"
-    },
-    _walk: function(visitor) {
-        return visitor._visit(this, function(){
-            this.names.forEach(function(name){
-                name._walk(visitor);
-            });
-        });
-    },
-    all_symbols: function() {
-        var out = [];
-        this.walk(new TreeWalker(function (node) {
-            if (node instanceof AST_Symbol) {
-                out.push(node);
-            }
-            if (node instanceof AST_Expansion) {
-                out.push(node.expression);
-            }
-        }));
-        return out;
-    }
-});
-
-var AST_PrefixedTemplateString = DEFNODE("PrefixedTemplateString", "template_string prefix", {
-    $documentation: "A templatestring with a prefix, such as String.raw`foobarbaz`",
-    $propdoc: {
-        template_string: "[AST_TemplateString] The template string",
-        prefix: "[AST_SymbolRef|AST_PropAccess] The prefix, which can be a symbol such as `foo` or a dotted expression such as `String.raw`."
-    },
-    _walk: function(visitor) {
-        this.prefix._walk(visitor);
-        this.template_string._walk(visitor);
-    }
-})
-
-var AST_TemplateString = DEFNODE("TemplateString", "segments", {
-    $documentation: "A template string literal",
-    $propdoc: {
-        segments: "[AST_Node*] One or more segments, starting with AST_TemplateSegment. AST_Node may follow AST_TemplateSegment, but each AST_Node must be followed by AST_TemplateSegment."
-    },
-    _walk: function(visitor) {
-        return visitor._visit(this, function(){
-            this.segments.forEach(function(seg){
-                seg._walk(visitor);
-            });
-        });
-    }
-});
-
-var AST_TemplateSegment = DEFNODE("TemplateSegment", "value raw", {
-    $documentation: "A segment of a template string literal",
-    $propdoc: {
-        value: "Content of the segment",
-        raw: "Raw content of the segment"
-    }
-});
 
 /* -----[ JUMPS ]----- */
 
@@ -588,7 +485,7 @@ var AST_Try = DEFNODE("Try", "bcatch bfinally", {
 var AST_Catch = DEFNODE("Catch", "argname", {
     $documentation: "A `catch` node; only makes sense as part of a `try` statement",
     $propdoc: {
-        argname: "[AST_SymbolCatch|AST_Destructuring|AST_Expansion|AST_DefaultAssign] symbol for the exception"
+        argname: "[AST_SymbolCatch] symbol for the exception"
     },
     _walk: function(visitor) {
         return visitor._visit(this, function(){
@@ -602,10 +499,10 @@ var AST_Finally = DEFNODE("Finally", null, {
     $documentation: "A `finally` node; only makes sense as part of a `try` statement"
 }, AST_Block);
 
-/* -----[ VAR/CONST ]----- */
+/* -----[ VAR ]----- */
 
 var AST_Definitions = DEFNODE("Definitions", "definitions", {
-    $documentation: "Base class for `var` or `const` nodes (variable declarations/initializations)",
+    $documentation: "Base class for `var` nodes (variable declarations/initializations)",
     $propdoc: {
         definitions: "[AST_VarDef*] array of variable definitions"
     },
@@ -623,83 +520,10 @@ var AST_Var = DEFNODE("Var", null, {
     $documentation: "A `var` statement"
 }, AST_Definitions);
 
-var AST_Let = DEFNODE("Let", null, {
-    $documentation: "A `let` statement"
-}, AST_Definitions);
-
-var AST_Const = DEFNODE("Const", null, {
-    $documentation: "A `const` statement"
-}, AST_Definitions);
-
-var AST_NameMapping = DEFNODE("NameMapping", "foreign_name name", {
-    $documentation: "The part of the export/import statement that declare names from a module.",
-    $propdoc: {
-        foreign_name: "[AST_SymbolExportForeign|AST_SymbolImportForeign] The name being exported/imported (as specified in the module)",
-        name: "[AST_SymbolExport|AST_SymbolImport] The name as it is visible to this module."
-    },
-    _walk: function (visitor) {
-        return visitor._visit(this, function() {
-            this.foreign_name._walk(visitor);
-            this.name._walk(visitor);
-        });
-    }
-})
-
-var AST_Import = DEFNODE("Import", "imported_name imported_names module_name", {
-    $documentation: "An `import` statement",
-    $propdoc: {
-        imported_name: "[AST_SymbolImport] The name of the variable holding the module's default export.",
-        imported_names: "[AST_NameMapping*] The names of non-default imported variables",
-        module_name: "[AST_String] String literal describing where this module came from",
-    },
-    _walk: function(visitor) {
-        return visitor._visit(this, function() {
-            if (this.imported_name) {
-                this.imported_name._walk(visitor);
-            }
-            if (this.imported_names) {
-                this.imported_names.forEach(function(name_import) {
-                    name_import._walk(visitor);
-                });
-            }
-            this.module_name._walk(visitor);
-        });
-    }
-});
-
-var AST_Export = DEFNODE("Export", "exported_definition exported_value is_default exported_names module_name", {
-    $documentation: "An `export` statement",
-    $propdoc: {
-        exported_definition: "[AST_Defun|AST_Definitions|AST_DefClass?] An exported definition",
-        exported_value: "[AST_Node?] An exported value",
-        exported_names: "[AST_NameMapping*?] List of exported names",
-        module_name: "[AST_String?] Name of the file to load exports from",
-        is_default: "[Boolean] Whether this is the default exported value of this module"
-    },
-    _walk: function (visitor) {
-        visitor._visit(this, function () {
-            if (this.exported_definition) {
-                this.exported_definition._walk(visitor);
-            }
-            if (this.exported_value) {
-                this.exported_value._walk(visitor);
-            }
-            if (this.exported_names) {
-                this.exported_names.forEach(function(name_export) {
-                    name_export._walk(visitor);
-                });
-            }
-            if (this.module_name) {
-                this.module_name._walk(visitor);
-            }
-        });
-    }
-}, AST_Statement);
-
 var AST_VarDef = DEFNODE("VarDef", "name value", {
     $documentation: "A variable declaration; only appears in a AST_Definitions node",
     $propdoc: {
-        name: "[AST_Destructuring|AST_SymbolConst|AST_SymbolLet|AST_SymbolVar] name of the variable",
+        name: "[AST_SymbolVar] name of the variable",
         value: "[AST_Node?] initializer, or null of there's no initializer"
     },
     _walk: function(visitor) {
@@ -719,12 +543,11 @@ var AST_Call = DEFNODE("Call", "expression args", {
         args: "[AST_Node*] array of arguments"
     },
     _walk: function(visitor) {
-        return visitor._visit(this, function(){
-            var args = this.args;
-            for (var i = 0, len = args.length; i < len; i++) {
-                args[i]._walk(visitor);
-            }
+        return visitor._visit(this, function() {
             this.expression._walk(visitor);
+            this.args.forEach(function(node) {
+                node._walk(visitor);
+            });
         });
     }
 });
@@ -830,10 +653,6 @@ var AST_Assign = DEFNODE("Assign", null, {
     $documentation: "An assignment expression — `a = b + 5`",
 }, AST_Binary);
 
-var AST_DefaultAssign = DEFNODE("DefaultAssign", null, {
-    $documentation: "A default assignment expression like in `(a = 3) => a`"
-}, AST_Binary);
-
 /* -----[ LITERALS ]----- */
 
 var AST_Array = DEFNODE("Array", "elements", {
@@ -869,13 +688,11 @@ var AST_Object = DEFNODE("Object", "properties", {
 var AST_ObjectProperty = DEFNODE("ObjectProperty", "key value", {
     $documentation: "Base class for literal object properties",
     $propdoc: {
-        key: "[string|AST_Node] property name. For ObjectKeyVal this is a string. For getters, setters and computed property this is an AST_Node.",
+        key: "[string|AST_SymbolAccessor] property name. For ObjectKeyVal this is a string. For getters and setters this is an AST_SymbolAccessor.",
         value: "[AST_Node] property value.  For getters and setters this is an AST_Accessor."
     },
     _walk: function(visitor) {
         return visitor._visit(this, function(){
-            if (this.key instanceof AST_Node)
-                this.key._walk(visitor);
             this.value._walk(visitor);
         });
     }
@@ -888,61 +705,13 @@ var AST_ObjectKeyVal = DEFNODE("ObjectKeyVal", "quote", {
     }
 }, AST_ObjectProperty);
 
-var AST_ObjectSetter = DEFNODE("ObjectSetter", "quote static", {
-    $propdoc: {
-        quote: "[string|undefined] the original quote character, if any",
-        static: "[boolean] whether this is a static setter (classes only)"
-    },
+var AST_ObjectSetter = DEFNODE("ObjectSetter", null, {
     $documentation: "An object setter property",
 }, AST_ObjectProperty);
 
-var AST_ObjectGetter = DEFNODE("ObjectGetter", "quote static", {
-    $propdoc: {
-        quote: "[string|undefined] the original quote character, if any",
-        static: "[boolean] whether this is a static getter (classes only)"
-    },
+var AST_ObjectGetter = DEFNODE("ObjectGetter", null, {
     $documentation: "An object getter property",
 }, AST_ObjectProperty);
-
-var AST_ConciseMethod = DEFNODE("ConciseMethod", "quote static is_generator async", {
-    $propdoc: {
-        quote: "[string|undefined] the original quote character, if any",
-        static: "[boolean] is this method static (classes only)",
-        is_generator: "[boolean] is this a generator method",
-        async: "[boolean] is this method async",
-    },
-    $documentation: "An ES6 concise method inside an object or class"
-}, AST_ObjectProperty);
-
-var AST_Class = DEFNODE("Class", "name extends properties inlined", {
-    $propdoc: {
-        name: "[AST_SymbolClass|AST_SymbolDefClass?] optional class name.",
-        extends: "[AST_Node]? optional parent class",
-        properties: "[AST_ObjectProperty*] array of properties"
-    },
-    $documentation: "An ES6 class",
-    _walk: function(visitor) {
-        return visitor._visit(this, function(){
-            if (this.name) {
-                this.name._walk(visitor);
-            }
-            if (this.extends) {
-                this.extends._walk(visitor);
-            }
-            this.properties.forEach(function(prop){
-                prop._walk(visitor);
-            });
-        });
-    },
-}, AST_Scope);
-
-var AST_DefClass = DEFNODE("DefClass", null, {
-    $documentation: "A class definition",
-}, AST_Class);
-
-var AST_ClassExpression = DEFNODE("ClassExpression", null, {
-    $documentation: "A class expression."
-}, AST_Class);
 
 var AST_Symbol = DEFNODE("Symbol", "scope name thedef", {
     $propdoc: {
@@ -950,32 +719,20 @@ var AST_Symbol = DEFNODE("Symbol", "scope name thedef", {
         scope: "[AST_Scope/S] the current scope (not necessarily the definition scope)",
         thedef: "[SymbolDef/S] the definition of this symbol"
     },
-    $documentation: "Base class for all symbols"
+    $documentation: "Base class for all symbols",
 });
 
-var AST_NewTarget = DEFNODE("NewTarget", null, {
-    $documentation: "A reference to new.target"
-});
+var AST_SymbolAccessor = DEFNODE("SymbolAccessor", null, {
+    $documentation: "The name of a property accessor (setter/getter function)"
+}, AST_Symbol);
 
 var AST_SymbolDeclaration = DEFNODE("SymbolDeclaration", "init", {
-    $documentation: "A declaration symbol (symbol in var/const, function name or argument, symbol in catch)",
+    $documentation: "A declaration symbol (symbol in var, function name or argument, symbol in catch)",
 }, AST_Symbol);
 
 var AST_SymbolVar = DEFNODE("SymbolVar", null, {
     $documentation: "Symbol defining a variable",
 }, AST_SymbolDeclaration);
-
-var AST_SymbolBlockDeclaration = DEFNODE("SymbolBlockDeclaration", null, {
-    $documentation: "Base class for block-scoped declaration symbols"
-}, AST_SymbolDeclaration);
-
-var AST_SymbolConst = DEFNODE("SymbolConst", null, {
-    $documentation: "A constant declaration"
-}, AST_SymbolBlockDeclaration);
-
-var AST_SymbolLet = DEFNODE("SymbolLet", null, {
-    $documentation: "A block-scoped `let` declaration"
-}, AST_SymbolBlockDeclaration);
 
 var AST_SymbolFunarg = DEFNODE("SymbolFunarg", null, {
     $documentation: "Symbol naming a function argument",
@@ -985,33 +742,13 @@ var AST_SymbolDefun = DEFNODE("SymbolDefun", null, {
     $documentation: "Symbol defining a function",
 }, AST_SymbolDeclaration);
 
-var AST_SymbolMethod = DEFNODE("SymbolMethod", null, {
-    $documentation: "Symbol in an object defining a method",
-}, AST_Symbol);
-
 var AST_SymbolLambda = DEFNODE("SymbolLambda", null, {
     $documentation: "Symbol naming a function expression",
 }, AST_SymbolDeclaration);
 
-var AST_SymbolDefClass = DEFNODE("SymbolDefClass", null, {
-    $documentation: "Symbol naming a class's name in a class declaration. Lexically scoped to its containing scope, and accessible within the class."
-}, AST_SymbolBlockDeclaration);
-
-var AST_SymbolClass = DEFNODE("SymbolClass", null, {
-    $documentation: "Symbol naming a class's name. Lexically scoped to the class."
-}, AST_SymbolDeclaration);
-
 var AST_SymbolCatch = DEFNODE("SymbolCatch", null, {
     $documentation: "Symbol naming the exception in catch",
-}, AST_SymbolBlockDeclaration);
-
-var AST_SymbolImport = DEFNODE("SymbolImport", null, {
-    $documentation: "Symbol referring to an imported name",
-}, AST_SymbolBlockDeclaration);
-
-var AST_SymbolImportForeign = DEFNODE("SymbolImportForeign", null, {
-    $documentation: "A symbol imported from a module, but it is defined in the other module, and its real name is irrelevant for this module's purposes",
-}, AST_Symbol);
+}, AST_SymbolDeclaration);
 
 var AST_Label = DEFNODE("Label", "references", {
     $documentation: "Symbol naming a label (declaration)",
@@ -1028,14 +765,6 @@ var AST_SymbolRef = DEFNODE("SymbolRef", null, {
     $documentation: "Reference to some symbol (not definition/declaration)",
 }, AST_Symbol);
 
-var AST_SymbolExport = DEFNODE("SymbolExport", null, {
-    $documentation: "Symbol referring to a name to export",
-}, AST_SymbolRef);
-
-var AST_SymbolExportForeign = DEFNODE("SymbolExportForeign", null, {
-    $documentation: "A symbol exported from this module, but it is used in the other module, and its real name is irrelevant for this module's purposes",
-}, AST_Symbol);
-
 var AST_LabelRef = DEFNODE("LabelRef", null, {
     $documentation: "Reference to a label symbol",
 }, AST_Symbol);
@@ -1043,10 +772,6 @@ var AST_LabelRef = DEFNODE("LabelRef", null, {
 var AST_This = DEFNODE("This", null, {
     $documentation: "The `this` symbol",
 }, AST_Symbol);
-
-var AST_Super = DEFNODE("Super", null, {
-    $documentation: "The `super` symbol",
-}, AST_This);
 
 var AST_Constant = DEFNODE("Constant", null, {
     $documentation: "Base class for all constants",
@@ -1121,31 +846,6 @@ var AST_True = DEFNODE("True", null, {
     value: true
 }, AST_Boolean);
 
-var AST_Await = DEFNODE("Await", "expression", {
-    $documentation: "An `await` statement",
-    $propdoc: {
-        expression: "[AST_Node] the mandatory expression being awaited",
-    },
-    _walk: function(visitor) {
-        return visitor._visit(this, function(){
-            this.expression._walk(visitor);
-        });
-    }
-});
-
-var AST_Yield = DEFNODE("Yield", "expression is_star", {
-    $documentation: "A `yield` statement",
-    $propdoc: {
-        expression: "[AST_Node?] the value returned or thrown by this statement; could be null (representing undefined) but only when is_star is set to false",
-        is_star: "[Boolean] Whether this is a yield or yield* statement"
-    },
-    _walk: function(visitor) {
-        return visitor._visit(this, this.expression && function(){
-            this.expression._walk(visitor);
-        });
-    }
-});
-
 /* -----[ TreeWalker ]----- */
 
 function TreeWalker(callback) {
@@ -1173,17 +873,11 @@ TreeWalker.prototype = {
             this.directives = Object.create(this.directives);
         } else if (node instanceof AST_Directive && !this.directives[node.value]) {
             this.directives[node.value] = node;
-        } else if (node instanceof AST_Class) {
-            this.directives = Object.create(this.directives);
-            if (!this.directives["use strict"]) {
-                this.directives["use strict"] = node;
-            }
         }
         this.stack.push(node);
     },
     pop: function() {
-        var node = this.stack.pop();
-        if (node instanceof AST_Lambda || node instanceof AST_Class) {
+        if (this.stack.pop() instanceof AST_Lambda) {
             this.directives = Object.getPrototypeOf(this.directives);
         }
     },
@@ -1201,7 +895,7 @@ TreeWalker.prototype = {
         var dir = this.directives[type];
         if (dir) return dir;
         var node = this.stack[this.stack.length - 1];
-        if (node instanceof AST_Scope && node.body) {
+        if (node instanceof AST_Scope) {
             for (var i = 0; i < node.body.length; ++i) {
                 var st = node.body[i];
                 if (!(st instanceof AST_Directive)) break;
@@ -1220,6 +914,26 @@ TreeWalker.prototype = {
             if (x instanceof AST_IterationStatement
                 || node instanceof AST_Break && x instanceof AST_Switch)
                 return x;
+        }
+    },
+    in_boolean_context: function() {
+        var self = this.self();
+        for (var i = 0, p; p = this.parent(i); i++) {
+            if (p instanceof AST_SimpleStatement
+                || p instanceof AST_Conditional && p.condition === self
+                || p instanceof AST_DWLoop && p.condition === self
+                || p instanceof AST_For && p.condition === self
+                || p instanceof AST_If && p.condition === self
+                || p instanceof AST_UnaryPrefix && p.operator == "!" && p.expression === self) {
+                return true;
+            }
+            if (p instanceof AST_Binary && (p.operator == "&&" || p.operator == "||")
+                || p instanceof AST_Conditional
+                || p.tail_node() === self) {
+                self = p;
+            } else {
+                return false;
+            }
         }
     }
 };

@@ -52,11 +52,10 @@ function SymbolDef(scope, orig, init) {
     this.references = [];
     this.replaced = 0;
     this.global = false;
-    this.export = false;
     this.mangled_name = null;
     this.undeclared = false;
     this.id = SymbolDef.next_id++;
-};
+}
 
 SymbolDef.next_id = 1;
 
@@ -65,32 +64,23 @@ SymbolDef.prototype = {
         if (!options) options = {};
 
         return (this.global && !options.toplevel)
-            || this.export
             || this.undeclared
             || (!options.eval && (this.scope.uses_eval || this.scope.uses_with))
             || (options.keep_fnames
                 && (this.orig[0] instanceof AST_SymbolLambda
-                    || this.orig[0] instanceof AST_SymbolDefun))
-            || this.orig[0] instanceof AST_SymbolMethod
-            || (options.keep_classnames
-                && (this.orig[0] instanceof AST_SymbolClass
-                    || this.orig[0] instanceof AST_SymbolDefClass));
+                    || this.orig[0] instanceof AST_SymbolDefun));
     },
     mangle: function(options) {
         var cache = options.cache && options.cache.props;
         if (this.global && cache && cache.has(this.name)) {
             this.mangled_name = cache.get(this.name);
-        }
-        else if (!this.mangled_name && !this.unmangleable(options)) {
-            var s = this.scope;
-            var sym = this.orig[0];
-            if (options.ie8 && sym instanceof AST_SymbolLambda)
-                s = s.parent_scope;
+        } else if (!this.mangled_name && !this.unmangleable(options)) {
             var def;
             if (def = this.redefined()) {
                 this.mangled_name = def.mangled_name || def.name;
-            } else
-                this.mangled_name = s.next_mangled(options, this);
+            } else {
+                this.mangled_name = next_mangled_name(this.scope, options, this);
+            }
             if (this.global && cache) {
                 cache.set(this.name, this.mangled_name);
             }
@@ -105,63 +95,30 @@ AST_Toplevel.DEFMETHOD("figure_out_scope", function(options){
     options = defaults(options, {
         cache: null,
         ie8: false,
-        safari10: false,
     });
 
     // pass 1: setup scope chaining and handle definitions
     var self = this;
     var scope = self.parent_scope = null;
-    var labels = new Dictionary();
     var defun = null;
-    var in_destructuring = null;
-    var for_scopes = [];
     var tw = new TreeWalker(function(node, descend){
-        if (node.is_block_scope()) {
+        if (node instanceof AST_Catch) {
             var save_scope = scope;
-            node.block_scope = scope = new AST_Scope(node);
+            scope = new AST_Scope(node);
             scope.init_scope_vars(save_scope);
-            if (!(node instanceof AST_Scope)) {
-                scope.uses_with = save_scope.uses_with;
-                scope.uses_eval = save_scope.uses_eval;
-                scope.directives = save_scope.directives;
-            }
-            if (options.safari10) {
-                if (node instanceof AST_For || node instanceof AST_ForIn) {
-                    for_scopes.push(scope);
-                }
-            }
             descend();
             scope = save_scope;
-            return true;
-        }
-        if (node instanceof AST_Destructuring) {
-            in_destructuring = node;  // These don't nest
-            descend();
-            in_destructuring = null;
             return true;
         }
         if (node instanceof AST_Scope) {
             node.init_scope_vars(scope);
             var save_scope = scope;
             var save_defun = defun;
-            var save_labels = labels;
             defun = scope = node;
-            labels = new Dictionary();
             descend();
             scope = save_scope;
             defun = save_defun;
-            labels = save_labels;
             return true;        // don't descend again in TreeWalker
-        }
-        if (node instanceof AST_LabeledStatement) {
-            var l = node.label;
-            if (labels.has(l.name)) {
-                throw new Error(string_template("Label {name} defined twice", l));
-            }
-            labels.set(l.name, l);
-            descend();
-            labels.del(l.name);
-            return true;        // no descend again
         }
         if (node instanceof AST_With) {
             for (var s = scope; s; s = s.parent_scope)
@@ -184,85 +141,21 @@ AST_Toplevel.DEFMETHOD("figure_out_scope", function(options){
             // scope when we encounter the AST_Defun node (which is
             // instanceof AST_Scope) but we get to the symbol a bit
             // later.
-            mark_export((node.scope = defun.parent_scope.get_defun_scope()).def_function(node, defun), 1);
+            (node.scope = defun.parent_scope).def_function(node, defun);
         }
-        else if (node instanceof AST_SymbolClass) {
-            mark_export(defun.def_variable(node, defun), 1);
-        }
-        else if (node instanceof AST_SymbolImport) {
-            scope.def_variable(node);
-        }
-        else if (node instanceof AST_SymbolDefClass) {
-            // This deals with the name of the class being available
-            // inside the class.
-            mark_export((node.scope = defun.parent_scope).def_function(node, defun), 1);
-        }
-        else if (node instanceof AST_SymbolVar
-            || node instanceof AST_SymbolLet
-            || node instanceof AST_SymbolConst) {
-            var def;
-            if (node instanceof AST_SymbolBlockDeclaration) {
-                def = scope.def_variable(node, null);
-            } else {
-                def = defun.def_variable(node, node.TYPE == "SymbolVar" ? null : undefined);
-            }
-            if (!all(def.orig, function(sym) {
-                if (sym === node) return true;
-                if (node instanceof AST_SymbolBlockDeclaration) {
-                    return sym instanceof AST_SymbolLambda;
-                }
-                return !(sym instanceof AST_SymbolLet || sym instanceof AST_SymbolConst);
-            })) {
-                js_error(
-                    node.name + " redeclared",
-                    node.start.file,
-                    node.start.line,
-                    node.start.col,
-                    node.start.pos
-                );
-            }
-            if (!(node instanceof AST_SymbolFunarg)) mark_export(def, 2);
-            def.destructuring = in_destructuring;
+        else if (node instanceof AST_SymbolVar) {
+            defun.def_variable(node, node.TYPE == "SymbolVar" ? null : undefined);
             if (defun !== scope) {
                 node.mark_enclosed(options);
                 var def = scope.find_variable(node);
                 if (node.thedef !== def) {
                     node.thedef = def;
-                    node.reference(options);
                 }
+                node.reference(options);
             }
         }
         else if (node instanceof AST_SymbolCatch) {
             scope.def_variable(node).defun = defun;
-        }
-        else if (node instanceof AST_LabelRef) {
-            var sym = labels.get(node.name);
-            if (!sym) throw new Error(string_template("Undefined label {name} [{line},{col}]", {
-                name: node.name,
-                line: node.start.line,
-                col: node.start.col
-            }));
-            node.thedef = sym;
-        }
-        if (!(scope instanceof AST_Toplevel) && (node instanceof AST_Export || node instanceof AST_Import)) {
-            js_error(
-                node.TYPE + " statement may only appear at top level",
-                node.start.file,
-                node.start.line,
-                node.start.col,
-                node.start.pos
-            );
-        }
-
-        function mark_export(def, level) {
-            if (in_destructuring) {
-                var i = 0;
-                do {
-                    level++;
-                } while (tw.parent(i++) !== in_destructuring);
-            }
-            var node = tw.parent(level);
-            def.export = node instanceof AST_Export;
         }
     });
     self.walk(tw);
@@ -281,19 +174,14 @@ AST_Toplevel.DEFMETHOD("figure_out_scope", function(options){
                     s.uses_eval = true;
                 }
             }
-            var sym;
-            if (tw.parent() instanceof AST_NameMapping && tw.parent(1).module_name
-                || !(sym = node.scope.find_variable(name))) {
+            var sym = node.scope.find_variable(name);
+            if (!sym) {
                 sym = self.def_global(node);
             } else if (sym.scope instanceof AST_Lambda && name == "arguments") {
                 sym.scope.uses_arguments = true;
             }
             node.thedef = sym;
             node.reference(options);
-            if (node.scope.is_block_scope()
-                && !(sym.orig[0] instanceof AST_SymbolBlockDeclaration)) {
-                node.scope = node.scope.get_defun_scope();
-            }
             return true;
         }
         // ensure mangling works if catch reuses a scope variable
@@ -327,19 +215,6 @@ AST_Toplevel.DEFMETHOD("figure_out_scope", function(options){
             }
         }));
     }
-
-    // pass 4: add symbol definitions to loop scopes
-    // Safari/Webkit bug workaround - loop init let variable shadowing argument.
-    // https://github.com/mishoo/UglifyJS2/issues/1753
-    // https://bugs.webkit.org/show_bug.cgi?id=171041
-    if (options.safari10) {
-        for (var i = 0; i < for_scopes.length; i++) {
-            var scope = for_scopes[i];
-            scope.parent_scope.variables.each(function(def) {
-                push_uniq(scope.enclosed, def);
-            });
-        }
-    }
 });
 
 AST_Toplevel.DEFMETHOD("def_global", function(node){
@@ -365,14 +240,6 @@ AST_Scope.DEFMETHOD("init_scope_vars", function(parent_scope){
     this.cname = -1;                    // the current index for mangling functions/variables
 });
 
-AST_Node.DEFMETHOD("is_block_scope", return_false);
-AST_Class.DEFMETHOD("is_block_scope", return_false);
-AST_Lambda.DEFMETHOD("is_block_scope", return_false);
-AST_Toplevel.DEFMETHOD("is_block_scope", return_false);
-AST_SwitchBranch.DEFMETHOD("is_block_scope", return_false);
-AST_Block.DEFMETHOD("is_block_scope", return_true);
-AST_IterationStatement.DEFMETHOD("is_block_scope", return_true);
-
 AST_Lambda.DEFMETHOD("init_scope_vars", function(){
     AST_Scope.prototype.init_scope_vars.apply(this, arguments);
     this.uses_arguments = false;
@@ -381,11 +248,6 @@ AST_Lambda.DEFMETHOD("init_scope_vars", function(){
         start: this.start,
         end: this.end
     }));
-});
-
-AST_Arrow.DEFMETHOD("init_scope_vars", function(){
-    AST_Scope.prototype.init_scope_vars.apply(this, arguments);
-    this.uses_arguments = false;
 });
 
 AST_Symbol.DEFMETHOD("mark_enclosed", function(options) {
@@ -436,56 +298,62 @@ AST_Scope.DEFMETHOD("def_variable", function(symbol, init){
     return symbol.thedef = def;
 });
 
-function next_mangled(scope, options) {
-    var ext = scope.enclosed;
-    out: while (true) {
-        var m = base54(++scope.cname);
-        if (!is_identifier(m)) continue; // skip over "do"
-
-        // https://github.com/mishoo/UglifyJS2/issues/242 -- do not
-        // shadow a name reserved from mangling.
-        if (member(m, options.reserved)) continue;
-
-        // we must ensure that the mangled name does not shadow a name
-        // from some parent scope that is referenced in this or in
-        // inner scopes.
-        for (var i = ext.length; --i >= 0;) {
-            var sym = ext[i];
-            var name = sym.mangled_name || (sym.unmangleable(options) && sym.name);
-            if (m == name) continue out;
-        }
-        return m;
+function names_in_use(scope, options) {
+    var names = scope.names_in_use;
+    if (!names) {
+        scope.names_in_use = names = Object.create(scope.mangled_names || null);
+        scope.cname_holes = [];
+        scope.enclosed.forEach(function(def) {
+            if (def.unmangleable(options)) names[def.name] = true;
+        });
     }
+    return names;
 }
 
-AST_Scope.DEFMETHOD("next_mangled", function(options){
-    return next_mangled(this, options);
-});
-
-AST_Toplevel.DEFMETHOD("next_mangled", function(options){
-    var name;
-    do {
-        name = next_mangled(this, options);
-    } while (member(name, this.mangled_names));
-    return name;
-});
-
-AST_Function.DEFMETHOD("next_mangled", function(options, def){
+function next_mangled_name(scope, options, def) {
+    var in_use = names_in_use(scope, options);
+    var holes = scope.cname_holes;
+    var names = Object.create(null);
     // #179, #326
     // in Safari strict mode, something like (function x(x){...}) is a syntax error;
     // a function expression's argument cannot shadow the function expression's name
-
-    var tricky_def = def.orig[0] instanceof AST_SymbolFunarg && this.name && this.name.definition();
-
-    // the function's mangled_name is null when keep_fnames is true
-    var tricky_name = tricky_def ? tricky_def.mangled_name || tricky_def.name : null;
-
-    while (true) {
-        var name = next_mangled(this, options);
-        if (!tricky_name || tricky_name != name)
-            return name;
+    if (scope instanceof AST_Function && scope.name && def.orig[0] instanceof AST_SymbolFunarg) {
+        var tricky_def = scope.name.definition();
+        // the function's mangled_name is null when keep_fnames is true
+        names[tricky_def.mangled_name || tricky_def.name] = true;
     }
-});
+    var scopes = [ scope ];
+    def.references.forEach(function(sym) {
+        var scope = sym.scope;
+        do {
+            if (scopes.indexOf(scope) < 0) {
+                for (var name in names_in_use(scope, options)) {
+                    names[name] = true;
+                }
+                scopes.push(scope);
+            } else break;
+        } while (scope = scope.parent_scope);
+    });
+    var name;
+    for (var i = 0, len = holes.length; i < len; i++) {
+        name = base54(holes[i]);
+        if (names[name]) continue;
+        holes.splice(i, 1);
+        scope.names_in_use[name] = true;
+        return name;
+    }
+    while (true) {
+        name = base54(++scope.cname);
+        if (in_use[name] || !is_identifier(name) || options.reserved.has[name]) continue;
+        if (!names[name]) break;
+        holes.push(scope.cname);
+    }
+    scope.names_in_use[name] = true;
+    if (options.ie8 && def.orig[0] instanceof AST_SymbolLambda) {
+        names_in_use(scope.parent_scope, options)[name] = true;
+    }
+    return name;
+}
 
 AST_Symbol.DEFMETHOD("unmangleable", function(options){
     var def = this.definition();
@@ -508,11 +376,10 @@ AST_Symbol.DEFMETHOD("global", function(){
     return this.definition().global;
 });
 
-AST_Toplevel.DEFMETHOD("_default_mangler_options", function(options) {
+function _default_mangler_options(options) {
     options = defaults(options, {
         eval        : false,
         ie8         : false,
-        keep_classnames: false,
         keep_fnames : false,
         reserved    : [],
         toplevel    : false,
@@ -520,29 +387,27 @@ AST_Toplevel.DEFMETHOD("_default_mangler_options", function(options) {
     if (!Array.isArray(options.reserved)) options.reserved = [];
     // Never mangle arguments
     push_uniq(options.reserved, "arguments");
+    options.reserved.has = makePredicate(options.reserved);
     return options;
-});
+}
 
 AST_Toplevel.DEFMETHOD("mangle_names", function(options){
-    options = this._default_mangler_options(options);
+    options = _default_mangler_options(options);
 
     // We only need to mangle declaration nodes.  Special logic wired
     // into the code generator will display the mangled name if it's
     // present (and for AST_SymbolRef-s it'll use the mangled name of
     // the AST_SymbolDeclaration that it points to).
     var lname = -1;
-    var to_mangle = [];
 
-    var mangled_names = this.mangled_names = [];
-    if (options.cache) {
-        this.globals.each(collect);
-        if (options.cache.props) {
-            options.cache.props.each(function(mangled_name) {
-                push_uniq(mangled_names, mangled_name);
-            });
-        }
+    if (options.cache && options.cache.props) {
+        var mangled_names = this.mangled_names = Object.create(null);
+        options.cache.props.each(function(mangled_name) {
+            mangled_names[mangled_name] = true;
+        });
     }
 
+    var redefined = [];
     var tw = new TreeWalker(function(node, descend){
         if (node instanceof AST_LabeledStatement) {
             // lname is incremented when we get to the AST_Label
@@ -552,12 +417,12 @@ AST_Toplevel.DEFMETHOD("mangle_names", function(options){
             return true;        // don't descend again in TreeWalker
         }
         if (node instanceof AST_Scope) {
-            node.variables.each(collect);
-            return;
-        }
-        if (node.is_block_scope()) {
-            node.block_scope.variables.each(collect);
-            return;
+            descend();
+            if (options.cache && node instanceof AST_Toplevel) {
+                node.globals.each(mangle);
+            }
+            node.variables.each(mangle);
+            return true;
         }
         if (node instanceof AST_Label) {
             var name;
@@ -565,18 +430,31 @@ AST_Toplevel.DEFMETHOD("mangle_names", function(options){
             node.mangled_name = name;
             return true;
         }
-        if (!options.ie8 && node instanceof AST_SymbolCatch) {
-            to_mangle.push(node.definition());
-            return;
+        if (!options.ie8 && node instanceof AST_Catch) {
+            var def = node.argname.definition();
+            var redef = def.redefined();
+            if (redef) {
+                redefined.push(def);
+                reference(node.argname);
+                def.references.forEach(reference);
+            }
+            descend();
+            if (!redef) mangle(def);
+            return true;
+        }
+
+        function reference(sym) {
+            sym.thedef = redef;
+            sym.reference(options);
+            sym.thedef = def;
         }
     });
     this.walk(tw);
-    to_mangle.forEach(function(def){ def.mangle(options) });
+    redefined.forEach(mangle);
 
-    function collect(symbol) {
-        if (!member(symbol.name, options.reserved)) {
-            to_mangle.push(symbol);
-        }
+    function mangle(def) {
+        if (options.reserved.has[def.name]) return;
+        def.mangle(options);
     }
 });
 
@@ -606,7 +484,7 @@ AST_Toplevel.DEFMETHOD("find_colliding_names", function(options) {
 AST_Toplevel.DEFMETHOD("expand_names", function(options) {
     base54.reset();
     base54.sort();
-    options = this._default_mangler_options(options);
+    options = _default_mangler_options(options);
     var avoid = this.find_colliding_names(options);
     var cname = 0;
     this.globals.each(rename);
@@ -626,7 +504,7 @@ AST_Toplevel.DEFMETHOD("expand_names", function(options) {
     function rename(def) {
         if (def.global && options.cache) return;
         if (def.unmangleable(options)) return;
-        if (member(def.name, options.reserved)) return;
+        if (options.reserved.has[def.name]) return;
         var d = def.redefined();
         def.name = d ? d.name : next_name();
         def.orig.forEach(function(sym) {
@@ -644,7 +522,8 @@ AST_Sequence.DEFMETHOD("tail_node", function() {
 });
 
 AST_Toplevel.DEFMETHOD("compute_char_frequency", function(options){
-    options = this._default_mangler_options(options);
+    options = _default_mangler_options(options);
+    base54.reset();
     try {
         AST_Node.prototype.print = function(stream, force_parens) {
             this._print(stream, force_parens);
@@ -677,17 +556,21 @@ AST_Toplevel.DEFMETHOD("compute_char_frequency", function(options){
 });
 
 var base54 = (function() {
-    var leading = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".split("");
-    var digits = "0123456789".split("");
+    var freq = Object.create(null);
+    function init(chars) {
+        var array = [];
+        for (var i = 0, len = chars.length; i < len; i++) {
+            var ch = chars[i];
+            array.push(ch);
+            freq[ch] = -1e-2 * i;
+        }
+        return array;
+    }
+    var digits = init("0123456789");
+    var leading = init("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_");
     var chars, frequency;
     function reset() {
-        frequency = Object.create(null);
-        leading.forEach(function(ch) {
-            frequency[ch] = 0;
-        });
-        digits.forEach(function(ch) {
-            frequency[ch] = 0;
-        });
+        frequency = Object.create(freq);
     }
     base54.consider = function(str, delta) {
         for (var i = str.length; --i >= 0;) {
@@ -698,7 +581,7 @@ var base54 = (function() {
         return frequency[b] - frequency[a];
     }
     base54.sort = function() {
-        chars = mergeSort(leading, compare).concat(mergeSort(digits, compare));
+        chars = leading.sort(compare).concat(digits.sort(compare));
     };
     base54.reset = reset;
     reset();
@@ -712,6 +595,6 @@ var base54 = (function() {
             base = 64;
         } while (num > 0);
         return ret;
-    };
+    }
     return base54;
 })();

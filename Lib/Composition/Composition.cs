@@ -317,7 +317,7 @@ namespace Lib.Composition
                 {
                     content = ((Lazy<object>)content).Value;
                 }
-                Directory.CreateDirectory(PathUtils.Parent(fileName));
+                Directory.CreateDirectory(PathUtils.Parent(fileName) ?? ".");
                 if (content is string)
                 {
                     File.WriteAllText(fileName, (string)content, utf8WithoutBom);

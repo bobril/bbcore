@@ -6,7 +6,7 @@
     function o(n, t) {
         return n - t;
     }
-    var r = Math.random() > .5 ? {
+    var r = .5 < Math.random() ? {
         fn: t
     } : {
         fn: o

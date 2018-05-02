@@ -1,25 +1,25 @@
-var __bbb={};!function(e) {
+var __bbb={};!function(a) {
     "use strict";
-    var o = function(o, n) {
-        var r = __bbb, t = r[n];
-        return t !== e ? t instanceof Promise ? t : Promise.resolve(t) : (t = new Promise(function(u, c) {
-            var i = document.createElement("script"), s = setTimeout(a, 12e4);
-            function a() {
-                i.onload = i.onerror = e, clearTimeout(s), r[n] === t ? (r[n] = e, c(Error("Fail to load " + o))) : u(r[n]);
+    var e = function(u, c) {
+        var i = __bbb, s = i[c];
+        return s !== a ? s instanceof Promise ? s : Promise.resolve(s) : (s = new Promise(function(e, o) {
+            var n = document.createElement("script"), r = setTimeout(t, 12e4);
+            function t() {
+                n.onload = n.onerror = a, clearTimeout(r), i[c] === s ? (i[c] = a, o(Error("Fail to load " + u))) : e(i[c]);
             }
-            i.charset = "utf-8", i.onload = i.onerror = a, i.src = o, document.head.appendChild(i);
-        }), r[n] = t);
+            n.charset = "utf-8", n.onload = n.onerror = t, n.src = u, document.head.appendChild(n);
+        }), i[c] = s);
     };
-    function n() {
+    function o() {
         console.log("shared");
     }
-    function r() {
+    function n() {
         return "unused";
     }
-    n(), o("lib.js", "a").then(function(e) {
+    o(), e("lib.js", "a").then(function(e) {
         console.log(e.hello());
     }), __bbb.b = {
-        shared: n,
-        unused: r
+        shared: o,
+        unused: n
     };
 }();

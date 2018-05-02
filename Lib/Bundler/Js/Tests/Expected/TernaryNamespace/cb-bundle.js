@@ -6,7 +6,7 @@
     function fn_libb(a, b) {
         return a - b;
     }
-    var lib = Math.random() > .5 ? {
+    var lib = .5 < Math.random() ? {
         fn: fn
     } : {
         fn: fn_libb
