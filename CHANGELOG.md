@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.35.0
+
 ### Updated
 
 *   UglifyJs to latest sources.
