@@ -186,8 +186,8 @@ namespace Releaser
                 Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish/ru-ru", true);
             if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish/Resources"))
                 Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish/Resources", true);
-            if (File.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/ChakraCore.dll"))
-                File.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/linux-x64/publish/ChakraCore.dll");
+            if (File.Exists(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish/ChakraCore.dll"))
+                File.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish/ChakraCore.dll");
             System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
         }
 
@@ -204,8 +204,8 @@ namespace Releaser
                 Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish/ru-ru", true);
             if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish/Resources"))
                 Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish/Resources", true);
-            if (File.Exists(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/ChakraCore.dll"))
-                File.Delete(projDir + "/bb/bin/Release/netcoreapp2.0/osx-x64/publish/ChakraCore.dll");
+            if (File.Exists(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish/ChakraCore.dll"))
+                File.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish/ChakraCore.dll");
             System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
         }
     }
