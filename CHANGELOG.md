@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.35.2
+
 ### Fixed
 
 *   Webserver now works again. Had to revert to some older nugets for ASPNetCore/Kestrel.
