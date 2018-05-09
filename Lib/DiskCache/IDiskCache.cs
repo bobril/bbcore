@@ -11,6 +11,7 @@ namespace Lib.DiskCache
         IFsAbstraction FsAbstraction { get; }
         IObservable<Unit> ChangeObservable { get; }
         bool CheckForTrueChange();
+        void ResetChange();
         void UpdateIfNeeded(IDirectoryCache dir);
     }
 }

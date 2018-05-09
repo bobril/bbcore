@@ -125,6 +125,8 @@ namespace Lib.TSCompiler
                         if (!forbiddenDependencyUpdate && ProjectOptions.DependencyUpdate != DepedencyUpdate.Disabled)
                         {
                             ProjectOptions.Tools.UpdateDependencies(Owner.FullPath, ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade, ProjectOptions.NpmRegistry);
+                            DiskCache.CheckForTrueChange();
+                            DiskCache.ResetChange();
                         }
                     }
                 }

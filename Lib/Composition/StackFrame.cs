@@ -24,7 +24,7 @@ namespace Lib.Composition
         static Regex FIREFOX_SAFARI_STACK_REGEXP = new Regex("(^|@)\\S+\\:\\d+", RegexOptions.ECMAScript);
         static Regex CHROME_IE_STACK_REGEXP = new Regex("^\\s*at .*(\\S+\\:\\d+|\\(native\\))", RegexOptions.ECMAScript | RegexOptions.Multiline);
         static Regex SAFARI_NATIVE_CODE_REGEXP = new Regex("^(eval@)?(\\[native code\\])?$", RegexOptions.ECMAScript);
-        static Regex ParseLocationRegexPar = new Regex("^\\((.+?)(?:\\:(\\d+))?(?:\\:(\\d+))?\\)$", RegexOptions.ECMAScript);
+        static Regex ParseLocationRegexPar = new Regex("^\\((.+?)(?:\\:(\\d+))?(?:\\:(\\d+))?\\)\\D*$", RegexOptions.ECMAScript);
         static Regex ParseLocationRegex = new Regex("^(.+?)(?:\\:(\\d+))?(?:\\:(\\d+))?$", RegexOptions.ECMAScript);
 
         public static List<StackFrame> Parse(string stack)

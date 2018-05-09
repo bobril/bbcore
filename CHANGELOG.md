@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Updated
+
+*   BTDB dependency to 13.0.0 nuget.
+
+### Fixed
+
+*   Build does not fail after yarn installing modules.
+*   Crash when testing stack exception contained nested stack with some characters after closing parentheses.
+
 ## 0.35.2
 
 ### Fixed
