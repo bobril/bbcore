@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.35.3
+
 ### Updated
 
 *   BTDB dependency to 13.0.0 nuget.
