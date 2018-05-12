@@ -64,7 +64,6 @@ namespace Lib.TSCompiler
                 {
                     return null;
                 }
-                GetFileInfo(file).StartCompiling();
                 return file.ChangeId;
             }
 
@@ -76,6 +75,7 @@ namespace Lib.TSCompiler
                 {
                     return null;
                 }
+                GetFileInfo(file).StartCompiling();
                 /*
                 var testPath = PathUtils.Subtract(fullPath, _owner._currentDirectory);
                 if (!testPath.StartsWith("../"))

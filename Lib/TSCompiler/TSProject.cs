@@ -244,7 +244,6 @@ namespace Lib.TSCompiler
                 {
                     buildModuleCtx.ChangedDts = false;
                     buildModuleCtx.CrawledCount = 0;
-                    buildModuleCtx.TrullyCompiledCount = 0;
                     buildModuleCtx.ToCheck.Clear();
                     buildModuleCtx.ToCompile.Clear();
                     buildModuleCtx.ToCompileDts.Clear();
@@ -287,9 +286,10 @@ namespace Lib.TSCompiler
                             break;
                         }
                         buildModuleCtx.UpdateCacheIds();
+                        buildModuleCtx.ToCompile.Clear();
                         buildModuleCtx.Crawl();
                     }
-                } while (buildModuleCtx.ChangedDts || buildModuleCtx.TrullyCompiledCount < buildModuleCtx.ToCompile.Count);
+                } while (buildModuleCtx.ChangedDts || 0 < buildModuleCtx.ToCompile.Count);
                 if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError)
                     StoreResultToBuildCache(buildModuleCtx._result);
                 buildCtx.BuildResult = buildModuleCtx._result;

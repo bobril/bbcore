@@ -57,7 +57,6 @@ namespace Lib.TSCompiler
                 }
                 sourceForJs.Output = data;
                 _result.RecompiledLast.Add(sourceForJs);
-                TrullyCompiledCount++;
                 return;
             }
             if (!fullPath.EndsWith(".d.ts"))
@@ -90,7 +89,6 @@ namespace Lib.TSCompiler
         internal OrderedHashSet<string> ToCompile;
         internal OrderedHashSet<string> ToCompileDts;
         internal uint CrawledCount;
-        internal int TrullyCompiledCount;
 
         public bool ChangedDts { get; internal set; }
 
@@ -143,7 +141,6 @@ namespace Lib.TSCompiler
             }
             CheckAdd(item.FullPath);
             TryToResolveFromBuildCache(itemInfo);
-            Crawl();
             if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath))
             {
                 return itemInfo.DtsLink.Owner.FullPath;
@@ -235,7 +232,6 @@ namespace Lib.TSCompiler
             itemInfo.Type = FileCompilationType.TypeScript;
             CheckAdd(item.FullPath);
             TryToResolveFromBuildCache(itemInfo);
-            Crawl();
             if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath))
             {
                 return itemInfo.DtsLink.Owner.FullPath;
@@ -314,12 +310,10 @@ namespace Lib.TSCompiler
                             fileAdditional.Output = fileAdditional.Owner.Utf8Content;
                             fileAdditional.MapLink = SourceMap.Identity(fileAdditional.Output, fileAdditional.Owner.FullPath);
                             _result.RecompiledLast.Add(fileAdditional);
-                            TrullyCompiledCount++;
                             break;
                         case FileCompilationType.Resource:
                             fileAdditional.StartCompiling();
                             _result.RecompiledLast.Add(fileAdditional);
-                            TrullyCompiledCount++;
                             break;
                         case FileCompilationType.Css:
                             fileAdditional.StartCompiling();
@@ -343,7 +337,6 @@ namespace Lib.TSCompiler
                                 }
                                 _result.RecompiledLast.Add(fileAdditional);
                             }
-                            TrullyCompiledCount++;
                             break;
                     }
                 }
