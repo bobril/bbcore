@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.35.4
+
 ### Fixed
 
 *   Compilation failed when modifying file which is part of import cycle.
