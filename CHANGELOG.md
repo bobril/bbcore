@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+*   Build-in bb-assets-generator-plugin for generating **assets.ts** and **sprites.ts** to src directory.
+
 ## 0.35.4
 
 ### Fixed

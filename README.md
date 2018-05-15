@@ -30,3 +30,15 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
 | -3     | Error    | Missing dependency                                             |
 | -5     | Error    | First parameter of b.asset must be resolved as constant string |
 | -6     | Error    | b.sprite cannot have more than 6 parameters                    |
+
+# Package.json - bobril section features
+
+## How to enable generating of **sprites.ts** from all pngs in assets directory
+
+    "bobril": {
+        "plugins": {
+            "bb-assets-generator-plugin": {
+                "generateSpritesFile": true
+            }
+        }
+    }
