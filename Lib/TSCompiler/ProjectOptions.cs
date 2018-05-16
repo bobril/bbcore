@@ -31,6 +31,7 @@ namespace Lib.TSCompiler
         public SpriteHolder SpriteGenerator;
         public string BundlePngUrl;
         public string BundleJsUrl;
+        public bool GenerateSpritesTs;
 
         public string HtmlHeadExpanded { get; set; }
         public string MainFile { get; set; }
@@ -182,6 +183,16 @@ namespace Lib.TSCompiler
                 }
             }
             ExampleSources = res;
+        }
+
+        public void GenerateCode()
+        {
+            var assetsPlugin = new AssetsPlugin.AssetsGenerator(Owner.DiskCache);
+            if (assetsPlugin.Run(Owner.Owner.FullPath, GenerateSpritesTs))
+            {
+                Owner.DiskCache.CheckForTrueChange();
+                Owner.DiskCache.ResetChange();
+            }
         }
 
         public void RefreshTestSources()

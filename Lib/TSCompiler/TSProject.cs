@@ -136,7 +136,7 @@ namespace Lib.TSCompiler
                 MainFile = "index.js";
                 if (ProjectOptions != null)
                 {
-                    FillProjectOptionsFromPackageJson(new JObject());
+                    FillProjectOptionsFromPackageJson(null);
                 }
             }
         }
@@ -145,12 +145,12 @@ namespace Lib.TSCompiler
         {
             ProjectOptions.Localize = Dependencies?.Contains("bobril-g11n") ?? false;
             ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec(?:\\.d)?\\.ts(?:x)?$";
-            var publishConfigSection = parsed.GetValue("publishConfig") as JObject;
+            var publishConfigSection = parsed?.GetValue("publishConfig") as JObject;
             if (publishConfigSection != null)
             {
                 ProjectOptions.NpmRegistry = publishConfigSection.Value<string>("registry");
             }
-            var bobrilSection = parsed.GetValue("bobril") as JObject;
+            var bobrilSection = parsed?.GetValue("bobril") as JObject;
             ProjectOptions.TypeScriptVersion = GetStringProperty(bobrilSection, "tsVersion", DefaultTypeScriptVersion);
             ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
             ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
@@ -162,6 +162,8 @@ namespace Lib.TSCompiler
             ProjectOptions.DependencyUpdate = String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
             var includeSources = bobrilSection?.GetValue("includeSources") as JArray;
             ProjectOptions.IncludeSources = includeSources?.Select(i => i.ToString()).ToArray();
+            var pluginsSection = bobrilSection?.GetValue("plugins") as JObject;
+            ProjectOptions.GenerateSpritesTs = pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
         }
 
         DepedencyUpdate String2DependencyUpdate(string value)
@@ -186,7 +188,7 @@ namespace Lib.TSCompiler
             return @default;
         }
 
-        public void FirstInitialize()
+        public void InitializeOnce()
         {
             if (WasFirstInitialize)
                 return;

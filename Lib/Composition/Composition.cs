@@ -139,12 +139,13 @@ namespace Lib.Composition
                     proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
                     if (bCommand.Localize.Value != null)
                         proj.Localize = bCommand.Localize.Value ?? false;
-                    proj.Owner.FirstInitialize();
+                    proj.Owner.InitializeOnce();
                     proj.OutputSubDir = bCommand.VersionDir.Value;
                     proj.CompressFileNames = !bCommand.Fast.Value;
                     proj.StyleDefNaming = ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
                     proj.BundleCss = !bCommand.Fast.Value;
                     proj.Defines["DEBUG"] = bCommand.Fast.Value;
+                    proj.GenerateCode();
                     proj.SpriterInitialization();
                     proj.RefreshMainFile();
                     proj.DetectBobrilJsxDts();
@@ -227,8 +228,9 @@ namespace Lib.Composition
                     Console.WriteLine("Test build started " + proj.Owner.Owner.FullPath);
                     Console.ForegroundColor = ConsoleColor.Gray;
                     proj.Owner.LoadProjectJson(true);
-                    proj.Owner.FirstInitialize();
+                    proj.Owner.InitializeOnce();
                     proj.StyleDefNaming = StyleDefNamingStyle.AddNames;
+                    proj.GenerateCode();
                     proj.SpriterInitialization();
                     proj.RefreshMainFile();
                     proj.DetectBobrilJsxDts();
@@ -597,8 +599,9 @@ namespace Lib.Composition
                         try
                         {
                             proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
-                            proj.Owner.FirstInitialize();
+                            proj.Owner.InitializeOnce();
                             proj.OutputSubDir = versionDir;
+                            proj.GenerateCode();
                             proj.RefreshMainFile();
                             proj.RefreshTestSources();
                             proj.SpriterInitialization();

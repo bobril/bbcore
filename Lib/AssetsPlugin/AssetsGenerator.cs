@@ -1,5 +1,6 @@
 ﻿using Lib.DiskCache;
 using Lib.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,29 +21,32 @@ namespace Lib.AssetsPlugin
             _cache = cache;
         }
 
-        public void Run(string projectDir, bool generateSpritesFile)
+        public bool Run(string projectDir, bool generateSpritesFile)
         {
             var projDir = _cache.TryGetItem(projectDir) as IDirectoryCache;
-            if (projDir == null) return;
+            if (projDir == null) return false;
+            _cache.UpdateIfNeeded(projDir);
             var assetsDir = projDir.TryGetChildNoVirtual(_assetsDirName) as IDirectoryCache;
-            if (assetsDir == null) return;
+            if (assetsDir == null) return false;
             var srcPath = PathUtils.Join(projectDir, _srcDirName);
 
             var assets = InspectAssets(assetsDir, srcPath);
             var assetsContentBuilder = new AssetsContentBuilder();
             assetsContentBuilder.Build(assets);
-            WriteContent(srcPath, _assetsFileName, assetsContentBuilder.Content);
+            var changed = WriteContent(srcPath, _assetsFileName, assetsContentBuilder.Content);
 
             if (generateSpritesFile)
             {
                 var spritesContentBuilder = new SpritesContentBuilder();
                 spritesContentBuilder.Build(assets);
-                WriteContent(srcPath, _spritesFileName, spritesContentBuilder.Content);
+                changed |= WriteContent(srcPath, _spritesFileName, spritesContentBuilder.Content);
             }
+            return changed;
         }
 
         IDictionary<string, object> InspectAssets(IDirectoryCache rootDir, string srcPath)
         {
+            _cache.UpdateIfNeeded(rootDir);
             var assetsMap = new Dictionary<string, object>();
             var assetsFiles = rootDir.ToList();
             for (var j = 0; j < assetsFiles.Count; j++)
@@ -65,14 +69,16 @@ namespace Lib.AssetsPlugin
             return key.Replace('.', '_').Replace('-', '_').Replace(' ', '_');
         }
 
-        void WriteContent(string srcPath, string fileName, string content)
+        bool WriteContent(string srcPath, string fileName, string content)
         {
             var filePath = PathUtils.Join(srcPath, fileName);
             var file = _cache.TryGetItem(filePath) as IFileCache;
             if (file != null && file.Utf8Content == content)
-                return;
+                return false;
+            Console.WriteLine("AssetGenerator updating " + filePath);
             Directory.CreateDirectory(srcPath);
             File.WriteAllText(filePath, content, new UTF8Encoding(false));
+            return true;
         }
     }
 }
