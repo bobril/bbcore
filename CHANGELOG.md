@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.36.0
+
 ### Fixed
 
 *   Regresion of modification of exports was not taken in account from 0.35.4.
