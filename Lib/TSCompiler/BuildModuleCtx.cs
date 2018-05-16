@@ -141,7 +141,7 @@ namespace Lib.TSCompiler
             }
             CheckAdd(item.FullPath);
             TryToResolveFromBuildCache(itemInfo);
-            if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath))
+            if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath) && !itemInfo.NeedsCompilation())
             {
                 return itemInfo.DtsLink.Owner.FullPath;
             }
@@ -232,7 +232,7 @@ namespace Lib.TSCompiler
             itemInfo.Type = FileCompilationType.TypeScript;
             CheckAdd(item.FullPath);
             TryToResolveFromBuildCache(itemInfo);
-            if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath))
+            if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath) && !itemInfo.NeedsCompilation())
             {
                 return itemInfo.DtsLink.Owner.FullPath;
             }

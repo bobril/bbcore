@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Regresion of modification of exports was not taken in account from 0.35.4.
+
 ### Added
 
 *   Build-in bb-assets-generator-plugin for generating **assets.ts** and **sprites.ts** to src directory.
