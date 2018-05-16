@@ -6,14 +6,18 @@ namespace Lib.AssetsPlugin
     {
         const string _importBobril = "import * as b from 'bobril';\n";
 
-        public override string GetHeader() => Notice + _importBobril + "\n";
+        public override string GetHeader() => Notice + _importBobril;
 
-        public override void AddPropertyValue(string name, string value, int depth)
+        public override bool ShouldSkip(string value)
         {
-            if (PathUtils.GetExtension(value) != "png") return;
-            var sanitizedName = SanitizePropertyName(name);
-            _content += sanitizedName + GetPropertyNameValueSeparator(depth) + "b.sprite(\"" + value + "\")";
-            _content += GetPropertyLineEnd(depth);
+            return PathUtils.GetExtension(value) != "png";
+        }
+
+        public override void AddPropertyValue(string value)
+        {
+            _content.Append("b.sprite(\"");
+            _content.Append(value);
+            _content.Append("\")");
         }
     }
 }
