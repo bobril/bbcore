@@ -774,7 +774,9 @@ namespace Lib.Composition
 
         public void ExitWithCleanUp()
         {
+            Console.WriteLine("Stopping Chrome");
             StopChromeTest();
+            Console.WriteLine("Exitting");
             Environment.Exit(0);
         }
     }
