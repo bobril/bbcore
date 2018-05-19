@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Text.RegularExpressions;
 using Lib.DiskCache;
 using Lib.Spriter;
 using SixLabors.ImageSharp;
@@ -166,7 +168,7 @@ namespace Lib.TSCompiler
                                 operation.ApplyProcessor(new Recolor(rgbColor));
                             });
                         }
-                        image = image.Clone(operation => operation.Crop(new Rectangle(new Point(sprite.x??0, sprite.y??0), new Size(sprite.owidth, sprite.oheight))));
+                        image = image.Clone(operation => operation.Crop(new Rectangle(new Point(sprite.x ?? 0, sprite.y ?? 0), new Size(sprite.owidth, sprite.oheight))));
                         c.DrawImage(new GraphicsOptions(), image, new Point(sprite.ox, sprite.oy));
                     }
                 }
@@ -178,49 +180,91 @@ namespace Lib.TSCompiler
             return _result;
         }
 
-        Rgba32 ParseColor(string color)
+        static Regex rgbaColorParser = new Regex(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript);
+
+        public static Rgba32 ParseColor(string color)
         {
-            if (color.Length == 4)
+            if (color.Length == 4 && color[0] == '#')
             {
                 color = "#" + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
             }
-            if (color.Length == 7)
+            if (color.Length == 5 && color[0] == '#')
+            {
+                color = "#" + color[1] + color[1] + color[2] + color[2] + color[3] + color[3] + color[4] + color[4];
+            }
+            if (color.Length == 7 && color[0] == '#')
             {
                 return new Rgba32(
-                    (byte)int.Parse(color.Substring(1, 2), System.Globalization.NumberStyles.HexNumber),
-                    (byte)int.Parse(color.Substring(3, 2), System.Globalization.NumberStyles.HexNumber),
-                    (byte)int.Parse(color.Substring(5, 2), System.Globalization.NumberStyles.HexNumber));
+                    (byte)int.Parse(color.Substring(1, 2), NumberStyles.HexNumber),
+                    (byte)int.Parse(color.Substring(3, 2), NumberStyles.HexNumber),
+                    (byte)int.Parse(color.Substring(5, 2), NumberStyles.HexNumber));
             }
-            return Rgba32.Transparent;
+            if (color.Length == 9 && color[0] == '#')
+            {
+                return new Rgba32(
+                    (byte)int.Parse(color.Substring(1, 2), NumberStyles.HexNumber),
+                    (byte)int.Parse(color.Substring(3, 2), NumberStyles.HexNumber),
+                    (byte)int.Parse(color.Substring(5, 2), NumberStyles.HexNumber),
+                    (byte)int.Parse(color.Substring(7, 2), NumberStyles.HexNumber));
+            }
+            var mrgba = rgbaColorParser.Match(color);
+            if (mrgba.Success)
+            {
+                return new Rgba32(
+                    (byte)int.Parse(mrgba.Groups[1].Value),
+                    (byte)int.Parse(mrgba.Groups[2].Value),
+                    (byte)int.Parse(mrgba.Groups[3].Value),
+                    (byte)Math.Round(float.Parse(mrgba.Groups[4].Value, CultureInfo.InvariantCulture) * 255));
+            }
+            throw new InvalidDataException("Cannot parse color " + color);
         }
 
-        private class Recolor : IImageProcessor<Rgba32>
+        class Recolor : IImageProcessor<Rgba32>
         {
-            private Rgba32 rgbColor;
+            Rgba32 _rgbColor;
 
             public Recolor(Rgba32 rgbColor)
             {
-                this.rgbColor = rgbColor;
+                _rgbColor = rgbColor;
             }
 
             public void Apply(Image<Rgba32> source, Rectangle sourceRectangle)
             {
-                var cgray = new SixLabors.ImageSharp.PixelFormats.Bgr24(128, 128, 128);
+                var cgray = new Bgr24(128, 128, 128);
                 var frame = source.Frames.RootFrame;
-                for (int y = 0; y < frame.Height; y++)
-                    for (int x = 0; x < frame.Width; x++)
-                    {
-                        var c = frame[x, y];
-                        var crgb = new SixLabors.ImageSharp.PixelFormats.Bgr24();
-                        c.ToBgr24(ref crgb);
-                        if (cgray.Equals(crgb))
+                var crgb = new Bgr24();
+                if (_rgbColor.A == 255)
+                {
+                    for (int y = 0; y < frame.Height; y++)
+                        for (int x = 0; x < frame.Width; x++)
                         {
-                            var alpha = c.A;
-                            c = rgbColor;
-                            c.A = alpha;
-                            frame[x, y] = c;
+                            var c = frame[x, y];
+                            c.ToBgr24(ref crgb);
+                            if (cgray.Equals(crgb))
+                            {
+                                var alpha = c.A;
+                                c = _rgbColor;
+                                c.A = alpha;
+                                frame[x, y] = c;
+                            }
                         }
-                    }
+                }
+                else
+                {
+                    for (int y = 0; y < frame.Height; y++)
+                        for (int x = 0; x < frame.Width; x++)
+                        {
+                            var c = frame[x, y];
+                            c.ToBgr24(ref crgb);
+                            if (cgray.Equals(crgb))
+                            {
+                                var alpha = c.A;
+                                c = _rgbColor;
+                                c.A = (byte)(((c.A * alpha) * 32897) >> 23); // clever divide by 255
+                                frame[x, y] = c;
+                            }
+                        }
+                }
             }
         }
     }

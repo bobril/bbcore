@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+*   Support for semitransparent sprites.
+*   Exitting info in console.
+
 ## 0.36.0
 
 ### Fixed
