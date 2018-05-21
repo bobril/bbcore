@@ -227,6 +227,7 @@ namespace Lib.Composition
                     Console.ForegroundColor = ConsoleColor.Blue;
                     Console.WriteLine("Test build started " + proj.Owner.Owner.FullPath);
                     Console.ForegroundColor = ConsoleColor.Gray;
+                    TestResultsHolder testResults = new TestResultsHolder();
                     proj.Owner.LoadProjectJson(true);
                     proj.Owner.InitializeOnce();
                     proj.StyleDefNaming = StyleDefNamingStyle.AddNames;
@@ -262,8 +263,7 @@ namespace Lib.Composition
                             _testServer.OnTestResults.Subscribe((results) =>
                             {
                                 testFailures = results.TestsFailed;
-                                if (testCommand.Out.Value != null)
-                                    File.WriteAllText(testCommand.Out.Value, results.ToJUnitXml(testCommand.FlatTestSuites.Value), new UTF8Encoding(false));
+                                testResults = results;
                                 wait.Release();
                             });
                             var durationb = DateTime.UtcNow - start;
@@ -276,6 +276,8 @@ namespace Lib.Composition
                             StopChromeTest();
                         }
                     }
+                    if (testCommand.Out.Value != null)
+                        File.WriteAllText(testCommand.Out.Value, testResults.ToJUnitXml(testCommand.FlatTestSuites.Value), new UTF8Encoding(false));
                 }
                 catch (Exception ex)
                 {

@@ -4,6 +4,7 @@
 
 ### Added
 
+*   Generate test result even there are no tests.
 *   Support for semitransparent sprites.
 *   Exitting info in console.
 
