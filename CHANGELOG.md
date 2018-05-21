@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.37.0
+
 ### Added
 
 *   Generate test result even there are no tests.
