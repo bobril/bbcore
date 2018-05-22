@@ -85,16 +85,19 @@ namespace Lib.Composition
             var duration = 0d;
             var testCaseCount = 0;
             var flat = true;
-            suite.Nested.ForEach(n =>
+            if (suite.Nested != null)
             {
-                if (n.IsSuite)
+                suite.Nested.ForEach(n =>
                 {
-                    flat = false;
-                    return;
-                }
-                testCaseCount++;
-                duration += n.Duration;
-            });
+                    if (n.IsSuite)
+                    {
+                        flat = false;
+                        return;
+                    }
+                    testCaseCount++;
+                    duration += n.Duration;
+                });
+            }
             if (flat || !isWritingFlatTestSuites)
                 duration = suite.Duration;
             var isRecursiveTestCaseToWrite = !isWritingFlatTestSuites && !string.IsNullOrEmpty(name);
@@ -108,26 +111,26 @@ namespace Lib.Composition
 
                 if (!flat && !isWritingFlatTestSuites)
                 {
-                    suite.Nested.ForEach(n =>
-                    {
-                        if (n.IsSuite)
-                        {
-                            RecursiveWriteJUnit(w, n, n.Name, false);
-                        }
-                    });
+                    if (suite.Nested != null) suite.Nested.ForEach(n =>
+                      {
+                          if (n.IsSuite)
+                          {
+                              RecursiveWriteJUnit(w, n, n.Name, false);
+                          }
+                      });
                 }
                 WriteJUnitSystemOut(w, suite);
                 w.WriteEndElement();
             }
             if (!flat && (isWritingFlatTestSuites || !isRecursiveTestCaseToWrite))
             {
-                suite.Nested.ForEach(n =>
-                {
-                    if (n.IsSuite)
-                    {
-                        RecursiveWriteJUnit(w, n, (!string.IsNullOrEmpty(name) ? name + "." : "") + n.Name, isWritingFlatTestSuites);
-                    }
-                });
+                if (suite.Nested != null) suite.Nested.ForEach(n =>
+                  {
+                      if (n.IsSuite)
+                      {
+                          RecursiveWriteJUnit(w, n, (!string.IsNullOrEmpty(name) ? name + "." : "") + n.Name, isWritingFlatTestSuites);
+                      }
+                  });
             }
         }
 

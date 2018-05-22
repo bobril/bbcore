@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Don't crash on no tests...
+
 ## 0.37.0
 
 ### Added
