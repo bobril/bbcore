@@ -6,6 +6,7 @@ namespace Lib.ToolsDir
     {
         string Path { get; }
         void SetTypeScriptVersion(string version);
+        void SetTypeScriptPath(string projectPath);
         void RunYarn(string dir, string aParams);
         void UpdateDependencies(string dir, bool upgrade, string npmRegistry);
         string TypeScriptLibDir { get; }

@@ -14,7 +14,7 @@ namespace Lib.TSCompiler
     {
         bool WasFirstInitialize;
 
-        public const string DefaultTypeScriptVersion = "2.7.2";
+        public const string DefaultTypeScriptVersion = "2.8.3";
 
         public IDiskCache DiskCache { get; set; }
         public IDirectoryCache Owner { get; set; }
@@ -151,7 +151,16 @@ namespace Lib.TSCompiler
                 ProjectOptions.NpmRegistry = publishConfigSection.Value<string>("registry");
             }
             var bobrilSection = parsed?.GetValue("bobril") as JObject;
-            ProjectOptions.TypeScriptVersion = GetStringProperty(bobrilSection, "tsVersion", DefaultTypeScriptVersion);
+            ProjectOptions.TypeScriptVersion = GetStringProperty(bobrilSection, "tsVersion", "");
+            if (ProjectOptions.TypeScriptVersion != "")
+            {
+                ProjectOptions.TypeScriptVersionOverride = true;
+            }
+            else
+            {
+                ProjectOptions.TypeScriptVersionOverride = false;
+                ProjectOptions.TypeScriptVersion = DefaultTypeScriptVersion;
+            }
             ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
             ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
             ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
@@ -237,7 +246,10 @@ namespace Lib.TSCompiler
                 compOpt.outDir = "_virtual";
                 compOpt.module = ModuleKind.CommonJS;
                 compOpt.declaration = true;
-                ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
+                if (!ProjectOptions.TypeScriptVersionOverride && Dependencies.Contains("typescript"))
+                    ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
+                else
+                    ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
                 compiler.MergeCompilerOptions(compOpt);
                 compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
                 ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(ProjectOptions.TypeScriptVersion, JsonConvert.SerializeObject(compiler.CompilerOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));

@@ -145,6 +145,15 @@ namespace Lib.ToolsDir
             TypeScriptVersion = version;
         }
 
+        public void SetTypeScriptPath(string projectPath)
+        {
+            if (TypeScriptVersion == "project")
+                return;
+            _typeScriptJsContent = null;
+            TypeScriptLibDir = PathUtils.Join(projectPath, "node_modules/typescript/lib");
+            TypeScriptVersion = "project";
+        }
+
         public void RunYarn(string dir, string aParams)
         {
             var yarnPath = GetYarnPath();

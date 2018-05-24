@@ -21,5 +21,8 @@
         "bobril": "*",
         "bobril-g11n": "*",
         "normalize.css": "^3.0.3"
+    },
+    "devDependencies": {
+        "typescript": "^2.8.3"
     }
 }

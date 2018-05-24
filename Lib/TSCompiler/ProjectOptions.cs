@@ -293,6 +293,7 @@ namespace Lib.TSCompiler
         string _originalContent;
         internal string CurrentBuildCommonSourceDirectory;
         internal string[] IncludeSources;
+        internal bool TypeScriptVersionOverride;
 
         public void UpdateTSConfigJson()
         {

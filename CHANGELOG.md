@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Changed
+
+*   Default TypeScript version to 2.8.3
+
+### Added
+
+*   Use TypeScript from project if it is in its dependencies and not overriden by tsVersion in project.json
+
 ## 0.37.1
 
 ### Fixed
