@@ -42,3 +42,9 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
             }
         }
     }
+
+# Environmental variables
+
+## Disable yarn creating links
+
+Docker on Windows filesystem has limitation in creating links. To workaround this issue create environment variable `BBCoreNoLinks` with not empty value so bbcore will add `--no-bin-links` parameter to yarn command line.

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+*   Allow to disable yarn to fail on creating links when inside Docker on Windows filesystem. See README for more details.
+
 ### Fixed
 
 *   Failure to start 3rd instance with enabled BuildCache

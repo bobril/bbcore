@@ -138,7 +138,7 @@ namespace Lib.ToolsDir
                 {
                     Directory.CreateDirectory(tsVerDir);
                     RunYarn(tsVerDir, "init -y --no-emoji --non-interactive");
-                    RunYarn(tsVerDir, "add typescript@" + version + " --no-emoji --non-interactive");
+                    RunYarn(tsVerDir, "add typescript@" + version + " --no-emoji --non-interactive --no-bin-links");
                 }
             }
             TypeScriptLibDir = PathUtils.Join(tsVerDir, "node_modules/typescript/lib");
@@ -229,7 +229,13 @@ namespace Lib.ToolsDir
             {
                 upgrade = false;
             }
-            RunYarn(dir, (upgrade ? "upgrade" : "install") + " --flat --no-emoji --non-interactive");
+            var par = upgrade ? "upgrade" : "install";
+            par += " --flat --no-emoji --non-interactive";
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BBCoreNoLinks")))
+            {
+                par += " --no-bin-links";
+            }
+            RunYarn(dir, par);
         }
     }
 }
