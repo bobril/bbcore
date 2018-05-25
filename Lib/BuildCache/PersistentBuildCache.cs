@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading;
 using BTDB.KVDBLayer;
 using BTDB.ODBLayer;
-using Lib.Utils;
 
 namespace Lib.BuildCache
 {
@@ -23,14 +20,17 @@ namespace Lib.BuildCache
         public PersistentBuildCache(string dir)
         {
             var cacheIndex = 0;
-            while (_mutex == null)
+            while (cacheIndex < 100)
             {
                 _mutex = new Mutex(false, @"Global\bbcoreCache" + cacheIndex);
                 if (_mutex.WaitOne(10))
                     break;
                 _mutex.Dispose();
+                _mutex = null;
                 cacheIndex++;
             }
+            if (_mutex == null)
+                return;
             _dir = dir + "/cache" + (cacheIndex == 0 ? "" : cacheIndex.ToString());
             if (!new DirectoryInfo(_dir).Exists)
                 Directory.CreateDirectory(_dir);
@@ -52,15 +52,15 @@ namespace Lib.BuildCache
             }
         }
 
-        public bool IsEnabled => true;
+        public bool IsEnabled => _mutex != null;
 
         public void Dispose()
         {
-            _odb.Dispose();
-            _kvdb.Dispose();
-            _diskFileCollection.Dispose();
             if (_mutex != null)
             {
+                _odb.Dispose();
+                _kvdb.Dispose();
+                _diskFileCollection.Dispose();
                 _mutex.ReleaseMutex();
                 _mutex.Dispose();
             }
@@ -68,6 +68,7 @@ namespace Lib.BuildCache
 
         public void EndTransaction()
         {
+            if (!IsEnabled) return;
             _tr.Commit();
             _tr.Dispose();
             _tr = null;
@@ -75,11 +76,13 @@ namespace Lib.BuildCache
 
         public TSFileBuildCache FindTSFileBuildCache(byte[] contentHash, uint configurationId)
         {
+            if (!IsEnabled) return null;
             return _tsRelation(_tr).FindByIdOrDefault(contentHash, configurationId);
         }
 
         public uint MapConfiguration(string tsversion, string compilerOptionsJson)
         {
+            if (!IsEnabled) return 0;
             var configRelation = _tsConfiguration(_tr);
             var cfg = configRelation.FindByIdOrDefault(tsversion, compilerOptionsJson);
             if (cfg != null)
@@ -98,11 +101,13 @@ namespace Lib.BuildCache
 
         public void StartTransaction()
         {
+            if (!IsEnabled) return;
             _tr = _odb.StartTransaction();
         }
 
         public void Store(TSFileBuildCache value)
         {
+            if (!IsEnabled) return;
             _tsRelation(_tr).Insert(value);
         }
     }

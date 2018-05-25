@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+*   Failure to start 3rd instance with enabled BuildCache
+
 ## 0.38.0
 
 ### Changed
@@ -10,7 +14,7 @@
 
 ### Added
 
-*   Use TypeScript from project if it is in its dependencies and not overriden by tsVersion in project.json
+*   Use TypeScript from project if it is in its dependencies and not overridden by tsVersion in project.json
 
 ## 0.37.1
 
@@ -24,13 +28,13 @@
 
 *   Generate test result even there are no tests.
 *   Support for semitransparent sprites.
-*   Exitting info in console.
+*   Exiting info in console.
 
 ## 0.36.0
 
 ### Fixed
 
-*   Regresion of modification of exports was not taken in account from 0.35.4.
+*   Regression of modification of exports was not taken in account from 0.35.4.
 
 ### Added
 
@@ -101,7 +105,7 @@
 
 ### Added
 
-*   Autoupdating tslint.json from bb-tslint-plugin when is in devDependencies.
+*   Auto-updating tslint.json from bb-tslint-plugin when is in devDependencies.
 
 ### Fixed
 
@@ -158,8 +162,8 @@
 
 ### Fixed
 
-*   Extreamly slow build compression with a lot of unused constants. And even improved compression size!
-*   Build exeption with empty ts file.
+*   Extremely slow build compression with a lot of unused constants. And even improved compression size!
+*   Build exception with empty ts file.
 
 ## 0.27.2
 
