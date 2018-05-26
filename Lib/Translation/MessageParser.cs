@@ -6,7 +6,142 @@ using System.Text.RegularExpressions;
 
 namespace Lib.Translation
 {
-    class MessageParser
+    public abstract class MessageAst
+    {
+        public virtual void GatherParams(HashSet<string> pars)
+        {
+        }
+    }
+
+    public class ErrorAst : MessageAst
+    {
+        public ErrorAst(string message, int position, int line, int column)
+        {
+            Message = message;
+            Position = position;
+            Line = line;
+            Column = column;
+        }
+        public string Message { get; }
+        public int Position { get; }
+        public int Line { get; }
+        public int Column { get; }
+    }
+
+    public class TextAst : MessageAst
+    {
+        public TextAst(string text)
+        {
+            Text = text;
+        }
+
+        public string Text { get; }
+    }
+
+    public class NumberAst : MessageAst
+    {
+        public NumberAst(int value)
+        {
+            Value = value;
+        }
+
+        public int Value { get; }
+    }
+
+    public class ListAst : MessageAst
+    {
+        public ListAst(MessageAst first, MessageAst second)
+        {
+            List = new List<MessageAst> { first, second };
+        }
+
+        public void Add(MessageAst item)
+        {
+            List.Add(item);
+        }
+
+        List<MessageAst> List { get; }
+
+        public override void GatherParams(HashSet<string> pars)
+        {
+            List.ForEach(i => i.GatherParams(pars));
+        }
+    }
+
+    public class HashAst : MessageAst
+    {
+    }
+
+    public class FormatAst : MessageAst
+    {
+        public FormatAst(string id)
+        {
+            Id = id;
+        }
+
+        public string Id { get; }
+        public MessageAst Format { get; set; }
+
+        public override void GatherParams(HashSet<string> pars)
+        {
+            pars.Add(Id);
+            if (Format != null)
+                Format.GatherParams(pars);
+        }
+    }
+
+    public class FormatTypeAst : MessageAst
+    {
+        public FormatTypeAst(string type)
+        {
+            Type = type;
+            Options = new List<KeyValuePair<string, MessageAst>>();
+        }
+
+        public string Type { get; }
+        public string Style { get; set; }
+        public List<KeyValuePair<string, MessageAst>> Options { get; }
+
+        public override void GatherParams(HashSet<string> pars)
+        {
+            Options.ForEach(i => i.Value.GatherParams(pars));
+        }
+    }
+
+    public class PluralAst : MessageAst
+    {
+        public PluralAst(bool ordinal)
+        {
+            Ordinal = ordinal;
+            Options = new List<KeyValuePair<object, MessageAst>>();
+        }
+
+        public bool Ordinal { get; }
+        public int Offset { get; set; }
+        public List<KeyValuePair<object, MessageAst>> Options { get; }
+
+        public override void GatherParams(HashSet<string> pars)
+        {
+            Options.ForEach(i => i.Value.GatherParams(pars));
+        }
+    }
+
+    public class SelectAst : MessageAst
+    {
+        public SelectAst()
+        {
+            Options = new List<KeyValuePair<object, MessageAst>>();
+        }
+
+        public List<KeyValuePair<object, MessageAst>> Options { get; }
+
+        public override void GatherParams(HashSet<string> pars)
+        {
+            Options.ForEach(i => i.Value.GatherParams(pars));
+        }
+    }
+
+    public class MessageParser
     {
         string _sourceText;
         int _pos;
@@ -100,13 +235,13 @@ namespace Lib.Translation
 
         bool IsError(object val)
         {
-            return val is ParserException;
+            return val is ErrorAst;
         }
 
-        ParserException BuildError(string msg = null)
+        ErrorAst BuildError(string msg = null)
         {
             if (msg == null) msg = _errorMsg;
-            return new ParserException(msg, _pos - 1, _curLine, _curCol);
+            return new ErrorAst(msg, _pos - 1, _curLine, _curCol);
         }
 
         void SkipWs()
@@ -175,17 +310,18 @@ namespace Lib.Translation
 
         static HashSet<string> _numClasses = new HashSet<string> { "zero", "one", "two", "few", "many", "other" };
 
-        object ParseFormat()
+        MessageAst ParseFormat()
         {
             SkipWs();
             if (_curToken == _errorToken) return BuildError();
             var identificator = ParseIdentificator();
-            if (IsError(identificator)) return identificator;
+            if (IsError(identificator)) return (ErrorAst)identificator;
             SkipWs();
             if (_curToken == _errorToken) return BuildError();
             if (IsCloseBracketToken())
             {
                 AdvanceNextToken();
+                return new FormatAst((string)identificator);
             }
             if (!IsComma())
             {
@@ -193,22 +329,14 @@ namespace Lib.Translation
             }
             AdvanceNextToken();
             SkipWs();
-            var format = new Dictionary<string, object> { ["type"] = null };
-            var res = new Dictionary<string, object>
-            {
-                ["type"] = "format",
-                ["id"] = identificator,
-                ["format"] = format
-            };
+            var res = new FormatAst((string)identificator);
             var name = ParseIdentificator();
-            if (IsError(name)) return name;
+            if (IsError(name)) return (ErrorAst)name;
             SkipWs();
             if (_curToken == _errorToken) return BuildError();
             if ((string)name == "number" || (string)name == "time" || (string)name == "date")
             {
-                format["type"] = name;
-                format["style"] = null;
-                format["options"] = null;
+                res.Format = new FormatTypeAst((string)name);
                 if (IsCloseBracketToken())
                 {
                     AdvanceNextToken();
@@ -219,9 +347,8 @@ namespace Lib.Translation
                     AdvanceNextToken();
                     SkipWs();
                     var style = ParseIdentificator();
-                    if (IsError(style)) return name;
-                    format["style"] = style;
-                    format["options"] = new List<KeyValuePair<object, object>>();
+                    if (IsError(style)) return (ErrorAst)style;
+                    ((FormatTypeAst)res.Format).Style = (string)style;
                     while (true)
                     {
                         SkipWs();
@@ -236,15 +363,15 @@ namespace Lib.Translation
                             AdvanceNextToken();
                             SkipWs();
                             var optionName = ParseIdentificator();
-                            if (IsError(optionName)) return optionName;
+                            if (IsError(optionName)) return (ErrorAst)optionName;
                             if (_curToken == ':')
                             {
                                 AdvanceNextToken();
                                 SkipWs();
-                                object val;
+                                MessageAst val;
                                 if (_curToken >= '0' && _curToken <= '9')
                                 {
-                                    val = ParseNumber();
+                                    val = ParseNumberAsAst();
                                 }
                                 else if (IsOpenBracketToken())
                                 {
@@ -253,14 +380,14 @@ namespace Lib.Translation
                                 }
                                 else
                                 {
-                                    val = ParseIdentificator();
+                                    val = ParseIdentificatorAsAst();
                                 }
-                                if (IsError(val)) return val;
-                                ((List<KeyValuePair<object, object>>)format["options"]).Add(new KeyValuePair<object, object>(optionName, val));
+                                if (IsError(val)) return (ErrorAst)val;
+                                ((FormatTypeAst)res.Format).Options.Add(new KeyValuePair<string, MessageAst>((string)optionName, val));
                             }
                             else
                             {
-                                ((List<KeyValuePair<object, object>>)format["options"]).Add(new KeyValuePair<object, object>(optionName, null));
+                                ((FormatTypeAst)res.Format).Options.Add(new KeyValuePair<string, MessageAst>((string)optionName, null));
                             }
                             continue;
                         }
@@ -271,11 +398,7 @@ namespace Lib.Translation
             }
             else if ((string)name == "plural" || (string)name == "selectordinal")
             {
-                var options = new List<KeyValuePair<object, object>>();
-                format["type"] = "plural";
-                format["ordinal"] = (string)name != "plural";
-                format["offset"] = 0;
-                format["options"] = options;
+                res.Format = new PluralAst((string)name != "plural");
                 if (!IsComma())
                 {
                     return BuildError("Expecting \",\"");
@@ -296,7 +419,7 @@ namespace Lib.Translation
                         var m = new Regex("^offset: *([0-9]+)$").Match(chars);
                         if (m.Success)
                         {
-                            format["offset"] = int.Parse(m.Groups[1].Value);
+                            ((PluralAst)res.Format).Offset = int.Parse(m.Groups[1].Value);
                         }
                         else if (chars == "offset:")
                         {
@@ -305,7 +428,7 @@ namespace Lib.Translation
                             {
                                 return BuildError("Expecting number");
                             }
-                            format["offset"] = ParseNumber();
+                            ((PluralAst)res.Format).Offset = ParseNumber();
                         }
                         else return BuildError("After \"offset:\" there must be number");
                         offsetAllowed = false;
@@ -329,7 +452,7 @@ namespace Lib.Translation
                     AdvanceNextToken();
                     var value = ParseMsg(false);
                     if (IsError(value)) return value;
-                    options.Add(new KeyValuePair<object, object>(selector, value));
+                    ((PluralAst)res.Format).Options.Add(new KeyValuePair<object, MessageAst>(selector, value));
                     SkipWs();
                 }
                 AdvanceNextToken();
@@ -337,9 +460,8 @@ namespace Lib.Translation
             }
             else if ((string)name == "select")
             {
-                var options = new List<KeyValuePair<object, object>>();
-                format["type"] = "select";
-                format["options"] = options;
+                res.Format = new SelectAst();
+                var options = ((SelectAst)res.Format).Options;
                 if (!IsComma())
                 {
                     return BuildError("Expecting \",\"");
@@ -370,7 +492,7 @@ namespace Lib.Translation
                     AdvanceNextToken();
                     var value = ParseMsg(false);
                     if (IsError(value)) return value;
-                    options.Add(new KeyValuePair<object, object>(selector, value));
+                    options.Add(new KeyValuePair<object, MessageAst>(selector, value));
                     SkipWs();
                 }
                 AdvanceNextToken();
@@ -379,9 +501,21 @@ namespace Lib.Translation
             return BuildError("Expecting one of \"number\", \"time\", \"date\", \"plural\", \"selectordinal\", \"select\".");
         }
 
-        object ParseMsg(bool endWithEOF)
+        MessageAst ParseNumberAsAst()
         {
-            object res = null;
+            return new NumberAst(ParseNumber());
+        }
+
+        MessageAst ParseIdentificatorAsAst()
+        {
+            var res = ParseIdentificator();
+            if (IsError(res)) return (ErrorAst)res;
+            return new TextAst((string)res);
+        }
+
+        MessageAst ParseMsg(bool endWithEOF)
+        {
+            MessageAst res = null;
             while (true)
             {
                 if (_curToken == _errorToken)
@@ -392,12 +526,12 @@ namespace Lib.Translation
                 {
                     if (endWithEOF)
                     {
-                        if (res == null) return "";
+                        if (res == null) return new TextAst("");
                         return res;
                     }
                     return BuildError("Unexpected end of message missing \"}\"");
                 }
-                object val = null;
+                MessageAst val = null;
                 if (_curToken == _openBracketToken)
                 {
                     AdvanceNextToken();
@@ -406,7 +540,7 @@ namespace Lib.Translation
                 else if (_curToken == _hashToken)
                 {
                     AdvanceNextToken();
-                    val = new Dictionary<string, object> { ["type"] = "hash" };
+                    val = new HashAst();
                 }
                 else if (_curToken == _closeBracketToken)
                 {
@@ -415,7 +549,7 @@ namespace Lib.Translation
                         return BuildError("Unexpected \"}\". Maybe you forgot to prefix it with \"\\\".");
                     }
                     AdvanceNextToken();
-                    if (res == null) return "";
+                    if (res == null) return new TextAst("");
                     return res;
                 }
                 else
@@ -426,25 +560,25 @@ namespace Lib.Translation
                         _sb.Append(char.ConvertFromUtf32(_curToken));
                         AdvanceNextToken();
                     }
-                    val = _sb.ToString();
+                    val = new TextAst(_sb.ToString());
                 }
                 if (IsError(val)) return val;
                 if (res == null) res = val;
                 else
                 {
-                    if (res is List<object>)
+                    if (res is ListAst)
                     {
-                        ((List<object>)res).Add(val);
+                        ((ListAst)res).Add(val);
                     }
                     else
                     {
-                        res = new List<object> { res, val };
+                        res = new ListAst(res, val);
                     }
                 }
             }
         }
 
-        public object Parse(string text)
+        public MessageAst Parse(string text)
         {
             _pos = 0;
             _sourceText = text;
