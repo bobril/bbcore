@@ -266,5 +266,26 @@ namespace Lib.Translation
                 filesContent[outfn] = i.Value;
             }
         }
+
+        MessageParser _messageParser = new MessageParser();
+
+        public ErrorAst CheckMessage(string message, List<string> knownParams)
+        {
+            var res = _messageParser.Parse(message);
+            if (res is ErrorAst)
+            {
+                return (ErrorAst)res;
+            }
+            if (knownParams != null && knownParams.Count > 0)
+            {
+                var p = new HashSet<string>();
+                res.GatherParams(p);
+                if (!p.SetEquals(knownParams))
+                {
+                    return new ErrorAst("Parameters does not match [" + string.Join(", ", p) + "] != [" + string.Join(", ", knownParams) + "]", 0, 0, 0);
+                }
+            }
+            return null;
+        }
     }
 }

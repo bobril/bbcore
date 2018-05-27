@@ -30,6 +30,7 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
 | -3     | Error    | Missing dependency                                             |
 | -5     | Error    | First parameter of b.asset must be resolved as constant string |
 | -6     | Error    | b.sprite cannot have more than 6 parameters                    |
+| -7     | Warn     | Problem with translation message                               |
 
 # Package.json - bobril section features
 

@@ -5,6 +5,7 @@
 ### Added
 
 *   Allow to disable yarn to fail on creating links when inside Docker on Windows filesystem. See README for more details.
+*   During compiling detect errors in translation messages.
 
 ### Fixed
 

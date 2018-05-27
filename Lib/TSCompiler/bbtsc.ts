@@ -609,7 +609,20 @@ function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts
                             ? (<ts.Identifier>prop.name).text
                             : (<ts.StringLiteral>prop.name).text;
                     res[name] = evalNode((<ts.PropertyAssignment>prop).initializer, tc, resolveStringLiteral);
-                }
+                } else if (
+                    prop.kind === ts.SyntaxKind.PropertyAssignment &&
+                    prop.name.kind === ts.SyntaxKind.ComputedPropertyName
+                ) {
+                    let name = evalNode((<ts.ComputedPropertyName>prop.name).expression, tc, resolveStringLiteral);
+                    if (typeof name == "string") {
+                        res[name] = evalNode((<ts.PropertyAssignment>prop).initializer, tc, resolveStringLiteral);
+                    } else return undefined;
+                } else if (
+                    prop.kind === ts.SyntaxKind.ShorthandPropertyAssignment &&
+                    prop.name.kind === ts.SyntaxKind.Identifier
+                ) {
+                    res[(<ts.Identifier>prop.name).text] = evalNode(prop.name, tc, resolveStringLiteral);
+                } else return undefined;
             }
             return res;
         }

@@ -507,6 +507,21 @@ function evalNode(n, tc, resolveStringLiteral) {
                         : prop.name.text;
                     res[name] = evalNode(prop.initializer, tc, resolveStringLiteral);
                 }
+                else if (prop.kind === ts.SyntaxKind.PropertyAssignment &&
+                    prop.name.kind === ts.SyntaxKind.ComputedPropertyName) {
+                    var name = evalNode(prop.name.expression, tc, resolveStringLiteral);
+                    if (typeof name == "string") {
+                        res[name] = evalNode(prop.initializer, tc, resolveStringLiteral);
+                    }
+                    else
+                        return undefined;
+                }
+                else if (prop.kind === ts.SyntaxKind.ShorthandPropertyAssignment &&
+                    prop.name.kind === ts.SyntaxKind.Identifier) {
+                    res[prop.name.text] = evalNode(prop.name, tc, resolveStringLiteral);
+                }
+                else
+                    return undefined;
             }
             return res;
         }

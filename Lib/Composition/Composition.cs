@@ -161,7 +161,7 @@ namespace Lib.Composition
                     var buildResult = ctx.BuildResult;
                     var filesContent = new Dictionary<string, object>();
                     proj.FillOutputByAdditionalResourcesDirectory(filesContent);
-                    IncludeMessages(buildResult, ref errors, ref warnings, messages, messagesFromFiles);
+                    IncludeMessages(buildResult, ref errors, ref warnings, messages, messagesFromFiles, proj.Owner.Owner.FullPath);
                     if (errors == 0)
                     {
                         if (proj.Localize && bCommand.UpdateTranslations.Value)
@@ -256,7 +256,7 @@ namespace Lib.Composition
                         fastBundle.Build("bb/base", "testbundle.js.map", true);
                         proj.TestProjFastBundle = fastBundle;
                         proj.FilesContent = filesContent;
-                        IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                        IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles, proj.Owner.Owner.FullPath);
                         if (errors == 0)
                         {
                             var wait = new Semaphore(0, 1);
@@ -627,7 +627,7 @@ namespace Lib.Composition
                             fastBundle.BuildResult = buildResult;
                             fastBundle.Build("bb/base", "bundle.js.map");
                             proj.MainProjFastBundle = fastBundle;
-                            IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                            IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles, proj.Owner.Owner.FullPath);
                             if (errors == 0 && proj.LiveReloadEnabled)
                             {
                                 proj.LiveReloadIdx++;
@@ -650,7 +650,7 @@ namespace Lib.Composition
                                 fastBundle.BuildResult = testBuildResult;
                                 fastBundle.Build("bb/base", "testbundle.js.map", true);
                                 proj.TestProjFastBundle = fastBundle;
-                                IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles);
+                                IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles, proj.Owner.Owner.FullPath);
                                 if (errors == 0)
                                 {
                                     _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
@@ -690,12 +690,12 @@ namespace Lib.Composition
             return number + " " + word + (number > 1 ? "s" : "");
         }
 
-        void IncludeMessages(FastBundleBundler fastBundle, ref int errors, ref int warnings, List<CompilationResultMessage> messages, HashSet<string> messagesFromFiles)
+        void IncludeMessages(FastBundleBundler fastBundle, ref int errors, ref int warnings, List<CompilationResultMessage> messages, HashSet<string> messagesFromFiles, string rootPath)
         {
-            IncludeMessages(fastBundle.BuildResult, ref errors, ref warnings, messages, messagesFromFiles);
+            IncludeMessages(fastBundle.BuildResult, ref errors, ref warnings, messages, messagesFromFiles, rootPath);
         }
 
-        void IncludeMessages(BuildResult buildResult, ref int errors, ref int warnings, List<CompilationResultMessage> messages, HashSet<string> messagesFromFiles)
+        void IncludeMessages(BuildResult buildResult, ref int errors, ref int warnings, List<CompilationResultMessage> messages, HashSet<string> messagesFromFiles, string rootPath)
         {
             foreach (var pathInfoPair in buildResult.Path2FileInfo)
             {
@@ -713,7 +713,7 @@ namespace Lib.Composition
                         warnings++;
                     messages.Add(new CompilationResultMessage
                     {
-                        FileName = pathInfoPair.Key,
+                        FileName = PathUtils.Subtract(pathInfoPair.Key,rootPath),
                         IsError = d.isError,
                         Text = d.text,
                         Pos = new int[]

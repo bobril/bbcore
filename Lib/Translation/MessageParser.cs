@@ -26,6 +26,11 @@ namespace Lib.Translation
         public int Position { get; }
         public int Line { get; }
         public int Column { get; }
+
+        public override string ToString()
+        {
+            return Message + (Position != 0 ? (" (" + Position + ")") : "");
+        }
     }
 
     public class TextAst : MessageAst
@@ -276,7 +281,7 @@ namespace Lib.Translation
             _sb.Clear();
             do
             {
-                _sb.Append(char.ConvertFromUtf32(_curToken));
+                AppendCurTokenToSb();
                 AdvanceNextToken();
             } while (_curToken >= 0 && _curToken != '\t' && _curToken != '\n' && _curToken != '\r' && _curToken != ' ');
             return _sb.ToString();
@@ -557,7 +562,7 @@ namespace Lib.Translation
                     _sb.Clear();
                     while (_curToken >= 0)
                     {
-                        _sb.Append(char.ConvertFromUtf32(_curToken));
+                        AppendCurTokenToSb();
                         AdvanceNextToken();
                     }
                     val = new TextAst(_sb.ToString());
@@ -576,6 +581,14 @@ namespace Lib.Translation
                     }
                 }
             }
+        }
+
+        void AppendCurTokenToSb()
+        {
+            if (_curToken <= 0xffff)
+                _sb.Append((char)_curToken);
+            else
+                _sb.Append(char.ConvertFromUtf32(_curToken));
         }
 
         public MessageAst Parse(string text)

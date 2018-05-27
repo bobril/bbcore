@@ -437,9 +437,17 @@ namespace Lib.TSCompiler
             {
                 sourceInfo.translations.ForEach(t =>
                 {
-                    if (t.justFormat)
-                        return;
                     if (t.message == null)
+                        return;
+                    if (t.withParams)
+                    {
+                        var err = trdb.CheckMessage(t.message, t.knownParams);
+                        if (err != null)
+                        {
+                            fai.ReportDiag(false, -7, "Problem with translation message \"" + t.message + "\" " + err.ToString(), 0, 0, 0, 0);
+                        }
+                    }
+                    if (t.justFormat)
                         return;
                     var id = trdb.AddToDB(t.message, t.hint, t.withParams);
                     var finalId = trdb.MapId(id);
