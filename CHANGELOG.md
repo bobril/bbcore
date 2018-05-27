@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.39.0
+
 ### Added
 
 *   Allow to disable yarn to fail on creating links when inside Docker on Windows filesystem. See README for more details.
