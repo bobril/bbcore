@@ -204,9 +204,7 @@ namespace Lib.TSCompiler
             WasFirstInitialize = true;
             if (ProjectOptions.Localize)
             {
-                ProjectOptions.TranslationDb = new Translation.TranslationDb(DiskCache.FsAbstraction);
-                ProjectOptions.TranslationDb.AddLanguage(ProjectOptions.DefaultLanguage ?? "en-us");
-                ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
+                InitializeTranslationDb();
             }
             var bbTslint = Dependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
             if (bbTslint != null)
@@ -221,6 +219,13 @@ namespace Lib.TSCompiler
                     Console.WriteLine("Updated tslint.json from " + srcTsLint);
                 }
             }
+        }
+
+        public void InitializeTranslationDb()
+        {
+            ProjectOptions.TranslationDb = new Translation.TranslationDb(DiskCache.FsAbstraction);
+            ProjectOptions.TranslationDb.AddLanguage(ProjectOptions.DefaultLanguage ?? "en-us");
+            ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
         }
 
         public void Build(BuildCtx buildCtx)

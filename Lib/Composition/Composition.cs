@@ -21,6 +21,7 @@ using System.Text;
 using System.Reactive;
 using Lib.BuildCache;
 using Lib.Utils.Notification;
+using Lib.Translation;
 
 namespace Lib.Composition
 {
@@ -100,6 +101,54 @@ namespace Lib.Composition
             {
                 RunTest(testCommand);
             }
+            else if (_command is TranslationCommand tCommand)
+            {
+                RunTranslation(tCommand);
+            }
+        }
+
+        void RunTranslation(TranslationCommand tCommand)
+        {
+            InitDiskCache();
+            var project = AddProject(PathUtils.Normalize(Environment.CurrentDirectory), false);
+            TranslationDb trDb;
+            var addLanguage = tCommand.AddLang.Value;
+            if (addLanguage != null)
+            {
+                project.Owner.InitializeTranslationDb();
+                trDb = project.TranslationDb;
+                addLanguage = addLanguage.ToLowerInvariant();
+                if (trDb.HasLanguage(addLanguage))
+                {
+                    Console.WriteLine("Cannot add language " + addLanguage + " because it already exists. Doing nothing.");
+                }
+                else
+                {
+                    Console.WriteLine("Adding language " + addLanguage);
+                    trDb.AddLanguage(addLanguage);
+                    trDb.SaveLangDb(PathToTranslations(project), addLanguage);
+                    Console.WriteLine("Added language " + addLanguage);
+                }
+                return;
+            }
+
+            var removeLanguage = tCommand.RemoveLang.Value;
+            if (removeLanguage != null)
+            {
+                project.Owner.InitializeTranslationDb();
+                trDb = project.TranslationDb;
+                if (!trDb.HasLanguage(removeLanguage))
+                {
+                    Console.WriteLine("Cannot remove language " + removeLanguage + " because it does not exist. Doing nothing.");
+                }
+                else
+                {
+                    Console.WriteLine("Removing language " + removeLanguage);
+                    File.Delete(PathUtils.Join(PathToTranslations(project), removeLanguage + ".json"));
+                    Console.WriteLine("Removed language " + removeLanguage);
+                }
+                return;
+            }
         }
 
         void IfEnabledStartVerbosive()
@@ -166,7 +215,7 @@ namespace Lib.Composition
                     {
                         if (proj.Localize && bCommand.UpdateTranslations.Value)
                         {
-                            proj.TranslationDb.SaveLangDbs(PathUtils.Join(proj.Owner.Owner.FullPath, "translations"));
+                            proj.TranslationDb.SaveLangDbs(PathToTranslations(proj));
                         }
                         else
                         {
@@ -204,6 +253,11 @@ namespace Lib.Composition
             Console.WriteLine("Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
             Console.ForegroundColor = ConsoleColor.Gray;
             Environment.ExitCode = errors != 0 ? 1 : 0;
+        }
+
+        private static string PathToTranslations(ProjectOptions proj)
+        {
+            return PathUtils.Join(proj.Owner.Owner.FullPath, "translations");
         }
 
         void RunTest(TestCommand testCommand)
@@ -713,7 +767,7 @@ namespace Lib.Composition
                         warnings++;
                     messages.Add(new CompilationResultMessage
                     {
-                        FileName = PathUtils.Subtract(pathInfoPair.Key,rootPath),
+                        FileName = PathUtils.Subtract(pathInfoPair.Key, rootPath),
                         IsError = d.isError,
                         Text = d.text,
                         Pos = new int[]

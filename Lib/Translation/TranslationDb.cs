@@ -173,27 +173,35 @@ namespace Lib.Translation
             {
                 if (!_loadedLanguages.Contains(p.Key))
                     continue;
-                var tw = new StringWriter();
-                var jw = new JsonTextWriter(tw);
-                jw.Formatting = Formatting.Indented;
-                jw.WriteStartArray();
-                jw.WriteValue(p.Key);
-                for (var i = 0; i < UsedIds.Count; i++)
-                {
-                    jw.WriteStartArray();
-                    var idx = (int)UsedIds[i];
-                    jw.WriteValue(Id2Key[idx].Message);
-                    jw.WriteValue(Id2Key[idx].Hint);
-                    jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
-                    if (idx < p.Value.Count && p.Value[idx] != null)
-                        jw.WriteValue(p.Value[idx]);
-                    jw.WriteEndArray();
-                }
-                jw.WriteEndArray();
-                jw.Flush();
-                File.WriteAllText(PathUtils.Join(dir, p.Key + ".json"), tw.ToString(), new UTF8Encoding(false));
+                SaveLangDb(dir, p.Key);
             }
         }
+
+        public void SaveLangDb(string dir, string lang)
+        {
+            var values = Lang2ValueList[lang];
+            var tw = new StringWriter();
+            var jw = new JsonTextWriter(tw);
+            jw.Formatting = Formatting.Indented;
+            jw.WriteStartArray();
+            jw.WriteValue(lang);
+            for (var i = 0; i < UsedIds.Count; i++)
+            {
+                jw.WriteStartArray();
+                var idx = (int)UsedIds[i];
+                jw.WriteValue(Id2Key[idx].Message);
+                jw.WriteValue(Id2Key[idx].Hint);
+                jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
+                if (idx < values.Count && values[idx] != null)
+                    jw.WriteValue(values[idx]);
+                jw.WriteEndArray();
+            }
+            jw.WriteEndArray();
+            jw.Flush();
+            File.WriteAllText(PathUtils.Join(dir, lang + ".json"), tw.ToString(), new UTF8Encoding(false));
+        }
+
+        public bool HasLanguage(string lang) => Lang2ValueList.ContainsKey(lang);
 
         public List<string> AddLanguage(string lang)
         {
