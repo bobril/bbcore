@@ -44,21 +44,21 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BTDB" Version="13.0.0" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.0.0-beta2" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.0.0-beta2" />
-    <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-beta1" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.1.0-preview2-final" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.1.0-preview2-final" />
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.1.0-preview2-final" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0-preview2-final" />
-    <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="2.1.0-preview2-26406-04" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.0.0-beta3" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.0.0-beta3" />
+    <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-beta4" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.0" />
+    <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="2.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="SixLabors.Core" Version="1.0.0-ci0007" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-dev001246" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-dev001246" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-dev001425" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-dev001425" />
     <PackageReference Include="System.Collections.Concurrent" Version="4.4.0-beta-24913-02" />
     <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.4.0-beta-24913-02" />
-    <PackageReference Include="System.Reactive" Version="4.0.0-preview00001" />
+    <PackageReference Include="System.Reactive" Version="4.0.0" />
     <PackageReference Include="System.Runtime.InteropServices" Version="4.4.0-beta-24913-02" />
     <PackageReference Include="System.ValueTuple" Version="4.6.0-preview3-26501-04" />
     <PackageReference Include="UAParser" Version="3.0.0" />
