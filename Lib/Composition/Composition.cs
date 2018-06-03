@@ -266,7 +266,12 @@ namespace Lib.Composition
             InitTestServer();
             InitMainServer();
             AddProject(PathUtils.Normalize(Environment.CurrentDirectory), testCommand.Sprite.Value);
-            StartWebServer(0, false);
+            int port = 0;
+            if (int.TryParse(testCommand.Port.Value, out var portInInt))
+            {
+                port = portInInt;
+            }
+            StartWebServer(port, false);
             DateTime start = DateTime.UtcNow;
             int errors = 0;
             int testFailures = 0;

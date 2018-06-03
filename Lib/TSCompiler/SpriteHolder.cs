@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Lib.DiskCache;
 using Lib.Spriter;
+using Lib.Utils;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -21,7 +23,7 @@ namespace Lib.TSCompiler
         Sprite2dPlacer _placer;
         List<SourceInfo.Sprite> _allSprites;
         List<SourceInfo.Sprite> _newSprites;
-        byte[] _result;
+        IReadOnlyList<ImageBytesWithQuality> _result;
         bool _wasChange;
 
         public SpriteHolder(IDiskCache dc)
@@ -67,20 +69,8 @@ namespace Lib.TSCompiler
             for (int i = 0; i < _allSprites.Count; i++)
             {
                 var sprite = _allSprites[i];
-                var fn = sprite.name;
-                var f = _dc.TryGetItem(fn);
-                if (f is IFileCache)
-                {
-                    var fi = TSFileAdditionalInfo.Get(f as IFileCache, _dc);
-                    if (fi.ImageCacheId != f.ChangeId)
-                    {
-                        fi.Image = Image.Load((f as IFileCache).ByteContent);
-                        fi.ImageCacheId = f.ChangeId;
-                    }
-                    sprite.owidth = fi.Image.Width;
-                    sprite.oheight = fi.Image.Height;
-                    _allSprites[i] = sprite;
-                }
+                ProcessOneSprite(ref sprite);
+                _allSprites[i] = sprite;
             }
             if (_newSprites.Count == 0)
                 return;
@@ -88,20 +78,8 @@ namespace Lib.TSCompiler
             for (int i = 0; i < _newSprites.Count; i++)
             {
                 var sprite = _newSprites[i];
-                var fn = sprite.name;
-                var f = _dc.TryGetItem(fn);
-                if (f is IFileCache)
-                {
-                    var fi = TSFileAdditionalInfo.Get(f as IFileCache, _dc);
-                    if (fi.Image == null)
-                    {
-                        fi.Image = Image.Load((f as IFileCache).ByteContent);
-                        fi.ImageCacheId = f.ChangeId;
-                    }
-                    sprite.owidth = fi.Image.Width;
-                    sprite.oheight = fi.Image.Height;
-                    _newSprites[i] = sprite;
-                }
+                ProcessOneSprite(ref sprite);
+                _newSprites[i] = sprite;
             }
             _newSprites.Sort((l, r) => r.oheight.CompareTo(l.oheight));
             for (int i = 0; i < _newSprites.Count; i++)
@@ -115,6 +93,38 @@ namespace Lib.TSCompiler
                 _allSprites.Add(sprite);
             }
             _newSprites.Clear();
+        }
+
+        void ProcessOneSprite(ref SourceInfo.Sprite sprite)
+        {
+            var fn = sprite.name;
+            var fnSplit = PathUtils.SplitDirAndFile(fn);
+            var dirc = _dc.TryGetItem(fnSplit.Item1);
+            var slices = new List<SpriteSlice>();
+            if (dirc is IDirectoryCache)
+            {
+                _dc.UpdateIfNeeded((IDirectoryCache)dirc);
+                foreach (var item in (IDirectoryCache)dirc)
+                {
+                    if (!item.IsFile || item.IsInvalid) continue;
+                    var (Name, Quality) = PathUtils.ExtractQuality(item.Name);
+                    if (Name == fnSplit.Item2)
+                    {
+                        var fi = TSFileAdditionalInfo.Get(item as IFileCache, _dc);
+                        if (fi.ImageCacheId != item.ChangeId)
+                        {
+                            _wasChange = true;
+                            fi.Image = Image.Load((item as IFileCache).ByteContent);
+                            fi.ImageCacheId = item.ChangeId;
+                        }
+                        slices.Add(new SpriteSlice { name = item.Name, quality = Quality, width = fi.Image.Width, height = fi.Image.Height });
+                    }
+                }
+                slices.Sort((l, r) => l.quality < r.quality ? -1 : l.quality > r.quality ? 1 : 0);
+                sprite.slices = slices.ToArray();
+                sprite.owidth = (int)(slices[0].width / slices[0].quality + 0.5);
+                sprite.oheight = (int)(slices[0].height / slices[0].quality + 0.5);
+            }
         }
 
         public void Retrieve(List<SourceInfo.Sprite> sprites)
@@ -141,46 +151,88 @@ namespace Lib.TSCompiler
             }
         }
 
-        public byte[] BuildImage(bool maxCompression)
+        public struct ImageBytesWithQuality
+        {
+            public float Quality;
+            public byte[] Content;
+        }
+
+        public IReadOnlyList<ImageBytesWithQuality> BuildImage(bool maxCompression)
         {
             if (!_wasChange)
             {
                 return _result;
             }
-            var resultImage = new Image<Rgba32>(_placer.Dim.Width, _placer.Dim.Height);
-            resultImage.Mutate(c =>
+            var qualities = new HashSet<float>();
+            var i = 0;
+            for (i = 0; i < _allSprites.Count; i++)
             {
-                c.Fill(Rgba32.Transparent);
-                for (int i = 0; i < _allSprites.Count; i++)
+                var slices = _allSprites[i].slices;
+                foreach (var s in slices)
                 {
-                    var sprite = _allSprites[i];
-                    var fn = sprite.name;
-                    var f = _dc.TryGetItem(fn);
-                    if (f is IFileCache)
+                    qualities.Add(s.quality);
+                }
+            }
+            var result = new ImageBytesWithQuality[qualities.Count];
+            i = 0;
+            foreach (var q in qualities.OrderBy(a => a))
+            {
+                result[i++].Quality = q;
+            }
+            for (i = 0; i < result.Length; i++)
+            {
+                var q = result[i].Quality;
+                var resultImage = new Image<Rgba32>((int)Math.Ceiling(_placer.Dim.Width * q), (int)Math.Ceiling(_placer.Dim.Height * q));
+                resultImage.Mutate(c =>
+                {
+                    c.Fill(Rgba32.Transparent);
+                    for (int j = 0; j < _allSprites.Count; j++)
                     {
-                        var fi = TSFileAdditionalInfo.Get(f as IFileCache, _dc);
-                        var image = fi.Image;
-                        if (sprite.color != null)
+                        var sprite = _allSprites[j];
+                        var fn = sprite.name;
+                        var slice = FindBestSlice(sprite.slices, q);
+                        var f = _dc.TryGetItem(PathUtils.InjectQuality(fn, slice.quality));
+                        if (f is IFileCache)
                         {
-                            Rgba32 rgbColor = ParseColor(sprite.color);
+                            var fi = TSFileAdditionalInfo.Get(f as IFileCache, _dc);
+                            var image = fi.Image;
+                            if (sprite.color != null)
+                            {
+                                Rgba32 rgbColor = ParseColor(sprite.color);
+                                image = image.Clone(operation =>
+                                {
+                                    operation.ApplyProcessor(new Recolor(rgbColor));
+                                });
+                            }
                             image = image.Clone(operation =>
                             {
-                                operation.ApplyProcessor(new Recolor(rgbColor));
+                                if (q != slice.quality)
+                                    operation = operation.Resize((int)Math.Round(image.Width * q / slice.quality), (int)Math.Round(image.Height * q / slice.quality));
+                                operation.Crop(new Rectangle(new Point((int)(q * (sprite.x ?? 0)), (int)(q * (sprite.y ?? 0))), new Size((int)(sprite.owidth * q), (int)(sprite.oheight * q))));
                             });
+                            c.DrawImage(new GraphicsOptions(), image, new Point((int)(sprite.ox * q), (int)(sprite.oy * q)));
                         }
-                        image = image.Clone(operation => operation.Crop(new Rectangle(new Point(sprite.x ?? 0, sprite.y ?? 0), new Size(sprite.owidth, sprite.oheight))));
-                        c.DrawImage(new GraphicsOptions(), image, new Point(sprite.ox, sprite.oy));
                     }
-                }
-            });
-            var ms = new MemoryStream();
-            resultImage.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder { CompressionLevel = maxCompression ? 9 : 1 });
-            _result = ms.ToArray();
+                });
+                var ms = new MemoryStream();
+                resultImage.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder { CompressionLevel = maxCompression ? 9 : 1 });
+                result[i].Content = ms.ToArray();
+            }
             _wasChange = false;
+            _result = result;
             return _result;
         }
 
-        static Regex rgbaColorParser = new Regex(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript);
+        SpriteSlice FindBestSlice(SpriteSlice[] slices, float quality)
+        {
+            for (var i = 0; i < slices.Length; i++)
+            {
+                if (slices[i].quality >= quality) return slices[i];
+            }
+            return slices.Last();
+        }
+
+        static Regex _rgbaColorParser = new Regex(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript);
 
         public static Rgba32 ParseColor(string color)
         {
@@ -207,7 +259,7 @@ namespace Lib.TSCompiler
                     (byte)int.Parse(color.Substring(5, 2), NumberStyles.HexNumber),
                     (byte)int.Parse(color.Substring(7, 2), NumberStyles.HexNumber));
             }
-            var mrgba = rgbaColorParser.Match(color);
+            var mrgba = _rgbaColorParser.Match(color);
             if (mrgba.Success)
             {
                 return new Rgba32(

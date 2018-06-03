@@ -2,6 +2,14 @@
 
 namespace Lib.TSCompiler
 {
+    public struct SpriteSlice
+    {
+        public string name;
+        public float quality;
+        public int width;
+        public int height;
+    }
+
     public class SourceInfo
     {
         public struct Asset
@@ -25,7 +33,9 @@ namespace Lib.TSCompiler
             public int oheight;
             public int ox;
             public int oy;
+            public SpriteSlice[] slices;
         }
+
         public List<Sprite> sprites;
 
         public struct Translation

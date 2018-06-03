@@ -17,5 +17,8 @@ namespace Lib.Utils.CommandLineParser.Definitions
         );
 
         public CommandLineArgumentBool Sprite { get; } = new CommandLineArgumentBool(description: "enable/disable creation of sprites", words: new[] { "--sprite" }, defaultValue: false);
+
+        public CommandLineArgumentString Port { get; } = new CommandLineArgumentString(description: "set port for test server to listen to (default: first free)", words: new[] { "-p", "--port" });
+
     }
 }

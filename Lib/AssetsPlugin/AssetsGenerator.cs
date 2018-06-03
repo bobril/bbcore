@@ -58,7 +58,7 @@ namespace Lib.AssetsPlugin
                 }
                 else
                 {
-                    assetsMap[SanitizeKey(assetFile.Name)] = PathUtils.Subtract(assetFile.FullPath, srcPath);
+                    assetsMap[SanitizeKey(PathUtils.ExtractQuality(assetFile.Name).Name)] = PathUtils.Subtract(PathUtils.ExtractQuality(assetFile.FullPath).Name, srcPath);
                 }
             };
             return assetsMap;

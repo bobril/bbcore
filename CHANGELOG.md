@@ -5,6 +5,8 @@
 ### Added
 
 *   Implemented translation command addlang and removelang parameters.
+*   --port parameter for test command.
+*   WIP: Spritting creates bundle with higher quality.
 
 ## 0.39.0
 

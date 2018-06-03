@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Lib.Utils
 {
@@ -78,6 +80,23 @@ namespace Lib.Utils
                 return path.Substring(0, 3);
             }
             return path.Substring(0, p);
+        }
+
+        static Regex _multiplierExtract = new Regex(@"@(\d+(?:\.\d+)?)\.(?:[^\.]+)$");
+
+        public static (string Name, float Quality) ExtractQuality(string name)
+        {
+            var m = _multiplierExtract.Match(name);
+            if (m.Success)
+            {
+                var capture = m.Groups[1];
+                var mult = float.Parse(capture.Value);
+                return (name.Substring(0, capture.Index - 1) + name.Substring(capture.Index + capture.Length), mult);
+            }
+            else
+            {
+                return (name, 1);
+            }
         }
 
         public static string Subtract(string pathA, string pathB)
@@ -205,6 +224,13 @@ namespace Lib.Utils
                 return "application/unknown";
             var extension = path.Substring(lastDotIndex + 1);
             return ExtensionToMimeType(extension);
+        }
+
+        internal static string InjectQuality(string fn, float quality)
+        {
+            if (quality == 1) return fn;
+            var lastDotIndex = fn.LastIndexOf('.');
+            return fn.Insert(lastDotIndex, "@" + quality.ToString(CultureInfo.InvariantCulture));
         }
 
         public static string ExtensionToMimeType(string extension)
