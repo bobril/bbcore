@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.40.0
+
 ### Added
 
 *   Implemented translation command addlang and removelang parameters.
