@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -312,7 +313,7 @@ namespace Lib.TSCompiler
                 compilerOptions = GetDefaultTSCompilerOptions()
                     .Merge(new TSCompilerOptions { allowJs = false })
                     .Merge(CompilerOptions),
-                files = new List<string>(2),
+                files = new List<string>(2 + IncludeSources?.Length ?? 0),
                 include = new List<string> { "**/*" }
             };
             if (BobrilJsx)
@@ -322,6 +323,10 @@ namespace Lib.TSCompiler
             if (TestSources.Count > 0)
             {
                 newConfigObject.files.Add(Tools.JasmineDtsPath);
+            }
+            if (IncludeSources != null)
+            {
+                newConfigObject.files.AddRange(IncludeSources);
             }
             var ss = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             ss.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());

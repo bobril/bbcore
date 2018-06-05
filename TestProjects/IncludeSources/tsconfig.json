@@ -24,7 +24,9 @@
     "target": "ES5",
     "types": []
   },
-  "files": [],
+  "files": [
+    "include1.d.ts"
+  ],
   "include": [
     "**/*"
   ]
