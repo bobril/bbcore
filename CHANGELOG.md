@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.41.0
+
 ### Added
 
 -   Generated tsconfig.json files now contains IncludedSources from bobril section in package.json
