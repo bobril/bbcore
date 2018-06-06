@@ -16,22 +16,33 @@ interface IResponse extends http.IncomingMessage {
 
 function get(url: string, options: http.RequestOptions): Promise<IResponse> {
     return new Promise<IResponse>((resolve, reject) => {
-        options = Object.assign(urlmodule.parse(url), options);
-        https
-            .get(options, response => {
-                var str: Buffer[] = [];
-                response.on("data", function(chunk: Buffer) {
-                    str.push(chunk);
-                });
-
-                response.on("end", function() {
-                    var res = Object.assign({}, response, {
-                        body: Buffer.concat(str)
+        try {
+            options = Object.assign(urlmodule.parse(url), options);
+            https
+                .get(options, response => {
+                    var str: Buffer[] = [];
+                    response.on("data", function(chunk: Buffer) {
+                        str.push(chunk);
                     });
-                    resolve(res);
-                });
-            })
-            .end();
+
+                    response.on("end", function() {
+                        var res = Object.assign({}, response, {
+                            body: Buffer.concat(str)
+                        });
+                        resolve(res);
+                    });
+
+                    response.on("error", function(err) {
+                        reject(err);
+                    });
+                })
+                .on("error", function(err) {
+                    reject(err);
+                })
+                .end();
+        } catch (err) {
+            reject(err);
+        }
     });
 }
 
@@ -240,7 +251,7 @@ const fsChmod = util.promisify(fs.chmod);
 
 async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     try {
-        if (!await fsExists(lastVersionFileName)) {
+        if (!(await fsExists(lastVersionFileName))) {
             return false;
         }
         var s = await fsStat(lastVersionFileName);
@@ -251,7 +262,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
 }
 
 (async () => {
-    if (!await fsExists(homeDir)) {
+    if (!(await fsExists(homeDir))) {
         try {
             await fsMkdir(homeDir);
         } catch (err) {
@@ -261,7 +272,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
         }
     }
     if (requestedVersion == "*") {
-        if (!await checkFreshnessOfCachedLastVersion()) {
+        if (!(await checkFreshnessOfCachedLastVersion())) {
             console.log("Updating latest version information from Github");
             try {
                 var rel = await getRelease();
@@ -289,7 +300,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     }
 
     let toRun = path.join(homeDir, requestedVersion);
-    if (!await fsExists(path.join(toRun, ".success"))) {
+    if (!(await fsExists(path.join(toRun, ".success")))) {
         var rel: any;
         try {
             rel = await getRelease(requestedVersion);
@@ -352,7 +363,10 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     proc.on("exit", (code: number) => {
         process.exit(code);
     });
-    process.stdin.pipe(proc.stdin, { end: true });
+    process.stdin.pipe(
+        proc.stdin,
+        { end: true }
+    );
     function endBBCore() {
         proc.stdin.write(
             "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +

@@ -18,21 +18,32 @@ const os = require("os");
 const child_process = require("child_process");
 function get(url, options) {
     return new Promise((resolve, reject) => {
-        options = Object.assign(urlmodule.parse(url), options);
-        https
-            .get(options, response => {
-            var str = [];
-            response.on("data", function (chunk) {
-                str.push(chunk);
-            });
-            response.on("end", function () {
-                var res = Object.assign({}, response, {
-                    body: Buffer.concat(str)
+        try {
+            options = Object.assign(urlmodule.parse(url), options);
+            https
+                .get(options, response => {
+                var str = [];
+                response.on("data", function (chunk) {
+                    str.push(chunk);
                 });
-                resolve(res);
-            });
-        })
-            .end();
+                response.on("end", function () {
+                    var res = Object.assign({}, response, {
+                        body: Buffer.concat(str)
+                    });
+                    resolve(res);
+                });
+                response.on("error", function (err) {
+                    reject(err);
+                });
+            })
+                .on("error", function (err) {
+                reject(err);
+            })
+                .end();
+        }
+        catch (err) {
+            reject(err);
+        }
     });
 }
 function getRelease(tagName) {
