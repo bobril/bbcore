@@ -53,7 +53,7 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 		/// <summary>
 		/// Version of original JS engine
 		/// </summary>
-		private const string EngineVersion = "1.8.3";
+		private const string EngineVersion = "1.8.4";
 
 		/// <summary>
 		/// Instance of JS runtime
@@ -73,7 +73,7 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 		/// <summary>
 		/// Set of external objects
 		/// </summary>
-		private readonly HashSet<object> _externalObjects = new HashSet<object>();
+		private HashSet<object> _externalObjects = new HashSet<object>();
 
 		/// <summary>
 		/// Callback for finalization of external object
@@ -88,12 +88,12 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 		/// <summary>
 		/// List of native function callbacks
 		/// </summary>
-		private readonly HashSet<JsNativeFunction> _nativeFunctions = new HashSet<JsNativeFunction>();
+		private HashSet<JsNativeFunction> _nativeFunctions = new HashSet<JsNativeFunction>();
 
 		/// <summary>
 		/// Script dispatcher
 		/// </summary>
-		private readonly ScriptDispatcher _dispatcher;
+		private ScriptDispatcher _dispatcher;
 
 		/// <summary>
 		/// Unique document name manager
@@ -476,15 +476,12 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 			GCHandle handle = GCHandle.FromIntPtr(data);
 			object obj = handle.Target;
 
-			if (obj == null)
-			{
-				return;
-			}
-
-			if (_externalObjects != null)
+			if (obj != null && _externalObjects != null)
 			{
 				_externalObjects.Remove(obj);
 			}
+
+			handle.Free();
 		}
 
 		private JsValue CreateObjectFromType(Type type)
@@ -936,14 +933,15 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 			}
 		}
 
-		private static WrapperException WrapJsException(OriginalException originalException)
+		private static WrapperException WrapJsException(OriginalException originalException,
+			string defaultDocumentName = null)
 		{
 			WrapperException wrapperException;
 			JsErrorCode errorCode = originalException.ErrorCode;
 			string description = originalException.Message;
 			string message = description;
 			string type = string.Empty;
-			string documentName = string.Empty;
+			string documentName = defaultDocumentName ?? string.Empty;
 			int lineNumber = 0;
 			int columnNumber = 0;
 			string callStack = string.Empty;
@@ -973,7 +971,11 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 						if (metadataValue.HasProperty(urlPropertyId))
 						{
 							JsValue urlPropertyValue = metadataValue.GetProperty(urlPropertyId);
-							documentName = urlPropertyValue.ConvertToString().ToString();
+							string url = urlPropertyValue.ConvertToString().ToString();
+							if (url != "undefined")
+							{
+								documentName = url;
+							}
 						}
 
 						JsPropertyId linePropertyId = JsPropertyId.FromString("line");
@@ -996,7 +998,7 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 						{
 							JsValue sourcePropertyValue = metadataValue.GetProperty(sourcePropertyId);
 							sourceLine = sourcePropertyValue.ConvertToString().ToString();
-							sourceFragment = CoreErrorHelpers.GetSourceFragment(sourceLine, columnNumber);
+							sourceFragment = CoreErrorHelpers.GetSourceFragmentFromLine(sourceLine, columnNumber);
 						}
 
 						JsPropertyId stackPropertyId = JsPropertyId.FromString("stack");
@@ -1151,7 +1153,7 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 					else if (osArchitecture == Architecture.Arm)
 					{
 						descriptionBuilder.AppendFormat(CoreStrings.Engine_NuGetPackageInstallationRequired,
-							"JavaScriptEngineSwitcher.ChakraCore.Native.win8-arm");
+							"JavaScriptEngineSwitcher.ChakraCore.Native.win-arm");
 					}
 					else
 					{
@@ -1259,6 +1261,35 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 
 		#region JsEngineBase overrides
 
+		protected override IPrecompiledScript InnerPrecompile(string code)
+		{
+			return InnerPrecompile(code, null);
+		}
+
+		protected override IPrecompiledScript InnerPrecompile(string code, string documentName)
+		{
+			string uniqueDocumentName = _documentNameManager.GetUniqueName(documentName);
+
+			IPrecompiledScript precompiledScript = _dispatcher.Invoke(() =>
+			{
+				using (CreateJsScope())
+				{
+					try
+					{
+						byte[] cachedBytes = JsContext.SerializeScript(code);
+
+						return new ChakraCorePrecompiledScript(code, cachedBytes, uniqueDocumentName);
+					}
+					catch (OriginalException e)
+					{
+						throw WrapJsException(e, uniqueDocumentName);
+					}
+				}
+			});
+
+			return precompiledScript;
+		}
+
 		protected override object InnerEvaluate(string expression)
 		{
 			return InnerEvaluate(expression, null);
@@ -1324,6 +1355,39 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 					}
 				}
 			});
+		}
+
+		protected override void InnerExecute(IPrecompiledScript precompiledScript)
+		{
+			var chakraCorePrecompiledScript = precompiledScript as ChakraCorePrecompiledScript;
+			if (chakraCorePrecompiledScript == null)
+			{
+				throw new WrapperUsageException(
+					string.Format(CoreStrings.Usage_CannotConvertPrecompiledScriptToInternalType,
+						typeof(ChakraCorePrecompiledScript).FullName),
+					Name, Version
+				);
+			}
+
+			_dispatcher.Invoke(() =>
+			{
+				using (CreateJsScope())
+				{
+					try
+					{
+						JsContext.RunSerializedScript(chakraCorePrecompiledScript.Code,
+							chakraCorePrecompiledScript.CachedBytes,
+							chakraCorePrecompiledScript.LoadScriptSourceCodeCallback, _jsSourceContext++,
+							chakraCorePrecompiledScript.DocumentName);
+					}
+					catch (OriginalException e)
+					{
+						throw WrapJsException(e);
+					}
+				}
+			});
+
+			GC.KeepAlive(chakraCorePrecompiledScript);
 		}
 
 		protected override object InnerCallFunction(string functionName, params object[] args)
@@ -1577,6 +1641,14 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 		}
 
 		/// <summary>
+		/// Gets a value that indicates if the JS engine supports script pre-compilation
+		/// </summary>
+		public override bool SupportsScriptPrecompilation
+		{
+			get { return true; }
+		}
+
+		/// <summary>
 		/// Gets a value that indicates if the JS engine supports script interruption
 		/// </summary>
 		public override bool SupportsScriptInterruption
@@ -1615,28 +1687,45 @@ namespace JavaScriptEngineSwitcher.ChakraCore
 		{
 			if (_disposedFlag.Set())
 			{
-				if (_dispatcher != null)
-				{
-					_dispatcher.Invoke(() =>
-					{
-						if (_jsContext.IsValid)
-						{
-							_jsContext.Release();
-						}
-						_jsRuntime.Dispose();
-					});
-					_dispatcher.Dispose();
-				}
-
 				if (disposing)
 				{
-					_externalObjects?.Clear();
-					_nativeFunctions?.Clear();
+					if (_dispatcher != null)
+					{
+						_dispatcher.Invoke(DisposeUnmanagedResources);
+
+						_dispatcher.Dispose();
+						_dispatcher = null;
+					}
+
+					if (_externalObjects != null)
+					{
+						_externalObjects.Clear();
+						_externalObjects = null;
+					}
+
+					if (_nativeFunctions != null)
+					{
+						_nativeFunctions.Clear();
+						_nativeFunctions = null;
+					}
 
 					_promiseContinuationCallback = null;
 					_externalObjectFinalizeCallback = null;
 				}
+				else
+				{
+					DisposeUnmanagedResources();
+				}
 			}
+		}
+
+		private void DisposeUnmanagedResources()
+		{
+			if (_jsContext.IsValid)
+			{
+				_jsContext.Release();
+			}
+			_jsRuntime.Dispose();
 		}
 
 		#endregion

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Error messages passed from JS to C# correctly again.
+
 ## 0.41.0
 
 ### Added

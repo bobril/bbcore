@@ -1,7 +1,7 @@
 ﻿
 
    --------------------------------------------------------------------------------
-             README file for JS Engine Switcher: ChakraCore v3.0.0 Beta 2
+             README file for JS Engine Switcher: ChakraCore v3.0.0 Beta 5
 
    --------------------------------------------------------------------------------
 
@@ -23,14 +23,16 @@
 
     * JavaScriptEngineSwitcher.ChakraCore.Native.win-x86
     * JavaScriptEngineSwitcher.ChakraCore.Native.win-x64
-    * JavaScriptEngineSwitcher.ChakraCore.Native.win8-arm
+    * JavaScriptEngineSwitcher.ChakraCore.Native.win-arm
     * JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64
     * JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64
 
    =============
    RELEASE NOTES
    =============
-   ChakraCore was updated to version 1.8.3.
+   1. Changed a implementation of the `Dispose` method;
+   2. Prevented a early destruction of delegates, which have been passed to the
+      native methods.
 
    =============
    DOCUMENTATION
