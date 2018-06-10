@@ -19,10 +19,9 @@ namespace Lib.TSCompiler
             _callbacks = new BBCallbacks(this);
         }
 
-        IDiskCache _diskCache;
         readonly IToolsDir _toolsDir;
 
-        public IDiskCache DiskCache { get => _diskCache; set => _diskCache = value; }
+        public IDiskCache DiskCache { get; set; }
         public bool MeasurePerformance { get; set; }
 
         public ITSCompilerOptions CompilerOptions
@@ -59,7 +58,7 @@ namespace Lib.TSCompiler
             public int? getChangeId(string fileName)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner._diskCache.TryGetItem(fullPath) as IFileCache;
+                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
                 if (file == null)
                 {
                     return null;
@@ -70,7 +69,7 @@ namespace Lib.TSCompiler
             public string readFile(string fileName, bool sourceCode)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner._diskCache.TryGetItem(fullPath) as IFileCache;
+                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
                 if (file == null)
                 {
                     return null;
@@ -99,7 +98,7 @@ namespace Lib.TSCompiler
                 var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
                 if (!fullPath.StartsWith(_owner._currentDirectory))
                     return false;
-                return _owner._diskCache.TryGetItem(fullPath) is IDirectoryCache;
+                return _owner.DiskCache.TryGetItem(fullPath) is IDirectoryCache;
             }
 
             public bool fileExists(string fileName)
@@ -107,7 +106,7 @@ namespace Lib.TSCompiler
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
                 if (!fullPath.StartsWith(_owner._currentDirectory))
                     return false;
-                return _owner._diskCache.TryGetItem(fullPath) is IFileCache;
+                return _owner.DiskCache.TryGetItem(fullPath) is IFileCache;
             }
 
             public string getDirectories(string directoryPath)
@@ -115,7 +114,7 @@ namespace Lib.TSCompiler
                 var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
                 if (!fullPath.StartsWith(_owner._currentDirectory))
                     return "";
-                var dc = _owner._diskCache.TryGetItem(fullPath) as IDirectoryCache;
+                var dc = _owner.DiskCache.TryGetItem(fullPath) as IDirectoryCache;
                 if (dc == null)
                     return "";
                 var sb = new StringBuilder();
@@ -169,7 +168,7 @@ namespace Lib.TSCompiler
             TSFileAdditionalInfo GetFileInfo(string name)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, name);
-                var file = _owner._diskCache.TryGetItem(fullPath) as IFileCache;
+                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
                 return GetFileInfo(file);
             }
 
@@ -223,7 +222,7 @@ namespace Lib.TSCompiler
             public void reportSourceInfo(string fileName, string info)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner._diskCache.TryGetItem(fullPath) as IFileCache;
+                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
                 if (file == null)
                 {
                     return;
@@ -271,19 +270,18 @@ namespace Lib.TSCompiler
 
         bool _wasError;
         string _currentDirectory;
-        string _commonSourceDirectory;
         private TimeSpan _gatherTime;
 
         public bool CompileProgram()
         {
             var engine = getJSEnviroment();
-            _commonSourceDirectory = (string)engine.CallFunction("bbCompileProgram");
-            if (_commonSourceDirectory.EndsWith("/"))
-                _commonSourceDirectory = _commonSourceDirectory.Substring(0, _commonSourceDirectory.Length - 1);
+            CommonSourceDirectory = (string)engine.CallFunction("bbCompileProgram");
+            if (CommonSourceDirectory.EndsWith("/"))
+                CommonSourceDirectory = CommonSourceDirectory.Substring(0, CommonSourceDirectory.Length - 1);
             return !_wasError;
         }
 
-        public string CommonSourceDirectory { get => _commonSourceDirectory; }
+        public string CommonSourceDirectory { get; private set; }
 
         public void GatherSourceInfo()
         {
@@ -302,6 +300,12 @@ namespace Lib.TSCompiler
                 Console.WriteLine(engine.CallFunction("bbFinishTSPerformance")+$" GatherInfo: {_gatherTime.TotalMilliseconds:0}");
             }
             return res;
+        }
+
+        public string GetTSVersion()
+        {
+            var engine = getJSEnviroment();
+            return engine.Evaluate<string>("ts.version");
         }
     }
 }

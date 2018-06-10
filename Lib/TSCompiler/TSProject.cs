@@ -257,7 +257,11 @@ namespace Lib.TSCompiler
                     ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
                 compiler.MergeCompilerOptions(compOpt);
                 compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
-                ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(ProjectOptions.TypeScriptVersion, JsonConvert.SerializeObject(compiler.CompilerOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                var positionIndependentOptions = ProjectOptions.CompilerOptions.Clone();
+                positionIndependentOptions.rootDir = null;
+                var trueTSVersion = compiler.GetTSVersion();
+                Console.WriteLine("Compiling using TypeScript " + trueTSVersion);
+                ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(trueTSVersion, JsonConvert.SerializeObject(positionIndependentOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
                 var wasSomeError = false;
                 do
                 {

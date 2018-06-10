@@ -11,6 +11,7 @@ namespace Lib.TSCompiler
 
         void MergeCompilerOptions(ITSCompilerOptions compilerOptions);
 
+        string GetTSVersion();
         void CreateProgram(string currentDirectory, string[] mainFiles);
         bool CompileProgram();
         string CommonSourceDirectory { get; }

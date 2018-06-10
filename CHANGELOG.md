@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+True version of TypeScript compiler shown in console.
+
 ### Fixed
 
 Error messages passed from JS to C# correctly again.
