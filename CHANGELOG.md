@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.42.0
+
 ### Added
 
 True version of TypeScript compiler shown in console.
