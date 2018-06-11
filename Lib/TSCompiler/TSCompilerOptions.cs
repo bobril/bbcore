@@ -79,7 +79,7 @@ namespace Lib.TSCompiler
             return jToken.ToObject<TSCompilerOptions>();
         }
 
-        public TSCompilerOptions Clone()
+        public ITSCompilerOptions Clone()
         {
             return new TSCompilerOptions
             {

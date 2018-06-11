@@ -109,5 +109,7 @@ namespace Lib.TSCompiler
         IList<string> types { get; set; }
         /** Paths used to compute primary types search locations */
         IList<string> typeRoots { get; set; }
+
+        ITSCompilerOptions Clone();
     }
 }

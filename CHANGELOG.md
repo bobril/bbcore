@@ -5,6 +5,7 @@
 ### Added
 
 True version of TypeScript compiler shown in console.
+Example for auto dppx sprites.
 
 ### Fixed
 

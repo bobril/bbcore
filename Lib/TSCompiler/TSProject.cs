@@ -257,7 +257,7 @@ namespace Lib.TSCompiler
                     ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
                 compiler.MergeCompilerOptions(compOpt);
                 compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
-                var positionIndependentOptions = ProjectOptions.CompilerOptions.Clone();
+                var positionIndependentOptions = compiler.CompilerOptions.Clone();
                 positionIndependentOptions.rootDir = null;
                 var trueTSVersion = compiler.GetTSVersion();
                 Console.WriteLine("Compiling using TypeScript " + trueTSVersion);

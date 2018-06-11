@@ -122,8 +122,16 @@ namespace Lib.TSCompiler
                 }
                 slices.Sort((l, r) => l.quality < r.quality ? -1 : l.quality > r.quality ? 1 : 0);
                 sprite.slices = slices.ToArray();
-                sprite.owidth = (int)(slices[0].width / slices[0].quality + 0.5);
-                sprite.oheight = (int)(slices[0].height / slices[0].quality + 0.5);
+                if (sprite.slices.Length>0)
+                {
+                    sprite.owidth = (int)(slices[0].width / slices[0].quality + 0.5);
+                    sprite.oheight = (int)(slices[0].height / slices[0].quality + 0.5);
+                }
+                else
+                {
+                    sprite.owidth = 0;
+                    sprite.oheight = 0;
+                }
             }
         }
 
