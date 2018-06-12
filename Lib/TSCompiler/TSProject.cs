@@ -260,7 +260,7 @@ namespace Lib.TSCompiler
                 var positionIndependentOptions = compiler.CompilerOptions.Clone();
                 positionIndependentOptions.rootDir = null;
                 var trueTSVersion = compiler.GetTSVersion();
-                Console.WriteLine("Compiling using TypeScript " + trueTSVersion);
+                buildCtx.ShowTsVersion(trueTSVersion);
                 ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(trueTSVersion, JsonConvert.SerializeObject(positionIndependentOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
                 var wasSomeError = false;
                 do

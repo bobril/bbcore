@@ -33,13 +33,13 @@ namespace Lib.AssetsPlugin
             var assets = InspectAssets(assetsDir, srcPath);
             var assetsContentBuilder = new AssetsContentBuilder();
             assetsContentBuilder.Build(assets);
-            var changed = WriteContent(srcPath, _assetsFileName, assetsContentBuilder.Content);
+            var changed = WriteContent(srcPath, _assetsFileName, assetsContentBuilder.Content, projectDir);
 
             if (generateSpritesFile)
             {
                 var spritesContentBuilder = new SpritesContentBuilder();
                 spritesContentBuilder.Build(assets);
-                changed |= WriteContent(srcPath, _spritesFileName, spritesContentBuilder.Content);
+                changed |= WriteContent(srcPath, _spritesFileName, spritesContentBuilder.Content, projectDir);
             }
             return changed;
         }
@@ -69,13 +69,13 @@ namespace Lib.AssetsPlugin
             return key.Replace('.', '_').Replace('-', '_').Replace(' ', '_');
         }
 
-        bool WriteContent(string srcPath, string fileName, string content)
+        bool WriteContent(string srcPath, string fileName, string content, string projectDir)
         {
             var filePath = PathUtils.Join(srcPath, fileName);
             var file = _cache.TryGetItem(filePath) as IFileCache;
             if (file != null && file.Utf8Content == content)
                 return false;
-            Console.WriteLine("AssetGenerator updating " + filePath);
+            Console.WriteLine("AssetGenerator updating " + PathUtils.Subtract(filePath, projectDir));
             Directory.CreateDirectory(srcPath);
             File.WriteAllText(filePath, content, new UTF8Encoding(false));
             return true;

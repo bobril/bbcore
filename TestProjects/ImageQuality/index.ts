@@ -8,9 +8,9 @@ function randomColor() {
 var sample = b.sprite(assets.Sample_png);
 var lightDefault = b.sprite(assets.light_png);
 var lightRandom = b.sprite(assets.light_png, randomColor);
-
+var lightRandomOnce = b.sprite(assets.light_png, randomColor());
 //setInterval(() => b.invalidateStyles(), 1000);
 
 b.init(() => {
-    return [b.styledDiv("", sample), b.styledDiv("", lightDefault), b.styledDiv("", lightRandom)];
+    return [b.styledDiv("", sample), b.styledDiv("", lightDefault), b.styledDiv("", lightRandom), b.styledDiv("", lightRandomOnce)];
 });

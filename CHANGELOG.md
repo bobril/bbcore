@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Minor cosmetic bugs.
+
 ## 0.42.0
 
 ### Added

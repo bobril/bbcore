@@ -199,7 +199,7 @@ namespace Lib.Composition
                     proj.RefreshMainFile();
                     proj.DetectBobrilJsxDts();
                     proj.RefreshExampleSources();
-                    var ctx = new BuildCtx(_compilerPool, _verbose);
+                    var ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
                     ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
                     ctx.Sources = new HashSet<string>();
                     ctx.Sources.Add(proj.MainFile);
@@ -255,6 +255,17 @@ namespace Lib.Composition
             Environment.ExitCode = errors != 0 ? 1 : 0;
         }
 
+        string _lastTsVersion = null;
+
+        void ShowTsVersion(string version)
+        {
+            if (_lastTsVersion != version)
+            {
+                Console.WriteLine("Using TypeScript version " + version);
+                _lastTsVersion = version;
+            }
+        }
+
         private static string PathToTranslations(ProjectOptions proj)
         {
             return PathUtils.Join(proj.Owner.Owner.FullPath, "translations");
@@ -297,7 +308,7 @@ namespace Lib.Composition
                     proj.RefreshTestSources();
                     if (proj.TestSources != null && proj.TestSources.Count > 0)
                     {
-                        var ctx = new BuildCtx(_compilerPool, _verbose);
+                        var ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
                         ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
                         ctx.Sources = new HashSet<string>();
                         ctx.Sources.Add(proj.JasmineDts);
@@ -464,7 +475,7 @@ namespace Lib.Composition
 
         public void Build(ProjectOptions project)
         {
-            var ctx = new BuildCtx(_compilerPool, false);
+            var ctx = new BuildCtx(_compilerPool, false, ShowTsVersion);
             project.Owner.Build(ctx);
         }
 
@@ -669,7 +680,7 @@ namespace Lib.Composition
                             proj.DetectBobrilJsxDts();
                             proj.RefreshExampleSources();
                             proj.UpdateTSConfigJson();
-                            var ctx = new BuildCtx(_compilerPool, _verbose);
+                            var ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
                             ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
                             ctx.Sources = new HashSet<string>();
                             ctx.Sources.Add(proj.MainFile);
@@ -694,7 +705,7 @@ namespace Lib.Composition
                             }
                             if (proj.TestSources != null && proj.TestSources.Count > 0)
                             {
-                                ctx = new BuildCtx(_compilerPool, _verbose);
+                                ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
                                 ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
                                 ctx.Sources = new HashSet<string>();
                                 ctx.Sources.Add(proj.JasmineDts);

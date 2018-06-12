@@ -1,5 +1,6 @@
 ﻿using Lib.CSSProcessor;
 using Lib.TSCompiler;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -7,12 +8,13 @@ namespace Lib.Composition
 {
     public class BuildCtx
     {
-        public BuildCtx(ICompilerPool compilerPool, bool verbose)
+        public BuildCtx(ICompilerPool compilerPool, bool verbose, Action<string> showTsVersion)
         {
             _cts = new CancellationTokenSource();
             _cancelationToken = _cts.Token;
             Verbose = verbose;
             CompilerPool = compilerPool;
+            ShowTsVersion = showTsVersion;
         }
 
         public void Cancel()
@@ -29,5 +31,7 @@ namespace Lib.Composition
         public CancellationToken _cancelationToken;
         public bool Verbose;
         public ICompilerPool CompilerPool;
+
+        public Action<string> ShowTsVersion { get; set; }
     }
 }
