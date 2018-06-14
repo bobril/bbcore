@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.42.2
+
 ### Fixed
 
 Don't crash on directory without package.json.
