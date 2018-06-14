@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
@@ -77,6 +78,13 @@ namespace Lib.TSCompiler
         {
             if (jToken == null) return new TSCompilerOptions();
             return jToken.ToObject<TSCompilerOptions>();
+        }
+
+        static public JsonSerializerSettings GetSerializerSettings()
+        {
+            var res = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
+            res.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter(true));
+            return res;
         }
 
         public ITSCompilerOptions Clone()

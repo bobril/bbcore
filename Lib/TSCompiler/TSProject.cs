@@ -249,7 +249,7 @@ namespace Lib.TSCompiler
                 var compOpt = buildCtx.TSCompilerOptions.Clone();
                 compOpt.rootDir = Owner.FullPath;
                 compOpt.outDir = "_virtual";
-                compOpt.module = ModuleKind.CommonJS;
+                compOpt.module = ModuleKind.Commonjs;
                 compOpt.declaration = true;
                 if (!ProjectOptions.TypeScriptVersionOverride && Dependencies.Contains("typescript"))
                     ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);

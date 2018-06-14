@@ -275,8 +275,8 @@ namespace Lib.TSCompiler
                 sourceMap = true,
                 skipLibCheck = true,
                 skipDefaultLibCheck = true,
-                target = ScriptTarget.ES5,
-                module = ModuleKind.CommonJS,
+                target = ScriptTarget.Es5,
+                module = ModuleKind.Commonjs,
                 declaration = true,
                 preserveConstEnums = false,
                 jsx = JsxEmit.React,
@@ -328,9 +328,7 @@ namespace Lib.TSCompiler
             {
                 newConfigObject.files.AddRange(IncludeSources);
             }
-            var ss = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-            ss.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
-            var newContent = JsonConvert.SerializeObject(newConfigObject, Formatting.Indented, ss);
+            var newContent = JsonConvert.SerializeObject(newConfigObject, Formatting.Indented, TSCompilerOptions.GetSerializerSettings());
             if (newContent != _originalContent)
             {
                 try

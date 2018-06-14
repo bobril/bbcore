@@ -1,29 +1,30 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Lib.TSCompiler
 {
     public enum ModuleKind
     {
         None = 0,
-        CommonJS = 1,
-        AMD = 2,
-        UMD = 3,
+        Commonjs = 1,
+        Amd = 2,
+        Umd = 3,
         System = 4,
-        ES2015 = 5,
+        Es2015 = 5,
     }
 
     public enum JsxEmit
     {
-        None = 0,
-        Preserve = 1,
-        React = 2,
-        ReactNative = 3,
+        Preserve = 0,
+        React = 1,
+        [EnumMember(Value = "react-native")]
+        ReactNative = 2,
     }
 
     public enum ModuleResolutionKind
     {
         Classic = 1,
-        NodeJs = 2,
+        Nodejs = 2,
     }
 
     public enum NewLineKind
@@ -34,13 +35,13 @@ namespace Lib.TSCompiler
 
     public enum ScriptTarget
     {
-        ES3 = 0,
-        ES5 = 1,
-        ES2015 = 2,
-        ES2016 = 3,
-        ES2017 = 4,
-        ESNext = 5,
-        Latest = 5,
+        Es3 = 0,
+        Es5 = 1,
+        Es2015 = 2,
+        Es2016 = 3,
+        Es2017 = 4,
+        Es2018 = 5,
+        Esnext = 6,
     }
 
     public interface ITSCompilerOptions

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+tsconfig compiler options enum names fixed.
+
 ## 0.42.1
 
 ### Fixed
