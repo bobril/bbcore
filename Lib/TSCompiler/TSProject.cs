@@ -251,7 +251,7 @@ namespace Lib.TSCompiler
                 compOpt.outDir = "_virtual";
                 compOpt.module = ModuleKind.Commonjs;
                 compOpt.declaration = true;
-                if (!ProjectOptions.TypeScriptVersionOverride && Dependencies.Contains("typescript"))
+                if (!ProjectOptions.TypeScriptVersionOverride && Dependencies != null && Dependencies.Contains("typescript"))
                     ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
                 else
                     ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);

@@ -4,6 +4,7 @@
 
 ### Fixed
 
+Don't crash on directory without package.json.
 tsconfig compiler options enum names fixed.
 
 ## 0.42.1
