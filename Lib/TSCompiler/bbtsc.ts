@@ -790,6 +790,8 @@ function gatherSourceInfo(
                     justFormat: false
                 };
                 item.message = evalNode(ce.arguments[0], tc);
+                if (item.message == null)
+                    reportWarningInTSNode(ce, -8, "Translation message should be compile time resolvable constant string");
                 if (ce.arguments.length >= 2) {
                     let parArg = ce.arguments[1];
                     item.withParams = parArg.kind != ts.SyntaxKind.NullKeyword && parArg.getText() != "undefined";
@@ -800,6 +802,8 @@ function gatherSourceInfo(
                 }
                 if (ce.arguments.length >= 3) {
                     item.hint = evalNode(ce.arguments[2], tc);
+                    if (item.hint == null)
+                       reportErrorInTSNode(ce, -9, "Hint message must be compile time resolvable constant string");
                 }
                 result.trs.push(item);
             } else if (isBobrilG11NFunction("f", ce, result)) {
@@ -855,12 +859,12 @@ function gatherSourceInfo(
     return result;
 }
 
-function reportErrorInTSNode(node: ts.Node, code: number, message: string) {
+function reportSomethingInTSNode(isError: boolean, node: ts.Node, code: number, message: string) {
     let sf = node.getSourceFile();
     let locStart = sf.getLineAndCharacterOfPosition(node.getStart());
     let locEnd = sf.getLineAndCharacterOfPosition(node.getEnd());
     bb.reportTypeScriptDiagFile(
-        true,
+        isError,
         code,
         message,
         sf.fileName,
@@ -869,4 +873,12 @@ function reportErrorInTSNode(node: ts.Node, code: number, message: string) {
         locEnd.line,
         locEnd.character
     );
+}
+
+function reportWarningInTSNode(node: ts.Node, code: number, message: string) {
+    reportSomethingInTSNode(false, node, code, message);
+}
+
+function reportErrorInTSNode(node: ts.Node, code: number, message: string) {
+    reportSomethingInTSNode(true, node, code, message);
 }

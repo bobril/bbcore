@@ -227,33 +227,33 @@ var transformers = {
                         while (modification.length > 0) {
                             var callEx = node;
                             switch (modification[0]) {
-                                case 0: // change first parameter to constant in modification[1]
+                                case 0:// change first parameter to constant in modification[1]
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread([
                                         ts.createLiteral(modification[1])
                                     ], callEx.arguments.slice(1))), callEx);
                                     modification = modification.slice(2);
                                     break;
-                                case 1: // set argument count to modification[1]
+                                case 1:// set argument count to modification[1]
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, sliceAndPad(callEx.arguments, 0, modification[1])), callEx);
                                     modification = modification.slice(2);
                                     break;
-                                case 2: // set parameter with index modification[1] to modification[2] and set argument count to modification[3]
+                                case 2:// set parameter with index modification[1] to modification[2] and set argument count to modification[3]
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [
                                         ts.createLiteral(modification[2])
                                     ], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
                                     modification = modification.slice(4);
                                     break;
-                                case 3: // set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
+                                case 3:// set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [
                                         ts.createAdd(ts.createLiteral(modification[2]), callEx.arguments[modification[1]])
                                     ], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
                                     modification = modification.slice(4);
                                     break;
-                                case 4: // set function name to modification[1]
+                                case 4:// set function name to modification[1]
                                     node = ts.setTextRange(ts.createCall(ts.createPropertyAccess(callEx.expression.expression, modification[1]), undefined, callEx.arguments), callEx);
                                     modification = modification.slice(2);
                                     break;
-                                case 5: // remove first parameter
+                                case 5:// remove first parameter
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, callEx.arguments.slice(1)), callEx);
                                     modification = modification.slice(1);
                                     break;
@@ -640,6 +640,8 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                     justFormat: false
                 };
                 item.message = evalNode(ce.arguments[0], tc);
+                if (item.message == null)
+                    reportWarningInTSNode(ce, -8, "Translation message should be compile time resolvable constant string");
                 if (ce.arguments.length >= 2) {
                     var parArg = ce.arguments[1];
                     item.withParams = parArg.kind != ts.SyntaxKind.NullKeyword && parArg.getText() != "undefined";
@@ -650,6 +652,8 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                 }
                 if (ce.arguments.length >= 3) {
                     item.hint = evalNode(ce.arguments[2], tc);
+                    if (item.hint == null)
+                        reportErrorInTSNode(ce, -9, "Hint message must be compile time resolvable constant string");
                 }
                 result.trs.push(item);
             }
@@ -706,9 +710,15 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
     visit(source);
     return result;
 }
-function reportErrorInTSNode(node, code, message) {
+function reportSomethingInTSNode(isError, node, code, message) {
     var sf = node.getSourceFile();
     var locStart = sf.getLineAndCharacterOfPosition(node.getStart());
     var locEnd = sf.getLineAndCharacterOfPosition(node.getEnd());
-    bb.reportTypeScriptDiagFile(true, code, message, sf.fileName, locStart.line, locStart.character, locEnd.line, locEnd.character);
+    bb.reportTypeScriptDiagFile(isError, code, message, sf.fileName, locStart.line, locStart.character, locEnd.line, locEnd.character);
+}
+function reportWarningInTSNode(node, code, message) {
+    reportSomethingInTSNode(false, node, code, message);
+}
+function reportErrorInTSNode(node, code, message) {
+    reportSomethingInTSNode(true, node, code, message);
 }
