@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.42.3
+
 ### Fixed
 
 Regression with compiler options. Sorry.
