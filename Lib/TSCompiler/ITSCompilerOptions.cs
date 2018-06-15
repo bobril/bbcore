@@ -15,10 +15,11 @@ namespace Lib.TSCompiler
 
     public enum JsxEmit
     {
-        Preserve = 0,
-        React = 1,
+        None = 0,
+        Preserve = 1,
+        React = 2,
         [EnumMember(Value = "react-native")]
-        ReactNative = 2,
+        ReactNative = 3,
     }
 
     public enum ModuleResolutionKind

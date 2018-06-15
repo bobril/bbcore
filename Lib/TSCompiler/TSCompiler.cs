@@ -29,12 +29,12 @@ namespace Lib.TSCompiler
             get
             {
                 var engine = getJSEnviroment();
-                return JsonConvert.DeserializeObject<TSCompilerOptions>(engine.CallFunction<string>("bbGetCurrentCompilerOptions"), TSCompilerOptions.GetSerializerSettings());
+                return JsonConvert.DeserializeObject<TSCompilerOptions>(engine.CallFunction<string>("bbGetCurrentCompilerOptions"));
             }
             set
             {
                 var engine = getJSEnviroment();
-                engine.CallFunction("bbSetCurrentCompilerOptions", JsonConvert.SerializeObject(value, Formatting.None, TSCompilerOptions.GetSerializerSettings()));
+                engine.CallFunction("bbSetCurrentCompilerOptions", JsonConvert.SerializeObject(value, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
             }
         }
 
@@ -43,7 +43,7 @@ namespace Lib.TSCompiler
         public void MergeCompilerOptions(ITSCompilerOptions compilerOptions)
         {
             var engine = getJSEnviroment();
-            engine.CallFunction("bbMergeCurrentCompilerOptions", JsonConvert.SerializeObject(compilerOptions, Formatting.None, TSCompilerOptions.GetSerializerSettings()));
+            engine.CallFunction("bbMergeCurrentCompilerOptions", JsonConvert.SerializeObject(compilerOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
         }
 
         class BBCallbacks

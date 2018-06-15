@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Regression with compiler options. Sorry.
+
 ## 0.42.2
 
 ### Fixed
