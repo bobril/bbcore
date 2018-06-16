@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.43.0
+
 ### Added
 
 New warning and error for wrong usage of bobril-g11n.t function.
