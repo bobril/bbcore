@@ -14,7 +14,7 @@ namespace Lib.TSCompiler
     {
         bool WasFirstInitialize;
 
-        public const string DefaultTypeScriptVersion = "2.8.3";
+        public const string DefaultTypeScriptVersion = "2.9.1";
 
         public IDiskCache DiskCache { get; set; }
         public IDirectoryCache Owner { get; set; }
@@ -332,18 +332,36 @@ namespace Lib.TSCompiler
             {
                 if (f.TakenFromBuildCache)
                     continue;
-                if (f.Type == FileCompilationType.TypeScript && (f.SourceInfo == null || f.SourceInfo.IsEmpty) && f.LocalImports.Count == 0 && f.ModuleImports.Count == 0)
+                if (f.Type == FileCompilationType.TypeScript && (f.SourceInfo == null || f.SourceInfo.IsEmpty) && f.ModuleImports.Count == 0)
                 {
-                    if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ProjectOptions.ConfigurationBuildCacheId) == null)
+                    var fbc = new BuildCache.TSFileBuildCache();
+                    if (f.LocalImports.Count != 0)
                     {
-                        var fbc = new BuildCache.TSFileBuildCache();
-                        fbc.ConfigurationId = ProjectOptions.ConfigurationBuildCacheId;
-                        fbc.ContentHash = f.Owner.HashOfContent;
-                        fbc.DtsOutput = f.DtsLink?.Owner.Utf8Content;
-                        fbc.JsOutput = f.Output;
-                        fbc.MapLink = f.MapLink;
-                        bc.Store(fbc);
+                        fbc.LocalImports = new List<string>();
+                        fbc.LocalImportsHashes = new List<byte[]>();
+                        foreach (var localf in f.LocalImports)
+                        {
+                            var dts = localf.DtsLink;
+                            if (dts == null)
+                            {
+                                // dependency is already d.ts
+                                dts = localf;
+                            }
+                            var localFullPath = dts.Owner.FullPath;
+                            fbc.LocalImports.Add(PathUtils.Subtract(localFullPath, f.Owner.Parent.FullPath));
+                            var hash = dts.Owner.HashOfContent;
+                            fbc.LocalImportsHashes.Add(hash);
+                            var content = bc.GetContentByHash(hash);
+                            if (content == null)
+                                bc.Store(hash, dts.Owner.Utf8Content);
+                        }
                     }
+                    fbc.ConfigurationId = ProjectOptions.ConfigurationBuildCacheId;
+                    fbc.ContentHash = f.Owner.HashOfContent;
+                    fbc.DtsOutput = f.DtsLink?.Owner.Utf8Content;
+                    fbc.JsOutput = f.Output;
+                    fbc.MapLink = f.MapLink;
+                    bc.Store(fbc);
                 }
             }
         }

@@ -75,15 +75,15 @@ namespace Lib.TSCompiler
                     return null;
                 }
                 GetFileInfo(file).StartCompiling();
-                /*
+                //*
                 var testPath = PathUtils.Subtract(fullPath, _owner._currentDirectory);
                 if (!testPath.StartsWith("../"))
                 {
-                    testPath = PathUtils.Join("DUMP_PATH", testPath);
+                    testPath = PathUtils.Join("../DUMP_PATH", testPath);
                     Directory.CreateDirectory(PathUtils.Parent(testPath));
                     File.WriteAllText(testPath, file.Utf8Content);
                 }
-                */
+                //*/
                 return file.Utf8Content;
             }
 

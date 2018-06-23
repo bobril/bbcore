@@ -162,13 +162,21 @@ namespace Lib.TSCompiler
                 itemInfo.BuildCacheValue = fbc;
                 if (fbc != null)
                 {
-                    if ((fbc.LocalImports?.Count ?? 0) == 0 && (fbc.ModuleImports?.Count ?? 0) == 0)
+                    if ((fbc.ModuleImports?.Count ?? 0) == 0)
                     {
+                        var fullPath = PathUtils.ChangeExtension(itemInfo.Owner.FullPath, "d.ts");
+                        var dirPath = PathUtils.Parent(fullPath);
+                        if ((fbc.LocalImports?.Count ?? 0) > 0)
+                        {
+                            for (int i = 0; i < fbc.LocalImports.Count; i++)
+                            {
+                                if (WriteDts(PathUtils.Join(dirPath, fbc.LocalImports[i]), fbc.LocalImportsHashes[i], bc.GetContentByHash))
+                                    return;
+                            }
+                        }
                         itemInfo.StartCompiling();
                         itemInfo.Output = fbc.JsOutput;
                         itemInfo.MapLink = fbc.MapLink;
-                        var fullPath = PathUtils.ChangeExtension(itemInfo.Owner.FullPath, "d.ts");
-                        var dirPath = PathUtils.Parent(fullPath);
                         var fileOnly = fullPath.Substring(dirPath.Length + 1);
                         var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
                         bool wasChange = false;
@@ -191,6 +199,22 @@ namespace Lib.TSCompiler
                     }
                 }
             }
+        }
+
+        bool WriteDts(string fullPath, byte[] hash, Func<byte[], string> getContentByHash)
+        {
+            var dirPath = PathUtils.Parent(fullPath);
+            var fileOnly = fullPath.Substring(dirPath.Length + 1);
+            var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
+            _owner.DiskCache.UpdateIfNeeded(dc);
+            var output = dc.TryGetChild(fileOnly) as IFileCache;
+            if (output != null)
+            {
+                return !output.HashOfContent.AsSpan().SequenceEqual(hash.AsSpan());
+            }
+            var content = getContentByHash(hash);
+            dc.WriteVirtualFile(fileOnly, content);
+            return false;
         }
 
         public string resolveModuleMain(string name, TSFileAdditionalInfo parentInfo)
