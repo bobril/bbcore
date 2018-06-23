@@ -38,7 +38,21 @@ namespace Lib.BuildCache
 
     public interface ITSFileBuildCacheTable
     {
-        void Insert(TSFileBuildCache value);
+        bool Upsert(TSFileBuildCache value);
         TSFileBuildCache FindByIdOrDefault(byte[] contentHash, uint configurationId);
+    }
+
+    public class HashedContent
+    {
+        [PrimaryKey(1)]
+        public byte[] ContentHash { get; set; }
+
+        public string Content { get; set; }
+    }
+
+    public interface IHashedContentTable
+    {
+        void Insert(HashedContent value);
+        HashedContent FindByIdOrDefault(byte[] contentHash);
     }
 }

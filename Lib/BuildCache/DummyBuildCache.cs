@@ -25,6 +25,11 @@ namespace Lib.BuildCache
             return null;
         }
 
+        public string GetContentByHash(byte[] contentHash)
+        {
+            return null;
+        }
+
         public uint MapConfiguration(string tsversion, string compilerOptionsJson)
         {
             return 0;
@@ -35,6 +40,10 @@ namespace Lib.BuildCache
         }
 
         public void Store(TSFileBuildCache value)
+        {
+        }
+
+        public void Store(byte[] contentHash, string content)
         {
         }
     }

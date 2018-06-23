@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using BTDB.KVDBLayer;
@@ -14,6 +16,7 @@ namespace Lib.BuildCache
         IObjectDB _odb;
         Func<IObjectDBTransaction, ITSConfigurationTable> _tsConfiguration;
         Func<IObjectDBTransaction, ITSFileBuildCacheTable> _tsRelation;
+        Func<IObjectDBTransaction, IHashedContentTable> _tsHashedContent;
         IObjectDBTransaction _tr;
         Mutex _mutex;
 
@@ -48,6 +51,7 @@ namespace Lib.BuildCache
             {
                 _tsConfiguration = tr.InitRelation<ITSConfigurationTable>("tsconf");
                 _tsRelation = tr.InitRelation<ITSFileBuildCacheTable>("ts");
+                _tsHashedContent = tr.InitRelation<IHashedContentTable>("hashedContent");
                 tr.Commit();
             }
         }
@@ -80,6 +84,12 @@ namespace Lib.BuildCache
             return _tsRelation(_tr).FindByIdOrDefault(contentHash, configurationId);
         }
 
+        public string GetContentByHash(byte[] contentHash)
+        {
+            if (!IsEnabled) return null;
+            return _tsHashedContent(_tr).FindByIdOrDefault(contentHash)?.Content;
+        }
+
         public uint MapConfiguration(string tsversion, string compilerOptionsJson)
         {
             if (!IsEnabled) return 0;
@@ -108,7 +118,50 @@ namespace Lib.BuildCache
         public void Store(TSFileBuildCache value)
         {
             if (!IsEnabled) return;
-            _tsRelation(_tr).Insert(value);
+            var relation = _tsRelation(_tr);
+            var existing = relation.FindByIdOrDefault(value.ContentHash, value.ConfigurationId);
+            if (existing != null)
+            {
+                if (CompareArrays(existing.LocalImports, value.LocalImports) && CompareArrays(existing.LocalImportsHashes, value.LocalImportsHashes)
+                    && CompareArrays(existing.ModuleImports, value.ModuleImports) && CompareArrays(existing.ModuleImportsHashes, value.ModuleImportsHashes))
+                    return;
+            }
+            relation.Upsert(value);
+        }
+
+        static bool CompareArrays(List<byte[]> a, List<byte[]> b)
+        {
+            if (a != null && a.Count == 0) a = null;
+            if (b != null && b.Count == 0) b = null;
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            if (a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++)
+            {
+                if (!a[i].AsSpan().SequenceEqual(b[i].AsSpan()))
+                    return false;
+            }
+            return true;
+        }
+
+        static bool CompareArrays(List<string> a, List<string> b)
+        {
+            if (a != null && a.Count == 0) a = null;
+            if (b != null && b.Count == 0) b = null;
+            if (a == null && b == null) return true;
+            if (a == null || b == null) return false;
+            if (a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++)
+            {
+                if (a[i] != b[i])
+                    return false;
+            }
+            return true;
+        }
+
+        public void Store(byte[] contentHash, string content)
+        {
+            _tsHashedContent(_tr).Insert(new HashedContent { ContentHash = contentHash, Content = content });
         }
     }
 }
