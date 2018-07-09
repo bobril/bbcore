@@ -109,7 +109,7 @@ namespace Lib.Translation
 
         public override void GatherParams(HashSet<string> pars)
         {
-            Options.ForEach(i => i.Value.GatherParams(pars));
+            Options.ForEach(i => i.Value?.GatherParams(pars));
         }
     }
 

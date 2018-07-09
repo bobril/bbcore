@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Parsing of relative noago parameter in g11n checker.
+
 ## 0.44.0
 
 ### Changed
