@@ -27,7 +27,7 @@
   },
   "files": [
     "node_modules/bobril/jsx.d.ts",
-    "C:/Users/b.letocha/.bbcore/dev/jasmine.d.ts"
+    "C:/Users/boris/.bbcore/tools/jasmine.d.ts"
   ],
   "include": [
     "**/*"

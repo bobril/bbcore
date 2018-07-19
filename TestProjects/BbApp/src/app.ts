@@ -11,6 +11,7 @@ b.asset("bootstrap/css/bootstrap.css");
 let headerStyle = b.styleDef({ backgroundColor: "green", padding: 10 }, undefined, "header");
 
 let semitransparentLight = b.sprite("light.png", "rgba(200,100,0,0.5)");
+let undefinedLight = b.sprite("light.png", undefined);
 
 function dontDoThis(cn: string) {
     b.styleDef({}, undefined, cn);
@@ -51,6 +52,7 @@ let page = b.createVirtualComponent({
             },
             b.styledDiv(" ", { backgroundColor: "blue", display: "inline-block" }, semitransparentLight),
             b.styledDiv(" ", { backgroundColor: "green", display: "inline-block" }, semitransparentLight),
+            b.styledDiv(" ", { display: "inline-block" }, undefinedLight),
             lightSwitch({
                 value: switchValue,
                 onChange: () => {
