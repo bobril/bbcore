@@ -14,7 +14,7 @@ namespace Lib.TSCompiler
     {
         bool WasFirstInitialize;
 
-        public const string DefaultTypeScriptVersion = "2.9.2";
+        public const string DefaultTypeScriptVersion = "3.0.1";
 
         public IDiskCache DiskCache { get; set; }
         public IDirectoryCache Owner { get; set; }
