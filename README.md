@@ -33,6 +33,8 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
 | -7     | Warn     | Problem with translation message                                      |
 | -8     | Warn     | Translation message should be compile time resolvable constant string |
 | -9     | Error    | Hint message must be compile time resolvable constant string          |
+| -10    | Error    | Absolute import name must be just simple module name                  |
+| -11    | Warn     | Fixing local import with two slashes                                  |
 
 # Package.json - bobril section features
 

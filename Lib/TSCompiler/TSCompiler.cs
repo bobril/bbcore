@@ -181,7 +181,7 @@ namespace Lib.TSCompiler
                 {
                     if (name.Contains("//"))
                     {
-                        _owner.Ctx.reportDiag(false, -2, "Fixing local import with two slashes: " + name, additionalInfo.Owner.FullPath, 0, 0, 0, 0);
+                        _owner.Ctx.reportDiag(false, -11, "Fixing local import with two slashes: " + name, additionalInfo.Owner.FullPath, 0, 0, 0, 0);
                         name = name.Replace("//", "/");
                     }
                     var fullName = PathUtils.Join(PathUtils.Parent(containingFile), name);
@@ -189,9 +189,9 @@ namespace Lib.TSCompiler
                 }
                 else
                 {
-                    if (name.Contains('/') || name.Contains('\\'))
+                    if (!containingFile.EndsWith(".d.ts") && (name.Contains('/') || name.Contains('\\')))
                     {
-                        _owner.Ctx.reportDiag(true, -1, "Absolute import '" + name + "' must be just simple module name", containingFile, 0, 0, 0, 0);
+                        _owner.Ctx.reportDiag(true, -10, "Absolute import '" + name + "' must be just simple module name", containingFile, 0, 0, 0, 0);
                         return "";
                     }
                     res = _owner.Ctx.resolveModuleMain(name, additionalInfo);

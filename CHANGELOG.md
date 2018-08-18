@@ -2,59 +2,68 @@
 
 ## [unreleased]
 
+### Added
+
+- Upgraded to ChakraCore 1.10.0
+
+### Fixed
+
+- Removed todo commands from command line help
+- Invalid errors in .d.ts files not shown anymore
+
 ## 0.45.0
 
 ### Changed
 
-Default version of TypeScript is now 3.0.1.
+- Default version of TypeScript is now 3.0.1.
 
 ## 0.44.1
 
 ### Fixed
 
-Parsing of relative noago parameter in g11n checker.
+- Parsing of relative noago parameter in g11n checker.
 
 ## 0.44.0
 
 ### Changed
 
-Default version of TypeScript is now 2.9.2.
+- Default version of TypeScript is now 2.9.2.
 
 ## 0.43.0
 
 ### Added
 
-New warning and error for wrong usage of bobril-g11n.t function.
+- New warning and error for wrong usage of bobril-g11n.t function.
 
 ## 0.42.3
 
 ### Fixed
 
-Regression with compiler options. Sorry.
+- Regression with compiler options. Sorry.
 
 ## 0.42.2
 
 ### Fixed
 
-Don't crash on directory without package.json.
-tsconfig compiler options enum names fixed.
+- Don't crash on directory without package.json.
+- tsconfig compiler options enum names fixed.
 
 ## 0.42.1
 
 ### Fixed
 
-Minor cosmetic bugs.
+- Minor cosmetic bugs.
 
 ## 0.42.0
 
 ### Added
 
-True version of TypeScript compiler shown in console.
-Example for auto dppx sprites.
+- True version of TypeScript compiler shown in console.
+- Example for auto dppx sprites.
 
 ### Fixed
 
-Error messages passed from JS to C# correctly again.
+- Error messages passed from JS to C# correctly again.
 
 ## 0.41.0
 
