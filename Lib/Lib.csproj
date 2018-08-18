@@ -44,8 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BTDB" Version="14.3.0" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.0.0-beta3" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.0.0-beta3" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.0.0-beta8" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.0.0-beta8" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.0.0-beta8" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.0.0-beta8" />
     <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.0.0-beta4" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.1.0" />
@@ -62,9 +64,6 @@
     <PackageReference Include="System.Runtime.InteropServices" Version="4.4.0-beta-24913-02" />
     <PackageReference Include="System.ValueTuple" Version="4.6.0-preview3-26501-04" />
     <PackageReference Include="UAParser" Version="3.0.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\JavaScriptEngineSwitcher.ChakraCore\JavaScriptEngineSwitcher.ChakraCore.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="ChakraCore.dll">
