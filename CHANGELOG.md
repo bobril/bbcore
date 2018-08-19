@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.46.0
+
 ### Added
 
 - Support for bobril-g11n Delayed and Serializable messages
