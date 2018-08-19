@@ -264,6 +264,23 @@ namespace Lib.Translation
                     sw.Write(")");
                     _outputJsCache[p.Key.ToLowerInvariant() + ".js"] = sw.ToString();
                 }
+                // scope
+                {
+                    var sw = new StringWriter();
+                    sw.Write("bobrilRegisterTranslations(\"\",[],");
+                    var jw = new JsonTextWriter(sw);
+                    jw.WriteStartArray();
+                    for (var i = 0; i < UsedIds.Count; i++)
+                    {
+                        var idx = (int)UsedIds[i];
+                        var key = Id2Key[idx];
+                        var val = key.Message + "\x9" + (key.WithParams ? "1" : "0") + (key.Hint ?? "");
+                        jw.WriteValue(val);
+                    }
+                    jw.WriteEndArray();
+                    sw.Write(")");
+                    _outputJsCache["l10nkeys.js"] = sw.ToString();
+                }
                 _changed = false;
             }
             foreach (var i in _outputJsCache)

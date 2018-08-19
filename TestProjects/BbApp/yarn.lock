@@ -9,8 +9,8 @@ bobril-g11n@*:
     moment "^2.10.6"
 
 bobril@*:
-  version "8.11.1"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.11.1.tgz#1f4b09149de0f21f4379a513e30a8c40be5c4a9a"
+  version "8.12.0"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.12.0.tgz#cf2370c3de6a6b96f345ba2d3be705e9e7544b70"
 
 moment@^2.10.6:
   version "2.22.2"
@@ -20,6 +20,6 @@ normalize.css@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/normalize.css/-/normalize.css-3.0.3.tgz#acc00262e235a2caa91363a2e5e3bfa4f8ad05c6"
 
-typescript@^2.8.3:
-  version "2.9.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.9.2.tgz#1cbf61d05d6b96269244eb6a3bce4bd914e0f00c"
+typescript@*:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.0.1.tgz#43738f29585d3a87575520a4b93ab6026ef11fdb"

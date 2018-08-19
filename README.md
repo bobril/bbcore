@@ -23,18 +23,18 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
 
 # List of bobril-build specific warnings and errors
 
-| Number | Severity | Message                                                               |
-| ------ | -------- | --------------------------------------------------------------------- |
-| -1     | Warn     | Local import has wrong casing                                         |
-| -2     | Warn     | Module import has wrong casing                                        |
-| -3     | Error    | Missing dependency                                                    |
-| -5     | Error    | First parameter of b.asset must be resolved as constant string        |
-| -6     | Error    | b.sprite cannot have more than 6 parameters                           |
-| -7     | Warn     | Problem with translation message                                      |
-| -8     | Warn     | Translation message should be compile time resolvable constant string |
-| -9     | Error    | Hint message must be compile time resolvable constant string          |
-| -10    | Error    | Absolute import name must be just simple module name                  |
-| -11    | Warn     | Fixing local import with two slashes                                  |
+| Number | Severity | Message                                                                                        |
+| ------ | -------- | ---------------------------------------------------------------------------------------------- |
+| -1     | Warn     | Local import has wrong casing                                                                  |
+| -2     | Warn     | Module import has wrong casing                                                                 |
+| -3     | Error    | Missing dependency                                                                             |
+| -5     | Error    | First parameter of b.asset must be resolved as constant string                                 |
+| -6     | Error    | b.sprite cannot have more than 6 parameters                                                    |
+| -7     | Warn     | Problem with translation message                                                               |
+| -8     | Error    | Translation message must be compile time resolvable constant string, use f instead if intended |
+| -9     | Error    | Hint message must be compile time resolvable constant string                                   |
+| -10    | Error    | Absolute import name must be just simple module name                                           |
+| -11    | Warn     | Fixing local import with two slashes                                                           |
 
 # Package.json - bobril section features
 

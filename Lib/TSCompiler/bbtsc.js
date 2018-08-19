@@ -227,33 +227,33 @@ var transformers = {
                         while (modification.length > 0) {
                             var callEx = node;
                             switch (modification[0]) {
-                                case 0:// change first parameter to constant in modification[1]
+                                case 0: // change first parameter to constant in modification[1]
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread([
                                         ts.createLiteral(modification[1])
                                     ], callEx.arguments.slice(1))), callEx);
                                     modification = modification.slice(2);
                                     break;
-                                case 1:// set argument count to modification[1]
+                                case 1: // set argument count to modification[1]
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, sliceAndPad(callEx.arguments, 0, modification[1])), callEx);
                                     modification = modification.slice(2);
                                     break;
-                                case 2:// set parameter with index modification[1] to modification[2] and set argument count to modification[3]
+                                case 2: // set parameter with index modification[1] to modification[2] and set argument count to modification[3]
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [
                                         ts.createLiteral(modification[2])
                                     ], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
                                     modification = modification.slice(4);
                                     break;
-                                case 3:// set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
+                                case 3: // set parameter with index modification[1] to modification[2] plus original content and set argument count to modification[3]
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, __spread(sliceAndPad(callEx.arguments, 0, modification[1]), [
                                         ts.createAdd(ts.createLiteral(modification[2]), callEx.arguments[modification[1]])
                                     ], sliceAndPad(callEx.arguments, modification[1] + 1, modification[3]))), callEx);
                                     modification = modification.slice(4);
                                     break;
-                                case 4:// set function name to modification[1]
+                                case 4: // set function name to modification[1]
                                     node = ts.setTextRange(ts.createCall(ts.createPropertyAccess(callEx.expression.expression, modification[1]), undefined, callEx.arguments), callEx);
                                     modification = modification.slice(2);
                                     break;
-                                case 5:// remove first parameter
+                                case 5: // remove first parameter
                                     node = ts.setTextRange(ts.createCall(callEx.expression, undefined, callEx.arguments.slice(1)), callEx);
                                     modification = modification.slice(1);
                                     break;
@@ -630,7 +630,7 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                 }
                 result.sprites.push(si);
             }
-            else if (isBobrilG11NFunction("t", ce, result)) {
+            else if (isBobrilG11NFunction("t", ce, result) || isBobrilG11NFunction("dt", ce, result)) {
                 var item = {
                     callExpression: ce,
                     message: "",
@@ -641,7 +641,7 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                 };
                 item.message = evalNode(ce.arguments[0], tc);
                 if (item.message == null)
-                    reportWarningInTSNode(ce, -8, "Translation message should be compile time resolvable constant string");
+                    reportErrorInTSNode(ce, -8, "Translation message must be compile time resolvable constant string, use f instead if intended");
                 if (ce.arguments.length >= 2) {
                     var parArg = ce.arguments[1];
                     item.withParams = parArg.kind != ts.SyntaxKind.NullKeyword && parArg.getText() != "undefined";

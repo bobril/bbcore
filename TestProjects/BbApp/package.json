@@ -1,28 +1,28 @@
 {
-    "name": "sample",
-    "version": "1.0.0",
-    "description": "",
-    "typescript": {
-        "main": "src/app.ts"
-    },
-    "bobril": {
-        "title": "Bobril Hello World",
-        "head": "<link rel=\"icon\" href=\"<<src/light.png>>\">",
-        "additionalResourcesDirectory": "assets-app",
-        "prefixStyleDefs": "pref1x",
-        "dependencies": "upgrade",
-        "compilerOptions": {
-            "strict": true
-        }
-    },
-    "author": "Bobris",
-    "license": "MIT",
-    "dependencies": {
-        "bobril": "*",
-        "bobril-g11n": "*",
-        "normalize.css": "^3.0.3"
-    },
-    "devDependencies": {
-        "typescript": "^2.8.3"
+  "name": "sample",
+  "version": "1.0.0",
+  "description": "",
+  "typescript": {
+    "main": "src/app.ts"
+  },
+  "bobril": {
+    "title": "Bobril Hello World",
+    "head": "<link rel=\"icon\" href=\"<<src/light.png>>\">",
+    "additionalResourcesDirectory": "assets-app",
+    "prefixStyleDefs": "pref1x",
+    "dependencies": "upgrade",
+    "compilerOptions": {
+      "strict": true
     }
+  },
+  "author": "Bobris",
+  "license": "MIT",
+  "dependencies": {
+    "bobril": "*",
+    "bobril-g11n": "*",
+    "normalize.css": "^3.0.3"
+  },
+  "devDependencies": {
+    "typescript": "*"
+  }
 }

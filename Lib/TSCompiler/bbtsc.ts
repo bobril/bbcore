@@ -780,7 +780,7 @@ function gatherSourceInfo(
                         }
                 }
                 result.sprites.push(si);
-            } else if (isBobrilG11NFunction("t", ce, result)) {
+            } else if (isBobrilG11NFunction("t", ce, result) || isBobrilG11NFunction("dt", ce, result)) {
                 let item: TranslationMessage = {
                     callExpression: ce,
                     message: "",
@@ -791,7 +791,7 @@ function gatherSourceInfo(
                 };
                 item.message = evalNode(ce.arguments[0], tc);
                 if (item.message == null)
-                    reportWarningInTSNode(ce, -8, "Translation message should be compile time resolvable constant string");
+                    reportErrorInTSNode(ce, -8, "Translation message must be compile time resolvable constant string, use f instead if intended");
                 if (ce.arguments.length >= 2) {
                     let parArg = ce.arguments[1];
                     item.withParams = parArg.kind != ts.SyntaxKind.NullKeyword && parArg.getText() != "undefined";

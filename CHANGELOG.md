@@ -4,6 +4,7 @@
 
 ### Added
 
+- Support for bobril-g11n Delayed and Serializable messages
 - Upgraded to ChakraCore 1.10.0
 
 ### Fixed
