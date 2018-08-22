@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Exception during resolving constants in imports by name
+
 ## 0.46.0
 
 ### Added

@@ -460,8 +460,9 @@ function evalNode(n, tc, resolveStringLiteral) {
                     decl.parent.parent.parent.kind === ts.SyntaxKind.ImportDeclaration) {
                     var impdecl = decl.parent.parent.parent;
                     var s2 = tc.getSymbolAtLocation(impdecl.moduleSpecifier);
-                    if (s2 && s2.exports.get(decl.propertyName.escapedText)) {
-                        var s3 = s2.exports.get(decl.propertyName.escapedText);
+                    var declname = decl.propertyName !== undefined ? decl.propertyName.escapedText : decl.name.escapedText;
+                    if (s2 && s2.exports.get(declname)) {
+                        var s3 = s2.exports.get(declname);
                         if (s3 == null)
                             return undefined;
                         var exportAssign = s3.declarations[0];

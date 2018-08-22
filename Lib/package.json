@@ -1,5 +1,9 @@
 {
+  "prettier": {
+    "tabWidth": 4,
+    "printWidth": 120
+  },
   "dependencies": {
-    "typescript": "^2.3.2"
+    "typescript": "*"
   }
 }

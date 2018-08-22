@@ -429,7 +429,7 @@ function evalTrueSourceByExportName(
     let program = sc.program;
     let typeChecker = sc.typeChecker;
     let sourceAst = program.getSourceFile(sourceName);
-    let s = typeChecker.tryGetMemberInModuleExports(varName, typeChecker.getSymbolAtLocation(sourceAst)!);
+    let s = typeChecker.tryGetMemberInModuleExports(varName, typeChecker.getSymbolAtLocation(sourceAst!)!);
     if (s == null) return undefined;
     if (s.flags & ts.SymbolFlags.Variable) {
         let varDecl = <ts.VariableDeclaration>s.valueDeclaration;
@@ -565,8 +565,10 @@ function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts
                 ) {
                     let impdecl = <ts.ImportDeclaration>decl.parent.parent.parent;
                     let s2 = tc.getSymbolAtLocation(impdecl.moduleSpecifier);
-                    if (s2 && s2.exports!.get(decl.propertyName!.escapedText)) {
-                        let s3 = s2.exports!.get(decl.propertyName!.escapedText);
+                    let declname =
+                        decl.propertyName !== undefined ? decl.propertyName.escapedText : decl.name.escapedText;
+                    if (s2 && s2.exports!.get(declname)) {
+                        let s3 = s2.exports!.get(declname);
                         if (s3 == null) return undefined;
                         let exportAssign = <ts.ExportAssignment>s3.declarations![0];
                         return evalNode(exportAssign, tc, resolveStringLiteral);
@@ -791,7 +793,11 @@ function gatherSourceInfo(
                 };
                 item.message = evalNode(ce.arguments[0], tc);
                 if (item.message == null)
-                    reportErrorInTSNode(ce, -8, "Translation message must be compile time resolvable constant string, use f instead if intended");
+                    reportErrorInTSNode(
+                        ce,
+                        -8,
+                        "Translation message must be compile time resolvable constant string, use f instead if intended"
+                    );
                 if (ce.arguments.length >= 2) {
                     let parArg = ce.arguments[1];
                     item.withParams = parArg.kind != ts.SyntaxKind.NullKeyword && parArg.getText() != "undefined";
@@ -803,7 +809,7 @@ function gatherSourceInfo(
                 if (ce.arguments.length >= 3) {
                     item.hint = evalNode(ce.arguments[2], tc);
                     if (item.hint == null)
-                       reportErrorInTSNode(ce, -9, "Hint message must be compile time resolvable constant string");
+                        reportErrorInTSNode(ce, -9, "Hint message must be compile time resolvable constant string");
                 }
                 result.trs.push(item);
             } else if (isBobrilG11NFunction("f", ce, result)) {
