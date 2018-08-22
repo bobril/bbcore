@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.46.1
+
 ### Fixed
 
 - Exception during resolving constants in imports by name
