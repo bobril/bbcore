@@ -5,8 +5,8 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
+using Newtonsoft.Json.Linq;
 
 namespace Lib.Translation
 {
@@ -58,7 +58,7 @@ namespace Lib.Translation
             AfterValue,
         }
 
-        void LoadLangDb(string fileName)
+        public void LoadLangDb(string fileName)
         {
             var reader = new JsonTextReader(new StringReader(_fsAbstraction.ReadAllUtf8(fileName)));
             var state = LoaderState.Start;
@@ -214,21 +214,38 @@ namespace Lib.Translation
             return valueList;
         }
 
-        public bool ExportLanguages(string filePath, bool exportOnlyUntranslated = true)
+        public bool ExportLanguages(string filePath, bool exportOnlyUntranslated = true, string specificLanguage = null, string specificPath = null)
         {
+            if (!string.IsNullOrEmpty(specificPath))
+                specificLanguage = GetLanguageFromSpecificPath(specificPath);
+            
             var contentBuilder = new StringBuilder();
+            List<string> values = null;
+
+            if (!string.IsNullOrEmpty(specificLanguage))
+                values = Lang2ValueList[specificLanguage];
+            
             for(int id = 0; id < Id2Key.Count; id++)
             {
                 var trs = Id2Key[id];
-               
-                foreach (var language in _loadedLanguages)
+                if (string.IsNullOrEmpty(specificLanguage) && string.IsNullOrEmpty(specificPath))
                 {
-                    var values = Lang2ValueList[language];
-                    
-                    if(exportOnlyUntranslated && values[id] != null) continue;
-                    
+                    foreach (var language in _loadedLanguages)
+                    {
+                        values = Lang2ValueList[language];
+                        if (exportOnlyUntranslated && values[id] != null)
+                            continue;
+
+                        contentBuilder.Append(ExportLanguageItem(trs.Message, trs.Hint));
+                        break;
+                    }
+                }
+                else
+                {
+                    if(exportOnlyUntranslated && values[id] != null) 
+                        continue;
                     contentBuilder.Append(ExportLanguageItem(trs.Message, trs.Hint));
-                    break;
+
                 }
             }
             
@@ -239,6 +256,12 @@ namespace Lib.Translation
             }
 
             return false;
+        }
+
+        string GetLanguageFromSpecificPath(string specificPath)
+        {
+            var content = File.ReadAllText(specificPath, new UTF8Encoding(false));
+            return JArray.Parse(content).First.ToString();
         }
 
         string ExportLanguageItem(string source, string hint)
@@ -360,5 +383,7 @@ namespace Lib.Translation
             }
             return null;
         }
+
+        public IEnumerable<string> GetLanguages() => _loadedLanguages;
     }
 }

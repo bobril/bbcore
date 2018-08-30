@@ -236,11 +236,15 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void InitializeTranslationDb()
+        public void InitializeTranslationDb(string specificPath = null)
         {
             ProjectOptions.TranslationDb = new Translation.TranslationDb(DiskCache.FsAbstraction);
             ProjectOptions.TranslationDb.AddLanguage(ProjectOptions.DefaultLanguage ?? "en-us");
-            ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
+            if (specificPath == null)
+            {
+                ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
+            }
+            else ProjectOptions.TranslationDb.LoadLangDb(specificPath);
         }
 
         public void Build(BuildCtx buildCtx)

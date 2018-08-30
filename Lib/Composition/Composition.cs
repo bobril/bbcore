@@ -19,7 +19,6 @@ using Lib.Chrome;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
-using System.Runtime.InteropServices;
 using Lib.BuildCache;
 using Lib.Utils.Notification;
 using Lib.Translation;
@@ -153,10 +152,19 @@ namespace Lib.Composition
 
             var export = tCommand.Export.Value;
             var exportAll = tCommand.ExportAll.Value;
+            var lang = tCommand.Lang.Value;
+            var path = tCommand.SpecificPath.Value;
             if (export != null || exportAll != null)
             {
-                project.Owner.InitializeTranslationDb();
+                project.Owner.InitializeTranslationDb(path);
                 trDb = project.TranslationDb;
+
+                if (lang != null && !trDb.HasLanguage(lang))
+                {
+                    Console.WriteLine(
+                        $"You have entered unsupported language '{lang}'. Please enter one of {string.Join(',', trDb.GetLanguages())}");
+                    return;
+                }
 
                 var destinationFile = export;
                 var exportOnlyUntranslated = true;
@@ -167,10 +175,20 @@ namespace Lib.Composition
                     exportOnlyUntranslated = false;
                 }
               
-                if (!trDb.ExportLanguages(destinationFile, exportOnlyUntranslated))
+                if (!trDb.ExportLanguages(destinationFile, exportOnlyUntranslated, lang, path))
                     Console.WriteLine("Nothing to export. No export file created.");
-                else 
-                    Console.WriteLine($"Exported {(exportOnlyUntranslated ? "untranslated " : string.Empty)}languages to {destinationFile}.");
+                else
+                {
+                    if (path == null)
+                    {
+                        Console.WriteLine(lang != null
+                            ? $"Exported {(exportOnlyUntranslated ? "untranslated " : string.Empty)}language '{lang}' to {destinationFile}."
+                            : $"Exported {(exportOnlyUntranslated ? "untranslated " : string.Empty)}languages to {destinationFile}.");
+                    }
+                    else
+                        Console.WriteLine($"Exported file from {path} into file {destinationFile}");
+                }
+
                 return;
             }
         }
