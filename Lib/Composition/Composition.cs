@@ -19,6 +19,7 @@ using Lib.Chrome;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
+using System.Runtime.InteropServices;
 using Lib.BuildCache;
 using Lib.Utils.Notification;
 using Lib.Translation;
@@ -147,6 +148,29 @@ namespace Lib.Composition
                     File.Delete(PathUtils.Join(PathToTranslations(project), removeLanguage + ".json"));
                     Console.WriteLine("Removed language " + removeLanguage);
                 }
+                return;
+            }
+
+            var export = tCommand.Export.Value;
+            var exportAll = tCommand.ExportAll.Value;
+            if (export != null || exportAll != null)
+            {
+                project.Owner.InitializeTranslationDb();
+                trDb = project.TranslationDb;
+
+                var destinationFile = export;
+                var exportOnlyUntranslated = true;
+
+                if (exportAll != null)
+                {
+                    destinationFile = exportAll;
+                    exportOnlyUntranslated = false;
+                }
+              
+                if (!trDb.ExportLanguages(destinationFile, exportOnlyUntranslated))
+                    Console.WriteLine("Nothing to export. No export file created.");
+                else 
+                    Console.WriteLine($"Exported {(exportOnlyUntranslated ? "untranslated " : string.Empty)}languages to {destinationFile}.");
                 return;
             }
         }
