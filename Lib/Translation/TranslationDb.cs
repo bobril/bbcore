@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Lib.Translation
@@ -211,6 +212,53 @@ namespace Lib.Translation
                 Lang2ValueList.Add(lang, valueList);
             }
             return valueList;
+        }
+
+        public bool ExportLanguages(string filePath, bool exportOnlyUntranslated = true)
+        {
+            var contentBuilder = new StringBuilder();
+            for(int id = 0; id < Id2Key.Count; id++)
+            {
+                var trs = Id2Key[id];
+               
+                foreach (var language in _loadedLanguages)
+                {
+                    var values = Lang2ValueList[language];
+                    
+                    if(exportOnlyUntranslated && values[id] != null) continue;
+                    
+                    contentBuilder.Append(ExportLanguageItem(trs.Message, trs.Hint));
+                    break;
+                }
+            }
+            
+            if (contentBuilder.Length > 0)
+            {
+                File.WriteAllText(filePath, contentBuilder.ToString(), new UTF8Encoding(false));
+                return true;
+            }
+
+            return false;
+        }
+
+        string ExportLanguageItem(string source, string hint)
+        {
+            var content = string.Empty;
+            var stringifyHint = hint;
+            if (stringifyHint != null)
+            {
+                stringifyHint = JsonConvert.SerializeObject(hint);
+                stringifyHint = stringifyHint.Substring(1, stringifyHint.Length - 2);
+            }
+
+            var stringifySource = JsonConvert.SerializeObject(source);
+            stringifySource = stringifySource.Substring(1, stringifySource.Length - 2);
+            
+            content += "S:" + stringifySource + "\r\n";
+            content += "I:" + (stringifyHint ?? "") + "\r\n";
+            content += "T:" + stringifySource + "\r\n";
+            return content;
+
         }
 
         public uint AddToDB(string message, string hint, bool withParams)
