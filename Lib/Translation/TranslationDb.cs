@@ -148,9 +148,9 @@ namespace Lib.Translation
                             case LoaderState.AfterValue:
                                 state = LoaderState.BeforeItem;
                                 var id = AddToDB(message, hint, withParams);
+                                while (valueList.Count <= id) valueList.Add(null);
                                 if (value != null)
                                 {
-                                    while (valueList.Count <= id) valueList.Add(null);
                                     valueList[(int)id] = value;
                                 }
                                 break;
@@ -293,6 +293,7 @@ namespace Lib.Translation
                 id = (uint)Id2Key.Count;
                 Id2Key.Add(key);
                 Key2Id.Add(key, id);
+                MapId(id);
             }
             return id;
         }
