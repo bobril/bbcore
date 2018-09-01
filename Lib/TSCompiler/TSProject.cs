@@ -12,7 +12,7 @@ namespace Lib.TSCompiler
 {
     public class TSProject
     {
-        bool WasFirstInitialize;
+        bool _wasFirstInitialize;
 
         public const string DefaultTypeScriptVersion = "3.0.1";
 
@@ -30,106 +30,99 @@ namespace Lib.TSCompiler
         {
             DiskCache.UpdateIfNeeded(Owner);
             var packageJsonFile = Owner.TryGetChild("package.json");
-            if (packageJsonFile is IFileCache)
+            if (packageJsonFile is IFileCache cache)
             {
-                var newChangeId = ((IFileCache)packageJsonFile).ChangeId;
-                if (newChangeId != PackageJsonChangeId)
+                var newChangeId = cache.ChangeId;
+                if (newChangeId == PackageJsonChangeId) return;
+                JObject parsed;
+                try
                 {
-                    JObject parsed;
-                    try
+                    parsed = JObject.Parse(cache.Utf8Content);
+                }
+                catch (Exception)
+                {
+                    parsed = new JObject();
+                }
+                var deps = new HashSet<string>();
+                var hasMain = false;
+                if (parsed.GetValue("typescript") is JObject parsedT)
+                {
+                    if (parsedT.GetValue("main") is JValue mainV)
                     {
-                        parsed = JObject.Parse(((IFileCache)packageJsonFile).Utf8Content);
+                        MainFile = PathUtils.Normalize(mainV.ToString());
+                        TypesMainFile = null;
+                        hasMain = true;
                     }
-                    catch (Exception)
+                }
+                if (!hasMain)
+                {
+                    if (parsed.GetValue("main") is JValue mainV2)
                     {
-                        parsed = new JObject();
+                        MainFile = PathUtils.Normalize(mainV2.ToString());
                     }
-                    var deps = new HashSet<string>();
-                    var hasMain = false;
-                    if (parsed.GetValue("typescript") is JObject parsedT)
+                    else
                     {
-                        if (parsedT.GetValue("main") is JValue mainV)
+                        MainFile = "index.js";
+                    }
+                    if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "ts"))) is IFileCache fileAsTs)
+                    {
+                        MainFile = PathUtils.ChangeExtension(MainFile, "ts");
+                        TypesMainFile = null;
+                        hasMain = true;
+                    }
+                    else
+                    {
+                        fileAsTs = DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "tsx"))) as IFileCache;
+                        if (fileAsTs != null)
                         {
-                            MainFile = PathUtils.Normalize(mainV.ToString());
+                            MainFile = PathUtils.ChangeExtension(MainFile, "tsx");
                             TypesMainFile = null;
                             hasMain = true;
                         }
                     }
                     if (!hasMain)
                     {
-                        var mainV2 = parsed.GetValue("main") as JValue;
-                        if (mainV2 != null)
+                        if (parsed.GetValue("types") is JValue mainV)
                         {
-                            MainFile = PathUtils.Normalize(mainV2.ToString());
-                        }
-                        else
-                        {
-                            MainFile = "index.js";
-                        }
-                        if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "ts"))) is IFileCache fileAsTs)
-                        {
-                            MainFile = PathUtils.ChangeExtension(MainFile, "ts");
-                            TypesMainFile = null;
+                            TypesMainFile = PathUtils.Normalize(mainV.ToString());
                             hasMain = true;
-                        }
-                        else
-                        {
-                            fileAsTs = DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "tsx"))) as IFileCache;
-                            if (fileAsTs != null)
-                            {
-                                MainFile = PathUtils.ChangeExtension(MainFile, "tsx");
-                                TypesMainFile = null;
-                                hasMain = true;
-                            }
-                        }
-                        if (!hasMain)
-                        {
-                            if (parsed.GetValue("types") is JValue mainV)
-                            {
-                                TypesMainFile = PathUtils.Normalize(mainV.ToString());
-                                hasMain = true;
-                            }
-                        }
-                    }
-                    if (TypesMainFile == null)
-                    {
-                        TypesMainFile = PathUtils.ChangeExtension(MainFile, "d.ts");
-                        if (!this.IsRootProject && !(DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, TypesMainFile)) is IFileCache))
-                        {
-                            var typesDts = PathUtils.Join(Owner.FullPath, "../@types/" + Owner.Name + "/index.d.ts");
-                            if (DiskCache.TryGetItem(typesDts) is IFileCache)
-                            {
-                                TypesMainFile = typesDts;
-                            }
-                        }
-                    }
-                    if (parsed.GetValue("dependencies") is JObject parsedV)
-                    {
-                        foreach (var i in parsedV.Properties())
-                        {
-                            deps.Add(i.Name);
-                        }
-                    }
-                    if (IsRootProject && parsed.GetValue("devDependencies") is JObject parsedV2)
-                    {
-                        foreach (var i in parsedV2.Properties())
-                        {
-                            deps.Add(i.Name);
-                        }
-                    }
-                    PackageJsonChangeId = newChangeId;
-                    Dependencies = deps;
-                    if (ProjectOptions != null)
-                    {
-                        FillProjectOptionsFromPackageJson(parsed);
-                        if (!forbiddenDependencyUpdate && ProjectOptions.DependencyUpdate != DepedencyUpdate.Disabled)
-                        {
-                            ProjectOptions.Tools.UpdateDependencies(Owner.FullPath, ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade, ProjectOptions.NpmRegistry);
-                            DiskCache.CheckForTrueChange();
-                            DiskCache.ResetChange();
                         }
                     }
                 }
+                if (TypesMainFile == null)
+                {
+                    TypesMainFile = PathUtils.ChangeExtension(MainFile, "d.ts");
+                    if (!this.IsRootProject && !(DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, TypesMainFile)) is IFileCache))
+                    {
+                        var typesDts = PathUtils.Join(Owner.FullPath, $"../@types/{Owner.Name}/index.d.ts");
+                        if (DiskCache.TryGetItem(typesDts) is IFileCache)
+                        {
+                            TypesMainFile = typesDts;
+                        }
+                    }
+                }
+                if (parsed.GetValue("dependencies") is JObject parsedV)
+                {
+                    foreach (var i in parsedV.Properties())
+                    {
+                        deps.Add(i.Name);
+                    }
+                }
+                if (IsRootProject && parsed.GetValue("devDependencies") is JObject parsedV2)
+                {
+                    foreach (var i in parsedV2.Properties())
+                    {
+                        deps.Add(i.Name);
+                    }
+                }
+                PackageJsonChangeId = newChangeId;
+                Dependencies = deps;
+                if (ProjectOptions == null) return;
+                FillProjectOptionsFromPackageJson(parsed);
+                if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
+                ProjectOptions.Tools.UpdateDependencies(Owner.FullPath, ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade, ProjectOptions.NpmRegistry);
+                DiskCache.CheckForTrueChange();
+                DiskCache.ResetChange();
             }
             else
             {
@@ -145,8 +138,7 @@ namespace Lib.TSCompiler
         {
             ProjectOptions.Localize = Dependencies?.Contains("bobril-g11n") ?? false;
             ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec(?:\\.d)?\\.ts(?:x)?$";
-            var publishConfigSection = parsed?.GetValue("publishConfig") as JObject;
-            if (publishConfigSection != null)
+            if (parsed?.GetValue("publishConfig") is JObject publishConfigSection)
             {
                 ProjectOptions.NpmRegistry = publishConfigSection.Value<string>("registry");
             }
@@ -199,9 +191,9 @@ namespace Lib.TSCompiler
 
         public void InitializeOnce()
         {
-            if (WasFirstInitialize)
+            if (_wasFirstInitialize)
                 return;
-            WasFirstInitialize = true;
+            _wasFirstInitialize = true;
             if (ProjectOptions.Localize)
             {
                 InitializeTranslationDb();
@@ -209,14 +201,13 @@ namespace Lib.TSCompiler
             var bbTslint = Dependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
             if (bbTslint != null)
             {
-                var srcTsLint = PathUtils.Join(Owner.FullPath, "node_modules/" + bbTslint + "/tslint.json");
+                var srcTsLint = PathUtils.Join(Owner.FullPath, $"node_modules/{bbTslint}/tslint.json");
                 var srcFile = DiskCache.TryGetItem(srcTsLint) as IFileCache;
                 var dstTsLint = PathUtils.Join(Owner.FullPath, "tslint.json");
-                var dstFile = DiskCache.TryGetItem(dstTsLint) as IFileCache;
-                if (srcFile != null && (dstFile == null || !dstFile.HashOfContent.SequenceEqual(srcFile.HashOfContent)))
+                if (srcFile != null && (!(DiskCache.TryGetItem(dstTsLint) is IFileCache dstFile) || !dstFile.HashOfContent.SequenceEqual(srcFile.HashOfContent)))
                 {
                     File.WriteAllBytes(dstTsLint, srcFile.ByteContent);
-                    Console.WriteLine("Updated tslint.json from " + srcTsLint);
+                    Console.WriteLine($"Updated tslint.json from {srcTsLint}");
                 }
             }
         }
@@ -294,12 +285,7 @@ namespace Lib.TSCompiler
                             break;
                         }
                         ProjectOptions.CurrentBuildCommonSourceDirectory = compiler.CommonSourceDirectory;
-                        if (ProjectOptions.CommonSourceDirectory == null)
-                            ProjectOptions.CommonSourceDirectory = compiler.CommonSourceDirectory;
-                        else
-                        {
-                            ProjectOptions.CommonSourceDirectory = PathUtils.CommonDir(ProjectOptions.CommonSourceDirectory, compiler.CommonSourceDirectory);
-                        }
+                        ProjectOptions.CommonSourceDirectory = ProjectOptions.CommonSourceDirectory == null ? compiler.CommonSourceDirectory : PathUtils.CommonDir(ProjectOptions.CommonSourceDirectory, compiler.CommonSourceDirectory);
                         compiler.GatherSourceInfo();
                         if (ProjectOptions.SpriteGeneration)
                             ProjectOptions.SpriteGenerator.ProcessNew();
@@ -332,19 +318,17 @@ namespace Lib.TSCompiler
             {
                 if (f.TakenFromBuildCache)
                     continue;
-                if (f.Type == FileCompilationType.TypeScript && (f.SourceInfo == null || f.SourceInfo.IsEmpty) && f.LocalImports.Count == 0 && f.ModuleImports.Count == 0)
-                {
-                    if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ProjectOptions.ConfigurationBuildCacheId) == null)
-                    {
-                        var fbc = new BuildCache.TSFileBuildCache();
-                        fbc.ConfigurationId = ProjectOptions.ConfigurationBuildCacheId;
-                        fbc.ContentHash = f.Owner.HashOfContent;
-                        fbc.DtsOutput = f.DtsLink?.Owner.Utf8Content;
-                        fbc.JsOutput = f.Output;
-                        fbc.MapLink = f.MapLink;
-                        bc.Store(fbc);
-                    }
-                }
+                if (f.Type != FileCompilationType.TypeScript || (f.SourceInfo != null && !f.SourceInfo.IsEmpty) ||
+                    f.LocalImports.Count != 0 || f.ModuleImports.Count != 0) continue;
+                if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ProjectOptions.ConfigurationBuildCacheId) !=
+                    null) continue;
+                var fbc = new BuildCache.TSFileBuildCache();
+                fbc.ConfigurationId = ProjectOptions.ConfigurationBuildCacheId;
+                fbc.ContentHash = f.Owner.HashOfContent;
+                fbc.DtsOutput = f.DtsLink?.Owner.Utf8Content;
+                fbc.JsOutput = f.Output;
+                fbc.MapLink = f.MapLink;
+                bc.Store(fbc);
             }
         }
 
@@ -353,12 +337,10 @@ namespace Lib.TSCompiler
             while (!dir.IsFake)
             {
                 diskCache.UpdateIfNeeded(dir);
-                var nmdir = dir.TryGetChild("node_modules") as IDirectoryCache;
-                if (nmdir != null)
+                if (dir.TryGetChild("node_modules") is IDirectoryCache nmdir)
                 {
                     diskCache.UpdateIfNeeded(nmdir);
-                    var mdir = nmdir.TryGetChild(moduleName) as IDirectoryCache;
-                    if (mdir != null)
+                    if (nmdir.TryGetChild(moduleName) is IDirectoryCache mdir)
                     {
                         diskName = mdir.Name;
                         diskCache.UpdateIfNeeded(mdir);
