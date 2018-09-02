@@ -20,6 +20,7 @@ TestResults
 /BTDB.sln.ide
 .vs/
 .bbcore/
+.idea/
 /bb/Properties/launchSettings.json
 /tools/bbcorenpm/node_modules
 !/tools/bbcorenpm/bin/
