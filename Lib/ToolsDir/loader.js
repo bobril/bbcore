@@ -1,12 +1,12 @@
 "use strict";
-var R = (function (name, fn) {
+var R = function(name, fn) {
     R.m[name.toLowerCase()] = { fn: fn, exports: undefined };
-});
+};
+R.t = this;
 R.m = Object.create(null);
-R.r = function (name, parent) {
+R.r = function(name, parent) {
     var p = R.map[name.toLowerCase()];
-    if (p === undefined)
-        p = name;
+    if (p === undefined) p = name;
     if (p[0] === ".") {
         var parts = parent ? parent.split("/") : [];
         parts.push("..");
@@ -14,21 +14,24 @@ R.r = function (name, parent) {
         var newParts = [];
         for (var i = 0, l = parts.length; i < l; i++) {
             var part = parts[i];
-            if (!part || part === ".")
-                continue;
-            if (part === "..")
-                newParts.pop();
-            else
-                newParts.push(part);
+            if (!part || part === ".") continue;
+            if (part === "..") newParts.pop();
+            else newParts.push(part);
         }
         p = newParts.join("/");
     }
     var m = R.m[p.toLowerCase()];
-    if (m == null)
-        throw new Error("Module " + name + " in " + (parent || "/") + " not registered");
-    if (m.exports !== undefined)
-        return m.exports;
+    if (m == null) throw new Error("Module " + name + " in " + (parent || "/") + " not registered");
+    if (m.exports !== undefined) return m.exports;
     m.exports = {};
-    m.fn.call(window, function (name) { return R.r(name, p); }, m, m.exports, window);
+    m.fn.call(
+        R.t,
+        function(name) {
+            return R.r(name, p);
+        },
+        m,
+        m.exports,
+        R.t
+    );
     return m.exports;
 };

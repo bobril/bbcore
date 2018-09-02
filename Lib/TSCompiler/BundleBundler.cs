@@ -34,8 +34,8 @@ namespace Lib.TSCompiler
         {
             var diskCache = Project.Owner.DiskCache;
             var root = Project.Owner.Owner.FullPath;
-            var cssLink = "";
             _jsFilesContent = new Dictionary<string, string>();
+            var cssLink = "";
             var cssToBundle = new List<SourceFromPair>();
             foreach (var source in BuildResult.Path2FileInfo)
             {
@@ -107,8 +107,11 @@ namespace Lib.TSCompiler
             }
             bundler.Defines = defines;
             bundler.Bundle();
-            BuildFastBundlerIndexHtml(cssLink);
-            FilesContent["index.html"] = _indexHtml;
+            if (!Project.NoHtml)
+            {
+                BuildFastBundlerIndexHtml(cssLink);
+                FilesContent["index.html"] = _indexHtml;
+            }
         }
 
         void BuildFastBundlerIndexHtml(string cssLink)

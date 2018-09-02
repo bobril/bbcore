@@ -43,6 +43,7 @@ namespace Lib.TSCompiler
                 {
                     parsed = new JObject();
                 }
+
                 var deps = new HashSet<string>();
                 var hasMain = false;
                 if (parsed.GetValue("typescript") is JObject parsedT)
@@ -54,6 +55,7 @@ namespace Lib.TSCompiler
                         hasMain = true;
                     }
                 }
+
                 if (!hasMain)
                 {
                     if (parsed.GetValue("main") is JValue mainV2)
@@ -64,7 +66,9 @@ namespace Lib.TSCompiler
                     {
                         MainFile = "index.js";
                     }
-                    if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "ts"))) is IFileCache fileAsTs)
+
+                    if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "ts")))
+                        is IFileCache fileAsTs)
                     {
                         MainFile = PathUtils.ChangeExtension(MainFile, "ts");
                         TypesMainFile = null;
@@ -72,7 +76,8 @@ namespace Lib.TSCompiler
                     }
                     else
                     {
-                        fileAsTs = DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "tsx"))) as IFileCache;
+                        fileAsTs = DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath,
+                            PathUtils.ChangeExtension(MainFile, "tsx"))) as IFileCache;
                         if (fileAsTs != null)
                         {
                             MainFile = PathUtils.ChangeExtension(MainFile, "tsx");
@@ -80,6 +85,7 @@ namespace Lib.TSCompiler
                             hasMain = true;
                         }
                     }
+
                     if (!hasMain)
                     {
                         if (parsed.GetValue("types") is JValue mainV)
@@ -89,10 +95,12 @@ namespace Lib.TSCompiler
                         }
                     }
                 }
+
                 if (TypesMainFile == null)
                 {
                     TypesMainFile = PathUtils.ChangeExtension(MainFile, "d.ts");
-                    if (!this.IsRootProject && !(DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, TypesMainFile)) is IFileCache))
+                    if (!this.IsRootProject &&
+                        !(DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, TypesMainFile)) is IFileCache))
                     {
                         var typesDts = PathUtils.Join(Owner.FullPath, $"../@types/{Owner.Name}/index.d.ts");
                         if (DiskCache.TryGetItem(typesDts) is IFileCache)
@@ -101,6 +109,7 @@ namespace Lib.TSCompiler
                         }
                     }
                 }
+
                 if (parsed.GetValue("dependencies") is JObject parsedV)
                 {
                     foreach (var i in parsedV.Properties())
@@ -108,6 +117,7 @@ namespace Lib.TSCompiler
                         deps.Add(i.Name);
                     }
                 }
+
                 if (IsRootProject && parsed.GetValue("devDependencies") is JObject parsedV2)
                 {
                     foreach (var i in parsedV2.Properties())
@@ -115,12 +125,14 @@ namespace Lib.TSCompiler
                         deps.Add(i.Name);
                     }
                 }
+
                 PackageJsonChangeId = newChangeId;
                 Dependencies = deps;
                 if (ProjectOptions == null) return;
                 FillProjectOptionsFromPackageJson(parsed);
                 if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
-                ProjectOptions.Tools.UpdateDependencies(Owner.FullPath, ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade, ProjectOptions.NpmRegistry);
+                ProjectOptions.Tools.UpdateDependencies(Owner.FullPath,
+                    ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade, ProjectOptions.NpmRegistry);
                 DiskCache.CheckForTrueChange();
                 DiskCache.ResetChange();
             }
@@ -142,6 +154,7 @@ namespace Lib.TSCompiler
             {
                 ProjectOptions.NpmRegistry = publishConfigSection.Value<string>("registry");
             }
+
             var bobrilSection = parsed?.GetValue("bobril") as JObject;
             ProjectOptions.TypeScriptVersion = GetStringProperty(bobrilSection, "tsVersion", "");
             if (ProjectOptions.TypeScriptVersion != "")
@@ -153,18 +166,27 @@ namespace Lib.TSCompiler
                 ProjectOptions.TypeScriptVersionOverride = false;
                 ProjectOptions.TypeScriptVersion = DefaultTypeScriptVersion;
             }
+
+            ProjectOptions.Variant = GetStringProperty(bobrilSection, "variant", "");
+            ProjectOptions.NoHtml = bobrilSection?["nohtml"]?.Value<bool>() ?? ProjectOptions.Variant != "";
             ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
-            ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head", "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
+            ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head",
+                "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
             ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
             ProjectOptions.Example = GetStringProperty(bobrilSection, "example", "");
-            ProjectOptions.AdditionalResourcesDirectory = GetStringProperty(bobrilSection, "additionalResourcesDirectory", null);
+            ProjectOptions.AdditionalResourcesDirectory =
+                GetStringProperty(bobrilSection, "additionalResourcesDirectory", null);
             ProjectOptions.BobrilJsx = true;
-            ProjectOptions.CompilerOptions = bobrilSection != null ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject) : null;
-            ProjectOptions.DependencyUpdate = String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
+            ProjectOptions.CompilerOptions = bobrilSection != null
+                ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject)
+                : null;
+            ProjectOptions.DependencyUpdate =
+                String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
             var includeSources = bobrilSection?.GetValue("includeSources") as JArray;
             ProjectOptions.IncludeSources = includeSources?.Select(i => i.ToString()).ToArray();
             var pluginsSection = bobrilSection?.GetValue("plugins") as JObject;
-            ProjectOptions.GenerateSpritesTs = pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
+            ProjectOptions.GenerateSpritesTs =
+                pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
         }
 
         DepedencyUpdate String2DependencyUpdate(string value)
@@ -185,7 +207,7 @@ namespace Lib.TSCompiler
         public string GetStringProperty(JObject obj, string name, string @default)
         {
             if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
-                return (string)value;
+                return (string) value;
             return @default;
         }
 
@@ -198,13 +220,15 @@ namespace Lib.TSCompiler
             {
                 InitializeTranslationDb();
             }
+
             var bbTslint = Dependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
             if (bbTslint != null)
             {
                 var srcTsLint = PathUtils.Join(Owner.FullPath, $"node_modules/{bbTslint}/tslint.json");
                 var srcFile = DiskCache.TryGetItem(srcTsLint) as IFileCache;
                 var dstTsLint = PathUtils.Join(Owner.FullPath, "tslint.json");
-                if (srcFile != null && (!(DiskCache.TryGetItem(dstTsLint) is IFileCache dstFile) || !dstFile.HashOfContent.SequenceEqual(srcFile.HashOfContent)))
+                if (srcFile != null && (!(DiskCache.TryGetItem(dstTsLint) is IFileCache dstFile) ||
+                                        !dstFile.HashOfContent.SequenceEqual(srcFile.HashOfContent)))
                 {
                     File.WriteAllBytes(dstTsLint, srcFile.ByteContent);
                     Console.WriteLine($"Updated tslint.json from {srcTsLint}");
@@ -242,7 +266,8 @@ namespace Lib.TSCompiler
                 compOpt.outDir = "_virtual";
                 compOpt.module = ModuleKind.Commonjs;
                 compOpt.declaration = true;
-                if (!ProjectOptions.TypeScriptVersionOverride && Dependencies != null && Dependencies.Contains("typescript"))
+                if (!ProjectOptions.TypeScriptVersionOverride && Dependencies != null &&
+                    Dependencies.Contains("typescript"))
                     ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
                 else
                     ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
@@ -252,7 +277,9 @@ namespace Lib.TSCompiler
                 positionIndependentOptions.rootDir = null;
                 var trueTSVersion = compiler.GetTSVersion();
                 buildCtx.ShowTsVersion(trueTSVersion);
-                ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(trueTSVersion, JsonConvert.SerializeObject(positionIndependentOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(trueTSVersion,
+                    JsonConvert.SerializeObject(positionIndependentOptions, Formatting.None,
+                        new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore}));
                 var wasSomeError = false;
                 do
                 {
@@ -266,6 +293,7 @@ namespace Lib.TSCompiler
                     {
                         buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
                     }
+
                     if (ProjectOptions.IncludeSources != null)
                     {
                         foreach (var src in ProjectOptions.IncludeSources)
@@ -273,19 +301,24 @@ namespace Lib.TSCompiler
                             buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
                         }
                     }
+
                     buildModuleCtx.Crawl();
                     if (buildModuleCtx.ToCompile.Count != 0)
                     {
                         if (buildCtx.Verbose)
                             compiler.MeasurePerformance = true;
-                        compiler.CreateProgram(Owner.FullPath, buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
+                        compiler.CreateProgram(Owner.FullPath,
+                            buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
                         {
                             wasSomeError = true;
                             break;
                         }
+
                         ProjectOptions.CurrentBuildCommonSourceDirectory = compiler.CommonSourceDirectory;
-                        ProjectOptions.CommonSourceDirectory = ProjectOptions.CommonSourceDirectory == null ? compiler.CommonSourceDirectory : PathUtils.CommonDir(ProjectOptions.CommonSourceDirectory, compiler.CommonSourceDirectory);
+                        ProjectOptions.CommonSourceDirectory = ProjectOptions.CommonSourceDirectory == null
+                            ? compiler.CommonSourceDirectory
+                            : PathUtils.CommonDir(ProjectOptions.CommonSourceDirectory, compiler.CommonSourceDirectory);
                         compiler.GatherSourceInfo();
                         if (ProjectOptions.SpriteGeneration)
                             ProjectOptions.SpriteGenerator.ProcessNew();
@@ -294,11 +327,13 @@ namespace Lib.TSCompiler
                             wasSomeError = true;
                             break;
                         }
+
                         buildModuleCtx.UpdateCacheIds();
                         buildModuleCtx.ToCompile.Clear();
                         buildModuleCtx.Crawl();
                     }
                 } while (buildModuleCtx.ChangedDts || 0 < buildModuleCtx.ToCompile.Count);
+
                 if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError)
                     StoreResultToBuildCache(buildModuleCtx._result);
                 buildCtx.BuildResult = buildModuleCtx._result;
@@ -332,7 +367,8 @@ namespace Lib.TSCompiler
             }
         }
 
-        public static TSProject FindInfoForModule(IDirectoryCache dir, IDiskCache diskCache, string moduleName, out string diskName)
+        public static TSProject FindInfoForModule(IDirectoryCache dir, IDiskCache diskCache, string moduleName,
+            out string diskName)
         {
             while (!dir.IsFake)
             {
@@ -347,8 +383,10 @@ namespace Lib.TSCompiler
                         return Get(mdir, diskCache);
                     }
                 }
+
                 dir = dir.Parent;
             }
+
             diskName = null;
             return null;
         }
@@ -358,8 +396,8 @@ namespace Lib.TSCompiler
             if (dir == null)
                 return null;
             if (dir.AdditionalInfo == null)
-                dir.AdditionalInfo = new TSProject { Owner = dir, DiskCache = diskCache };
-            return (TSProject)dir.AdditionalInfo;
+                dir.AdditionalInfo = new TSProject {Owner = dir, DiskCache = diskCache};
+            return (TSProject) dir.AdditionalInfo;
         }
     }
 }

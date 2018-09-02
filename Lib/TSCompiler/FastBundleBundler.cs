@@ -35,11 +35,18 @@ namespace Lib.TSCompiler
             _versionDirPrefix = "";
             if (Project.OutputSubDir != null)
                 _versionDirPrefix = Project.OutputSubDir + "/";
-            var diskCache = Project.Owner.DiskCache;
             var root = Project.CommonSourceDirectory;
             if (root == null)
                 return;
             var sourceMapBuilder = new SourceMapBuilder();
+            if (!testProj && Project.NoHtml)
+            {
+                sourceMapBuilder.AddText(GetInitG11nCode());
+                sourceMapBuilder.AddText(_tools.LoaderJs);
+                sourceMapBuilder.AddText(GetGlobalDefines());
+                sourceMapBuilder.AddText(GetModuleMap());
+            }
+
             sourceMapBuilder.AddText(_tools.TsLibSource);
             var cssLink = "";
             foreach (var source in BuildResult.Path2FileInfo)
@@ -49,13 +56,16 @@ namespace Lib.TSCompiler
                     sourceMapBuilder.AddSource(source.Value.Output, source.Value.MapLink);
                 }
             }
+
             foreach (var source in BuildResult.Path2FileInfo)
             {
-                if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript)
+                if (source.Value.Type == FileCompilationType.TypeScript ||
+                    source.Value.Type == FileCompilationType.JavaScript)
                 {
                     if (source.Value.Output == null)
                         continue; // Skip d.ts
-                    sourceMapBuilder.AddText($"R('{PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root)}',function(require, module, exports, global){{");
+                    sourceMapBuilder.AddText(
+                        $"R('{PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root)}',function(require, module, exports, global){{");
                     sourceMapBuilder.AddSource(source.Value.Output, source.Value.MapLink);
                     sourceMapBuilder.AddText("});");
                 }
@@ -70,6 +80,7 @@ namespace Lib.TSCompiler
                     FilesContent[source.Value.OutputUrl] = source.Value.Owner.ByteContent;
                 }
             }
+
             if (Project.SpriteGeneration)
             {
                 _bundlePng = Project.BundlePngUrl;
@@ -88,15 +99,24 @@ namespace Lib.TSCompiler
                     _bundlePng = null;
                 }
             }
+
+            if (!testProj && Project.NoHtml)
+            {
+                sourceMapBuilder.AddText(RequireBobril());
+                sourceMapBuilder.AddText(
+                    $"R.r('{PathUtils.WithoutExtension(PathUtils.Subtract(Project.MainFile, root))}');");
+            }
+
             sourceMapBuilder.AddText("//# sourceMappingURL=" + mapUrl);
             _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
             _sourceMapString = _sourceMap.ToString();
             _bundleJs = sourceMapBuilder.Content();
-            if (!testProj && Project.ExampleSources.Count > 0)
+            if (!testProj && !Project.NoHtml && Project.ExampleSources.Count > 0)
             {
                 if (Project.ExampleSources.Count == 1)
                 {
-                    BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(Project.ExampleSources[0], root)), cssLink);
+                    BuildFastBundlerIndexHtml(
+                        PathUtils.WithoutExtension(PathUtils.Subtract(Project.ExampleSources[0], root)), cssLink);
                 }
                 else
                 {
@@ -109,6 +129,7 @@ namespace Lib.TSCompiler
                         FilesContent[justName + ".html"] = _indexHtml;
                         htmlList.Add(justName);
                     }
+
                     BuildExampleListHtml(htmlList, cssLink);
                 }
             }
@@ -116,10 +137,12 @@ namespace Lib.TSCompiler
             {
                 BuildFastBundlerTestHtml(Project.TestSources, root, cssLink);
             }
-            else
+            else if (!Project.NoHtml)
             {
-                BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(Project.MainFile, root)), cssLink);
+                BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(Project.MainFile, root)),
+                    cssLink);
             }
+
             if (testProj)
             {
                 FilesContent["test.html"] = _indexHtml;
@@ -127,23 +150,27 @@ namespace Lib.TSCompiler
                 FilesContent[_versionDirPrefix + "jasmine-boot.js"] = _tools.JasmineBootJs;
                 FilesContent[_versionDirPrefix + "loader.js"] = _tools.LoaderJs;
             }
-            else
+            else if (!Project.NoHtml)
             {
                 FilesContent["index.html"] = _indexHtml;
                 FilesContent[_versionDirPrefix + "loader.js"] = _tools.LoaderJs;
                 if (Project.LiveReloadEnabled)
                 {
-                    FilesContent[_versionDirPrefix + "liveReload.js"] = _tools.LiveReloadJs.Replace("##Idx##", (Project.LiveReloadIdx + 1).ToString());
+                    FilesContent[_versionDirPrefix + "liveReload.js"] =
+                        _tools.LiveReloadJs.Replace("##Idx##", (Project.LiveReloadIdx + 1).ToString());
                 }
             }
+
             FilesContent[_versionDirPrefix + PathUtils.WithoutExtension(mapUrl)] = _bundleJs;
             FilesContent[_versionDirPrefix + mapUrl] = _sourceMapString;
             BuildResult.SourceMap = _sourceMap;
         }
 
-        void BuildFastBundlerTestHtml(List<string> testSources, string root, string cssLink)
+        void BuildFastBundlerTestHtml(IEnumerable<string> testSources, string root, string cssLink)
         {
-            var reqSpec = string.Join(' ', testSources.Where(src => !src.EndsWith(".d.ts")).Select(src => "R.r(\'" + PathUtils.WithoutExtension(PathUtils.Subtract(src, root)) + "\');"));
+            var reqSpec = string.Join(' ',
+                testSources.Where(src => !src.EndsWith(".d.ts")).Select(src =>
+                    "R.r(\'" + PathUtils.WithoutExtension(PathUtils.Subtract(src, root)) + "\');"));
             _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
@@ -174,6 +201,7 @@ namespace Lib.TSCompiler
             {
                 liveReloadInclude = $@"<script src=""{_versionDirPrefix}liveReload.js"" charset=""utf-8""></script>";
             }
+
             _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
@@ -196,36 +224,46 @@ namespace Lib.TSCompiler
 ";
         }
 
+        string GetInitG11nCode()
+        {
+            var res = new StringBuilder();
+            if (Project.Localize)
+            {
+                Project.TranslationDb.BuildTranslationJs(_tools, FilesContent, Project.OutputSubDir);
+                res.Append(
+                    $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};");
+                if (Project.DefaultLanguage != null)
+                {
+                    res.Append($"var g11nLoc=\"{Project.DefaultLanguage}\";");
+                }
+            }
+
+            if (_bundlePng != null)
+            {
+                res.Append($"var bobrilBPath=\"{_bundlePng}\"");
+                if (_bundlePngInfo.Count > 1)
+                {
+                    res.Append($",bobrilBPath2=[");
+                    for (var i = 1; i < _bundlePngInfo.Count; i++)
+                    {
+                        var q = _bundlePngInfo[i];
+                        if (i > 1) res.Append(",");
+                        res.Append(
+                            $"[\"{PathUtils.InjectQuality(_bundlePng, q)}\",{q.ToString(CultureInfo.InvariantCulture)}]");
+                    }
+
+                    res.Append("]");
+                }
+            }
+
+            return res.ToString();
+        }
+
         string InitG11n()
         {
             if (!Project.Localize && _bundlePng == null)
                 return "";
-            var res = "<script>";
-            if (Project.Localize)
-            {
-                Project.TranslationDb.BuildTranslationJs(_tools, FilesContent, Project.OutputSubDir);
-                res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
-                if (Project.DefaultLanguage != null)
-                {
-                    res += $"var g11nLoc=\"{Project.DefaultLanguage}\";";
-                }
-            }
-            if (_bundlePng != null)
-            {
-                res += $"var bobrilBPath=\"{_bundlePng}\"";
-                if (_bundlePngInfo.Count > 1)
-                {
-                    res += $",bobrilBPath2=[";
-                    for (int i = 1; i < _bundlePngInfo.Count; i++)
-                    {
-                        var q = _bundlePngInfo[i];
-                        if (i > 1) res += ",";
-                        res += $"[\"{PathUtils.InjectQuality(_bundlePng, q)}\",{q.ToString(CultureInfo.InvariantCulture)}]";
-                    }
-                    res += "]";
-                }
-            }
-            res += "</script>";
+            var res = $"<script>{GetInitG11nCode()}</script>";
             return res;
         }
 
@@ -236,6 +274,7 @@ namespace Lib.TSCompiler
             {
                 testList += $@"<li><a href=""{namesWOExt[i]}.html"">{namesWOExt[i]}</a></li>";
             }
+
             _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
@@ -250,13 +289,14 @@ namespace Lib.TSCompiler
 
         string GetGlobalDefines()
         {
+            if (Project.Defines == null) return "";
             var res = new StringBuilder();
-            if (Project.Defines != null)
-                foreach (var def in Project.Defines)
-                {
-                    var val = def.Value ? "true" : "false";
-                    res.Append($"var {def.Key} = {val};");
-                }
+            foreach (var def in Project.Defines)
+            {
+                var val = def.Value ? "true" : "false";
+                res.Append($"var {def.Key} = {val};");
+            }
+
             return res.ToString();
         }
 
@@ -269,9 +309,11 @@ namespace Lib.TSCompiler
                 var module = source.Value.ImportedAsModule;
                 if (module != null)
                 {
-                    res.Add(module.ToLowerInvariant(), PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root));
+                    res.Add(module.ToLowerInvariant(),
+                        PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root));
                 }
             }
+
             return $"R.map = {Newtonsoft.Json.JsonConvert.SerializeObject(res)};";
         }
 
@@ -282,6 +324,7 @@ namespace Lib.TSCompiler
             {
                 return "R.r('bobril');";
             }
+
             return "";
         }
     }

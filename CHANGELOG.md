@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- NoHtml mode for creating just self contained bundle.js.
+
 ## 0.46.1
 
 ### Fixed

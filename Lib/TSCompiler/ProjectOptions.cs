@@ -15,16 +15,16 @@ namespace Lib.TSCompiler
 {
     public class ProjectOptions
     {
-        public ToolsDir.IToolsDir Tools { get; set; }
-        public TSProject Owner { get; set; }
-        public string TestSourcesRegExp { get; set; }
-        public Dictionary<string, bool> Defines { get; set; }
-        public string Title { get; set; }
-        public string HtmlHead { get; set; }
-        public StyleDefNamingStyle StyleDefNaming { get; set; }
-        public string PrefixStyleNames { get; set; }
-        public string Example { get; set; }
-        public bool BobrilJsx { get; set; }
+        public ToolsDir.IToolsDir Tools;
+        public TSProject Owner;
+        public string TestSourcesRegExp;
+        public Dictionary<string, bool> Defines;
+        public string Title;
+        public string HtmlHead;
+        public StyleDefNamingStyle StyleDefNaming;
+        public string PrefixStyleNames;
+        public string Example;
+        public bool BobrilJsx;
         public TSCompilerOptions CompilerOptions;
         public string AdditionalResourcesDirectory;
         public string CommonSourceDirectory;
@@ -33,17 +33,20 @@ namespace Lib.TSCompiler
         public string BundlePngUrl;
         public string BundleJsUrl;
         public bool GenerateSpritesTs;
+        public string Variant;
+        public bool NoHtml;
 
-        public string HtmlHeadExpanded { get; set; }
-        public string MainFile { get; set; }
-        public string JasmineDts { get; set; }
-        public List<string> TestSources { get; set; }
-        public List<string> ExampleSources { get; set; }
-        public string BobrilJsxDts { get; set; }
-        public FastBundleBundler MainProjFastBundle { get; set; }
-        public FastBundleBundler TestProjFastBundle { get; internal set; }
-        public bool LiveReloadEnabled { get; internal set; }
-        public string TypeScriptVersion { get; internal set; }
+        public string HtmlHeadExpanded;
+        public string MainFile;
+        public Dictionary<string, string> MainFileVariants;
+        public string JasmineDts;
+        public List<string> TestSources;
+        public List<string> ExampleSources;
+        public string BobrilJsxDts;
+        public FastBundleBundler MainProjFastBundle;
+        public FastBundleBundler TestProjFastBundle;
+        public bool LiveReloadEnabled;
+        public string TypeScriptVersion;
 
         public bool Localize;
         public string DefaultLanguage;
@@ -72,13 +75,15 @@ namespace Lib.TSCompiler
 
         string ToShortName(int idx)
         {
-            var res = "";
+            Span<char> res = stackalloc char[8];
+            var resLen = 0;
             do
             {
-                res += (char)(97 + idx % 26);
+                res[resLen++] = (char) (97 + idx % 26);
                 idx = idx / 26 - 1;
             } while (idx >= 0);
-            return res;
+
+            return new string(res.Slice(0, resLen));
         }
 
         public string AllocateName(string niceName)
@@ -95,9 +100,9 @@ namespace Lib.TSCompiler
                     niceName = ToShortName(idx) + extension;
                     idx++;
                     if (OutputSubDir != null)
-                        niceName = OutputSubDir + "/" + niceName;
-                }
-                while (TakenNames.Contains(niceName));
+                        niceName = $"{OutputSubDir}/{niceName}";
+                } while (TakenNames.Contains(niceName));
+
                 Extension2LastNameIdx[extension] = idx;
             }
             else
@@ -115,6 +120,7 @@ namespace Lib.TSCompiler
                     niceName = prefix + counter.ToString() + extension;
                 }
             }
+
             TakenNames.Add(niceName);
             return niceName;
         }
@@ -126,6 +132,7 @@ namespace Lib.TSCompiler
                 SpriteGenerator = new SpriteHolder(Owner.DiskCache);
                 BundlePngUrl = AllocateName("bundle.png");
             }
+
             if (BundleJsUrl == null)
                 BundleJsUrl = AllocateName("bundle.js");
         }
@@ -137,6 +144,7 @@ namespace Lib.TSCompiler
                 BobrilJsxDts = null;
                 return;
             }
+
             var item = Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, "node_modules/bobril/jsx.d.ts"));
             if (item is IFileCache)
             {
@@ -153,7 +161,8 @@ namespace Lib.TSCompiler
             var res = new List<string>(ExampleSources?.Count ?? 1);
             if (Example == "")
             {
-                var item = (Owner.Owner.TryGetChild("example.ts") ?? Owner.Owner.TryGetChild("example.tsx")) as IFileCache;
+                var item =
+                    (Owner.Owner.TryGetChild("example.ts") ?? Owner.Owner.TryGetChild("example.tsx")) as IFileCache;
                 if (item != null)
                 {
                     res.Add(item.FullPath);
@@ -165,7 +174,7 @@ namespace Lib.TSCompiler
                 var item = Owner.DiskCache.TryGetItem(examplePath);
                 if (item is IDirectoryCache)
                 {
-                    foreach (var child in (IDirectoryCache)item)
+                    foreach (var child in (IDirectoryCache) item)
                     {
                         if (!(child is IFileCache))
                             continue;
@@ -183,6 +192,7 @@ namespace Lib.TSCompiler
                     res.Add(item.FullPath);
                 }
             }
+
             ExampleSources = res;
         }
 
@@ -205,6 +215,7 @@ namespace Lib.TSCompiler
                 var fileRegex = new Regex(TestSourcesRegExp, RegexOptions.CultureInvariant);
                 RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);
             }
+
             TestSources = res;
         }
 
@@ -245,25 +256,26 @@ namespace Lib.TSCompiler
             }
         }
 
-        void RecursiveFillOutputByAdditionalResourcesDirectory(IDirectoryCache directoryCache, string resourcesPath, Dictionary<string, object> filesContent)
+        void RecursiveFillOutputByAdditionalResourcesDirectory(IDirectoryCache directoryCache, string resourcesPath,
+            Dictionary<string, object> filesContent)
         {
             Owner.DiskCache.UpdateIfNeeded(directoryCache);
             foreach (var child in directoryCache)
             {
                 if (child is IDirectoryCache)
                 {
-                    RecursiveFillOutputByAdditionalResourcesDirectory(child as IDirectoryCache, resourcesPath, filesContent);
+                    RecursiveFillOutputByAdditionalResourcesDirectory(child as IDirectoryCache, resourcesPath,
+                        filesContent);
                 }
+
                 if (child.IsInvalid)
                     continue;
                 var outPathFileName = PathUtils.Subtract(child.FullPath, resourcesPath);
                 TakenNames.Add(outPathFileName);
                 if (child is IFileCache)
                 {
-                    filesContent[outPathFileName] = new Lazy<object>(() =>
-                    {
-                        return (child as IFileCache).ByteContent;
-                    });
+                    filesContent[outPathFileName] =
+                        new Lazy<object>(() => { return (child as IFileCache).ByteContent; });
                 }
             }
         }
@@ -287,7 +299,8 @@ namespace Lib.TSCompiler
                 checkJs = false,
                 removeComments = false,
                 types = new string[0],
-                lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
+                lib = new HashSet<string>
+                    {"es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection"}
             };
         }
 
@@ -306,29 +319,36 @@ namespace Lib.TSCompiler
                 {
                     _originalContent = fsAbstration.ReadAllUtf8(tsConfigPath);
                 }
-                catch { }
+                catch
+                {
+                }
             }
+
             var newConfigObject = new TSConfigJson
             {
                 compilerOptions = GetDefaultTSCompilerOptions()
-                    .Merge(new TSCompilerOptions { allowJs = false })
+                    .Merge(new TSCompilerOptions {allowJs = false})
                     .Merge(CompilerOptions),
                 files = new List<string>(2 + IncludeSources?.Length ?? 0),
-                include = new List<string> { "**/*" }
+                include = new List<string> {"**/*"}
             };
             if (BobrilJsx)
             {
                 newConfigObject.files.Add(PathUtils.Subtract(this.BobrilJsxDts, Owner.Owner.FullPath));
             }
+
             if (TestSources.Count > 0)
             {
                 newConfigObject.files.Add(Tools.JasmineDtsPath);
             }
+
             if (IncludeSources != null)
             {
                 newConfigObject.files.AddRange(IncludeSources);
             }
-            var newContent = JsonConvert.SerializeObject(newConfigObject, Formatting.Indented, TSCompilerOptions.GetSerializerSettings());
+
+            var newContent = JsonConvert.SerializeObject(newConfigObject, Formatting.Indented,
+                TSCompilerOptions.GetSerializerSettings());
             if (newContent != _originalContent)
             {
                 try
@@ -341,6 +361,7 @@ namespace Lib.TSCompiler
                     Console.WriteLine("Writting to " + tsConfigPath + " failed");
                     Console.ForegroundColor = ConsoleColor.Gray;
                 }
+
                 _originalContent = newContent;
             }
         }
