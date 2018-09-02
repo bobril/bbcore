@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default version of TypeScript is now 3.0.3.
+
 ### Added
 
 - NoHtml mode for creating just self contained bundle.js.

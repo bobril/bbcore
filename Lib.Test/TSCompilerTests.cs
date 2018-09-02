@@ -16,7 +16,7 @@ namespace Lib.Test
     public class FakeFsAbstraction : IFsAbstraction, IDirectoryWatcher
     {
         public bool IsMac => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-        
+
         public bool IsUnixFs => PathUtils.IsUnixFs;
 
         public string WatchedDirectory { get; set; }
@@ -164,7 +164,7 @@ namespace Lib.Test
         [Fact]
         public void DefaultTypeScriptVersionDidntChanged()
         {
-            Assert.Equal("3.0.1", _tools.TypeScriptVersion);
+            Assert.Equal("3.0.3", _tools.TypeScriptVersion);
         }
 
         [Fact]
@@ -249,7 +249,7 @@ var s2 = b.styleDef({ color: ""red"" }, { hover: { color: ""navy"" } });
 var s3 = b.styleDef({}, undefined, ""myname"");
 var s4 = b.styleDefEx(s1, {});
 var s5 = b.styleDefEx(s2, {}, {});
-var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname""); 
+var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");
             ");
             BuildResult buildResult = BuildProject();
             Assert.Equal(@"""use strict"";
