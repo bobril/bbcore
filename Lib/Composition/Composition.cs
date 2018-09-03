@@ -22,6 +22,7 @@ using System.Reactive;
 using Lib.BuildCache;
 using Lib.Utils.Notification;
 using Lib.Translation;
+using Lib.Utils.Logger;
 
 namespace Lib.Composition
 {
@@ -47,6 +48,7 @@ namespace Lib.Composition
         bool _verbose;
         bool _forbiddenDependencyUpdate;
         NotificationManager _notificationManager;
+        IConsoleLogger _logger;
 
         public Composition()
         {
@@ -120,14 +122,14 @@ namespace Lib.Composition
                 addLanguage = addLanguage.ToLowerInvariant();
                 if (trDb.HasLanguage(addLanguage))
                 {
-                    Console.WriteLine("Cannot add language " + addLanguage + " because it already exists. Doing nothing.");
+                    _logger.WriteLine("Cannot add language " + addLanguage + " because it already exists. Doing nothing.");
                 }
                 else
                 {
-                    Console.WriteLine("Adding language " + addLanguage);
+                    _logger.WriteLine("Adding language " + addLanguage);
                     trDb.AddLanguage(addLanguage);
                     trDb.SaveLangDb(PathToTranslations(project), addLanguage);
-                    Console.WriteLine("Added language " + addLanguage);
+                    _logger.WriteLine("Added language " + addLanguage);
                 }
                 return;
             }
@@ -139,13 +141,13 @@ namespace Lib.Composition
                 trDb = project.TranslationDb;
                 if (!trDb.HasLanguage(removeLanguage))
                 {
-                    Console.WriteLine("Cannot remove language " + removeLanguage + " because it does not exist. Doing nothing.");
+                    _logger.Warn("Cannot remove language " + removeLanguage + " because it does not exist. Doing nothing.");
                 }
                 else
                 {
-                    Console.WriteLine("Removing language " + removeLanguage);
+                    _logger.WriteLine("Removing language " + removeLanguage);
                     File.Delete(PathUtils.Join(PathToTranslations(project), removeLanguage + ".json"));
-                    Console.WriteLine("Removed language " + removeLanguage);
+                    _logger.WriteLine("Removed language " + removeLanguage);
                 }
                 return;
             }
@@ -161,7 +163,7 @@ namespace Lib.Composition
 
                 if (lang != null && !trDb.HasLanguage(lang))
                 {
-                    Console.WriteLine(
+                    _logger.Error(
                         $"You have entered unsupported language '{lang}'. Please enter one of {string.Join(',', trDb.GetLanguages())}");
                     return;
                 }
@@ -176,17 +178,17 @@ namespace Lib.Composition
                 }
               
                 if (!trDb.ExportLanguages(destinationFile, exportOnlyUntranslated, lang, specificPath))
-                    Console.WriteLine("Nothing to export. No export file created.");
+                    _logger.Warn("Nothing to export. No export file created.");
                 else
                 {
                     if (specificPath == null)
                     {
-                        Console.WriteLine(lang != null
+                        _logger.WriteLine(lang != null
                             ? $"Exported {(exportOnlyUntranslated ? "untranslated " : string.Empty)}language '{lang}' to {destinationFile}."
                             : $"Exported {(exportOnlyUntranslated ? "untranslated " : string.Empty)}languages to {destinationFile}.");
                     }
                     else
-                        Console.WriteLine($"Exported file from {specificPath} into file {destinationFile}");
+                        _logger.WriteLine($"Exported file from {specificPath} into file {destinationFile}");
                 }
 
                 return;
@@ -201,20 +203,20 @@ namespace Lib.Composition
                 {
                     if (!trDb.ImportTranslatedLanguage(import, specificPath))
                     {
-                        Console.WriteLine("Import failed. See output for more information.");
+                        _logger.Error("Import failed. See output for more information.");
                         return;
                     }
                     var importedLang = Path.GetFileNameWithoutExtension(PathUtils.Normalize(import));
                     trDb.SaveLangDb(PathToTranslations(project), importedLang);
 
-                    Console.WriteLine($"Translated language from file {import} successfully imported.");
+                    _logger.WriteLine($"Translated language from file {import} successfully imported.");
                 }
                 else
                 {
                     if (!trDb.ImportTranslatedLanguage(import, specificPath))
                     {
                         //TODO LOG ERROR
-                        Console.WriteLine("Import failed. See output for more information.");
+                        _logger.Error("Import failed. See output for more information.");
                         return;
                     }
                     
@@ -222,7 +224,7 @@ namespace Lib.Composition
                     var dir = Path.GetDirectoryName(specificPath);
                     trDb.SaveLangDb(dir, language);
                     
-                    Console.WriteLine($"Translated language from file {import} successfully imported to file {specificPath}.");
+                    _logger.WriteLine($"Translated language from file {import} successfully imported to file {specificPath}.");
                 }
                 
                 return;
@@ -234,7 +236,7 @@ namespace Lib.Composition
         {
             if (!_verbose)
                 return;
-            Console.WriteLine("Verbose output enabled");
+            _logger.WriteLine("Verbose output enabled");
             AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
         }
 
@@ -243,7 +245,7 @@ namespace Lib.Composition
             string s = e.Exception.ToString();
             if (s.Contains("KestrelConnectionReset"))
                 return;
-            Console.WriteLine("First chance exception: " + s);
+            _logger.WriteLine("First chance exception: " + s);
         }
 
         void RunBuild(BuildCommand bCommand)
@@ -261,9 +263,7 @@ namespace Lib.Composition
             {
                 try
                 {
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
-                    Console.ForegroundColor = ConsoleColor.Gray;
+                    _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
                     proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
                     if (bCommand.Localize.Value != null)
                         proj.Localize = bCommand.Localize.Value ?? false;
@@ -321,16 +321,14 @@ namespace Lib.Composition
                 }
                 catch (Exception ex)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Fatal Error: " + ex);
-                    Console.ForegroundColor = ConsoleColor.Gray;
+                    _logger.Error("Fatal Error: " + ex);
                     errors++;
                 }
             }
             var duration = DateTime.UtcNow - start;
-            Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-            Console.WriteLine("Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
-            Console.ForegroundColor = ConsoleColor.Gray;
+             var color = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+            _logger.WriteLine("Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"), color);
+         
             Environment.ExitCode = errors != 0 ? 1 : 0;
         }
 
@@ -340,7 +338,7 @@ namespace Lib.Composition
         {
             if (_lastTsVersion != version)
             {
-                Console.WriteLine("Using TypeScript version " + version);
+                _logger.WriteLine("Using TypeScript version " + version);
                 _lastTsVersion = version;
             }
         }
@@ -373,9 +371,8 @@ namespace Lib.Composition
             {
                 try
                 {
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine("Test build started " + proj.Owner.Owner.FullPath);
-                    Console.ForegroundColor = ConsoleColor.Gray;
+                  
+                    _logger.WriteLine("Test build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
                     TestResultsHolder testResults = new TestResultsHolder();
                     proj.Owner.LoadProjectJson(true);
                     proj.Owner.InitializeOnce();
@@ -416,9 +413,9 @@ namespace Lib.Composition
                                 wait.Release();
                             });
                             var durationb = DateTime.UtcNow - start;
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
-                            Console.ForegroundColor = ConsoleColor.Gray;
+                            
+                            _logger.Success("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
+                         
                             _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
                             StartChromeTest();
                             wait.WaitOne();
@@ -430,16 +427,14 @@ namespace Lib.Composition
                 }
                 catch (Exception ex)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Fatal Error: " + ex);
-                    Console.ForegroundColor = ConsoleColor.Gray;
+                    _logger.Error("Fatal Error: " + ex);
                     errors++;
                 }
             }
             var duration = DateTime.UtcNow - start;
-            Console.ForegroundColor = (errors + testFailures) != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-            Console.WriteLine("Test done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure"));
-            Console.ForegroundColor = ConsoleColor.Gray;
+            var color = (errors + testFailures) != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+            _logger.WriteLine("Test done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure"), color);
+         
             Environment.ExitCode = (errors + testFailures) != 0 ? 1 : 0;
         }
 
@@ -519,6 +514,7 @@ namespace Lib.Composition
             _tools = new ToolsDir.ToolsDir(_bbdir);
             _compilerPool = new CompilerPool(_tools);
             _notificationManager = new NotificationManager();
+            _logger = new ConsoleLogger();
         }
 
         public void InitDiskCache()
@@ -566,7 +562,7 @@ namespace Lib.Composition
             _webServer.Handler = Handler;
             _webServer.BindToAny = bindToAny;
             _webServer.Start();
-            Console.WriteLine($"Listening on http://{(bindToAny ? "*" : "localhost")}:{_webServer.Port}/");
+            _logger.WriteLine($"Listening on http://{(bindToAny ? "*" : "localhost")}:{_webServer.Port}/");
         }
 
         async Task Handler(HttpContext context)
@@ -697,10 +693,11 @@ namespace Lib.Composition
             _testServerLongPollingHandler = new LongPollingServer(_testServer.NewConnectionHandler);
             _testServer.OnTestResults.Subscribe((results) =>
             {
-                Console.ForegroundColor = results.TestsFailed != 0 ? ConsoleColor.Red : results.TestsSkipped != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                Console.WriteLine("Tests on {0} Failed: {1} Skipped: {2} Total: {3} Duration: {4:F1}s", results.UserAgent, results.TestsFailed, results.TestsSkipped, results.TotalTests, results.Duration * 0.001);
+              var color = results.TestsFailed != 0 ? ConsoleColor.Red : results.TestsSkipped != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                _logger.WriteLine(
+                    $"Tests on {results.UserAgent} Failed: {results.TestsFailed} Skipped: {results.TestsSkipped} Total: {results.TotalTests} Duration: {results.Duration * 0.001:F1}s", color);
                 _notificationManager.SendNotification(results.ToNotificationParameters());
-                Console.ForegroundColor = ConsoleColor.Gray;
+             
             });
         }
 
@@ -731,9 +728,7 @@ namespace Lib.Composition
                     }
                     if (toBuild.Length == 0)
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Change detected, but no project to build");
-                        Console.ForegroundColor = ConsoleColor.Gray;
+                        _logger.Error("Change detected, but no project to build");
                         continue;
                     }
                     _mainServer.NotifyCompilationStarted();
@@ -744,9 +739,7 @@ namespace Lib.Composition
                     var totalFiles = 0;
                     foreach (var proj in toBuild)
                     {
-                        Console.ForegroundColor = ConsoleColor.Blue;
-                        Console.WriteLine("Build started " + proj.Owner.Owner.FullPath);
-                        Console.ForegroundColor = ConsoleColor.Gray;
+                        _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
                         try
                         {
                             proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
@@ -815,18 +808,15 @@ namespace Lib.Composition
                         }
                         catch (Exception ex)
                         {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("Fatal Error: " + ex);
-                            Console.ForegroundColor = ConsoleColor.Gray;
+                            _logger.Error("Fatal Error: " + ex);
                             errors++;
                         }
                     }
                     var duration = DateTime.UtcNow - start;
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
                     _notificationManager.SendNotification(NotificationParameters.CreateBuildParameters(errors, warnings, duration.TotalSeconds));
-                    Console.ForegroundColor = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                    Console.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"));
-                    Console.ForegroundColor = ConsoleColor.Gray;
+                    var color = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                    _logger.WriteLine("Build done in " + (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"), color);
                     _dc.ResetChange();
                 }
             });
@@ -925,9 +915,9 @@ namespace Lib.Composition
 
         public void ExitWithCleanUp()
         {
-            Console.WriteLine("Stopping Chrome");
+            _logger.WriteLine("Stopping Chrome");
             StopChromeTest();
-            Console.WriteLine("Exitting");
+            _logger.WriteLine("Exitting");
             Environment.Exit(0);
         }
     }
