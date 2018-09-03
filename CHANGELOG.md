@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.48.0
+
 ### Added
 
 - Translation Import and Export
