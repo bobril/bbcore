@@ -219,7 +219,8 @@ namespace Lib.Composition
                     }
                     
                     var language = trDb.GetLanguageFromSpecificFile(specificPath);
-                    trDb.SaveLangDb(specificPath, language);
+                    var dir = Path.GetDirectoryName(specificPath);
+                    trDb.SaveLangDb(dir, language);
                     
                     Console.WriteLine($"Translated language from file {import} successfully imported to file {specificPath}.");
                 }
