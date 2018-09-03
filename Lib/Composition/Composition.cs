@@ -215,7 +215,6 @@ namespace Lib.Composition
                 {
                     if (!trDb.ImportTranslatedLanguage(import, specificPath))
                     {
-                        //TODO LOG ERROR
                         _logger.Error("Import failed. See output for more information.");
                         return;
                     }
@@ -228,8 +227,9 @@ namespace Lib.Composition
                 }
 
                 return;
-
             }
+            
+            
         }
 
         void IfEnabledStartVerbosive()
