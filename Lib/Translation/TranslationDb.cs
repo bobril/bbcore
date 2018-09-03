@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Newtonsoft.Json.Linq;
 
@@ -386,5 +387,85 @@ namespace Lib.Translation
         }
 
         public IEnumerable<string> GetLanguages() => _loadedLanguages;
+
+        public bool ImportTranslatedLanguage(string pathFrom, string pathTo = null)
+        {
+            var normalizedPath = PathUtils.Normalize(pathFrom);
+            var language = Path.GetFileNameWithoutExtension(normalizedPath);
+            if (pathTo != null)
+            {
+                normalizedPath = PathUtils.Normalize(pathTo);
+                language = Path.GetFileNameWithoutExtension(normalizedPath);
+            }
+            
+            //TODO check language exists
+            ImportTranslatedLanguageInternal(pathFrom, (source, hint, target) =>
+            {
+                //TODO Refactor this
+                var key = new TranslationKey(source, hint, true);
+                if (Key2Id.TryGetValue(key, out var idt))
+                {
+                    var msg = _messageParser.Parse(target);
+                    if (msg is ErrorAst errorMsg)
+                    {
+                        //TODO error output
+                        Console.WriteLine((errorMsg.Message));
+                    }
+                    else
+                    {
+                        //TODO Refactor
+                        var values = Lang2ValueList[language];
+                        while(values.Count < idt) values.Add(null);
+                        values[(int) idt] = target;
+                    }
+                }
+                else
+                {
+                    key = new TranslationKey(source, hint, false);
+                    if (Key2Id.TryGetValue(key, out var idf))
+                    {
+                        var values = Lang2ValueList[language];
+                        while(values.Count < idf) values.Add(null);
+                        values[(int) idf] = target;
+                    }
+                }
+            });
+
+            return true;
+        }
+
+        private void ImportTranslatedLanguageInternal(string pathFrom, Action<string, string, string> action)
+        {
+            var content = _fsAbstraction.ReadAllUtf8(pathFrom);
+            content = content.Replace("\r\n", "\n").Replace("\r", "\n");
+            var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                //TODO LOG ERROR MSG TO OUTPUT
+                if (lines[i][0] != 'S' || lines[i][1] != ':')
+                    Console.WriteLine("Invalid file format. (" + lines[i] + ")");
+                if (lines[i+1][0] != 'I' || lines[i+1][1] != ':')
+                    Console.WriteLine("Invalid file format. (" + lines[i+1] + ")");
+                if (lines[i+2][0] != 'T' || lines[i+2][1] != ':')
+                    Console.WriteLine("Invalid file format. (" + lines[i] + ")");
+                
+                var source = lines[i].Substring(2);
+                var hint = lines[i + 1].Substring(2);
+                if (hint == "") hint = null;
+                var target = lines[i + 2].Substring(2);
+                
+                action(source, hint, target);
+                i += 3;
+            }
+        }
+
+        public string GetLanguageFromSpecificFile(string specificPath)
+        {
+            var content = _fsAbstraction.ReadAllUtf8(specificPath);
+            var parsed = JArray.Parse(content);
+            return parsed.First.ToString();
+
+        }
     }
 }

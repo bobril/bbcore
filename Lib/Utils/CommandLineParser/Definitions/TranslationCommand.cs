@@ -17,7 +17,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
      
         public CommandLineArgumentString ExportAll { get; } = new CommandLineArgumentString(description: "export all texts from all languages", words: new[] { "-x", "--exportAll" });
      
-       // public CommandLineArgumentString Import { get; } = new CommandLineArgumentString(description: "import translated language", words: new[] { "-i", "--import" });
+        public CommandLineArgumentString Import { get; } = new CommandLineArgumentString(description: "import translated language", words: new[] { "-i", "--import" });
      
         public CommandLineArgumentString SpecificPath { get; } = new CommandLineArgumentString(description: "specify path for export from / import to", words: new[] { "-p", "--specificPath" });
      
