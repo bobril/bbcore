@@ -153,10 +153,10 @@ namespace Lib.Composition
             var export = tCommand.Export.Value;
             var exportAll = tCommand.ExportAll.Value;
             var lang = tCommand.Lang.Value;
-            var path = tCommand.SpecificPath.Value;
+            var specificPath = tCommand.SpecificPath.Value;
             if (export != null || exportAll != null)
             {
-                project.Owner.InitializeTranslationDb(path);
+                project.Owner.InitializeTranslationDb(specificPath);
                 trDb = project.TranslationDb;
 
                 if (lang != null && !trDb.HasLanguage(lang))
@@ -175,21 +175,57 @@ namespace Lib.Composition
                     exportOnlyUntranslated = false;
                 }
               
-                if (!trDb.ExportLanguages(destinationFile, exportOnlyUntranslated, lang, path))
+                if (!trDb.ExportLanguages(destinationFile, exportOnlyUntranslated, lang, specificPath))
                     Console.WriteLine("Nothing to export. No export file created.");
                 else
                 {
-                    if (path == null)
+                    if (specificPath == null)
                     {
                         Console.WriteLine(lang != null
                             ? $"Exported {(exportOnlyUntranslated ? "untranslated " : string.Empty)}language '{lang}' to {destinationFile}."
                             : $"Exported {(exportOnlyUntranslated ? "untranslated " : string.Empty)}languages to {destinationFile}.");
                     }
                     else
-                        Console.WriteLine($"Exported file from {path} into file {destinationFile}");
+                        Console.WriteLine($"Exported file from {specificPath} into file {destinationFile}");
                 }
 
                 return;
+            }
+
+            var import = tCommand.Import.Value;
+            if (import != null)
+            {
+                project.Owner.InitializeTranslationDb(specificPath);
+                trDb = project.TranslationDb;
+                if (specificPath == null)
+                {
+                    if (!trDb.ImportTranslatedLanguage(import, specificPath))
+                    {
+                        Console.WriteLine("Import failed. See output for more information.");
+                        return;
+                    }
+                    var importedLang = Path.GetFileNameWithoutExtension(PathUtils.Normalize(import));
+                    trDb.SaveLangDb(PathToTranslations(project), importedLang);
+
+                    Console.WriteLine($"Translated language from file {import} successfully imported.");
+                }
+                else
+                {
+                    if (!trDb.ImportTranslatedLanguage(import, specificPath))
+                    {
+                        //TODO LOG ERROR
+                        Console.WriteLine("Import failed. See output for more information.");
+                        return;
+                    }
+                    
+                    var language = trDb.GetLanguageFromSpecificFile(specificPath);
+                    trDb.SaveLangDb(specificPath, language);
+                    
+                    Console.WriteLine($"Translated language from file {import} successfully imported to file {specificPath}.");
+                }
+                
+                return;
+                
             }
         }
 
