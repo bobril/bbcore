@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
 
 namespace Lib.Translation
@@ -27,6 +28,8 @@ namespace Lib.Translation
         readonly IFsAbstraction _fsAbstraction;
         bool _changed;
         Dictionary<string, string> _outputJsCache = new Dictionary<string, string>();
+        
+        public ILogger Logger { get; set; }
 
         public void LoadLangDbs(string dir)
         {
@@ -398,38 +401,49 @@ namespace Lib.Translation
                 language = Path.GetFileNameWithoutExtension(normalizedPath);
             }
             
-            //TODO check language exists
-            ImportTranslatedLanguageInternal(pathFrom, (source, hint, target) =>
+            try
             {
-                //TODO Refactor this
-                var key = new TranslationKey(source, hint, true);
-                if (Key2Id.TryGetValue(key, out var idt))
+                if(!HasLanguage(language))
+                    throw new Exception($"Language {language} does not exist. Probably file name is not valid.");
+                
+                ImportTranslatedLanguageInternal(pathFrom, (source, hint, target) =>
                 {
-                    var msg = _messageParser.Parse(target);
-                    if (msg is ErrorAst errorMsg)
+                    var key = new TranslationKey(source, hint, true);
+                    if (Key2Id.TryGetValue(key, out var idt))
                     {
-                        //TODO error output
-                        Console.WriteLine((errorMsg.Message));
+                        var msg = _messageParser.Parse(target);
+                        if (msg is ErrorAst errorMsg)
+                        {
+                            Logger?.Error("Skipping wrong translation entry:");
+                            Logger?.Warn($"S: {source}");
+                            Logger?.Warn($"I: {hint}");
+                            Logger?.Warn($"T: {target}");
+                            Logger?.Error($"Error in g11n format: {errorMsg.Message}");
+                        }
+                        else
+                        {
+                            var values = Lang2ValueList[language];
+                            while (values.Count < idt) values.Add(null);
+                            values[(int) idt] = target;
+                        }
                     }
                     else
                     {
-                        //TODO Refactor
-                        var values = Lang2ValueList[language];
-                        while(values.Count < idt) values.Add(null);
-                        values[(int) idt] = target;
+                        key = new TranslationKey(source, hint, false);
+                        if (Key2Id.TryGetValue(key, out var idf))
+                        {
+                            var values = Lang2ValueList[language];
+                            while (values.Count < idf) values.Add(null);
+                            values[(int) idf] = target;
+                        }
                     }
-                }
-                else
-                {
-                    key = new TranslationKey(source, hint, false);
-                    if (Key2Id.TryGetValue(key, out var idf))
-                    {
-                        var values = Lang2ValueList[language];
-                        while(values.Count < idf) values.Add(null);
-                        values[(int) idf] = target;
-                    }
-                }
-            });
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger?.Error(ex.Message);
+                return false;
+            }
 
             return true;
         }
@@ -442,13 +456,12 @@ namespace Lib.Translation
 
             for (int i = 0; i < lines.Length; i++)
             {
-                //TODO LOG ERROR MSG TO OUTPUT
                 if (lines[i][0] != 'S' || lines[i][1] != ':')
-                    Console.WriteLine("Invalid file format. (" + lines[i] + ")");
+                    throw new Exception("Invalid file format. (" + lines[i] + ")");
                 if (lines[i+1][0] != 'I' || lines[i+1][1] != ':')
-                    Console.WriteLine("Invalid file format. (" + lines[i+1] + ")");
+                    throw new Exception("Invalid file format. (" + lines[i+1] + ")");
                 if (lines[i+2][0] != 'T' || lines[i+2][1] != ':')
-                    Console.WriteLine("Invalid file format. (" + lines[i] + ")");
+                    throw new Exception("Invalid file format. (" + lines[i+2] + ")");
                 
                 var source = lines[i].Substring(2);
                 var hint = lines[i + 1].Substring(2);
