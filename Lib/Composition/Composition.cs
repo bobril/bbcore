@@ -117,19 +117,19 @@ namespace Lib.Composition
             var addLanguage = tCommand.AddLang.Value;
             if (addLanguage != null)
             {
-                project.Owner.InitializeTranslationDb();
+                project.InitializeTranslationDb();
                 trDb = project.TranslationDb;
                 addLanguage = addLanguage.ToLowerInvariant();
                 if (trDb.HasLanguage(addLanguage))
                 {
-                    _logger.WriteLine("Cannot add language " + addLanguage + " because it already exists. Doing nothing.");
+                    _logger.WriteLine($"Cannot add language {addLanguage} because it already exists. Doing nothing.");
                 }
                 else
                 {
-                    _logger.WriteLine("Adding language " + addLanguage);
+                    _logger.WriteLine($"Adding language {addLanguage}");
                     trDb.AddLanguage(addLanguage);
                     trDb.SaveLangDb(PathToTranslations(project), addLanguage);
-                    _logger.WriteLine("Added language " + addLanguage);
+                    _logger.WriteLine($"Added language {addLanguage}");
                 }
                 return;
             }
@@ -137,17 +137,17 @@ namespace Lib.Composition
             var removeLanguage = tCommand.RemoveLang.Value;
             if (removeLanguage != null)
             {
-                project.Owner.InitializeTranslationDb();
+                project.InitializeTranslationDb();
                 trDb = project.TranslationDb;
                 if (!trDb.HasLanguage(removeLanguage))
                 {
-                    _logger.Warn("Cannot remove language " + removeLanguage + " because it does not exist. Doing nothing.");
+                    _logger.Warn($"Cannot remove language {removeLanguage} because it does not exist. Doing nothing.");
                 }
                 else
                 {
-                    _logger.WriteLine("Removing language " + removeLanguage);
-                    File.Delete(PathUtils.Join(PathToTranslations(project), removeLanguage + ".json"));
-                    _logger.WriteLine("Removed language " + removeLanguage);
+                    _logger.WriteLine($"Removing language {removeLanguage}");
+                    File.Delete(PathUtils.Join(PathToTranslations(project), $"{removeLanguage}.json"));
+                    _logger.WriteLine($"Removed language {removeLanguage}");
                 }
                 return;
             }
@@ -158,7 +158,7 @@ namespace Lib.Composition
             var specificPath = tCommand.SpecificPath.Value;
             if (export != null || exportAll != null)
             {
-                project.Owner.InitializeTranslationDb(specificPath);
+                project.InitializeTranslationDb(specificPath);
                 trDb = project.TranslationDb;
 
                 if (lang != null && !trDb.HasLanguage(lang))
@@ -176,7 +176,7 @@ namespace Lib.Composition
                     destinationFile = exportAll;
                     exportOnlyUntranslated = false;
                 }
-              
+
                 if (!trDb.ExportLanguages(destinationFile, exportOnlyUntranslated, lang, specificPath))
                     _logger.Warn("Nothing to export. No export file created.");
                 else
@@ -197,7 +197,7 @@ namespace Lib.Composition
             var import = tCommand.Import.Value;
             if (import != null)
             {
-                project.Owner.InitializeTranslationDb(specificPath);
+                project.InitializeTranslationDb(specificPath);
                 trDb = project.TranslationDb;
                 if (specificPath == null)
                 {
@@ -219,16 +219,16 @@ namespace Lib.Composition
                         _logger.Error("Import failed. See output for more information.");
                         return;
                     }
-                    
+
                     var language = trDb.GetLanguageFromSpecificFile(specificPath);
                     var dir = Path.GetDirectoryName(specificPath);
                     trDb.SaveLangDb(dir, language);
-                    
+
                     _logger.WriteLine($"Translated language from file {import} successfully imported to file {specificPath}.");
                 }
-                
+
                 return;
-                
+
             }
         }
 
@@ -328,7 +328,7 @@ namespace Lib.Composition
             var duration = DateTime.UtcNow - start;
              var color = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
             _logger.WriteLine("Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file"), color);
-         
+
             Environment.ExitCode = errors != 0 ? 1 : 0;
         }
 
@@ -371,7 +371,7 @@ namespace Lib.Composition
             {
                 try
                 {
-                  
+
                     _logger.WriteLine("Test build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
                     TestResultsHolder testResults = new TestResultsHolder();
                     proj.Owner.LoadProjectJson(true);
@@ -413,9 +413,9 @@ namespace Lib.Composition
                                 wait.Release();
                             });
                             var durationb = DateTime.UtcNow - start;
-                            
+
                             _logger.Success("Build successful. Starting Chrome to run tests in " + durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
-                         
+
                             _testServer.StartTest("/test.html", new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } });
                             StartChromeTest();
                             wait.WaitOne();
@@ -434,7 +434,7 @@ namespace Lib.Composition
             var duration = DateTime.UtcNow - start;
             var color = (errors + testFailures) != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
             _logger.WriteLine("Test done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " + Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure"), color);
-         
+
             Environment.ExitCode = (errors + testFailures) != 0 ? 1 : 0;
         }
 
@@ -697,7 +697,7 @@ namespace Lib.Composition
                 _logger.WriteLine(
                     $"Tests on {results.UserAgent} Failed: {results.TestsFailed} Skipped: {results.TestsSkipped} Total: {results.TotalTests} Duration: {results.Duration * 0.001:F1}s", color);
                 _notificationManager.SendNotification(results.ToNotificationParameters());
-             
+
             });
         }
 

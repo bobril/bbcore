@@ -6,16 +6,20 @@ using System.Reactive;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Lib.AssetsPlugin;
 using Lib.BuildCache;
 using Lib.DiskCache;
+using Lib.ToolsDir;
+using Lib.Translation;
 using Lib.Utils;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Lib.TSCompiler
 {
     public class ProjectOptions
     {
-        public ToolsDir.IToolsDir Tools;
+        public IToolsDir Tools;
         public TSProject Owner;
         public string TestSourcesRegExp;
         public Dictionary<string, bool> Defines;
@@ -56,7 +60,7 @@ namespace Lib.TSCompiler
         public bool BundleCss;
         public int LiveReloadIdx;
 
-        public Translation.TranslationDb TranslationDb;
+        public TranslationDb TranslationDb;
 
         // value could be string or byte[]
         public Dictionary<string, object> FilesContent;
@@ -198,7 +202,7 @@ namespace Lib.TSCompiler
 
         public void GenerateCode()
         {
-            var assetsPlugin = new AssetsPlugin.AssetsGenerator(Owner.DiskCache);
+            var assetsPlugin = new AssetsGenerator(Owner.DiskCache);
             if (assetsPlugin.Run(Owner.Owner.FullPath, GenerateSpritesTs))
             {
                 Owner.DiskCache.CheckForTrueChange();
@@ -299,9 +303,25 @@ namespace Lib.TSCompiler
                 checkJs = false,
                 removeComments = false,
                 types = new string[0],
-                lib = new HashSet<string>
-                    {"es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection"}
+                lib = GetDefaultTSLibs()
             };
+        }
+
+        HashSet<string> GetDefaultTSLibs()
+        {
+            if (Variant == "worker")
+                return new HashSet<string>
+                {
+                    "es5", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection", "webworker",
+                    "webworker.importscripts"
+                };
+            if (Variant == "serviceworker")
+                return new HashSet<string>
+                {
+                    "es2017", "webworker"
+                };
+            return new HashSet<string>
+                {"es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection"};
         }
 
         string _originalContent;
@@ -334,7 +354,7 @@ namespace Lib.TSCompiler
             };
             if (BobrilJsx)
             {
-                newConfigObject.files.Add(PathUtils.Subtract(this.BobrilJsxDts, Owner.Owner.FullPath));
+                newConfigObject.files.Add(PathUtils.Subtract(BobrilJsxDts, Owner.Owner.FullPath));
             }
 
             if (TestSources.Count > 0)
@@ -364,6 +384,103 @@ namespace Lib.TSCompiler
 
                 _originalContent = newContent;
             }
+        }
+
+        public void StoreResultToBuildCache(BuildResult result)
+        {
+            var bc = BuildCache;
+            foreach (var f in result.RecompiledLast)
+            {
+                if (f.TakenFromBuildCache)
+                    continue;
+                if (f.Type != FileCompilationType.TypeScript || (f.SourceInfo != null && !f.SourceInfo.IsEmpty) ||
+                    f.LocalImports.Count != 0 || f.ModuleImports.Count != 0) continue;
+                if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ConfigurationBuildCacheId) !=
+                    null) continue;
+                var fbc = new TSFileBuildCache();
+                fbc.ConfigurationId = ConfigurationBuildCacheId;
+                fbc.ContentHash = f.Owner.HashOfContent;
+                fbc.DtsOutput = f.DtsLink?.Owner.Utf8Content;
+                fbc.JsOutput = f.Output;
+                fbc.MapLink = f.MapLink;
+                bc.Store(fbc);
+            }
+        }
+
+        public void InitializeTranslationDb(string specificPath = null)
+        {
+            TranslationDb = new TranslationDb(Owner.DiskCache.FsAbstraction);
+            TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
+            if (specificPath == null)
+            {
+                TranslationDb.LoadLangDbs(PathUtils.Join(Owner.Owner.FullPath, "translations"));
+            }
+            else TranslationDb.LoadLangDb(specificPath);
+        }
+
+        public void FillProjectOptionsFromPackageJson(JObject parsed)
+        {
+            Localize = Owner.Dependencies?.Contains("bobril-g11n") ?? false;
+            TestSourcesRegExp = "^.*?(?:\\.s|S)pec(?:\\.d)?\\.ts(?:x)?$";
+            if (parsed?.GetValue("publishConfig") is JObject publishConfigSection)
+            {
+                NpmRegistry = publishConfigSection.Value<string>("registry");
+            }
+
+            var bobrilSection = parsed?.GetValue("bobril") as JObject;
+            TypeScriptVersion = GetStringProperty(bobrilSection, "tsVersion", "");
+            if (TypeScriptVersion != "")
+            {
+                TypeScriptVersionOverride = true;
+            }
+            else
+            {
+                TypeScriptVersionOverride = false;
+                TypeScriptVersion = TSProject.DefaultTypeScriptVersion;
+            }
+
+            Variant = GetStringProperty(bobrilSection, "variant", "");
+            NoHtml = bobrilSection?["nohtml"]?.Value<bool>() ?? Variant != "";
+            Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
+            HtmlHead = GetStringProperty(bobrilSection, "head",
+                "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
+            PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
+            Example = GetStringProperty(bobrilSection, "example", "");
+            AdditionalResourcesDirectory =
+                GetStringProperty(bobrilSection, "additionalResourcesDirectory", null);
+            BobrilJsx = true;
+            CompilerOptions = bobrilSection != null
+                ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject)
+                : null;
+            DependencyUpdate =
+                String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
+            var includeSources = bobrilSection?.GetValue("includeSources") as JArray;
+            IncludeSources = includeSources?.Select(i => i.ToString()).ToArray();
+            var pluginsSection = bobrilSection?.GetValue("plugins") as JObject;
+            GenerateSpritesTs =
+                pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
+        }
+
+        static DepedencyUpdate String2DependencyUpdate(string value)
+        {
+            switch (value.ToLowerInvariant())
+            {
+                case "disable":
+                case "disabled":
+                    return DepedencyUpdate.Disabled;
+                case "update":
+                case "upgrade":
+                    return DepedencyUpdate.Upgrade;
+                default:
+                    return DepedencyUpdate.Install;
+            }
+        }
+
+        static string GetStringProperty(JObject obj, string name, string @default)
+        {
+            if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
+                return (string) value;
+            return @default;
         }
     }
 }

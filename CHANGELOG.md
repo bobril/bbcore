@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+- Translation Import and Export
+- Variants: worker, serviceworker (different default libs and auto nohtml mode)
+
 ## 0.47.0
 
 ### Changed

@@ -129,7 +129,7 @@ namespace Lib.TSCompiler
                 PackageJsonChangeId = newChangeId;
                 Dependencies = deps;
                 if (ProjectOptions == null) return;
-                FillProjectOptionsFromPackageJson(parsed);
+                ProjectOptions.FillProjectOptionsFromPackageJson(parsed);
                 if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
                 ProjectOptions.Tools.UpdateDependencies(Owner.FullPath,
                     ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade, ProjectOptions.NpmRegistry);
@@ -139,76 +139,8 @@ namespace Lib.TSCompiler
             else
             {
                 MainFile = "index.js";
-                if (ProjectOptions != null)
-                {
-                    FillProjectOptionsFromPackageJson(null);
-                }
+                ProjectOptions?.FillProjectOptionsFromPackageJson(null);
             }
-        }
-
-        void FillProjectOptionsFromPackageJson(JObject parsed)
-        {
-            ProjectOptions.Localize = Dependencies?.Contains("bobril-g11n") ?? false;
-            ProjectOptions.TestSourcesRegExp = "^.*?(?:\\.s|S)pec(?:\\.d)?\\.ts(?:x)?$";
-            if (parsed?.GetValue("publishConfig") is JObject publishConfigSection)
-            {
-                ProjectOptions.NpmRegistry = publishConfigSection.Value<string>("registry");
-            }
-
-            var bobrilSection = parsed?.GetValue("bobril") as JObject;
-            ProjectOptions.TypeScriptVersion = GetStringProperty(bobrilSection, "tsVersion", "");
-            if (ProjectOptions.TypeScriptVersion != "")
-            {
-                ProjectOptions.TypeScriptVersionOverride = true;
-            }
-            else
-            {
-                ProjectOptions.TypeScriptVersionOverride = false;
-                ProjectOptions.TypeScriptVersion = DefaultTypeScriptVersion;
-            }
-
-            ProjectOptions.Variant = GetStringProperty(bobrilSection, "variant", "");
-            ProjectOptions.NoHtml = bobrilSection?["nohtml"]?.Value<bool>() ?? ProjectOptions.Variant != "";
-            ProjectOptions.Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
-            ProjectOptions.HtmlHead = GetStringProperty(bobrilSection, "head",
-                "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
-            ProjectOptions.PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
-            ProjectOptions.Example = GetStringProperty(bobrilSection, "example", "");
-            ProjectOptions.AdditionalResourcesDirectory =
-                GetStringProperty(bobrilSection, "additionalResourcesDirectory", null);
-            ProjectOptions.BobrilJsx = true;
-            ProjectOptions.CompilerOptions = bobrilSection != null
-                ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject)
-                : null;
-            ProjectOptions.DependencyUpdate =
-                String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
-            var includeSources = bobrilSection?.GetValue("includeSources") as JArray;
-            ProjectOptions.IncludeSources = includeSources?.Select(i => i.ToString()).ToArray();
-            var pluginsSection = bobrilSection?.GetValue("plugins") as JObject;
-            ProjectOptions.GenerateSpritesTs =
-                pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
-        }
-
-        DepedencyUpdate String2DependencyUpdate(string value)
-        {
-            switch (value.ToLowerInvariant())
-            {
-                case "disable":
-                case "disabled":
-                    return DepedencyUpdate.Disabled;
-                case "update":
-                case "upgrade":
-                    return DepedencyUpdate.Upgrade;
-                default:
-                    return DepedencyUpdate.Install;
-            }
-        }
-
-        public string GetStringProperty(JObject obj, string name, string @default)
-        {
-            if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
-                return (string) value;
-            return @default;
         }
 
         public void InitializeOnce()
@@ -218,7 +150,7 @@ namespace Lib.TSCompiler
             _wasFirstInitialize = true;
             if (ProjectOptions.Localize)
             {
-                InitializeTranslationDb();
+                ProjectOptions.InitializeTranslationDb();
             }
 
             var bbTslint = Dependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
@@ -234,17 +166,6 @@ namespace Lib.TSCompiler
                     Console.WriteLine($"Updated tslint.json from {srcTsLint}");
                 }
             }
-        }
-
-        public void InitializeTranslationDb(string specificPath = null)
-        {
-            ProjectOptions.TranslationDb = new Translation.TranslationDb(DiskCache.FsAbstraction);
-            ProjectOptions.TranslationDb.AddLanguage(ProjectOptions.DefaultLanguage ?? "en-us");
-            if (specificPath == null)
-            {
-                ProjectOptions.TranslationDb.LoadLangDbs(PathUtils.Join(Owner.FullPath, "translations"));
-            }
-            else ProjectOptions.TranslationDb.LoadLangDb(specificPath);
         }
 
         public void Build(BuildCtx buildCtx)
@@ -338,8 +259,7 @@ namespace Lib.TSCompiler
                     }
                 } while (buildModuleCtx.ChangedDts || 0 < buildModuleCtx.ToCompile.Count);
 
-                if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError)
-                    StoreResultToBuildCache(buildModuleCtx._result);
+                if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError) ProjectOptions.StoreResultToBuildCache(buildModuleCtx._result);
                 buildCtx.BuildResult = buildModuleCtx._result;
             }
             finally
@@ -347,27 +267,6 @@ namespace Lib.TSCompiler
                 if (compiler != null)
                     buildCtx.CompilerPool.ReleaseTs(compiler);
                 ProjectOptions.BuildCache.EndTransaction();
-            }
-        }
-
-        void StoreResultToBuildCache(BuildResult result)
-        {
-            var bc = ProjectOptions.BuildCache;
-            foreach (var f in result.RecompiledLast)
-            {
-                if (f.TakenFromBuildCache)
-                    continue;
-                if (f.Type != FileCompilationType.TypeScript || (f.SourceInfo != null && !f.SourceInfo.IsEmpty) ||
-                    f.LocalImports.Count != 0 || f.ModuleImports.Count != 0) continue;
-                if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ProjectOptions.ConfigurationBuildCacheId) !=
-                    null) continue;
-                var fbc = new BuildCache.TSFileBuildCache();
-                fbc.ConfigurationId = ProjectOptions.ConfigurationBuildCacheId;
-                fbc.ContentHash = f.Owner.HashOfContent;
-                fbc.DtsOutput = f.DtsLink?.Owner.Utf8Content;
-                fbc.JsOutput = f.Output;
-                fbc.MapLink = f.MapLink;
-                bc.Store(fbc);
             }
         }
 

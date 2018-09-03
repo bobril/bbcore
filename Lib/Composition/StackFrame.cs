@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 
@@ -14,14 +15,13 @@ namespace Lib.Composition
         public override string ToString()
         {
             var functionName = FunctionName ?? "{anonymous}";
-            var args = '(' + string.Join(",", Args ?? new List<string>()) + ')';
-            var fileName = FileName != null ? ('@' + FileName) : "";
-            var lineNumber = LineNumber != 0 ? (":" + LineNumber) : "";
-            var columnNumber = ColumnNumber != 0 ? (":" + ColumnNumber) : "";
+            var args = $"({string.Join(",", Args ?? new List<string>())})";
+            var fileName = FileName != null ? ("@" + FileName) : "";
+            var lineNumber = LineNumber != 0 ? (":" + LineNumber.ToString()) : "";
+            var columnNumber = ColumnNumber != 0 ? (":" + ColumnNumber.ToString()) : "";
             return functionName + args + fileName + lineNumber + columnNumber;
         }
 
-        static Regex FIREFOX_SAFARI_STACK_REGEXP = new Regex("(^|@)\\S+\\:\\d+", RegexOptions.ECMAScript);
         static Regex CHROME_IE_STACK_REGEXP = new Regex("^\\s*at .*(\\S+\\:\\d+|\\(native\\))", RegexOptions.ECMAScript | RegexOptions.Multiline);
         static Regex SAFARI_NATIVE_CODE_REGEXP = new Regex("^(eval@)?(\\[native code\\])?$", RegexOptions.ECMAScript);
         static Regex ParseLocationRegexPar = new Regex("^\\((.+?)(?:\\:(\\d+))?(?:\\:(\\d+))?\\)\\D*$", RegexOptions.ECMAScript);
@@ -59,7 +59,7 @@ namespace Lib.Composition
 
             return filtered.Select(line =>
             {
-                if (line.IndexOf("(eval ") > -1)
+                if (line.IndexOf("(eval ", StringComparison.Ordinal) > -1)
                 {
                     // Throw away eval information
                     line = new Regex("(\\(eval at [^\\()]*)|(\\)\\,.*$)", RegexOptions.ECMAScript).Replace(line.Replace("eval code", "eval"), "");
