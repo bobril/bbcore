@@ -518,7 +518,46 @@ namespace Lib.Translation
                 _logger?.Error(e.Message);
                 return false;
             }
-            
+
+            return true;
+        }
+
+        public bool SubtractExportedLanguage(string file1, string file2, string outputFile)
+        {
+            var keys = new HashSet<TranslationKey>();
+
+            ImportTranslatedLanguageInternal(file1,
+                (source, hint, target) => keys.Add(new TranslationKey(source, hint, false)));
+            ImportTranslatedLanguageInternal(file2, (source, hint, target) =>
+            {
+                var key = new TranslationKey(source, hint, false);
+                if (keys.Contains(key))
+                    keys.Remove(key);
+            });
+
+            var strBuilder = new StringBuilder();
+            foreach (var key in keys)
+            {
+                var content = ExportLanguageItem(key.Message, key.Hint);
+                strBuilder.Append(content);
+            }
+
+            if (strBuilder.Length == 0)
+            {
+                _logger?.Warn("The result is empty set. Nothing saved.");
+                return false;
+            }
+
+            try
+            {
+                File.WriteAllText(outputFile, strBuilder.ToString());
+            }
+            catch (Exception e)
+            {
+                _logger?.Error(e.Message);
+                return false;
+            }
+
             return true;
         }
     }

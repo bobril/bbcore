@@ -247,6 +247,24 @@ namespace Lib.Composition
                 
                 return;
             }
+
+            var subtract = tCommand.Subtract.Value;
+            if (subtract != null && subtract.All(x => x!= null))
+            {
+                if (subtract.Length != 3)
+                {
+                    _logger.Error("Incorrect count of parameters.");
+                    return;
+                }
+                
+                project.InitializeTranslationDb();
+                trDb = project.TranslationDb;
+
+                if(trDb.SubtractExportedLanguage(subtract[0], subtract[1], subtract[2]))
+                    _logger.Success($"Subtract of {subtract[0]} with {subtract[1]} successfully saved to {subtract[2]}");
+                
+                return;
+            }
         }
 
         void IfEnabledStartVerbosive()

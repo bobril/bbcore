@@ -25,7 +25,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
         
         public CommandLineArgumentStrings Union { get; } = new CommandLineArgumentStrings(description: "make union from paths <sourcePath1,sourcePath2,destinationPath>", words: new[] { "-u", "--union" }, valuesCount: 3);
      
-        //public CommandLineArgumentStrings Subtract { get; } = new CommandLineArgumentStrings(description: "make subtract of paths <sourcePath1,sourcePath2,destinationPath>", words: new[] { "-s", "--subtract" }, valuesCount: 3);
+        public CommandLineArgumentStrings Subtract { get; } = new CommandLineArgumentStrings(description: "make subtract of paths <sourcePath1,sourcePath2,destinationPath>", words: new[] { "-s", "--subtract" }, valuesCount: 3);
         
     }
 }
