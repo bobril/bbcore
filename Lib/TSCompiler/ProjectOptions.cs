@@ -12,6 +12,7 @@ using Lib.DiskCache;
 using Lib.ToolsDir;
 using Lib.Translation;
 using Lib.Utils;
+using Lib.Utils.Logger;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -409,7 +410,7 @@ namespace Lib.TSCompiler
 
         public void InitializeTranslationDb(string specificPath = null)
         {
-            TranslationDb = new TranslationDb(Owner.DiskCache.FsAbstraction);
+            TranslationDb = new TranslationDb(Owner.DiskCache.FsAbstraction, new ConsoleLogger());
             TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
             if (specificPath == null)
             {

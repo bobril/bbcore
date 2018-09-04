@@ -14,9 +14,10 @@ namespace Lib.Translation
 {
     public class TranslationDb
     {
-        public TranslationDb(IFsAbstraction fsAbstraction)
+        public TranslationDb(IFsAbstraction fsAbstraction, ILogger logger)
         {
             _fsAbstraction = fsAbstraction;
+            _logger = logger;
         }
 
         Dictionary<TranslationKey, uint> Key2Id = new Dictionary<TranslationKey, uint>();
@@ -28,8 +29,8 @@ namespace Lib.Translation
         readonly IFsAbstraction _fsAbstraction;
         bool _changed;
         Dictionary<string, string> _outputJsCache = new Dictionary<string, string>();
-        
-        public ILogger Logger { get; set; }
+
+        private ILogger _logger;
 
         public void LoadLangDbs(string dir)
         {
@@ -414,11 +415,11 @@ namespace Lib.Translation
                         var msg = _messageParser.Parse(target);
                         if (msg is ErrorAst errorMsg)
                         {
-                            Logger?.Error("Skipping wrong translation entry:");
-                            Logger?.Warn($"S: {source}");
-                            Logger?.Warn($"I: {hint}");
-                            Logger?.Warn($"T: {target}");
-                            Logger?.Error($"Error in g11n format: {errorMsg.Message}");
+                            _logger?.Error("Skipping wrong translation entry:");
+                            _logger?.Warn($"S: {source}");
+                            _logger?.Warn($"I: {hint}");
+                            _logger?.Warn($"T: {target}");
+                            _logger?.Error($"Error in g11n format: {errorMsg.Message}");
                         }
                         else
                         {
@@ -441,7 +442,7 @@ namespace Lib.Translation
             }
             catch (Exception ex)
             {
-                Logger?.Error(ex.Message);
+                _logger?.Error(ex.Message);
                 return false;
             }
 
