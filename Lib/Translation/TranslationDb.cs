@@ -14,9 +14,10 @@ namespace Lib.Translation
 {
     public class TranslationDb
     {
-        public TranslationDb(IFsAbstraction fsAbstraction)
+        public TranslationDb(IFsAbstraction fsAbstraction, ILogger logger)
         {
             _fsAbstraction = fsAbstraction;
+            _logger = logger;
         }
 
         Dictionary<TranslationKey, uint> Key2Id = new Dictionary<TranslationKey, uint>();
@@ -28,8 +29,8 @@ namespace Lib.Translation
         readonly IFsAbstraction _fsAbstraction;
         bool _changed;
         Dictionary<string, string> _outputJsCache = new Dictionary<string, string>();
-        
-        public ILogger Logger { get; set; }
+
+        private ILogger _logger;
 
         public void LoadLangDbs(string dir)
         {
@@ -414,11 +415,11 @@ namespace Lib.Translation
                         var msg = _messageParser.Parse(target);
                         if (msg is ErrorAst errorMsg)
                         {
-                            Logger?.Error("Skipping wrong translation entry:");
-                            Logger?.Warn($"S: {source}");
-                            Logger?.Warn($"I: {hint}");
-                            Logger?.Warn($"T: {target}");
-                            Logger?.Error($"Error in g11n format: {errorMsg.Message}");
+                            _logger?.Error("Skipping wrong translation entry:");
+                            _logger?.Warn($"S: {source}");
+                            _logger?.Warn($"I: {hint}");
+                            _logger?.Warn($"T: {target}");
+                            _logger?.Error($"Error in g11n format: {errorMsg.Message}");
                         }
                         else
                         {
@@ -441,7 +442,7 @@ namespace Lib.Translation
             }
             catch (Exception ex)
             {
-                Logger?.Error(ex.Message);
+                _logger?.Error(ex.Message);
                 return false;
             }
 
@@ -454,7 +455,7 @@ namespace Lib.Translation
             content = content.Replace("\r\n", "\n").Replace("\r", "\n");
             var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-            for (int i = 0; i < lines.Length; i++)
+            for (int i = 0; i < lines.Length; i+=3)
             {
                 if (lines[i][0] != 'S' || lines[i][1] != ':')
                     throw new Exception("Invalid file format. (" + lines[i] + ")");
@@ -469,7 +470,6 @@ namespace Lib.Translation
                 var target = lines[i + 2].Substring(2);
                 
                 action(source, hint, target);
-                i += 3;
             }
         }
 
@@ -479,6 +479,41 @@ namespace Lib.Translation
             var parsed = JArray.Parse(content);
             return parsed.First.ToString();
 
+        }
+
+        public bool UnionExportedLanguage(string file1, string file2, string outputFile)
+        {
+            var keys = new List<TranslationKey>();
+
+            void AddData(string source, string hint, string target) => keys.Add(new TranslationKey(source, hint, false));
+
+            ImportTranslatedLanguageInternal(file1, AddData);
+            ImportTranslatedLanguageInternal(file2, AddData);
+            
+            var strBuilder = new StringBuilder();
+            foreach (var key in keys)
+            {
+                var content = ExportLanguageItem(key.Message, key.Hint);
+                strBuilder.Append(content);
+            }
+
+            if (strBuilder.Length == 0)
+            {
+                _logger?.Warn("Nothing to union.");
+                return false;
+            }
+            
+            try
+            {
+                File.WriteAllText(outputFile, strBuilder.ToString());
+            }
+            catch (Exception e)
+            {
+                _logger?.Error(e.Message);
+                return false;
+            }
+            
+            return true;
         }
     }
 }

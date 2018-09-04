@@ -22,10 +22,10 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentString SpecificPath { get; } = new CommandLineArgumentString(description: "specify path for export from / import to", words: new[] { "-p", "--specificPath" });
      
         public CommandLineArgumentString Lang { get; } = new CommandLineArgumentString(description: "specify language for export", words: new[] { "-l", "--lang" });
-        /* TODO
+        
         public CommandLineArgumentStrings Union { get; } = new CommandLineArgumentStrings(description: "make union from paths <sourcePath1,sourcePath2,destinationPath>", words: new[] { "-u", "--union" }, valuesCount: 3);
      
-        public CommandLineArgumentStrings Subtract { get; } = new CommandLineArgumentStrings(description: "make subtract of paths <sourcePath1,sourcePath2,destinationPath>", words: new[] { "-s", "--subtract" }, valuesCount: 3);
-             */
+        //public CommandLineArgumentStrings Subtract { get; } = new CommandLineArgumentStrings(description: "make subtract of paths <sourcePath1,sourcePath2,destinationPath>", words: new[] { "-s", "--subtract" }, valuesCount: 3);
+        
     }
 }
