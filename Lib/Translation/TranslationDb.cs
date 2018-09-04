@@ -281,12 +281,10 @@ namespace Lib.Translation
 
             var stringifySource = JsonConvert.SerializeObject(source);
             stringifySource = stringifySource.Substring(1, stringifySource.Length - 2);
-            
-            content += "S:" + stringifySource + "\r\n";
-            content += "I:" + (stringifyHint ?? "") + "\r\n";
-            content += "T:" + stringifySource + "\r\n";
+            content += $"S:{stringifySource}\n";
+            content += $"I:{stringifyHint}\n";
+            content += $"T:{stringifySource}\n";
             return content;
-
         }
 
         public uint AddToDB(string message, string hint, bool withParams)
@@ -455,7 +453,7 @@ namespace Lib.Translation
             content = content.Replace("\r\n", "\n").Replace("\r", "\n");
             var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-            for (int i = 0; i < lines.Length; i++)
+            for (int i = 0; i < lines.Length; i+=3)
             {
                 if (lines[i][0] != 'S' || lines[i][1] != ':')
                     throw new Exception("Invalid file format. (" + lines[i] + ")");
@@ -468,9 +466,13 @@ namespace Lib.Translation
                 var hint = lines[i + 1].Substring(2);
                 if (hint == "") hint = null;
                 var target = lines[i + 2].Substring(2);
-                
+                string Sanitize(string input) => input?.Replace("\\\"", "\"")?.Replace("\\\\", "\\");
+
+                source = Sanitize(source);
+                hint = Sanitize(hint);
+                target = Sanitize(target);
+
                 action(source, hint, target);
-                i += 3;
             }
         }
 
