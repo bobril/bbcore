@@ -481,5 +481,40 @@ namespace Lib.Translation
             return parsed.First.ToString();
 
         }
+
+        public bool UnionExportedLanguage(string file1, string file2, string outputFile)
+        {
+            var keys = new List<TranslationKey>();
+
+            void AddData(string source, string hint, string target) => keys.Add(new TranslationKey(source, hint, false));
+
+            ImportTranslatedLanguageInternal(file1, AddData);
+            ImportTranslatedLanguageInternal(file2, AddData);
+            
+            var strBuilder = new StringBuilder();
+            foreach (var key in keys)
+            {
+                var content = ExportLanguageItem(key.Message, key.Hint);
+                strBuilder.Append(content);
+            }
+
+            if (strBuilder.Length == 0)
+            {
+                _logger?.Warn("Nothing to union.");
+                return false;
+            }
+            
+            try
+            {
+                File.WriteAllText(outputFile, strBuilder.ToString());
+            }
+            catch (Exception e)
+            {
+                _logger?.Error(e.Message);
+                return false;
+            }
+            
+            return true;
+        }
     }
 }
