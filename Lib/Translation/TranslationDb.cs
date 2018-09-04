@@ -455,7 +455,7 @@ namespace Lib.Translation
             content = content.Replace("\r\n", "\n").Replace("\r", "\n");
             var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-            for (int i = 0; i < lines.Length; i++)
+            for (int i = 0; i < lines.Length; i+=3)
             {
                 if (lines[i][0] != 'S' || lines[i][1] != ':')
                     throw new Exception("Invalid file format. (" + lines[i] + ")");
@@ -470,7 +470,6 @@ namespace Lib.Translation
                 var target = lines[i + 2].Substring(2);
                 
                 action(source, hint, target);
-                i += 3;
             }
         }
 
