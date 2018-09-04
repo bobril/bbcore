@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Lib.Utils.Logger;
@@ -276,11 +277,12 @@ namespace Lib.Translation
             if (stringifyHint != null)
             {
                 stringifyHint = JsonConvert.SerializeObject(hint);
-                stringifyHint = stringifyHint.Substring(1, stringifyHint.Length - 2);
+                stringifyHint = stringifyHint.Substring(1, stringifyHint.Length - 2).Replace(@"\\n",@"\n");
             }
 
             var stringifySource = JsonConvert.SerializeObject(source);
-            stringifySource = stringifySource.Substring(1, stringifySource.Length - 2);
+            stringifySource = stringifySource.Substring(1, stringifySource.Length - 2).Replace(@"\\n",@"\n");
+            
             content += $"S:{stringifySource}\n";
             content += $"I:{stringifyHint}\n";
             content += $"T:{stringifySource}\n";
@@ -482,6 +484,42 @@ namespace Lib.Translation
             var parsed = JArray.Parse(content);
             return parsed.First.ToString();
 
+        }
+
+        public bool UnionExportedLanguage(string file1, string file2, string outputFile)
+        {
+            var keys = new HashSet<TranslationKey>();
+
+            void AddData(string source, string hint, string target) =>
+                keys.Add(new TranslationKey(source, hint, false));
+            
+            ImportTranslatedLanguageInternal(file1, AddData);
+            ImportTranslatedLanguageInternal(file2, AddData);
+            
+            var strBuilder = new StringBuilder();
+            foreach (var key in keys)
+            {
+                var content = ExportLanguageItem(key.Message, key.Hint);
+                strBuilder.Append(content);
+            }
+
+            if (strBuilder.Length == 0)
+            {
+                _logger?.Warn("Nothing to union.");
+                return false;
+            }
+            
+            try
+            {
+                File.WriteAllText(outputFile, strBuilder.ToString());
+            }
+            catch (Exception e)
+            {
+                _logger?.Error(e.Message);
+                return false;
+            }
+            
+            return true;
         }
     }
 }

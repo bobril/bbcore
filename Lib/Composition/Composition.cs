@@ -13,6 +13,7 @@ using System.Threading;
 using Lib.Utils.CommandLineParser.Definitions;
 using Lib.Utils.CommandLineParser.Parser;
 using System.Globalization;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Lib.Chrome;
@@ -228,8 +229,24 @@ namespace Lib.Composition
 
                 return;
             }
-            
-            
+
+            var union = tCommand.Union.Value;
+            if (union != null && union.All(x => x!= null))
+            {
+                if (union.Length != 3)
+                {
+                    _logger.Error("Incorrect count of parameters.");
+                    return;
+                }
+                
+                project.InitializeTranslationDb();
+                trDb = project.TranslationDb;
+
+                if(trDb.UnionExportedLanguage(union[0], union[1], union[2]))
+                    _logger.Success($"Union of {union[0]} with {union[1]} successfully saved to {union[2]}");
+                
+                return;
+            }
         }
 
         void IfEnabledStartVerbosive()
