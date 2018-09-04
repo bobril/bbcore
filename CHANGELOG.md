@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.49.0
+
 ### Added
 
 - Translation Union, Subtract
