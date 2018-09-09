@@ -3,8 +3,8 @@
 
 
 "@types/node@^8.5.1":
-  version "8.10.18"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.10.18.tgz#eb9ad8b0723d13fa9bc8b42543e3661ed805f2bb"
+  version "8.10.29"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.10.29.tgz#b3a13b58dd7b0682bf1b42022bef4a5a9718f687"
 
 buffer-crc32@~0.2.3:
   version "0.2.13"
@@ -21,8 +21,8 @@ pend@~1.2.0:
   resolved "https://registry.yarnpkg.com/pend/-/pend-1.2.0.tgz#7a57eb550a6783f9115331fcf4663d5c8e007a50"
 
 yauzl@^2.9.1:
-  version "2.9.2"
-  resolved "https://registry.yarnpkg.com/yauzl/-/yauzl-2.9.2.tgz#4fb1bc7ae1fc2f57037b54af6acc8fe1031c5b77"
+  version "2.10.0"
+  resolved "https://registry.yarnpkg.com/yauzl/-/yauzl-2.10.0.tgz#c7eb17c93e112cb1086fa6d8e51fb0667b79a5f9"
   dependencies:
     buffer-crc32 "~0.2.3"
     fd-slicer "~1.1.0"
