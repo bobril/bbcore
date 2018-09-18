@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using JavaScriptEngineSwitcher.Core;
+using Lib.Registry;
 using Lib.Utils;
 using Newtonsoft.Json.Linq;
 
@@ -28,10 +31,14 @@ namespace Lib.ToolsDir
                     var jsEngineSwitcher = JsEngineSwitcher.Current;
                     if (!jsEngineSwitcher.EngineFactories.Any())
                     {
-                        jsEngineSwitcher.EngineFactories.Add(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory(new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreSettings { MaxStackSize = 2000000 }));
-                        jsEngineSwitcher.DefaultEngineName = JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;
+                        jsEngineSwitcher.EngineFactories.Add(
+                            new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory(
+                                new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreSettings {MaxStackSize = 2000000}));
+                        jsEngineSwitcher.DefaultEngineName =
+                            JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;
                     }
                 }
+
                 LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js");
                 JasmineCoreJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine.js");
                 JasmineDts = ResourceUtils.GetText("Lib.ToolsDir.jasmine.d.ts");
@@ -64,9 +71,11 @@ namespace Lib.ToolsDir
                     _typeScriptJsContent = File.ReadAllText(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
 
                     // Patch TypeScript compiler to never generate useless __esmodule = true
-                    _typeScriptJsContent = _typeScriptJsContent.Replace("(shouldEmitUnderscoreUnderscoreESModule())", "(false)");
+                    _typeScriptJsContent =
+                        _typeScriptJsContent.Replace("(shouldEmitUnderscoreUnderscoreESModule())", "(false)");
                     // Patch https://github.com/Microsoft/TypeScript/commit/c557131cac4379fc3e685514d44b6b82f1f642fb
-                    var bugPos = _typeScriptJsContent.IndexOf("// As the type information we would attempt to lookup to perform ellision is potentially unavailable for the synthesized nodes");
+                    var bugPos = _typeScriptJsContent.IndexOf(
+                        "// As the type information we would attempt to lookup to perform ellision is potentially unavailable for the synthesized nodes");
                     if (bugPos > 0)
                     {
                         var bugPos3 = _typeScriptJsContent.IndexOf("visitEachChild", bugPos);
@@ -74,29 +83,39 @@ namespace Lib.ToolsDir
                         // but only when it is already not fixed
                         if (bugPos3 < 0 || bugPos3 > bugPos2)
                         {
-                            _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos2, "if (node.transformFlags & 2) { return ts.visitEachChild(node, visitor, context); };");
+                            _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos2,
+                                "if (node.transformFlags & 2) { return ts.visitEachChild(node, visitor, context); };");
                         }
                     }
-                    // Patch 
+
+                    // Patch
                     bugPos = _typeScriptJsContent.IndexOf("function checkUnusedClassMembers(");
-                    var bugPos22 = bugPos < 0 ? -1 : _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos);
+                    var bugPos22 = bugPos < 0
+                        ? -1
+                        : _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos);
                     var bugPos33 = bugPos22 < 0 ? -1 : _typeScriptJsContent.IndexOf("case 207", bugPos22);
                     if (bugPos22 > 0 && (bugPos33 < 0 || bugPos33 > bugPos22 + 200))
                     {
                         _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos22, "case 207:");
                     }
+
                     // Patch https://github.com/Microsoft/TypeScript/issues/22403 in 2.8.1
-                    bugPos = _typeScriptJsContent.IndexOf("if (links.target && links.target !== unknownSymbol && links.target !== resolvingSymbol) {");
+                    bugPos = _typeScriptJsContent.IndexOf(
+                        "if (links.target && links.target !== unknownSymbol && links.target !== resolvingSymbol) {");
                     if (bugPos > 0)
                     {
-                        var bugPos2a = _typeScriptJsContent.IndexOf("links.nameType = getLiteralTypeFromPropertyName(links.target);", bugPos);
+                        var bugPos2a =
+                            _typeScriptJsContent.IndexOf(
+                                "links.nameType = getLiteralTypeFromPropertyName(links.target);", bugPos);
                         if (bugPos2a > 0 && bugPos2a - bugPos < 400)
                         {
                             _typeScriptJsContent = _typeScriptJsContent.Remove(bugPos, bugPos2a - bugPos);
-                            _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos, "if (links.target && links.target !== unknownSymbol && links.target !== resolvingSymbol && links.target.escapedName === prop.escapedName) {");
+                            _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos,
+                                "if (links.target && links.target !== unknownSymbol && links.target !== resolvingSymbol && links.target.escapedName === prop.escapedName) {");
                         }
                     }
                 }
+
                 return _typeScriptJsContent;
             }
         }
@@ -125,23 +144,64 @@ namespace Lib.ToolsDir
 
         public string LiveReloadJs { get; }
 
+        public async Task DownloadAndExtractTS(string dir, string versionString)
+        {
+            var version = new SemVer.Version(versionString);
+            var npmr = new NpmRepositoryAccessor();
+            var packageEtagAndContent = await npmr.GetPackageInfo("typescript", null);
+            var packageInfo = new PackageInfo(packageEtagAndContent.content);
+            var task = null as Task<byte[]>;
+            packageInfo.LazyParseVersions(v => v == version, reader =>
+            {
+                var j = PackageJson.Parse(reader);
+                task = npmr.GetPackageTgz("typescript", PathUtils.SplitDirAndFile(j.Dist.Tarball).Item2);
+            });
+            if (task != null)
+            {
+                await TarExtractor.ExtractTgzAsync(await task, async (name, stream, size) =>
+                {
+                    if (name.StartsWith("package/"))
+                        name = name.Substring("package/".Length);
+                    var fn = PathUtils.Join(dir, name);
+                    Directory.CreateDirectory(PathUtils.Parent(fn));
+                    using (var targetStream = File.Create(fn))
+                    {
+                        var buf = new byte[4096];
+                        while (size > 0)
+                        {
+                            var read = await stream.ReadAsync(buf, 0, (int) Math.Min((ulong) buf.Length, size));
+                            if (read == 0) throw new IOException($"Reading {name} failed");
+                            await targetStream.WriteAsync(buf, 0, read);
+                            size -= (ulong) read;
+                        }
+                    }
+
+                    return true;
+                });
+            }
+            else
+            {
+                throw new Exception($"TypeScript version {version} does not exists");
+            }
+        }
+
         public void SetTypeScriptVersion(string version)
         {
             if (TypeScriptVersion == version)
                 return;
             _typeScriptJsContent = null;
-            var tsVerDir = PathUtils.Join(Path, version);
+            var tsVerDir = PathUtils.Join(Path, $"TS{version}");
             var tspackage = PathUtils.Join(tsVerDir, "package.json");
             lock (_lock)
             {
                 if (!File.Exists(tspackage))
                 {
                     Directory.CreateDirectory(tsVerDir);
-                    RunYarn(tsVerDir, "init -y --no-emoji --non-interactive");
-                    RunYarn(tsVerDir, "add typescript@" + version + " --no-emoji --non-interactive --no-bin-links");
+                    DownloadAndExtractTS(tsVerDir, version).Wait();
                 }
             }
-            TypeScriptLibDir = PathUtils.Join(tsVerDir, "node_modules/typescript/lib");
+
+            TypeScriptLibDir = PathUtils.Join(tsVerDir, "lib");
             TypeScriptVersion = version;
         }
 
@@ -188,6 +248,7 @@ namespace Lib.ToolsDir
             {
                 yarnExecName += ".cmd";
             }
+
             return Environment.GetEnvironmentVariable("PATH")
                 .Split(System.IO.Path.PathSeparator)
                 .Where(t => !string.IsNullOrEmpty(t))
@@ -209,6 +270,7 @@ namespace Lib.ToolsDir
                 {
                     return val.ToString();
                 }
+
                 var dashIndex = locale.IndexOf('-');
                 if (dashIndex < 0)
                     return null;
@@ -225,16 +287,19 @@ namespace Lib.ToolsDir
                     File.WriteAllText(PathUtils.Join(dir, ".npmrc"), "registry =" + npmRegistry);
                 }
             }
+
             if (upgrade && !File.Exists(PathUtils.Join(dir, "yarn.lock")))
             {
                 upgrade = false;
             }
+
             var par = upgrade ? "upgrade" : "install";
             par += " --flat --no-emoji --non-interactive";
             if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BBCoreNoLinks")))
             {
                 par += " --no-bin-links";
             }
+
             RunYarn(dir, par);
         }
     }
