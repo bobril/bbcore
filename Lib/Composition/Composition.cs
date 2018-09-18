@@ -238,13 +238,13 @@ namespace Lib.Composition
                     _logger.Error("Incorrect count of parameters.");
                     return;
                 }
-                
+
                 project.InitializeTranslationDb();
                 trDb = project.TranslationDb;
 
                 if(trDb.UnionExportedLanguage(union[0], union[1], union[2]))
                     _logger.Success($"Union of {union[0]} with {union[1]} successfully saved to {union[2]}");
-                
+
                 return;
             }
 
@@ -256,13 +256,13 @@ namespace Lib.Composition
                     _logger.Error("Incorrect count of parameters.");
                     return;
                 }
-                
+
                 project.InitializeTranslationDb();
                 trDb = project.TranslationDb;
 
                 if(trDb.SubtractExportedLanguage(subtract[0], subtract[1], subtract[2]))
                     _logger.Success($"Subtract of {subtract[0]} with {subtract[1]} successfully saved to {subtract[2]}");
-                
+
                 return;
             }
         }
@@ -546,7 +546,7 @@ namespace Lib.Composition
             {
                 _bbdir = PathUtils.Join(_bbdir, "dev");
             }
-            _tools = new ToolsDir.ToolsDir(_bbdir);
+            _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
             _compilerPool = new CompilerPool(_tools);
             _notificationManager = new NotificationManager();
             _logger = new ConsoleLogger();

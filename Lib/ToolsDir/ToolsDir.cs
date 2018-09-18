@@ -8,19 +8,22 @@ using System.Threading.Tasks;
 using JavaScriptEngineSwitcher.Core;
 using Lib.Registry;
 using Lib.Utils;
+using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
 
 namespace Lib.ToolsDir
 {
     public class ToolsDir : IToolsDir
     {
+        readonly ILogger _logger;
         static object lockInitialization = new object();
 
         const string YarnExecutableName = "yarn";
         static object _lock = new object();
 
-        public ToolsDir(string dir)
+        public ToolsDir(string dir, ILogger logger)
         {
+            _logger = logger;
             lock (lockInitialization)
             {
                 Path = dir;
@@ -146,6 +149,7 @@ namespace Lib.ToolsDir
 
         public async Task DownloadAndExtractTS(string dir, string versionString)
         {
+            _logger.Info($"Downloading and extracting TypeScript {versionString}");
             var version = new SemVer.Version(versionString);
             var npmr = new NpmRepositoryAccessor();
             var packageEtagAndContent = await npmr.GetPackageInfo("typescript", null);
@@ -154,11 +158,15 @@ namespace Lib.ToolsDir
             packageInfo.LazyParseVersions(v => v == version, reader =>
             {
                 var j = PackageJson.Parse(reader);
-                task = npmr.GetPackageTgz("typescript", PathUtils.SplitDirAndFile(j.Dist.Tarball).Item2);
+                var tgzName = PathUtils.SplitDirAndFile(j.Dist.Tarball).Item2;
+                _logger.Info($"Downloading Tarball {tgzName}");
+                task = npmr.GetPackageTgz("typescript", tgzName);
             });
             if (task != null)
             {
-                await TarExtractor.ExtractTgzAsync(await task, async (name, stream, size) =>
+                var bytes = await task;
+                _logger.Info($"Extracting {bytes.Length} bytes");
+                await TarExtractor.ExtractTgzAsync(bytes, async (name, stream, size) =>
                 {
                     if (name.StartsWith("package/"))
                         name = name.Substring("package/".Length);

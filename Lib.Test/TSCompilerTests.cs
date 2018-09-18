@@ -156,7 +156,7 @@ namespace Lib.Test
         public CompilerTests()
         {
             _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore");
-            _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"));
+            _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"), new DummyLogger());
             _tools.SetTypeScriptVersion(TSProject.DefaultTypeScriptVersion);
             _compilerPool = new CompilerPool(_tools);
         }
