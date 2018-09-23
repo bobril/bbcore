@@ -222,9 +222,48 @@ namespace Lib.ToolsDir
             TypeScriptVersion = "project";
         }
 
+        public IJsEngine CreateJsEngine()
+        {
+            var jsEngineSwitcher = JsEngineSwitcher.Current;
+            return jsEngineSwitcher.CreateDefaultEngine();
+        }
+
+        public string GetLocaleDef(string locale)
+        {
+            while (true)
+            {
+                if (_localeDefs.TryGetValue(locale, StringComparison.InvariantCultureIgnoreCase, out var val))
+                {
+                    return val.ToString();
+                }
+
+                var dashIndex = locale.IndexOf('-');
+                if (dashIndex < 0)
+                    return null;
+                locale = locale.Substring(0, dashIndex);
+            }
+        }
+
         public void RunYarn(string dir, string aParams)
         {
-            var yarnPath = GetYarnPath();
+            var yarnExecName = "yarn";
+            if (!PathUtils.IsUnixFs)
+            {
+                yarnExecName += ".cmd";
+            }
+
+            var yarnPath = Environment.GetEnvironmentVariable("PATH")?
+                .Split(System.IO.Path.PathSeparator)
+                .Where(t => !string.IsNullOrEmpty(t))
+                .Select(p => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), yarnExecName))
+                .FirstOrDefault(File.Exists);
+
+            if (yarnPath == null)
+            {
+                _logger.Error("Cannot find yarn executable in PATH");
+                return;
+            }
+
             var start = new ProcessStartInfo(yarnPath, aParams)
             {
                 UseShellExecute = false,
@@ -246,44 +285,7 @@ namespace Lib.ToolsDir
 
         void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            Console.WriteLine(e.Data);
-        }
-
-        string GetYarnPath()
-        {
-            string yarnExecName = YarnExecutableName;
-            if (!PathUtils.IsUnixFs)
-            {
-                yarnExecName += ".cmd";
-            }
-
-            return Environment.GetEnvironmentVariable("PATH")
-                .Split(System.IO.Path.PathSeparator)
-                .Where(t => !string.IsNullOrEmpty(t))
-                .Select((p) => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), yarnExecName))
-                .First((p) => File.Exists(p));
-        }
-
-        public IJsEngine CreateJsEngine()
-        {
-            var jsEngineSwitcher = JsEngineSwitcher.Current;
-            return jsEngineSwitcher.CreateDefaultEngine();
-        }
-
-        public string GetLocaleDef(string locale)
-        {
-            while (true)
-            {
-                if (_localeDefs.TryGetValue(locale, StringComparison.InvariantCultureIgnoreCase, out var val))
-                {
-                    return val.ToString();
-                }
-
-                var dashIndex = locale.IndexOf('-');
-                if (dashIndex < 0)
-                    return null;
-                locale = locale.Substring(0, dashIndex);
-            }
+            _logger.WriteLine(e.Data);
         }
 
         public void UpdateDependencies(string dir, bool upgrade, string npmRegistry)
