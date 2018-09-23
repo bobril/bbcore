@@ -4,8 +4,11 @@ namespace Lib.Utils.CommandLineParser.Definitions
 {
     public abstract class CommonParametersBaseCommand : CommandLineCommand
     {
-        public CommandLineArgumentSwitch Verbose { get; } = new CommandLineArgumentSwitch(description: "enable spamming console output", words: new[] { "--verbose" });
+        public CommandLineArgumentSwitch Verbose { get; } = new CommandLineArgumentSwitch(
+            "enable spamming console output",
+            new[] {"--verbose"});
 
-        public CommandLineArgumentSwitch NoBuildCache { get; } = new CommandLineArgumentSwitch(description: "forbid using Build Cache", words: new[] { "--nocache" });
+        public CommandLineArgumentSwitch NoBuildCache { get; } =
+            new CommandLineArgumentSwitch("forbid using Build Cache", new[] {"--nocache"});
     }
 }

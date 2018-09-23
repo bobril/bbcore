@@ -38,6 +38,7 @@ namespace Lib.Utils.CommandLineParser.Parser
 
                 // remove first argument
                 commandArgs = args.Skip(1).ToArray();
+
             }
             else
             {
@@ -47,7 +48,7 @@ namespace Lib.Utils.CommandLineParser.Parser
 
             // Parse arguments or show help
             if (command == null)
-                ShowHelp(commands: commands);
+                ShowHelp(commands);
             else if (commandArgs?.Length > 0)
                 command = command.ParseArguments(commandArgs);
 
@@ -58,7 +59,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// Show help of command
         /// </summary>
         /// <param name="commands">Registered commands</param>
-        private static void ShowHelp(List<CommandLineCommand> commands)
+        internal static void ShowHelp(List<CommandLineCommand> commands)
         {
             commands.ForEach(command =>
             {

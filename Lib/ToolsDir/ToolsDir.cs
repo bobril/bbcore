@@ -18,7 +18,6 @@ namespace Lib.ToolsDir
         readonly ILogger _logger;
         static object lockInitialization = new object();
 
-        const string YarnExecutableName = "yarn";
         static object _lock = new object();
 
         public ToolsDir(string dir, ILogger logger)
@@ -137,7 +136,7 @@ namespace Lib.ToolsDir
         public string WebAJs { get; }
         public string WebIndexHtml { get; }
 
-        private readonly JObject _localeDefs;
+        readonly JObject _localeDefs;
 
         public string WebtAJs { get; }
 
@@ -242,75 +241,6 @@ namespace Lib.ToolsDir
                     return null;
                 locale = locale.Substring(0, dashIndex);
             }
-        }
-
-        public void RunYarn(string dir, string aParams)
-        {
-            var yarnExecName = "yarn";
-            if (!PathUtils.IsUnixFs)
-            {
-                yarnExecName += ".cmd";
-            }
-
-            var yarnPath = Environment.GetEnvironmentVariable("PATH")?
-                .Split(System.IO.Path.PathSeparator)
-                .Where(t => !string.IsNullOrEmpty(t))
-                .Select(p => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), yarnExecName))
-                .FirstOrDefault(File.Exists);
-
-            if (yarnPath == null)
-            {
-                _logger.Error("Cannot find yarn executable in PATH");
-                return;
-            }
-
-            var start = new ProcessStartInfo(yarnPath, aParams)
-            {
-                UseShellExecute = false,
-                WorkingDirectory = dir,
-                StandardErrorEncoding = Encoding.UTF8,
-                StandardOutputEncoding = Encoding.UTF8,
-                RedirectStandardError = true,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true
-            };
-
-            var process = Process.Start(start);
-            process.OutputDataReceived += Process_OutputDataReceived;
-            process.ErrorDataReceived += Process_OutputDataReceived;
-            process.BeginErrorReadLine();
-            process.BeginOutputReadLine();
-            process.WaitForExit();
-        }
-
-        void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            _logger.WriteLine(e.Data);
-        }
-
-        public void UpdateDependencies(string dir, bool upgrade, string npmRegistry)
-        {
-            if (npmRegistry != null)
-            {
-                if (!File.Exists(PathUtils.Join(dir, ".npmrc")))
-                {
-                    File.WriteAllText(PathUtils.Join(dir, ".npmrc"), "registry =" + npmRegistry);
-                }
-            }
-
-            if (upgrade && !File.Exists(PathUtils.Join(dir, "yarn.lock")))
-            {
-                upgrade = false;
-            }
-
-            var par = upgrade ? "upgrade" : "install";
-            par += " --flat --no-emoji --non-interactive";
-            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BBCoreNoLinks")))
-            {
-                par += " --no-bin-links";
-            }
-
-            RunYarn(dir, par);
         }
     }
 }

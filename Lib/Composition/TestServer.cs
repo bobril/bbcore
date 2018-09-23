@@ -9,7 +9,7 @@ using Lib.Utils;
 
 namespace Lib.Composition
 {
-    internal class TestServer
+    class TestServer
     {
         public readonly ConcurrentDictionary<TestServerConnectionHandler, TestServerConnectionHandler> Clients = new ConcurrentDictionary<TestServerConnectionHandler, TestServerConnectionHandler>();
         int _runid;

@@ -8,80 +8,68 @@ using Lib.DiskCache;
 using Lib.TSCompiler;
 using Lib.Utils;
 using Lib.Utils.Logger;
+using Newtonsoft.Json.Linq;
 
 namespace Lib.Registry
 {
-    public class YarnNodePackageManager : INodePackageManager
+    public class NpmNodePackageManager : INodePackageManager
     {
         readonly IDiskCache _diskCache;
         readonly ILogger _logger;
-        string _yarnPath;
+        string _npmPath;
 
-        public YarnNodePackageManager(IDiskCache diskCache, ILogger logger)
+        public NpmNodePackageManager(IDiskCache diskCache, ILogger logger)
         {
             _diskCache = diskCache;
             _logger = logger;
-            _yarnPath = GetYarnPath();
+            _npmPath = GetNpmPath();
         }
 
-        static string GetYarnPath()
+        static string GetNpmPath()
         {
-            var yarnExecName = "yarn";
+            var npmExecName = "npm";
             if (!PathUtils.IsUnixFs)
             {
-                yarnExecName += ".cmd";
+                npmExecName += ".cmd";
             }
 
             return Environment.GetEnvironmentVariable("PATH")?
                 .Split(Path.PathSeparator)
                 .Where(t => !string.IsNullOrEmpty(t))
-                .Select(p => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), yarnExecName))
+                .Select(p => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), npmExecName))
                 .FirstOrDefault(File.Exists);
         }
 
-        public bool IsAvailable => _yarnPath != null;
+        public bool IsAvailable => _npmPath != null;
 
         public bool IsUsedInProject(IDirectoryCache projectDirectory)
         {
-            return projectDirectory.TryGetChildNoVirtual("yarn.lock") is IFileCache;
+            return projectDirectory.TryGetChildNoVirtual("package-lock.json") is IFileCache;
         }
 
         public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
         {
-            var yarnLockFile = projectDirectory.TryGetChildNoVirtual("yarn.lock") as IFileCache;
-            if (yarnLockFile == null)
+            var lockFile = projectDirectory.TryGetChildNoVirtual("package-lock.json") as IFileCache;
+            if (lockFile == null)
             {
-                return Enumerable.Empty<PackagePathVersion>();
+                yield break;
             }
 
-            return ParseYarnLock(projectDirectory, yarnLockFile.Utf8Content);
-        }
-
-        public static string ExtractPackageName(string nameWithVersion)
-        {
-            return nameWithVersion.Substring(0, nameWithVersion.LastIndexOf('@'));
-        }
-
-        public static IEnumerable<PackagePathVersion> ParseYarnLock(IDirectoryCache projectDirectory, string content)
-        {
-            var parsed = YarnLockParser.Parse(content);
-            var known = new HashSet<string>();
-            foreach (var pair in parsed)
+            var parsed = JObject.Parse(lockFile.Utf8Content);
+            foreach (var prop in parsed["dependencies"].Children<JProperty>())
             {
-                var name = ExtractPackageName(pair.Key);
-                if (!known.Add(name)) continue;
                 yield return new PackagePathVersion
                 {
-                    Name = name,
-                    Version = ((Dictionary<string, object>) pair.Value)["version"] as string,
-                    Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + name)
+                    Name = prop.Name,
+                    Version = ((JObject) prop.Value)["version"].Value<string>(),
+                    Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + prop.Name)
                 };
             }
         }
 
-        public void RunYarn(string dir, string aParams)
+        public void RunNpm(string dir, string aParams)
         {
-            var start = new ProcessStartInfo(_yarnPath, aParams)
+            var start = new ProcessStartInfo(_npmPath, aParams)
             {
                 UseShellExecute = false,
                 WorkingDirectory = dir,
@@ -107,10 +95,10 @@ namespace Lib.Registry
 
         public void Install(IDirectoryCache projectDirectory)
         {
-            RunYarnWithParam(projectDirectory, "install");
+            RunNpmWithParam(projectDirectory, "install");
         }
 
-        void RunYarnWithParam(IDirectoryCache projectDirectory, string param)
+        void RunNpmWithParam(IDirectoryCache projectDirectory, string param)
         {
             var fullPath = projectDirectory.FullPath;
             var project = TSProject.Get(projectDirectory, _diskCache, _logger);
@@ -125,34 +113,29 @@ namespace Lib.Registry
             }
 
             var par = param;
-            par += " --no-emoji --non-interactive";
             if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BBCoreNoLinks")))
             {
                 par += " --no-bin-links";
             }
 
-            RunYarn(fullPath, par);
+            RunNpm(fullPath, par);
         }
 
         public void UpgradeAll(IDirectoryCache projectDirectory)
         {
-            if (!IsUsedInProject(projectDirectory))
-            {
-                Install(projectDirectory);
-                return;
-            }
-
-            RunYarnWithParam(projectDirectory, "upgrade");
+            File.Delete(PathUtils.Join(projectDirectory.FullPath,"package-lock.json"));
+            Directory.Delete(PathUtils.Join(projectDirectory.FullPath,"node_modules"),true);
+            Install(projectDirectory);
         }
 
         public void Upgrade(IDirectoryCache projectDirectory, string packageName)
         {
-            RunYarnWithParam(projectDirectory, "upgrade " + packageName);
+            RunNpmWithParam(projectDirectory, "update " + packageName);
         }
 
         public void Add(IDirectoryCache projectDirectory, string packageName, bool devDependency = false)
         {
-            RunYarnWithParam(projectDirectory, "add " + packageName + (devDependency ? " --dev" : ""));
+            RunNpmWithParam(projectDirectory, "install " + packageName + (devDependency ? " --save-dev" : ""));
         }
     }
 }

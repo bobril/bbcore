@@ -158,7 +158,7 @@ namespace Lib.Test
             _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore");
             _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"), new DummyLogger());
             _tools.SetTypeScriptVersion(TSProject.DefaultTypeScriptVersion);
-            _compilerPool = new CompilerPool(_tools);
+            _compilerPool = new CompilerPool(_tools, new DummyLogger());
         }
 
         [Fact]
@@ -276,7 +276,7 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
             dc.CheckForTrueChange();
             var ctx = new BuildCtx(_compilerPool, false, (_)=> { });
             var dirCache = dc.TryGetItem(projdir) as IDirectoryCache;
-            var proj = TSProject.Get(dirCache, dc);
+            var proj = TSProject.Get(dirCache, dc, new DummyLogger());
             proj.IsRootProject = true;
             if (proj.ProjectOptions == null)
             {

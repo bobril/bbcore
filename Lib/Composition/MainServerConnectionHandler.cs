@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Lib.Composition
 {
-    internal class MainServerConnectionHandler : ILongPollingConnectionHandler
+    class MainServerConnectionHandler : ILongPollingConnectionHandler
     {
         ILongPollingConnection _connection;
         MainServer _mainServer;

@@ -62,14 +62,15 @@ namespace Lib.Composition
         {
             _command = CommandLineParser.Parse
             (
-                args: args,
-                commands: new List<CommandLineCommand>()
+                args,
+                new List<CommandLineCommand>()
                 {
                     new BuildCommand(),
                     new TranslationCommand(),
                     new TestCommand(),
                     new BuildInteractiveCommand(),
-                    new BuildInteractiveNoUpdateCommand()
+                    new BuildInteractiveNoUpdateCommand(),
+                    new PackageManagerCommand()
                 }
             );
         }
@@ -87,11 +88,11 @@ namespace Lib.Composition
                 else
                     _buildCache = new PersistentBuildCache(_tools.Path);
             }
-            if (_command is BuildInteractiveCommand iCommand)
+            if (_command is BuildInteractiveCommand)
             {
                 RunInteractive(_command as CommonInteractiveCommand);
             }
-            else if (_command is BuildInteractiveNoUpdateCommand yCommand)
+            else if (_command is BuildInteractiveNoUpdateCommand)
             {
                 _forbiddenDependencyUpdate = true;
                 RunInteractive(_command as CommonInteractiveCommand);
@@ -378,7 +379,7 @@ namespace Lib.Composition
             }
         }
 
-        private static string PathToTranslations(ProjectOptions proj)
+        static string PathToTranslations(ProjectOptions proj)
         {
             return PathUtils.Join(proj.Owner.Owner.FullPath, "translations");
         }
@@ -547,7 +548,7 @@ namespace Lib.Composition
                 _bbdir = PathUtils.Join(_bbdir, "dev");
             }
             _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
-            _compilerPool = new CompilerPool(_tools);
+            _compilerPool = new CompilerPool(_tools, _logger);
             _notificationManager = new NotificationManager();
             _logger = new ConsoleLogger();
         }
@@ -561,7 +562,7 @@ namespace Lib.Composition
         {
             var projectDir = PathUtils.Normalize(new DirectoryInfo(path).FullName);
             var dirCache = _dc.TryGetItem(projectDir) as IDirectoryCache;
-            var proj = TSProject.Get(dirCache, _dc);
+            var proj = TSProject.Get(dirCache, _dc, _logger);
             proj.IsRootProject = true;
             if (proj.ProjectOptions != null)
                 return proj.ProjectOptions;

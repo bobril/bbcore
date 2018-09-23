@@ -10,7 +10,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <summary>
         /// Enum values
         /// </summary>
-        private string[] _enumValues;
+        string[] _enumValues;
 
         /// <summary>
         /// Constructor

@@ -20,7 +20,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <summary>
         /// Default value in string
         /// </summary>
-        private string _defaultValueString;
+        string _defaultValueString;
 
         /// <summary>
         /// Constructor
@@ -47,7 +47,12 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// </summary>
         public void ShowHelp()
         {
-            Console.WriteLine($"  {string.Join("|", Words)}{(string.IsNullOrWhiteSpace(AdditionalHelpInfo) ? "" : $"  { AdditionalHelpInfo}")}{(string.IsNullOrWhiteSpace(_defaultValueString) ? "" : $"  [default value: <{_defaultValueString}>]")}  ({Description})");
+            if (Words == null)
+                Console.WriteLine(
+                    $"{(string.IsNullOrWhiteSpace(AdditionalHelpInfo) ? "  [name]" : $"  {AdditionalHelpInfo}")}{(string.IsNullOrWhiteSpace(_defaultValueString) ? "" : $"  [default value: <{_defaultValueString}>]")}  ({Description})");
+            else
+                Console.WriteLine(
+                    $"  {string.Join("|", Words)}{(string.IsNullOrWhiteSpace(AdditionalHelpInfo) ? "" : $"  {AdditionalHelpInfo}")}{(string.IsNullOrWhiteSpace(_defaultValueString) ? "" : $"  [default value: <{_defaultValueString}>]")}  ({Description})");
         }
 
         /// <summary>

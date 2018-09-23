@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Lib.Registry;
+using Lib.Utils.Logger;
 
 namespace Lib.TSCompiler
 {
@@ -16,6 +18,7 @@ namespace Lib.TSCompiler
 
         public const string DefaultTypeScriptVersion = "3.0.3";
 
+        public ILogger Logger { get; set; }
         public IDiskCache DiskCache { get; set; }
         public IDirectoryCache Owner { get; set; }
         public string MainFile { get; set; }
@@ -131,8 +134,15 @@ namespace Lib.TSCompiler
                 if (ProjectOptions == null) return;
                 ProjectOptions.FillProjectOptionsFromPackageJson(parsed);
                 if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
-                ProjectOptions.Tools.UpdateDependencies(Owner.FullPath,
-                    ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade, ProjectOptions.NpmRegistry);
+                var packageManager = new CurrentNodePackageManager(DiskCache, Logger);
+                if (ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade)
+                {
+                    packageManager.UpgradeAll(Owner);
+                }
+                else
+                {
+                    packageManager.Install(Owner);
+                }
                 DiskCache.CheckForTrueChange();
                 DiskCache.ResetChange();
             }
@@ -270,7 +280,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        public static TSProject FindInfoForModule(IDirectoryCache dir, IDiskCache diskCache, string moduleName,
+        public static TSProject FindInfoForModule(IDirectoryCache dir, IDiskCache diskCache, ILogger logger, string moduleName,
             out string diskName)
         {
             while (!dir.IsFake)
@@ -283,7 +293,7 @@ namespace Lib.TSCompiler
                     {
                         diskName = mdir.Name;
                         diskCache.UpdateIfNeeded(mdir);
-                        return Get(mdir, diskCache);
+                        return Get(mdir, diskCache, logger);
                     }
                 }
 
@@ -294,12 +304,12 @@ namespace Lib.TSCompiler
             return null;
         }
 
-        public static TSProject Get(IDirectoryCache dir, IDiskCache diskCache)
+        public static TSProject Get(IDirectoryCache dir, IDiskCache diskCache, ILogger logger)
         {
             if (dir == null)
                 return null;
             if (dir.AdditionalInfo == null)
-                dir.AdditionalInfo = new TSProject {Owner = dir, DiskCache = diskCache};
+                dir.AdditionalInfo = new TSProject {Owner = dir, DiskCache = diskCache, Logger = logger};
             return (TSProject) dir.AdditionalInfo;
         }
     }

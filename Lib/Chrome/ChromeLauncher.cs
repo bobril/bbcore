@@ -56,9 +56,9 @@ namespace Lib.Chrome
 
         public class LocalChromeProcess : IChromeProcess
         {
-            private readonly DirectoryInfo _userDirectory;
-            private readonly EventHandler _disposeHandler;
-            private readonly UnhandledExceptionEventHandler _unhandledExceptionHandler;
+            readonly DirectoryInfo _userDirectory;
+            readonly EventHandler _disposeHandler;
+            readonly UnhandledExceptionEventHandler _unhandledExceptionHandler;
 
             public LocalChromeProcess(DirectoryInfo userDirectory, Process process)
             {

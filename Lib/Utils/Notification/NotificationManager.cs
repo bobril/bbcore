@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace Lib.Utils.Notification
 {
-    internal enum NotificationType
+    enum NotificationType
     {
         Build,
         Tests,

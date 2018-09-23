@@ -1,6 +1,4 @@
-﻿using Lib.Utils.CommandLineParser.Parser;
-
-namespace Lib.Utils.CommandLineParser.Definitions
+﻿namespace Lib.Utils.CommandLineParser.Definitions
 {
     public class BuildInteractiveNoUpdateCommand : CommonInteractiveCommand
     {

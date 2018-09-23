@@ -41,7 +41,7 @@ namespace Lib.TSCompiler
 
         public IReadOnlyList<TSProject> ModuleImports { get => _moduleImports; }
 
-        private TSFileAdditionalInfo()
+        TSFileAdditionalInfo()
         {
         }
 

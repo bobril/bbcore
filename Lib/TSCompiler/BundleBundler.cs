@@ -180,7 +180,7 @@ namespace Lib.TSCompiler
                 return PathUtils.Join(PathUtils.Parent(from), name) + ".js";
             }
             var diskCache = Project.Owner.DiskCache;
-            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache, name, out var diskName);
+            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache, Project.Owner.Logger, name, out var diskName);
             if (moduleInfo == null)
                 return null;
             var mainFile = PathUtils.ChangeExtension(PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile), "js");

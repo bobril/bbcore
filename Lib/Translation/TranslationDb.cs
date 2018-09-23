@@ -31,7 +31,7 @@ namespace Lib.Translation
         bool _changed;
         Dictionary<string, string> _outputJsCache = new Dictionary<string, string>();
 
-        private ILogger _logger;
+        ILogger _logger;
 
         public void LoadLangDbs(string dir)
         {
@@ -449,7 +449,7 @@ namespace Lib.Translation
             return true;
         }
 
-        private void ImportTranslatedLanguageInternal(string pathFrom, Action<string, string, string> action)
+        void ImportTranslatedLanguageInternal(string pathFrom, Action<string, string, string> action)
         {
             var content = _fsAbstraction.ReadAllUtf8(pathFrom);
             content = content.Replace("\r\n", "\n").Replace("\r", "\n");

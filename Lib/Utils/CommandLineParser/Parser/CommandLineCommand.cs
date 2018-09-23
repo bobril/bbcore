@@ -20,15 +20,20 @@ namespace Lib.Utils.CommandLineParser.Parser
         protected abstract string Description { get; }
 
         /// <summary>
+        /// List of sub commands
+        /// </summary>
+        public virtual List<CommandLineCommand> SubCommands { get; } = null;
+
+        /// <summary>
         /// Command arguments
         /// </summary>
-        private List<CommandLineArgument> Arguments
+        List<CommandLineArgument> Arguments
         {
             get
             {
                 var argumentProperties = GetType().GetProperties()
                     .Where(p => p.PropertyType.IsSubclassOf(typeof(CommandLineArgument))).ToList();
-                return argumentProperties.ToList().Select(ap => (CommandLineArgument)ap.GetValue(this))
+                return argumentProperties.ToList().Select(ap => (CommandLineArgument) ap.GetValue(this))
                     .ToList();
             }
         }
@@ -39,11 +44,46 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <param name="args">Command line arguments (at least one)</param>
         public CommandLineCommand ParseArguments(string[] args)
         {
-            // help
-            string firstArg = args[0];
+            var firstArg = args[0];
+
             if (CommandLineParser.HelpWords.Contains(firstArg))
             {
                 ShowHelp();
+                return null;
+            }
+
+            var subCommands = SubCommands;
+
+            if (!firstArg.StartsWith("-") && subCommands != null)
+            {
+                // get the command by the first argument
+                var command = subCommands.FirstOrDefault(c => c.Words?.Contains(firstArg) ?? false);
+
+                // remove first argument
+                var commandArgs = args.Skip(1).ToArray();
+
+                if (command == null)
+                {
+                    CommandLineParser.ShowHelp(subCommands);
+                    return null;
+                }
+
+                if (commandArgs.Length > 0)
+                    command = command.ParseArguments(commandArgs);
+
+                return command;
+            }
+
+            if (subCommands != null)
+            {
+                var command = subCommands.FirstOrDefault(c => c.Words == null || c.Words.Contains(""));
+                if (command != null)
+                {
+                    command = command.ParseArguments(args);
+                    return command;
+                }
+
+                CommandLineParser.ShowHelp(subCommands);
                 return null;
             }
 
@@ -51,7 +91,7 @@ namespace Lib.Utils.CommandLineParser.Parser
             var arguments = Arguments;
 
             while (args?.Length > 0)
-                args = ParseOneArgument(args: args, arguments: arguments);
+                args = ParseOneArgument(args, arguments);
 
             return this;
         }
@@ -62,17 +102,18 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <param name="args">Command line arguments (at least one)</param>
         /// <param name="arguments">Argument definitions</param>
         /// <returns>Rest command line arguments</returns>
-        private string[] ParseOneArgument(string[] args, List<CommandLineArgument> arguments)
+        string[] ParseOneArgument(string[] args, List<CommandLineArgument> arguments)
         {
-            string firstArg = args[0].Trim();
-            CommandLineArgument argument = arguments.FirstOrDefault(a => a.Words.Contains(firstArg));
+            var firstArg = args[0].Trim();
+            var argument = arguments.FirstOrDefault(a =>
+                a.Words?.Contains(firstArg) ?? !firstArg.StartsWith('-'));
             if (argument == null)
             {
                 ShowHelp();
                 return null;
             }
 
-            string[] returnArgs = argument.SetValue(args);
+            var returnArgs = argument.SetValue(args);
             if (returnArgs == null)
             {
                 ShowHelp();
@@ -100,17 +141,18 @@ namespace Lib.Utils.CommandLineParser.Parser
         {
             Arguments.ForEach(a =>
             {
-                string name = string.Join("|", a.Words);
-                var property = a.GetType().GetProperty(name: "Value",
-                    bindingAttr: System.Reflection.BindingFlags.GetProperty | System.Reflection.BindingFlags.Instance |
-                                 System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly);
+                var name = string.Join("|", a.Words);
+                var property = a.GetType().GetProperty("Value",
+                    System.Reflection.BindingFlags.GetProperty | System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly);
                 if (property == null)
-                    property = a.GetType().GetProperty(name: "Value",
-                        bindingAttr: System.Reflection.BindingFlags.GetProperty | System.Reflection.BindingFlags.Instance |
-                                     System.Reflection.BindingFlags.Public);
+                    property = a.GetType().GetProperty("Value",
+                        System.Reflection.BindingFlags.GetProperty |
+                        System.Reflection.BindingFlags.Instance |
+                        System.Reflection.BindingFlags.Public);
                 var value = property?.GetValue(a);
                 if (value is string[])
-                    value = string.Join("|", (string[])value);
+                    value = string.Join("|", (string[]) value);
                 Console.WriteLine($"{name}: {value}");
             });
         }

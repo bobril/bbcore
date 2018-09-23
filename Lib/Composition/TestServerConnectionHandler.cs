@@ -6,17 +6,17 @@ using System.Linq;
 
 namespace Lib.Composition
 {
-    internal class TestServerConnectionHandler : ILongPollingConnectionHandler
+    class TestServerConnectionHandler : ILongPollingConnectionHandler
     {
         ILongPollingConnection _connection;
         TestServer _testServer;
         string _userAgent;
         string _url;
-        private int _runid;
-        private TestResultsHolder _curResults;
-        private int _suiteId;
-        private Stack<SuiteOrTest> _suiteStack;
-        private TestResultsHolder _oldResults;
+        int _runid;
+        TestResultsHolder _curResults;
+        int _suiteId;
+        Stack<SuiteOrTest> _suiteStack;
+        TestResultsHolder _oldResults;
         readonly object _lock = new object();
         readonly bool _verbose;
 

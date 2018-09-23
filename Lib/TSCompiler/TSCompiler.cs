@@ -8,19 +8,22 @@ using System.Linq;
 using System.Diagnostics;
 using Newtonsoft.Json;
 using System.IO;
+using Lib.Utils.Logger;
 
 namespace Lib.TSCompiler
 {
     public class TsCompiler : ITSCompiler
     {
-        public TsCompiler(IToolsDir toolsDir)
+        public TsCompiler(IToolsDir toolsDir, ILogger logger)
         {
+            Logger = logger;
             _toolsDir = toolsDir;
             _callbacks = new BBCallbacks(this);
         }
 
         readonly IToolsDir _toolsDir;
 
+        public ILogger Logger { get; }
         public IDiskCache DiskCache { get; set; }
         public bool MeasurePerformance { get; set; }
 
@@ -157,7 +160,7 @@ namespace Lib.TSCompiler
 
             TSProject GetDirectoryInfo(IDirectoryCache dir)
             {
-                return TSProject.Get(dir, _owner.DiskCache);
+                return TSProject.Get(dir, _owner.DiskCache, _owner.Logger);
             }
 
             TSFileAdditionalInfo GetFileInfo(IFileCache file)
@@ -270,7 +273,7 @@ namespace Lib.TSCompiler
 
         bool _wasError;
         string _currentDirectory;
-        private TimeSpan _gatherTime;
+        TimeSpan _gatherTime;
 
         public bool CompileProgram()
         {

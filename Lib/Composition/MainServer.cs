@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace Lib.Composition
 {
-    internal class MainServer
+    class MainServer
     {
         public readonly ConcurrentDictionary<MainServerConnectionHandler, MainServerConnectionHandler> Clients = new ConcurrentDictionary<MainServerConnectionHandler, MainServerConnectionHandler>();
 
