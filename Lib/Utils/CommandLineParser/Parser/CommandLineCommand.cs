@@ -132,6 +132,17 @@ namespace Lib.Utils.CommandLineParser.Parser
             Console.WriteLine($"{(Words?.Length > 0 ? $"{string.Join("|", Words)}  " : "")}({Description})");
             Console.WriteLine($"  {string.Join("|", CommandLineParser.HelpWords)}  (help)");
             Arguments.ForEach(a => a.ShowHelp());
+            var subCommands = SubCommands;
+            if (subCommands != null)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Sub commands:");
+                foreach (var subCommand in subCommands)
+                {
+                    Console.WriteLine();
+                    subCommand.ShowHelp();
+                }
+            }
         }
 
         /// <summary>

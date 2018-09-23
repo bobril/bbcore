@@ -69,6 +69,7 @@ namespace Lib.Registry
 
         public void RunNpm(string dir, string aParams)
         {
+            _logger.Info("Npm " + aParams);
             var start = new ProcessStartInfo(_npmPath, aParams)
             {
                 UseShellExecute = false,
@@ -123,8 +124,8 @@ namespace Lib.Registry
 
         public void UpgradeAll(IDirectoryCache projectDirectory)
         {
-            File.Delete(PathUtils.Join(projectDirectory.FullPath,"package-lock.json"));
-            Directory.Delete(PathUtils.Join(projectDirectory.FullPath,"node_modules"),true);
+            File.Delete(PathUtils.Join(projectDirectory.FullPath, "package-lock.json"));
+            Directory.Delete(PathUtils.Join(projectDirectory.FullPath, "node_modules"), true);
             Install(projectDirectory);
         }
 

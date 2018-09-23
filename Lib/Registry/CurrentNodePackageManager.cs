@@ -62,6 +62,7 @@ namespace Lib.Registry
             if (_yarn.IsUsedInProject(projectDirectory) || _yarn.IsAvailable)
             {
                 _yarn.Install(projectDirectory);
+                return;
             }
 
             _npm.Install(projectDirectory);
@@ -78,6 +79,7 @@ namespace Lib.Registry
             if (_yarn.IsUsedInProject(projectDirectory) || _yarn.IsAvailable)
             {
                 _yarn.UpgradeAll(projectDirectory);
+                return;
             }
 
             _npm.UpgradeAll(projectDirectory);
@@ -94,6 +96,7 @@ namespace Lib.Registry
             if (_yarn.IsUsedInProject(projectDirectory) || _yarn.IsAvailable)
             {
                 _yarn.Upgrade(projectDirectory, packageName);
+                return;
             }
 
             _npm.Upgrade(projectDirectory, packageName);
@@ -110,6 +113,7 @@ namespace Lib.Registry
             if (_yarn.IsUsedInProject(projectDirectory) || _yarn.IsAvailable)
             {
                 _yarn.Add(projectDirectory, packageName, devDependency);
+                return;
             }
 
             _npm.Add(projectDirectory, packageName, devDependency);

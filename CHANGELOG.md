@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+- Added Npm next to Yarn support
+- Added new package command line commands which autodetect what package manager you are using
+
 ## 0.49.0
 
 ### Added
