@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.50.0
+
 ### Added
 
 - Added Npm next to Yarn support
