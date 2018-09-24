@@ -7,11 +7,13 @@ namespace Lib.Registry
 {
     class CurrentNodePackageManager : INodePackageManager
     {
+        readonly ILogger _logger;
         YarnNodePackageManager _yarn;
         NpmNodePackageManager _npm;
 
         public CurrentNodePackageManager(IDiskCache diskCache, ILogger logger)
         {
+            _logger = logger;
             _yarn = new YarnNodePackageManager(diskCache, logger);
             _npm = new NpmNodePackageManager(diskCache, logger);
         }
@@ -51,72 +53,57 @@ namespace Lib.Registry
             return Enumerable.Empty<PackagePathVersion>();
         }
 
-        public void Install(IDirectoryCache projectDirectory)
+        INodePackageManager Choose(IDirectoryCache projectDirectory)
         {
             if (_npm.IsUsedInProject(projectDirectory))
             {
-                _npm.Install(projectDirectory);
-                return;
+                if (_npm.IsAvailable)
+                {
+                    return _npm;
+                }
+                _logger.Error("Npm is used in project, but it is not found installed in PATH. Skipping ...");
+                return null;
             }
 
-            if (_yarn.IsUsedInProject(projectDirectory) || _yarn.IsAvailable)
+            var yarnIsUsed = _yarn.IsUsedInProject(projectDirectory);
+            if (yarnIsUsed || _yarn.IsAvailable)
             {
-                _yarn.Install(projectDirectory);
-                return;
+                if (_yarn.IsAvailable)
+                {
+                    if (!yarnIsUsed)
+                        _logger.Info("Introducing Yarn into project");
+                    return _yarn;
+                }
+                _logger.Error("Yarn is used in project, but it is not found installed in PATH. Skipping ...");
+                return null;
             }
+            if (_npm.IsAvailable)
+            {
+                _logger.Info("Introducing Npm into project");
+                return _npm;
+            }
+            _logger.Error("Yarn and Npm are not found installed in PATH. Skipping package manager operation.");
+            return null;
+        }
 
-            _npm.Install(projectDirectory);
+        public void Install(IDirectoryCache projectDirectory)
+        {
+            Choose(projectDirectory)?.Install(projectDirectory);
         }
 
         public void UpgradeAll(IDirectoryCache projectDirectory)
         {
-            if (_npm.IsUsedInProject(projectDirectory))
-            {
-                _npm.UpgradeAll(projectDirectory);
-                return;
-            }
-
-            if (_yarn.IsUsedInProject(projectDirectory) || _yarn.IsAvailable)
-            {
-                _yarn.UpgradeAll(projectDirectory);
-                return;
-            }
-
-            _npm.UpgradeAll(projectDirectory);
+            Choose(projectDirectory)?.UpgradeAll(projectDirectory);
         }
 
         public void Upgrade(IDirectoryCache projectDirectory, string packageName)
         {
-            if (_npm.IsUsedInProject(projectDirectory))
-            {
-                _npm.Upgrade(projectDirectory, packageName);
-                return;
-            }
-
-            if (_yarn.IsUsedInProject(projectDirectory) || _yarn.IsAvailable)
-            {
-                _yarn.Upgrade(projectDirectory, packageName);
-                return;
-            }
-
-            _npm.Upgrade(projectDirectory, packageName);
+            Choose(projectDirectory)?.Upgrade(projectDirectory, packageName);
         }
 
         public void Add(IDirectoryCache projectDirectory, string packageName, bool devDependency = false)
         {
-            if (_npm.IsUsedInProject(projectDirectory))
-            {
-                _npm.Add(projectDirectory, packageName, devDependency);
-                return;
-            }
-
-            if (_yarn.IsUsedInProject(projectDirectory) || _yarn.IsAvailable)
-            {
-                _yarn.Add(projectDirectory, packageName, devDependency);
-                return;
-            }
-
-            _npm.Add(projectDirectory, packageName, devDependency);
+            Choose(projectDirectory)?.Add(projectDirectory, packageName, devDependency);
         }
     }
 }
