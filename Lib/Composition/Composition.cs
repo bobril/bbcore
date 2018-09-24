@@ -50,7 +50,7 @@ namespace Lib.Composition
         bool _verbose;
         bool _forbiddenDependencyUpdate;
         NotificationManager _notificationManager;
-        IConsoleLogger _logger;
+        readonly IConsoleLogger _logger = new ConsoleLogger();
 
         public Composition()
         {
@@ -628,7 +628,6 @@ namespace Lib.Composition
             _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
             _compilerPool = new CompilerPool(_tools, _logger);
             _notificationManager = new NotificationManager();
-            _logger = new ConsoleLogger();
         }
 
         public void InitDiskCache()
