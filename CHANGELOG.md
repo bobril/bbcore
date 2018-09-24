@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.50.1
+
 ### Fixed
 
 - Regression with crashing when Downloading TypeScript
