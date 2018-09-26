@@ -164,7 +164,7 @@ namespace Lib.ToolsDir
                     task = npmr.GetPackageTgz("typescript", tgzName);
                 });
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 _logger.Error("Failed to parse TypeScript package info: " +
                               packageEtagAndContent.content.Substring(0,
