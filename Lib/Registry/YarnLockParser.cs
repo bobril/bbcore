@@ -56,7 +56,7 @@ namespace Lib.Registry
                 {
                     chop++;
                     // If this is a \r\n line, ignore both chars but only add one new line
-                    if (input[1] == '\n')
+                    if (input.Length > 1 && input[1] == '\n')
                     {
                         chop++;
                     }

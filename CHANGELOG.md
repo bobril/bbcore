@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- In package upgrade command print relevant CHANGELOG.md entries.
+
 ## 0.50.1
 
 ### Fixed

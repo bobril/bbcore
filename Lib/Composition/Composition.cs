@@ -136,7 +136,7 @@ namespace Lib.Composition
             }
             else
             {
-                currentNodePackageManager.Add(project.Owner.Owner,addCommand.PackageName.Value,addCommand.Dev.Value);
+                currentNodePackageManager.Add(project.Owner.Owner, addCommand.PackageName.Value, addCommand.Dev.Value);
             }
         }
 
@@ -145,13 +145,21 @@ namespace Lib.Composition
             InitDiskCache();
             var project = AddProject(PathUtils.Normalize(Environment.CurrentDirectory), false);
             var currentNodePackageManager = new CurrentNodePackageManager(_dc, _logger);
+            var before = currentNodePackageManager.GetLockedDependencies(project.Owner.Owner).ToArray();
             if (upgradeCommand.PackageName.Value == null)
             {
                 currentNodePackageManager.UpgradeAll(project.Owner.Owner);
             }
             else
             {
-                currentNodePackageManager.Upgrade(project.Owner.Owner,upgradeCommand.PackageName.Value);
+                currentNodePackageManager.Upgrade(project.Owner.Owner, upgradeCommand.PackageName.Value);
+            }
+
+            _dc.CheckForTrueChange();
+            var after = currentNodePackageManager.GetLockedDependencies(project.Owner.Owner).ToArray();
+            foreach (var line in new DiffChangeLog(_dc).Generate(before, after))
+            {
+                _logger.WriteLine(line);
             }
         }
 
