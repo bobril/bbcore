@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.51.0
+
 ### Added
 
 - In package upgrade command print relevant CHANGELOG.md entries.
