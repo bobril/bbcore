@@ -69,9 +69,6 @@
     <PackageReference Include="UAParser" Version="3.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="ChakraCore.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="Resources\error.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
