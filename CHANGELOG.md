@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- npm upgrade command now uses bullet proof directory delete.
+
 ## 0.51.0
 
 ### Added

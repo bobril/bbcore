@@ -124,9 +124,58 @@ namespace Lib.Registry
 
         public void UpgradeAll(IDirectoryCache projectDirectory)
         {
+            _diskCache.UpdateIfNeeded(projectDirectory);
             File.Delete(PathUtils.Join(projectDirectory.FullPath, "package-lock.json"));
-            Directory.Delete(PathUtils.Join(projectDirectory.FullPath, "node_modules"), true);
+            var dirToDelete = projectDirectory.TryGetChildNoVirtual("node_modules") as IDirectoryCache;
+            RecursiveDelete(dirToDelete);
             Install(projectDirectory);
+        }
+
+        void RecursiveDelete(IDirectoryCache dirToDelete)
+        {
+            if (dirToDelete == null)
+                return;
+            _diskCache.UpdateIfNeeded(dirToDelete);
+            foreach (var item in dirToDelete)
+            {
+                if (item is IFileCache)
+                {
+                    try
+                    {
+                        File.Delete(item.FullPath);
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+
+                    continue;
+                }
+
+                var dir = item as IDirectoryCache;
+                if (dir != null && dir.IsLink)
+                {
+                    try
+                    {
+                        Directory.Delete(dir.FullPath, false);
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+                }
+
+                RecursiveDelete(dir);
+            }
+
+            try
+            {
+                Directory.Delete(dirToDelete.FullPath, true);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
         public void Upgrade(IDirectoryCache projectDirectory, string packageName)
