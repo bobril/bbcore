@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- improved error message to investigate TypeScript package download failure
 - npm upgrade command now uses bullet proof directory delete.
 
 ## 0.51.0

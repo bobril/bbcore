@@ -152,15 +152,26 @@ namespace Lib.ToolsDir
             var version = new SemVer.Version(versionString);
             var npmr = new NpmRepositoryAccessor();
             var packageEtagAndContent = await npmr.GetPackageInfo("typescript", null);
-            var packageInfo = new PackageInfo(packageEtagAndContent.content);
             var task = null as Task<byte[]>;
-            packageInfo.LazyParseVersions(v => v == version, reader =>
+            try
             {
-                var j = PackageJson.Parse(reader);
-                var tgzName = PathUtils.SplitDirAndFile(j.Dist.Tarball).Item2;
-                _logger.Info($"Downloading Tarball {tgzName}");
-                task = npmr.GetPackageTgz("typescript", tgzName);
-            });
+                var packageInfo = new PackageInfo(packageEtagAndContent.content);
+                packageInfo.LazyParseVersions(v => v == version, reader =>
+                {
+                    var j = PackageJson.Parse(reader);
+                    var tgzName = PathUtils.SplitDirAndFile(j.Dist.Tarball).Item2;
+                    _logger.Info($"Downloading Tarball {tgzName}");
+                    task = npmr.GetPackageTgz("typescript", tgzName);
+                });
+            }
+            catch (Exception e)
+            {
+                _logger.Error("Failed to parse TypeScript package info: " +
+                              packageEtagAndContent.content.Substring(0,
+                                  Math.Min(1000, packageEtagAndContent.content.Length)));
+                throw;
+            }
+
             if (task != null)
             {
                 var bytes = await task;
