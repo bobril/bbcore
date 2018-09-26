@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.51.1
+
 ### Fixed
 
 - improved error message to investigate TypeScript package download failure
