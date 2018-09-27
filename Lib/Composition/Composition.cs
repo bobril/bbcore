@@ -157,10 +157,23 @@ namespace Lib.Composition
 
             _dc.CheckForTrueChange();
             var after = currentNodePackageManager.GetLockedDependencies(project.Owner.Owner).ToArray();
+            var lines = new List<string>();
             foreach (var line in new DiffChangeLog(_dc).Generate(before, after))
             {
+                lines.Add(line);
                 _logger.WriteLine(line);
             }
+
+            if (lines.Count > 0)
+                try
+                {
+                    File.WriteAllText(PathUtils.Join(project.Owner.Owner.FullPath, "DEPSCHANGELOG.md"),
+                        string.Join('\n', lines) + '\n', Encoding.UTF8);
+                }
+                catch (Exception e)
+                {
+                    _logger.Error($"Write DEPSCHANGELOG.md failed with {e}");
+                }
         }
 
         void RunPackageInstall(PackageManagerInstallCommand installCommand)
