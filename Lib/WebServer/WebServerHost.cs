@@ -13,6 +13,7 @@ namespace Lib.WebServer
     {
         IWebHost _webHost;
 
+        public bool InDocker { get; set; }
         public RequestDelegate Handler { get; set; }
         public int Port { get; set; }
         public bool FallbackToRandomPort { get; set; }
@@ -20,6 +21,13 @@ namespace Lib.WebServer
 
         public void Start()
         {
+            if (InDocker)
+            {
+                FallbackToRandomPort = false;
+                if (Port == 0)
+                    Port = 8080;
+                BindToAny = true;
+            }
             _webHost = BuildWebHost(Port);
             if (Port != 0 && FallbackToRandomPort)
             {
@@ -89,7 +97,8 @@ namespace Lib.WebServer
                 config.Limits.MaxRequestBodySize = int.MaxValue;
                 config.ApplicationSchedulingMode = Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.Internal.SchedulingMode.Inline;
                 config.Listen(BindToAny ? IPAddress.Any : IPAddress.Loopback, port);
-                config.Listen(BindToAny ? IPAddress.IPv6Any : IPAddress.IPv6Loopback, port);
+                if (!InDocker)
+                    config.Listen(BindToAny ? IPAddress.IPv6Any : IPAddress.IPv6Loopback, port);
             })
             .Configure(a => a.Run(Handler))
             .Build();

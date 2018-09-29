@@ -30,6 +30,7 @@ namespace Lib.Composition
 {
     public class Composition
     {
+        readonly bool _inDocker;
         string _bbdir;
         ToolsDir.IToolsDir _tools;
         DiskCache.DiskCache _dc;
@@ -52,8 +53,9 @@ namespace Lib.Composition
         NotificationManager _notificationManager;
         readonly IConsoleLogger _logger = new ConsoleLogger();
 
-        public Composition()
+        public Composition(bool inDocker)
         {
+            _inDocker = inDocker;
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             InitTools();
@@ -633,17 +635,24 @@ namespace Lib.Composition
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
-            var location = new Uri(Assembly.GetEntryAssembly().GetName().CodeBase);
-            var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory.FullName);
-            _bbdir = PathUtils.Join(
-                PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)), ".bbcore");
-            if (runningFrom.StartsWith(_bbdir))
+            if (_inDocker)
             {
-                _bbdir = PathUtils.Join(_bbdir, "tools");
+                _bbdir = "/bbcache";
             }
             else
             {
-                _bbdir = PathUtils.Join(_bbdir, "dev");
+                var location = new Uri(Assembly.GetEntryAssembly().GetName().CodeBase);
+                var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory.FullName);
+                _bbdir = PathUtils.Join(
+                    PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)), ".bbcore");
+                if (runningFrom.StartsWith(_bbdir))
+                {
+                    _bbdir = PathUtils.Join(_bbdir, "tools");
+                }
+                else
+                {
+                    _bbdir = PathUtils.Join(_bbdir, "dev");
+                }
             }
 
             _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
@@ -692,6 +701,7 @@ namespace Lib.Composition
         public void StartWebServer(int port, bool bindToAny)
         {
             _webServer = new WebServerHost();
+            _webServer.InDocker = _inDocker;
             _webServer.FallbackToRandomPort = true;
             _webServer.Port = port;
             _webServer.Handler = Handler;
