@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.52.0
+
 ### Added
 
 - Official Docker build
