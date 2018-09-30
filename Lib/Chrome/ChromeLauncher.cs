@@ -18,27 +18,35 @@ namespace Lib.Chrome
 
     public class ChromeProcessFactory : IChromeProcessFactory
     {
+        readonly bool _inDocker;
         public string ChromePath { get; }
 
-        public ChromeProcessFactory(string chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
+        public ChromeProcessFactory(bool inDocker, string chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
         {
+            _inDocker = inDocker;
             ChromePath = chromePath;
         }
 
         public IChromeProcess Create(string urlToOpen)
         {
-            string path = Path.GetRandomFileName();
-            var directoryInfo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), path));
-            var chromeProcessArgs = new List<string>
+            var chromeProcessArgs = new List<string>();
+            DirectoryInfo directoryInfo = null;
+            if (!_inDocker)
             {
-                $"--user-data-dir=\"{directoryInfo.FullName}\"",
-                $"--remote-debugging-port={8081}",
-                "--bwsi",
-                "--no-first-run",
-                "--headless",
-                "--disable-gpu",
-                "\""+urlToOpen+"\""
-            };
+                var path = Path.GetRandomFileName();
+                directoryInfo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), path));
+                chromeProcessArgs.Add($"--user-data-dir=\"{directoryInfo.FullName}\"");
+                chromeProcessArgs.Add("--bwsi");
+            }
+            else
+            {
+                chromeProcessArgs.Add("--no-sandbox");
+            }
+            chromeProcessArgs.Add($"--remote-debugging-port={9222}");
+            chromeProcessArgs.Add("--headless");
+            chromeProcessArgs.Add("--disable-gpu");
+            chromeProcessArgs.Add("--no-first-run");
+            chromeProcessArgs.Add("\""+urlToOpen+"\"");
             var processStartInfo = new ProcessStartInfo(ChromePath, string.Join(" ", chromeProcessArgs));
             processStartInfo.RedirectStandardError = true;
             processStartInfo.RedirectStandardOutput = true;
@@ -99,7 +107,14 @@ namespace Lib.Chrome
                 }
                 else
                 {
-                    Process.Kill();
+                    try
+                    {
+                        Process.Kill();
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
                 }
                 Process.WaitForExit();
                 var repetition = 0;
@@ -107,7 +122,7 @@ namespace Lib.Chrome
                 {
                     try
                     {
-                        _userDirectory.Delete(true);
+                        _userDirectory?.Delete(true);
                         return;
                     }
                     catch

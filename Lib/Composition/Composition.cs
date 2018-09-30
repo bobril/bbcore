@@ -1051,7 +1051,7 @@ namespace Lib.Composition
             if (_chromeProcessFactory == null)
             {
                 var chromePath = ChromePathFinder.GetChromePath(new NativeFsAbstraction());
-                _chromeProcessFactory = new ChromeProcessFactory(chromePath);
+                _chromeProcessFactory = new ChromeProcessFactory(_inDocker, chromePath);
             }
 
             if (_chromeProcess == null)

@@ -19,6 +19,8 @@ RUN rm -r ./out/Resources
 
 FROM microsoft/dotnet:2.1-runtime-deps-stretch-slim AS runtime
 
+RUN apt-get update && apt-get install -y chromium
+
 ENV LD_LIBRARY_PATH=/app
 WORKDIR /project
 COPY --from=build /app/bb/out /app
