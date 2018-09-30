@@ -1,14 +1,14 @@
 # bbcore
 
-Rewrite of bobril-build to .Net Core. Mainly for speed reasons. Massive work in progress.
+Rewrite of bobril-build to .Net Core. Mainly for speed reasons. It now replaced original JS version.
 
 # How to start
 
-    yarn global add bobril-build-core
+    yarn global add bobril-build
 
-    bb2
+    bb
 
-# What to do when bb2 failing to start for first time because Github rate limit
+# What to do when bb failing to start for first time because Github rate limit
 
 Github by default has limit of 60 anonymous requests per hour from one IP. So if it fails you have 2 options, wait or provide token to authenticate as yourself. First read [https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/] how to create your token. Token can have just read only rights, you don't need to select any scopes. Then you can either store it into your user profile directory in .github/token.txt file or set environment variable GITHUB_TOKEN.
 
@@ -20,6 +20,31 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
         "bbVersion": "0.9.0",
         "tsVersion": "2.7.1"
     }
+
+# How to use Docker version
+
+## Run it
+
+    docker run -it --rm -v %cd%:/project -v directory_for_persistent_cache:/bbcache -p 8080:8080 bobril/build
+
+## What it contains
+
+- Bobril-build
+- Chrome
+- Nodejs
+- Npm
+- Yarn
+
+## Build it on your own
+
+    docker build . -t bobril/build --build-arg VERSION=x.y.z
+    docker tag bobril/build bobril/build:x.y.z
+    docker push bobril/build:x.y.z
+
+## Look inside
+
+    docker history bobril/build
+    docker run -it --rm --entrypoint bash bobril/build
 
 # List of bobril-build specific warnings and errors
 

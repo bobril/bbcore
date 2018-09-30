@@ -4,6 +4,8 @@
 
 ### Added
 
+- Official Docker build
+- Making it work in Docker 
 - package upgrade command also creates DEPSCHANGELOG.md
 
 ## 0.51.1

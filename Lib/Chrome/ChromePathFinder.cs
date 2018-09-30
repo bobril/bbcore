@@ -9,8 +9,7 @@ namespace Lib.Chrome
     {
 
         const string WindowsChromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
-        const string LinuxChromePath = "/opt/google/chrome/google-chrome";
-        static readonly string[] LinuxChromiumPaths = { "/usr/bin/chromium", "/usr/bin/chromium-browser" };
+        static readonly string[] LinuxChromePaths = { "/usr/bin/google-chrome", "/opt/google/chrome/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser" };
         static readonly string[] MacChromePaths = { "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/Applications/Chromium.app/Contents/MacOS/Chromium" };
 
         public static string GetChromePath(IFsAbstraction fsAbstraction)
@@ -43,16 +42,11 @@ namespace Lib.Chrome
 
         static string GetLinuxChromePath(IFsAbstraction fsAbstraction)
         {
-            if (fsAbstraction.FileExists(LinuxChromePath))
+            foreach (string path in LinuxChromePaths)
             {
-                return LinuxChromePath;
-            }
-
-            foreach (string chromiumPath in LinuxChromiumPaths)
-            {
-                if (fsAbstraction.FileExists(chromiumPath))
+                if (fsAbstraction.FileExists(path))
                 {
-                    return chromiumPath;
+                    return path;
                 }
             }
             throw new Exception("Chrome not found. Install Google Chrome or Chromium.");

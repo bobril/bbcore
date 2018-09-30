@@ -41,6 +41,7 @@ namespace Lib.Chrome
             else
             {
                 chromeProcessArgs.Add("--no-sandbox");
+                chromeProcessArgs.Add("--remote-debugging-address=0.0.0.0");
             }
             chromeProcessArgs.Add($"--remote-debugging-port={9222}");
             chromeProcessArgs.Add("--headless");

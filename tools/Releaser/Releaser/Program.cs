@@ -137,10 +137,42 @@ namespace Releaser
                 uploadAsset = await UploadWithRetry(projDir, client, release2, "osx-x64.zip");
                 Console.WriteLine("osx-x64 url:");
                 Console.WriteLine(uploadAsset.BrowserDownloadUrl);
+                DockerBuild(projDir, newVersion);
                 Console.WriteLine("Press Enter for finish");
                 Console.ReadLine();
                 return 0;
             }
+        }
+
+        static void DockerBuild(string projDir, string version)
+        {
+            var start = new ProcessStartInfo("docker", $"build . -t bobril/build --build-arg VERSION={version}")
+            {
+                UseShellExecute = true,
+                WorkingDirectory = projDir
+            };
+            Console.WriteLine($"Starting docker {start.Arguments}");
+            var process = Process.Start(start);
+            process.WaitForExit();
+            Console.WriteLine($"Exit code:{process.ExitCode}");
+            start = new ProcessStartInfo("docker", $"tag bobril/build bobril/build:{version}")
+            {
+                UseShellExecute = true,
+                WorkingDirectory = projDir
+            };
+            Console.WriteLine($"Starting docker {start.Arguments}");
+            process = Process.Start(start);
+            process.WaitForExit();
+            Console.WriteLine($"Exit code:{process.ExitCode}");
+            start = new ProcessStartInfo("docker", $"push bobril/build:{version}")
+            {
+                UseShellExecute = true,
+                WorkingDirectory = projDir
+            };
+            Console.WriteLine($"Starting docker {start.Arguments}");
+            process = Process.Start(start);
+            process.WaitForExit();
+            Console.WriteLine($"Exit code:{process.ExitCode}");
         }
 
         static async Task<ReleaseAsset> UploadWithRetry(string projDir, GitHubClient client, Release release2, string fileName)
