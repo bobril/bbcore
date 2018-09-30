@@ -154,7 +154,11 @@ namespace Releaser
             Console.WriteLine($"Starting docker {start.Arguments}");
             var process = Process.Start(start);
             process.WaitForExit();
-            Console.WriteLine($"Exit code:{process.ExitCode}");
+            if (process.ExitCode > 0)
+            {
+                Console.WriteLine($"Exit code:{process.ExitCode}");
+                return;
+            }
             start = new ProcessStartInfo("docker", $"tag bobril/build bobril/build:{version}")
             {
                 UseShellExecute = true,
@@ -163,7 +167,11 @@ namespace Releaser
             Console.WriteLine($"Starting docker {start.Arguments}");
             process = Process.Start(start);
             process.WaitForExit();
-            Console.WriteLine($"Exit code:{process.ExitCode}");
+            if (process.ExitCode > 0)
+            {
+                Console.WriteLine($"Exit code:{process.ExitCode}");
+                return;
+            }
             start = new ProcessStartInfo("docker", $"push bobril/build:{version}")
             {
                 UseShellExecute = true,
@@ -172,7 +180,10 @@ namespace Releaser
             Console.WriteLine($"Starting docker {start.Arguments}");
             process = Process.Start(start);
             process.WaitForExit();
-            Console.WriteLine($"Exit code:{process.ExitCode}");
+            if (process.ExitCode > 0)
+            {
+                Console.WriteLine($"Exit code:{process.ExitCode}");
+            }
         }
 
         static async Task<ReleaseAsset> UploadWithRetry(string projDir, GitHubClient client, Release release2, string fileName)
