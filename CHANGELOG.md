@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.53.0
+
 ### Added
 
 - Lowered memory usage with just small slow down
