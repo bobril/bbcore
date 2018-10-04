@@ -40,6 +40,7 @@ namespace Lib.TSCompiler
         public bool GenerateSpritesTs;
         public string Variant;
         public bool NoHtml;
+        public bool WarningsAsErrors;
 
         public string HtmlHeadExpanded;
         public string MainFile;
@@ -460,6 +461,7 @@ namespace Lib.TSCompiler
             var pluginsSection = bobrilSection?.GetValue("plugins") as JObject;
             GenerateSpritesTs =
                 pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
+            WarningsAsErrors = bobrilSection?["warningsAsErrors"]?.Value<bool>() ?? false;
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)

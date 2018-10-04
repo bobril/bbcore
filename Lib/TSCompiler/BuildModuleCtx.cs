@@ -247,9 +247,6 @@ namespace Lib.TSCompiler
                 throw new Exception("Cannot found " + fileName);
             }
             var fi = TSFileAdditionalInfo.Get(fc, _owner.DiskCache);
-            Console.ForegroundColor = isError ? ConsoleColor.Red : ConsoleColor.Yellow;
-            Console.WriteLine(PathUtils.Subtract(fileName, _owner.Owner.FullPath) + "(" + (startLine + 1) + "," + (startCharacter + 1) + "): " + (isError ? "error" : "warning") + " TS" + code + ": " + text);
-            Console.ForegroundColor = ConsoleColor.Gray;
             fi.ReportDiag(isError, code, text, startLine, startCharacter, endLine, endCharacter);
         }
 

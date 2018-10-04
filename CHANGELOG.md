@@ -5,7 +5,9 @@
 ### Added
 
 - Lowered memory usage with just small slow down
-- Allow to manually dispose JS Engine to free most of memory.
+- Allow to manually dispose JS Engine to free most of memory. Write "f" and Enter when bb running.
+- warningsAsErrors package.json bobril section flag.
+- All errors and warnings are printed to console too.
 
 ## 0.52.0
 

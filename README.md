@@ -63,6 +63,12 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
 
 # Package.json - bobril section features
 
+## Warnings As Errors
+
+    "bobril": {
+        "warningsAsErrors": true
+    }
+
 ## How to enable generating of **sprites.ts** from all pngs in assets directory
 
     "bobril": {

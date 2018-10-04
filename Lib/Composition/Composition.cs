@@ -406,7 +406,7 @@ namespace Lib.Composition
                     var buildResult = ctx.BuildResult;
                     var filesContent = new Dictionary<string, object>();
                     proj.FillOutputByAdditionalResourcesDirectory(filesContent);
-                    IncludeMessages(buildResult, ref errors, ref warnings, messages, messagesFromFiles,
+                    IncludeMessages(proj, buildResult, ref errors, ref warnings, messages, messagesFromFiles,
                         proj.Owner.Owner.FullPath);
                     if (errors == 0)
                     {
@@ -446,13 +446,29 @@ namespace Lib.Composition
             }
 
             var duration = DateTime.UtcNow - start;
+            PrintMessages(messages);
             var color = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
             _logger.WriteLine(
-                "Build done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s with " +
-                Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " +
-                Plural(totalFiles, "file"), color);
+                $"Build done in {duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(totalFiles, "file")}",
+                color);
 
             Environment.ExitCode = errors != 0 ? 1 : 0;
+        }
+
+        void PrintMessages(IList<CompilationResultMessage> messages)
+        {
+            foreach (var message in messages)
+            {
+                if (message.IsError)
+                {
+                    _logger.Error(
+                        $"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text}");
+                }
+                else
+                {
+                    _logger.Warn($"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text}");
+                }
+            }
         }
 
         string _lastTsVersion = null;
@@ -525,8 +541,10 @@ namespace Lib.Composition
                         fastBundle.Build("bb/base", "testbundle.js.map", true);
                         proj.TestProjFastBundle = fastBundle;
                         proj.FilesContent = filesContent;
-                        IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages, messagesFromFiles,
+                        IncludeMessages(proj, proj.TestProjFastBundle, ref errors, ref warnings, messages,
+                            messagesFromFiles,
                             proj.Owner.Owner.FullPath);
+                        PrintMessages(messages);
                         if (errors == 0)
                         {
                             var wait = new Semaphore(0, 1);
@@ -933,7 +951,7 @@ namespace Lib.Composition
                             fastBundle.BuildResult = buildResult;
                             fastBundle.Build("bb/base", "bundle.js.map");
                             proj.MainProjFastBundle = fastBundle;
-                            IncludeMessages(proj.MainProjFastBundle, ref errors, ref warnings, messages,
+                            IncludeMessages(proj, proj.MainProjFastBundle, ref errors, ref warnings, messages,
                                 messagesFromFiles, proj.Owner.Owner.FullPath);
                             if (errors == 0 && proj.LiveReloadEnabled)
                             {
@@ -958,7 +976,7 @@ namespace Lib.Composition
                                 fastBundle.BuildResult = testBuildResult;
                                 fastBundle.Build("bb/base", "testbundle.js.map", true);
                                 proj.TestProjFastBundle = fastBundle;
-                                IncludeMessages(proj.TestProjFastBundle, ref errors, ref warnings, messages,
+                                IncludeMessages(proj, proj.TestProjFastBundle, ref errors, ref warnings, messages,
                                     messagesFromFiles, proj.Owner.Owner.FullPath);
                                 if (errors == 0)
                                 {
@@ -987,10 +1005,12 @@ namespace Lib.Composition
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
                     _notificationManager.SendNotification(
                         NotificationParameters.CreateBuildParameters(errors, warnings, duration.TotalSeconds));
+                    PrintMessages(messages);
                     var color = errors != 0 ? ConsoleColor.Red :
                         warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     _logger.WriteLine(
-                        $"Build done in {(DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(totalFiles, "file")}", color);
+                        $"Build done in {(DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(totalFiles, "file")}",
+                        color);
                     _dc.ResetChange();
                 }
             });
@@ -1003,13 +1023,14 @@ namespace Lib.Composition
             return $"{number} {word}{(number > 1 ? "s" : "")}";
         }
 
-        void IncludeMessages(FastBundleBundler fastBundle, ref int errors, ref int warnings,
+        void IncludeMessages(ProjectOptions options, FastBundleBundler fastBundle, ref int errors, ref int warnings,
             List<CompilationResultMessage> messages, HashSet<string> messagesFromFiles, string rootPath)
         {
-            IncludeMessages(fastBundle.BuildResult, ref errors, ref warnings, messages, messagesFromFiles, rootPath);
+            IncludeMessages(options, fastBundle.BuildResult, ref errors, ref warnings, messages, messagesFromFiles,
+                rootPath);
         }
 
-        void IncludeMessages(BuildResult buildResult, ref int errors, ref int warnings,
+        void IncludeMessages(ProjectOptions options, BuildResult buildResult, ref int errors, ref int warnings,
             List<CompilationResultMessage> messages, HashSet<string> messagesFromFiles, string rootPath)
         {
             foreach (var pathInfoPair in buildResult.Path2FileInfo)
@@ -1022,14 +1043,15 @@ namespace Lib.Composition
                     continue;
                 foreach (var d in diag)
                 {
-                    if (d.isError)
+                    var isError = d.isError || options.WarningsAsErrors;
+                    if (isError)
                         errors++;
                     else
                         warnings++;
                     messages.Add(new CompilationResultMessage
                     {
                         FileName = PathUtils.Subtract(pathInfoPair.Key, rootPath),
-                        IsError = d.isError,
+                        IsError = isError,
                         Text = d.text,
                         Pos = new int[]
                         {

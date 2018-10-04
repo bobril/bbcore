@@ -60,7 +60,7 @@ namespace Lib.TSCompiler
         List<TSFileAdditionalInfo> _localImports;
         List<Diag> _diag;
 
-        public IReadOnlyList<Diag> Diagnostic { get => _diag; }
+        public IReadOnlyList<Diag> Diagnostic => _diag;
         public IReadOnlyList<TSFileAdditionalInfo> LocalImports { get => _localImports; }
         public string ImportedAsModule { get; internal set; }
 
