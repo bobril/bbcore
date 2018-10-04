@@ -1,8 +1,9 @@
-﻿using Lib.DiskCache;
+﻿using System;
+using Lib.DiskCache;
 
 namespace Lib.TSCompiler
 {
-    public interface ITSCompiler
+    public interface ITSCompiler: IDisposable
     {
         IDiskCache DiskCache { get; set; }
         ITSCompilerOptions CompilerOptions { get; set; }

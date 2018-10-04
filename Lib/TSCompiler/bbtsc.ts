@@ -37,8 +37,6 @@ interface IBB {
     getModifications(fileName: string): string;
 }
 
-let parseCache: { [fileName: string]: [number, ts.SourceFile] } = {};
-
 function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
     function getCanonicalFileName(fileName: string): string {
         return fileName;
@@ -49,15 +47,6 @@ function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
         languageVersion: ts.ScriptTarget,
         onError?: (message: string) => void
     ): ts.SourceFile {
-        let version = bb.getChangeId(fileName);
-        if (version == undefined) {
-            if (onError) {
-                onError("Read Error in " + fileName);
-            }
-            throw new Error("Cannot getSourceFile " + fileName);
-        }
-        let cache = parseCache[fileName];
-        if (cache && version == cache[0]) return cache[1];
         let text = bb.readFile(fileName, true);
         if (text == undefined) {
             if (onError) {
@@ -66,7 +55,6 @@ function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
             throw new Error("Cannot getSourceFile " + fileName);
         }
         let res = ts.createSourceFile(fileName, text, languageVersion, setParentNodes);
-        if (fileName.endsWith(".d.ts")) parseCache[fileName] = [version, res];
         return res;
     }
 
@@ -135,7 +123,7 @@ function bbGetCurrentCompilerOptions(): string {
     return JSON.stringify(compilerOptions);
 }
 
-let program: ts.Program;
+let program: ts.Program | undefined;
 let typeChecker: ts.TypeChecker;
 
 function addLibPrefixPostfix(names: string[]) {
@@ -189,13 +177,13 @@ function reportDiagnostics(diagnostics: ReadonlyArray<ts.Diagnostic>) {
 }
 
 function bbCompileProgram(): string {
-    let diagnostics = program.getSyntacticDiagnostics();
+    let diagnostics = program!.getSyntacticDiagnostics();
     reportDiagnostics(diagnostics);
     if (diagnostics.length === 0) {
-        let diagnostics = program.getGlobalDiagnostics();
+        let diagnostics = program!.getGlobalDiagnostics();
         reportDiagnostics(diagnostics);
         if (diagnostics.length === 0) {
-            let diagnostics = program.getSemanticDiagnostics();
+            let diagnostics = program!.getSemanticDiagnostics();
             reportDiagnostics(diagnostics);
         }
     }
@@ -205,7 +193,7 @@ function bbCompileProgram(): string {
 const sourceInfos: { [name: string]: SourceInfo } = Object.create(null);
 
 function bbGatherSourceInfo(): void {
-    let sourceFiles = program.getSourceFiles();
+    let sourceFiles = program!.getSourceFiles();
     const resolvePathStringLiteral = (nn: ts.StringLiteral) =>
         bb.resolvePathStringLiteral(nn.getSourceFile().fileName, nn.text);
     for (let i = 0; i < sourceFiles.length; i++) {
@@ -251,8 +239,9 @@ function toJsonableSourceInfo(sourceInfo: SourceInfo) {
 }
 
 function bbEmitProgram(): boolean {
-    const res = program.emit(undefined, undefined, undefined, undefined, transformers);
+    const res = program!.emit(undefined, undefined, undefined, undefined, transformers);
     reportDiagnostics(res.diagnostics);
+    program = undefined;
     return !res.emitSkipped;
 }
 
@@ -425,7 +414,7 @@ function evalTrueSourceByExportName(
             typeChecker
         };
         evalSourceCache.set(sourceName, sc);
-    }
+    } 
     let program = sc.program;
     let typeChecker = sc.typeChecker;
     let sourceAst = program.getSourceFile(sourceName);

@@ -300,9 +300,16 @@ namespace Lib.TSCompiler
             var res = engine.CallFunction<bool>("bbEmitProgram") && !_wasError;
             if (MeasurePerformance)
             {
-                Console.WriteLine(engine.CallFunction("bbFinishTSPerformance")+$" GatherInfo: {_gatherTime.TotalMilliseconds:0}");
+                Console.WriteLine(
+                    $"{engine.CallFunction("bbFinishTSPerformance")} GatherInfo: {_gatherTime.TotalMilliseconds:0}");
             }
+            engine.CollectGarbage();
             return res;
+        }
+
+        public void Dispose()
+        {
+            _engine?.Dispose();
         }
 
         public string GetTSVersion()

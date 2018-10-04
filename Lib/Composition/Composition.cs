@@ -882,7 +882,7 @@ namespace Lib.Composition
                         continue;
                     _dc.ResetChange();
                     _hasBuildWork.Set();
-                    DateTime start = DateTime.UtcNow;
+                    var start = DateTime.UtcNow;
                     ProjectOptions[] toBuild;
                     lock (_projectsLock)
                     {
@@ -995,6 +995,8 @@ namespace Lib.Composition
                         "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " +
                         Plural(totalFiles, "file"), color);
                     _dc.ResetChange();
+                    GC.Collect(GC.MaxGeneration);
+                    _compilerPool.FreeMemory().GetAwaiter();
                 }
             });
         }
@@ -1003,7 +1005,7 @@ namespace Lib.Composition
         {
             if (number == 0)
                 return "no " + word + "s";
-            return number + " " + word + (number > 1 ? "s" : "");
+            return $"{number} {word}{(number > 1 ? "s" : "")}";
         }
 
         void IncludeMessages(FastBundleBundler fastBundle, ref int errors, ref int warnings,

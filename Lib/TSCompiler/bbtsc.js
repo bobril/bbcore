@@ -20,22 +20,11 @@ var __spread = (this && this.__spread) || function () {
     for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
     return ar;
 };
-var parseCache = {};
 function createCompilerHost(setParentNodes) {
     function getCanonicalFileName(fileName) {
         return fileName;
     }
     function getSourceFile(fileName, languageVersion, onError) {
-        var version = bb.getChangeId(fileName);
-        if (version == undefined) {
-            if (onError) {
-                onError("Read Error in " + fileName);
-            }
-            throw new Error("Cannot getSourceFile " + fileName);
-        }
-        var cache = parseCache[fileName];
-        if (cache && version == cache[0])
-            return cache[1];
         var text = bb.readFile(fileName, true);
         if (text == undefined) {
             if (onError) {
@@ -44,8 +33,6 @@ function createCompilerHost(setParentNodes) {
             throw new Error("Cannot getSourceFile " + fileName);
         }
         var res = ts.createSourceFile(fileName, text, languageVersion, setParentNodes);
-        if (fileName.endsWith(".d.ts"))
-            parseCache[fileName] = [version, res];
         return res;
     }
     function writeFile(fileName, data, _writeByteOrderMark, onError) {
@@ -202,6 +189,7 @@ function toJsonableSourceInfo(sourceInfo) {
 function bbEmitProgram() {
     var res = program.emit(undefined, undefined, undefined, undefined, transformers);
     reportDiagnostics(res.diagnostics);
+    program = undefined;
     return !res.emitSkipped;
 }
 function bbFinishTSPerformance() {

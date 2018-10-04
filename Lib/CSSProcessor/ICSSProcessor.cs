@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Lib.CSSProcessor
 {
-    public interface ICssProcessor
+    public interface ICssProcessor: IDisposable
     {
         Task<string> ProcessCss(string source, string from, Func<string, string, string> urlReplacer);
         Task<string> ConcatenateAndMinifyCss(IEnumerable<SourceFromPair> inputs, Func<string, string, string> urlReplacer);

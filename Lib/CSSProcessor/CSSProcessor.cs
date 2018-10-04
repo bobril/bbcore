@@ -84,5 +84,10 @@ namespace Lib.CSSProcessor
             engine.CallFunction("bbConcatAndMinify", JsonConvert.SerializeObject(inputs, serializerSettings));
             return _tcs.Task;
         }
+
+        public void Dispose()
+        {
+            _engine?.Dispose();
+        }
     }
 }
