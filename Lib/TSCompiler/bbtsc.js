@@ -190,6 +190,7 @@ function bbEmitProgram() {
     var res = program.emit(undefined, undefined, undefined, undefined, transformers);
     reportDiagnostics(res.diagnostics);
     program = undefined;
+    typeChecker = undefined;
     return !res.emitSkipped;
 }
 function bbFinishTSPerformance() {

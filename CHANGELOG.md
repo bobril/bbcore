@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+- Lowered memory usage with just small slow down
+- Allow to manually dispose JS Engine to free most of memory.
+
 ## 0.52.0
 
 ### Added

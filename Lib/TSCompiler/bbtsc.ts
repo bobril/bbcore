@@ -124,7 +124,7 @@ function bbGetCurrentCompilerOptions(): string {
 }
 
 let program: ts.Program | undefined;
-let typeChecker: ts.TypeChecker;
+let typeChecker: ts.TypeChecker | undefined;
 
 function addLibPrefixPostfix(names: string[]) {
     for (var i = 0; i < names.length; i++) {
@@ -199,7 +199,7 @@ function bbGatherSourceInfo(): void {
     for (let i = 0; i < sourceFiles.length; i++) {
         let sourceFile = sourceFiles[i];
         if (sourceFile.isDeclarationFile) continue;
-        let sourceInfo = gatherSourceInfo(sourceFile, typeChecker, resolvePathStringLiteral);
+        let sourceInfo = gatherSourceInfo(sourceFile, typeChecker!, resolvePathStringLiteral);
         sourceInfos[sourceFile.fileName] = sourceInfo;
         bb.reportSourceInfo(sourceFile.fileName, JSON.stringify(toJsonableSourceInfo(sourceInfo)));
     }
@@ -242,6 +242,7 @@ function bbEmitProgram(): boolean {
     const res = program!.emit(undefined, undefined, undefined, undefined, transformers);
     reportDiagnostics(res.diagnostics);
     program = undefined;
+    typeChecker = undefined;
     return !res.emitSkipped;
 }
 

@@ -990,13 +990,8 @@ namespace Lib.Composition
                     var color = errors != 0 ? ConsoleColor.Red :
                         warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     _logger.WriteLine(
-                        "Build done in " +
-                        (DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) +
-                        "s with " + Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " +
-                        Plural(totalFiles, "file"), color);
+                        $"Build done in {(DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(totalFiles, "file")}", color);
                     _dc.ResetChange();
-                    GC.Collect(GC.MaxGeneration);
-                    _compilerPool.FreeMemory().GetAwaiter();
                 }
             });
         }
@@ -1089,6 +1084,8 @@ namespace Lib.Composition
             while (true)
             {
                 var line = Console.ReadLine();
+                if (line == "f" || line == "free" || line == "free ram")
+                    _compilerPool.FreeMemory().GetAwaiter();
                 if (line == "q" || line == "quit")
                     break;
             }
