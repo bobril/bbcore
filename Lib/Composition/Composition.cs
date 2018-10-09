@@ -514,6 +514,8 @@ namespace Lib.Composition
                     _logger.WriteLine("Test build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
                     TestResultsHolder testResults = new TestResultsHolder();
                     proj.Owner.LoadProjectJson(true);
+                    if (testCommand.Localize.Value != null)
+                        proj.Localize = testCommand.Localize.Value ?? false;
                     proj.Owner.InitializeOnce();
                     proj.StyleDefNaming = StyleDefNamingStyle.AddNames;
                     proj.GenerateCode();
@@ -638,12 +640,12 @@ namespace Lib.Composition
                 port = portInInt;
             }
 
-            InitDiskCache();
+            InitDiskCache(true);
             InitTestServer();
             InitMainServer();
             AddProject(PathUtils.Normalize(Environment.CurrentDirectory), command.Sprite.Value);
             StartWebServer(port, command.BindToAny.Value);
-            InitInteractiveMode(command.VersionDir.Value);
+            InitInteractiveMode(command.VersionDir.Value, command.Localize.Value);
             WaitForStop();
         }
 
@@ -678,9 +680,11 @@ namespace Lib.Composition
             _notificationManager = new NotificationManager();
         }
 
-        public void InitDiskCache()
+        public void InitDiskCache(bool withWatcher = false)
         {
-            _dc = new DiskCache.DiskCache(new NativeFsAbstraction(), () => new OsWatcher());
+            _dc = _inDocker || !withWatcher
+                ? new DiskCache.DiskCache(new NativeFsAbstraction(), () => new DummyWatcher())
+                : new DiskCache.DiskCache(new NativeFsAbstraction(), () => new OsWatcher());
         }
 
         public ProjectOptions AddProject(string path, bool enableSpritting)
@@ -888,7 +892,7 @@ namespace Lib.Composition
             _testServer.OnChange.Subscribe((_) => { _mainServer.NotifyTestServerChange(); });
         }
 
-        public void InitInteractiveMode(string versionDir)
+        public void InitInteractiveMode(string versionDir, bool? localizeValue)
         {
             _hasBuildWork.Set();
             _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200)).Subscribe((_) => _hasBuildWork.Set());
@@ -925,6 +929,8 @@ namespace Lib.Composition
                         try
                         {
                             proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
+                            if (localizeValue != null)
+                                proj.Localize = localizeValue ?? false;
                             proj.Owner.InitializeOnce();
                             proj.OutputSubDir = versionDir;
                             proj.GenerateCode();

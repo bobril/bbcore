@@ -8,17 +8,18 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         protected override string Description => "runs tests once in Chrome";
 
-        public CommandLineArgumentString Out { get; } = new CommandLineArgumentString(description: "filename for test result as JUnit XML", words: new[] { "-o", "--out" });
+        public CommandLineArgumentString Out { get; } = new CommandLineArgumentString("filename for test result as JUnit XML", new[] { "-o", "--out" });
 
         public CommandLineArgumentBool FlatTestSuites { get; } = new CommandLineArgumentBool(
-            description: "use flat structure of testsuites (to increase viewer compatibility)",
-            words: new[] {"--flat"},
-            defaultValue: true
+            "use flat structure of testsuites (to increase viewer compatibility)",
+            new[] {"--flat"},
+            true
         );
 
-        public CommandLineArgumentBool Sprite { get; } = new CommandLineArgumentBool(description: "enable/disable creation of sprites", words: new[] { "--sprite" }, defaultValue: false);
+        public CommandLineArgumentBool Sprite { get; } = new CommandLineArgumentBool("enable/disable creation of sprites", new[] { "--sprite" }, false);
 
-        public CommandLineArgumentString Port { get; } = new CommandLineArgumentString(description: "set port for test server to listen to (default: first free)", words: new[] { "-p", "--port" });
+        public CommandLineArgumentString Port { get; } = new CommandLineArgumentString("set port for test server to listen to (default: first free)", new[] { "-p", "--port" });
 
+        public CommandLineArgumentBoolNullable Localize { get; } = new CommandLineArgumentBoolNullable("create localized resources (default: autodetect)", new[] { "-l", "--localize" });
     }
 }

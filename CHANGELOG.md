@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+- Localize command line parameter to Interactive and Test commands
+- Directory watcher is now never used in Docker or for noninteractive commands
+
 ## 0.53.0
 
 ### Added
