@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.54.0
+
 ### Fixed
 
 - Parsing of standalone command line parameters, which fixes bb package upgrade module
