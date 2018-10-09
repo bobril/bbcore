@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Parsing of standalone command line parameters, which fixes bb package upgrade module
+
 ### Added
 
 - Localize command line parameter to Interactive and Test commands

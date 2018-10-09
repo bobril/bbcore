@@ -18,7 +18,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <param name="description">Description</param>
         /// <param name="words">Argument aliases</param>
         /// <param name="defaultValue">Default value</param>
-        public CommandLineArgumentString(string description, string[] words, string defaultValue = null) : base(description: description, words: words, defaultValue: defaultValue)
+        public CommandLineArgumentString(string description, string[] words, string defaultValue = null) : base(description, words, defaultValue)
         {
             Value = defaultValue;
         }
@@ -30,16 +30,32 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <returns>Unused command line arguments</returns>
         public override string[] SetValue(string[] args)
         {
-            if (args.Length < 2)
-                return null;
+            if (Words == null)
+            {
+                if (args.Length < 1)
+                    return null;
 
-            if (!CheckValue(args[1]))
-                return null;
+                if (!CheckValue(args[0]))
+                    return null;
 
-            Value = args[1];
-            string[] returnArgs = new string[args.Length - 2];
-            Array.Copy(sourceArray: args, sourceIndex: 2, destinationArray: returnArgs, destinationIndex: 0, length: returnArgs.Length);
-            return returnArgs;
+                Value = args[0];
+                var returnArgs = new string[args.Length - 1];
+                Array.Copy(args, 1, returnArgs, 0, returnArgs.Length);
+                return returnArgs;
+            }
+            else
+            {
+                if (args.Length < 2)
+                    return null;
+
+                if (!CheckValue(args[1]))
+                    return null;
+
+                Value = args[1];
+                var returnArgs = new string[args.Length - 2];
+                Array.Copy(args, 2, returnArgs, 0, returnArgs.Length);
+                return returnArgs;
+            }
         }
 
         /// <summary>
