@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Upgraded
+
+- Javascript switcher and Chakracore, hoping it fixes problems on Linux
+
 ## 0.54.0
 
 ### Fixed
