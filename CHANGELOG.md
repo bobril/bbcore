@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.55.0
+
 ### Added
 
 - ignoreDiagnostic array in bobril section that allows list warnings and errors which you want to ignore (not count and not show)
