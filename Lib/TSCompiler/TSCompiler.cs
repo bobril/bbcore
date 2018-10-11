@@ -303,7 +303,6 @@ namespace Lib.TSCompiler
                 Console.WriteLine(
                     $"{engine.CallFunction("bbFinishTSPerformance")} GatherInfo: {_gatherTime.TotalMilliseconds:0}");
             }
-            engine.CollectGarbage();
             return res;
         }
 

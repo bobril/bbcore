@@ -2,9 +2,10 @@
 
 ## [unreleased]
 
-### Upgraded
+### Fixed
 
-- Javascript switcher and Chakracore, hoping it fixes problems on Linux
+- Upgraded Javascript switcher and Chakracore, hoping it fixes problems on Linux
+- Removed GarbageCollect call from 0.53.0 which caused StackOverflow on complex builds.
 
 ## 0.54.0
 

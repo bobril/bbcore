@@ -10,6 +10,18 @@
                 "${workspaceFolder}/bb/bb.csproj"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "dockerbbdebug",
+            "command": "docker",
+            "type": "process",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "args": [
+                "build", ".", "-t", "bbdebug", "-f", "Dockerfile.debug"
+            ],
+            "problemMatcher": "$msCompile"
         }
     ]
 }

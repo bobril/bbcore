@@ -1,28 +1,56 @@
 {
-    // Use IntelliSense to find out which attributes exist for C# debugging
-    // Use hover for the description of the existing attributes
-    // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": ".NET Core Launch (console)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/bb/bin/Debug/netcoreapp2.0/bb.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/bb",
-            // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
-            "console": "integratedTerminal",
-            "stopAtEntry": false,
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "name": ".NET Core Attach",
-            "type": "coreclr",
-            "request": "attach",
-            "processId": "${command:pickProcess}"
-        }
-    ]
+  // Use IntelliSense to find out which attributes exist for C# debugging
+  // Use hover for the description of the existing attributes
+  // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Docker Launch",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dockerbbdebug",
+      "cwd": "/project",
+      "program": "/app/bb.dll",
+      "args":[
+        "b", "-f", "1", "-l", "0", "--verbose"
+      ],
+      "sourceFileMap": {
+        "/app": "${workspaceRoot}"
+      },
+      "justMyCode": false,
+      "logging": {
+        "engineLogging": false,
+        "exceptions": true,
+        "moduleLoad": true,
+        "programOutput": true
+      },
+      "pipeTransport": {
+        "pipeProgram": "docker",
+        "pipeCwd": "${workspaceRoot}",
+        "pipeArgs": ["run -i --rm -v C:/Research/Cloud/WebMain:/project bbdebug"],
+        "debuggerPath": "/vsdbg/vsdbg",
+        "quoteArgs": false
+      }
+    },
+    {
+      "name": ".NET Core Launch (console)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      // If you have changed target frameworks, make sure to update the program path.
+      "program": "${workspaceFolder}/bb/bin/Debug/netcoreapp2.0/bb.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/bb",
+      // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    }
+  ]
 }

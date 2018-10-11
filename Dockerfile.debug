@@ -17,6 +17,13 @@ RUN dotnet publish -c Debug -o out
 
 
 FROM microsoft/dotnet:2.1-sdk AS runtime
+
+RUN apt-get update
+RUN apt-get install wget zip
+WORKDIR /vsdbg
+RUN curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
+
 WORKDIR /project
 COPY --from=build /app/bb/out /app
-ENTRYPOINT ["dotnet", "/app/bb.dll", "b"]
+
+#ENTRYPOINT ["dotnet", "/app/bb.dll"]
