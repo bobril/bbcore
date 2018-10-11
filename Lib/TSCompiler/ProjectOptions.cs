@@ -330,6 +330,7 @@ namespace Lib.TSCompiler
         internal string CurrentBuildCommonSourceDirectory;
         internal string[] IncludeSources;
         internal bool TypeScriptVersionOverride;
+        public HashSet<int> IgnoreDiagnostic;
 
         public void UpdateTSConfigJson()
         {
@@ -458,6 +459,8 @@ namespace Lib.TSCompiler
                 String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
             var includeSources = bobrilSection?.GetValue("includeSources") as JArray;
             IncludeSources = includeSources?.Select(i => i.ToString()).ToArray();
+            if (bobrilSection?.GetValue("ignoreDiagnostic") is JArray ignoreDiagnostic)
+                IgnoreDiagnostic = new HashSet<int>(ignoreDiagnostic.Select(i => i.Value<int>()).ToArray());
             var pluginsSection = bobrilSection?.GetValue("plugins") as JObject;
             GenerateSpritesTs =
                 pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;

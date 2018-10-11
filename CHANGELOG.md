@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- ignoreDiagnostic array in bobril section that allows list warnings and errors which you want to ignore (not count and not show)
+
 ### Fixed
 
 - Upgraded Javascript switcher and Chakracore, hoping it fixes problems on Linux

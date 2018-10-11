@@ -462,11 +462,11 @@ namespace Lib.Composition
                 if (message.IsError)
                 {
                     _logger.Error(
-                        $"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text}");
+                        $"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text} ({message.Code})");
                 }
                 else
                 {
-                    _logger.Warn($"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text}");
+                    _logger.Warn($"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text} ({message.Code})");
                 }
             }
         }
@@ -1049,6 +1049,8 @@ namespace Lib.Composition
                     continue;
                 foreach (var d in diag)
                 {
+                    if (options.IgnoreDiagnostic?.Contains(d.code) ?? false)
+                        continue;
                     var isError = d.isError || options.WarningsAsErrors;
                     if (isError)
                         errors++;
@@ -1059,7 +1061,8 @@ namespace Lib.Composition
                         FileName = PathUtils.Subtract(pathInfoPair.Key, rootPath),
                         IsError = isError,
                         Text = d.text,
-                        Pos = new int[]
+                        Code = d.code,
+                        Pos = new[]
                         {
                             d.startLine + 1,
                             d.startCharacter + 1,
