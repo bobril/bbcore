@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.56.0
+
 ### Added
 
 - Detection of missing or superfluous dependencies in package.json. For temporary disable this feature use "ignoreDiagnostic": [-12, -13]
