@@ -466,7 +466,8 @@ namespace Lib.Composition
                 }
                 else
                 {
-                    _logger.Warn($"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text} ({message.Code})");
+                    _logger.Warn(
+                        $"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text} ({message.Code})");
                 }
             }
         }
@@ -691,7 +692,7 @@ namespace Lib.Composition
         {
             var projectDir = PathUtils.Normalize(new DirectoryInfo(path).FullName);
             var dirCache = _dc.TryGetItem(projectDir) as IDirectoryCache;
-            var proj = TSProject.Get(dirCache, _dc, _logger);
+            var proj = TSProject.Get(dirCache, _dc, _logger, null);
             proj.IsRootProject = true;
             if (proj.ProjectOptions != null)
                 return proj.ProjectOptions;
@@ -712,12 +713,6 @@ namespace Lib.Composition
             if (_mainServer != null)
                 _mainServer.Project = _currentProject;
             return proj.ProjectOptions;
-        }
-
-        public void Build(ProjectOptions project)
-        {
-            var ctx = new BuildCtx(_compilerPool, false, ShowTsVersion);
-            project.Owner.Build(ctx);
         }
 
         public void StartWebServer(int port, bool bindToAny)
@@ -933,6 +928,7 @@ namespace Lib.Composition
                                 proj.Localize = localizeValue ?? false;
                             proj.Owner.InitializeOnce();
                             proj.OutputSubDir = versionDir;
+                            proj.Owner.UsedDependencies = new HashSet<string>();
                             proj.GenerateCode();
                             proj.RefreshMainFile();
                             proj.RefreshTestSources();
@@ -999,6 +995,9 @@ namespace Lib.Composition
 
                             proj.FilesContent = filesContent;
                             totalFiles += filesContent.Count;
+                            var unusedDeps = proj.Owner.Dependencies.ToHashSet();
+                            unusedDeps.ExceptWith(proj.Owner.UsedDependencies);
+                            AddUnusedDependenciesMessages(proj, unusedDeps, ref errors, ref warnings, messages);
                         }
                         catch (Exception ex)
                         {
@@ -1022,6 +1021,35 @@ namespace Lib.Composition
             });
         }
 
+        void AddUnusedDependenciesMessages(ProjectOptions options, HashSet<string> unusedDeps, ref int errors, ref int warnings, List<CompilationResultMessage> messages)
+        {
+            foreach (var unusedDep in unusedDeps)
+            {
+                const int unusedDependencyCode = -13;
+                if (options.IgnoreDiagnostic?.Contains(unusedDependencyCode) ?? false)
+                    continue;
+                var isError = options.WarningsAsErrors;
+                if (isError)
+                    errors++;
+                else
+                    warnings++;
+                messages.Add(new CompilationResultMessage
+                {
+                    FileName = "package.json",
+                    IsError = isError,
+                    Text = "Unused dependency "+unusedDep+" in package.json",
+                    Code = unusedDependencyCode,
+                    Pos = new[]
+                    {
+                        1,
+                        1,
+                        1,
+                        1
+                    }
+                });
+            }
+        }
+
         string Plural(int number, string word)
         {
             if (number == 0)
@@ -1039,10 +1067,19 @@ namespace Lib.Composition
         void IncludeMessages(ProjectOptions options, BuildResult buildResult, ref int errors, ref int warnings,
             List<CompilationResultMessage> messages, HashSet<string> messagesFromFiles, string rootPath)
         {
+            var usedDependencies = options.Owner.UsedDependencies;
             foreach (var pathInfoPair in buildResult.Path2FileInfo)
             {
                 if (messagesFromFiles.Contains(pathInfoPair.Key))
                     continue;
+                if (usedDependencies != null && options.Owner == pathInfoPair.Value.MyProject)
+                {
+                    foreach (var moduleImport in pathInfoPair.Value.ModuleImports)
+                    {
+                        usedDependencies.Add(moduleImport.Name);
+                    }
+                }
+
                 messagesFromFiles.Add(pathInfoPair.Key);
                 var diag = pathInfoPair.Value.Diagnostic;
                 if (diag == null)

@@ -102,7 +102,7 @@ namespace Lib.Registry
         void RunNpmWithParam(IDirectoryCache projectDirectory, string param)
         {
             var fullPath = projectDirectory.FullPath;
-            var project = TSProject.Get(projectDirectory, _diskCache, _logger);
+            var project = TSProject.Get(projectDirectory, _diskCache, _logger, null);
             project.LoadProjectJson(true);
             if (project.ProjectOptions.NpmRegistry != null)
             {

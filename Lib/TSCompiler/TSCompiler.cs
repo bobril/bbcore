@@ -158,11 +158,6 @@ namespace Lib.TSCompiler
                     Trace.WriteLine((isError ? "Error:" : "Warn:") + code + " " + text + " " + fileName + ":" + startLine);
             }
 
-            TSProject GetDirectoryInfo(IDirectoryCache dir)
-            {
-                return TSProject.Get(dir, _owner.DiskCache, _owner.Logger);
-            }
-
             TSFileAdditionalInfo GetFileInfo(IFileCache file)
             {
                 return TSFileAdditionalInfo.Get(file, _owner.DiskCache);

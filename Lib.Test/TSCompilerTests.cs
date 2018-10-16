@@ -276,7 +276,7 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
             dc.CheckForTrueChange();
             var ctx = new BuildCtx(_compilerPool, false, (_)=> { });
             var dirCache = dc.TryGetItem(projdir) as IDirectoryCache;
-            var proj = TSProject.Get(dirCache, dc, new DummyLogger());
+            var proj = TSProject.Get(dirCache, dc, new DummyLogger(), null);
             proj.IsRootProject = true;
             if (proj.ProjectOptions == null)
             {

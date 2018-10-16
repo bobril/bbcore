@@ -27,7 +27,10 @@ namespace Lib.TSCompiler
         public int PackageJsonChangeId { get; set; }
         public int InterfaceChangeId { get; set; }
         public bool IsRootProject { get; set; }
-        public HashSet<string> Dependencies { get; set; }
+        public HashSet<string> Dependencies;
+        public HashSet<string> DevDependencies;
+        public HashSet<string> UsedDependencies;
+        public string Name;
 
         public void LoadProjectJson(bool forbiddenDependencyUpdate)
         {
@@ -48,6 +51,7 @@ namespace Lib.TSCompiler
                 }
 
                 var deps = new HashSet<string>();
+                var devdeps = new HashSet<string>();
                 var hasMain = false;
                 if (parsed.GetValue("typescript") is JObject parsedT)
                 {
@@ -121,16 +125,17 @@ namespace Lib.TSCompiler
                     }
                 }
 
-                if (IsRootProject && parsed.GetValue("devDependencies") is JObject parsedV2)
+                if (parsed.GetValue("devDependencies") is JObject parsedV2)
                 {
                     foreach (var i in parsedV2.Properties())
                     {
-                        deps.Add(i.Name);
+                        devdeps.Add(i.Name);
                     }
                 }
 
                 PackageJsonChangeId = newChangeId;
                 Dependencies = deps;
+                DevDependencies = devdeps;
                 if (ProjectOptions == null) return;
                 ProjectOptions.FillProjectOptionsFromPackageJson(parsed);
                 if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
@@ -163,7 +168,7 @@ namespace Lib.TSCompiler
                 ProjectOptions.InitializeTranslationDb();
             }
 
-            var bbTslint = Dependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
+            var bbTslint = DevDependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
             if (bbTslint != null)
             {
                 var srcTsLint = PathUtils.Join(Owner.FullPath, $"node_modules/{bbTslint}/tslint.json");
@@ -201,8 +206,8 @@ namespace Lib.TSCompiler
                 compOpt.outDir = "_virtual";
                 compOpt.module = ModuleKind.Commonjs;
                 compOpt.declaration = true;
-                if (!ProjectOptions.TypeScriptVersionOverride && Dependencies != null &&
-                    Dependencies.Contains("typescript"))
+                if (!ProjectOptions.TypeScriptVersionOverride && DevDependencies != null &&
+                    DevDependencies.Contains("typescript"))
                     ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
                 else
                     ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
@@ -293,7 +298,7 @@ namespace Lib.TSCompiler
                     {
                         diskName = mdir.Name;
                         diskCache.UpdateIfNeeded(mdir);
-                        return Get(mdir, diskCache, logger);
+                        return Get(mdir, diskCache, logger, diskName);
                     }
                 }
 
@@ -304,12 +309,12 @@ namespace Lib.TSCompiler
             return null;
         }
 
-        public static TSProject Get(IDirectoryCache dir, IDiskCache diskCache, ILogger logger)
+        public static TSProject Get(IDirectoryCache dir, IDiskCache diskCache, ILogger logger, string diskName)
         {
             if (dir == null)
                 return null;
             if (dir.AdditionalInfo == null)
-                dir.AdditionalInfo = new TSProject {Owner = dir, DiskCache = diskCache, Logger = logger};
+                dir.AdditionalInfo = new TSProject {Owner = dir, DiskCache = diskCache, Logger = logger, Name = diskName };
             return (TSProject) dir.AdditionalInfo;
         }
     }

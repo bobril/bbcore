@@ -60,6 +60,8 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
 | -9     | Error    | Hint message must be compile time resolvable constant string                                   |
 | -10    | Error    | Absolute import name must be just simple module name                                           |
 | -11    | Warn     | Fixing local import with two slashes                                                           |
+| -12    | Warn     | Importing module without being in package.json as dependency                                   |
+| -13    | Warn     | Unused dependency in package.json                                                              |
 
 # Package.json - bobril section features
 

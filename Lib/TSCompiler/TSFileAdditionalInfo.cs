@@ -59,6 +59,7 @@ namespace Lib.TSCompiler
 
         List<TSFileAdditionalInfo> _localImports;
         List<Diag> _diag;
+        public TSProject MyProject;
 
         public IReadOnlyList<Diag> Diagnostic => _diag;
         public IReadOnlyList<TSFileAdditionalInfo> LocalImports { get => _localImports; }
