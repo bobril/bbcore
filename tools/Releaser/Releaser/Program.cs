@@ -114,17 +114,17 @@ namespace Releaser
                 var commit = gitrepo.Commit("Released " + newVersion, author, committer);
                 gitrepo.ApplyTag(newVersion);
                 var options = new PushOptions();
-                options.CredentialsProvider = new CredentialsHandler(
-                    (url, usernameFromUrl, types) =>
-                        new UsernamePasswordCredentials()
-                        {
-                            Username = token,
-                            Password = ""
-                        });
+                options.CredentialsProvider = (url, usernameFromUrl, types) =>
+                    new UsernamePasswordCredentials()
+                    {
+                        Username = token,
+                        Password = ""
+                    };
                 gitrepo.Network.Push(gitrepo.Head, options);
                 var release = new NewRelease(newVersion);
                 release.Name = newVersion;
                 release.Body = string.Join("", releaseLogLines.Select(s => s + '\n'));
+                release.Prerelease = true;
                 var release2 = await client.Repository.Release.Create(bbcoreRepo.Id, release);
                 Console.WriteLine("release url:");
                 Console.WriteLine(release2.HtmlUrl);
