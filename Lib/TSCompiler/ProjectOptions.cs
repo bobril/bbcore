@@ -304,7 +304,7 @@ namespace Lib.TSCompiler
                 allowJs = true,
                 checkJs = false,
                 removeComments = false,
-                types = new string[0],
+                types = null,
                 lib = GetDefaultTSLibs()
             };
         }

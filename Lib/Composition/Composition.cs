@@ -1026,6 +1026,10 @@ namespace Lib.Composition
         {
             foreach (var unusedDep in unusedDeps)
             {
+                if (unusedDep.StartsWith("@types/", StringComparison.Ordinal))
+                {
+                    continue;
+                }
                 const int unusedDependencyCode = -13;
                 if (options.IgnoreDiagnostic?.Contains(unusedDependencyCode) ?? false)
                     continue;
