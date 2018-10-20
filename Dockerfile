@@ -52,6 +52,6 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /project
 COPY --from=build /app/bb/out /app
-EXPOSE 8080 9222
+EXPOSE 8080 9223
 VOLUME [ "/project", "/bbcache" ]
 ENTRYPOINT ["/app/bb"]
