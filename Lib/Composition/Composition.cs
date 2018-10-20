@@ -1021,7 +1021,8 @@ namespace Lib.Composition
             });
         }
 
-        void AddUnusedDependenciesMessages(ProjectOptions options, HashSet<string> unusedDeps, ref int errors, ref int warnings, List<CompilationResultMessage> messages)
+        void AddUnusedDependenciesMessages(ProjectOptions options, HashSet<string> unusedDeps, ref int errors,
+            ref int warnings, List<CompilationResultMessage> messages)
         {
             foreach (var unusedDep in unusedDeps)
             {
@@ -1037,7 +1038,7 @@ namespace Lib.Composition
                 {
                     FileName = "package.json",
                     IsError = isError,
-                    Text = "Unused dependency "+unusedDep+" in package.json",
+                    Text = "Unused dependency " + unusedDep + " in package.json",
                     Code = unusedDependencyCode,
                     Pos = new[]
                     {
@@ -1077,6 +1078,20 @@ namespace Lib.Composition
                     foreach (var moduleImport in pathInfoPair.Value.ModuleImports)
                     {
                         usedDependencies.Add(moduleImport.Name);
+                    }
+
+                    var assets = pathInfoPair.Value.SourceInfo?.assets;
+                    if (assets != null)
+                    {
+                        foreach (var asset in assets)
+                        {
+                            if (buildResult.Path2FileInfo.TryGetValue(asset.name, out var info))
+                            {
+                                var module = info.GetFromModule();
+                                if (module != null)
+                                    usedDependencies.Add(module);
+                            }
+                        }
                     }
                 }
 

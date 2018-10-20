@@ -31,6 +31,7 @@ namespace Lib.TSCompiler
         public Image<Rgba32> Image { get; set; }
         public int ImageCacheId;
         public string OutputUrl { get; set; }
+        public string FromModule;
 
         public bool TakenFromBuildCache;
         public byte[] BuildCacheHash;
@@ -39,7 +40,10 @@ namespace Lib.TSCompiler
 
         List<TSProject> _moduleImports;
 
-        public IReadOnlyList<TSProject> ModuleImports { get => _moduleImports; }
+        public IReadOnlyList<TSProject> ModuleImports
+        {
+            get => _moduleImports;
+        }
 
         TSFileAdditionalInfo()
         {
@@ -62,7 +66,12 @@ namespace Lib.TSCompiler
         public TSProject MyProject;
 
         public IReadOnlyList<Diag> Diagnostic => _diag;
-        public IReadOnlyList<TSFileAdditionalInfo> LocalImports { get => _localImports; }
+
+        public IReadOnlyList<TSFileAdditionalInfo> LocalImports
+        {
+            get => _localImports;
+        }
+
         public string ImportedAsModule { get; internal set; }
 
         public void ImportingLocal(TSFileAdditionalInfo name)
@@ -70,7 +79,8 @@ namespace Lib.TSCompiler
             _localImports.Add(name);
         }
 
-        public void ReportDiag(bool isError, int code, string text, int startLine, int startCharacter, int endLine, int endCharacter)
+        public void ReportDiag(bool isError, int code, string text, int startLine, int startCharacter, int endLine,
+            int endCharacter)
         {
             if (_diag == null) _diag = new List<Diag>();
             _diag.Add(new Diag(isError, code, text, startLine, startCharacter, endLine, endCharacter));
@@ -80,8 +90,8 @@ namespace Lib.TSCompiler
         {
             if (file == null) return null;
             if (file.AdditionalInfo == null)
-                file.AdditionalInfo = new TSFileAdditionalInfo { Owner = file, DiskCache = diskCache };
-            return (TSFileAdditionalInfo)file.AdditionalInfo;
+                file.AdditionalInfo = new TSFileAdditionalInfo {Owner = file, DiskCache = diskCache};
+            return (TSFileAdditionalInfo) file.AdditionalInfo;
         }
 
         public bool NeedsCompilation()
@@ -90,21 +100,26 @@ namespace Lib.TSCompiler
             {
                 return true;
             }
+
             if (Enumerable.SequenceEqual(LastCompilationCacheIds, BuildLastCompilationCacheIds()))
             {
                 return false;
             }
+
             return true;
         }
 
         public IEnumerable<int> BuildLastCompilationCacheIds()
         {
             yield return Owner.ChangeId;
-            if (_moduleImports != null) foreach (var module in _moduleImports)
+            if (_moduleImports != null)
+                foreach (var module in _moduleImports)
                 {
                     yield return module.InterfaceChangeId;
                 }
-            if (_localImports != null) foreach (var local in _localImports)
+
+            if (_localImports != null)
+                foreach (var local in _localImports)
                 {
                     if (local.DtsLink != null)
                     {
@@ -132,7 +147,8 @@ namespace Lib.TSCompiler
             public int endLine;
             public int endCharacter;
 
-            public Diag(bool isError, int code, string text, int startLine, int startCharacter, int endLine, int endCharacter)
+            public Diag(bool isError, int code, string text, int startLine, int startCharacter, int endLine,
+                int endCharacter)
             {
                 this.isError = isError;
                 this.code = code;
@@ -142,6 +158,36 @@ namespace Lib.TSCompiler
                 this.endLine = endLine;
                 this.endCharacter = endCharacter;
             }
+        }
+
+        public string GetFromModule()
+        {
+            if (FromModule != null) return FromModule;
+            if (MyProject != null)
+            {
+                FromModule = MyProject.Name;
+                return FromModule;
+            }
+
+            var o = (IItemCache) Owner;
+            while (o != null)
+            {
+                var n = o.Parent;
+                if (n != null)
+                {
+                    if (n.Name == "node_modules")
+                    {
+                        FromModule = o.Name;
+                        return FromModule;
+                    }
+
+                    o = n;
+                }
+                else
+                    break;
+            }
+
+            return null;
         }
     }
 }

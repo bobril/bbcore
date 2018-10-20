@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Detection of dependencies does not break build in second rebuild. It also does not show as missing dependency when it is in devDependencies.
+
 ## 0.56.0
 
 ### Added

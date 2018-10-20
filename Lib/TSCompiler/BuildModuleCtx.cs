@@ -235,7 +235,10 @@ namespace Lib.TSCompiler
             var itemInfo = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
             itemInfo.ImportedAsModule = name;
             itemInfo.MyProject = moduleInfo;
-            if (parentInfo.MyProject.IsRootProject && !parentInfo.MyProject.Dependencies.Contains(name))
+            var parentProject = parentInfo.MyProject;
+            if (parentProject.IsRootProject &&
+                ((parentProject.Dependencies == null || !parentProject.Dependencies.Contains(name)) &&
+                 (parentProject.DevDependencies == null || !parentProject.DevDependencies.Contains(name))))
             {
                 parentInfo.ReportDiag(false, -12,
                     "Importing module " + name + " without being in package.json as dependency", 0, 0, 0, 0);
@@ -587,17 +590,6 @@ namespace Lib.TSCompiler
                     return;
                 var assetName = a.name;
                 AutodetectAndAddDependency(assetName, fileInfo.Owner);
-                var relName = PathUtils.Subtract(assetName, _owner.Owner.FullPath);
-                if (relName.StartsWith("node_modules/"))
-                {
-                    relName = relName.Substring("node_modules/".Length);
-                    relName = PathUtils.EnumParts(relName).First().name;
-                    var moduleInfo =
-                        TSProject.FindInfoForModule(_owner.Owner, _owner.DiskCache, _owner.Logger, relName,
-                            out var diskName);
-                    if (moduleInfo != null)
-                        fileInfo.ImportingModule(moduleInfo);
-                }
             });
             if (_owner.ProjectOptions.SpriteGeneration)
             {
