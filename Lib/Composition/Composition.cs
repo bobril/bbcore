@@ -71,6 +71,7 @@ namespace Lib.Composition
                     new BuildCommand(),
                     new TranslationCommand(),
                     new TestCommand(),
+                    new BlameTestCommand(),
                     new BuildInteractiveCommand(),
                     new BuildInteractiveNoUpdateCommand(),
                     new PackageManagerCommand()
@@ -108,6 +109,10 @@ namespace Lib.Composition
             else if (_command is TestCommand testCommand)
             {
                 RunTest(testCommand);
+            }
+            else if (_command is BlameTestCommand blameTestCommand)
+            {
+                RunBlameTest(blameTestCommand);
             }
             else if (_command is TranslationCommand tCommand)
             {
@@ -551,7 +556,7 @@ namespace Lib.Composition
                         if (errors == 0)
                         {
                             var wait = new Semaphore(0, 1);
-                            _testServer.OnTestResults.Subscribe((results) =>
+                            _testServer.OnTestResults.Subscribe(results =>
                             {
                                 testFailures = results.TestsFailed;
                                 testResults = results;
@@ -590,6 +595,190 @@ namespace Lib.Composition
                 Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure"), color);
 
             Environment.ExitCode = (errors + testFailures) != 0 ? 1 : 0;
+        }
+
+        void RunBlameTest(BlameTestCommand testCommand)
+        {
+            InitDiskCache();
+            InitTestServer(false);
+            InitMainServer();
+            AddProject(PathUtils.Normalize(Environment.CurrentDirectory), testCommand.Sprite.Value);
+            int port = 0;
+            if (int.TryParse(testCommand.Port.Value, out var portInInt))
+            {
+                port = portInInt;
+            }
+
+            StartWebServer(port, false);
+
+            var rng = new Random();
+            foreach (var proj in _projects)
+            {
+                try
+                {
+                    _logger.WriteLine("Test build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
+                    proj.Owner.LoadProjectJson(true);
+                    if (testCommand.Localize.Value != null)
+                        proj.Localize = testCommand.Localize.Value ?? false;
+                    proj.Owner.InitializeOnce();
+                    proj.StyleDefNaming = StyleDefNamingStyle.AddNames;
+                    proj.GenerateCode();
+                    proj.SpriterInitialization();
+                    proj.RefreshMainFile();
+                    proj.DetectBobrilJsxDts();
+                    proj.RefreshTestSources();
+                    if (proj.TestSources == null) proj.TestSources = new List<string>();
+                    var dtsFiles = proj.TestSources.Where(s => s.EndsWith(".d.ts", StringComparison.Ordinal)).ToArray();
+                    var specFiles = proj.TestSources.Where(s => !s.EndsWith(".d.ts", StringComparison.Ordinal))
+                        .ToList();
+                    var end = false;
+                    var removeChunk = (specFiles.Count + 1) / 2;
+                    while (specFiles.Count > 0 && !end)
+                    {
+                        if (removeChunk >= specFiles.Count)
+                        {
+                            removeChunk = (specFiles.Count + 1) / 2;
+                        }
+
+                        end = true;
+                        var orderOfRemoval = Enumerable.Range(0, specFiles.Count).ToArray();
+                        for (var i = orderOfRemoval.Length - 1; i > -1; i--)
+                        {
+                            var j = rng.Next(i);
+                            var tmp = orderOfRemoval[i];
+                            orderOfRemoval[i] = orderOfRemoval[j];
+                            orderOfRemoval[j] = tmp;
+                        }
+
+                        for (var ti = 0; ti < orderOfRemoval.Length - removeChunk + 1; ti+=removeChunk)
+                        {
+                            var testResults = new TestResultsHolder();
+                            var testFailures = 0;
+                            var errors = 0;
+                            var warnings = 0;
+                            var messages = new List<CompilationResultMessage>();
+                            var messagesFromFiles = new HashSet<string>();
+                            var ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
+                            ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
+                            ctx.Sources = new HashSet<string>();
+                            ctx.Sources.Add(proj.JasmineDts);
+                            proj.TestSources = new List<string>();
+                            for (var k = ti; k < ti + specFiles.Count - removeChunk + 1; k++)
+                            {
+                                var item = specFiles[orderOfRemoval[k % orderOfRemoval.Length]];
+                                ctx.Sources.Add(item);
+                                proj.TestSources.Add(item);
+                            }
+                            _logger.Info($"{ti}/{proj.TestSources.Count} ChunkSize:{removeChunk}");
+
+                            foreach (var dtsFile in dtsFiles)
+                            {
+                                ctx.Sources.Add(dtsFile);
+                            }
+
+                            if (proj.BobrilJsxDts != null)
+                                ctx.Sources.Add(proj.BobrilJsxDts);
+                            proj.Owner.Build(ctx);
+                            var testBuildResult = ctx.BuildResult;
+                            var fastBundle = new FastBundleBundler(_tools);
+                            var filesContent = new Dictionary<string, object>();
+                            proj.FillOutputByAdditionalResourcesDirectory(filesContent);
+                            fastBundle.FilesContent = filesContent;
+                            fastBundle.Project = proj;
+                            fastBundle.BuildResult = testBuildResult;
+                            fastBundle.Build("bb/base", "testbundle.js.map", true);
+                            proj.TestProjFastBundle = fastBundle;
+                            proj.FilesContent = filesContent;
+                            IncludeMessages(proj, proj.TestProjFastBundle, ref errors, ref warnings, messages,
+                                messagesFromFiles,
+                                proj.Owner.Owner.FullPath);
+                            PrintMessages(messages);
+                            if (errors == 0)
+                            {
+                                var wait = new Semaphore(0, 1);
+                                using (_testServer.OnTestResults.Subscribe(results =>
+                                {
+                                    testFailures = results.TestsFailed;
+                                    testResults = results;
+                                    wait.Release();
+                                }))
+                                {
+
+                                    var startOfTest = DateTime.UtcNow;
+                                    _testServer.StartTest("/test.html",
+                                        new Dictionary<string, SourceMap>
+                                            {{"testbundle.js", testBuildResult.SourceMap}});
+                                    StartChromeTest();
+                                    try
+                                    {
+                                        if (!wait.WaitOne(120000))
+                                        {
+                                            _logger.Error($"First run 120s timeout");
+                                            continue;
+                                        }
+                                        if (testFailures != 0)
+                                        {
+                                            _logger.Error($"{testFailures} failures");
+                                            continue;
+                                            /*
+                                            File.WriteAllText("out.xml",
+                                                testResults.ToJUnitXml(false), new UTF8Encoding(false));
+                                            SaveFilesContentToDisk(filesContent, "dist");
+                                            removeChunk = 1;
+                                            break;
+                                            //*/
+                                        }
+
+                                        var firstRunInMS = (DateTime.UtcNow - startOfTest).TotalMilliseconds;
+                                        _testServer.StartTest("/test.html",
+                                            new Dictionary<string, SourceMap>
+                                                {{"testbundle.js", testBuildResult.SourceMap}});
+
+                                        var timeout = (int) (firstRunInMS * 2 + 1000);
+                                        if (timeout < 10) timeout = 120000;
+                                        _logger.Info("Running again with "+timeout+"ms timeout");
+                                        if (!wait.WaitOne(timeout))
+                                        {
+                                            _logger.Error("Timeout");
+                                            specFiles = proj.TestSources;
+                                            end = false;
+                                            break;
+                                        }
+
+                                        if (testFailures != 0)
+                                        {
+                                            _logger.Error($"{testFailures} second run failures");
+                                            File.WriteAllText("out.xml",
+                                                testResults.ToJUnitXml(false), new UTF8Encoding(false));
+                                            removeChunk = 1;
+                                            break;
+                                        }
+                                    }
+                                    finally
+                                    {
+                                        StopChromeTest();
+                                    }
+                                }
+                            }
+                        }
+
+                        if (end && removeChunk > 1)
+                        {
+                            removeChunk = removeChunk / 2;
+                            end = false;
+                        }
+                    }
+
+                    specFiles.ForEach(s => _logger.Info(s));
+                    _logger.Warn($"Total left {specFiles.Count}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error("Fatal Error: " + ex);
+                }
+
+                Console.ReadLine();
+            }
         }
 
         StyleDefNamingStyle ParseStyleDefNaming(string value)
@@ -865,19 +1054,22 @@ namespace Lib.Composition
             return false;
         }
 
-        public void InitTestServer()
+        public void InitTestServer(bool notify = true)
         {
             _testServer = new TestServer(_verbose);
             _testServerLongPollingHandler = new LongPollingServer(_testServer.NewConnectionHandler);
-            _testServer.OnTestResults.Subscribe((results) =>
+            if (notify)
             {
-                var color = results.TestsFailed != 0 ? ConsoleColor.Red :
-                    results.TestsSkipped != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                _logger.WriteLine(
-                    $"Tests on {results.UserAgent} Failed: {results.TestsFailed} Skipped: {results.TestsSkipped} Total: {results.TotalTests} Duration: {results.Duration * 0.001:F1}s",
-                    color);
-                _notificationManager.SendNotification(results.ToNotificationParameters());
-            });
+                _testServer.OnTestResults.Subscribe((results) =>
+                {
+                    var color = results.TestsFailed != 0 ? ConsoleColor.Red :
+                        results.TestsSkipped != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                    _logger.WriteLine(
+                        $"Tests on {results.UserAgent} Failed: {results.TestsFailed} Skipped: {results.TestsSkipped} Total: {results.TotalTests} Duration: {results.Duration * 0.001:F1}s",
+                        color);
+                    _notificationManager.SendNotification(results.ToNotificationParameters());
+                });
+            }
         }
 
         public void InitMainServer()
@@ -1030,6 +1222,7 @@ namespace Lib.Composition
                 {
                     continue;
                 }
+
                 const int unusedDependencyCode = -13;
                 if (options.IgnoreDiagnostic?.Contains(unusedDependencyCode) ?? false)
                     continue;
