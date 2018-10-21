@@ -1,3 +1,5 @@
 #!/usr/bin/env node
 
+global.bb2 = true;
+
 require("../index");

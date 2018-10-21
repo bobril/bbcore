@@ -14,12 +14,16 @@ Github by default has limit of 60 anonymous requests per hour from one IP. So if
 
 # How to override used version
 
+By default prerelease versions are not used.
+
 In `package.json` create `bobril` section and set `bbVersion` to specific version you need. By setting `tsVersion` you can override used TypeScript for compilation.
 
     "bobril": {
         "bbVersion": "0.9.0",
         "tsVersion": "2.7.1"
     }
+
+By setting `BBVERSION` enviroment variable you can define default version (including prerelease). If you will start `bb2` instead of `bb`, then `BBVERSION` override what is in `package.json`
 
 # How to use Docker version
 

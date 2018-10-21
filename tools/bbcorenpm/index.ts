@@ -213,6 +213,11 @@ let homeDir = path.join(os.homedir(), ".bbcore");
 let lastVersionFileName = path.join(homeDir, ".lastversion");
 let requestedVersion = "*";
 
+let envVersion = process.env["BBVERSION"];
+if (envVersion) {
+    requestedVersion = envVersion;
+}
+
 if (fs.existsSync("package.json")) {
     try {
         var packageJson = JSON.parse(
@@ -224,6 +229,10 @@ if (fs.existsSync("package.json")) {
     } catch {
         // ignore
     }
+}
+
+if ((global as any).bb2 && envVersion) {
+    requestedVersion = envVersion;
 }
 
 if (process.env.GITHUB_TOKEN) {

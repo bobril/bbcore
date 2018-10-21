@@ -189,6 +189,10 @@ let platformAssetName = platformToAssetNameMap[platformWithArch] || platformWith
 let homeDir = path.join(os.homedir(), ".bbcore");
 let lastVersionFileName = path.join(homeDir, ".lastversion");
 let requestedVersion = "*";
+let envVersion = process.env["BBVERSION"];
+if (envVersion) {
+    requestedVersion = envVersion;
+}
 if (fs.existsSync("package.json")) {
     try {
         var packageJson = JSON.parse(fs.readFileSync("package.json").toString("utf-8"));
@@ -199,6 +203,9 @@ if (fs.existsSync("package.json")) {
     catch (_a) {
         // ignore
     }
+}
+if (global.bb2 && envVersion) {
+    requestedVersion = envVersion;
 }
 if (process.env.GITHUB_TOKEN) {
     githubToken = "" + process.env.GITHUB_TOKEN;
