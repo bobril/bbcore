@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.57.0
+
 ### Changed
 
 - By default all @types modules will be now referenced by TypeScript.
