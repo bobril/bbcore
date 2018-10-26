@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.58.0
+
 ### Changed
 
 - Default TypeScript is now 3.1.3
