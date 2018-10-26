@@ -1,0 +1,17 @@
+{
+  "name": "bobril-build-web",
+  "version": "1.0.0",
+  "description": "",
+  "typescript": {
+    "main": "index.ts"
+  },
+  "bobril": {
+    "title": "Bobril-Build",
+    "dir": "../distweb"
+  },
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "bobril": "*"
+  }
+}

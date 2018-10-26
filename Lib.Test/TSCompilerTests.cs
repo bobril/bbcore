@@ -164,11 +164,11 @@ namespace Lib.Test
         [Fact]
         public void DefaultTypeScriptVersionDidntChanged()
         {
-            Assert.Equal("3.0.3", _tools.TypeScriptVersion);
+            Assert.Equal("3.1.3", _tools.TypeScriptVersion);
         }
 
         [Fact]
-        public void SimpliestProjectCompiles()
+        public void SimplestProjectCompiles()
         {
             InitFakeProject();
             AddSimpleProjectJson();
@@ -184,11 +184,11 @@ console.log(""Hello"");
         [Fact]
         public void ChangeOfSimpleIndexTsRebuildsIt()
         {
-            SimpliestProjectCompiles();
+            SimplestProjectCompiles();
             fs.AddTextFile(PathUtils.Join(projdir, "index.ts"), @"
 console.log(""Changed"");
             ");
-            BuildResult buildResult = BuildProject();
+            var buildResult = BuildProject();
             Assert.Single(buildResult.RecompiledLast);
             Assert.Single(buildResult.Path2FileInfo);
             Assert.Contains("Changed", buildResult.RecompiledLast.First().Output);

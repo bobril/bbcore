@@ -29,3 +29,4 @@ TestResults
 /TestProjects/**/node_modules
 /TestProjects/**/dist
 /TestProjects/IncludeSources/tslint.json
+node_modules
