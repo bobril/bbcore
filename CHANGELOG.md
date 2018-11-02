@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.59.0
+
 ### Added
 
 - Test command has now -d parameter which can define where to dump build files for testing
