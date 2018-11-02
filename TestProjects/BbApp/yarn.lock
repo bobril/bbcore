@@ -3,28 +3,23 @@
 
 
 bobril-g11n@*:
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/bobril-g11n/-/bobril-g11n-4.3.0.tgz#602c9fa2f34189312776224fb73a532c402ed6f8"
-  integrity sha512-gl/LMW/dYl5qywsKHuw+tHz9jvx9478ww0KUIG3G+NiTKGMKHjYR/Q0SEk1Jp5NOEVtYs1acURc6szZwcN5q7w==
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/bobril-g11n/-/bobril-g11n-4.3.1.tgz#e5fcc5532a280859a372f8042480c233f7c56c6c"
   dependencies:
     moment "^2.10.6"
 
 bobril@*:
-  version "8.15.0"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.15.0.tgz#6b2a2778f6da1e40fc76a9ede2ed5fd63a0f1380"
-  integrity sha512-6JbZjS3It1PYQpAW5Mra7txYf9E5GnBoUCv86P5IhWtt8laJlNwDkfI76LUmILZqdnTWSY+megFWkaKXKZCa/A==
+  version "8.15.2"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.15.2.tgz#c254dd1add45d3e2262d3824e02d11849fb47757"
 
 moment@^2.10.6:
   version "2.22.2"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.22.2.tgz#3c257f9839fc0e93ff53149632239eb90783ff66"
-  integrity sha1-PCV/mDn8DpP/UxSWMiOeuQeD/2Y=
 
 normalize.css@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/normalize.css/-/normalize.css-3.0.3.tgz#acc00262e235a2caa91363a2e5e3bfa4f8ad05c6"
-  integrity sha1-rMACYuI1osqpE2Oi5eO/pPitBcY=
 
 typescript@*:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.1.1.tgz#3362ba9dd1e482ebb2355b02dfe8bcd19a2c7c96"
-  integrity sha512-Veu0w4dTc/9wlWNf2jeRInNodKlcdLgemvPsrNpfu5Pq39sgfFjvIIgTsvUHCoLBnMhPoUA+tFxsXjU6VexVRQ==
+  version "3.1.6"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.1.6.tgz#b6543a83cfc8c2befb3f4c8fba6896f5b0c9be68"

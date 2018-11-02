@@ -67,7 +67,7 @@ namespace Lib.TSCompiler
                 throw new Exception("Unknown extension written by TS " + fullPath);
             }
 
-            data = new Regex("\\/\\/\\/ <reference path=\\\"(.+)\\\" \\/>").Replace(data, (m) =>
+            data = new Regex("\\/\\/\\/ *<reference path=\\\"(.+)\\\" *\\/>").Replace(data, (m) =>
             {
                 var origPath = m.Groups[1].Value;
                 var newPath = PathUtils.Subtract(PathUtils.Join(PathUtils.Parent(fullPathWithVirtual), origPath),

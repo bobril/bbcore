@@ -549,6 +549,8 @@ namespace Lib.Composition
                         fastBundle.Build("bb/base", "testbundle.js.map", true);
                         proj.TestProjFastBundle = fastBundle;
                         proj.FilesContent = filesContent;
+                        if (testCommand.Dir.Value != null)
+                            SaveFilesContentToDisk(filesContent, testCommand.Dir.Value);
                         IncludeMessages(proj, proj.TestProjFastBundle, ref errors, ref warnings, messages,
                             messagesFromFiles,
                             proj.Owner.Owner.FullPath);
@@ -650,7 +652,7 @@ namespace Lib.Composition
                             orderOfRemoval[j] = tmp;
                         }
 
-                        for (var ti = 0; ti < orderOfRemoval.Length - removeChunk + 1; ti+=removeChunk)
+                        for (var ti = 0; ti < orderOfRemoval.Length - removeChunk + 1; ti += removeChunk)
                         {
                             var testResults = new TestResultsHolder();
                             var testFailures = 0;
@@ -669,6 +671,7 @@ namespace Lib.Composition
                                 ctx.Sources.Add(item);
                                 proj.TestSources.Add(item);
                             }
+
                             _logger.Info($"{ti}/{proj.TestSources.Count} ChunkSize:{removeChunk}");
 
                             foreach (var dtsFile in dtsFiles)
@@ -703,7 +706,6 @@ namespace Lib.Composition
                                     wait.Release();
                                 }))
                                 {
-
                                     var startOfTest = DateTime.UtcNow;
                                     _testServer.StartTest("/test.html",
                                         new Dictionary<string, SourceMap>
@@ -716,6 +718,7 @@ namespace Lib.Composition
                                             _logger.Error($"First run 120s timeout");
                                             continue;
                                         }
+
                                         if (testFailures != 0)
                                         {
                                             _logger.Error($"{testFailures} failures");
@@ -736,7 +739,7 @@ namespace Lib.Composition
 
                                         var timeout = (int) (firstRunInMS * 2 + 1000);
                                         if (timeout < 10) timeout = 120000;
-                                        _logger.Info("Running again with "+timeout+"ms timeout");
+                                        _logger.Info("Running again with " + timeout + "ms timeout");
                                         if (!wait.WaitOne(timeout))
                                         {
                                             _logger.Error("Timeout");

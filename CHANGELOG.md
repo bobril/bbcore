@@ -2,6 +2,18 @@
 
 ## [unreleased]
 
+### Added
+
+- Test command has now -d parameter which can define where to dump build files for testing
+
+### Changed
+
+- Default TypeScript is now 3.1.6
+
+### Fixed
+
+- detection of triple slash references (TypeScript is still somewhat buggy https://github.com/Microsoft/TypeScript/issues/26439)
+
 ## 0.58.0
 
 ### Changed
