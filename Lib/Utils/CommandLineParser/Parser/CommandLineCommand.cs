@@ -87,13 +87,13 @@ namespace Lib.Utils.CommandLineParser.Parser
                 return null;
             }
 
-            // list of arguments
+            // list of arguments (it always creates new list instance, so it could be modified by ParseOneArgument)
             var arguments = Arguments;
 
             while (args?.Length > 0)
                 args = ParseOneArgument(args, arguments);
 
-            return this;
+            return args == null ? null : this;
         }
 
         /// <summary>
@@ -109,6 +109,7 @@ namespace Lib.Utils.CommandLineParser.Parser
                 a.Words?.Contains(firstArg) ?? !firstArg.StartsWith('-'));
             if (argument == null)
             {
+                Console.WriteLine("Unknown parameter " + firstArg);
                 ShowHelp();
                 return null;
             }

@@ -20,11 +20,11 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <param name="words">Words</param>
         /// <param name="valuesCount">Count of values</param>
         /// <param name="defaultValue">Default value</param>
-        public CommandLineArgumentStrings(string description, string[] words, int valuesCount, string[] defaultValue = null) : base(description: description, words: words, defaultValue: defaultValue?.Length == valuesCount ? $" <{string.Join("> <", defaultValue)}> " : "")
+        public CommandLineArgumentStrings(string description, string[] words, int valuesCount, string[] defaultValue = null) : base(description, words, defaultValue?.Length == valuesCount ? $" <{string.Join("> <", defaultValue)}> " : "")
         {
             Value = new string[valuesCount];
             if (defaultValue?.Length == valuesCount)
-                Array.Copy(sourceArray: defaultValue, destinationArray: Value, length: valuesCount);
+                Array.Copy(defaultValue, Value, valuesCount);
         }
 
         /// <summary>
@@ -37,9 +37,9 @@ namespace Lib.Utils.CommandLineParser.Parser
             if (args?.Length < Value.Length + 1)
                 return null;
 
-            Array.Copy(sourceArray: args, sourceIndex: 1, destinationArray: Value, destinationIndex: 0, length: Value.Length);
-            string[] returnArgs = new string[args.Length - Value.Length - 1];
-            Array.Copy(sourceArray: args, sourceIndex: Value.Length + 1, destinationArray: returnArgs, destinationIndex: 0, length: returnArgs.Length);
+            Array.Copy(args, 1, Value, 0, Value.Length);
+            var returnArgs = new string[args.Length - Value.Length - 1];
+            Array.Copy(args, Value.Length + 1, returnArgs, 0, returnArgs.Length);
 
             return returnArgs;
         }

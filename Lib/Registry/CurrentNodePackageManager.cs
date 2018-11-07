@@ -57,6 +57,11 @@ namespace Lib.Registry
         {
             if (_npm.IsUsedInProject(projectDirectory))
             {
+                if (_yarn.IsUsedInProject(projectDirectory))
+                {
+                    _logger.Error("Both package-lock.json and yarn.lock found. Skipping ...");
+                    return null;
+                }
                 if (_npm.IsAvailable)
                 {
                     return _npm;

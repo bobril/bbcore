@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Added, but possibly breaking changes
+
+If both package-lock.json and yarn.lock exists, bobril-build will refuse to use yarn or npm. Which will prevent inconsistent installed packages.
+
+Improved command line parser to stop on invalid or unknown parameter, only help should be shown.
+
 ## 0.60.0
 
 ### Added
