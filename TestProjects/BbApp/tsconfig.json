@@ -22,12 +22,11 @@
     "skipDefaultLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "target": "es5",
-    "types": []
+    "target": "es5"
   },
   "files": [
     "node_modules/bobril/jsx.d.ts",
-    "/bbcache/jasmine.d.ts"
+    "C:/Users/boris/.bbcore/dev/jasmine.d.ts"
   ],
   "include": [
     "**/*"

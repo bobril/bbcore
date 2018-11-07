@@ -826,6 +826,18 @@ namespace Lib.Composition
 
         void RunInteractive(CommonInteractiveCommand command)
         {
+            if (command.ProxyBB.Value != null)
+            {
+                _tools.ProxyWeb(command.ProxyBB.Value);
+                _logger.Info("Enabling bb proxy to " + command.ProxyBB.Value);
+            }
+
+            if (command.ProxyBBTest.Value != null)
+            {
+                _tools.ProxyWebt(command.ProxyBBTest.Value);
+                _logger.Info("Enabling bb/test proxy to " + command.ProxyBBTest.Value);
+            }
+
             IfEnabledStartVerbosive();
             int port = 8080;
             if (int.TryParse(command.Port.Value, out var portInInt))
@@ -924,26 +936,6 @@ namespace Lib.Composition
             var path = context.Request.Path;
             if (path == "/")
                 path = "/index.html";
-            if (path.StartsWithSegments("/bb", out var bbweb))
-            {
-                if (bbweb == "")
-                {
-                    context.Response.Redirect("/bb/", true);
-                    return;
-                }
-
-                if (bbweb == "/" || bbweb == "/index.html")
-                {
-                    await context.Response.WriteAsync(_tools.WebIndexHtml);
-                    return;
-                }
-
-                if (bbweb == "/a.js")
-                {
-                    await context.Response.WriteAsync(_tools.WebAJs);
-                    return;
-                }
-            }
 
             if (path.StartsWithSegments("/bb/test", out var bbtest))
             {
@@ -953,15 +945,16 @@ namespace Lib.Composition
                     return;
                 }
 
-                if (bbtest == "/" || bbtest == "/index.html")
+                if (bbtest == "/")
                 {
-                    await context.Response.WriteAsync(_tools.WebtIndexHtml);
-                    return;
+                    bbtest = "/index.html";
                 }
 
-                if (bbtest == "/a.js")
+                var bytes = _tools.WebtGet(bbtest);
+                if (bytes != null)
                 {
-                    await context.Response.WriteAsync(_tools.WebtAJs);
+                    context.Response.ContentType = PathUtils.PathToMimeType(bbtest);
+                    await context.Response.Body.WriteAsync(bytes);
                     return;
                 }
             }
@@ -1005,6 +998,28 @@ namespace Lib.Composition
                 {
                     context.Response.ContentType = "text/plain";
                     await context.Response.WriteAsync(srcFileCache.Utf8Content);
+                    return;
+                }
+            }
+
+            if (path.StartsWithSegments("/bb", out var bbweb))
+            {
+                if (bbweb == "")
+                {
+                    context.Response.Redirect("/bb/", true);
+                    return;
+                }
+
+                if (bbweb == "/")
+                {
+                    bbweb = "/index.html";
+                }
+
+                var bytes = _tools.WebGet(bbweb);
+                if (bytes != null)
+                {
+                    context.Response.ContentType = PathUtils.PathToMimeType(bbweb);
+                    await context.Response.Body.WriteAsync(bytes);
                     return;
                 }
             }

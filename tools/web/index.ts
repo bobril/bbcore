@@ -173,7 +173,7 @@ b.init(() => {
         selectedAgent = 0;
     }
     return [
-        { tag: "h2", children: "Bobril-build" },
+        { tag: "h2", children: "Bobril-build 2" },
         b.styledDiv(<b.IBobrilChildArray>[
             s.disconnected ? "Disconnected" : s.connected ? "Connected" : "Connecting",
             createCheckbox("Live reload", s.liveReload, com.setLiveReload),

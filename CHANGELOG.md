@@ -1,5 +1,12 @@
 # Changelog
 
+### Added
+
+Simplified development of bb and bb/test webs. New parameters allow to proxy request to another bobril-build. Both webs are also stored as zip in resources which allows to have variable number of files not just html and js. tools/WebUpdateUI automates builds and update zip files.
+
+    tools/web> bb -p 10000
+    sometestproject> bb --proxybb http://localhost:10000
+
 ## [unreleased]
 
 ## 0.59.0

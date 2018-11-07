@@ -35,10 +35,8 @@
     <EmbeddedResource Include="ToolsDir\liveReload.js" />
     <EmbeddedResource Include="ToolsDir\loader.js" />
     <EmbeddedResource Include="ToolsDir\localeDefs.json" />
-    <EmbeddedResource Include="ToolsDir\webt_a.js" />
-    <EmbeddedResource Include="ToolsDir\webt_index.html" />
-    <EmbeddedResource Include="ToolsDir\web_a.js" />
-    <EmbeddedResource Include="ToolsDir\web_index.html" />
+    <EmbeddedResource Include="ToolsDir\web.zip" />
+    <EmbeddedResource Include="ToolsDir\webt.zip" />
     <EmbeddedResource Include="TSCompiler\bbtsc.js" />
     <EmbeddedResource Include="TSCompiler\import.js" />
     <EmbeddedResource Include="TSCompiler\tslib.js" />

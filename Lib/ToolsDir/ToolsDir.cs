@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using JavaScriptEngineSwitcher.Core;
@@ -47,16 +48,18 @@ namespace Lib.ToolsDir
                 JasmineDtsPath = PathUtils.Join(Path, "jasmine.d.ts");
                 File.WriteAllText(JasmineDtsPath, JasmineDts);
                 JasmineBootJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot.js");
-                WebtAJs = ResourceUtils.GetText("Lib.ToolsDir.webt_a.js");
-                WebtIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.webt_index.html");
-                WebAJs = ResourceUtils.GetText("Lib.ToolsDir.web_a.js");
-                WebIndexHtml = ResourceUtils.GetText("Lib.ToolsDir.web_index.html");
+                WebtZip = ResourceUtils.GetZip("Lib.ToolsDir.webt.zip");
+                WebZip = ResourceUtils.GetZip("Lib.ToolsDir.web.zip");
                 _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
                 TsLibSource = ResourceUtils.GetText("Lib.TSCompiler.tslib.js");
                 ImportSource = ResourceUtils.GetText("Lib.TSCompiler.import.js");
                 LiveReloadJs = ResourceUtils.GetText("Lib.ToolsDir.liveReload.js");
             }
         }
+
+        public IDictionary<string, byte[]> WebZip { get; }
+
+        public IDictionary<string, byte[]> WebtZip { get; }
 
         public string Path { get; }
         public string TypeScriptLibDir { get; private set; }
@@ -132,13 +135,9 @@ namespace Lib.ToolsDir
 
         public string JasmineDtsPath { get; }
 
-        public string WebtIndexHtml { get; }
-        public string WebAJs { get; }
-        public string WebIndexHtml { get; }
-
         readonly JObject _localeDefs;
-
-        public string WebtAJs { get; }
+        string _proxyWeb;
+        string _proxyWebt;
 
         public string TsLibSource { get; }
 
@@ -236,6 +235,57 @@ namespace Lib.ToolsDir
         {
             var jsEngineSwitcher = JsEngineSwitcher.Current;
             return jsEngineSwitcher.CreateDefaultEngine();
+        }
+
+        public byte[] WebGet(string path)
+        {
+            if (_proxyWeb != null)
+            {
+                try
+                {
+                    return ProxyGet(_proxyWeb, path);
+                }
+                catch (Exception e)
+                {
+                    _logger.Error("Proxy failure " + _proxyWeb + " " + path + " " + e.Message);
+                }
+            }
+            WebZip.TryGetValue(path, out var result);
+            return result;
+        }
+
+        public byte[] WebtGet(string path)
+        {
+            if (_proxyWebt != null)
+            {
+                try
+                {
+                    return ProxyGet(_proxyWebt, path);
+                }
+                catch (Exception e)
+                {
+                    _logger.Error("Proxy failure " + _proxyWebt + " " + path + " " + e.Message);
+                }
+            }
+            WebtZip.TryGetValue(path, out var result);
+            return result;
+        }
+
+        HttpClient _httpClient = new HttpClient();
+
+        byte[] ProxyGet(string baseUrl, string path)
+        {
+            return _httpClient.GetByteArrayAsync(new Uri(baseUrl + path)).Result;
+        }
+
+        public void ProxyWeb(string url)
+        {
+            _proxyWeb = url;
+        }
+
+        public void ProxyWebt(string url)
+        {
+            _proxyWebt = url;
         }
 
         public string GetLocaleDef(string locale)

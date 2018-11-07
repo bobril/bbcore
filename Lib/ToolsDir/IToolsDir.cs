@@ -1,4 +1,5 @@
 ﻿using JavaScriptEngineSwitcher.Core;
+using Microsoft.AspNetCore.Http;
 
 namespace Lib.ToolsDir
 {
@@ -15,14 +16,14 @@ namespace Lib.ToolsDir
         string JasmineCoreJs { get; }
         string JasmineBootJs { get; }
         string JasmineDts { get; }
-        string WebtIndexHtml { get; }
-        string WebtAJs { get; }
-        string WebIndexHtml { get; }
-        string WebAJs { get; }
         string JasmineDtsPath { get; }
         string GetLocaleDef(string locale);
         string TsLibSource { get; }
         string ImportSource { get;  }
         IJsEngine CreateJsEngine();
+        byte[] WebGet(string path);
+        byte[] WebtGet(string path);
+        void ProxyWeb(string url);
+        void ProxyWebt(string url);
     }
 }

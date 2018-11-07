@@ -30,3 +30,5 @@ TestResults
 /TestProjects/**/dist
 /TestProjects/IncludeSources/tslint.json
 node_modules
+/tools/web/dist
+/tools/webt/dist

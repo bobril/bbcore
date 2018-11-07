@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Text;
 
 namespace Lib.Utils
@@ -14,6 +17,29 @@ namespace Lib.Utils
                     return reader.ReadToEnd();
                 }
             }
+        }
+
+        static public IDictionary<string, byte[]> GetZip(string name)
+        {
+            var result = new Dictionary<string, byte[]>();
+            using (var stream = typeof(ResourceUtils).Assembly.GetManifestResourceStream(name))
+            {
+                using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
+                {
+                    foreach (var entry in zip.Entries)
+                    {
+                        using (var onestream = entry.Open())
+                        {
+                            var buf = new byte[entry.Length];
+                            if (onestream.Read(buf) != buf.Length)
+                                throw new InvalidDataException();
+                            result["/" + entry.FullName] = buf;
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }
