@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.61.0
+
 ### Added, but possibly breaking changes
 
 If both package-lock.json and yarn.lock exists, bobril-build will refuse to use yarn or npm. Which will prevent inconsistent installed packages.
