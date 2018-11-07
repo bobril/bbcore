@@ -13,6 +13,8 @@ Added missing --save parameter for npm version of bb package add command.
 
 ## [unreleased]
 
+## 0.60.0
+
 ## 0.59.0
 
 ### Added
