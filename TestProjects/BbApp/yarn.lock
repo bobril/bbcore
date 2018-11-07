@@ -5,21 +5,21 @@
 bobril-g11n@*:
   version "4.3.1"
   resolved "https://registry.yarnpkg.com/bobril-g11n/-/bobril-g11n-4.3.1.tgz#e5fcc5532a280859a372f8042480c233f7c56c6c"
+  integrity sha512-x7dPLKvjvvwCxCF5ts7kXAqi6/gl9p+r1IGsGFd8J06TS3aX/mRSoIBeennFkIxFcFL1vKWSKBhuzL/vRrUJtw==
   dependencies:
     moment "^2.10.6"
 
 bobril@*:
   version "8.16.0"
   resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.16.0.tgz#1196656df3defb52e84fe3f59ef223c078b597f0"
+  integrity sha512-oXvXhf6VG4z+6tqoBgqU0StKpOGoqjWncg21S1sooF+9+eEX/jrIrI7Ed6uFXtsh2AwnHiJRJ9PT7TC0kWpH/Q==
 
 moment@^2.10.6:
   version "2.22.2"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.22.2.tgz#3c257f9839fc0e93ff53149632239eb90783ff66"
-
-normalize.css@^3.0.3:
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/normalize.css/-/normalize.css-3.0.3.tgz#acc00262e235a2caa91363a2e5e3bfa4f8ad05c6"
+  integrity sha1-PCV/mDn8DpP/UxSWMiOeuQeD/2Y=
 
 typescript@*:
   version "3.1.6"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.1.6.tgz#b6543a83cfc8c2befb3f4c8fba6896f5b0c9be68"
+  integrity sha512-tDMYfVtvpb96msS1lDX9MEdHrW4yOuZ4Kdc4Him9oU796XldPYF/t2+uKoX0BBa0hXXwDlqYQbXY5Rzjzc5hBA==
