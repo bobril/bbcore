@@ -7,6 +7,10 @@ Simplified development of bb and bb/test webs. New parameters allow to proxy req
     tools/web> bb -p 10000
     sometestproject> bb --proxybb http://localhost:10000
 
+### Fixed
+
+Added missing --save parameter for npm version of bb package add command.
+
 ## [unreleased]
 
 ## 0.59.0

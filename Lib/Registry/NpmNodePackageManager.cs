@@ -185,7 +185,7 @@ namespace Lib.Registry
 
         public void Add(IDirectoryCache projectDirectory, string packageName, bool devDependency = false)
         {
-            RunNpmWithParam(projectDirectory, "install " + packageName + (devDependency ? " --save-dev" : ""));
+            RunNpmWithParam(projectDirectory, "install " + packageName + (devDependency ? " --save-dev" : " --save"));
         }
     }
 }
