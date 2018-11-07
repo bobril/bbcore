@@ -1,5 +1,9 @@
 # Changelog
 
+## [unreleased]
+
+## 0.60.0
+
 ### Added
 
 Simplified development of bb and bb/test webs. New parameters allow to proxy request to another bobril-build. Both webs are also stored as zip in resources which allows to have variable number of files not just html and js. tools/WebUpdateUI automates builds and update zip files.
@@ -10,10 +14,6 @@ Simplified development of bb and bb/test webs. New parameters allow to proxy req
 ### Fixed
 
 Added missing --save parameter for npm version of bb package add command.
-
-## [unreleased]
-
-## 0.60.0
 
 ## 0.59.0
 
