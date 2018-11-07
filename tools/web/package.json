@@ -1,16 +1,14 @@
 {
   "name": "bobril-build-web",
   "version": "1.0.0",
-  "description": "",
   "typescript": {
     "main": "index.ts"
   },
   "bobril": {
-    "title": "Bobril-Build",
-    "dir": "../distweb"
+    "title": "Bobril-Build"
   },
-  "author": "",
-  "license": "",
+  "license": "MIT",
+  "private": true,
   "dependencies": {
     "bobril": "*"
   }

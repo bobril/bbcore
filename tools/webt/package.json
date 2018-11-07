@@ -1,16 +1,15 @@
 {
   "name": "bobril-build-web-test",
   "version": "1.0.0",
-  "description": "",
   "typescript": {
     "main": "app.ts"
   },
   "bobril": {
-    "title": "Bobril-Build-Test",
-    "dir": "../distwebt"
+    "title": "Bobril-Build-Test"
   },
   "author": "",
-  "license": "",
+  "license": "MIT",
+  "private": true,
   "dependencies": {
     "bobril": "*"
   }
