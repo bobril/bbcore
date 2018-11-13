@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+BB b -u 1 now removes unused texts from translation files.
+
 ## 0.61.0
 
 ### Added, but possibly breaking changes

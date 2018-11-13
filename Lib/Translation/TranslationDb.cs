@@ -224,13 +224,13 @@ namespace Lib.Translation
         {
             if (!string.IsNullOrEmpty(specificPath))
                 specificLanguage = GetLanguageFromSpecificPath(specificPath);
-            
+
             var contentBuilder = new StringBuilder();
             List<string> values = null;
 
             if (!string.IsNullOrEmpty(specificLanguage))
                 values = Lang2ValueList[specificLanguage];
-            
+
             for(int id = 0; id < Id2Key.Count; id++)
             {
                 var trs = Id2Key[id];
@@ -248,13 +248,13 @@ namespace Lib.Translation
                 }
                 else
                 {
-                    if(exportOnlyUntranslated && values[id] != null) 
+                    if(exportOnlyUntranslated && values[id] != null)
                         continue;
                     contentBuilder.Append(ExportLanguageItem(trs.Message, trs.Hint));
 
                 }
             }
-            
+
             if (contentBuilder.Length > 0)
             {
                 File.WriteAllText(filePath, contentBuilder.ToString(), new UTF8Encoding(false));
@@ -282,7 +282,7 @@ namespace Lib.Translation
 
             var stringifySource = JsonConvert.SerializeObject(source);
             stringifySource = stringifySource.Substring(1, stringifySource.Length - 2).Replace(@"\\n",@"\n");
-            
+
             content += $"S:{stringifySource}\n";
             content += $"I:{stringifyHint}\n";
             content += $"T:{stringifySource}\n";
@@ -298,7 +298,6 @@ namespace Lib.Translation
                 id = (uint)Id2Key.Count;
                 Id2Key.Add(key);
                 Key2Id.Add(key, id);
-                MapId(id);
             }
             return id;
         }
@@ -401,12 +400,12 @@ namespace Lib.Translation
                 normalizedPath = PathUtils.Normalize(pathTo);
                 language = Path.GetFileNameWithoutExtension(normalizedPath);
             }
-            
+
             try
             {
                 if(!HasLanguage(language))
                     throw new Exception($"Language {language} does not exist. Probably file name is not valid.");
-                
+
                 ImportTranslatedLanguageInternal(pathFrom, (source, hint, target) =>
                 {
                     var key = new TranslationKey(source, hint, true);
@@ -463,7 +462,7 @@ namespace Lib.Translation
                     throw new Exception("Invalid file format. (" + lines[i+1] + ")");
                 if (lines[i+2][0] != 'T' || lines[i+2][1] != ':')
                     throw new Exception("Invalid file format. (" + lines[i+2] + ")");
-                
+
                 var source = lines[i].Substring(2);
                 var hint = lines[i + 1].Substring(2);
                 if (hint == "") hint = null;
@@ -492,10 +491,10 @@ namespace Lib.Translation
 
             void AddData(string source, string hint, string target) =>
                 keys.Add(new TranslationKey(source, hint, false));
-            
+
             ImportTranslatedLanguageInternal(file1, AddData);
             ImportTranslatedLanguageInternal(file2, AddData);
-            
+
             var strBuilder = new StringBuilder();
             foreach (var key in keys)
             {
@@ -508,7 +507,7 @@ namespace Lib.Translation
                 _logger?.Warn("Nothing to union.");
                 return false;
             }
-            
+
             try
             {
                 File.WriteAllText(outputFile, strBuilder.ToString());
