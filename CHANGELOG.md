@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.62.0
+
 ### Added
 
 Way to mark module as obsolete. See README for details.
