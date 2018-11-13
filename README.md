@@ -66,6 +66,7 @@ By setting `BBVERSION` enviroment variable you can define default version (inclu
 | -11    | Warn     | Fixing local import with two slashes                                                           |
 | -12    | Warn     | Importing module without being in package.json as dependency                                   |
 | -13    | Warn     | Unused dependency in package.json                                                              |
+| -14    | Warn     | Importing obsolete module: reason                                                              |
 
 # Package.json - bobril section features
 
@@ -89,6 +90,12 @@ By setting `BBVERSION` enviroment variable you can define default version (inclu
                 "generateSpritesFile": true
             }
         }
+    }
+
+## How to mark module as obsolete
+
+    "bobril": {
+        "obsolete": "Reason why is obsolete and what to use instead"
     }
 
 # Environmental variables

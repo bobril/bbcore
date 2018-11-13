@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Way to mark module as obsolete. See README for details.
+
 ### Fixed
 
 BB b -u 1 now removes unused texts from translation files.

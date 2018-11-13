@@ -331,6 +331,7 @@ namespace Lib.TSCompiler
         internal string[] IncludeSources;
         internal bool TypeScriptVersionOverride;
         public HashSet<int> IgnoreDiagnostic;
+        public string ObsoleteMessage;
 
         public void UpdateTSConfigJson()
         {
@@ -465,6 +466,7 @@ namespace Lib.TSCompiler
             GenerateSpritesTs =
                 pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
             WarningsAsErrors = bobrilSection?["warningsAsErrors"]?.Value<bool>() ?? false;
+            ObsoleteMessage = GetStringProperty(bobrilSection, "obsolete", null);
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)
