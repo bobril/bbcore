@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.62.1
+
 ### Fixed
 
 Improved parsing of changelogs in package upgrage.
