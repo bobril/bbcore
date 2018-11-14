@@ -42,7 +42,7 @@
     <EmbeddedResource Include="TSCompiler\tslib.js" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="BTDB" Version="14.7.0" />
+    <PackageReference Include="BTDB" Version="14.12.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.0.0-rc1" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.0.0-rc1" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.0.0-rc1" />
@@ -61,7 +61,7 @@
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-dev001449" />
     <PackageReference Include="System.Collections.Concurrent" Version="4.4.0-beta-24913-02" />
     <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.4.0-beta-24913-02" />
-    <PackageReference Include="System.Reactive" Version="4.1.1" />
+    <PackageReference Include="System.Reactive" Version="4.1.2" />
     <PackageReference Include="System.Runtime.InteropServices" Version="4.4.0-beta-24913-02" />
     <PackageReference Include="System.ValueTuple" Version="4.6.0-preview3-26501-04" />
     <PackageReference Include="UAParser" Version="3.0.0" />

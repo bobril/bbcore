@@ -63,7 +63,7 @@ Added missing --save parameter for npm version of bb package add command.
 ### Added
 
 - blametest command for randomized searching for Headless chrome bugs.
- 
+
 ### Fixed
 
 - Detection of dependencies does not break build in second rebuild. It also does not show as missing dependency when it is in devDependencies. Automatically ignore @types/ dependencies.
@@ -112,7 +112,7 @@ Added missing --save parameter for npm version of bb package add command.
 ### Added
 
 - Official Docker build
-- Making it work in Docker 
+- Making it work in Docker
 - package upgrade command also creates DEPSCHANGELOG.md
 
 ## 0.51.1
