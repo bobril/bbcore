@@ -898,7 +898,7 @@ namespace Lib.Composition
             var dirCache = _dc.TryGetItem(projectDir) as IDirectoryCache;
             var proj = TSProject.Get(dirCache, _dc, _logger, null);
             proj.IsRootProject = true;
-            if (proj.ProjectOptions != null)
+            if (proj.ProjectOptions.BuildCache != null)
                 return proj.ProjectOptions;
             proj.ProjectOptions = new ProjectOptions
             {
