@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.62.2
+
 ### Fixed
 
 Regression from 0.62.
