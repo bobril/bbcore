@@ -244,10 +244,10 @@ namespace Lib.TSCompiler
                     "Importing module " + name + " without being in package.json as dependency", 0, 0, 0, 0);
             }
 
-            if (moduleInfo.ProjectOptions.ObsoleteMessage != null)
+            if (moduleInfo.ProjectOptions?.ObsoleteMessage != null)
             {
                 parentInfo.ReportDiag(false, -14,
-                    "Importing obsolete module: " + moduleInfo.ProjectOptions.ObsoleteMessage, 0, 0, 0, 0);
+                    "Importing obsolete module: " + moduleInfo.ProjectOptions?.ObsoleteMessage, 0, 0, 0, 0);
             }
 
             AddSource(itemInfo);

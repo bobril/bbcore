@@ -314,7 +314,11 @@ namespace Lib.TSCompiler
             if (dir == null)
                 return null;
             if (dir.AdditionalInfo == null)
-                dir.AdditionalInfo = new TSProject {Owner = dir, DiskCache = diskCache, Logger = logger, Name = diskName };
+            {
+                var proj =new TSProject {Owner = dir, DiskCache = diskCache, Logger = logger, Name = diskName, ProjectOptions = new ProjectOptions() };
+                proj.ProjectOptions.Owner = proj;
+                dir.AdditionalInfo = proj; 
+            }
             return (TSProject) dir.AdditionalInfo;
         }
     }
