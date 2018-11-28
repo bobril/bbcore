@@ -246,8 +246,11 @@ namespace Lib.TSCompiler
 
             if (moduleInfo.ProjectOptions?.ObsoleteMessage != null)
             {
-                parentInfo.ReportDiag(false, -14,
-                    "Importing obsolete module: " + moduleInfo.ProjectOptions?.ObsoleteMessage, 0, 0, 0, 0);
+                if (!PragmaParser.ParseIgnoreImportingObsolete(parentInfo.Owner.Utf8Content).Contains(name))
+                {
+                    parentInfo.ReportDiag(false, -14,
+                        "Importing obsolete module: " + moduleInfo.ProjectOptions?.ObsoleteMessage, 0, 0, 0, 0);
+                }
             }
 
             AddSource(itemInfo);

@@ -30,7 +30,8 @@ namespace Lib.Test
             public DateTime _lastWriteTimeUtc;
         }
 
-        Dictionary<KeyValuePair<string, string>, FakeFile> _content = new Dictionary<KeyValuePair<string, string>, FakeFile>();
+        Dictionary<KeyValuePair<string, string>, FakeFile> _content =
+            new Dictionary<KeyValuePair<string, string>, FakeFile>();
 
         public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
         {
@@ -43,6 +44,7 @@ namespace Lib.Test
                 else
                     res.Add(FsItemInfo.Existing(kv.Key.Value, kv.Value._length, kv.Value._lastWriteTimeUtc));
             }
+
             return res;
         }
 
@@ -55,6 +57,7 @@ namespace Lib.Test
                     return FsItemInfo.Directory(fad.Item2, false);
                 return FsItemInfo.Existing(fad.Item2, file._length, file._lastWriteTimeUtc);
             }
+
             return FsItemInfo.Missing();
         }
 
@@ -67,6 +70,7 @@ namespace Lib.Test
                     throw new Exception("Cannot read directory as file " + path);
                 return Encoding.UTF8.GetBytes(file._content);
             }
+
             throw new Exception("Not found file " + path);
         }
 
@@ -79,6 +83,7 @@ namespace Lib.Test
                     throw new Exception("Cannot read directory as file " + path);
                 return file._content;
             }
+
             throw new Exception("Not found file " + path);
         }
 
@@ -95,14 +100,15 @@ namespace Lib.Test
                     throw new Exception("Cannot add file because it is already dir " + path);
                 file._lastWriteTimeUtc = DateTime.UtcNow;
                 file._content = content;
-                file._length = (ulong)Encoding.UTF8.GetByteCount(content);
+                file._length = (ulong) Encoding.UTF8.GetByteCount(content);
                 return;
             }
+
             CreateDir(fad.Item1);
             _content[new KeyValuePair<string, string>(fad.Item1, fad.Item2)] = new FakeFile
             {
                 _content = content,
-                _length = (ulong)Encoding.UTF8.GetByteCount(content),
+                _length = (ulong) Encoding.UTF8.GetByteCount(content),
                 _lastWriteTimeUtc = DateTime.UtcNow
             };
             OnFileChange?.Invoke(path);
@@ -118,12 +124,15 @@ namespace Lib.Test
                 {
                     throw new Exception("mkdir fail already file " + path);
                 }
+
                 return;
             }
+
             if (fad.Item1 != "")
             {
                 CreateDir(fad.Item1);
             }
+
             _content[new KeyValuePair<string, string>(fad.Item1, fad.Item2)] = null;
         }
 
@@ -259,7 +268,8 @@ var s2 = b.styleDef({ color: ""red"" }, { hover: { color: ""navy"" } }, ""s2"");
 var s3 = b.styleDef({}, undefined, ""myname"");
 var s4 = b.styleDefEx(s1, {}, void 0, ""s4"");
 var s5 = b.styleDefEx(s2, {}, {}, ""s5"");
-var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildResult.Path2FileInfo[PathUtils.Join(projdir, "index.ts")].Output);
+var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r", ""),
+                buildResult.Path2FileInfo[PathUtils.Join(projdir, "index.ts")].Output);
         }
 
         void AddSimpleProjectJson()
@@ -274,17 +284,17 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
         BuildResult BuildProject(Action<ProjectOptions> configure = null)
         {
             dc.CheckForTrueChange();
-            var ctx = new BuildCtx(_compilerPool, false, (_)=> { });
+            var ctx = new BuildCtx(_compilerPool, false, (_) => { });
             var dirCache = dc.TryGetItem(projdir) as IDirectoryCache;
             var proj = TSProject.Get(dirCache, dc, new DummyLogger(), null);
             proj.IsRootProject = true;
-            if (proj.ProjectOptions == null)
+            if (proj.ProjectOptions.Tools == null)
             {
                 proj.ProjectOptions = new ProjectOptions
                 {
                     Tools = _tools,
                     Owner = proj,
-                    Defines = new Dictionary<string, bool> { { "DEBUG", true } },
+                    Defines = new Dictionary<string, bool> {{"DEBUG", true}},
                     BuildCache = new DummyBuildCache()
                 };
                 proj.LoadProjectJson(true);
@@ -293,6 +303,7 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
                 proj.ProjectOptions.DetectBobrilJsxDts();
                 proj.ProjectOptions.RefreshExampleSources();
             }
+
             configure?.Invoke(proj.ProjectOptions);
             ctx.TSCompilerOptions = new TSCompilerOptions
             {
@@ -309,7 +320,8 @@ var s6 = b.styleDefEx([s1, s2], {}, {}, ""advname"");".Replace("\r",""), buildRe
                 checkJs = false,
                 removeComments = false,
                 types = new string[0],
-                lib = new HashSet<string> { "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection" }
+                lib = new HashSet<string>
+                    {"es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection"}
             };
             ctx.Sources = new HashSet<string>();
             ctx.Sources.Add(proj.MainFile);

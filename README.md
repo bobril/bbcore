@@ -98,6 +98,10 @@ By setting `BBVERSION` enviroment variable you can define default version (inclu
         "obsolete": "Reason why is obsolete and what to use instead"
     }
 
+Use this comment in source code with import to ignore this specific import (must be before last import in source file)
+
+    // BBIgnoreObsolete: modulea, moduleb
+
 # Environmental variables
 
 ## Disable yarn creating links

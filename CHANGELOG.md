@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Allow to ignore import of obsolete module by useing comment `// BBIgnoreObsolete: modulea, moduleb`
+
 ## 0.62.3
 
 ### Fixed
