@@ -233,6 +233,7 @@ namespace Lib.TSCompiler
             }
 
             var itemInfo = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
+            moduleInfo.MainFileInfo = itemInfo;
             itemInfo.ImportedAsModule = name;
             itemInfo.MyProject = moduleInfo;
             var parentProject = parentInfo.MyProject;

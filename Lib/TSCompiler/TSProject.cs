@@ -25,8 +25,9 @@ namespace Lib.TSCompiler
         public string TypesMainFile { get; set; }
         public ProjectOptions ProjectOptions { get; set; }
         public int PackageJsonChangeId { get; set; }
-        public int InterfaceChangeId { get; set; }
         public bool IsRootProject { get; set; }
+        public TSFileAdditionalInfo MainFileInfo { get; set; }
+
         public HashSet<string> Dependencies;
         public HashSet<string> DevDependencies;
         public HashSet<string> UsedDependencies;
@@ -317,7 +318,7 @@ namespace Lib.TSCompiler
             {
                 var proj =new TSProject {Owner = dir, DiskCache = diskCache, Logger = logger, Name = diskName, ProjectOptions = new ProjectOptions() };
                 proj.ProjectOptions.Owner = proj;
-                dir.AdditionalInfo = proj; 
+                dir.AdditionalInfo = proj;
             }
             return (TSProject) dir.AdditionalInfo;
         }

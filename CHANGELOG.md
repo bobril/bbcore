@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Major problem in compilation cache.
+
 ### Added
 
 Allow to ignore import of obsolete module by useing comment `// BBIgnoreObsolete: modulea, moduleb`

@@ -413,6 +413,7 @@ namespace Lib.DiskCache
                         }
                         _contentBytes = null;
                         _contentUtf8 = null;
+                        _contentHash = null;
                         _changeId++;
                         if (Parent != null)
                             ((DirectoryCache)Parent).NoteChange();

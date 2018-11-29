@@ -112,22 +112,70 @@ namespace Lib.TSCompiler
         public IEnumerable<int> BuildLastCompilationCacheIds()
         {
             yield return Owner.ChangeId;
+            HashSet<TSFileAdditionalInfo> visited = null;
             if (_moduleImports != null)
                 foreach (var module in _moduleImports)
                 {
-                    yield return module.InterfaceChangeId;
+                    yield return module.PackageJsonChangeId;
+                    var local = module.MainFileInfo;
+                    if (visited == null)
+                    {
+                        visited = new HashSet<TSFileAdditionalInfo>();
+                        visited.Add(this);
+                    }
+
+                    foreach (var id in local.BuildLastCompilationCacheIds(visited))
+                    {
+                        yield return id;
+                    }
                 }
 
             if (_localImports != null)
                 foreach (var local in _localImports)
                 {
-                    if (local.DtsLink != null)
+                    if (visited == null)
                     {
-                        yield return local.DtsLink.Owner.ChangeId;
+                        visited = new HashSet<TSFileAdditionalInfo>();
+                        visited.Add(this);
                     }
-                    else
+
+                    foreach (var id in local.BuildLastCompilationCacheIds(visited))
                     {
-                        yield return local.Owner.ChangeId;
+                        yield return id;
+                    }
+                }
+        }
+
+        IEnumerable<int> BuildLastCompilationCacheIds(HashSet<TSFileAdditionalInfo> visited)
+        {
+            if (!visited.Add(this))
+                yield break;
+            if (DtsLink != null)
+            {
+                yield return DtsLink.Owner.ChangeId;
+            }
+            else
+            {
+                yield return Owner.ChangeId;
+            }
+
+            if (_moduleImports != null)
+                foreach (var module in _moduleImports)
+                {
+                    yield return module.PackageJsonChangeId;
+                    var local = module.MainFileInfo;
+                    foreach (var id in local.BuildLastCompilationCacheIds(visited))
+                    {
+                        yield return id;
+                    }
+                }
+
+            if (_localImports != null)
+                foreach (var local in _localImports)
+                {
+                    foreach (var id in local.BuildLastCompilationCacheIds(visited))
+                    {
+                        yield return id;
                     }
                 }
         }
