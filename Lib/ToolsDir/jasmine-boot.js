@@ -1,7 +1,7 @@
 "use strict";
 (function () {
     var jasmine = jasmineRequire.core(jasmineRequire);
-    window['jasmine'] = jasmine;
+    window["jasmine"] = jasmine;
     var env = jasmine.getEnv();
     var jasmineInterface = jasmineRequire.interface(jasmine, env);
     for (var property in jasmineInterface)
@@ -12,59 +12,59 @@
         return true;
     };
     function _inspect(arg, within) {
-        var result = '';
+        var result = "";
         if (Object(arg) !== arg) {
-            if (within && typeof arg == 'string') {
+            if (within && typeof arg == "string") {
                 return '"' + arg + '"';
             }
             return arg;
         }
         if (arg && arg.nodeType == 1) {
             // Is element?
-            result = '<' + arg.tagName;
+            result = "<" + arg.tagName;
             for (var i = 0, ii = arg.attributes.length; i < ii; i++) {
                 if (arg.attributes[i].specified) {
-                    result += ' ' + arg.attributes[i].name + '="' + arg.attributes[i].value + '"';
+                    result += " " + arg.attributes[i].name + '="' + arg.attributes[i].value + '"';
                 }
             }
             if (arg.childNodes && arg.childNodes.length === 0) {
-                result += '/';
+                result += "/";
             }
-            return result + '>';
+            return result + ">";
         }
         var kind = Object.prototype.toString.call(arg).slice(8, -1);
         switch (kind) {
-            case 'String':
+            case "String":
                 return 'String "' + arg + '"';
-            case 'Number':
-            case 'Boolean':
-                return kind + ' ' + arg;
-            case 'Array':
-            case 'HTMLCollection':
-            case 'NodeList':
+            case "Number":
+            case "Boolean":
+                return kind + " " + arg;
+            case "Array":
+            case "HTMLCollection":
+            case "NodeList":
                 // Is array-like object?
-                result = kind == 'Array' ? '[' : kind + ' [';
+                result = kind == "Array" ? "[" : kind + " [";
                 var arr_list = [];
                 for (var j = 0, jj = arg.length; j < jj; j++) {
                     arr_list[j] = _inspect(arg[j], true);
                 }
-                return result + arr_list.join(', ') + ']';
-            case 'Function':
-            case 'Date':
+                return result + arr_list.join(", ") + "]";
+            case "Function":
+            case "Date":
                 return arg;
-            case 'RegExp':
+            case "RegExp":
                 return "/" + arg.source + "/";
             default:
-                if (typeof arg === 'object') {
+                if (typeof arg === "object") {
                     var prefix;
-                    if (kind == 'Object') {
-                        prefix = '';
+                    if (kind == "Object") {
+                        prefix = "";
                     }
                     else {
-                        prefix = kind + ' ';
+                        prefix = kind + " ";
                     }
                     if (within) {
-                        return prefix + '{?}';
+                        return prefix + "{?}";
                     }
                     if (Object.getOwnPropertyNames) {
                         var keys = Object.getOwnPropertyNames(arg);
@@ -77,7 +77,7 @@
                             }
                         }
                     }
-                    result = prefix + '{';
+                    result = prefix + "{";
                     if (!keys.length) {
                         return result + "}";
                     }
@@ -87,21 +87,20 @@
                         key = keys[n];
                         try {
                             var value = _inspect(arg[key], true);
-                            properties.push(key + ': ' + value);
+                            properties.push(key + ": " + value);
                         }
                         catch (e) { }
                     }
-                    return result + properties.join(', ') + '}';
+                    return result + properties.join(", ") + "}";
                 }
                 else {
                     return arg;
                 }
         }
     }
-    ;
     function repeatString(text, times) {
         if (times < 1) {
-            return '';
+            return "";
         }
         var result = text;
         for (var i = times; --i;) {
@@ -109,7 +108,7 @@
         }
         return result;
     }
-    var _indent = '  ';
+    var _indent = "  ";
     function primitiveOf(object) {
         var value = object.valueOf();
         switch (typeof value) {
@@ -124,13 +123,13 @@
     function source_of(arg, limit, stack) {
         var aType = typeof arg;
         switch (aType) {
-            case 'string':
+            case "string":
                 return '"' + arg + '"';
-            case 'function':
+            case "function":
                 break;
-            case 'object':
+            case "object":
                 if (arg === null) {
-                    return 'null';
+                    return "null";
                 }
                 break;
             default:
@@ -138,24 +137,24 @@
         }
         var prefix;
         var kind = Object.prototype.toString.call(arg).slice(8, -1);
-        if (kind == 'Object') {
-            prefix = '';
+        if (kind == "Object") {
+            prefix = "";
         }
         else {
-            prefix = kind + ' ';
+            prefix = kind + " ";
             var primitive = primitiveOf(arg);
             if (primitive) {
-                prefix += primitive + ' ';
+                prefix += primitive + " ";
             }
         }
         if (!limit) {
-            return prefix + '{?}';
+            return prefix + "{?}";
         }
         // Check circular references
         var stack_length = stack.length;
         for (var si = 0; si < stack_length; si++) {
             if (stack[si] === arg) {
-                return '#';
+                return "#";
             }
         }
         stack[stack_length++] = arg;
@@ -169,7 +168,7 @@
                 keys.push(key);
             }
         }
-        var result = prefix + '{';
+        var result = prefix + "{";
         if (!keys.length) {
             return result + "}";
         }
@@ -179,13 +178,12 @@
             key = keys[n];
             try {
                 var value = source_of(arg[key], limit - 1, stack);
-                arr_obj.push("\n" + indent + key + ': ' + value);
+                arr_obj.push("\n" + indent + key + ": " + value);
             }
             catch (e) { }
         }
-        return result + arr_obj.join(', ') + '\n' + repeatString(_indent, stack_length - 1) + '}';
+        return result + arr_obj.join(", ") + "\n" + repeatString(_indent, stack_length - 1) + "}";
     }
-    ;
     function realLog(message) {
         var stack;
         var err = new Error();
@@ -216,7 +214,7 @@
             perfnow = Date.now;
         }
         else {
-            perfnow = (function () { return +(new Date()); });
+            perfnow = function () { return +new Date(); };
         }
         var stack_1 = [];
         var specStart_1 = 0;
@@ -234,42 +232,52 @@
                 stack_1.push(perfnow());
             },
             specStarted: function (result) {
-                bbTest("testStart", result.description);
+                bbTest("testStart", { name: result.description, file: __BBSPECFILE });
                 specStart_1 = perfnow();
             },
             specDone: function (result) {
                 var duration = perfnow() - specStart_1;
-                bbTest("testDone", { name: result.description, duration: duration, status: result.status, failures: result.failedExpectations });
+                bbTest("testDone", {
+                    name: result.description,
+                    duration: duration,
+                    status: result.status,
+                    failures: result.failedExpectations
+                });
             },
             suiteDone: function (result) {
                 var duration = perfnow() - stack_1.pop();
-                bbTest("suiteDone", { name: result.description, duration: duration, status: result.status, failures: result.failedExpectations });
+                bbTest("suiteDone", {
+                    name: result.description,
+                    duration: duration,
+                    status: result.status,
+                    failures: result.failedExpectations
+                });
             }
         });
         // Heavily inspired by https://github.com/NV/console.js
-        if (typeof console === 'undefined') {
+        if (typeof console === "undefined") {
             window.console = {
                 toString: function () {
-                    return 'Inspired by Console.js version 0.9';
+                    return "Inspired by Console.js version 0.9";
                 }
             };
         }
         var dimensions_limit_1 = 3;
-        console.dir = function dir() {
+        console.dir = function dir( /* ...arguments */) {
             var result = [];
             for (var i = 0; i < arguments.length; i++) {
                 result.push(source_of(arguments[i], dimensions_limit_1, []));
             }
             return realLog(result.join(_args_separator_1));
         };
-        var log_methods = ['log', 'info', 'warn', 'error', 'debug', 'dirxml'];
-        var _args_separator_1 = '\n';
+        var log_methods = ["log", "info", "warn", "error", "debug", "dirxml"];
+        var _args_separator_1 = "\n";
         var _interpolate_1 = /%[sdifo]/gi;
         for (var i = 0; i < log_methods.length; i++) {
             console[log_methods[i]] = function logger(first_arg) {
                 var result = [];
                 var args = Array.prototype.slice.call(arguments, 0);
-                if (typeof first_arg === 'string' && _interpolate_1.test(first_arg)) {
+                if (typeof first_arg === "string" && _interpolate_1.test(first_arg)) {
                     args.shift();
                     result.push(first_arg.replace(_interpolate_1, function () {
                         return _inspect(args.shift());
@@ -286,36 +294,36 @@
         };
         console.assert = function assert(is_ok, message) {
             if (!is_ok)
-                realLog('ASSERT FAIL: ' + message);
+                realLog("ASSERT FAIL: " + message);
         };
         console.group = function group(name) {
-            realLog('\n-------- ' + name + ' --------');
+            realLog("\n-------- " + name + " --------");
         };
         console.groupCollapsed = console.group;
         console.groupEnd = function groupEnd() {
-            realLog('\n\n\n');
+            realLog("\n\n\n");
         };
         var _counters_1 = {};
         console.count = function count(title) {
-            title = title || '';
+            title = title || "";
             if (_counters_1[title]) {
                 _counters_1[title]++;
             }
             else {
                 _counters_1[title] = 1;
             }
-            realLog(title + ' ' + _counters_1[title]);
+            realLog(title + " " + _counters_1[title]);
         };
         var _timers_1 = {};
         console.time = function time(name) {
-            var start = (new Date).getTime();
+            var start = new Date().getTime();
             _timers_1[name] = {
-                'start': start
+                start: start
             };
         };
         console.timeEnd = function timeEnd(name) {
-            var end = (new Date).getTime();
-            console.info(name + ': ' + (end - _timers_1[name].start) + 'ms');
+            var end = new Date().getTime();
+            console.info(name + ": " + (end - _timers_1[name].start) + "ms");
             _timers_1[name].end = end;
         };
     }
@@ -352,4 +360,4 @@
     window.onload = function () {
         env.execute();
     };
-}());
+})();

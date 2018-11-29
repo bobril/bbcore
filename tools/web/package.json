@@ -4,6 +4,10 @@
   "typescript": {
     "main": "index.ts"
   },
+  "prettier": {
+    "tabWidth": 4,
+    "printWidth": 120
+  },
   "bobril": {
     "title": "Bobril-Build"
   },

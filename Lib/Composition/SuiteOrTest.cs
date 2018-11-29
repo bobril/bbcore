@@ -9,6 +9,7 @@ namespace Lib.Composition
         public int ParentId;
         public bool IsSuite;
         public string Name;
+        public string SpecFileName; // only for Tests
         public bool Skipped;
         public bool Failure;
         public double Duration;
@@ -24,6 +25,7 @@ namespace Lib.Composition
                 ParentId = ParentId,
                 IsSuite = IsSuite,
                 Name = Name,
+                SpecFileName = SpecFileName,
                 Skipped = Skipped,
                 Failure = Failure,
                 Duration = Duration,

@@ -160,7 +160,8 @@ namespace Lib.Composition
                                 {
                                     Id = ++_suiteId,
                                     ParentId = _suiteStack.Peek().Id,
-                                    Name = (string)data,
+                                    Name = data.Value<string>("name"),
+                                    SpecFileName = data.Value<string>("file"),
                                     Nested = null,
                                     Duration = 0,
                                     Failure = false,

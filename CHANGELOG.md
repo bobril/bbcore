@@ -10,6 +10,7 @@ Regression in translation commands from 0.62.0.
 ### Added
 
 Allow to ignore import of obsolete module by useing comment `// BBIgnoreObsolete: modulea, moduleb`
+Propagate Spec File Name to web.
 
 ## 0.62.3
 

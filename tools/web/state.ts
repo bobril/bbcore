@@ -19,12 +19,14 @@ export interface SuiteOrTest {
     id: number;
     parentId: number;
     name: string;
+    /// valid only for Test
+    specFileName: string | null;
     skipped: boolean;
     failure: boolean;
     duration: number;
-    failures: { message: string, stack: StackFrame[] }[];
+    failures: { message: string; stack: StackFrame[] }[];
     nested: SuiteOrTest[];
-    logs: { message: string, stack: StackFrame[] }[];
+    logs: { message: string; stack: StackFrame[] }[];
 }
 
 export interface TestResultsHolder extends SuiteOrTest {
@@ -55,7 +57,7 @@ export interface IActionCombo extends IAction {
     type: "combo";
     label: string;
     selected: string;
-    options: { id: string, name: string }[];
+    options: { id: string; name: string }[];
 }
 
 export let connected = false;
