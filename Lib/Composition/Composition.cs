@@ -209,7 +209,7 @@ namespace Lib.Composition
                 {
                     _logger.WriteLine($"Adding language {addLanguage}");
                     trDb.AddLanguage(addLanguage);
-                    trDb.SaveLangDb(PathToTranslations(project), addLanguage);
+                    trDb.SaveLangDb(PathToTranslations(project), addLanguage, false);
                     _logger.WriteLine($"Added language {addLanguage}");
                 }
 
@@ -291,7 +291,7 @@ namespace Lib.Composition
                     }
 
                     var importedLang = Path.GetFileNameWithoutExtension(PathUtils.Normalize(import));
-                    trDb.SaveLangDb(PathToTranslations(project), importedLang);
+                    trDb.SaveLangDb(PathToTranslations(project), importedLang, false);
 
                     _logger.WriteLine($"Translated language from file {import} successfully imported.");
                 }
@@ -305,7 +305,7 @@ namespace Lib.Composition
 
                     var language = trDb.GetLanguageFromSpecificFile(specificPath);
                     var dir = Path.GetDirectoryName(specificPath);
-                    trDb.SaveLangDb(dir, language);
+                    trDb.SaveLangDb(dir, language, false);
 
                     _logger.WriteLine(
                         $"Translated language from file {import} successfully imported to file {specificPath}.");
@@ -417,7 +417,7 @@ namespace Lib.Composition
                     {
                         if (proj.Localize && bCommand.UpdateTranslations.Value)
                         {
-                            proj.TranslationDb.SaveLangDbs(PathToTranslations(proj));
+                            proj.TranslationDb.SaveLangDbs(PathToTranslations(proj), true);
                         }
                         else
                         {

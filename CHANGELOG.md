@@ -5,6 +5,7 @@
 ### Fixed
 
 Major problem in compilation cache.
+Regression in translation commands from 0.62.0.
 
 ### Added
 

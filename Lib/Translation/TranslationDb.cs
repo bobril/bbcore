@@ -174,17 +174,17 @@ namespace Lib.Translation
             }
         }
 
-        public void SaveLangDbs(string dir)
+        public void SaveLangDbs(string dir, bool justUsed)
         {
             foreach (var p in Lang2ValueList)
             {
                 if (!_loadedLanguages.Contains(p.Key))
                     continue;
-                SaveLangDb(dir, p.Key);
+                SaveLangDb(dir, p.Key, justUsed);
             }
         }
 
-        public void SaveLangDb(string dir, string lang)
+        public void SaveLangDb(string dir, string lang, bool justUsed)
         {
             var values = Lang2ValueList[lang];
             var tw = new StringWriter();
@@ -192,16 +192,32 @@ namespace Lib.Translation
             jw.Formatting = Formatting.Indented;
             jw.WriteStartArray();
             jw.WriteValue(lang);
-            for (var i = 0; i < UsedIds.Count; i++)
+            if (justUsed)
             {
-                jw.WriteStartArray();
-                var idx = (int)UsedIds[i];
-                jw.WriteValue(Id2Key[idx].Message);
-                jw.WriteValue(Id2Key[idx].Hint);
-                jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
-                if (idx < values.Count && values[idx] != null)
-                    jw.WriteValue(values[idx]);
-                jw.WriteEndArray();
+                for (var i = 0; i < UsedIds.Count; i++)
+                {
+                    jw.WriteStartArray();
+                    var idx = (int)UsedIds[i];
+                    jw.WriteValue(Id2Key[idx].Message);
+                    jw.WriteValue(Id2Key[idx].Hint);
+                    jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
+                    if (idx < values.Count && values[idx] != null)
+                        jw.WriteValue(values[idx]);
+                    jw.WriteEndArray();
+                }
+            }
+            else
+            {
+                for (var idx = 0; idx < Id2Key.Count; idx++)
+                {
+                    jw.WriteStartArray();
+                    jw.WriteValue(Id2Key[idx].Message);
+                    jw.WriteValue(Id2Key[idx].Hint);
+                    jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
+                    if (idx < values.Count && values[idx] != null)
+                        jw.WriteValue(values[idx]);
+                    jw.WriteEndArray();
+                }
             }
             jw.WriteEndArray();
             jw.Flush();
