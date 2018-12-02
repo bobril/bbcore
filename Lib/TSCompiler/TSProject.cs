@@ -149,6 +149,7 @@ namespace Lib.TSCompiler
                 {
                     packageManager.Install(Owner);
                 }
+
                 DiskCache.CheckForTrueChange();
                 DiskCache.ResetChange();
             }
@@ -248,6 +249,9 @@ namespace Lib.TSCompiler
                     {
                         if (buildCtx.Verbose)
                             compiler.MeasurePerformance = true;
+                        var start = DateTime.UtcNow;
+                        buildModuleCtx.OutputedJsFiles = 0;
+                        buildModuleCtx.OutputedDtsFiles = 0;
                         compiler.CreateProgram(Owner.FullPath,
                             buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
@@ -270,12 +274,15 @@ namespace Lib.TSCompiler
                         }
 
                         buildModuleCtx.UpdateCacheIds();
+                        Logger.Info(
+                            $"Compiled Src: {buildModuleCtx.ToCompile.Count} Dts: {buildModuleCtx.ToCompileDts.Count} => Js: {buildModuleCtx.OutputedJsFiles} Dts: {buildModuleCtx.OutputedDtsFiles} in {(DateTime.UtcNow - start).TotalSeconds:F1}s");
                         buildModuleCtx.ToCompile.Clear();
                         buildModuleCtx.Crawl();
                     }
                 } while (buildModuleCtx.ChangedDts || 0 < buildModuleCtx.ToCompile.Count);
 
-                if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError) ProjectOptions.StoreResultToBuildCache(buildModuleCtx._result);
+                if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError)
+                    ProjectOptions.StoreResultToBuildCache(buildModuleCtx._result);
                 buildCtx.BuildResult = buildModuleCtx._result;
             }
             finally
@@ -286,7 +293,8 @@ namespace Lib.TSCompiler
             }
         }
 
-        public static TSProject FindInfoForModule(IDirectoryCache dir, IDiskCache diskCache, ILogger logger, string moduleName,
+        public static TSProject FindInfoForModule(IDirectoryCache dir, IDiskCache diskCache, ILogger logger,
+            string moduleName,
             out string diskName)
         {
             while (!dir.IsFake)
@@ -316,10 +324,15 @@ namespace Lib.TSCompiler
                 return null;
             if (dir.AdditionalInfo == null)
             {
-                var proj =new TSProject {Owner = dir, DiskCache = diskCache, Logger = logger, Name = diskName, ProjectOptions = new ProjectOptions() };
+                var proj = new TSProject
+                {
+                    Owner = dir, DiskCache = diskCache, Logger = logger, Name = diskName,
+                    ProjectOptions = new ProjectOptions()
+                };
                 proj.ProjectOptions.Owner = proj;
                 dir.AdditionalInfo = proj;
             }
+
             return (TSProject) dir.AdditionalInfo;
         }
     }

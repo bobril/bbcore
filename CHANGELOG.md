@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Optimized speed regression in 0.63.0.
+
 ## 0.63.0
 
 ### Fixed

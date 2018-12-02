@@ -23,7 +23,7 @@ namespace Lib.TSCompiler
         public FileCompilationType Type;
         public IFileCache Owner { get; set; }
         public IDiskCache DiskCache { get; set; }
-        public List<int> LastCompilationCacheIds { get; set; }
+        public int[] LastCompilationCacheIds { get; set; }
         public TSFileAdditionalInfo DtsLink { get; set; }
         public string Output { get; set; }
         public SourceMap MapLink { get; set; }
@@ -64,6 +64,7 @@ namespace Lib.TSCompiler
         List<TSFileAdditionalInfo> _localImports;
         List<Diag> _diag;
         public TSProject MyProject;
+        bool _updateNeedsCompilation;
 
         public IReadOnlyList<Diag> Diagnostic => _diag;
 
@@ -98,91 +99,172 @@ namespace Lib.TSCompiler
         {
             if (Output == null || _moduleImports == null || _localImports == null || LastCompilationCacheIds == null)
             {
+                _updateNeedsCompilation = true;
                 return true;
             }
 
-            if (Enumerable.SequenceEqual(LastCompilationCacheIds, BuildLastCompilationCacheIds()))
-            {
+            var result = !CompareLastCompilationCacheIds(LastCompilationCacheIds);
+            if (result)
+                _updateNeedsCompilation = true;
+            return result;
+        }
+
+        bool CompareLastCompilationCacheIds(int[] lastCompilationCacheIds)
+        {
+            var idx = 0;
+            if (idx > lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != Owner.ChangeId)
                 return false;
-            }
+            HashSet<object> visited = null;
+            if (_moduleImports != null)
+                foreach (var module in _moduleImports)
+                {
+                    if (visited == null)
+                    {
+                        visited = new HashSet<object>();
+                        visited.Add(this);
+                    }
+
+                    if (!visited.Add(module))
+                        continue;
+                    if (idx > lastCompilationCacheIds.Length ||
+                        lastCompilationCacheIds[idx++] != module.PackageJsonChangeId)
+                        return false;
+                    var local = module.MainFileInfo;
+
+                    if (!local.CompareLastCompilationCacheIds(lastCompilationCacheIds, ref idx, visited))
+                        return false;
+                }
+
+            if (_localImports != null)
+                foreach (var local in _localImports)
+                {
+                    if (visited == null)
+                    {
+                        visited = new HashSet<object>();
+                        visited.Add(this);
+                    }
+
+                    if (!local.CompareLastCompilationCacheIds(lastCompilationCacheIds, ref idx, visited))
+                        return false;
+                }
 
             return true;
         }
 
-        public IEnumerable<int> BuildLastCompilationCacheIds()
-        {
-            yield return Owner.ChangeId;
-            HashSet<TSFileAdditionalInfo> visited = null;
-            if (_moduleImports != null)
-                foreach (var module in _moduleImports)
-                {
-                    yield return module.PackageJsonChangeId;
-                    var local = module.MainFileInfo;
-                    if (visited == null)
-                    {
-                        visited = new HashSet<TSFileAdditionalInfo>();
-                        visited.Add(this);
-                    }
-
-                    foreach (var id in local.BuildLastCompilationCacheIds(visited))
-                    {
-                        yield return id;
-                    }
-                }
-
-            if (_localImports != null)
-                foreach (var local in _localImports)
-                {
-                    if (visited == null)
-                    {
-                        visited = new HashSet<TSFileAdditionalInfo>();
-                        visited.Add(this);
-                    }
-
-                    foreach (var id in local.BuildLastCompilationCacheIds(visited))
-                    {
-                        yield return id;
-                    }
-                }
-        }
-
-        IEnumerable<int> BuildLastCompilationCacheIds(HashSet<TSFileAdditionalInfo> visited)
+        bool CompareLastCompilationCacheIds(int[] lastCompilationCacheIds, ref int idx,
+            HashSet<object> visited)
         {
             if (!visited.Add(this))
-                yield break;
+                return true;
             if (DtsLink != null)
             {
-                yield return DtsLink.Owner.ChangeId;
+                if (idx > lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != DtsLink.Owner.ChangeId)
+                    return false;
             }
             else
             {
-                yield return Owner.ChangeId;
+                if (idx > lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != Owner.ChangeId)
+                    return false;
             }
 
             if (_moduleImports != null)
                 foreach (var module in _moduleImports)
                 {
-                    yield return module.PackageJsonChangeId;
+                    if (!visited.Add(module))
+                        continue;
+                    if (idx > lastCompilationCacheIds.Length ||
+                        lastCompilationCacheIds[idx++] != module.PackageJsonChangeId)
+                        return false;
                     var local = module.MainFileInfo;
-                    foreach (var id in local.BuildLastCompilationCacheIds(visited))
-                    {
-                        yield return id;
-                    }
+
+                    if (!local.CompareLastCompilationCacheIds(lastCompilationCacheIds, ref idx, visited))
+                        return false;
                 }
 
             if (_localImports != null)
                 foreach (var local in _localImports)
                 {
-                    foreach (var id in local.BuildLastCompilationCacheIds(visited))
+                    if (!local.CompareLastCompilationCacheIds(lastCompilationCacheIds, ref idx, visited))
+                        return false;
+                }
+
+            return true;
+        }
+
+        public int[] BuildLastCompilationCacheIds()
+        {
+            var result = new List<int>();
+            result.Add(Owner.ChangeId);
+            HashSet<object> visited = null;
+            if (_moduleImports != null)
+                foreach (var module in _moduleImports)
+                {
+                    if (visited == null)
                     {
-                        yield return id;
+                        visited = new HashSet<object>();
+                        visited.Add(this);
                     }
+
+                    if (!visited.Add(module))
+                        continue;
+                    result.Add(module.PackageJsonChangeId);
+                    var local = module.MainFileInfo;
+
+                    local.BuildLastCompilationCacheIds(result, visited);
+                }
+
+            if (_localImports != null)
+                foreach (var local in _localImports)
+                {
+                    if (visited == null)
+                    {
+                        visited = new HashSet<object>();
+                        visited.Add(this);
+                    }
+
+                    local.BuildLastCompilationCacheIds(result, visited);
+                }
+
+            return result.ToArray();
+        }
+
+        void BuildLastCompilationCacheIds(List<int> result, HashSet<object> visited)
+        {
+            if (!visited.Add(this))
+                return;
+            if (DtsLink != null)
+            {
+                result.Add(DtsLink.Owner.ChangeId);
+            }
+            else
+            {
+                result.Add(Owner.ChangeId);
+            }
+
+            if (_moduleImports != null)
+                foreach (var module in _moduleImports)
+                {
+                    if (!visited.Add(module))
+                        continue;
+                    result.Add(module.PackageJsonChangeId);
+                    var local = module.MainFileInfo;
+                    local.BuildLastCompilationCacheIds(result, visited);
+                }
+
+            if (_localImports != null)
+                foreach (var local in _localImports)
+                {
+                    local.BuildLastCompilationCacheIds(result, visited);
                 }
         }
 
         public void RememberLastCompilationCacheIds()
         {
-            LastCompilationCacheIds = BuildLastCompilationCacheIds().ToList();
+            if (LastCompilationCacheIds == null || _updateNeedsCompilation)
+            {
+                _updateNeedsCompilation = false;
+                LastCompilationCacheIds = BuildLastCompilationCacheIds();
+            }
         }
 
         public class Diag

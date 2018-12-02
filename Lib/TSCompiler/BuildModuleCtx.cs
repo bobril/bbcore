@@ -13,6 +13,8 @@ namespace Lib.TSCompiler
         public BuildCtx _buildCtx;
         public TSProject _owner;
         public BuildResult _result;
+        public int OutputedJsFiles;
+        public int OutputedDtsFiles;
 
         public void AddSource(TSFileAdditionalInfo file)
         {
@@ -46,6 +48,7 @@ namespace Lib.TSCompiler
             var fullPath = PathUtils.Join(_owner.ProjectOptions.CurrentBuildCommonSourceDirectory, fileName);
             if (fullPath.EndsWith(".js"))
             {
+                OutputedJsFiles++;
                 data = SourceMap.RemoveLinkToSourceMap(data);
                 var sourceName = fullPath.Substring(0, fullPath.Length - ".js".Length) + ".ts";
                 TSFileAdditionalInfo sourceForJs = null;
@@ -67,6 +70,7 @@ namespace Lib.TSCompiler
                 throw new Exception("Unknown extension written by TS " + fullPath);
             }
 
+            OutputedDtsFiles++;
             data = new Regex("\\/\\/\\/ *<reference path=\\\"(.+)\\\" *\\/>").Replace(data, (m) =>
             {
                 var origPath = m.Groups[1].Value;
@@ -342,14 +346,11 @@ namespace Lib.TSCompiler
                     switch (fileAdditional.Type)
                     {
                         case FileCompilationType.TypeScript:
-                            if (fileAdditional.DtsLink != null)
-                                fileAdditional.DtsLink.Owner.IsInvalid = true;
                             if (fileAdditional.MyProject == null)
                             {
                                 fileAdditional.MyProject = _owner;
                             }
 
-                            fileAdditional.DtsLink = null;
                             fileAdditional.Output = null;
                             fileAdditional.MapLink = null;
                             // d.ts files are compiled always but they don't have any output so needs to be in separate set
