@@ -4,7 +4,8 @@
 
 ### Fixed
 
-Optimized speed regression in 0.63.0.
+Partially optimized speed regression in 0.63.0.
+Changed not working Spec File Name propagation to Stack propagation and it costs "only" 2% of test speed.
 
 ## 0.63.0
 

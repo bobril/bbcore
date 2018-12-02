@@ -161,7 +161,7 @@ namespace Lib.Composition
                                     Id = ++_suiteId,
                                     ParentId = _suiteStack.Peek().Id,
                                     Name = data.Value<string>("name"),
-                                    SpecFileName = data.Value<string>("file"),
+                                    Stack = ConvertMessageAndStack("", data.Value<string>("stack")).Stack.Where(f => f.FileName != "testbundle.js").ToList(),
                                     Nested = null,
                                     Duration = 0,
                                     Failure = false,

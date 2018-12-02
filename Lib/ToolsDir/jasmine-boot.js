@@ -232,7 +232,7 @@
                 stack_1.push(perfnow());
             },
             specStarted: function (result) {
-                bbTest("testStart", { name: result.description, file: __BBSPECFILE });
+                bbTest("testStart", { name: result.description, stack: result.stack });
                 specStart_1 = perfnow();
             },
             specDone: function (result) {

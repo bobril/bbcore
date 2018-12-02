@@ -1,3 +1,4 @@
+// Search for BBCHANGE - for modifications for Bobril-build
 /*
 Copyright (c) 2008-2018 Pivotal Labs
 
@@ -483,6 +484,19 @@ getJasmineRequireObj().Spec = function(j$) {
     this.expectationFactory = attrs.expectationFactory;
     this.resultCallback = attrs.resultCallback || function() {};
     this.id = attrs.id;
+    // BBCHANGE START
+    var stack;
+    var err = new Error();
+    stack = err.stack || err.stacktrace;
+    if (!stack) {
+      try {
+        i.crash.fast++;
+      } catch (err) {
+        stack = err.stack || err.stacktrace;
+      }
+    }
+    this.stack = stack;
+    // BBCHANGE END
     this.description = attrs.description || '';
     this.queueableFn = attrs.queueableFn;
     this.beforeAndAfterFns = attrs.beforeAndAfterFns || function() { return {befores: [], afters: []}; };
@@ -511,6 +525,9 @@ getJasmineRequireObj().Spec = function(j$) {
      */
     this.result = {
       id: this.id,
+      // BBCHANGE START
+      stack: this.stack,
+      // BBCHANGE END
       description: this.description,
       fullName: this.getFullName(),
       failedExpectations: [],

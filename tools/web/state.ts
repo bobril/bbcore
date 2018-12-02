@@ -20,7 +20,7 @@ export interface SuiteOrTest {
     parentId: number;
     name: string;
     /// valid only for Test
-    specFileName: string | null;
+    stack: StackFrame[] | null;
     skipped: boolean;
     failure: boolean;
     duration: number;

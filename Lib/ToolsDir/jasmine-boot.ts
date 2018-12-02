@@ -1,5 +1,4 @@
 declare var jasmineRequire: any;
-declare var __BBSPECFILE: string | undefined;
 
 (function() {
     var jasmine = jasmineRequire.core(jasmineRequire);
@@ -243,8 +242,8 @@ declare var __BBSPECFILE: string | undefined;
                 bbTest("suiteStart", result.description);
                 stack.push(perfnow());
             },
-            specStarted: (result: { description: string; fullName: string }) => {
-                bbTest("testStart", { name: result.description, file: __BBSPECFILE });
+            specStarted: (result: { description: string; stack: string }) => {
+                bbTest("testStart", { name: result.description, stack: result.stack });
                 specStart = perfnow();
             },
             specDone: (result: {

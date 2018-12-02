@@ -172,7 +172,7 @@ namespace Lib.TSCompiler
                 testSources.Where(src => !src.EndsWith(".d.ts")).Select(src =>
                 {
                     var name = PathUtils.WithoutExtension(PathUtils.Subtract(src, root));
-                    return $"__BBSPECFILE='{name}';R.r('{name}');\n";
+                    return $"R.r('{name}');\n";
                 }));
             _indexHtml = $@"<!DOCTYPE html>
 <html>
@@ -191,7 +191,6 @@ namespace Lib.TSCompiler
         <script src=""{_versionDirPrefix}testbundle.js"" charset=""utf-8""></script>
         <script>
             {RequireBobril()}
-            var __BBSPECFILE;
             {reqSpec}
         </script>
     </body>
