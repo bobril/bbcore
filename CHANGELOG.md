@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.63.1
+
 ### Fixed
 
 Partially optimized speed regression in 0.63.0.
