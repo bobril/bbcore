@@ -17,6 +17,10 @@
   },
   "author": "Bobris",
   "license": "MIT",
+  "prettier": {
+    "tabWidth": 4,
+    "printWidth": 120
+  },
   "dependencies": {
     "bobril": "*",
     "bobril-g11n": "*"
