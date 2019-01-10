@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.63.2
+
 ### Fixed
 
 Off by one error in previous changes.
