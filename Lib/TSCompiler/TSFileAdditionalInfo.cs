@@ -112,7 +112,7 @@ namespace Lib.TSCompiler
         bool CompareLastCompilationCacheIds(int[] lastCompilationCacheIds)
         {
             var idx = 0;
-            if (idx > lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != Owner.ChangeId)
+            if (idx >= lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != Owner.ChangeId)
                 return false;
             HashSet<object> visited = null;
             if (_moduleImports != null)
@@ -126,7 +126,7 @@ namespace Lib.TSCompiler
 
                     if (!visited.Add(module))
                         continue;
-                    if (idx > lastCompilationCacheIds.Length ||
+                    if (idx >= lastCompilationCacheIds.Length ||
                         lastCompilationCacheIds[idx++] != module.PackageJsonChangeId)
                         return false;
                     var local = module.MainFileInfo;
@@ -158,12 +158,12 @@ namespace Lib.TSCompiler
                 return true;
             if (DtsLink != null)
             {
-                if (idx > lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != DtsLink.Owner.ChangeId)
+                if (idx >= lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != DtsLink.Owner.ChangeId)
                     return false;
             }
             else
             {
-                if (idx > lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != Owner.ChangeId)
+                if (idx >= lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != Owner.ChangeId)
                     return false;
             }
 
@@ -172,7 +172,7 @@ namespace Lib.TSCompiler
                 {
                     if (!visited.Add(module))
                         continue;
-                    if (idx > lastCompilationCacheIds.Length ||
+                    if (idx >= lastCompilationCacheIds.Length ||
                         lastCompilationCacheIds[idx++] != module.PackageJsonChangeId)
                         return false;
                     var local = module.MainFileInfo;
