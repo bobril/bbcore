@@ -1,8 +1,8 @@
-import * as b from 'bobril';
-import s = require('./state');
-import * as longPollingClient from './longPollingClient';
+import * as b from "bobril";
+import s = require("./state");
+import * as longPollingClient from "./longPollingClient";
 
-let c = new longPollingClient.Connection('/bb/api/main');
+let c = new longPollingClient.Connection("/bb/api/main");
 
 export function reconnect() {
     s.disconnected = false;
@@ -28,6 +28,7 @@ c.onMessage = (c: longPollingClient.Connection, message: string, data: any) => {
     switch (message) {
         case "testUpdated": {
             s.testSvrState = data;
+            s.testSvrDataVersion++;
             b.invalidate();
             break;
         }

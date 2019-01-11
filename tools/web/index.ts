@@ -1,185 +1,399 @@
-import * as b from 'bobril';
-import * as testReportAnalyzer from './testReportAnalyzer';
-import * as styles from './styles';
-import * as s from './state';
-import * as com from './communication';
+import * as b from "bobril";
+import * as testReportAnalyzer from "./testReportAnalyzer";
+import * as styles from "./styles";
+import * as s from "./state";
+import * as com from "./communication";
+import * as bs from "bobrilstrap";
+import { ResultTree, NestingMethod } from "./resultTree/resultTree";
 
-function clickable(content: b.IBobrilChildren, action: () => void): b.IBobrilNode {
+export function clickable(content: b.IBobrilChildren, action: () => void): b.IBobrilNode {
     return {
-        children: content, component: {
-            onClick() { action(); return true; }
-        }
-    };
-}
-
-function createButton(content: b.IBobrilChildren, enabled: boolean, action: () => void) {
-    return {
-        tag: "button",
         children: content,
-        attrs: { disabled: !enabled },
         component: {
-            onClick() { action(); return true; }
-        }
-    }
-}
-
-function createCheckbox(content: b.IBobrilChildren, checked: boolean, action: (value: boolean) => void) {
-    return {
-        tag: "label", children: [{
-            tag: "input",
-            attrs: { type: "checkbox", value: b.prop(checked, action) }
-        }, content]
-    };
-}
-
-function createCombo(selected: string, options: { id: string, name: string }[], select: (id: string) => void) {
-    return {
-        tag: "select",
-        attrs: { value: selected },
-        component: {
-            onChange(ctx: any, value: string) {
-                select(value);
+            onClick() {
+                action();
+                return true;
             }
-        },
-        children: options.map((i) => ({ tag: "option", attrs: { value: i.id }, children: i.name }))
+        }
     };
 }
 
-function getAgentsShort(selectedAgent: number, setSelectedAgent: (index: number) => void): b.IBobrilChildren {
-    return s.testSvrState.agents.map((r, index) => {
-        return clickable(b.styledDiv([
-            b.styledDiv(r.userAgent, styles.spanUserAgent),
-            b.styledDiv("Failures: " + r.testsFailed
-                + ((r.testsSkipped > 0) ? (" Skipped: " + r.testsSkipped) : "")
-                + " Successful: " + (r.testsFinished - r.testsFailed - r.testsSkipped), styles.spanInfo),
-            r.running && b.styledDiv("Running " + r.testsFinished + "/" + r.totalTests, styles.spanInfo)
-        ], index === selectedAgent && styles.selectedStyle), () => { setSelectedAgent(index) });
+function button(name: string, action: () => void, style?: any) {
+    return clickable(b.styledDiv(name, [styles.button, style]), action);
+}
+
+function createOverview(): b.IBobrilChildren {
+    return b.styledDiv(
+        [
+            createBuildStatus(),
+            createAgentOverview(selectedAgentIndex, i => {
+                selectedAgentIndex = i;
+                ResultTree.id++;
+                reloadResultTree();
+            })
+        ],
+        styles.overview
+    );
+}
+
+function createNavbar(): b.IBobrilChildren {
+    return bs.Navbar({ static: bs.NavbarStatic.Top, style: styles.navbar }, [
+        bs.NavbarHeader({}, [bs.NavbarBrand({ href: " ", style: styles.navbarHeader }, "Bobril-Build")]),
+        bs.NavbarNav({}, [
+            bs.NavbarNavItem(
+                { active: s.liveReload, style: styles.navbar },
+                bs.A(
+                    {
+                        onClick: () => {
+                            com.setLiveReload(!s.liveReload);
+                        },
+                        style: styles.navbarItem
+                    },
+                    "Live reload"
+                )
+            )
+        ])
+    ]);
+}
+
+function createBuildStatus() {
+    const lastResult = s.lastBuildResult;
+    return b.styledDiv([
+        s.building && b.styledDiv("Build in progress"),
+        b.styledDiv([
+            b.styledDiv("Last Build Results -", styles.lastBuildResultPart, styles.lastBuildResultHeader),
+            "  ",
+            b.styledDiv("Errors: " + lastResult.errors, styles.lastBuildResultPart, styles.lastBuildResultErrors),
+            "  ",
+            b.styledDiv("Warnings: " + lastResult.warnings, styles.lastBuildResultPart, styles.lastBuildResultWarnings),
+            "  ",
+            b.styledDiv(
+                "Duration: " + lastResult.time + "ms",
+                styles.lastBuildResultPart,
+                styles.lastBuildResultDuration
+            )
+        ]),
+        lastResult.messages.map(m =>
+            clickable(
+                b.styledDiv(
+                    [
+                        b.styledDiv(
+                            (m.isError ? "Error: " : "Warning: ") + m.text,
+                            m.isError ? styles.buildStatusErrormessage : styles.buildStatusWarningMessage
+                        ),
+                        b.styledDiv(`${m.fileName} (${m.pos[0]}:${m.pos[1]}-${m.pos[2]}:${m.pos[3]})`, styles.filePos)
+                    ],
+                    styles.buildStatusMessage
+                ),
+                () => {
+                    com.focusPlace(m.fileName, m.pos);
+                }
+            )
+        )
+    ]);
+}
+
+function createAgentOverview(selectedAgent: number, setSelectedAgent: (index: number) => void): b.IBobrilChildren {
+    return s.testSvrState.agents.map((results, index) => {
+        return clickable(
+            b.styledDiv(
+                [
+                    b.styledDiv(results.userAgent, styles.spanInfo),
+                    b.styledDiv(
+                        [
+                            b.styledDiv(
+                                "Failures: " + results.testsFailed,
+                                index === selectedAgent
+                                    ? styles.agentOverviewFailedCount
+                                    : styles.agentOverviewFailedCountInactive
+                            ),
+                            "  ",
+                            b.styledDiv(
+                                results.testsSkipped > 0 ? " Skipped: " + results.testsSkipped : "",
+                                index === selectedAgent
+                                    ? styles.agentOverviewSkippedCount
+                                    : styles.agentOverviewSkippedCountInactive
+                            ),
+                            "  ",
+                            b.styledDiv(
+                                " Successful & Logs: " +
+                                    (results.testsFinished - results.testsFailed - results.testsSkipped),
+                                index === selectedAgent
+                                    ? styles.agentOverviewSuccessfulAndLogsCount
+                                    : styles.agentOverviewSuccessfulAndLogsCountInactive
+                            ),
+                            "  "
+                        ],
+                        styles.spanInfo
+                    ),
+                    createProgressBar(index === selectedAgent, results),
+                    results.running &&
+                        b.styledDiv("Running " + results.testsFinished + "/" + results.totalTests, styles.spanInfo)
+                ],
+                index === selectedAgent ? styles.activeAgentOverview : styles.agentOverview
+            ),
+            () => {
+                setSelectedAgent(index);
+            }
+        );
     });
 }
 
-function stackFrameToString(sf: s.StackFrame) {
-    var functionName = sf.functionName || '{anonymous}';
-    var args = '(' + (sf.args || []).join(',') + ')';
-    var fileName = sf.fileName ? ('@' + sf.fileName) : '';
-    var lineNumber = sf.lineNumber != null ? (':' + sf.lineNumber) : '';
-    var columnNumber = sf.columnNumber != null ? (':' + sf.columnNumber) : '';
-    return functionName + args + fileName + lineNumber + columnNumber;
-}
-
-function getMessagesDetails(failures: { message: string, stack: s.StackFrame[] }[]): b.IBobrilChildren {
-    return failures.map(f => [
-        b.styledDiv(f.message),
-        b.styledDiv(f.stack.map(sf => clickable(b.styledDiv(stackFrameToString(sf)), () => {
-            com.focusPlace(sf.fileName, [sf.lineNumber, sf.columnNumber]);
-        }), styles.stackStyle))
-    ]);
-}
-
-function getTestDetail(a: s.SuiteOrTest): b.IBobrilChildren {
-    let isFailed = a.failures && a.failures.length > 0;
-    let hasLogs = a.logs && a.logs.length > 0;
-    let isSuccessful = !isFailed && !hasLogs && !a.skipped;
-    return [
-        b.styledDiv(a.name, styles.suiteDivStyle,
-            isFailed && styles.failedStyle,
-            a.skipped && styles.skippedStyle,
-            isSuccessful && styles.successfulStyle
-        ),
-        isFailed && b.styledDiv(getMessagesDetails(a.failures), styles.suiteChildrenIndentStyle),
-        hasLogs && b.styledDiv(getMessagesDetails(a.logs), styles.suiteChildrenIndentStyle)
-    ];
-}
-
-function getSuiteDetail(a: s.SuiteOrTest): b.IBobrilChildren {
-    return [
-        b.styledDiv(a.name, styles.suiteDivStyle),
-        b.styledDiv(getSuitesDetail(a.nested), styles.suiteChildrenIndentStyle)
-    ];
-}
-
-function getSuitesDetail(a: s.SuiteOrTest[]): b.IBobrilChildren {
-    return a.map(v => v.isSuite ? getSuiteDetail(v) : getTestDetail(v));
-}
-
-function getSuites(a: s.SuiteOrTest[], title: string): b.IBobrilChildren {
-    return a.length > 0 && [
-        { tag: "h3", children: title },
-        getSuitesDetail(a)
-    ]
-}
-
-function getAgentDetail(agent: s.TestResultsHolder): b.IBobrilChildren {
-    let results = testReportAnalyzer.analyze(agent.nested);
-    let suites = [
-        getSuites(results.failed, "Failed"),
-        getSuites(results.logged, "Logged")
-    ];
-    let skippedSuites = getSuites(results.skipped, "Skipped");
-    let passedSuites = getSuites(results.passed, "Successful");
-    if (results.skipped.length > results.passed.length) {
-        suites.push(passedSuites);
-        suites.push(skippedSuites);
-    } else {
-        suites.push(skippedSuites);
-        suites.push(passedSuites);
-    }
-    return [{ tag: "h2", children: agent.userAgent + " details" }, suites];
-}
-
-function getBuildStatus() {
-    const l = s.lastBuildResult;
-    return b.styledDiv([
-        s.building && b.styledDiv("Build in progress"),
-        b.styledDiv("Last Build Result Errors: " + l.errors + " Warnings: " + l.warnings + " Duration: " + l.time + "ms"),
-        l.messages.map(m => clickable(b.styledDiv(
-            [
-                b.styledDiv((m.isError ? "Error: " : "Warning: ") + m.text, m.isError ? styles.errorMessage : styles.warningMessage),
-                b.styledDiv(`${m.fileName} (${m.pos[0]}:${m.pos[1]}-${m.pos[2]}:${m.pos[3]})`, styles.filePos)
+function createProgressBar(active: boolean, results: s.TestResultsHolder): b.IBobrilChildren {
+    return b.styledDiv(
+        bs.Progress({
+            style: styles.progressBar,
+            bars: [
+                {
+                    value: results.testsFailed / (results.totalTests / 100),
+                    striped: results.running,
+                    active: results.running,
+                    style: active ? styles.progressBarFailed : styles.progressBarFailedInactive
+                },
+                {
+                    value: results.testsSkipped / (results.totalTests / 100),
+                    striped: results.running,
+                    active: results.running,
+                    style: active ? styles.progressBarSkipped : styles.progressBarSkippedInactive
+                },
+                {
+                    value:
+                        (results.testsFinished - (results.testsFailed + results.testsSkipped)) /
+                        (results.totalTests / 100),
+                    striped: results.running,
+                    active: results.running,
+                    style: active ? styles.progressBarSuccessful : styles.progressBarSuccessfulInactive
+                }
             ]
-        ), () => {
-            com.focusPlace(m.fileName, m.pos);
-        }))
-    ]);
+        }),
+        styles.spanInfo
+    );
 }
 
-function createActionUI(action: s.IAction): b.IBobrilChildren {
-    switch (action.type) {
-        case "command": {
-            const command = <s.IActionCommand>action;
-            return createButton(command.name, command.enabled, () => {
-                com.runAction(command.id);
-            })
-        }
-        case "combo": {
-            const combo = <s.IActionCombo>action;
-            return [combo.label, " ", createCombo(combo.selected, combo.options, (id) => {
-                com.runAction(id);
-            })];
-        }
-        default: {
-            return "Unknown action type " + action.type;
-        }
-    }
+function createToolbar(): b.IBobrilChildren {
+    return b.styledDiv(
+        [
+            createCollapseAndExpandButtons(),
+            createResultTypeFilterButtons(),
+            createFilter(),
+            createNestingMethodSelectionButtons()
+        ],
+        styles.toolbar
+    );
 }
+
+function createCollapseAndExpandButtons(): b.IBobrilChildren {
+    return b.styledDiv(
+        [
+            button("Collapse", () => {
+                ResultTree.nodesOpenByDefault = false;
+                ResultTree.id++;
+                reloadResultTree();
+            }),
+            button("Expand", () => {
+                ResultTree.nodesOpenByDefault = true;
+                ResultTree.id++;
+                reloadResultTree();
+            })
+        ],
+        styles.buttonGroup
+    );
+}
+
+function createResultTypeFilterButtons(): b.IBobrilChildren {
+    return b.styledDiv(
+        [
+            button(
+                "Failed",
+                () => {
+                    ResultTree.showStatus.failed = !ResultTree.showStatus.failed;
+                    b.invalidate();
+                    b.invalidateStyles();
+                },
+                ResultTree.showStatus.failed ? styles.buttonFailedSelected : styles.buttonFailed
+            ),
+            button(
+                "Skipped",
+                () => {
+                    ResultTree.showStatus.skipped = !ResultTree.showStatus.skipped;
+                    b.invalidate();
+                    b.invalidateStyles();
+                },
+                ResultTree.showStatus.skipped ? styles.buttonSkippedSelected : styles.buttonSkipped
+            ),
+            button(
+                "Successful",
+                () => {
+                    ResultTree.showStatus.successful = !ResultTree.showStatus.successful;
+                    b.invalidate();
+                    b.invalidateStyles();
+                },
+                ResultTree.showStatus.successful ? styles.buttonSuccessfulSelected : styles.buttonSuccessful
+            ),
+            button(
+                "Logs",
+                () => {
+                    ResultTree.showStatus.logs = !ResultTree.showStatus.logs;
+                    b.invalidate();
+                    b.invalidateStyles();
+                },
+                ResultTree.showStatus.logs ? styles.buttonLogsSelected : styles.buttonLogs
+            )
+        ],
+        styles.buttonGroup
+    );
+}
+
+function createFilter(): b.IBobrilChildren {
+    interface FilterCtx extends b.IBobrilCtx {
+        filterStyle: any;
+        setFilterStyle(): void;
+        getFilterInputValue(): string;
+        setFilterInputValue(value: string): void;
+    }
+
+    return b.createComponent({
+        init(ctx: FilterCtx, me) {
+            ctx.setFilterStyle = () => {
+                if (ResultTree.textFilter === "") {
+                    ctx.filterStyle = [styles.filter, styles.filterInactiveContent];
+                } else {
+                    ctx.filterStyle = [
+                        styles.filter,
+                        ResultTree.textFilter === ctx.getFilterInputValue()
+                            ? styles.filterActiveContent
+                            : styles.filterInactiveContent
+                    ];
+                }
+                b.invalidateStyles();
+            };
+
+            ctx.getFilterInputValue = (): string =>
+                <HTMLInputElement>document.getElementById("filter")
+                    ? (<HTMLInputElement>document.getElementById("filter")).value
+                    : "";
+
+            ctx.setFilterInputValue = (value: string) =>
+                ((<HTMLInputElement>document.getElementById("filter")).value = value);
+
+            ctx.setFilterStyle();
+        },
+        render(ctx: FilterCtx, me) {
+            me.children = bs.InputText({
+                id: "filter",
+                placeholder: "Filter..",
+                style: ctx.filterStyle,
+                attrs: { autocomplete: "off" },
+                onChange: () => ctx.setFilterStyle(),
+                onKeyPress: event => {
+                    if (event.charCode === 13) {
+                        ResultTree.textFilter = ctx.getFilterInputValue();
+                        ResultTree.id++;
+                        reloadResultTree();
+                    }
+                    ctx.setFilterStyle();
+                    return false;
+                }
+            });
+
+            b.style(me, styles.buttonGroup);
+        },
+        onFocusOut(ctx: FilterCtx) {
+            ctx.setFilterInputValue(ResultTree.textFilter);
+            ctx.setFilterStyle();
+        }
+    })();
+}
+
+function createNestingMethodSelectionButtons(): b.IBobrilChildren {
+    return b.styledDiv(
+        [
+            button(
+                "by describe",
+                () => {
+                    if (ResultTree.nestingMethod === NestingMethod.ByPath) {
+                        ResultTree.nestingMethod = NestingMethod.ByDescribe;
+                        reloadResultTree();
+                        b.invalidateStyles();
+                        b.invalidate();
+                    }
+                },
+                [
+                    styles.switchButton,
+                    ResultTree.nestingMethod === NestingMethod.ByPath ? styles.disabledButton : styles.activeButton
+                ]
+            ),
+            button(
+                "by path",
+                () => {
+                    if (ResultTree.nestingMethod === NestingMethod.ByDescribe) {
+                        ResultTree.nestingMethod = NestingMethod.ByPath;
+                        reloadResultTree();
+                        b.invalidateStyles();
+                        b.invalidate();
+                    }
+                },
+                [
+                    styles.switchButton,
+                    ResultTree.nestingMethod === NestingMethod.ByDescribe ? styles.disabledButton : styles.activeButton
+                ]
+            )
+        ],
+        styles.buttonGroup
+    );
+}
+
+function createResultTree(): b.IBobrilChildren {
+    if (selectedAgentIndex !== lastLoadedAgentIndex || lastLoadedDataVersion !== s.testSvrDataVersion) {
+        reloadResultTree();
+    }
+
+    return b.styledDiv(resultTree.toComponent(), styles.results);
+}
+
+function reloadResultTree() {
+    let separatedResults: testReportAnalyzer.SeparatedTests = testReportAnalyzer.analyze(
+        s.testSvrState.agents[selectedAgentIndex].nested
+    );
+
+    resultTree.reloadSOTs(separatedResults);
+
+    lastLoadedAgentIndex = selectedAgentIndex;
+    lastLoadedDataVersion = s.testSvrDataVersion;
+
+    b.invalidate();
+}
+
+let selectedAgentIndex = -1;
+let lastLoadedAgentIndex = -1;
+
+let lastLoadedDataVersion = 0;
+
+const resultTree: ResultTree = new ResultTree();
 
 com.reconnect();
 
-let selectedAgent = -1;
 b.init(() => {
-    if (selectedAgent >= s.testSvrState.agents.length) {
-        selectedAgent = -1;
+    if (selectedAgentIndex >= s.testSvrState.agents.length) {
+        selectedAgentIndex = -1;
     }
-    if (selectedAgent === -1 && s.testSvrState.agents.length > 0) {
-        selectedAgent = 0;
+    if (selectedAgentIndex === -1 && s.testSvrState.agents.length > 0) {
+        selectedAgentIndex = 0;
     }
-    return [
-        { tag: "h2", children: "Bobril-build 2" },
-        b.styledDiv(<b.IBobrilChildArray>[
-            s.disconnected ? "Disconnected" : s.connected ? "Connected" : "Connecting",
-            createCheckbox("Live reload", s.liveReload, com.setLiveReload),
-            s.actions.map((a) => [" ", createActionUI(a)])]),
-        getBuildStatus(),
-        getAgentsShort(selectedAgent, i => { selectedAgent = i; b.invalidate() }),
-        selectedAgent >= 0 && getAgentDetail(s.testSvrState.agents[selectedAgent])
-    ];
+    return b.createComponent({
+        render(ctx, me) {
+            me.children = [
+                createNavbar(),
+                createOverview(),
+                selectedAgentIndex >= 0 && createToolbar(),
+                selectedAgentIndex >= 0 && createResultTree()
+            ];
+            b.style(me, styles.page);
+        },
+        postInitDom() {
+            document.getElementsByTagName("html")[0].style.setProperty("height", "100%");
+            document.getElementsByTagName("html")[0].style.setProperty("overflow-y", "scroll");
+            document.getElementsByTagName("html")[0].style.setProperty("background-color", "#5d6273");
+        }
+    })();
 });

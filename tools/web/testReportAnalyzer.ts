@@ -62,7 +62,7 @@ function buildSuiteTrees(tests: SuiteOrTest[], all: { [key: number]: SuiteOrTest
     let nodes: { [key: number]: SuiteOrTest } = {};
     for (let i = 0; i < tests.length; i++) {
         let current = tests[i];
-        nodes[current.id] = cloneSuiteOrTest(current);        
+        nodes[current.id] = cloneSuiteOrTest(current);
         while (current.parentId != 0) {
             if (!nodes[current.id]) {
                 nodes[current.id] = cloneSuiteOrTest(current);
@@ -91,6 +91,7 @@ function cloneSuiteOrTest(suiteOrTest: SuiteOrTest): SuiteOrTest {
         parentId: suiteOrTest.parentId,
         isSuite: suiteOrTest.isSuite,
         name: suiteOrTest.name,
+        stack: suiteOrTest.stack,
         skipped: suiteOrTest.skipped,
         failure: suiteOrTest.failure,
         duration: suiteOrTest.duration,
