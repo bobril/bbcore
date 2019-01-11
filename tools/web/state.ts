@@ -64,6 +64,7 @@ export let connected = false;
 export let disconnected = false;
 export let reconnectDelay = 0;
 export let testSvrState: TestSvrState = { agents: [] };
+export let testSvrDataVersion = 0;
 export let building = false;
 export let actions: IAction[] = [];
 export let liveReload = false;
