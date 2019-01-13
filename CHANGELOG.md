@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Improved
+
+Completely redesigned web inside bobril-build. Contributed by https://github.com/0papen0, sponsored by Quadient.
+
 ## 0.63.2
 
 ### Fixed

@@ -41,6 +41,7 @@ namespace UpdateWebUI
                 return;
             }
 
+            File.Delete(targetZip);
             ZipFile.CreateFromDirectory(projDir + "/dist", targetZip, CompressionLevel.Optimal, false);
         }
     }
