@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.64.1
+
 ### Fixed
 
 Problem with strange compilation error after specific change.
