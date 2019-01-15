@@ -116,6 +116,8 @@ namespace Lib.TSCompiler
             return name.EndsWith(".ts") || name.EndsWith(".tsx");
         }
 
+        public readonly Dictionary<string, string> LocalResolveCache = new Dictionary<string, string>();
+
         public string resolveLocalImport(string name, TSFileAdditionalInfo parentInfo)
         {
             var dirPath = PathUtils.Parent(name);
@@ -138,8 +140,7 @@ namespace Lib.TSCompiler
             itemInfo.MyProject = parentInfo.MyProject;
             if (IsDts(item.FullPath))
             {
-                var jsItem = dc.TryGetChild(fileOnly + ".js") as IFileCache;
-                if (jsItem != null)
+                if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
                 {
                     var jsItemInfo = TSFileAdditionalInfo.Get(jsItem, _owner.DiskCache);
                     jsItemInfo.Type = FileCompilationType.JavaScript;
@@ -155,14 +156,25 @@ namespace Lib.TSCompiler
                 AddSource(itemInfo);
             }
 
-            CheckAdd(item.FullPath);
-            TryToResolveFromBuildCache(itemInfo);
-            if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath) && !itemInfo.NeedsCompilation())
+            if (LocalResolveCache.TryGetValue(name, out var res))
             {
-                return itemInfo.DtsLink.Owner.FullPath;
+                return res;
             }
 
-            return item.FullPath;
+            CheckAdd(item.FullPath);
+            TryToResolveFromBuildCache(itemInfo);
+
+            if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath) && !itemInfo.NeedsCompilation())
+            {
+                res = itemInfo.DtsLink.Owner.FullPath;
+            }
+            else
+            {
+                res = item.FullPath;
+            }
+
+            LocalResolveCache.Add(name, res);
+            return res;
         }
 
         void TryToResolveFromBuildCache(TSFileAdditionalInfo itemInfo)

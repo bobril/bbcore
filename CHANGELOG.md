@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Problem with strange compilation error after specific change.
+
 ## 0.64.0
 
 ### Improved

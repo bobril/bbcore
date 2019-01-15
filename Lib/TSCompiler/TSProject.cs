@@ -230,6 +230,7 @@ namespace Lib.TSCompiler
                     buildModuleCtx.ToCheck.Clear();
                     buildModuleCtx.ToCompile.Clear();
                     buildModuleCtx.ToCompileDts.Clear();
+                    buildModuleCtx.LocalResolveCache.Clear();
                     ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
                     foreach (var src in buildCtx.Sources)
                     {
