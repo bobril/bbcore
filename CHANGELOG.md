@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Removed leftover "debug" view from bb web.
+
 ## 0.64.1
 
 ### Fixed
