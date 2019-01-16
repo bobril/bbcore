@@ -114,10 +114,7 @@ const createResultNodeComponent = b.createComponent<IResultNodeComponentData>({
     render(ctx: MessageContext, me) {
         me.children = [
             clickable(
-                b.styledDiv(
-                    ctx.data.node.SOT.name + ": " + ctx.isOpen,
-                    ctx.getResultHeaderStyle(ctx.data.node.containedResults)
-                ),
+                b.styledDiv(ctx.data.node.SOT.name, ctx.getResultHeaderStyle(ctx.data.node.containedResults)),
                 () => {
                     ctx.isOpen = !ctx.isOpen;
                     ctx.setContent();
