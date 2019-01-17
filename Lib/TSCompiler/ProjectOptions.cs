@@ -77,6 +77,10 @@ namespace Lib.TSCompiler
         public void RefreshMainFile()
         {
             MainFile = PathUtils.Join(Owner.Owner.FullPath, Owner.MainFile);
+            if (!(Owner.DiskCache.TryGetItem(MainFile) is IFileCache))
+            {
+                Owner.Logger.Warn("Main file " + MainFile + " not found");
+            }
         }
 
         string ToShortName(int idx)
