@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Allow to specify version of Jasmine want to use default is "2.99", but you can also set "3.3". In some future version 3.3 will be made default.
+
 ## 0.64.2
 
 ### Fixed

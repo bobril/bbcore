@@ -16,11 +16,12 @@ Github by default has limit of 60 anonymous requests per hour from one IP. So if
 
 By default prerelease versions are not used.
 
-In `package.json` create `bobril` section and set `bbVersion` to specific version you need. By setting `tsVersion` you can override used TypeScript for compilation.
+In `package.json` create `bobril` section and set `bbVersion` to specific version you need. By setting `tsVersion` you can override used TypeScript for compilation. By setting `jasmineVersion` you can override Jasmine version only allowed values are "2.99" (default) and "3.3".
 
     "bobril": {
         "bbVersion": "0.9.0",
-        "tsVersion": "2.7.1"
+        "tsVersion": "2.7.1",
+        "jasmineVersion: "2.99"
     }
 
 By setting `BBVERSION` enviroment variable you can define default version (including prerelease). If you will start `bb2` instead of `bb`, then `BBVERSION` override what is in `package.json`

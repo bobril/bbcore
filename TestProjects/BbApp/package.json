@@ -1,31 +1,32 @@
 {
-  "name": "sample",
-  "version": "1.0.0",
-  "description": "",
-  "typescript": {
-    "main": "src/app.ts"
-  },
-  "bobril": {
-    "title": "Bobril Hello World",
-    "head": "<link rel=\"icon\" href=\"<<src/light.png>>\">",
-    "additionalResourcesDirectory": "assets-app",
-    "prefixStyleDefs": "pref1x",
-    "dependencies": "upgrade",
-    "compilerOptions": {
-      "strict": true
+    "name": "sample",
+    "version": "1.0.0",
+    "description": "",
+    "typescript": {
+        "main": "src/app.ts"
+    },
+    "bobril": {
+        "title": "Bobril Hello World",
+        "head": "<link rel=\"icon\" href=\"<<src/light.png>>\">",
+        "jasmineVersion": "3.3",
+        "additionalResourcesDirectory": "assets-app",
+        "prefixStyleDefs": "pref1x",
+        "dependencies": "upgrade",
+        "compilerOptions": {
+            "strict": true
+        }
+    },
+    "author": "Bobris",
+    "license": "MIT",
+    "prettier": {
+        "tabWidth": 4,
+        "printWidth": 120
+    },
+    "dependencies": {
+        "bobril": "*",
+        "bobril-g11n": "*"
+    },
+    "devDependencies": {
+        "typescript": "*"
     }
-  },
-  "author": "Bobris",
-  "license": "MIT",
-  "prettier": {
-    "tabWidth": 4,
-    "printWidth": 120
-  },
-  "dependencies": {
-    "bobril": "*",
-    "bobril-g11n": "*"
-  },
-  "devDependencies": {
-    "typescript": "*"
-  }
 }

@@ -24,6 +24,7 @@ namespace Lib.ToolsDir
         public ToolsDir(string dir, ILogger logger)
         {
             _logger = logger;
+            _jasmineVersion = "299";
             lock (lockInitialization)
             {
                 Path = dir;
@@ -42,12 +43,21 @@ namespace Lib.ToolsDir
                     }
                 }
 
+                SetJasmineVersion("299");
                 LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js");
-                JasmineCoreJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine.js");
-                JasmineDts = ResourceUtils.GetText("Lib.ToolsDir.jasmine.d.ts");
-                JasmineDtsPath = PathUtils.Join(Path, "jasmine.d.ts");
-                File.WriteAllText(JasmineDtsPath, JasmineDts);
-                JasmineBootJs = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot.js");
+                JasmineCoreJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.js");
+                JasmineDts299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.d.ts");
+                JasmineDtsPath299 = PathUtils.Join(Path, "jasmine.d.ts");
+                if (!File.Exists(JasmineDtsPath299) || File.ReadAllText(JasmineDtsPath299) != JasmineDts299)
+                    File.WriteAllText(JasmineDtsPath299, JasmineDts299);
+                JasmineBootJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot299.js");
+                JasmineCoreJs330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine330.js");
+                JasmineDts330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine330.d.ts");
+                JasmineDtsPath330 = PathUtils.Join(Path, "jasmine330.d.ts");
+                if (!File.Exists(JasmineDtsPath330) || File.ReadAllText(JasmineDtsPath330) != JasmineDts330)
+                    File.WriteAllText(JasmineDtsPath330, JasmineDts330);
+                JasmineBootJs330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot330.js");
+
                 WebtZip = ResourceUtils.GetZip("Lib.ToolsDir.webt.zip");
                 WebZip = ResourceUtils.GetZip("Lib.ToolsDir.web.zip");
                 _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
@@ -127,13 +137,27 @@ namespace Lib.ToolsDir
 
         public string LoaderJs { get; }
 
-        public string JasmineCoreJs { get; }
+        public string JasmineCoreJs299 { get; }
 
-        public string JasmineBootJs { get; }
+        public string JasmineBootJs299 { get; }
 
-        public string JasmineDts { get; }
+        public string JasmineDts299 { get; }
 
-        public string JasmineDtsPath { get; }
+        public string JasmineDtsPath299 { get; }
+        public string JasmineCoreJs330 { get; }
+
+        public string JasmineBootJs330 { get; }
+        public string JasmineDts330 { get; }
+
+        public string JasmineDtsPath330 { get; }
+
+        public string JasmineCoreJs => _jasmineVersion == "2.99" ? JasmineCoreJs299 : JasmineCoreJs330;
+
+        public string JasmineBootJs => _jasmineVersion == "2.99" ? JasmineBootJs299 : JasmineBootJs330;
+
+        public string JasmineDts => _jasmineVersion == "2.99" ? JasmineDts299 : JasmineDts330;
+
+        public string JasmineDtsPath => _jasmineVersion == "2.99" ? JasmineDtsPath299 : JasmineDtsPath330;
 
         readonly JObject _localeDefs;
         string _proxyWeb;
@@ -202,6 +226,11 @@ namespace Lib.ToolsDir
             }
         }
 
+        public void SetJasmineVersion(string version)
+        {
+            _jasmineVersion = version ?? "299";
+        }
+
         public void SetTypeScriptVersion(string version)
         {
             if (TypeScriptVersion == version)
@@ -250,6 +279,7 @@ namespace Lib.ToolsDir
                     _logger.Error("Proxy failure " + _proxyWeb + " " + path + " " + e.Message);
                 }
             }
+
             WebZip.TryGetValue(path, out var result);
             return result;
         }
@@ -267,11 +297,13 @@ namespace Lib.ToolsDir
                     _logger.Error("Proxy failure " + _proxyWebt + " " + path + " " + e.Message);
                 }
             }
+
             WebtZip.TryGetValue(path, out var result);
             return result;
         }
 
         HttpClient _httpClient = new HttpClient();
+        string _jasmineVersion;
 
         byte[] ProxyGet(string baseUrl, string path)
         {

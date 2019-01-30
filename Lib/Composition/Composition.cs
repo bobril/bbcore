@@ -1290,9 +1290,12 @@ namespace Lib.Composition
                     continue;
                 if (usedDependencies != null && options.Owner == pathInfoPair.Value.MyProject)
                 {
-                    foreach (var moduleImport in pathInfoPair.Value.ModuleImports)
+                    if (pathInfoPair.Value.ModuleImports != null)
                     {
-                        usedDependencies.Add(moduleImport.Name);
+                        foreach (var moduleImport in pathInfoPair.Value.ModuleImports)
+                        {
+                            usedDependencies.Add(moduleImport.Name);
+                        }
                     }
 
                     var assets = pathInfoPair.Value.SourceInfo?.assets;

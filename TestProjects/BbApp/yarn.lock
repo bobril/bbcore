@@ -3,23 +3,23 @@
 
 
 bobril-g11n@*:
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/bobril-g11n/-/bobril-g11n-4.4.0.tgz#40ed2f02d90a1059fa96665c0ea660f1bacca88f"
-  integrity sha512-fXv1WNYPH+FUmfjMjIebCd/E7a6nm+JRUbfa7gCEk1oKuZnbsAMOMX0SPIQ4a2FiBbZ3/nWwIYzqVO2hqvVwWw==
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/bobril-g11n/-/bobril-g11n-4.4.1.tgz#4b43684a13cd8f8b1707a4bede837ec6bc82c939"
+  integrity sha512-XmqpVX1mCBgAvBnQuRFInoiOJSqEcwRybUwA/lEhoMMbMr16uW0C6NXOiyy5OCy6MBMI0NEtbqc05r4zjKegiQ==
   dependencies:
     moment "^2.10.6"
 
 bobril@*:
-  version "8.17.1"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.17.1.tgz#e291be0072efbc1287047a8099cb46380a65476e"
-  integrity sha512-RUOQ2IJFrRNXuYqQDmqTSuY9kkMO54vzH5QeY85C83uJUpob7VUVBmSohxPQKZ3G72AX13P1W22Bbj81KIAk5w==
+  version "8.19.0"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.19.0.tgz#e53f32eb7f86a1e113856e17937285d7f3d4c851"
+  integrity sha512-AIi4jBP3RYrb0RwAicoGcxEYdzrgLXVM/hI1a7OGVDsez6PI8QsJOcKPQolznOdTHLQEUactZmbcEBYINgKrjw==
 
 moment@^2.10.6:
-  version "2.23.0"
-  resolved "https://registry.yarnpkg.com/moment/-/moment-2.23.0.tgz#759ea491ac97d54bac5ad776996e2a58cc1bc225"
-  integrity sha512-3IE39bHVqFbWWaPOMHZF98Q9c3LDKGTmypMiTM2QygGXXElkFWIH7GxfmlwmY2vwa+wmNsoYZmG2iusf1ZjJoA==
+  version "2.24.0"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.24.0.tgz#0d055d53f5052aa653c9f6eb68bb5d12bf5c2b5b"
+  integrity sha512-bV7f+6l2QigeBBZSM/6yTNq4P2fNpSWj/0e7jQcy87A8e7o2nAfP/34/2ky5Vw4B9S446EtIhodAzkFCcR4dQg==
 
 typescript@*:
-  version "3.2.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.2.2.tgz#fe8101c46aa123f8353523ebdcf5730c2ae493e5"
-  integrity sha512-VCj5UiSyHBjwfYacmDuc/NOk4QQixbE+Wn7MFJuS0nRuPQbof132Pw4u53dm264O8LPc2MVsc7RJNml5szurkg==
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.2.4.tgz#c585cb952912263d915b462726ce244ba510ef3d"
+  integrity sha512-0RNDbSdEokBeEAkgNbxJ+BLwSManFy9TeXz8uW+48j/xhEXv1ePME60olyzw2XzUqUBNAYFeJadIqAgNqIACwg==

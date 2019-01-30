@@ -6,6 +6,7 @@ namespace Lib.ToolsDir
     public interface IToolsDir
     {
         string Path { get; }
+        void SetJasmineVersion(string version);
         void SetTypeScriptVersion(string version);
         void SetTypeScriptPath(string projectPath);
         string TypeScriptLibDir { get; }

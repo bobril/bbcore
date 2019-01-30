@@ -1,4 +1,3 @@
-"use strict";
 (function () {
     var jasmine = jasmineRequire.core(jasmineRequire);
     window["jasmine"] = jasmine;
@@ -6,10 +5,14 @@
     var jasmineInterface = jasmineRequire.interface(jasmine, env);
     for (var property in jasmineInterface)
         window[property] = jasmineInterface[property];
-    env.throwOnExpectationFailure(true);
-    env.specFilter = function (_spec) {
-        //console.log("Filter "+spec.getFullName());
-        return true;
+    var config = {
+        failFast: true,
+        oneFailurePerSpec: true,
+        hideDisabled: false,
+        specFilter: function (spec) {
+            //console.log("Filter "+spec.getFullName());
+            return true;
+        }
     };
     function _inspect(arg, within) {
         var result = "";
@@ -200,7 +203,8 @@
     }
     var bbTest = window.parent.bbTest;
     if (bbTest) {
-        env.catchExceptions(true);
+        config.failFast = false;
+        env.configure(config);
         var perfnow;
         if (window.performance) {
             var p_1 = window.performance;
@@ -328,7 +332,8 @@
         };
     }
     else {
-        env.catchExceptions(false);
+        config.failFast = true;
+        env.configure(config);
         env.addReporter({
             jasmineStarted: function (suiteInfo) {
                 console.log("Started " + suiteInfo.totalSpecsDefined);

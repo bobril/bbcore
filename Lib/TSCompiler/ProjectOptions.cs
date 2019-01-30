@@ -41,6 +41,7 @@ namespace Lib.TSCompiler
         public string Variant;
         public bool NoHtml;
         public bool WarningsAsErrors;
+        public string JasmineVersion;
 
         public string HtmlHeadExpanded;
         public string MainFile;
@@ -218,6 +219,7 @@ namespace Lib.TSCompiler
 
         public void RefreshTestSources()
         {
+            Tools.SetJasmineVersion(JasmineVersion);
             JasmineDts = Tools.JasmineDtsPath;
             var res = new List<string>(TestSources?.Count ?? 4);
             if (TestSourcesRegExp != null)
@@ -448,6 +450,7 @@ namespace Lib.TSCompiler
             }
 
             Variant = GetStringProperty(bobrilSection, "variant", "");
+            JasmineVersion = GetStringProperty(bobrilSection, "jasmineVersion", "2.99");
             NoHtml = bobrilSection?["nohtml"]?.Value<bool>() ?? Variant != "";
             Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
             HtmlHead = GetStringProperty(bobrilSection, "head",
