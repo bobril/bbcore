@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.66.0
+
 ### Added
 
 Implemented support for `resolveJsonModule` and it is enabled by default.
