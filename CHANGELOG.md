@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Highlight when default port is not available.
+
 ## 0.66.0
 
 ### Added

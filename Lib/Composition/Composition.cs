@@ -928,7 +928,14 @@ namespace Lib.Composition
             _webServer.Handler = Handler;
             _webServer.BindToAny = bindToAny;
             _webServer.Start();
-            _logger.WriteLine($"Listening on http://{(bindToAny ? "*" : "localhost")}:{_webServer.Port}/");
+            if (port != _webServer.Port)
+            {
+                _logger.Warn($"Listening on RANDOM port http://{(bindToAny ? "*" : "localhost")}:{_webServer.Port}/");
+            }
+            else
+            {
+                _logger.Info($"Listening on http://{(bindToAny ? "*" : "localhost")}:{_webServer.Port}/");
+            }
         }
 
         async Task Handler(HttpContext context)
