@@ -39,11 +39,19 @@ namespace Lib.TSCompiler
             var cssToBundle = new List<SourceFromPair>();
             foreach (var source in BuildResult.Path2FileInfo)
             {
-                if (source.Value.Type == FileCompilationType.TypeScript || source.Value.Type == FileCompilationType.JavaScript || source.Value.Type == FileCompilationType.JavaScriptAsset)
+                if (source.Value.Type == FileCompilationType.TypeScript ||
+                    source.Value.Type == FileCompilationType.JavaScript ||
+                    source.Value.Type == FileCompilationType.JavaScriptAsset)
                 {
                     if (source.Value.Output == null)
                         continue; // Skip d.ts
-                    _jsFilesContent[PathUtils.ChangeExtension(source.Key, "js").ToLowerInvariant()] = source.Value.Output;
+                    _jsFilesContent[PathUtils.ChangeExtension(source.Key, "js").ToLowerInvariant()] =
+                        source.Value.Output;
+                }
+                else if (source.Value.Type == FileCompilationType.Json)
+                {
+                    _jsFilesContent[source.Key.ToLowerInvariant() + ".js"] =
+                        "Object.assign(module.exports, " + source.Value.Output + ");";
                 }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
@@ -54,6 +62,7 @@ namespace Lib.TSCompiler
                     FilesContent[source.Value.OutputUrl] = source.Value.Owner.ByteContent;
                 }
             }
+
             if (cssToBundle.Count > 0)
             {
                 string cssPath = Project.AllocateName("bundle.css");
@@ -62,12 +71,15 @@ namespace Lib.TSCompiler
                 {
                     var full = PathUtils.Join(from, url);
                     var fullJustName = full.Split('?', '#')[0];
-                    var fileAdditionalInfo = BuildModuleCtx.AutodetectAndAddDependencyCore(Project, fullJustName, diskCache.TryGetItem(from) as IFileCache);
+                    var fileAdditionalInfo = BuildModuleCtx.AutodetectAndAddDependencyCore(Project, fullJustName,
+                        diskCache.TryGetItem(from) as IFileCache);
                     FilesContent[fileAdditionalInfo.OutputUrl] = fileAdditionalInfo.Owner.ByteContent;
-                    return PathUtils.SplitDirAndFile(fileAdditionalInfo.OutputUrl).Item2 + full.Substring(fullJustName.Length);
+                    return PathUtils.SplitDirAndFile(fileAdditionalInfo.OutputUrl).Item2 +
+                           full.Substring(fullJustName.Length);
                 }).Result;
                 cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
             }
+
             if (Project.SpriteGeneration)
             {
                 _bundlePng = Project.BundlePngUrl;
@@ -86,16 +98,18 @@ namespace Lib.TSCompiler
                     _bundlePng = null;
                 }
             }
+
             var bundler = new BundlerImpl(_tools);
             bundler.Callbacks = this;
             if (Project.ExampleSources.Count > 0)
             {
-                bundler.MainFiles = new[] { PathUtils.ChangeExtension(Project.ExampleSources[0], "js") };
+                bundler.MainFiles = new[] {PathUtils.ChangeExtension(Project.ExampleSources[0], "js")};
             }
             else
             {
-                bundler.MainFiles = new[] { PathUtils.ChangeExtension(Project.MainFile, "js") };
+                bundler.MainFiles = new[] {PathUtils.ChangeExtension(Project.MainFile, "js")};
             }
+
             _mainJsBundleUrl = Project.BundleJsUrl;
             bundler.Compress = compress;
             bundler.Mangle = mangle;
@@ -105,6 +119,7 @@ namespace Lib.TSCompiler
             {
                 defines.Add(p.Key, p.Value);
             }
+
             bundler.Defines = defines;
             bundler.Bundle();
             if (!Project.NoHtml)
@@ -116,7 +131,8 @@ namespace Lib.TSCompiler
 
         void BuildFastBundlerIndexHtml(string cssLink)
         {
-            _indexHtml = $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{Project.HtmlHeadExpanded}<title>{Project.Title}</title>{cssLink}</head><body>{InitG11n()}<script src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
+            _indexHtml =
+                $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{Project.HtmlHeadExpanded}<title>{Project.Title}</title>{cssLink}</head><body>{InitG11n()}<script src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
         }
 
         string InitG11n()
@@ -127,12 +143,14 @@ namespace Lib.TSCompiler
             if (Project.Localize)
             {
                 Project.TranslationDb.BuildTranslationJs(_tools, FilesContent, Project.OutputSubDir);
-                res += $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
+                res +=
+                    $"function g11nPath(s){{return\"./{(Project.OutputSubDir != null ? (Project.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
                 if (Project.DefaultLanguage != null)
                 {
                     res += $"var g11nLoc=\"{Project.DefaultLanguage}\";";
                 }
             }
+
             if (_bundlePng != null)
             {
                 res += $"var bobrilBPath=\"{_bundlePng}\"";
@@ -143,11 +161,14 @@ namespace Lib.TSCompiler
                     {
                         var q = _bundlePngInfo[i];
                         if (i > 1) res += ",";
-                        res += $"[\"{PathUtils.InjectQuality(_bundlePng, q)}\",{q.ToString(CultureInfo.InvariantCulture)}]";
+                        res +=
+                            $"[\"{PathUtils.InjectQuality(_bundlePng, q)}\",{q.ToString(CultureInfo.InvariantCulture)}]";
                     }
+
                     res += "]";
                 }
             }
+
             res += "</script>";
             return res;
         }
@@ -158,6 +179,7 @@ namespace Lib.TSCompiler
             {
                 return content;
             }
+
             throw new System.InvalidOperationException("Bundler Read Content does not exists:" + name);
         }
 
@@ -179,11 +201,14 @@ namespace Lib.TSCompiler
             {
                 return PathUtils.Join(PathUtils.Parent(from), name) + ".js";
             }
+
             var diskCache = Project.Owner.DiskCache;
-            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache, Project.Owner.Logger, name, out var diskName);
+            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache, Project.Owner.Logger, name,
+                out var diskName);
             if (moduleInfo == null)
                 return null;
-            var mainFile = PathUtils.ChangeExtension(PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile), "js");
+            var mainFile =
+                PathUtils.ChangeExtension(PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile), "js");
             return mainFile;
         }
 
@@ -200,6 +225,7 @@ namespace Lib.TSCompiler
             {
                 file = diskCache.TryGetItem(PathUtils.ChangeExtension(name, "tsx")) as IFileCache;
             }
+
             if (file == null)
                 return new List<string>();
             var fileInfo = TSFileAdditionalInfo.Get(file, diskCache);

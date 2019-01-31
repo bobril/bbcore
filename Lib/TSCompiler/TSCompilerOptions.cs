@@ -73,6 +73,7 @@ namespace Lib.TSCompiler
         public bool? traceResolution { get; set; }
         public IList<string> types { get; set; }
         public IList<string> typeRoots { get; set; }
+        public bool? resolveJsonModule { get; set; }
 
         static public TSCompilerOptions Parse(JToken jToken)
         {
@@ -156,7 +157,8 @@ namespace Lib.TSCompiler
                 target = target,
                 traceResolution = traceResolution,
                 typeRoots = typeRoots,
-                types = types
+                types = types,
+                resolveJsonModule = resolveJsonModule
             };
         }
 
@@ -296,6 +298,8 @@ namespace Lib.TSCompiler
                 typeRoots = with.typeRoots;
             if (with.types != null)
                 types = with.types;
+            if (with.resolveJsonModule != null)
+                resolveJsonModule = with.resolveJsonModule;
             return this;
         }
     }

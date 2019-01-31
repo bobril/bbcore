@@ -311,6 +311,7 @@ namespace Lib.TSCompiler
                 checkJs = false,
                 removeComments = false,
                 types = null,
+                resolveJsonModule = true,
                 lib = GetDefaultTSLibs()
             };
         }

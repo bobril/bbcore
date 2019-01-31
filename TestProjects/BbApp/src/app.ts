@@ -1,6 +1,7 @@
 import * as b from "bobril";
 import * as g from "bobril-g11n";
 import lightSwitch from "./lightSwitch";
+import * as json from "./json.json";
 
 interface IPageCtx extends b.IBobrilCtx {
     counter: number;
@@ -37,7 +38,7 @@ let page = b.createVirtualComponent({
             b.style(
                 {
                     tag: "h1",
-                    children: g.t("Hello World! {c, number}", { c: ctx.counter })
+                    children: g.t("Hello World! {c, number} {test}", { c: ctx.counter, test: json.test })
                 },
                 headerStyle
             ),

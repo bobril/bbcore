@@ -40,12 +40,18 @@ namespace Lib.TSCompiler
                 sourceForMap.MapLink = sourceMap;
                 return;
             }
-
             if (!fileName.StartsWith("_virtual/"))
                 throw new Exception("writeFile does not start with _virtual");
             var fullPathWithVirtual = PathUtils.Join(_owner.ProjectOptions.CurrentBuildCommonSourceDirectory, fileName);
             fileName = fileName.Substring(9);
             var fullPath = PathUtils.Join(_owner.ProjectOptions.CurrentBuildCommonSourceDirectory, fileName);
+            if (fileName.EndsWith(".json"))
+            {
+                _result.Path2FileInfo.TryGetValue(fullPath, out var sourceForJs);
+                _result.RecompiledLast.Add(sourceForJs);
+                return;
+            }
+
             if (fullPath.EndsWith(".js"))
             {
                 OutputedJsFiles++;
@@ -94,7 +100,7 @@ namespace Lib.TSCompiler
                 ChangedDts = true;
         }
 
-        static string[] ExtensionsToImport = new string[] {".tsx", ".ts", ".d.ts", ".jsx", ".js"};
+        static readonly string[] ExtensionsToImport = {".tsx", ".ts", ".d.ts", ".jsx", ".js"};
         internal OrderedHashSet<string> ToCheck;
         internal OrderedHashSet<string> ToCompile;
         internal OrderedHashSet<string> ToCompileDts;
@@ -127,6 +133,12 @@ namespace Lib.TSCompiler
                 return null;
             var item = ExtensionsToImport.Select(ext => dc.TryGetChild(fileOnly + ext) as IFileCache)
                 .FirstOrDefault(i => i != null && !i.IsInvalid);
+            var isJson = false;
+            if (fileOnly.EndsWith(".json"))
+            {
+                item = dc.TryGetChild(fileOnly) as IFileCache;
+                isJson = true;
+            }
             if (item == null)
                 return null;
             if (item.FullPath.Substring(0, name.Length) != name)
@@ -152,7 +164,7 @@ namespace Lib.TSCompiler
             }
             else
             {
-                itemInfo.Type = FileCompilationType.TypeScript;
+                itemInfo.Type = isJson? FileCompilationType.Json : FileCompilationType.TypeScript;
                 AddSource(itemInfo);
             }
 
@@ -357,6 +369,15 @@ namespace Lib.TSCompiler
                 {
                     switch (fileAdditional.Type)
                     {
+                        case FileCompilationType.Json:
+                            if (fileAdditional.MyProject == null)
+                            {
+                                fileAdditional.MyProject = _owner;
+                            }
+
+                            fileAdditional.Output = null;
+                            fileAdditional.MapLink = null;
+                            break;
                         case FileCompilationType.TypeScript:
                             if (fileAdditional.MyProject == null)
                             {

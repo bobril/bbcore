@@ -69,6 +69,13 @@ namespace Lib.TSCompiler
                     sourceMapBuilder.AddSource(source.Value.Output, source.Value.MapLink);
                     sourceMapBuilder.AddText("});");
                 }
+                else if (source.Value.Type == FileCompilationType.Json)
+                {
+                    sourceMapBuilder.AddText(
+                        $"R('{PathUtils.Subtract(source.Key, root)}',function(require, module, exports, global){{");
+                    sourceMapBuilder.AddText("Object.assign(exports, " + source.Value.Owner.Utf8Content + ");");
+                    sourceMapBuilder.AddText("});");
+                }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
                     string cssPath = source.Value.OutputUrl;

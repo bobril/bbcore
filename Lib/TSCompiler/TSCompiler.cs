@@ -205,6 +205,8 @@ namespace Lib.TSCompiler
                     return res + "|false|Js";
                 if (res.EndsWith(".jsx"))
                     return res + "|false|Jsx";
+                if (res.EndsWith(".json"))
+                    return res + "|false|Json";
                 throw new ArgumentException("Unknown extension " + res + " in " + containingFile + " importing " + name);
             }
 
