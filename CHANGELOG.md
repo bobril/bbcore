@@ -2,9 +2,17 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript is now 3.3.1
+
 ### Added
 
 Highlight when default port is not available.
+
+### Fixed
+
+Bundling Json modules.
 
 ## 0.66.0
 

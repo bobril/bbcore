@@ -51,7 +51,7 @@ namespace Lib.TSCompiler
                 else if (source.Value.Type == FileCompilationType.Json)
                 {
                     _jsFilesContent[source.Key.ToLowerInvariant() + ".js"] =
-                        "Object.assign(module.exports, " + source.Value.Output + ");";
+                        "Object.assign(module.exports, " + source.Value.Owner.Utf8Content + ");";
                 }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
