@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Workaround for too defensive checks in TypeScript 2742 error by hot patching TypeScript source
+
 ## 0.67.0
 
 ### Changed

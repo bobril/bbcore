@@ -129,6 +129,9 @@ namespace Lib.ToolsDir
                                 "if (links.target && links.target !== unknownSymbol && links.target !== resolvingSymbol && links.target.escapedName === prop.escapedName) {");
                         }
                     }
+
+                    // Remove too defensive check for TS2742 - it is ok in Bobril-build to have relative paths into node_modules when in sandboxes
+                    _typeScriptJsContent = _typeScriptJsContent.Replace(".indexOf(\"/node_modules/\") >= 0", "===null");
                 }
 
                 return _typeScriptJsContent;
