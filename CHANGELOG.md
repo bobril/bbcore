@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Updated multiple dependencies to latest versions notably ChakraCore
+
 ### Fixed
 
 - Workaround for too defensive checks in TypeScript 2742 error by hot patching TypeScript source
