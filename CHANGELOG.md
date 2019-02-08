@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.68.0
+
 ### Changed
 
 - Updated multiple dependencies to latest versions notably ChakraCore
