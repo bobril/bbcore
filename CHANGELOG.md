@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.68.1
+
 ### Fixed
 
 - Json modules support wrongly forbidden to name modules x.json.ts
