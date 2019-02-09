@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Json modules support wrongly forbidden to name modules x.json.ts
+
 ## 0.68.0
 
 ### Changed

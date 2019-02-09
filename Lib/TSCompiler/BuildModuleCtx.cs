@@ -40,6 +40,7 @@ namespace Lib.TSCompiler
                 sourceForMap.MapLink = sourceMap;
                 return;
             }
+
             if (!fileName.StartsWith("_virtual/"))
                 throw new Exception("writeFile does not start with _virtual");
             var fullPathWithVirtual = PathUtils.Join(_owner.ProjectOptions.CurrentBuildCommonSourceDirectory, fileName);
@@ -131,14 +132,18 @@ namespace Lib.TSCompiler
             var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
             if (dc == null || dc.IsInvalid)
                 return null;
-            var item = ExtensionsToImport.Select(ext => dc.TryGetChild(fileOnly + ext) as IFileCache)
-                .FirstOrDefault(i => i != null && !i.IsInvalid);
             var isJson = false;
+            IFileCache item = null;
             if (fileOnly.EndsWith(".json"))
             {
                 item = dc.TryGetChild(fileOnly) as IFileCache;
-                isJson = true;
+                if (item != null) isJson = true;
             }
+
+            if (item == null)
+                item = ExtensionsToImport.Select(ext => dc.TryGetChild(fileOnly + ext) as IFileCache)
+                    .FirstOrDefault(i => i != null && !i.IsInvalid);
+
             if (item == null)
                 return null;
             if (item.FullPath.Substring(0, name.Length) != name)
@@ -164,7 +169,7 @@ namespace Lib.TSCompiler
             }
             else
             {
-                itemInfo.Type = isJson? FileCompilationType.Json : FileCompilationType.TypeScript;
+                itemInfo.Type = isJson ? FileCompilationType.Json : FileCompilationType.TypeScript;
                 AddSource(itemInfo);
             }
 
