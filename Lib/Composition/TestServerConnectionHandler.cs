@@ -10,6 +10,7 @@ namespace Lib.Composition
     {
         ILongPollingConnection _connection;
         TestServer _testServer;
+        string _specFilter;
         string _userAgent;
         string _url;
         int _runid;
@@ -281,17 +282,18 @@ namespace Lib.Composition
             }
         }
 
-        internal void StartTest(string url, int runid)
+        internal void StartTest(string url, int runid, string specFilter)
         {
             _url = url;
             _runid = runid;
+            _specFilter = specFilter;
             DoStart();
         }
 
         void DoStart()
         {
             InitCurResults();
-            _connection.Send("test", new { url = _url });
+            _connection.Send("test", new { specFilter = _specFilter, url = _url });
         }
 
         void InitCurResults()

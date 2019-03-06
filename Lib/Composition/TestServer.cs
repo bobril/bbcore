@@ -33,14 +33,14 @@ namespace Lib.Composition
             return new TestServerConnectionHandler(this);
         }
 
-        public void StartTest(string url, IDictionary<string, SourceMap> sourceMaps)
+        public void StartTest(string url, IDictionary<string, SourceMap> sourceMaps, string specFilter="")
         {
             _runid++;
             Url = url;
             SourceMaps = sourceMaps;
             foreach (var client in Clients.Keys)
             {
-                client.StartTest(url, _runid);
+                client.StartTest(url, _runid, specFilter);
             }
         }
 

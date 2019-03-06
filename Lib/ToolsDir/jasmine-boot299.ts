@@ -11,9 +11,10 @@ declare var jasmineRequire: any;
 
     env.throwOnExpectationFailure(true);
 
-    env.specFilter = function(_spec: any) {
-        //console.log("Filter "+spec.getFullName());
-        return true;
+    var specFilterRegExp = new RegExp((<any>window.parent).specFilter);
+
+    env.specFilter = function(spec: any) {
+        return specFilterRegExp.test(spec.getFullName());
     };
 
     function _inspect(arg: any, within?: boolean): string {

@@ -6,9 +6,9 @@
     for (var property in jasmineInterface)
         window[property] = jasmineInterface[property];
     env.throwOnExpectationFailure(true);
-    env.specFilter = function (_spec) {
-        //console.log("Filter "+spec.getFullName());
-        return true;
+    var specFilterRegExp = new RegExp(window.parent.specFilter);
+    env.specFilter = function (spec) {
+        return specFilterRegExp.test(spec.getFullName());
     };
     function _inspect(arg, within) {
         var result = "";

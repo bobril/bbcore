@@ -13,5 +13,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentString Port { get; } = new CommandLineArgumentString("set port for test server to listen to (default: first free)", new[] { "-p", "--port" });
 
         public CommandLineArgumentBoolNullable Localize { get; } = new CommandLineArgumentBoolNullable("create localized resources (default: autodetect)", new[] { "-l", "--localize" });
+
+        public CommandLineArgumentString SpecFilter { get; } = new CommandLineArgumentString("enable/disable tests matching a pattern", words: new[] { "-f", "--filter" });
     }
 }
