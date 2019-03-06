@@ -44,6 +44,7 @@ c.onMessage = (c: longPollingClient.Connection, message: string, data: any) => {
         }
         case "test": {
             testing = true;
+            window["specFilter"] = data.specFilter;
             testUrl = data.url;
             b.invalidate();
             if (iframe != null) document.body.removeChild(iframe);

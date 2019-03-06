@@ -23,5 +23,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentBoolNullable Localize { get; } = new CommandLineArgumentBoolNullable("create localized resources (default: autodetect)", new[] { "-l", "--localize" });
 
         public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString("define where to put build result", words: new[] { "-d", "--dir" });
+
+        public CommandLineArgumentString SpecFilter { get; } = new CommandLineArgumentString("enable/disable tests matching a pattern", words: new[] { "-f", "--filter" });
     }
 }

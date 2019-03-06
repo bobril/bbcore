@@ -570,7 +570,7 @@ namespace Lib.Composition
                                             durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
 
                             _testServer.StartTest("/test.html",
-                                new Dictionary<string, SourceMap> {{"testbundle.js", testBuildResult.SourceMap}});
+                                new Dictionary<string, SourceMap> {{"testbundle.js", testBuildResult.SourceMap}}, testCommand.SpecFilter.Value);
                             StartChromeTest();
                             wait.WaitOne();
                             StopChromeTest();
@@ -709,7 +709,7 @@ namespace Lib.Composition
                                     var startOfTest = DateTime.UtcNow;
                                     _testServer.StartTest("/test.html",
                                         new Dictionary<string, SourceMap>
-                                            {{"testbundle.js", testBuildResult.SourceMap}});
+                                            {{"testbundle.js", testBuildResult.SourceMap}}, testCommand.SpecFilter.Value);
                                     StartChromeTest();
                                     try
                                     {
@@ -735,7 +735,7 @@ namespace Lib.Composition
                                         var firstRunInMS = (DateTime.UtcNow - startOfTest).TotalMilliseconds;
                                         _testServer.StartTest("/test.html",
                                             new Dictionary<string, SourceMap>
-                                                {{"testbundle.js", testBuildResult.SourceMap}});
+                                                {{"testbundle.js", testBuildResult.SourceMap}}, testCommand.SpecFilter.Value);
 
                                         var timeout = (int) (firstRunInMS * 2 + 1000);
                                         if (timeout < 10) timeout = 120000;

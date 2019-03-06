@@ -9,13 +9,13 @@ declare var jasmineRequire: any;
     var jasmineInterface = jasmineRequire.interface(jasmine, env);
     for (var property in jasmineInterface) (<any>window)[property] = jasmineInterface[property];
 
+    var specFilterRegExp = new RegExp((<any>window.parent).specFilter);
     var config = {
         failFast: true,
         oneFailurePerSpec: true,
         hideDisabled: false,
         specFilter: function(spec: any) {
-            //console.log("Filter "+spec.getFullName());
-            return true;
+            return specFilterRegExp.test(spec.getFullName());
         }
     };
 
