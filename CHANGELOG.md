@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Command line option to filter tests by any regex in test command (contributed by https://github.com/scottis).
+
 ## 0.68.1
 
 ### Fixed
