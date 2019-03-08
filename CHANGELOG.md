@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+- Used Modules can now add assets to dist. In package.json bobril section you can define assets object which key is original asset name and value is name of asset in dist.
+
+### Removed
+
+- Useless blametest command.
+
 ## 0.69.0
 
 ### Added

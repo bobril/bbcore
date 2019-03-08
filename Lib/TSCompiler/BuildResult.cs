@@ -11,10 +11,12 @@ namespace Lib.TSCompiler
         {
             Path2FileInfo = new Dictionary<string, TSFileAdditionalInfo>();
             RecompiledLast = new HashSet<TSFileAdditionalInfo>();
+            Modules = new Dictionary<string, TSProject>();
         }
 
         public Dictionary<string, TSFileAdditionalInfo> Path2FileInfo;
         public HashSet<TSFileAdditionalInfo> RecompiledLast;
+        public Dictionary<string, TSProject> Modules;
 
         public SourceMap SourceMap { get; internal set; }
     }

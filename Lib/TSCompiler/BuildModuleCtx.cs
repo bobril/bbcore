@@ -19,6 +19,10 @@ namespace Lib.TSCompiler
         public void AddSource(TSFileAdditionalInfo file)
         {
             _result.Path2FileInfo[file.Owner.FullPath] = file;
+            if (file.MyProject != null && file.ImportedAsModule != null)
+            {
+                _result.Modules.TryAdd(file.ImportedAsModule, file.MyProject);
+            }
         }
 
         public void UpdateCacheIds()

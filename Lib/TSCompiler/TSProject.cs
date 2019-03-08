@@ -31,6 +31,7 @@ namespace Lib.TSCompiler
         public HashSet<string> Dependencies;
         public HashSet<string> DevDependencies;
         public HashSet<string> UsedDependencies;
+        public Dictionary<string, string> Assets;
         public string Name;
 
         public void LoadProjectJson(bool forbiddenDependencyUpdate)
@@ -137,6 +138,8 @@ namespace Lib.TSCompiler
                 PackageJsonChangeId = newChangeId;
                 Dependencies = deps;
                 DevDependencies = devdeps;
+                Assets = ParseBobrilAssets(parsed);
+
                 if (ProjectOptions == null) return;
                 ProjectOptions.FillProjectOptionsFromPackageJson(parsed);
                 if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
@@ -156,8 +159,36 @@ namespace Lib.TSCompiler
             else
             {
                 MainFile = "index.js";
+                Dependencies = new HashSet<string>();
+                DevDependencies = new HashSet<string>();
+                Assets = null;
                 ProjectOptions?.FillProjectOptionsFromPackageJson(null);
             }
+        }
+
+        Dictionary<string, string> ParseBobrilAssets(JObject parsed)
+        {
+            Dictionary<string, string> res = null;
+            var bobrilSection = parsed?.GetValue("bobril") as JObject;
+            if (bobrilSection == null)
+                return res;
+            var assetsJson = bobrilSection.GetValue("assets") as JObject;
+            if (assetsJson == null)
+                return res;
+            foreach (var (key, value) in assetsJson)
+            {
+                if (value.Type == JTokenType.String)
+                {
+                    if (res == null)
+                    {
+                        res = new Dictionary<string, string>();
+                    }
+
+                    res.Add(key, value.Value<string>());
+                }
+            }
+
+            return res;
         }
 
         public void InitializeOnce()
@@ -335,6 +366,19 @@ namespace Lib.TSCompiler
             }
 
             return (TSProject) dir.AdditionalInfo;
+        }
+
+        public void FillOutputByAssets(Dictionary<string, object> filesContent, HashSet<string> takenNames)
+        {
+            if (Assets == null) return;
+            foreach (var asset in Assets)
+            {
+                var item = DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, asset.Key)) as IFileCache;
+                if (item == null || item.IsInvalid)
+                    continue;
+                takenNames.Add(asset.Value);
+                filesContent[asset.Value] = new Lazy<object>(() => { return item.ByteContent; });
+            }
         }
     }
 }

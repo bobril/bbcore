@@ -256,8 +256,11 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, object> filesContent)
+        public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, object> filesContent,
+            Dictionary<string, TSProject> buildResultModules)
         {
+            Owner.FillOutputByAssets(filesContent, TakenNames);
+            FillOutputByAssetsFromModules(filesContent, buildResultModules);
             if (AdditionalResourcesDirectory == null)
                 return;
             var resourcesPath = PathUtils.Join(Owner.Owner.FullPath, AdditionalResourcesDirectory);
@@ -497,6 +500,14 @@ namespace Lib.TSCompiler
             if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
                 return (string) value;
             return @default;
+        }
+
+        public void FillOutputByAssetsFromModules(Dictionary<string,object> filesContent, Dictionary<string,TSProject> modules)
+        {
+            foreach (var keyValuePair in modules)
+            {
+                keyValuePair.Value.FillOutputByAssets(filesContent, TakenNames);
+            }
         }
     }
 }

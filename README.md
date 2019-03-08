@@ -103,6 +103,14 @@ Use this comment in source code with import to ignore this specific import (must
 
     // BBIgnoreObsolete: modulea, moduleb
 
+## How to add additional assets
+
+    "bobril": {
+        "assets": {
+            "original/source/path/name.ext": "distName.ext"
+        }
+    }
+
 # Environmental variables
 
 ## Disable yarn creating links
