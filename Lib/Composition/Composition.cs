@@ -73,7 +73,8 @@ namespace Lib.Composition
                     new TestCommand(),
                     new BuildInteractiveCommand(),
                     new BuildInteractiveNoUpdateCommand(),
-                    new PackageManagerCommand()
+                    new PackageManagerCommand(),
+                    new FindUnusedCommand()
                 }
             );
         }
@@ -100,6 +101,11 @@ namespace Lib.Composition
             {
                 _forbiddenDependencyUpdate = true;
                 RunInteractive(_command as CommonInteractiveCommand);
+            }
+            else if (_command is FindUnusedCommand)
+            {
+                _forbiddenDependencyUpdate = true;
+                RunFindUnused(_command as FindUnusedCommand);
             }
             else if (_command is BuildCommand bCommand)
             {
@@ -565,7 +571,8 @@ namespace Lib.Composition
                                             durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
 
                             _testServer.StartTest("/test.html",
-                                new Dictionary<string, SourceMap> {{"testbundle.js", testBuildResult.SourceMap}}, testCommand.SpecFilter.Value);
+                                new Dictionary<string, SourceMap> {{"testbundle.js", testBuildResult.SourceMap}},
+                                testCommand.SpecFilter.Value);
                             StartChromeTest();
                             wait.WaitOne();
                             StopChromeTest();
@@ -630,6 +637,87 @@ namespace Lib.Composition
                 else
                 {
                     File.WriteAllBytes(fileName, (byte[]) content);
+                }
+            }
+        }
+
+        void RunFindUnused(FindUnusedCommand findUnusedCommand)
+        {
+            IfEnabledStartVerbosive();
+            InitDiskCache();
+            var proj = AddProject(PathUtils.Normalize(Environment.CurrentDirectory), false);
+            _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Cyan);
+            try
+            {
+                proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
+                proj.Localize = false;
+                proj.Owner.InitializeOnce();
+                proj.Owner.UsedDependencies = new HashSet<string>();
+                proj.GenerateCode();
+                proj.RefreshMainFile();
+                proj.RefreshTestSources();
+                proj.SpriterInitialization();
+                proj.DetectBobrilJsxDts();
+                proj.RefreshExampleSources();
+                var ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
+                ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
+                ctx.Sources = new HashSet<string>();
+                ctx.Sources.Add(proj.MainFile);
+                proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
+                if (proj.BobrilJsxDts != null)
+                    ctx.Sources.Add(proj.BobrilJsxDts);
+                proj.Owner.Build(ctx);
+                var buildResult = ctx.BuildResult;
+                if (proj.TestSources != null && proj.TestSources.Count > 0)
+                {
+                    ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
+                    ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
+                    ctx.Sources = new HashSet<string>();
+                    ctx.Sources.Add(proj.JasmineDts);
+                    proj.TestSources.ForEach(s => ctx.Sources.Add(s));
+                    if (proj.BobrilJsxDts != null)
+                        ctx.Sources.Add(proj.BobrilJsxDts);
+                    proj.Owner.Build(ctx);
+                    var testBuildResult = ctx.BuildResult;
+                    buildResult.RecompiledLast.UnionWith(testBuildResult.RecompiledLast);
+                }
+
+                var unused = new List<string>();
+                SearchUnused(buildResult.RecompiledLast, proj.Owner.Owner, unused, "");
+                _logger.WriteLine(
+                    "Build finished total used: " + buildResult.RecompiledLast.Count + " total unused: " + unused.Count,
+                    ConsoleColor.Cyan);
+                foreach (var name in unused)
+                {
+                    _logger.Warn(name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Fatal Error: " + ex);
+            }
+        }
+
+        void SearchUnused(HashSet<TSFileAdditionalInfo> used, IDirectoryCache dir, List<string> unused, string prefix)
+        {
+            foreach (var item in dir)
+            {
+                if (item is IDirectoryCache itemDir)
+                {
+                    if (prefix.Length == 0 && itemDir.Name == "node_modules")
+                        continue;
+                    _dc.UpdateIfNeeded(item);
+                    SearchUnused(used, itemDir, unused, prefix + itemDir.Name + "/");
+                }
+                else if (item is IFileCache itemFile)
+                {
+                    if (itemFile.IsVirtual)
+                        continue;
+                    if (PathUtils.GetExtension(itemFile.Name) != "ts")
+                        continue;
+                    if (used.Contains(itemFile.AdditionalInfo))
+                        continue;
+                    unused.Add(prefix + itemFile.Name);
                 }
             }
         }
@@ -947,7 +1035,7 @@ namespace Lib.Composition
                     var totalFiles = 0;
                     foreach (var proj in toBuild)
                     {
-                        _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
+                        _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Cyan);
                         try
                         {
                             proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);

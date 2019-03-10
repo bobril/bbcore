@@ -4,6 +4,7 @@
 
 ### Added
 
+- findunused command which list all \*.ts files which are not part of project.
 - Used Modules can now add assets to dist. In package.json bobril section you can define assets object which key is original asset name and value is name of asset in dist.
 
 ### Removed
