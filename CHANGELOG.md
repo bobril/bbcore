@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.70.0
+
 ### Added
 
 - findunused command which list all \*.ts files which are not part of project.
