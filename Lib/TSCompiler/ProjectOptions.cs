@@ -282,6 +282,7 @@ namespace Lib.TSCompiler
                 {
                     RecursiveFillOutputByAdditionalResourcesDirectory(child as IDirectoryCache, resourcesPath,
                         filesContent);
+                    continue;
                 }
 
                 if (child.IsInvalid)
@@ -291,7 +292,7 @@ namespace Lib.TSCompiler
                 if (child is IFileCache)
                 {
                     filesContent[outPathFileName] =
-                        new Lazy<object>(() => { return (child as IFileCache).ByteContent; });
+                        new Lazy<object>(() => { return ((IFileCache) child).ByteContent; });
                 }
             }
         }

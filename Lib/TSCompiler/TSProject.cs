@@ -378,11 +378,41 @@ namespace Lib.TSCompiler
                 var fullPath = fromModules ? nodeModulesDir : Owner.FullPath;
                 projectOptions.Owner.UsedDependencies.Add(PathUtils.EnumParts(asset.Key).Skip(1).Select(a => a.name)
                     .First());
-                var item = DiskCache.TryGetItem(PathUtils.Join(fullPath, asset.Key)) as IFileCache;
+                var item = DiskCache.TryGetItem(PathUtils.Join(fullPath, asset.Key));
                 if (item == null || item.IsInvalid)
                     continue;
-                takenNames.Add(asset.Value);
-                filesContent[asset.Value] = new Lazy<object>(() => { return item.ByteContent; });
+                if (item is IFileCache)
+                {
+                    takenNames.Add(asset.Value);
+                    filesContent[asset.Value] = new Lazy<object>(() => { return ((IFileCache)item).ByteContent; });
+                }
+                else
+                {
+                    RecursiveAddFilesContent(item as IDirectoryCache, filesContent, takenNames, asset.Value);
+                }
+            }
+        }
+
+        void RecursiveAddFilesContent(IDirectoryCache directory, Dictionary<string,object> filesContent, HashSet<string> takenNames, string destDir)
+        {
+            DiskCache.UpdateIfNeeded(directory);
+            foreach (var child in directory)
+            {
+                if (child.IsInvalid)
+                    continue;
+                var outPathFileName = destDir + "/" + child.Name; 
+                takenNames.Add(outPathFileName);
+                if (child is IDirectoryCache)
+                {
+                    RecursiveAddFilesContent(child as IDirectoryCache, filesContent, takenNames, outPathFileName);
+                    continue;
+                }
+
+                if (child is IFileCache)
+                {
+                    filesContent[outPathFileName] =
+                        new Lazy<object>(() => { return ((IFileCache) child).ByteContent; });
+                }
             }
         }
     }
