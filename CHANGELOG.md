@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 3.3.3333
+
+### Fixed
+
+- Some bugs in findunused and assets features.
+
 ## 0.71.0
 
 ### Added

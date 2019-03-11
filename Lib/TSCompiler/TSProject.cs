@@ -16,7 +16,7 @@ namespace Lib.TSCompiler
     {
         bool _wasFirstInitialize;
 
-        public const string DefaultTypeScriptVersion = "3.3.1";
+        public const string DefaultTypeScriptVersion = "3.3.3333";
 
         public ILogger Logger { get; set; }
         public IDiskCache DiskCache { get; set; }
@@ -376,6 +376,8 @@ namespace Lib.TSCompiler
             {
                 var fromModules = asset.Key.StartsWith("node_modules/");
                 var fullPath = fromModules ? nodeModulesDir : Owner.FullPath;
+                if (projectOptions.Owner.UsedDependencies == null)
+                    projectOptions.Owner.UsedDependencies = new HashSet<string>();
                 projectOptions.Owner.UsedDependencies.Add(PathUtils.EnumParts(asset.Key).Skip(1).Select(a => a.name)
                     .First());
                 var item = DiskCache.TryGetItem(PathUtils.Join(fullPath, asset.Key));
@@ -384,7 +386,7 @@ namespace Lib.TSCompiler
                 if (item is IFileCache)
                 {
                     takenNames.Add(asset.Value);
-                    filesContent[asset.Value] = new Lazy<object>(() => { return ((IFileCache)item).ByteContent; });
+                    filesContent[asset.Value] = new Lazy<object>(() => { return ((IFileCache) item).ByteContent; });
                 }
                 else
                 {
@@ -393,14 +395,15 @@ namespace Lib.TSCompiler
             }
         }
 
-        void RecursiveAddFilesContent(IDirectoryCache directory, Dictionary<string,object> filesContent, HashSet<string> takenNames, string destDir)
+        void RecursiveAddFilesContent(IDirectoryCache directory, Dictionary<string, object> filesContent,
+            HashSet<string> takenNames, string destDir)
         {
             DiskCache.UpdateIfNeeded(directory);
             foreach (var child in directory)
             {
                 if (child.IsInvalid)
                     continue;
-                var outPathFileName = destDir + "/" + child.Name; 
+                var outPathFileName = destDir + "/" + child.Name;
                 takenNames.Add(outPathFileName);
                 if (child is IDirectoryCache)
                 {

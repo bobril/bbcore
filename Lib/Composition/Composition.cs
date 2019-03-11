@@ -667,7 +667,7 @@ namespace Lib.Composition
                 if (proj.BobrilJsxDts != null)
                     ctx.Sources.Add(proj.BobrilJsxDts);
                 proj.Owner.Build(ctx);
-                var buildResult = ctx.BuildResult;
+                var buildResult = ctx.BuildResult.Path2FileInfo.Values.ToHashSet();
                 if (proj.TestSources != null && proj.TestSources.Count > 0)
                 {
                     ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
@@ -679,13 +679,19 @@ namespace Lib.Composition
                         ctx.Sources.Add(proj.BobrilJsxDts);
                     proj.Owner.Build(ctx);
                     var testBuildResult = ctx.BuildResult;
-                    buildResult.RecompiledLast.UnionWith(testBuildResult.RecompiledLast);
+                    buildResult.UnionWith(testBuildResult.Path2FileInfo.Values);
+                }
+
+                if (buildResult.Any(a => a.Diagnostic?.Any(d => d.isError) ?? false))
+                {
+                    _logger.Error("Compiled with errors => result could be wrong.");
+                    _logger.Warn("If you didn't installed modules run 'bb p i' before 'bb fu'.");
                 }
 
                 var unused = new List<string>();
-                SearchUnused(buildResult.RecompiledLast, proj.Owner.Owner, unused, "");
+                SearchUnused(buildResult, proj.Owner.Owner, unused, "");
                 _logger.WriteLine(
-                    "Build finished total used: " + buildResult.RecompiledLast.Count + " total unused: " + unused.Count,
+                    "Build finished total used: " + buildResult.Count + " total unused: " + unused.Count,
                     ConsoleColor.Cyan);
                 foreach (var name in unused)
                 {
