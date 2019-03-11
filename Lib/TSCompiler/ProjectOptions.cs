@@ -259,8 +259,9 @@ namespace Lib.TSCompiler
         public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, object> filesContent,
             Dictionary<string, TSProject> buildResultModules)
         {
-            Owner.FillOutputByAssets(filesContent, TakenNames);
-            FillOutputByAssetsFromModules(filesContent, buildResultModules);
+            var nodeModulesDir = Owner.Owner.FullPath;
+            Owner.FillOutputByAssets(filesContent, TakenNames, nodeModulesDir, this);
+            FillOutputByAssetsFromModules(filesContent, buildResultModules, nodeModulesDir);
             if (AdditionalResourcesDirectory == null)
                 return;
             var resourcesPath = PathUtils.Join(Owner.Owner.FullPath, AdditionalResourcesDirectory);
@@ -502,11 +503,12 @@ namespace Lib.TSCompiler
             return @default;
         }
 
-        public void FillOutputByAssetsFromModules(Dictionary<string,object> filesContent, Dictionary<string,TSProject> modules)
+        public void FillOutputByAssetsFromModules(Dictionary<string, object> filesContent,
+            Dictionary<string, TSProject> modules, string nodeModulesDir)
         {
             foreach (var keyValuePair in modules)
             {
-                keyValuePair.Value.FillOutputByAssets(filesContent, TakenNames);
+                keyValuePair.Value.FillOutputByAssets(filesContent, TakenNames, nodeModulesDir, this);
             }
         }
     }

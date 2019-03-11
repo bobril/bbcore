@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- special handling for node_modules path in new assets feature. Also make module as used when just assets are taken from it.
+
 ## 0.70.0
 
 ### Added

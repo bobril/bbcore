@@ -368,12 +368,17 @@ namespace Lib.TSCompiler
             return (TSProject) dir.AdditionalInfo;
         }
 
-        public void FillOutputByAssets(Dictionary<string, object> filesContent, HashSet<string> takenNames)
+        public void FillOutputByAssets(Dictionary<string, object> filesContent, HashSet<string> takenNames,
+            string nodeModulesDir, ProjectOptions projectOptions)
         {
             if (Assets == null) return;
             foreach (var asset in Assets)
             {
-                var item = DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, asset.Key)) as IFileCache;
+                var fromModules = asset.Key.StartsWith("node_modules/");
+                var fullPath = fromModules ? nodeModulesDir : Owner.FullPath;
+                projectOptions.Owner.UsedDependencies.Add(PathUtils.EnumParts(asset.Key).Skip(1).Select(a => a.name)
+                    .First());
+                var item = DiskCache.TryGetItem(PathUtils.Join(fullPath, asset.Key)) as IFileCache;
                 if (item == null || item.IsInvalid)
                     continue;
                 takenNames.Add(asset.Value);

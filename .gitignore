@@ -26,9 +26,9 @@ TestResults
 /tools/bbcorenpm/node_modules
 !/tools/bbcorenpm/bin/
 /Lib/Bundler/Js/Tests/Outputs/
-/TestProjects/**/node_modules
 /TestProjects/**/dist
 /TestProjects/IncludeSources/tslint.json
-node_modules
+**/node_modules/
 /tools/web/dist
 /tools/webt/dist
+!/TestProjects/Assets/node_modules
