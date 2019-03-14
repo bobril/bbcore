@@ -415,7 +415,7 @@ function evalTrueSourceByExportName(
             typeChecker
         };
         evalSourceCache.set(sourceName, sc);
-    } 
+    }
     let program = sc.program;
     let typeChecker = sc.typeChecker;
     let sourceAst = program.getSourceFile(sourceName);
@@ -557,10 +557,10 @@ function evalNode(n: ts.Node, tc: ts.TypeChecker, resolveStringLiteral?: (sl: ts
                     let s2 = tc.getSymbolAtLocation(impdecl.moduleSpecifier);
                     let declname =
                         decl.propertyName !== undefined ? decl.propertyName.escapedText : decl.name.escapedText;
-                    if (s2 && s2.exports!.get(declname)) {
-                        let s3 = s2.exports!.get(declname);
-                        if (s3 == null) return undefined;
-                        let exportAssign = <ts.ExportAssignment>s3.declarations![0];
+
+                    let s2exp = tc.getExportsOfModule(s2!).find(s => s.getName() === declname);
+                    if (s2exp) {
+                        let exportAssign = <ts.ExportAssignment>s2exp.declarations![0];
                         return evalNode(exportAssign, tc, resolveStringLiteral);
                     }
                 }
