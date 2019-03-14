@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.72.1
+
 ### Fixed
 
 - import { x } from "y", when x was reexported constant, failed to find that it is constant during compilation
