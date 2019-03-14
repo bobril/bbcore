@@ -26,8 +26,7 @@
     "resolveJsonModule": true
   },
   "files": [
-    "node_modules/bobril/jsx.d.ts",
-    "C:/Users/boris/.bbcore/dev/jasmine330.d.ts"
+    "node_modules/bobril/jsx.d.ts"
   ],
   "include": [
     "**/*"

@@ -248,6 +248,10 @@ namespace Lib.TSCompiler
                 }
                 else if (item is IFileCache && !item.IsVirtual)
                 {
+                    if (item.Name == "jasmine.d.ts")
+                    {
+                        JasmineDts = item.FullPath;
+                    }
                     if (fileRegex.IsMatch(item.Name))
                     {
                         res.Add(item.FullPath);
@@ -375,12 +379,20 @@ namespace Lib.TSCompiler
 
             if (TestSources.Count > 0)
             {
-                newConfigObject.files.Add(Tools.JasmineDtsPath);
+                if (Tools.JasmineDtsPath == JasmineDts)
+                {
+                    newConfigObject.files.Add(Tools.JasmineDtsPath);
+                }
             }
 
             if (IncludeSources != null)
             {
                 newConfigObject.files.AddRange(IncludeSources);
+            }
+
+            if (newConfigObject.files.Count == 0)
+            {
+                newConfigObject.files = null;
             }
 
             var newContent = JsonConvert.SerializeObject(newConfigObject, Formatting.Indented,
