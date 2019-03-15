@@ -326,10 +326,10 @@ function evalTrueSourceByExportName(dtsFileName, varName, resolveStringLiteral) 
     return undefined;
 }
 function traceNode(n) {
-    bb.trace(n.getSourceFile().fileName + " " + ts.SyntaxKind[n.kind]);
+    bb.trace(n.getSourceFile().fileName + " " + ts.SyntaxKind[n.kind] + " " + n.getText());
 }
 function evalNode(n, tc, resolveStringLiteral) {
-    //traceNode(n);
+    // traceNode(n);
     switch (n.kind) {
         case ts.SyntaxKind.StringLiteral: {
             var nn = n;
@@ -465,16 +465,20 @@ function evalNode(n, tc, resolveStringLiteral) {
                 return obj[name];
             }
             else if (s.flags & ts.SymbolFlags.Variable) {
-                var varDecl = s.valueDeclaration;
-                if ((varDecl.parent.flags & ts.NodeFlags.Const) !== 0) {
-                    if (varDecl.initializer != null) {
-                        return evalNode(varDecl.initializer, tc, resolveStringLiteral);
-                    }
-                    else {
-                        var dtsFileName = varDecl.getSourceFile().fileName;
-                        var varName = varDecl.name.text;
-                        return evalTrueSourceByExportName(dtsFileName, varName, resolveStringLiteral);
-                    }
+                return evalNode(s.valueDeclaration, tc, resolveStringLiteral);
+            }
+            return undefined;
+        }
+        case ts.SyntaxKind.VariableDeclaration: {
+            var varDecl = n;
+            if ((varDecl.parent.flags & ts.NodeFlags.Const) !== 0) {
+                if (varDecl.initializer != null) {
+                    return evalNode(varDecl.initializer, tc, resolveStringLiteral);
+                }
+                else {
+                    var dtsFileName = varDecl.getSourceFile().fileName;
+                    var varName = varDecl.name.text;
+                    return evalTrueSourceByExportName(dtsFileName, varName, resolveStringLiteral);
                 }
             }
             return undefined;
@@ -586,6 +590,7 @@ function gatherSourceInfo(source, tc, resolvePathStringLiteral) {
                 si.hasColor = ce.arguments.length >= 2;
                 for (var i = 0; i < ce.arguments.length; i++) {
                     var res = evalNode(ce.arguments[i], tc, i === 0 ? resolvePathStringLiteral : undefined); // first argument is path
+                    // bb.trace(i + " => " + res);
                     if (res !== undefined)
                         switch (i) {
                             case 0:

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- another attempt of const eval fix
+
 ## 0.72.1
 
 ### Fixed
