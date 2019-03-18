@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.73.0
+
 ### Added
 
 - Log more details about testing in verbose mode.
