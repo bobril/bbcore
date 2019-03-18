@@ -1,3 +1,4 @@
+"use strict";
 (function () {
     var jasmine = jasmineRequire.core(jasmineRequire);
     window["jasmine"] = jasmine;
@@ -5,15 +6,6 @@
     var jasmineInterface = jasmineRequire.interface(jasmine, env);
     for (var property in jasmineInterface)
         window[property] = jasmineInterface[property];
-    var specFilterRegExp = new RegExp(window.parent.specFilter);
-    var config = {
-        failFast: true,
-        oneFailurePerSpec: true,
-        hideDisabled: false,
-        specFilter: function (spec) {
-            return specFilterRegExp.test(spec.getFullName());
-        }
-    };
     function _inspect(arg, within) {
         var result = "";
         if (Object(arg) !== arg) {
@@ -203,7 +195,18 @@
     }
     var bbTest = window.parent.bbTest;
     if (bbTest) {
-        config.failFast = false;
+        var specFilter = window.parent.specFilter;
+        var specFilterFnc = function (_spec) { return true; };
+        if (specFilter) {
+            var specFilterRegExp = new RegExp(specFilter);
+            specFilterFnc = function (spec) { return specFilterRegExp.test(spec.getFullName()); };
+        }
+        var config = {
+            failFast: false,
+            oneFailurePerSpec: true,
+            hideDisabled: false,
+            specFilter: specFilterFnc
+        };
         env.configure(config);
         var perfnow;
         if (window.performance) {
@@ -332,7 +335,12 @@
         };
     }
     else {
-        config.failFast = true;
+        var config = {
+            failFast: true,
+            oneFailurePerSpec: true,
+            hideDisabled: false,
+            specFilter: function (_spec) { return true; }
+        };
         env.configure(config);
         env.addReporter({
             jasmineStarted: function (suiteInfo) {

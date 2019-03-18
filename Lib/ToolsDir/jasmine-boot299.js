@@ -1,3 +1,4 @@
+"use strict";
 (function () {
     var jasmine = jasmineRequire.core(jasmineRequire);
     window["jasmine"] = jasmine;
@@ -6,10 +7,6 @@
     for (var property in jasmineInterface)
         window[property] = jasmineInterface[property];
     env.throwOnExpectationFailure(true);
-    var specFilterRegExp = new RegExp(window.parent.specFilter);
-    env.specFilter = function (spec) {
-        return specFilterRegExp.test(spec.getFullName());
-    };
     function _inspect(arg, within) {
         var result = "";
         if (Object(arg) !== arg) {
@@ -199,6 +196,13 @@
     }
     var bbTest = window.parent.bbTest;
     if (bbTest) {
+        var specFilter = window.parent.specFilter;
+        var specFilterFnc = function (_spec) { return true; };
+        if (specFilter) {
+            var specFilterRegExp = new RegExp(specFilter);
+            specFilterFnc = function (spec) { return specFilterRegExp.test(spec.getFullName()); };
+        }
+        env.specFilter = specFilterFnc;
         env.catchExceptions(true);
         var perfnow;
         if (window.performance) {
@@ -327,6 +331,7 @@
         };
     }
     else {
+        env.specFilter = function (_spec) { return true; };
         env.catchExceptions(false);
         env.addReporter({
             jasmineStarted: function (suiteInfo) {

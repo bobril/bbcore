@@ -11,12 +11,6 @@ declare var jasmineRequire: any;
 
     env.throwOnExpectationFailure(true);
 
-    var specFilterRegExp = new RegExp((<any>window.parent).specFilter);
-
-    env.specFilter = function(spec: any) {
-        return specFilterRegExp.test(spec.getFullName());
-    };
-
     function _inspect(arg: any, within?: boolean): string {
         var result = "";
 
@@ -213,6 +207,13 @@ declare var jasmineRequire: any;
 
     var bbTest = (<any>window.parent).bbTest;
     if (bbTest) {
+        var specFilter = (<any>window.parent).specFilter;
+        var specFilterFnc = (_spec: any) => true;
+        if (specFilter) {
+            var specFilterRegExp = new RegExp(specFilter);
+            specFilterFnc = (spec: any) => specFilterRegExp.test(spec.getFullName());
+        }
+        env.specFilter = specFilterFnc;
         env.catchExceptions(true);
         var perfnow: () => number;
         if (window.performance) {
@@ -363,6 +364,7 @@ declare var jasmineRequire: any;
             _timers[name].end = end;
         };
     } else {
+        env.specFilter = (_spec: any) => true;
         env.catchExceptions(false);
 
         env.addReporter({

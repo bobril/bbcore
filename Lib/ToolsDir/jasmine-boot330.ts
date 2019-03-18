@@ -9,16 +9,6 @@ declare var jasmineRequire: any;
     var jasmineInterface = jasmineRequire.interface(jasmine, env);
     for (var property in jasmineInterface) (<any>window)[property] = jasmineInterface[property];
 
-    var specFilterRegExp = new RegExp((<any>window.parent).specFilter);
-    var config = {
-        failFast: true,
-        oneFailurePerSpec: true,
-        hideDisabled: false,
-        specFilter: function(spec: any) {
-            return specFilterRegExp.test(spec.getFullName());
-        }
-    };
-
     function _inspect(arg: any, within?: boolean): string {
         var result = "";
 
@@ -215,7 +205,18 @@ declare var jasmineRequire: any;
 
     var bbTest = (<any>window.parent).bbTest;
     if (bbTest) {
-        config.failFast = false;
+        var specFilter = (<any>window.parent).specFilter;
+        var specFilterFnc = (_spec: any) => true;
+        if (specFilter) {
+            var specFilterRegExp = new RegExp(specFilter);
+            specFilterFnc = (spec: any) => specFilterRegExp.test(spec.getFullName());
+        }
+        var config = {
+            failFast: false,
+            oneFailurePerSpec: true,
+            hideDisabled: false,
+            specFilter: specFilterFnc
+        };
         env.configure(config);
         var perfnow: () => number;
         if (window.performance) {
@@ -366,7 +367,12 @@ declare var jasmineRequire: any;
             _timers[name].end = end;
         };
     } else {
-        config.failFast = true;
+        var config = {
+            failFast: true,
+            oneFailurePerSpec: true,
+            hideDisabled: false,
+            specFilter: (_spec: any) => true
+        };
         env.configure(config);
 
         env.addReporter({
