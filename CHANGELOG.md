@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Log more details about testing in verbose mode.
+
 ### Changed
 
 - Module Resolver changed to be more similar to node.

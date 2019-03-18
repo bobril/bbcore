@@ -6,6 +6,7 @@ using System.Reactive.Subjects;
 using System.Reactive.Linq;
 using System.Collections.Generic;
 using Lib.Utils;
+using Lib.Utils.Logger;
 
 namespace Lib.Composition
 {
@@ -18,10 +19,12 @@ namespace Lib.Composition
         public Subject<TestResultsHolder> OnTestResults = new Subject<TestResultsHolder>();
         internal Subject<Unit> OnChangeRaw = new Subject<Unit>();
         public bool Verbose;
+        public ILogger Logger;
 
-        public TestServer(bool verbose)
+        public TestServer(bool verbose, ILogger logger)
         {
             Verbose = verbose;
+            Logger = logger;
             OnChangeRaw.Throttle(TimeSpan.FromMilliseconds(500)).Subscribe(OnChange);
         }
 

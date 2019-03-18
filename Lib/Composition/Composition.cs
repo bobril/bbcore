@@ -985,7 +985,7 @@ namespace Lib.Composition
 
         public void InitTestServer(bool notify = true)
         {
-            _testServer = new TestServer(_verbose);
+            _testServer = new TestServer(_verbose, _logger);
             _testServerLongPollingHandler = new LongPollingServer(_testServer.NewConnectionHandler);
             if (notify)
             {
