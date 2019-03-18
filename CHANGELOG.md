@@ -9,6 +9,7 @@
 ### Changed
 
 - Module Resolver changed to be more similar to node.
+- Modification Watcher should use less resources (Big projects on Mac should work now)
 
 ### Fixed
 

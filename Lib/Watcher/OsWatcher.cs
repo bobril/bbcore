@@ -82,7 +82,7 @@ namespace Lib.Watcher
                 try
                 {
                     _fileSystemWatcher = new FileSystemWatcher(WatchedDirectory);
-                    _fileSystemWatcher.IncludeSubdirectories = false;
+                    _fileSystemWatcher.IncludeSubdirectories = true;
                     _fileSystemWatcher.Created += WatcherChangeHandler;
                     _fileSystemWatcher.Deleted += WatcherChangeHandler;
                     _fileSystemWatcher.Changed += WatcherChangeHandler;
