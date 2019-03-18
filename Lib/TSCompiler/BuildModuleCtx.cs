@@ -251,7 +251,7 @@ namespace Lib.TSCompiler
         public string resolveModuleMain(string name, TSFileAdditionalInfo parentInfo)
         {
             var moduleInfo =
-                TSProject.FindInfoForModule(_owner.Owner, _owner.DiskCache, _owner.Logger, name, out var diskName);
+                TSProject.FindInfoForModule(parentInfo.Owner.Parent, _owner.DiskCache, _owner.Logger, name, out var diskName);
             if (moduleInfo == null)
                 return null;
             if (name != diskName)

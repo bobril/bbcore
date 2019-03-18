@@ -203,10 +203,13 @@ namespace Lib.TSCompiler
             }
 
             var diskCache = Project.Owner.DiskCache;
-            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache, Project.Owner.Logger, name,
+            var moduleInfo = TSProject.FindInfoForModule(diskCache.TryGetItem(PathUtils.Parent(from)) as IDirectoryCache, diskCache, Project.Owner.Logger, name,
                 out var diskName);
             if (moduleInfo == null)
+            {
+                Project.Owner.Logger.Error($"Bundler cannot resolve {name} from {@from}");
                 return null;
+            }
             var mainFile =
                 PathUtils.ChangeExtension(PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile), "js");
             return mainFile;

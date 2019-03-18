@@ -320,7 +320,7 @@ namespace Lib.TSCompiler
                 var module = source.Value.ImportedAsModule;
                 if (module != null)
                 {
-                    res.Add(module.ToLowerInvariant(),
+                    res.TryAdd(module.ToLowerInvariant(),
                         PathUtils.Subtract(PathUtils.WithoutExtension(source.Key), root));
                 }
             }

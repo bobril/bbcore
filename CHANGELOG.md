@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Changed
+
+- Module Resolver changed to be more similar to node.
+
+### Fixed
+
+- Filter test parameter works better when empty.
+
 ## 0.72.2
 
 ### Fixed
