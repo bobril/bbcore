@@ -4,7 +4,8 @@
 
 ### Improved
 
-- Decreased memory consumption of Build and Test command.
+- Decreased memory consumption of Build and Test command. Test command with -d parameter does not run tests just create output.
+- Updated ChakraCore dependency.
 
 ### Fixed
 
