@@ -357,7 +357,7 @@ namespace Lib.Composition
         {
             if (!_verbose)
                 return;
-            _logger.WriteLine("Verbose output enabled");
+            _logger.Info("Verbose output enabled");
             AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
         }
 
@@ -367,7 +367,7 @@ namespace Lib.Composition
             string s = e.Exception.ToString();
             if (s.Contains("KestrelConnectionReset"))
                 return;
-            _logger.WriteLine("First chance exception: " + s);
+            _logger.Info("First chance exception: " + s);
         }
 
         void RunBuild(BuildCommand bCommand)
@@ -375,9 +375,9 @@ namespace Lib.Composition
             InitDiskCache();
             AddProject(PathUtils.Normalize(Environment.CurrentDirectory), bCommand.Sprite.Value);
             _forbiddenDependencyUpdate = bCommand.NoUpdate.Value;
-            DateTime start = DateTime.UtcNow;
-            int errors = 0;
-            int warnings = 0;
+            var start = DateTime.UtcNow;
+            var errors = 0;
+            var warnings = 0;
             var messages = new List<CompilationResultMessage>();
             var messagesFromFiles = new HashSet<string>();
             var totalFiles = 0;
@@ -409,6 +409,7 @@ namespace Lib.Composition
                     if (proj.BobrilJsxDts != null)
                         ctx.Sources.Add(proj.BobrilJsxDts);
                     proj.Owner.Build(ctx);
+                    _compilerPool.FreeMemory().GetAwaiter();
                     var buildResult = ctx.BuildResult;
                     var filesContent = new Dictionary<string, object>();
                     proj.FillOutputByAdditionalResourcesDirectory(filesContent, buildResult.Modules);
@@ -550,12 +551,15 @@ namespace Lib.Composition
                         fastBundle.Build("bb/base", "testbundle.js.map", true);
                         proj.TestProjFastBundle = fastBundle;
                         proj.FilesContent = filesContent;
+                        _compilerPool.FreeMemory().GetAwaiter();
                         if (testCommand.Dir.Value != null)
                             SaveFilesContentToDisk(filesContent, testCommand.Dir.Value);
                         IncludeMessages(proj, proj.TestProjFastBundle, ref errors, ref warnings, messages,
                             messagesFromFiles,
                             proj.Owner.Owner.FullPath);
                         PrintMessages(messages);
+                        messagesFromFiles = null;
+                        messages = null;
                         if (errors == 0)
                         {
                             var wait = new Semaphore(0, 1);

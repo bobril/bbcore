@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Improved
+
+- Decreased memory consumption of Build and Test command.
+
 ### Fixed
 
 - Module resolver now first search in project root and then continue with classic node resolver.
