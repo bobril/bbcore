@@ -18,7 +18,7 @@ namespace Lib.DiskCache
         readonly IDirectoryCache _root;
         readonly object _lock = new object();
         readonly bool IsUnixFs;
-        bool Changed;
+        bool _changed;
 
         public IFsAbstraction FsAbstraction { get; }
 
@@ -41,9 +41,10 @@ namespace Lib.DiskCache
                         foreach (var i in VirtualFiles) i.IsInvalid = true;
                     }
 
+                    var wasChange = _isInvalid != value;
                     _isInvalid = value;
                     if (value) IsWatcherRoot = false;
-                    NoteChange();
+                    if (wasChange) NoteChange();
                 }
             }
 
@@ -219,7 +220,7 @@ namespace Lib.DiskCache
 
         void NotifyChange()
         {
-            Changed = true;
+            _changed = true;
         }
 
         public DiskCache(IFsAbstraction fsAbstraction, Func<IDirectoryWatcher> directoryWatcherFactory)
@@ -263,7 +264,7 @@ namespace Lib.DiskCache
             _changeSubject.OnNext(Unit.Default);
         }
 
-        IDirectoryCache AddDirectoryFromName(string name, IDirectoryCache parent, bool isLink)
+        IDirectoryCache AddDirectoryFromName(string name, IDirectoryCache parent, bool isLink, bool isInvalid)
         {
             var subDir = new DirectoryCache(this)
             {
@@ -272,10 +273,12 @@ namespace Lib.DiskCache
                 Parent = parent,
                 Filter = DefaultFilter,
                 IsStale = true,
-                IsLink = isLink
+                IsLink = isLink,
+                IsInvalid = isInvalid
             };
             ((DirectoryCache) parent).Add(subDir);
-            ((DirectoryCache) parent).NoteChange();
+            if (!isInvalid)
+                ((DirectoryCache) parent).NoteChange();
             return subDir;
         }
 
@@ -539,7 +542,7 @@ namespace Lib.DiskCache
                             return null;
                         }
 
-                        subItem = AddDirectoryFromName(name, directory, false);
+                        subItem = AddDirectoryFromName(name, directory, false, false);
                         ((IDirectoryCache) subItem).IsFake = true;
                     }
 
@@ -565,8 +568,9 @@ namespace Lib.DiskCache
                     }
                     else
                     {
-                        subItem = AddDirectoryFromName(name, directory, false);
-                        CheckUpdateIfNeededNoLock((IDirectoryCache) subItem);
+                        subItem = AddDirectoryFromName(name, directory, false, !info.Exists);
+                        if (info.Exists)
+                            CheckUpdateIfNeededNoLock((IDirectoryCache) subItem);
                     }
 
                     return subItem;
@@ -578,7 +582,7 @@ namespace Lib.DiskCache
 
         public void ResetChange()
         {
-            Changed = false;
+            _changed = false;
         }
 
         public IDirectoryCache Root()
@@ -641,7 +645,7 @@ namespace Lib.DiskCache
                 {
                     if (fsi.IsDirectory)
                     {
-                        AddDirectoryFromName(fsi.Name, directory, fsi.IsLink);
+                        AddDirectoryFromName(fsi.Name, directory, fsi.IsLink, false);
                     }
                     else
                     {
@@ -656,7 +660,7 @@ namespace Lib.DiskCache
                         {
                             item.IsInvalid = true;
                             ((DirectoryCache) directory).Remove(item);
-                            AddDirectoryFromName(fsi.Name, directory, fsi.IsLink);
+                            AddDirectoryFromName(fsi.Name, directory, fsi.IsLink, false);
                         }
                         else
                         {
@@ -685,7 +689,7 @@ namespace Lib.DiskCache
                 }
             }
 
-            directory.IsWatcherRoot = directory.IsLink || NotWatchedByParents(directory.Parent);
+            directory.IsWatcherRoot = !directory.IsInvalid && (directory.IsLink || NotWatchedByParents(directory.Parent));
             directory.IsStale = false;
         }
 
@@ -705,7 +709,7 @@ namespace Lib.DiskCache
             lock (_lock)
             {
                 CheckUpdateIfNeededNoLock(_root);
-                return Changed;
+                return _changed;
             }
         }
 

@@ -325,14 +325,23 @@ namespace Lib.TSCompiler
             }
         }
 
-        public static TSProject FindInfoForModule(IDirectoryCache dir, IDiskCache diskCache, ILogger logger,
+        public static TSProject FindInfoForModule(IDirectoryCache projectDir, IDirectoryCache dir, IDiskCache diskCache, ILogger logger,
             string moduleName,
             out string diskName)
         {
-            while (!dir.IsFake)
+            if (projectDir.TryGetChildNoVirtual("node_modules") is IDirectoryCache pnmdir)
             {
-                diskCache.UpdateIfNeeded(dir);
-                if (dir.TryGetChild("node_modules") is IDirectoryCache nmdir)
+                diskCache.UpdateIfNeeded(pnmdir);
+                if (pnmdir.TryGetChild(moduleName) is IDirectoryCache mdir)
+                {
+                    diskName = mdir.Name;
+                    diskCache.UpdateIfNeeded(mdir);
+                    return Get(mdir, diskCache, logger, diskName);
+                }
+            }
+            while (dir != null)
+            {
+                if (diskCache.TryGetItem(PathUtils.Join(dir.FullPath, "node_modules")) is IDirectoryCache nmdir)
                 {
                     diskCache.UpdateIfNeeded(nmdir);
                     if (nmdir.TryGetChild(moduleName) is IDirectoryCache mdir)

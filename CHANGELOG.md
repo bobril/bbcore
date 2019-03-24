@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Module resolver now first search in project root and then continue with classic node resolver.
+
 ## 0.73.0
 
 ### Added
