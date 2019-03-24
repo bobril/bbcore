@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.74.0
+
 ### Improved
 
 - Decreased memory consumption of Build and Test command. Test command with -d parameter does not run tests just create output.
