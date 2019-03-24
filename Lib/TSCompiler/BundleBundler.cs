@@ -7,6 +7,7 @@ using System.IO;
 using Lib.CSSProcessor;
 using Lib.DiskCache;
 using System.Globalization;
+using BTDB.Collections;
 
 namespace Lib.TSCompiler
 {
@@ -27,7 +28,7 @@ namespace Lib.TSCompiler
         public BuildResult BuildResult;
 
         // value could be string or byte[] or Lazy<string|byte[]>
-        public Dictionary<string, object> FilesContent;
+        public RefDictionary<string, object> FilesContent;
         Dictionary<string, string> _jsFilesContent;
 
         public void Build(bool compress, bool mangle, bool beautify)
@@ -59,7 +60,7 @@ namespace Lib.TSCompiler
                 }
                 else if (source.Value.Type == FileCompilationType.Resource)
                 {
-                    FilesContent[source.Value.OutputUrl] = source.Value.Owner.ByteContent;
+                    FilesContent.GetOrAddValueRef(source.Value.OutputUrl) = source.Value.Owner.ByteContent;
                 }
             }
 
@@ -67,16 +68,17 @@ namespace Lib.TSCompiler
             {
                 string cssPath = Project.AllocateName("bundle.css");
                 var cssProcessor = new CssProcessor(Project.Tools);
-                FilesContent[cssPath] = cssProcessor.ConcatenateAndMinifyCss(cssToBundle, (string url, string from) =>
+                var cssContent = cssProcessor.ConcatenateAndMinifyCss(cssToBundle, (string url, string from) =>
                 {
                     var full = PathUtils.Join(from, url);
                     var fullJustName = full.Split('?', '#')[0];
                     var fileAdditionalInfo = BuildModuleCtx.AutodetectAndAddDependencyCore(Project, fullJustName,
                         diskCache.TryGetItem(from) as IFileCache);
-                    FilesContent[fileAdditionalInfo.OutputUrl] = fileAdditionalInfo.Owner.ByteContent;
+                    FilesContent.GetOrAddValueRef(fileAdditionalInfo.OutputUrl) = fileAdditionalInfo.Owner.ByteContent;
                     return PathUtils.SplitDirAndFile(fileAdditionalInfo.OutputUrl).Item2 +
                            full.Substring(fullJustName.Length);
                 }).Result;
+                FilesContent.GetOrAddValueRef(cssPath) = cssContent;
                 cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
             }
 
@@ -89,7 +91,7 @@ namespace Lib.TSCompiler
                     _bundlePngInfo = new List<float>();
                     foreach (var slice in bundlePngContent)
                     {
-                        FilesContent[PathUtils.InjectQuality(_bundlePng, slice.Quality)] = slice.Content;
+                        FilesContent.GetOrAddValueRef(PathUtils.InjectQuality(_bundlePng, slice.Quality)) = slice.Content;
                         _bundlePngInfo.Add(slice.Quality);
                     }
                 }
@@ -125,7 +127,7 @@ namespace Lib.TSCompiler
             if (!Project.NoHtml)
             {
                 BuildFastBundlerIndexHtml(cssLink);
-                FilesContent["index.html"] = _indexHtml;
+                FilesContent.GetOrAddValueRef("index.html") = _indexHtml;
             }
         }
 
@@ -185,7 +187,7 @@ namespace Lib.TSCompiler
 
         public void WriteBundle(string name, string content)
         {
-            FilesContent[name] = content;
+            FilesContent.GetOrAddValueRef(name) = content;
         }
 
         public string GenerateBundleName(string forName)

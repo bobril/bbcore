@@ -4,6 +4,7 @@ using Lib.Utils;
 using Lib.ToolsDir;
 using System.Linq;
 using System.Globalization;
+using BTDB.Collections;
 
 namespace Lib.TSCompiler
 {
@@ -26,7 +27,7 @@ namespace Lib.TSCompiler
         public BuildResult BuildResult;
 
         // value could be string or byte[] or Lazy<string|byte[]>
-        public Dictionary<string, object> FilesContent;
+        public RefDictionary<string, object> FilesContent;
         string _bundlePng;
         List<float> _bundlePngInfo;
 
@@ -79,12 +80,12 @@ namespace Lib.TSCompiler
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
                     string cssPath = source.Value.OutputUrl;
-                    FilesContent[cssPath] = source.Value.Output;
+                    FilesContent.GetOrAddValueRef(cssPath) = source.Value.Output;
                     cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
                 }
                 else if (source.Value.Type == FileCompilationType.Resource)
                 {
-                    FilesContent[source.Value.OutputUrl] = source.Value.Owner.ByteContent;
+                    FilesContent.GetOrAddValueRef(source.Value.OutputUrl) = source.Value.Owner.ByteContent;
                 }
             }
 
@@ -97,7 +98,7 @@ namespace Lib.TSCompiler
                     _bundlePngInfo = new List<float>();
                     foreach (var slice in bundlePngContent)
                     {
-                        FilesContent[PathUtils.InjectQuality(_bundlePng, slice.Quality)] = slice.Content;
+                        FilesContent.GetOrAddValueRef(PathUtils.InjectQuality(_bundlePng, slice.Quality)) = slice.Content;
                         _bundlePngInfo.Add(slice.Quality);
                     }
                 }
@@ -133,7 +134,7 @@ namespace Lib.TSCompiler
                         var moduleNameWOExt = PathUtils.WithoutExtension(PathUtils.Subtract(exampleSrc, root));
                         BuildFastBundlerIndexHtml(moduleNameWOExt, cssLink);
                         var justName = PathUtils.SplitDirAndFile(moduleNameWOExt).Item2;
-                        FilesContent[justName + ".html"] = _indexHtml;
+                        FilesContent.GetOrAddValueRef(justName + ".html") = _indexHtml;
                         htmlList.Add(justName);
                     }
 
@@ -152,24 +153,24 @@ namespace Lib.TSCompiler
 
             if (testProj)
             {
-                FilesContent["test.html"] = _indexHtml;
-                FilesContent[_versionDirPrefix + "jasmine-core.js"] = _tools.JasmineCoreJs;
-                FilesContent[_versionDirPrefix + "jasmine-boot.js"] = _tools.JasmineBootJs;
-                FilesContent[_versionDirPrefix + "loader.js"] = _tools.LoaderJs;
+                FilesContent.GetOrAddValueRef("test.html") = _indexHtml;
+                FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-core.js") = _tools.JasmineCoreJs;
+                FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-boot.js") = _tools.JasmineBootJs;
+                FilesContent.GetOrAddValueRef(_versionDirPrefix + "loader.js") = _tools.LoaderJs;
             }
             else if (!Project.NoHtml)
             {
-                FilesContent["index.html"] = _indexHtml;
-                FilesContent[_versionDirPrefix + "loader.js"] = _tools.LoaderJs;
+                FilesContent.GetOrAddValueRef("index.html") = _indexHtml;
+                FilesContent.GetOrAddValueRef(_versionDirPrefix + "loader.js") = _tools.LoaderJs;
                 if (Project.LiveReloadEnabled)
                 {
-                    FilesContent[_versionDirPrefix + "liveReload.js"] =
+                    FilesContent.GetOrAddValueRef(_versionDirPrefix + "liveReload.js") =
                         _tools.LiveReloadJs.Replace("##Idx##", (Project.LiveReloadIdx + 1).ToString());
                 }
             }
 
-            FilesContent[_versionDirPrefix + PathUtils.WithoutExtension(mapUrl)] = _bundleJs;
-            FilesContent[_versionDirPrefix + mapUrl] = _sourceMapString;
+            FilesContent.GetOrAddValueRef(_versionDirPrefix + PathUtils.WithoutExtension(mapUrl)) = _bundleJs;
+            FilesContent.GetOrAddValueRef(_versionDirPrefix + mapUrl) = _sourceMapString;
             BuildResult.SourceMap = _sourceMap;
         }
 

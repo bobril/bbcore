@@ -11,7 +11,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentString Out { get; } = new CommandLineArgumentString("filename for test result as JUnit XML", new[] { "-o", "--out" });
 
         public CommandLineArgumentBool FlatTestSuites { get; } = new CommandLineArgumentBool(
-            "use flat structure of testsuites (to increase viewer compatibility)",
+            "use flat structure of test suites (to increase viewer compatibility)",
             new[] {"--flat"},
             true
         );
@@ -22,7 +22,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         public CommandLineArgumentBoolNullable Localize { get; } = new CommandLineArgumentBoolNullable("create localized resources (default: autodetect)", new[] { "-l", "--localize" });
 
-        public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString("define where to put build result", words: new[] { "-d", "--dir" });
+        public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString("where to just write test bundle", words: new[] { "-d", "--dir" });
 
         public CommandLineArgumentString SpecFilter { get; } = new CommandLineArgumentString("enable/disable tests matching a pattern", words: new[] { "-f", "--filter" });
     }

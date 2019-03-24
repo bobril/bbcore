@@ -20,6 +20,7 @@ using Lib.Chrome;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
+using BTDB.Collections;
 using Lib.BuildCache;
 using Lib.Registry;
 using Lib.Utils.Notification;
@@ -411,7 +412,7 @@ namespace Lib.Composition
                     proj.Owner.Build(ctx);
                     _compilerPool.FreeMemory().GetAwaiter();
                     var buildResult = ctx.BuildResult;
-                    var filesContent = new Dictionary<string, object>();
+                    var filesContent = new RefDictionary<string, object>();
                     proj.FillOutputByAdditionalResourcesDirectory(filesContent, buildResult.Modules);
                     IncludeMessages(proj, buildResult, ref errors, ref warnings, messages, messagesFromFiles,
                         proj.Owner.Owner.FullPath);
@@ -543,7 +544,7 @@ namespace Lib.Composition
                         proj.Owner.Build(ctx);
                         var testBuildResult = ctx.BuildResult;
                         var fastBundle = new FastBundleBundler(_tools);
-                        var filesContent = new Dictionary<string, object>();
+                        var filesContent = new RefDictionary<string, object>();
                         proj.FillOutputByAdditionalResourcesDirectory(filesContent, testBuildResult.Modules);
                         fastBundle.FilesContent = filesContent;
                         fastBundle.Project = proj;
@@ -558,6 +559,8 @@ namespace Lib.Composition
                             messagesFromFiles,
                             proj.Owner.Owner.FullPath);
                         PrintMessages(messages);
+                        if (testCommand.Dir.Value != null)
+                            break;
                         messagesFromFiles = null;
                         messages = null;
                         if (errors == 0)
@@ -620,14 +623,14 @@ namespace Lib.Composition
             }
         }
 
-        void SaveFilesContentToDisk(Dictionary<string, object> filesContent, string dir)
+        void SaveFilesContentToDisk(RefDictionary<string, object> filesContent, string dir)
         {
             dir = PathUtils.Normalize(dir);
             var utf8WithoutBom = new UTF8Encoding(false);
-            foreach (var nameAndContent in filesContent)
+            foreach (var index in filesContent.Index)
             {
-                var content = nameAndContent.Value;
-                var fileName = PathUtils.Join(dir, nameAndContent.Key);
+                ref var content = ref filesContent.ValueRef(index);
+                var fileName = PathUtils.Join(dir, filesContent.KeyRef(index));
                 if (content is Lazy<object>)
                 {
                     content = ((Lazy<object>) content).Value;
@@ -642,6 +645,8 @@ namespace Lib.Composition
                 {
                     File.WriteAllBytes(fileName, (byte[]) content);
                 }
+
+                content = null;
             }
         }
 
@@ -967,7 +972,7 @@ namespace Lib.Composition
         }
 
         static bool FindInFilesContent(string pathWithoutFirstSlash,
-            Dictionary<string, object> filesContentFromCurrentProjectBuildResult, out object content)
+            RefDictionary<string, object> filesContentFromCurrentProjectBuildResult, out object content)
         {
             content = null;
             if (filesContentFromCurrentProjectBuildResult == null)
@@ -1070,7 +1075,7 @@ namespace Lib.Composition
                                 ctx.Sources.Add(proj.BobrilJsxDts);
                             proj.Owner.Build(ctx);
                             var buildResult = ctx.BuildResult;
-                            var filesContent = new Dictionary<string, object>();
+                            var filesContent = new RefDictionary<string, object>();
                             proj.FillOutputByAdditionalResourcesDirectory(filesContent, buildResult.Modules);
                             var fastBundle = new FastBundleBundler(_tools);
                             fastBundle.FilesContent = filesContent;

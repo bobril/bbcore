@@ -6,6 +6,7 @@ using System.Reactive;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using BTDB.Collections;
 using Lib.AssetsPlugin;
 using Lib.BuildCache;
 using Lib.DiskCache;
@@ -66,7 +67,7 @@ namespace Lib.TSCompiler
         public TranslationDb TranslationDb;
 
         // value could be string or byte[]
-        public Dictionary<string, object> FilesContent;
+        public RefDictionary<string, object> FilesContent;
         internal string NpmRegistry;
 
         public Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();
@@ -260,7 +261,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, object> filesContent,
+        public void FillOutputByAdditionalResourcesDirectory(RefDictionary<string, object> filesContent,
             Dictionary<string, TSProject> buildResultModules)
         {
             var nodeModulesDir = Owner.Owner.FullPath;
@@ -277,7 +278,7 @@ namespace Lib.TSCompiler
         }
 
         void RecursiveFillOutputByAdditionalResourcesDirectory(IDirectoryCache directoryCache, string resourcesPath,
-            Dictionary<string, object> filesContent)
+            RefDictionary<string, object> filesContent)
         {
             Owner.DiskCache.UpdateIfNeeded(directoryCache);
             foreach (var child in directoryCache)
@@ -295,8 +296,13 @@ namespace Lib.TSCompiler
                 TakenNames.Add(outPathFileName);
                 if (child is IFileCache)
                 {
-                    filesContent[outPathFileName] =
-                        new Lazy<object>(() => { return ((IFileCache) child).ByteContent; });
+                    filesContent.GetOrAddValueRef(outPathFileName) =
+                        new Lazy<object>(() =>
+                        {
+                            var res = ((IFileCache) child).ByteContent;
+                            ((IFileCache) child).FreeCache();
+                            return res;
+                        });
                 }
             }
         }
@@ -516,7 +522,7 @@ namespace Lib.TSCompiler
             return @default;
         }
 
-        public void FillOutputByAssetsFromModules(Dictionary<string, object> filesContent,
+        public void FillOutputByAssetsFromModules(RefDictionary<string, object> filesContent,
             Dictionary<string, TSProject> modules, string nodeModulesDir)
         {
             foreach (var keyValuePair in modules)

@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using BTDB.Collections;
 using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
 
@@ -331,7 +332,7 @@ namespace Lib.Translation
             return res;
         }
 
-        public void BuildTranslationJs(IToolsDir tools, Dictionary<string, object> filesContent, string versionDir)
+        public void BuildTranslationJs(IToolsDir tools, RefDictionary<string, object> filesContent, string versionDir)
         {
             if (_changed)
             {
@@ -341,8 +342,8 @@ namespace Lib.Translation
                     var langInit = tools.GetLocaleDef(p.Key);
                     if (langInit == null) continue;
                     var sw = new StringWriter();
-                    var posLoc1 = langInit.IndexOf("bobrilRegisterTranslations(") + "bobrilRegisterTranslations(".Length;
-                    var posLoc2 = langInit.IndexOf(",", posLoc1);
+                    var posLoc1 = langInit.IndexOf("bobrilRegisterTranslations(", StringComparison.Ordinal) + "bobrilRegisterTranslations(".Length;
+                    var posLoc2 = langInit.IndexOf(",", posLoc1, StringComparison.Ordinal);
                     langInit = langInit.Substring(0, posLoc1) + "\'" + p.Key + "\'" + langInit.Substring(posLoc2);
                     sw.Write(langInit);
                     var jw = new JsonTextWriter(sw);
@@ -380,7 +381,7 @@ namespace Lib.Translation
                 var outfn = i.Key;
                 if (versionDir != null)
                     outfn = versionDir + "/" + outfn;
-                filesContent[outfn] = i.Value;
+                filesContent.GetOrAddValueRef(outfn) = i.Value;
             }
         }
 

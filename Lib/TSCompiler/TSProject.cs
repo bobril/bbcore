@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using BTDB.Collections;
 using Lib.Registry;
 using Lib.Utils.Logger;
 
@@ -325,7 +326,8 @@ namespace Lib.TSCompiler
             }
         }
 
-        public static TSProject FindInfoForModule(IDirectoryCache projectDir, IDirectoryCache dir, IDiskCache diskCache, ILogger logger,
+        public static TSProject FindInfoForModule(IDirectoryCache projectDir, IDirectoryCache dir, IDiskCache diskCache,
+            ILogger logger,
             string moduleName,
             out string diskName)
         {
@@ -339,6 +341,7 @@ namespace Lib.TSCompiler
                     return Get(mdir, diskCache, logger, diskName);
                 }
             }
+
             while (dir != null)
             {
                 if (diskCache.TryGetItem(PathUtils.Join(dir.FullPath, "node_modules")) is IDirectoryCache nmdir)
@@ -377,7 +380,7 @@ namespace Lib.TSCompiler
             return (TSProject) dir.AdditionalInfo;
         }
 
-        public void FillOutputByAssets(Dictionary<string, object> filesContent, HashSet<string> takenNames,
+        public void FillOutputByAssets(RefDictionary<string, object> filesContent, HashSet<string> takenNames,
             string nodeModulesDir, ProjectOptions projectOptions)
         {
             if (Assets == null) return;
@@ -395,7 +398,12 @@ namespace Lib.TSCompiler
                 if (item is IFileCache)
                 {
                     takenNames.Add(asset.Value);
-                    filesContent[asset.Value] = new Lazy<object>(() => { return ((IFileCache) item).ByteContent; });
+                    filesContent.GetOrAddValueRef(asset.Value) = new Lazy<object>(() =>
+                    {
+                        var res = ((IFileCache) item).ByteContent;
+                        ((IFileCache) item).FreeCache();
+                        return res;
+                    });
                 }
                 else
                 {
@@ -404,7 +412,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        void RecursiveAddFilesContent(IDirectoryCache directory, Dictionary<string, object> filesContent,
+        void RecursiveAddFilesContent(IDirectoryCache directory, RefDictionary<string, object> filesContent,
             HashSet<string> takenNames, string destDir)
         {
             DiskCache.UpdateIfNeeded(directory);
@@ -422,8 +430,13 @@ namespace Lib.TSCompiler
 
                 if (child is IFileCache)
                 {
-                    filesContent[outPathFileName] =
-                        new Lazy<object>(() => { return ((IFileCache) child).ByteContent; });
+                    filesContent.GetOrAddValueRef(outPathFileName) =
+                        new Lazy<object>(() =>
+                        {
+                            var res = ((IFileCache) child).ByteContent;
+                            ((IFileCache) child).FreeCache();
+                            return res;
+                        });
                 }
             }
         }

@@ -341,6 +341,9 @@ namespace Lib.DiskCache
             public string Utf8Content => _content;
 
             public object AdditionalInfo { get; set; }
+            public void FreeCache()
+            {
+            }
 
             public string Name => _name;
 
@@ -453,8 +456,7 @@ namespace Lib.DiskCache
                         _contentUtf8 = null;
                         _contentHash = null;
                         _changeId++;
-                        if (Parent != null)
-                            ((DirectoryCache) Parent).NoteChange();
+                        ((DirectoryCache) Parent)?.NoteChange();
                     }
 
                     _isStale = value;
@@ -495,6 +497,12 @@ namespace Lib.DiskCache
             public int ChangeId => _changeId;
 
             public object AdditionalInfo { get; set; }
+            public void FreeCache()
+            {
+                _contentUtf8 = null;
+                _contentBytes = null;
+                _contentHash = null;
+            }
 
             public byte[] HashOfContent
             {
