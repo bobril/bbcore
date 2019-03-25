@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Improved
+
+Updated to .NetCore 2.2. Updated all dependencies.
+
 ## 0.74.0
 
 ### Improved
