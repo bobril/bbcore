@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json.Serialization;
 
 namespace Lib.TSCompiler
 {
@@ -83,8 +84,9 @@ namespace Lib.TSCompiler
 
         static public JsonSerializerSettings GetSerializerSettings()
         {
-            var res = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-            res.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter(true));
+            var res = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+            res.Converters.Add(
+                new Newtonsoft.Json.Converters.StringEnumConverter(new CamelCaseNamingStrategy(true, false), false));
             return res;
         }
 
