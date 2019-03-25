@@ -86,8 +86,8 @@ namespace Releaser
                     releaseLogLines.RemoveAt(releaseLogLines.Count - 1);
                 outputLogLines.Insert(topVersionLine + 1, "## " + newVersion);
                 outputLogLines.Insert(topVersionLine + 1, "");
-                if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.1"))
-                    Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1", true);
+                if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.2"))
+                    Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.2", true);
                 BuildWinX64(projDir, newVersion);
                 BuildLinuxX64(projDir, newVersion);
                 BuildOsxX64(projDir, newVersion);
@@ -192,7 +192,7 @@ namespace Releaser
             {
                 try
                 {
-                    return await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload(fileName, "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.1/" + fileName), TimeSpan.FromMinutes(14)));
+                    return await client.Repository.Release.UploadAsset(release2, new ReleaseAssetUpload(fileName, "application/zip", File.OpenRead(projDir + "/bb/bin/Release/netcoreapp2.2/" + fileName), TimeSpan.FromMinutes(14)));
                 }
                 catch (Exception)
                 {
@@ -211,9 +211,9 @@ namespace Releaser
             };
             var process = Process.Start(start);
             process.WaitForExit();
-            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.1/win10-x64/publish/ru-ru"))
-                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/win10-x64/publish/ru-ru", true);
-            System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.1/win10-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.1/win-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.2/win10-x64/publish/ru-ru"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.2/win10-x64/publish/ru-ru", true);
+            System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.2/win10-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.2/win-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
         }
 
         static void BuildLinuxX64(string projDir, string newVersion)
@@ -225,11 +225,11 @@ namespace Releaser
             };
             var process = Process.Start(start);
             process.WaitForExit();
-            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish/ru-ru"))
-                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish/ru-ru", true);
-            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish/Resources"))
-                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish/Resources", true);
-            System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.1/linux-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.2/linux-x64/publish/ru-ru"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.2/linux-x64/publish/ru-ru", true);
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.2/linux-x64/publish/Resources"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.2/linux-x64/publish/Resources", true);
+            System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.2/linux-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.2/linux-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
         }
 
         static void BuildOsxX64(string projDir, string newVersion)
@@ -241,11 +241,11 @@ namespace Releaser
             };
             var process = Process.Start(start);
             process.WaitForExit();
-            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish/ru-ru"))
-                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish/ru-ru", true);
-            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish/Resources"))
-                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish/Resources", true);
-            System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.1/osx-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.2/osx-x64/publish/ru-ru"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.2/osx-x64/publish/ru-ru", true);
+            if (Directory.Exists(projDir + "/bb/bin/Release/netcoreapp2.2/osx-x64/publish/Resources"))
+                Directory.Delete(projDir + "/bb/bin/Release/netcoreapp2.2/osx-x64/publish/Resources", true);
+            System.IO.Compression.ZipFile.CreateFromDirectory(projDir + "/bb/bin/Release/netcoreapp2.2/osx-x64/publish", projDir + "/bb/bin/Release/netcoreapp2.2/osx-x64.zip", System.IO.Compression.CompressionLevel.Optimal, false);
         }
     }
 }
