@@ -2,11 +2,15 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Don't crash at Quill
+
 ## 0.75.0
 
 ### Improved
 
-Updated to .NetCore 2.2. Updated all dependencies.
+- Updated to .NetCore 2.2. Updated all dependencies.
 
 ## 0.74.0
 

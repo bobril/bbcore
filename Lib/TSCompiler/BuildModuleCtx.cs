@@ -274,7 +274,7 @@ namespace Lib.TSCompiler
             itemInfo.ImportedAsModule = name;
             itemInfo.MyProject = moduleInfo;
             var parentProject = parentInfo.MyProject;
-            if (parentProject.IsRootProject &&
+            if (parentProject != null && parentProject.IsRootProject &&
                 ((parentProject.Dependencies == null || !parentProject.Dependencies.Contains(name)) &&
                  (parentProject.DevDependencies == null || !parentProject.DevDependencies.Contains(name))))
             {
