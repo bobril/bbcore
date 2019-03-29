@@ -229,6 +229,7 @@ namespace Lib.TSCompiler
                 RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);
             }
 
+            res.Sort(StringComparer.Ordinal);
             TestSources = res;
         }
 
@@ -253,6 +254,7 @@ namespace Lib.TSCompiler
                     {
                         JasmineDts = item.FullPath;
                     }
+
                     if (fileRegex.IsMatch(item.Name))
                     {
                         res.Add(item.FullPath);

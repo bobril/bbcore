@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Test sources are now sorted (imported in same order in test.html on all platforms).
+
 ### Fixed
 
 - Don't crash at Quill
