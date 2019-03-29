@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.76.0
+
 ### Added
 
 - BBCACHEDIR environmental variable allows to override .bbcache directory placement.
