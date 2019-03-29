@@ -7,8 +7,6 @@ describe("Demo suite", () => {
         expect(1 + 1).toBe(2);
     });
 
-    (undefined as any)(1);
-
     function exampleFailure(result: number) {
         expect(1 + 2).toBe(result);
     }
