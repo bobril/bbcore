@@ -5,6 +5,7 @@
 ### Added
 
 - BBCACHEDIR environmental variable allows to override .bbcache directory placement.
+- Errors in tests between them are now correctly displayed and reported.
 
 ### Changed
 

@@ -568,7 +568,7 @@ namespace Lib.Composition
                             var wait = new Semaphore(0, 1);
                             _testServer.OnTestResults.Subscribe(results =>
                             {
-                                testFailures = results.TestsFailed;
+                                testFailures = results.TestsFailed + results.SuitesFailed;
                                 testResults = results;
                                 wait.Release();
                             });

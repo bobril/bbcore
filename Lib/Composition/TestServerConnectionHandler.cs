@@ -70,6 +70,7 @@ namespace Lib.Composition
                         _testServer.NotifySomeChange();
                         break;
                     }
+
                     case "wholeStart":
                     {
                         if (_verbose) _logger.Info($"wholeStart tests:{(int) data}");
@@ -87,6 +88,7 @@ namespace Lib.Composition
                         _testServer.NotifySomeChange();
                         break;
                     }
+
                     case "wholeDone":
                     {
                         if (_verbose) _logger.Info($"wholeDone duration:{((double) data):f2}");
@@ -107,6 +109,7 @@ namespace Lib.Composition
                         _testServer.NotifySomeChange();
                         break;
                     }
+
                     case "suiteStart":
                     {
                         if (_verbose) _logger.Info($"suiteStart {(string) data}");
@@ -136,6 +139,7 @@ namespace Lib.Composition
                         _testServer.NotifySomeChange();
                         break;
                     }
+
                     case "suiteDone":
                     {
                         lock (_lock)
@@ -151,7 +155,10 @@ namespace Lib.Composition
                             suite.Failures.AddRange(ConvertFailures(data.Value<JArray>("failures")));
                             if (suite.Failures.Count > 0)
                             {
+                                _curResults.SuitesFailed += suite.Failures.Count;
                                 suite.Failure = true;
+                                _logger.Error(
+                                    $"suite {suite.Name} in between test failures\n{string.Join('\n', suite.Failures.Select(f => f.Message + "\n  " + string.Join("\n  ", f.Stack)))}");
                                 foreach (var s in _suiteStack)
                                 {
                                     s.Failure = true;
@@ -162,6 +169,7 @@ namespace Lib.Composition
                         _testServer.NotifySomeChange();
                         break;
                     }
+
                     case "testStart":
                     {
                         if (_verbose)
@@ -194,6 +202,7 @@ namespace Lib.Composition
                         _testServer.NotifySomeChange();
                         break;
                     }
+
                     case "testDone":
                     {
                         lock (_lock)
@@ -231,6 +240,7 @@ namespace Lib.Composition
                         _testServer.NotifySomeChange();
                         break;
                     }
+
                     case "consoleLog":
                     {
                         lock (_lock)
