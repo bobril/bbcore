@@ -773,23 +773,28 @@ namespace Lib.Composition
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
-            if (_inDocker)
+            _bbdir = Environment.GetEnvironmentVariable("BBCACHEDIR");
+            if (_bbdir == null)
             {
-                _bbdir = "/bbcache";
-            }
-            else
-            {
-                var location = new Uri(Assembly.GetEntryAssembly().GetName().CodeBase);
-                var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory.FullName);
-                _bbdir = PathUtils.Join(
-                    PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)), ".bbcore");
-                if (runningFrom.StartsWith(_bbdir))
+                if (_inDocker)
                 {
-                    _bbdir = PathUtils.Join(_bbdir, "tools");
+                    _bbdir = "/bbcache";
                 }
                 else
                 {
-                    _bbdir = PathUtils.Join(_bbdir, "dev");
+                    var location = new Uri(Assembly.GetEntryAssembly().GetName().CodeBase);
+                    var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory.FullName);
+                    _bbdir = PathUtils.Join(
+                        PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)),
+                        ".bbcore");
+                    if (runningFrom.StartsWith(_bbdir))
+                    {
+                        _bbdir = PathUtils.Join(_bbdir, "tools");
+                    }
+                    else
+                    {
+                        _bbdir = PathUtils.Join(_bbdir, "dev");
+                    }
                 }
             }
 

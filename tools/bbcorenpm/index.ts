@@ -200,6 +200,7 @@ const platformToAssetNameMap: { [name: string]: string } = {
     "win32-x64": "win-x64.zip",
     "win32-x86": "win-x64.zip",
     "win32-x32": "win-x64.zip",
+    "win32-ia32": "win-x64.zip",
     "linux-x64": "linux-x64.zip",
     "darwin-x64": "osx-x64.zip"
 };
@@ -209,7 +210,7 @@ const platformWithArch = os.platform() + "-" + os.arch();
 let platformAssetName =
     platformToAssetNameMap[platformWithArch] || platformWithArch + ".zip";
 
-let homeDir = path.join(os.homedir(), ".bbcore");
+let homeDir = process.env["BBCACHEDIR"] || path.join(os.homedir(), ".bbcore");
 let lastVersionFileName = path.join(homeDir, ".lastversion");
 let requestedVersion = "*";
 

@@ -26,6 +26,10 @@ In `package.json` create `bobril` section and set `bbVersion` to specific versio
 
 By setting `BBVERSION` enviroment variable you can define default version (including prerelease). If you will start `bb2` instead of `bb`, then `BBVERSION` override what is in `package.json`
 
+# How to override where bb store its caches
+
+bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcache`. You can override it be defining `BBCACHEDIR` environmental variable.
+
 # How to use Docker version
 
 ## Run it

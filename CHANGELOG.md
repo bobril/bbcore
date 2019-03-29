@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- BBCACHEDIR environmental variable allows to override .bbcache directory placement.
+
 ### Changed
 
 - Test sources are now sorted (imported in same order in test.html on all platforms).
