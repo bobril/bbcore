@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Added DisableFatalOnOOM = true to ChakraCore settings.
+
 ## 0.76.0
 
 ### Added
