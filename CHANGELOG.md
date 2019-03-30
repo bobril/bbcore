@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 3.4.1
+
 ### Fixed
 
 - Added DisableFatalOnOOM = true to ChakraCore settings.
