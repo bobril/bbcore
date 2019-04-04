@@ -187,11 +187,6 @@ namespace Lib.TSCompiler
                 }
                 else
                 {
-                    if (!containingFile.EndsWith(".d.ts") && (name.Contains('/') || name.Contains('\\')))
-                    {
-                        _owner.Ctx.reportDiag(true, -10, "Absolute import '" + name + "' must be just simple module name", containingFile, 0, 0, 0, 0);
-                        return "";
-                    }
                     res = _owner.Ctx.resolveModuleMain(name, additionalInfo);
                 }
                 if (res == null) return "";

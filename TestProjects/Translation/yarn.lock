@@ -3,15 +3,18 @@
 
 
 bobril-g11n@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/bobril-g11n/-/bobril-g11n-4.2.0.tgz#a0e70dea158a10b4e716a9a8c4ebb445974ab70c"
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/bobril-g11n/-/bobril-g11n-4.4.1.tgz#4b43684a13cd8f8b1707a4bede837ec6bc82c939"
+  integrity sha512-XmqpVX1mCBgAvBnQuRFInoiOJSqEcwRybUwA/lEhoMMbMr16uW0C6NXOiyy5OCy6MBMI0NEtbqc05r4zjKegiQ==
   dependencies:
     moment "^2.10.6"
 
 bobril@^8.6.1:
-  version "8.6.1"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.6.1.tgz#01dfd75e1ef50233c33cd6e5ccfc7bc65a54454e"
+  version "8.21.0"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.21.0.tgz#8feb9a19af5f94a872147a0ddfa154c2a453ca81"
+  integrity sha512-mli2FZCd8PkA0F+v8kruuvof9t7VIYLiIO5XJNdKAyGO5gMw3tAjhKzYj71CN8YPhMySWh4TOObBXin0npChmQ==
 
 moment@^2.10.6:
-  version "2.22.0"
-  resolved "https://registry.yarnpkg.com/moment/-/moment-2.22.0.tgz#7921ade01017dd45186e7fee5f424f0b8663a730"
+  version "2.24.0"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.24.0.tgz#0d055d53f5052aa653c9f6eb68bb5d12bf5c2b5b"
+  integrity sha512-bV7f+6l2QigeBBZSM/6yTNq4P2fNpSWj/0e7jQcy87A8e7o2nAfP/34/2ky5Vw4B9S446EtIhodAzkFCcR4dQg==

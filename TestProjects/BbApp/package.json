@@ -12,6 +12,7 @@
         "additionalResourcesDirectory": "assets-app",
         "prefixStyleDefs": "pref1x",
         "dependencies": "upgrade",
+        "allowModuleDeepImport": true,
         "compilerOptions": {
             "strict": true
         },

@@ -1,5 +1,6 @@
 import * as b from "bobril";
 import * as g from "bobril-g11n";
+import * as deep from "bobril-g11n/src/jsonp";
 import lightSwitch from "./lightSwitch";
 import * as json from "./json.json";
 
@@ -19,6 +20,8 @@ function dontDoThis(cn: string) {
 }
 
 dontDoThis("try");
+
+if (!b.isFunction(deep.jsonp)) console.error("deep import");
 
 let switchValue = false;
 

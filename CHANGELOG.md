@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Allow to disable Error -10 which forbids relative imports into modules.
+
 ## 0.77.0
 
 ### Changed

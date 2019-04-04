@@ -75,6 +75,12 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 
 # Package.json - bobril section features
 
+## Disable Error -10 which forbids relative imports into modules
+
+    "bobril": {
+        "allowModuleDeepImport": true
+    }
+
 ## Warnings As Errors
 
     "bobril": {

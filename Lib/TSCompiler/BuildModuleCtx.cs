@@ -250,18 +250,33 @@ namespace Lib.TSCompiler
 
         public string resolveModuleMain(string name, TSFileAdditionalInfo parentInfo)
         {
+            if (!_owner.ProjectOptions.AllowModuleDeepImport)
+            {
+                if (!parentInfo.Owner.Name.EndsWith(".d.ts") && (name.Contains('/') || name.Contains('\\')))
+                {
+                    parentInfo.ReportDiag(true, -10, "Absolute import '" + name + "' must be just simple module name", 0, 0, 0, 0);
+                    return null;
+                }
+            }
+
+            var mname = PathUtils.EnumParts(name).First().name;
             var moduleInfo =
-                TSProject.FindInfoForModule(_owner.Owner, parentInfo.Owner.Parent, _owner.DiskCache, _owner.Logger, name, out var diskName);
+                TSProject.FindInfoForModule(_owner.Owner, parentInfo.Owner.Parent, _owner.DiskCache, _owner.Logger, mname, out var diskName);
             if (moduleInfo == null)
                 return null;
-            if (name != diskName)
+            if (mname != diskName)
             {
                 parentInfo.ReportDiag(false, -2,
-                    "Module import has wrong casing '" + name + "' on disk '" + diskName + "'", 0, 0, 0, 0);
+                    "Module import has wrong casing '" + mname + "' on disk '" + diskName + "'", 0, 0, 0, 0);
             }
 
             moduleInfo.LoadProjectJson(true);
             parentInfo.ImportingModule(moduleInfo);
+            if (mname.Length != name.Length)
+            {
+                return resolveLocalImport(PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(mname.Length + 1)),
+                    parentInfo);
+            }
             var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
             var item = _owner.DiskCache.TryGetItem(mainFile) as IFileCache;
             if (item == null || item.IsInvalid)

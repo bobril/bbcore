@@ -54,6 +54,7 @@ namespace Lib.TSCompiler
         public FastBundleBundler MainProjFastBundle;
         public FastBundleBundler TestProjFastBundle;
         public bool LiveReloadEnabled;
+        public bool AllowModuleDeepImport;
         public string TypeScriptVersion;
 
         public bool Localize;
@@ -500,6 +501,7 @@ namespace Lib.TSCompiler
                 pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
             WarningsAsErrors = bobrilSection?["warningsAsErrors"]?.Value<bool>() ?? false;
             ObsoleteMessage = GetStringProperty(bobrilSection, "obsolete", null);
+            AllowModuleDeepImport = bobrilSection?["allowModuleDeepImport"]?.Value<bool>() ?? false;
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)
