@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.78.0
+
 ### Added
 
 - Allow to disable Error -10 which forbids relative imports into modules.
