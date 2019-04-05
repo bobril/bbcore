@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.78.1
+
 ### Fixed
 
 - Relative module imports from 0.78.0 works with more complex project.
