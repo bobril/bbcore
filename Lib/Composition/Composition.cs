@@ -1223,6 +1223,14 @@ namespace Lib.Composition
                         }
                     }
 
+                    if (pathInfoPair.Value.LocalImports != null)
+                    {
+                        foreach (var localImport in pathInfoPair.Value.LocalImports)
+                        {
+                            usedDependencies.Add(localImport.MyProject.Name);
+                        }
+                    }
+
                     var assets = pathInfoPair.Value.SourceInfo?.assets;
                     if (assets != null)
                     {

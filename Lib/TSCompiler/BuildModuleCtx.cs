@@ -105,6 +105,11 @@ namespace Lib.TSCompiler
                 ChangedDts = true;
         }
 
+        public string resolveLocalImport(string name, TSFileAdditionalInfo parentInfo)
+        {
+            return resolveLocalImport(name, parentInfo, null);
+        }
+
         static readonly string[] ExtensionsToImport = {".tsx", ".ts", ".d.ts", ".jsx", ".js"};
         internal OrderedHashSet<string> ToCheck;
         internal OrderedHashSet<string> ToCompile;
@@ -129,7 +134,7 @@ namespace Lib.TSCompiler
 
         public readonly Dictionary<string, string> LocalResolveCache = new Dictionary<string, string>();
 
-        public string resolveLocalImport(string name, TSFileAdditionalInfo parentInfo)
+        public string resolveLocalImport(string name, TSFileAdditionalInfo parentInfo, TSProject moduleInfo)
         {
             var dirPath = PathUtils.Parent(name);
             var fileOnly = name.Substring(dirPath.Length + 1);
@@ -158,7 +163,7 @@ namespace Lib.TSCompiler
 
             var itemInfo = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
             parentInfo.ImportingLocal(itemInfo);
-            itemInfo.MyProject = parentInfo.MyProject;
+            itemInfo.MyProject = moduleInfo ?? parentInfo.MyProject;
             if (IsDts(item.FullPath))
             {
                 if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
@@ -271,12 +276,12 @@ namespace Lib.TSCompiler
             }
 
             moduleInfo.LoadProjectJson(true);
-            parentInfo.ImportingModule(moduleInfo);
             if (mname.Length != name.Length)
             {
                 return resolveLocalImport(PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(mname.Length + 1)),
-                    parentInfo);
+                    parentInfo, moduleInfo);
             }
+            parentInfo.ImportingModule(moduleInfo);
             var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
             var item = _owner.DiskCache.TryGetItem(mainFile) as IFileCache;
             if (item == null || item.IsInvalid)
