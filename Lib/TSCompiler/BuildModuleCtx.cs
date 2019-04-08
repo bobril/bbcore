@@ -107,7 +107,7 @@ namespace Lib.TSCompiler
 
         public string resolveLocalImport(string name, TSFileAdditionalInfo parentInfo)
         {
-            return resolveLocalImport(name, parentInfo, null);
+            return ResolveLocalImport(name, parentInfo, null, null);
         }
 
         static readonly string[] ExtensionsToImport = {".tsx", ".ts", ".d.ts", ".jsx", ".js"};
@@ -134,7 +134,7 @@ namespace Lib.TSCompiler
 
         public readonly Dictionary<string, string> LocalResolveCache = new Dictionary<string, string>();
 
-        public string resolveLocalImport(string name, TSFileAdditionalInfo parentInfo, TSProject moduleInfo)
+        public string ResolveLocalImport(string name, TSFileAdditionalInfo parentInfo, TSProject moduleInfo, string importedAsModule)
         {
             var dirPath = PathUtils.Parent(name);
             var fileOnly = name.Substring(dirPath.Length + 1);
@@ -164,6 +164,7 @@ namespace Lib.TSCompiler
             var itemInfo = TSFileAdditionalInfo.Get(item, _owner.DiskCache);
             parentInfo.ImportingLocal(itemInfo);
             itemInfo.MyProject = moduleInfo ?? parentInfo.MyProject;
+            if (importedAsModule != null) itemInfo.ImportedAsModule = importedAsModule;
             if (IsDts(item.FullPath))
             {
                 if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
@@ -259,14 +260,16 @@ namespace Lib.TSCompiler
             {
                 if (!parentInfo.Owner.Name.EndsWith(".d.ts") && (name.Contains('/') || name.Contains('\\')))
                 {
-                    parentInfo.ReportDiag(true, -10, "Absolute import '" + name + "' must be just simple module name", 0, 0, 0, 0);
+                    parentInfo.ReportDiag(true, -10, "Absolute import '" + name + "' must be just simple module name",
+                        0, 0, 0, 0);
                     return null;
                 }
             }
 
             var mname = PathUtils.EnumParts(name).First().name;
             var moduleInfo =
-                TSProject.FindInfoForModule(_owner.Owner, parentInfo.Owner.Parent, _owner.DiskCache, _owner.Logger, mname, out var diskName);
+                TSProject.FindInfoForModule(_owner.Owner, parentInfo.Owner.Parent, _owner.DiskCache, _owner.Logger,
+                    mname, out var diskName);
             if (moduleInfo == null)
                 return null;
             if (mname != diskName)
@@ -278,9 +281,10 @@ namespace Lib.TSCompiler
             moduleInfo.LoadProjectJson(true);
             if (mname.Length != name.Length)
             {
-                return resolveLocalImport(PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(mname.Length + 1)),
-                    parentInfo, moduleInfo);
+                return ResolveLocalImport(PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(mname.Length + 1)),
+                    parentInfo, moduleInfo, name);
             }
+
             parentInfo.ImportingModule(moduleInfo);
             var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
             var item = _owner.DiskCache.TryGetItem(mainFile) as IFileCache;

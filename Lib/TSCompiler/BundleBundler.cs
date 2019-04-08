@@ -204,13 +204,19 @@ namespace Lib.TSCompiler
                 return PathUtils.Join(PathUtils.Parent(from), name) + ".js";
             }
 
+            var mname = PathUtils.EnumParts(name).First().name;
             var diskCache = Project.Owner.DiskCache;
-            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache.TryGetItem(PathUtils.Parent(from)) as IDirectoryCache, diskCache, Project.Owner.Logger, name,
+            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache.TryGetItem(PathUtils.Parent(from)) as IDirectoryCache, diskCache, Project.Owner.Logger, mname,
                 out var diskName);
             if (moduleInfo == null)
             {
                 Project.Owner.Logger.Error($"Bundler cannot resolve {name} from {@from}");
                 return null;
+            }
+            if (mname.Length != name.Length)
+            {
+                return PathUtils.ChangeExtension(
+                    PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(mname.Length + 1)), "js");
             }
             var mainFile =
                 PathUtils.ChangeExtension(PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile), "js");
