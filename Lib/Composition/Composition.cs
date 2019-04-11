@@ -1151,6 +1151,7 @@ namespace Lib.Composition
                     _logger.WriteLine(
                         $"Build done in {(DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(totalFiles, "file")}",
                         color);
+                    _compilerPool.FreeMemory().GetAwaiter();
                     _dc.ResetChange();
                 }
             });

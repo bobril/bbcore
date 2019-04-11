@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Free memory after each interactive build.
+
 ## 0.78.2
 
 ### Fixed
