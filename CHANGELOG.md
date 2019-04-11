@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.79.0
+
 ### Changed
 
 - Free memory after each interactive build.
