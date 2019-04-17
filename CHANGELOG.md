@@ -5,6 +5,7 @@
 ### Fixed
 
 - Regression in importing d.ts with js.
+- Don't print unused dependencies when build has errors.
 
 ## 0.79.0
 

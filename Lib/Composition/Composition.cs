@@ -578,7 +578,7 @@ namespace Lib.Composition
                                             durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
 
                             _testServer.StartTest("/test.html",
-                                new Dictionary<string, SourceMap> {{"testbundle.js", testBuildResult.SourceMap}},
+                                new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } },
                                 testCommand.SpecFilter.Value);
                             StartChromeTest();
                             wait.WaitOne();
@@ -633,17 +633,17 @@ namespace Lib.Composition
                 var fileName = PathUtils.Join(dir, filesContent.KeyRef(index));
                 if (content is Lazy<object>)
                 {
-                    content = ((Lazy<object>) content).Value;
+                    content = ((Lazy<object>)content).Value;
                 }
 
                 Directory.CreateDirectory(PathUtils.Parent(fileName) ?? ".");
                 if (content is string)
                 {
-                    File.WriteAllText(fileName, (string) content, utf8WithoutBom);
+                    File.WriteAllText(fileName, (string)content, utf8WithoutBom);
                 }
                 else
                 {
-                    File.WriteAllBytes(fileName, (byte[]) content);
+                    File.WriteAllBytes(fileName, (byte[])content);
                 }
 
                 content = null;
@@ -823,7 +823,7 @@ namespace Lib.Composition
                 Tools = _tools,
                 BuildCache = _buildCache,
                 Owner = proj,
-                Defines = new Dictionary<string, bool> {{"DEBUG", true}},
+                Defines = new Dictionary<string, bool> { { "DEBUG", true } },
                 SpriteGeneration = enableSpritting
             };
             lock (_projectsLock)
@@ -957,16 +957,16 @@ namespace Lib.Composition
                 context.Response.ContentType = PathUtils.PathToMimeType(pathWithoutFirstSlash);
                 if (content is Lazy<object>)
                 {
-                    content = ((Lazy<object>) content).Value;
+                    content = ((Lazy<object>)content).Value;
                 }
 
                 if (content is string)
                 {
-                    await context.Response.WriteAsync((string) content);
+                    await context.Response.WriteAsync((string)content);
                 }
                 else
                 {
-                    await context.Response.Body.WriteAsync((byte[]) content, 0, ((byte[]) content).Length);
+                    await context.Response.Body.WriteAsync((byte[])content, 0, ((byte[])content).Length);
                 }
 
                 return;
@@ -1130,9 +1130,12 @@ namespace Lib.Composition
 
                             proj.FilesContent = filesContent;
                             totalFiles += filesContent.Count;
-                            var unusedDeps = proj.Owner.Dependencies.ToHashSet();
-                            unusedDeps.ExceptWith(proj.Owner.UsedDependencies);
-                            AddUnusedDependenciesMessages(proj, unusedDeps, ref errors, ref warnings, messages);
+                            if (errors == 0)
+                            {
+                                var unusedDeps = proj.Owner.Dependencies.ToHashSet();
+                                unusedDeps.ExceptWith(proj.Owner.UsedDependencies);
+                                AddUnusedDependenciesMessages(proj, unusedDeps, ref errors, ref warnings, messages);
+                            }
                         }
                         catch (Exception ex)
                         {
