@@ -3,6 +3,7 @@ import * as g from "bobril-g11n";
 import * as deep from "bobril-g11n/src/jsonp";
 import lightSwitch from "./lightSwitch";
 import * as json from "./json.json";
+import "./polyfills";
 
 interface IPageCtx extends b.IBobrilCtx {
     counter: number;

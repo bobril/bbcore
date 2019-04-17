@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Regression in importing d.ts with js.
+
 ## 0.79.0
 
 ### Changed

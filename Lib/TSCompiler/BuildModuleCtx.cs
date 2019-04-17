@@ -171,6 +171,7 @@ namespace Lib.TSCompiler
                 {
                     var jsItemInfo = TSFileAdditionalInfo.Get(jsItem, _owner.DiskCache);
                     jsItemInfo.Type = FileCompilationType.JavaScript;
+                    jsItemInfo.MyProject = itemInfo.MyProject;
                     parentInfo.ImportingLocal(jsItemInfo);
                     CheckAdd(jsItem.FullPath);
                 }
