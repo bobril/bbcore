@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.79.1
+
 ### Fixed
 
 - Regression in importing d.ts with js.
