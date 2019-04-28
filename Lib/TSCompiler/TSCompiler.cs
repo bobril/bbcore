@@ -99,26 +99,22 @@ namespace Lib.TSCompiler
             public bool dirExists(string directoryPath)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
-                if (!fullPath.StartsWith(_owner._currentDirectory))
-                    return false;
-                return _owner.DiskCache.TryGetItem(fullPath) is IDirectoryCache;
+                var dir = _owner.DiskCache.TryGetItem(fullPath) as IDirectoryCache;
+                return dir != null && !dir.IsInvalid;
             }
 
             public bool fileExists(string fileName)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                if (!fullPath.StartsWith(_owner._currentDirectory))
-                    return false;
-                return _owner.DiskCache.TryGetItem(fullPath) is IFileCache;
+                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
+                return file != null && !file.IsInvalid;
             }
 
             public string getDirectories(string directoryPath)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
-                if (!fullPath.StartsWith(_owner._currentDirectory))
-                    return "";
                 var dc = _owner.DiskCache.TryGetItem(fullPath) as IDirectoryCache;
-                if (dc == null)
+                if (dc == null || dc.IsInvalid)
                     return "";
                 var sb = new StringBuilder();
                 foreach (var item in dc)

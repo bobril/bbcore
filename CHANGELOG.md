@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Allow to read @types higher than is project root.
+
 ## 0.79.1
 
 ### Fixed
