@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Allow to use template strings.
+
 ## 0.79.2
 
 ### Fixed
