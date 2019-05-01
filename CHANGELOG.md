@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Support for importing css files.
+
 ### Fixed
 
 - Allow to use template strings.

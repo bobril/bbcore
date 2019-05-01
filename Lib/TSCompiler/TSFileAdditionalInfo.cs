@@ -14,6 +14,7 @@ namespace Lib.TSCompiler
         TypeScript,
         JavaScript,
         Css,
+        ImportedCss,
         Resource,
         JavaScriptAsset,
         Json

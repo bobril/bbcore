@@ -142,11 +142,18 @@ namespace Lib.TSCompiler
             if (dc == null || dc.IsInvalid)
                 return null;
             var isJson = false;
+            var isCss = false;
             IFileCache item = null;
             if (fileOnly.EndsWith(".json"))
             {
                 item = dc.TryGetChild(fileOnly) as IFileCache;
                 if (item != null) isJson = true;
+            }
+
+            if (fileOnly.EndsWith(".css"))
+            {
+                item = dc.TryGetChild(fileOnly) as IFileCache;
+                if (item != null) isCss = true;
             }
 
             if (item == null)
@@ -165,7 +172,22 @@ namespace Lib.TSCompiler
             parentInfo.ImportingLocal(itemInfo);
             itemInfo.MyProject = moduleInfo ?? parentInfo.MyProject;
             if (importedAsModule != null) itemInfo.ImportedAsModule = importedAsModule;
-            if (IsDts(item.FullPath))
+            if (isCss)
+            {
+                itemInfo.Type = FileCompilationType.ImportedCss;
+                AddSource(itemInfo);
+                CheckAdd(item.FullPath);
+                var po = itemInfo.MyProject.ProjectOptions;
+                if (!po.BundleCss)
+                {
+                    if (itemInfo.OutputUrl == null)
+                        itemInfo.OutputUrl =
+                            po.AllocateName(PathUtils.Subtract(item.FullPath,
+                                po.Owner.Owner.FullPath));
+                }
+                return null;
+            }
+            if (IsDts(item.Name))
             {
                 if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
                 {
@@ -439,6 +461,7 @@ namespace Lib.TSCompiler
                             _result.RecompiledLast.Add(fileAdditional);
                             break;
                         case FileCompilationType.Css:
+                        case FileCompilationType.ImportedCss:
                             fileAdditional.StartCompiling();
                             if (!_owner.ProjectOptions.BundleCss)
                             {
@@ -499,7 +522,7 @@ namespace Lib.TSCompiler
                 TSFileAdditionalInfo.Get(_owner.DiskCache.TryGetItem(fileName) as IFileCache, _owner.DiskCache);
             if (assetFileInfo == null)
                 return fileName;
-            if (_owner.ProjectOptions.BundleCss && assetFileInfo.Type == FileCompilationType.Css)
+            if (_owner.ProjectOptions.BundleCss && (assetFileInfo.Type == FileCompilationType.Css || assetFileInfo.Type == FileCompilationType.ImportedCss))
             {
                 return fileName;
             }

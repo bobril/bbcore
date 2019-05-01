@@ -77,6 +77,14 @@ namespace Lib.TSCompiler
                     sourceMapBuilder.AddText("Object.assign(exports, " + source.Value.Owner.Utf8Content + ");");
                     sourceMapBuilder.AddText("});");
                 }
+                else if (source.Value.Type == FileCompilationType.ImportedCss)
+                {
+                    sourceMapBuilder.AddText(
+                        $"R('{PathUtils.Subtract(source.Key, root)}',function(){{}});");
+                    string cssPath = source.Value.OutputUrl;
+                    FilesContent.GetOrAddValueRef(cssPath) = source.Value.Output;
+                    cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
+                }
                 else if (source.Value.Type == FileCompilationType.Css)
                 {
                     string cssPath = source.Value.OutputUrl;

@@ -54,7 +54,7 @@ namespace Lib.TSCompiler
                     _jsFilesContent[source.Key.ToLowerInvariant() + ".js"] =
                         "Object.assign(module.exports, " + source.Value.Owner.Utf8Content + ");";
                 }
-                else if (source.Value.Type == FileCompilationType.Css)
+                else if (source.Value.Type == FileCompilationType.Css || source.Value.Type == FileCompilationType.ImportedCss)
                 {
                     cssToBundle.Add(new SourceFromPair(source.Value.Owner.Utf8Content, source.Value.Owner.FullPath));
                 }
@@ -177,9 +177,15 @@ namespace Lib.TSCompiler
 
         public string ReadContent(string name)
         {
-            if (_jsFilesContent.TryGetValue(name.ToLowerInvariant(), out var content))
+            var normalized = name.ToLowerInvariant();
+            if (_jsFilesContent.TryGetValue(normalized, out var content))
             {
                 return content;
+            }
+
+            if (normalized.EndsWith(".css.js"))
+            {
+                return "";
             }
 
             throw new System.InvalidOperationException("Bundler Read Content does not exists:" + name);
