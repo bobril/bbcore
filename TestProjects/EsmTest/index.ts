@@ -14,25 +14,33 @@ import * as monaco from "monaco-editor";
       return "./html.worker.js";
     }
     if (label === "typescript" || label === "javascript") {
-      return "./ts.worker.js";
+      return b.asset("./ts.worker.js");
     }
-    return "./editor.worker.js";
+    return b.asset("./editor.worker.js");
   }
 };
 
 class MonacoApp extends b.Component<{}> {
   render() {
-    return b.styledDiv([]);
+    return b.styledDiv([], { width: "100%", height: "100%" });
   }
   postInitDom() {
     monaco.editor.create(b.getDomNode(this.me) as HTMLElement, {
       value: ["function x() {", '\tconsole.log("Hello world!");', "}"].join(
         "\n"
       ),
-      language: "javascript"
+      language: "typescript"
     });
   }
 }
 
 const app = b.component(MonacoApp);
+
+b.selectorStyleDef("html, body", {
+  width: "100%",
+  height: "100%",
+  padding: 0,
+  margin: 0
+});
+
 b.init(() => app());
