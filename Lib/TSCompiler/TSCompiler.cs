@@ -72,7 +72,7 @@ namespace Lib.TSCompiler
             public string readFile(string fileName, bool sourceCode)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
+                var file = _owner.DiskCache.TryGetItemPreferReal(fullPath) as IFileCache;
                 if (file == null)
                 {
                     return null;

@@ -23,6 +23,9 @@ namespace Lib.TSCompiler
         public IDiskCache DiskCache { get; set; }
         public IDirectoryCache Owner { get; set; }
         public string MainFile { get; set; }
+
+        public bool MainFileNeedsToBeCompiled;
+
         public string TypesMainFile { get; set; }
         public ProjectOptions ProjectOptions { get; set; }
         public int PackageJsonChangeId { get; set; }
@@ -38,11 +41,12 @@ namespace Lib.TSCompiler
         public void LoadProjectJson(bool forbiddenDependencyUpdate)
         {
             DiskCache.UpdateIfNeeded(Owner);
-            var packageJsonFile = Owner.TryGetChild("package.json");
+            var packageJsonFile = Owner.TryGetChild("package.json", true);
             if (packageJsonFile is IFileCache cache)
             {
                 var newChangeId = cache.ChangeId;
                 if (newChangeId == PackageJsonChangeId) return;
+                MainFileNeedsToBeCompiled = false;
                 JObject parsed;
                 try
                 {
@@ -63,6 +67,20 @@ namespace Lib.TSCompiler
                         MainFile = PathUtils.Normalize(mainV.ToString());
                         TypesMainFile = null;
                         hasMain = true;
+                    }
+                }
+
+                if (parsed.GetValue("module") is JValue moduleV)
+                {
+                    MainFile = PathUtils.Normalize(moduleV.ToString());
+                    MainFileNeedsToBeCompiled = true;
+                    if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
+                    {
+                        hasMain = true;
+                        if (parsed.GetValue("typings") is JValue mainV)
+                        {
+                            TypesMainFile = PathUtils.Normalize(mainV.ToString());
+                        }
                     }
                 }
 
@@ -109,7 +127,7 @@ namespace Lib.TSCompiler
                 if (TypesMainFile == null)
                 {
                     TypesMainFile = PathUtils.ChangeExtension(MainFile, "d.ts");
-                    if (!this.IsRootProject &&
+                    if (!IsRootProject &&
                         !(DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, TypesMainFile)) is IFileCache))
                     {
                         var typesDts = PathUtils.Join(Owner.FullPath, $"../@types/{Owner.Name}/index.d.ts");
@@ -253,7 +271,7 @@ namespace Lib.TSCompiler
                 buildCtx.ShowTsVersion(trueTSVersion);
                 ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(trueTSVersion,
                     JsonConvert.SerializeObject(positionIndependentOptions, Formatting.None,
-                        new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore}));
+                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
                 var wasSomeError = false;
                 do
                 {
@@ -334,7 +352,7 @@ namespace Lib.TSCompiler
             if (projectDir.TryGetChildNoVirtual("node_modules") is IDirectoryCache pnmdir)
             {
                 diskCache.UpdateIfNeeded(pnmdir);
-                if (pnmdir.TryGetChild(moduleName) is IDirectoryCache mdir)
+                if (pnmdir.TryGetChild(moduleName, true) is IDirectoryCache mdir)
                 {
                     diskName = mdir.Name;
                     diskCache.UpdateIfNeeded(mdir);
@@ -347,7 +365,7 @@ namespace Lib.TSCompiler
                 if (diskCache.TryGetItem(PathUtils.Join(dir.FullPath, "node_modules")) is IDirectoryCache nmdir)
                 {
                     diskCache.UpdateIfNeeded(nmdir);
-                    if (nmdir.TryGetChild(moduleName) is IDirectoryCache mdir)
+                    if (nmdir.TryGetChild(moduleName, true) is IDirectoryCache mdir)
                     {
                         diskName = mdir.Name;
                         diskCache.UpdateIfNeeded(mdir);
@@ -370,14 +388,17 @@ namespace Lib.TSCompiler
             {
                 var proj = new TSProject
                 {
-                    Owner = dir, DiskCache = diskCache, Logger = logger, Name = diskName,
+                    Owner = dir,
+                    DiskCache = diskCache,
+                    Logger = logger,
+                    Name = diskName,
                     ProjectOptions = new ProjectOptions()
                 };
                 proj.ProjectOptions.Owner = proj;
                 dir.AdditionalInfo = proj;
             }
 
-            return (TSProject) dir.AdditionalInfo;
+            return (TSProject)dir.AdditionalInfo;
         }
 
         public void FillOutputByAssets(RefDictionary<string, object> filesContent, HashSet<string> takenNames,
@@ -400,8 +421,8 @@ namespace Lib.TSCompiler
                     takenNames.Add(asset.Value);
                     filesContent.GetOrAddValueRef(asset.Value) = new Lazy<object>(() =>
                     {
-                        var res = ((IFileCache) item).ByteContent;
-                        ((IFileCache) item).FreeCache();
+                        var res = ((IFileCache)item).ByteContent;
+                        ((IFileCache)item).FreeCache();
                         return res;
                     });
                 }
@@ -433,8 +454,8 @@ namespace Lib.TSCompiler
                     filesContent.GetOrAddValueRef(outPathFileName) =
                         new Lazy<object>(() =>
                         {
-                            var res = ((IFileCache) child).ByteContent;
-                            ((IFileCache) child).FreeCache();
+                            var res = ((IFileCache)child).ByteContent;
+                            ((IFileCache)child).FreeCache();
                             return res;
                         });
                 }

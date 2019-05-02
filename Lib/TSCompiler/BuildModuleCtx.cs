@@ -93,7 +93,7 @@ namespace Lib.TSCompiler
             var fileOnly = fullPath.Substring(dirPath.Length + 1);
             var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
             var wasChange = dc.WriteVirtualFile(fileOnly, data);
-            var output = dc.TryGetChild(fileOnly) as IFileCache;
+            var output = dc.TryGetChild(fileOnly, false) as IFileCache;
             var outputInfo = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
             var sourceName2 = fullPath.Substring(0, fullPath.Length - ".d.ts".Length) + ".ts";
             TSFileAdditionalInfo source = null;
@@ -110,7 +110,9 @@ namespace Lib.TSCompiler
             return ResolveLocalImport(name, parentInfo, null, null);
         }
 
-        static readonly string[] ExtensionsToImport = {".tsx", ".ts", ".d.ts", ".jsx", ".js"};
+        static readonly string[] ExtensionsToImport = { ".tsx", ".ts", ".d.ts", ".jsx", ".js" };
+        static readonly string[] ExtensionsToImportFromJs = { ".jsx", ".js", "" };
+
         internal OrderedHashSet<string> ToCheck;
         internal OrderedHashSet<string> ToCompile;
         internal OrderedHashSet<string> ToCompileDts;
@@ -138,7 +140,7 @@ namespace Lib.TSCompiler
         {
             var dirPath = PathUtils.Parent(name);
             var fileOnly = name.Substring(dirPath.Length + 1);
-            var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
+            var dc = _owner.DiskCache.TryGetItemPreferReal(dirPath) as IDirectoryCache;
             if (dc == null || dc.IsInvalid)
                 return null;
             var isJson = false;
@@ -146,22 +148,27 @@ namespace Lib.TSCompiler
             IFileCache item = null;
             if (fileOnly.EndsWith(".json"))
             {
-                item = dc.TryGetChild(fileOnly) as IFileCache;
+                item = dc.TryGetChild(fileOnly, true) as IFileCache;
                 if (item != null) isJson = true;
             }
 
             if (fileOnly.EndsWith(".css"))
             {
-                item = dc.TryGetChild(fileOnly) as IFileCache;
+                item = dc.TryGetChild(fileOnly, true) as IFileCache;
                 if (item != null) isCss = true;
             }
 
+
             if (item == null)
-                item = ExtensionsToImport.Select(ext => dc.TryGetChild(fileOnly + ext) as IFileCache)
+                item = (parentInfo.Type == FileCompilationType.EsmJavaScript ? ExtensionsToImportFromJs : ExtensionsToImport).Select(ext => dc.TryGetChild(fileOnly + ext, true) as IFileCache)
                     .FirstOrDefault(i => i != null && !i.IsInvalid);
 
             if (item == null)
+            {
+                parentInfo.ReportDiag(false, -15, "Cannot resolve import '" + name + "'", 0, 0, 0, 0);
                 return null;
+            }
+
             if (item.FullPath.Substring(0, name.Length) != name)
             {
                 parentInfo.ReportDiag(false, -1,
@@ -189,7 +196,7 @@ namespace Lib.TSCompiler
             }
             if (IsDts(item.Name))
             {
-                if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
+                if (dc.TryGetChild(fileOnly + ".js", true) is IFileCache jsItem)
                 {
                     var jsItemInfo = TSFileAdditionalInfo.Get(jsItem, _owner.DiskCache);
                     jsItemInfo.Type = FileCompilationType.JavaScript;
@@ -202,7 +209,7 @@ namespace Lib.TSCompiler
             }
             else
             {
-                itemInfo.Type = isJson ? FileCompilationType.Json : FileCompilationType.TypeScript;
+                itemInfo.Type = isJson ? FileCompilationType.Json : parentInfo.Type;
                 AddSource(itemInfo);
             }
 
@@ -256,7 +263,7 @@ namespace Lib.TSCompiler
                         if (fbc.DtsOutput != null)
                         {
                             wasChange = dc.WriteVirtualFile(fileOnly, fbc.DtsOutput);
-                            var output = dc.TryGetChild(fileOnly) as IFileCache;
+                            var output = dc.TryGetChild(fileOnly, false) as IFileCache;
                             itemInfo.DtsLink = TSFileAdditionalInfo.Get(output, _owner.DiskCache);
                             itemInfo.DtsLink.MyProject = itemInfo.MyProject;
                         }
@@ -310,7 +317,7 @@ namespace Lib.TSCompiler
 
             parentInfo.ImportingModule(moduleInfo);
             var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
-            var item = _owner.DiskCache.TryGetItem(mainFile) as IFileCache;
+            var item = _owner.DiskCache.TryGetItemPreferReal(mainFile) as IFileCache;
             if (item == null || item.IsInvalid)
             {
                 return null;
@@ -341,8 +348,18 @@ namespace Lib.TSCompiler
             AddSource(itemInfo);
             if (!IsTsOrTsx(mainFile))
             {
-                itemInfo.Type = FileCompilationType.JavaScript;
-                CheckAdd(mainFile);
+                if (moduleInfo.MainFileNeedsToBeCompiled)
+                {
+                    itemInfo.Type = FileCompilationType.EsmJavaScript;
+                    CheckAdd(mainFile);
+                    TryToResolveFromBuildCache(itemInfo);
+                }
+                else
+                {
+                    itemInfo.Type = FileCompilationType.JavaScript;
+                    CheckAdd(mainFile);
+                }
+
                 if (moduleInfo.TypesMainFile != null)
                 {
                     var dtsPath = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.TypesMainFile);
@@ -396,7 +413,7 @@ namespace Lib.TSCompiler
                 {
                     return AutodetectAndAddDependency(
                         PathUtils.Join(_owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)),
-                        _owner.Owner.TryGetChild("package.json") as IFileCache).OutputUrl;
+                        _owner.Owner.TryGetChild("package.json", true) as IFileCache).OutputUrl;
                 });
         }
 
@@ -404,9 +421,9 @@ namespace Lib.TSCompiler
         {
             while (CrawledCount < ToCheck.Count)
             {
-                var fileName = ToCheck[(int) CrawledCount];
+                var fileName = ToCheck[(int)CrawledCount];
                 CrawledCount++;
-                var fileCache = _owner.DiskCache.TryGetItem(fileName) as IFileCache;
+                var fileCache = _owner.DiskCache.TryGetItemPreferReal(fileName) as IFileCache;
                 if (fileCache == null || fileCache.IsInvalid)
                 {
                     if (_buildCtx.Verbose)
@@ -433,6 +450,16 @@ namespace Lib.TSCompiler
 
                             fileAdditional.Output = null;
                             fileAdditional.MapLink = null;
+                            break;
+                        case FileCompilationType.EsmJavaScript:
+                            if (fileAdditional.MyProject == null)
+                            {
+                                fileAdditional.MyProject = _owner;
+                            }
+
+                            fileAdditional.Output = null;
+                            fileAdditional.MapLink = null;
+                            ToCompile.Add(fileName);
                             break;
                         case FileCompilationType.TypeScript:
                             if (fileAdditional.MyProject == null)
@@ -547,7 +574,7 @@ namespace Lib.TSCompiler
             {
                 if (a.name == null)
                     return;
-                res[a.nodeId] = new object[] {0, ToOutputUrl(a.name)};
+                res[a.nodeId] = new object[] { 0, ToOutputUrl(a.name) };
             });
             if (_owner.ProjectOptions.SpriteGeneration)
             {
@@ -588,7 +615,7 @@ namespace Lib.TSCompiler
                 {
                     if (s.name == null)
                         return;
-                    res[s.nodeId] = new object[] {0, ToOutputUrl(s.name)};
+                    res[s.nodeId] = new object[] { 0, ToOutputUrl(s.name) };
                 });
             }
 
@@ -613,7 +640,7 @@ namespace Lib.TSCompiler
                         return;
                     var id = trdb.AddToDB(t.message, t.hint, t.withParams);
                     var finalId = trdb.MapId(id);
-                    res[t.nodeId] = new object[] {2, 0, finalId, 1 + (t.withParams ? 1 : 0)};
+                    res[t.nodeId] = new object[] { 2, 0, finalId, 1 + (t.withParams ? 1 : 0) };
                 });
             }
 
@@ -631,17 +658,17 @@ namespace Lib.TSCompiler
                         {
                             if (s.name != null)
                             {
-                                res[s.nodeId] = new object[] {2, 2 + skipEx, styleDefPrefix + s.name, 3 + skipEx};
+                                res[s.nodeId] = new object[] { 2, 2 + skipEx, styleDefPrefix + s.name, 3 + skipEx };
                             }
                             else
                             {
-                                res[s.nodeId] = new object[] {3, 2 + skipEx, styleDefPrefix, 3 + skipEx};
+                                res[s.nodeId] = new object[] { 3, 2 + skipEx, styleDefPrefix, 3 + skipEx };
                             }
                         }
                     }
                     else
                     {
-                        res[s.nodeId] = new object[] {1, 2 + skipEx};
+                        res[s.nodeId] = new object[] { 1, 2 + skipEx };
                     }
                 }
                 else
@@ -649,7 +676,7 @@ namespace Lib.TSCompiler
                     if (styleDefNaming == StyleDefNamingStyle.AddNames && s.name != null)
                     {
                         // TODO: heuristicaly improve s.name by filename
-                        res[s.nodeId] = new object[] {2, 2 + skipEx, styleDefPrefix + s.name, 3 + skipEx};
+                        res[s.nodeId] = new object[] { 2, 2 + skipEx, styleDefPrefix + s.name, 3 + skipEx };
                     }
                 }
             });

@@ -5,7 +5,7 @@ namespace Lib.DiskCache
 {
     public interface IDirectoryCache: IItemCache, IEnumerable<IItemCache>
     {
-        IItemCache TryGetChild(string name);
+        IItemCache TryGetChild(string name, bool preferReal);
         IItemCache TryGetChildNoVirtual(string name);
         bool IsFake { get; set; }
         bool IsWatcherRoot { get; set; }

@@ -175,7 +175,7 @@ namespace Lib.TSCompiler
             if (Example == "")
             {
                 var item =
-                    (Owner.Owner.TryGetChild("example.ts") ?? Owner.Owner.TryGetChild("example.tsx")) as IFileCache;
+                    (Owner.Owner.TryGetChild("example.ts", true) ?? Owner.Owner.TryGetChild("example.tsx", true)) as IFileCache;
                 if (item != null)
                 {
                     res.Add(item.FullPath);
@@ -430,7 +430,7 @@ namespace Lib.TSCompiler
             {
                 if (f.TakenFromBuildCache)
                     continue;
-                if (f.Type != FileCompilationType.TypeScript || (f.SourceInfo != null && !f.SourceInfo.IsEmpty) ||
+                if ((f.Type != FileCompilationType.TypeScript && f.Type != FileCompilationType.EsmJavaScript) || (f.SourceInfo != null && !f.SourceInfo.IsEmpty) ||
                     f.LocalImports.Count != 0 || f.ModuleImports.Count != 0) continue;
                 if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ConfigurationBuildCacheId) !=
                     null) continue;

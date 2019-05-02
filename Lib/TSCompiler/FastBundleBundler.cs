@@ -61,6 +61,7 @@ namespace Lib.TSCompiler
             foreach (var source in BuildResult.Path2FileInfo)
             {
                 if (source.Value.Type == FileCompilationType.TypeScript ||
+                    source.Value.Type == FileCompilationType.EsmJavaScript ||
                     source.Value.Type == FileCompilationType.JavaScript)
                 {
                     if (source.Value.Output == null)

@@ -5,6 +5,7 @@
 ### Added
 
 - Support for importing css files.
+- Support for esm modules.
 
 ### Fixed
 

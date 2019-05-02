@@ -41,6 +41,7 @@ namespace Lib.TSCompiler
             foreach (var source in BuildResult.Path2FileInfo)
             {
                 if (source.Value.Type == FileCompilationType.TypeScript ||
+                    source.Value.Type == FileCompilationType.EsmJavaScript ||
                     source.Value.Type == FileCompilationType.JavaScript ||
                     source.Value.Type == FileCompilationType.JavaScriptAsset)
                 {
@@ -181,6 +182,15 @@ namespace Lib.TSCompiler
             if (_jsFilesContent.TryGetValue(normalized, out var content))
             {
                 return content;
+            }
+
+            if (normalized.EndsWith(".js.js"))
+            {
+                normalized = normalized.Substring(0, normalized.Length - 3);
+                if (_jsFilesContent.TryGetValue(normalized, out content))
+                {
+                    return content;
+                }
             }
 
             if (normalized.EndsWith(".css.js"))

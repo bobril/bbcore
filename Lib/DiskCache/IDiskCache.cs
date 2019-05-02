@@ -6,6 +6,7 @@ namespace Lib.DiskCache
     public interface IDiskCache
     {
         IItemCache TryGetItem(string path);
+        IItemCache TryGetItemPreferReal(string path);
         IDirectoryCache Root();
         Func<(IDirectoryCache parent, string name, bool isDir), bool> DefaultFilter { get; set; }
         IFsAbstraction FsAbstraction { get; }

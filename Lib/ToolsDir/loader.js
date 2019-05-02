@@ -20,7 +20,11 @@ R.r = function(name, parent) {
         }
         p = newParts.join("/");
     }
-    var m = R.m[p.toLowerCase()];
+    var lp = p.toLowerCase();
+    var m = R.m[lp];
+    if (m == null && /\.js$/.test(lp)) {
+        m = R.m[lp.substr(0, lp.length-3)];
+    }
     if (m == null) throw new Error("Module " + name + " in " + (parent || "/") + " not registered");
     if (m.exports !== undefined) return m.exports;
     m.exports = {};

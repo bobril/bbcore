@@ -12,6 +12,7 @@ namespace Lib.TSCompiler
     {
         Unknown,
         TypeScript,
+        EsmJavaScript,
         JavaScript,
         Css,
         ImportedCss,
