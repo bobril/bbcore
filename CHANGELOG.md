@@ -5,7 +5,7 @@
 ### Added
 
 - Support for importing css files.
-- Support for esm modules.
+- Support for esm modules. (means importing monaco-editor "works")
 
 ### Fixed
 
