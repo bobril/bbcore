@@ -21,16 +21,21 @@ import * as monaco from "monaco-editor";
 };
 
 class MonacoApp extends b.Component<{}> {
+  editor: monaco.editor.IStandaloneCodeEditor;
+
   render() {
     return b.styledDiv([], { width: "100%", height: "100%" });
   }
   postInitDom() {
-    monaco.editor.create(b.getDomNode(this.me) as HTMLElement, {
+    this.editor = monaco.editor.create(b.getDomNode(this.me) as HTMLElement, {
       value: ["function x() {", '\tconsole.log("Hello world!");', "}"].join(
         "\n"
       ),
       language: "typescript"
     });
+  }
+  postUpdateDomEverytime() {
+    this.editor.layout();
   }
 }
 
