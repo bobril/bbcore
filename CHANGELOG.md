@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.80.0
+
 ### Added
 
 - Support for importing css files.
