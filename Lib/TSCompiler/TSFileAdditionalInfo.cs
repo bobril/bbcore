@@ -117,6 +117,7 @@ namespace Lib.TSCompiler
             var idx = 0;
             if (idx >= lastCompilationCacheIds.Length || lastCompilationCacheIds[idx++] != Owner.ChangeId)
                 return false;
+            if (Type == FileCompilationType.EsmJavaScript) return true;
             HashSet<object> visited = null;
             if (_moduleImports != null)
                 foreach (var module in _moduleImports)
@@ -198,6 +199,7 @@ namespace Lib.TSCompiler
         {
             var result = new List<int>();
             result.Add(Owner.ChangeId);
+            if (Type == FileCompilationType.EsmJavaScript) return result.ToArray();
             HashSet<object> visited = null;
             if (_moduleImports != null)
                 foreach (var module in _moduleImports)
