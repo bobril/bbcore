@@ -14,9 +14,9 @@ import * as monaco from "monaco-editor";
       return "./html.worker.js";
     }
     if (label === "typescript" || label === "javascript") {
-      return b.asset("./ts.worker.js");
+      return b.asset("resource:./ts.worker.js");
     }
-    return b.asset("./editor.worker.js");
+    return b.asset("resource:./editor.worker.js");
   }
 };
 

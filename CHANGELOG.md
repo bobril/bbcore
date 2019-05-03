@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+- b.asset now forces external resource handling when parameter is prefixed by `resource:` like:
+
+```ts
+console.log(b.asset("resource:./src/file.js")); // depending on mode prints "src/file.js" or "b.js"
+```
+
 ## 0.80.0
 
 ### Added

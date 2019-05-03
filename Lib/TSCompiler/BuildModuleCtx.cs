@@ -574,7 +574,12 @@ namespace Lib.TSCompiler
             {
                 if (a.name == null)
                     return;
-                res[a.nodeId] = new object[] { 0, ToOutputUrl(a.name) };
+                var assetName = a.name;
+                if (assetName.StartsWith("resource:"))
+                {
+                    assetName = assetName.Substring(9);
+                }
+                res[a.nodeId] = new object[] { 0, ToOutputUrl(assetName) };
             });
             if (_owner.ProjectOptions.SpriteGeneration)
             {
@@ -694,7 +699,12 @@ namespace Lib.TSCompiler
             {
                 if (a.name == null)
                     return;
-                CheckAdd(a.name);
+                var assetName = a.name;
+                if (assetName.StartsWith("resource:"))
+                {
+                    assetName = assetName.Substring(9);
+                }
+                CheckAdd(assetName);
             });
             if (!_owner.ProjectOptions.SpriteGeneration)
             {
@@ -717,7 +727,15 @@ namespace Lib.TSCompiler
                 if (a.name == null)
                     return;
                 var assetName = a.name;
-                AutodetectAndAddDependency(assetName, fileInfo.Owner);
+                if (assetName.StartsWith("resource:"))
+                {
+                    assetName = assetName.Substring(9);
+                    AutodetectAndAddDependency(assetName, fileInfo.Owner, true);
+                }
+                else
+                {
+                    AutodetectAndAddDependency(assetName, fileInfo.Owner);
+                }
             });
             if (_owner.ProjectOptions.SpriteGeneration)
             {
@@ -737,7 +755,7 @@ namespace Lib.TSCompiler
         }
 
         public static TSFileAdditionalInfo AutodetectAndAddDependencyCore(ProjectOptions projectOptions, string depName,
-            IFileCache usedFrom)
+            IFileCache usedFrom, bool forceResource = false)
         {
             var dc = projectOptions.Owner.DiskCache;
             var extension = PathUtils.GetExtension(depName);
@@ -763,7 +781,7 @@ namespace Lib.TSCompiler
             }
 
             var assetFileInfo = TSFileAdditionalInfo.Get(depFile, dc);
-            if (projectOptions.BundleCss && extension == "css")
+            if (projectOptions.BundleCss && extension == "css" && !forceResource)
             {
                 assetFileInfo.Type = FileCompilationType.Css;
                 return assetFileInfo;
@@ -773,6 +791,13 @@ namespace Lib.TSCompiler
                 assetFileInfo.OutputUrl =
                     projectOptions.AllocateName(PathUtils.Subtract(depFile.FullPath,
                         projectOptions.Owner.Owner.FullPath));
+
+            if (forceResource)
+            {
+                assetFileInfo.Type = FileCompilationType.Resource;
+                return assetFileInfo;
+            }
+
             switch (extension)
             {
                 case "css":
@@ -789,9 +814,9 @@ namespace Lib.TSCompiler
             return assetFileInfo;
         }
 
-        TSFileAdditionalInfo AutodetectAndAddDependency(string depName, IFileCache usedFrom)
+        TSFileAdditionalInfo AutodetectAndAddDependency(string depName, IFileCache usedFrom, bool forceResource = false)
         {
-            var fai = AutodetectAndAddDependencyCore(_owner.ProjectOptions, depName, usedFrom);
+            var fai = AutodetectAndAddDependencyCore(_owner.ProjectOptions, depName, usedFrom, forceResource);
             if (fai != null)
                 CheckAdd(depName);
             return fai;
