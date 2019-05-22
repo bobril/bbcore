@@ -10,6 +10,8 @@
 console.log(b.asset("resource:./src/file.js")); // depending on mode prints "src/file.js" or "b.js"
 ```
 
+- b.asset("node_modules/x") now also search parent node_modules directories
+
 ## 0.80.0
 
 ### Added

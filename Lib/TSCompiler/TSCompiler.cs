@@ -209,7 +209,14 @@ namespace Lib.TSCompiler
                 }
                 if (text.StartsWith("node_modules/"))
                 {
-                    return PathUtils.Join(_owner._currentDirectory, text);
+                    var dir = _owner._currentDirectory;
+                    while (dir != null)
+                    {
+                        var fp = PathUtils.Join(dir, text);
+                        if (!(_owner.DiskCache.TryGetItem(fp)?.IsInvalid ?? true)) return fp;
+                        dir = PathUtils.Parent(dir);
+                    }
+                    return text;
                 }
                 return PathUtils.Join(PathUtils.Parent(sourcePath), text);
             }

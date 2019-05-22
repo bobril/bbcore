@@ -764,9 +764,6 @@ namespace Lib.TSCompiler
             {
                 if (usedFrom != null)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("In " + usedFrom.FullPath + " missing dependency " + depName);
-                    Console.ForegroundColor = ConsoleColor.Gray;
                     TSFileAdditionalInfo.Get(usedFrom, dc)
                         .ReportDiag(true, -3, "Missing dependency " + depName, 0, 0, 0, 0);
                 }
