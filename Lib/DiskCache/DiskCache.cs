@@ -659,84 +659,92 @@ namespace Lib.DiskCache
             if (!directory.IsStale)
                 return;
             directory.IsFake = false;
-            var fsis = FsAbstraction.GetDirectoryContent(directory.FullPath);
-            var origItems = ((DirectoryCache)directory).Items;
-            var items = origItems;
-
-            var names = new HashSet<string>();
-            foreach (var fsi in fsis)
+            var fullPath = directory.FullPath;
+            if (!FsAbstraction.GetItemInfo(fullPath).Exists)
             {
-                if (!directory.Filter((directory, fsi.Name, fsi.IsDirectory)))
-                    continue;
-                names.Add(fsi.Name);
+                directory.IsInvalid = true;
             }
-
-            for (var i = items.Count - 1; i >= 0; i--)
+            else
             {
-                var item = origItems[i];
-                if (!names.Contains(item.Name))
+                var fsis = FsAbstraction.GetDirectoryContent(fullPath);
+                var origItems = ((DirectoryCache)directory).Items;
+                var items = origItems;
+
+                var names = new HashSet<string>();
+                foreach (var fsi in fsis)
                 {
-                    item.IsInvalid = true;
-                    if (items == origItems)
-                        items = origItems.ToList();
-                    items.RemoveAt(i);
+                    if (!directory.Filter((directory, fsi.Name, fsi.IsDirectory)))
+                        continue;
+                    names.Add(fsi.Name);
                 }
-            }
 
-            if (items != origItems)
-            {
-                ((DirectoryCache)directory).Items = items;
-                ((DirectoryCache)directory).NoteChange();
-            }
-
-            foreach (var fsi in fsis)
-            {
-                if (!directory.Filter((directory, fsi.Name, fsi.IsDirectory)))
-                    continue;
-                var item = directory.TryGetChildNoVirtual(fsi.Name);
-                if (item == null)
+                for (var i = items.Count - 1; i >= 0; i--)
                 {
-                    if (fsi.IsDirectory)
+                    var item = origItems[i];
+                    if (!names.Contains(item.Name))
                     {
-                        AddDirectoryFromName(fsi.Name, directory, fsi.IsLink, false);
-                    }
-                    else
-                    {
-                        AddFileFromFileInfo(fsi.Name, directory, fsi);
+                        item.IsInvalid = true;
+                        if (items == origItems)
+                            items = origItems.ToList();
+                        items.RemoveAt(i);
                     }
                 }
-                else
+
+                if (items != origItems)
                 {
-                    if (fsi.IsDirectory)
+                    ((DirectoryCache)directory).Items = items;
+                    ((DirectoryCache)directory).NoteChange();
+                }
+
+                foreach (var fsi in fsis)
+                {
+                    if (!directory.Filter((directory, fsi.Name, fsi.IsDirectory)))
+                        continue;
+                    var item = directory.TryGetChildNoVirtual(fsi.Name);
+                    if (item == null)
                     {
-                        if (!item.IsDirectory)
+                        if (fsi.IsDirectory)
                         {
-                            item.IsInvalid = true;
-                            ((DirectoryCache)directory).Remove(item);
                             AddDirectoryFromName(fsi.Name, directory, fsi.IsLink, false);
                         }
                         else
                         {
-                            ((IDirectoryCache)item).IsLink = fsi.IsLink;
+                            AddFileFromFileInfo(fsi.Name, directory, fsi);
                         }
                     }
                     else
                     {
-                        if (item.IsFile)
+                        if (fsi.IsDirectory)
                         {
-                            var fitem = (FileCache)item;
-                            if (fitem.Modified != fsi.LastWriteTimeUtc || fitem.Length != fsi.Length)
+                            if (!item.IsDirectory)
                             {
-                                fitem.Modified = fsi.LastWriteTimeUtc;
-                                fitem.Length = fsi.Length;
-                                fitem.IsStale = false;
+                                item.IsInvalid = true;
+                                ((DirectoryCache)directory).Remove(item);
+                                AddDirectoryFromName(fsi.Name, directory, fsi.IsLink, false);
+                            }
+                            else
+                            {
+                                ((IDirectoryCache)item).IsLink = fsi.IsLink;
                             }
                         }
                         else
                         {
-                            item.IsInvalid = true;
-                            ((DirectoryCache)directory).Remove(item);
-                            AddFileFromFileInfo(fsi.Name, directory, fsi);
+                            if (item.IsFile)
+                            {
+                                var fitem = (FileCache)item;
+                                if (fitem.Modified != fsi.LastWriteTimeUtc || fitem.Length != fsi.Length)
+                                {
+                                    fitem.Modified = fsi.LastWriteTimeUtc;
+                                    fitem.Length = fsi.Length;
+                                    fitem.IsStale = false;
+                                }
+                            }
+                            else
+                            {
+                                item.IsInvalid = true;
+                                ((DirectoryCache)directory).Remove(item);
+                                AddFileFromFileInfo(fsi.Name, directory, fsi);
+                            }
                         }
                     }
                 }

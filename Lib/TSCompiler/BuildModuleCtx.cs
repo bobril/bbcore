@@ -556,7 +556,7 @@ namespace Lib.TSCompiler
 
             if (assetFileInfo.OutputUrl == null)
                 assetFileInfo.OutputUrl =
-                    _owner.ProjectOptions.AllocateName(PathUtils.Subtract(fileName, _owner.Owner.FullPath));
+                    _owner.ProjectOptions.AllocateName(PathUtils.Subtract(fileName, _owner.ProjectOptions.CommonSourceDirectory));
             return assetFileInfo.OutputUrl;
         }
 
@@ -787,7 +787,7 @@ namespace Lib.TSCompiler
             if (assetFileInfo.OutputUrl == null)
                 assetFileInfo.OutputUrl =
                     projectOptions.AllocateName(PathUtils.Subtract(depFile.FullPath,
-                        projectOptions.Owner.Owner.FullPath));
+                        projectOptions.CommonSourceDirectory));
 
             if (forceResource)
             {

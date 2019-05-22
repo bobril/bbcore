@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 3.4.5
+
 ### Added
 
 - b.asset now forces external resource handling when parameter is prefixed by `resource:` like:
@@ -11,6 +15,10 @@ console.log(b.asset("resource:./src/file.js")); // depending on mode prints "src
 ```
 
 - b.asset("node_modules/x") now also search parent node_modules directories
+
+### Fixed
+
+- Asset resolving now correctly relative to common build directory and not to project directory
 
 ## 0.80.0
 
