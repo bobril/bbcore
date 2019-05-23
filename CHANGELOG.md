@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.81.1
+
 ### Fixed
 
 - Crash when exists d.ts file together with ts(x) file.
