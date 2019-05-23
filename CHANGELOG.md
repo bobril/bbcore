@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Crash when exists d.ts file together with ts(x) file.
+
 ## 0.81.0
 
 ### Changed

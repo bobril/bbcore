@@ -61,7 +61,7 @@ namespace Lib.TSCompiler
             public int? getChangeId(string fileName)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
+                var file = _owner.Ctx.TryGetFile(fullPath);
                 if (file == null)
                 {
                     return null;
@@ -69,25 +69,12 @@ namespace Lib.TSCompiler
                 return file.ChangeId;
             }
 
+#pragma warning disable IDE0060 // Remove unused parameter
             public string readFile(string fileName, bool sourceCode)
+#pragma warning restore IDE0060 // Remove unused parameter
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner.DiskCache.TryGetItemPreferReal(fullPath) as IFileCache;
-                if (file == null)
-                {
-                    return null;
-                }
-                GetFileInfo(file).StartCompiling();
-                /*
-                var testPath = PathUtils.Subtract(fullPath, _owner._currentDirectory);
-                if (!testPath.StartsWith("../"))
-                {
-                    testPath = PathUtils.Join("../DUMP_PATH", testPath);
-                    Directory.CreateDirectory(PathUtils.Parent(testPath));
-                    File.WriteAllText(testPath, file.Utf8Content);
-                }
-                //*/
-                return file.Utf8Content;
+                return _owner.Ctx.readFile(fullPath);
             }
 
             public bool writeFile(string fileName, string data)
@@ -106,7 +93,7 @@ namespace Lib.TSCompiler
             public bool fileExists(string fileName)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
+                var file = _owner.Ctx.TryGetFile(fullPath);
                 return file != null && !file.IsInvalid;
             }
 
@@ -162,7 +149,7 @@ namespace Lib.TSCompiler
             TSFileAdditionalInfo GetFileInfo(string name)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, name);
-                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
+                var file = _owner.Ctx.TryGetFile(fullPath);
                 return GetFileInfo(file);
             }
 
@@ -213,7 +200,7 @@ namespace Lib.TSCompiler
                     while (dir != null)
                     {
                         var fp = PathUtils.Join(dir, text);
-                        if (!(_owner.DiskCache.TryGetItem(fp)?.IsInvalid ?? true)) return fp;
+                        if (!(_owner.DiskCache.TryGetItemPreferReal(fp)?.IsInvalid ?? true)) return fp;
                         dir = PathUtils.Parent(dir);
                     }
                     return text;
@@ -224,7 +211,7 @@ namespace Lib.TSCompiler
             public void reportSourceInfo(string fileName, string info)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
+                var file = _owner.Ctx.TryGetFile(fullPath);
                 if (file == null)
                 {
                     return;

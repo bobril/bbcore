@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Lib.DiskCache;
+﻿using Lib.DiskCache;
+using System.Collections.Generic;
 
 namespace Lib.TSCompiler
 {
@@ -11,5 +11,7 @@ namespace Lib.TSCompiler
         void reportDiag(bool isError, int code, string text, string fileName, int startLine, int startCharacter, int endLine, int endCharacter);
         IDictionary<long,object[]> getPreEmitTransformations(string fileName);
         void AddDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo);
+        string readFile(string fullPath);
+        IFileCache TryGetFile(string fullPath);
     }
 }

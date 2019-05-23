@@ -5,6 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Lib.Composition;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace Lib.TSCompiler
 {
@@ -15,6 +16,7 @@ namespace Lib.TSCompiler
         public BuildResult _result;
         public int OutputedJsFiles;
         public int OutputedDtsFiles;
+        Dictionary<string, IFileCache> _readFileMap = new Dictionary<string, IFileCache>();
 
         public void AddSource(TSFileAdditionalInfo file)
         {
@@ -31,6 +33,7 @@ namespace Lib.TSCompiler
             {
                 fileInfo.RememberLastCompilationCacheIds();
             }
+            _readFileMap.Clear();
         }
 
         public void writeFile(string fileName, string data)
@@ -379,7 +382,9 @@ namespace Lib.TSCompiler
             TryToResolveFromBuildCache(itemInfo);
             if (itemInfo.DtsLink != null && !ToCompile.Contains(item.FullPath) && !itemInfo.NeedsCompilation())
             {
-                return itemInfo.DtsLink.Owner.FullPath;
+                var fp = itemInfo.DtsLink.Owner.FullPath;
+                _readFileMap[fp] = itemInfo.DtsLink.Owner;
+                return fp;
             }
 
             return item.FullPath;
@@ -817,6 +822,33 @@ namespace Lib.TSCompiler
             if (fai != null)
                 CheckAdd(depName);
             return fai;
+        }
+
+        public string readFile(string fullPath)
+        {
+            var file = TryGetFile(fullPath);
+            if (file == null)
+            {
+                return null;
+            }
+            TSFileAdditionalInfo.Get(file, _owner.DiskCache).StartCompiling();
+            /*
+            var testPath = PathUtils.Subtract(fullPath, _buildCtx.TSCompilerOptions.baseUrl);
+            if (!testPath.StartsWith("../"))
+            {
+                testPath = PathUtils.Join("../DUMP_PATH", testPath);
+                Directory.CreateDirectory(PathUtils.Parent(testPath));
+                File.WriteAllText(testPath, file.Utf8Content);
+            }
+            //*/
+            return file.Utf8Content;
+        }
+
+        public IFileCache TryGetFile(string fullPath)
+        {
+            _readFileMap.TryGetValue(fullPath, out var file);
+            if (file == null) file = _owner.DiskCache.TryGetItemPreferReal(fullPath) as IFileCache;
+            return file;
         }
     }
 }
