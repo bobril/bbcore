@@ -792,7 +792,7 @@ namespace Lib.TSCompiler
             if (assetFileInfo.OutputUrl == null)
                 assetFileInfo.OutputUrl =
                     projectOptions.AllocateName(PathUtils.Subtract(depFile.FullPath,
-                        projectOptions.CommonSourceDirectory));
+                        projectOptions.CommonSourceDirectory ?? projectOptions.Owner.Owner.FullPath));
 
             if (forceResource)
             {

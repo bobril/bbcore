@@ -43,6 +43,7 @@ namespace Lib.TSCompiler
         public bool NoHtml;
         public bool WarningsAsErrors;
         public string JasmineVersion;
+        public List<string> TestDirectories;
 
         public string HtmlHeadExpanded;
         public string MainFile;
@@ -88,11 +89,11 @@ namespace Lib.TSCompiler
 
         string ToShortName(int idx)
         {
-            Span<char> res = stackalloc char[8];
+            Span<char> res = new char[8];
             var resLen = 0;
             do
             {
-                res[resLen++] = (char) (97 + idx % 26);
+                res[resLen++] = (char)(97 + idx % 26);
                 idx = idx / 26 - 1;
             } while (idx >= 0);
 
@@ -187,7 +188,7 @@ namespace Lib.TSCompiler
                 var item = Owner.DiskCache.TryGetItem(examplePath);
                 if (item is IDirectoryCache)
                 {
-                    foreach (var child in (IDirectoryCache) item)
+                    foreach (var child in (IDirectoryCache)item)
                     {
                         if (!(child is IFileCache))
                             continue;
@@ -227,7 +228,21 @@ namespace Lib.TSCompiler
             if (TestSourcesRegExp != null)
             {
                 var fileRegex = new Regex(TestSourcesRegExp, RegexOptions.CultureInvariant);
-                RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);
+                if (TestDirectories != null)
+                {
+                    foreach (var dir in TestDirectories)
+                    {
+                        var dc = Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, dir)) as IDirectoryCache;
+                        if (dc != null && !dc.IsInvalid)
+                        {
+                            RecursiveFileSearch(dc, Owner.DiskCache, fileRegex, res);
+                        }
+                    }
+                }
+                else
+                {
+                    RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);
+                }
             }
 
             res.Sort(StringComparer.Ordinal);
@@ -302,8 +317,8 @@ namespace Lib.TSCompiler
                     filesContent.GetOrAddValueRef(outPathFileName) =
                         new Lazy<object>(() =>
                         {
-                            var res = ((IFileCache) child).ByteContent;
-                            ((IFileCache) child).FreeCache();
+                            var res = ((IFileCache)child).ByteContent;
+                            ((IFileCache)child).FreeCache();
                             return res;
                         });
                 }
@@ -376,10 +391,10 @@ namespace Lib.TSCompiler
             var newConfigObject = new TSConfigJson
             {
                 compilerOptions = GetDefaultTSCompilerOptions()
-                    .Merge(new TSCompilerOptions {allowJs = false})
+                    .Merge(new TSCompilerOptions { allowJs = false })
                     .Merge(CompilerOptions),
                 files = new List<string>(2 + IncludeSources?.Length ?? 0),
-                include = new List<string> {"**/*"}
+                include = new List<string> { "**/*" }
             };
             if (BobrilJsx)
             {
@@ -502,6 +517,7 @@ namespace Lib.TSCompiler
             WarningsAsErrors = bobrilSection?["warningsAsErrors"]?.Value<bool>() ?? false;
             ObsoleteMessage = GetStringProperty(bobrilSection, "obsolete", null);
             AllowModuleDeepImport = bobrilSection?["allowModuleDeepImport"]?.Value<bool>() ?? false;
+            TestDirectories = bobrilSection?["testDirectories"]?.Values<string>().ToList();
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)
@@ -522,7 +538,7 @@ namespace Lib.TSCompiler
         static string GetStringProperty(JObject obj, string name, string @default)
         {
             if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
-                return (string) value;
+                return (string)value;
             return @default;
         }
 

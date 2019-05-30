@@ -259,7 +259,7 @@ namespace Lib.TSCompiler
             var sourceInfo = fileInfo.SourceInfo;
             if (sourceInfo == null || sourceInfo.assets == null)
                 return new List<string>();
-            return sourceInfo.assets.Select(i => i.name).Where(i => i.EndsWith(".js")).ToList();
+            return sourceInfo.assets.Select(i => i.name).Where(i => !i.StartsWith("resource:") && i.EndsWith(".js")).ToList();
         }
     }
 }
