@@ -44,6 +44,7 @@ namespace Lib.TSCompiler
         public bool NoHtml;
         public bool WarningsAsErrors;
         public string JasmineVersion;
+        public List<string> TestDirectories;
 
         public string HtmlHeadExpanded;
         public string MainFile;
@@ -165,7 +166,21 @@ namespace Lib.TSCompiler
             if (TestSourcesRegExp != null)
             {
                 var fileRegex = new Regex(TestSourcesRegExp, RegexOptions.CultureInvariant);
-                RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);
+                if (TestDirectories != null)
+                {
+                    foreach (var dir in TestDirectories)
+                    {
+                        var dc = Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, dir)) as IDirectoryCache;
+                        if (dc != null && !dc.IsInvalid)
+                        {
+                            RecursiveFileSearch(dc, Owner.DiskCache, fileRegex, res);
+                        }
+                    }
+                }
+                else
+                {
+                    RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);
+                }
             }
 
             res.Sort(StringComparer.Ordinal);
@@ -417,6 +432,7 @@ namespace Lib.TSCompiler
                 pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
             WarningsAsErrors = bobrilSection?["warningsAsErrors"]?.Value<bool>() ?? false;
             ObsoleteMessage = GetStringProperty(bobrilSection, "obsolete", null);
+            TestDirectories = bobrilSection?["testDirectories"]?.Values<string>().ToList();
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)

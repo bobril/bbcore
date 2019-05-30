@@ -18,7 +18,10 @@
         },
         "assets": {
             "assets-app/light.png": "distName.png"
-        }
+        },
+        "testDirectories": [
+            "spec"
+        ]
     },
     "author": "Bobris",
     "license": "MIT",

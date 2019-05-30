@@ -75,6 +75,14 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 
 # Package.json - bobril section features
 
+## Where to find test sources
+
+By default it finds all tests in project directory (it always skips `node_modules`). By defining this, you can limit or add additional directories where to search.
+
+    "bobril": {
+        "testDirectories": [ "spec" ]
+    }
+
 ## Warnings As Errors
 
     "bobril": {
