@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.82.0
+
 ### Added
 
 - Package.json bobril section `testDirectories` can define array of relative paths to search test files
