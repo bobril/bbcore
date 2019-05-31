@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.82.1
+
 ### Fixed
 
 - Don't show missing dependency from files which are in node_module directory.
