@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- assets can now define target dir as empty without crash
+- recompilation in interactive mode in some cases missed to include some modules to bundle
+
 ## 0.82.1
 
 ### Fixed

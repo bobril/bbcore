@@ -213,6 +213,8 @@ namespace Lib.TSCompiler
             else
             {
                 itemInfo.Type = isJson ? FileCompilationType.Json : parentInfo.Type;
+                if (itemInfo.Type == FileCompilationType.Unknown)
+                    itemInfo.Type = FileCompilationType.TypeScript;
                 AddSource(itemInfo);
             }
 
