@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.82.2
+
 ### Fixed
 
 - assets can now define target dir as empty without crash
