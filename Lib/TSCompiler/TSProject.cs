@@ -409,10 +409,14 @@ namespace Lib.TSCompiler
             {
                 var fromModules = asset.Key.StartsWith("node_modules/");
                 var fullPath = fromModules ? nodeModulesDir : Owner.FullPath;
-                if (projectOptions.Owner.UsedDependencies == null)
-                    projectOptions.Owner.UsedDependencies = new HashSet<string>();
-                projectOptions.Owner.UsedDependencies.Add(PathUtils.EnumParts(asset.Key).Skip(1).Select(a => a.name)
-                    .First());
+                if (fromModules)
+                {
+                    if (projectOptions.Owner.UsedDependencies == null)
+                        projectOptions.Owner.UsedDependencies = new HashSet<string>();
+                    projectOptions.Owner.UsedDependencies.Add(PathUtils.EnumParts(asset.Key).Skip(1).Select(a => a.name)
+                        .First());
+                }
+
                 var item = DiskCache.TryGetItem(PathUtils.Join(fullPath, asset.Key));
                 if (item == null || item.IsInvalid)
                     continue;
@@ -441,7 +445,8 @@ namespace Lib.TSCompiler
             {
                 if (child.IsInvalid)
                     continue;
-                var outPathFileName = destDir + "/" + child.Name;
+                
+                var outPathFileName = (destDir == "")?child.Name:PathUtils.Join(destDir,child.Name);
                 takenNames.Add(outPathFileName);
                 if (child is IDirectoryCache)
                 {
