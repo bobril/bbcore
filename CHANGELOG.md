@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Missing import from d.ts should be silently skipped.
+
 ## 0.82.2
 
 ### Fixed

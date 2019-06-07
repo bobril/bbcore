@@ -168,6 +168,10 @@ namespace Lib.TSCompiler
 
             if (item == null)
             {
+                if (IsDts(parentInfo.Owner.Name))
+                {
+                    return null;
+                }
                 parentInfo.ReportDiag(false, -15, "Cannot resolve import '" + name + "'", 0, 0, 0, 0);
                 return null;
             }
