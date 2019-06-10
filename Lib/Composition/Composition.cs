@@ -823,6 +823,11 @@ namespace Lib.Composition
 
         async Task Handler(HttpContext context)
         {
+            // In Google Chrome 75 running from Docker have in same cases problem with loading of resources.
+            // There was resources with pending status which is never resolved (but data was actually send by Kestrel
+            // server to Chrome client)
+            // Task.Delay(10) is workaround fix which should prevent Chrome pending status 
+            await Task.Delay(10);
             var path = context.Request.Path;
             if (path == "/")
                 path = "/index.html";

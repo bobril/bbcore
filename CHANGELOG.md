@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- added workaround fix which should resolve pending status when loading resources in Chrome 75 running in Docker
+
 ### Added
 
 - Package.json bobril section `testDirectories` can define array of relative paths to search test files
