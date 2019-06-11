@@ -17,7 +17,7 @@ namespace Lib.Utils
             IsUnixFs = Path.DirectorySeparatorChar == '/';
         }
 
-        public static string Normalize(string path)
+        public static string Normalize(string path, bool removeParentFolderDirective = true)
         {
             if (path.Length >= 2 && path[1] == ':' && char.IsLower(path[0]))
             {
@@ -25,7 +25,7 @@ namespace Lib.Utils
             }
             path = path.Replace('\\', '/').Replace("/./", "/");
             int idx;
-            while ((idx = path.IndexOf("/../")) > 0)
+            while ((idx = path.IndexOf("/../")) > 0 && removeParentFolderDirective)
             {
                 int diridx = path.LastIndexOf('/', idx - 1);
                 if (diridx >= 0)
@@ -137,11 +137,11 @@ namespace Lib.Utils
             return (dir, path.Substring(dir.Length + 1));
         }
 
-        public static string Join(string dir1, string dir2)
+        public static string Join(string dir1, string dir2, bool removeParentFolderDirective = true)
         {
             if (Path.IsPathRooted(dir2))
                 return dir2;
-            return Normalize(dir1 + "/" + dir2);
+            return Normalize(dir1 + "/" + dir2, removeParentFolderDirective);
         }
 
         public static bool IsChildOf(string child, string parent)
