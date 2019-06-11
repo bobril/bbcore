@@ -125,12 +125,17 @@ namespace Lib.Utils.CommandLineParser.Parser
             return returnArgs;
         }
 
+        public void ShowCommandHelp()
+        {
+            Console.WriteLine($"{(Words?.Length > 0 ? $"{string.Join("|", Words)}  " : "")}({Description})");
+        }
+
         /// <summary>
         /// Show help
         /// </summary>
         public void ShowHelp()
         {
-            Console.WriteLine($"{(Words?.Length > 0 ? $"{string.Join("|", Words)}  " : "")}({Description})");
+            ShowCommandHelp();
             Console.WriteLine($"  {string.Join("|", CommandLineParser.HelpWords)}  (help)");
             Arguments.ForEach(a => a.ShowHelp());
             var subCommands = SubCommands;

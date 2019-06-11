@@ -43,6 +43,11 @@ namespace Lib.Utils.CommandLineParser.Parser
             else
             {
                 // command without parameters
+                if (firstArg != null && HelpWords.Contains(firstArg))
+                {
+                    ShowCommandsHelp(commands);
+                }
+
                 command = commands?.FirstOrDefault(c => c.Words == null || c.Words.Contains(""));
             }
 
@@ -67,5 +72,15 @@ namespace Lib.Utils.CommandLineParser.Parser
                 Console.WriteLine();
             });
         }
+        internal static void ShowCommandsHelp(List<CommandLineCommand> commands)
+        {
+            Console.WriteLine("Available commands (write command name before -? to see details):");
+            commands.ForEach(command =>
+            {
+                command.ShowCommandHelp();
+            });
+            Console.WriteLine();
+        }
+
     }
 }
