@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- allowing to override autodetection of localization from package.json. And define directory for translations.
+
 ### Fixed
 
 - added workaround fix which should resolve pending status when loading resources in Chrome 75 running in Docker
