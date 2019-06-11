@@ -493,7 +493,7 @@ namespace Lib.Composition
 
         static string PathToTranslations(ProjectOptions proj)
         {
-            return PathUtils.Join(proj.Owner.Owner.FullPath, "translations");
+            return PathUtils.Join(proj.Owner.Owner.FullPath, proj.PathToTranslations ?? "translations");
         }
 
         void RunTest(TestCommand testCommand)
