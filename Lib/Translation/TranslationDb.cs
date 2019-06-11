@@ -44,7 +44,7 @@ namespace Lib.Translation
                     if (!info.Name.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase)) continue;
                     if (info.Name.StartsWith("package.", StringComparison.InvariantCultureIgnoreCase)) continue;
                     if (info.Name.StartsWith("tsconfig.", StringComparison.InvariantCultureIgnoreCase)) continue;
-                    LoadLangDb(PathUtils.Join(dir, info.Name, false));
+                    LoadLangDb(PathUtils.Join(dir, info.Name));
                 }
             }
             catch

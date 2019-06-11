@@ -466,7 +466,7 @@ namespace Lib.TSCompiler
             TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
             if (specificPath == null)
             {
-                TranslationDb.LoadLangDbs(PathToTranslations ?? PathUtils.Join(Owner.Owner.FullPath, "translations"));
+                TranslationDb.LoadLangDbs(PathUtils.Join(Owner.Owner.FullPath, PathToTranslations ?? "translations"));
             }
             else TranslationDb.LoadLangDb(specificPath);
         }
@@ -519,7 +519,7 @@ namespace Lib.TSCompiler
             ObsoleteMessage = GetStringProperty(bobrilSection, "obsolete", null);
             AllowModuleDeepImport = bobrilSection?["allowModuleDeepImport"]?.Value<bool>() ?? false;
             TestDirectories = bobrilSection?["testDirectories"]?.Values<string>().ToList();
-            Localize = bobrilSection?["forceTranslationGeneration"]?.Value<bool>() ?? Localize;
+            Localize = bobrilSection?["localize"]?.Value<bool>() ?? Localize;
             PathToTranslations = GetStringProperty(bobrilSection, "pathToTranslations", null);
         }
 
