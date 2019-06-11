@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.83.0
+
 ### Added
 
 - allowing to override autodetection of localization from package.json. And define directory for translations.
