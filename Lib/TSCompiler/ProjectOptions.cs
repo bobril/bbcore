@@ -45,6 +45,7 @@ namespace Lib.TSCompiler
         public bool WarningsAsErrors;
         public string JasmineVersion;
         public List<string> TestDirectories;
+        public string PathToTranslations;
 
         public string HtmlHeadExpanded;
         public string MainFile;
@@ -381,7 +382,7 @@ namespace Lib.TSCompiler
             TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
             if (specificPath == null)
             {
-                TranslationDb.LoadLangDbs(PathUtils.Join(Owner.Owner.FullPath, "translations"));
+                TranslationDb.LoadLangDbs(PathUtils.Join(Owner.Owner.FullPath, PathToTranslations ?? "translations"));
             }
             else TranslationDb.LoadLangDb(specificPath);
         }
@@ -433,6 +434,8 @@ namespace Lib.TSCompiler
             WarningsAsErrors = bobrilSection?["warningsAsErrors"]?.Value<bool>() ?? false;
             ObsoleteMessage = GetStringProperty(bobrilSection, "obsolete", null);
             TestDirectories = bobrilSection?["testDirectories"]?.Values<string>().ToList();
+            Localize = bobrilSection?["localize"]?.Value<bool>() ?? Localize;
+            PathToTranslations = GetStringProperty(bobrilSection, "pathToTranslations", null);
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)
