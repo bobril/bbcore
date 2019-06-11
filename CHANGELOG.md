@@ -9,6 +9,7 @@
 ### Fixed
 
 - added workaround fix which should resolve pending status when loading resources in Chrome 75 running in Docker
+- global help also lists all commands.
 
 ### Added
 
