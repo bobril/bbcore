@@ -23,7 +23,7 @@ namespace Lib.Composition
             get => _project; internal set => _project = value;
         }
 
-        public string ProjectDir { get => _project.Owner.Owner.FullPath; }
+        public string ProjectDir { get => _project.CommonSourceDirectory; }
 
         public Func<TestServerState> TestServerStateGetter => _testServerStateGetter;
 
