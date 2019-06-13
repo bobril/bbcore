@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fixed focusing error in VSCode when common source root is not project root.
+
 ## 0.83.0
 
 ### Added
