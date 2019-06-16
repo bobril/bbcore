@@ -25,9 +25,6 @@
     "target": "es5",
     "resolveJsonModule": true
   },
-  "files": [
-    "node_modules/bobril/jsx.d.ts"
-  ],
   "include": [
     "**/*"
   ]

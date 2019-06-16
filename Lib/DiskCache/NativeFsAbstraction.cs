@@ -1,4 +1,5 @@
 ﻿using Lib.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -39,14 +40,15 @@ namespace Lib.DiskCache
             return res;
         }
 
-        public FsItemInfo GetItemInfo(string path)
+        public FsItemInfo GetItemInfo(ReadOnlySpan<char> path)
         {
-            var fi = new FileInfo(path);
+            var p = path.ToString();
+            var fi = new FileInfo(p);
             if (fi.Exists)
             {
                 return FsItemInfo.Existing(fi.Name, (ulong)fi.Length, fi.LastWriteTimeUtc);
             }
-            var di = new DirectoryInfo(path);
+            var di = new DirectoryInfo(p);
             if (di.Exists)
             {
                 return FsItemInfo.Directory(di.Name, (di.Attributes & FileAttributes.ReparsePoint) != 0);

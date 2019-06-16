@@ -1,4 +1,4 @@
-﻿namespace Lib.Utils
+﻿namespace Njsast.SourceMap
 {
     public class SourceCodePosition
     {
@@ -6,6 +6,4 @@
         public int Line;
         public int Col;
     }
-
-
 }

@@ -1,10 +1,11 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
+using Njsast.Utils;
 
-namespace Lib.Utils
+namespace Njsast.SourceMap
 {
     public class SourceMap
     {
@@ -22,6 +23,7 @@ namespace Lib.Utils
         public string mappings { get; set; }
 
         public const uint CacheLineSkip = 64;
+
         [JsonIgnore]
         /// cache for every multiply of CacheLineSkip output lines
         SourceMapPositionTrinity[] _searchCache;
@@ -44,7 +46,8 @@ namespace Lib.Utils
 
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+            return JsonConvert.SerializeObject(this,
+                new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
         }
 
         public static SourceMap Empty()
@@ -83,6 +86,7 @@ namespace Lib.Utils
             {
                 res.sources = res.sources.Select(s => PathUtils.Join(dir, s)).ToList();
             }
+
             return res;
         }
 
@@ -95,11 +99,13 @@ namespace Lib.Utils
                     break;
                 pos--;
             }
+
             if (pos < content.Length - 5)
             {
                 if (content.Substring(pos + 1, 3) == "//#")
                     return content.Substring(0, pos < 0 ? 0 : pos);
             }
+
             return content;
         }
 
@@ -112,6 +118,7 @@ namespace Lib.Utils
                 if (inputMappings[i] == ';')
                     outputLineCount++;
             }
+
             _searchCache = new SourceMapPositionTrinity[outputLineCount / CacheLineSkip];
             var ip = 0;
             var inSourceIndex = 0;
@@ -131,7 +138,8 @@ namespace Lib.Utils
                     outputLine++;
                     if (outputLine % CacheLineSkip == 0)
                     {
-                        _searchCache[cachePos] = new SourceMapPositionTrinity(ip, inSourceIndex, inSourceLine, inSourceCol);
+                        _searchCache[cachePos] =
+                            new SourceMapPositionTrinity(ip, inSourceIndex, inSourceLine, inSourceCol);
                         cachePos++;
                     }
                 }
@@ -141,7 +149,7 @@ namespace Lib.Utils
                 }
                 else
                 {
-                    var b = (int)SourceMapBuilder.char2int[ch];
+                    var b = (int)SourceMapBuilder.Char2Int[ch];
                     if (b == 255)
                         throw new Exception("Invalid sourceMap");
                     value += (b & 31) << shift;
@@ -167,12 +175,12 @@ namespace Lib.Utils
                                 inSourceCol += value;
                                 break;
                         }
+
                         valpos++;
                         value = shift = 0;
                     }
                 }
             }
-
         }
 
         public SourceCodePosition FindPosition(int line, int col)
@@ -181,6 +189,7 @@ namespace Lib.Utils
             {
                 BuildSearchCache();
             }
+
             var inputMappings = this.mappings;
             var outputLine = 1;
             var ip = 0;
@@ -209,6 +218,7 @@ namespace Lib.Utils
                 lastSourceLine = inSourceLine;
                 lastSourceCol = inSourceCol;
             }
+
             bool commit()
             {
                 if (outputLine > line)
@@ -217,6 +227,7 @@ namespace Lib.Utils
                 {
                     return false;
                 }
+
                 if (outputLine == line && lastOutputCol <= col && col <= inOutputCol)
                 {
                     if (lastSourceIndex < 0)
@@ -226,6 +237,7 @@ namespace Lib.Utils
                     res.Col = lastSourceCol + col - lastOutputCol;
                     return true;
                 }
+
                 if (valpos == 1)
                 {
                     lastSourceIndex = -1;
@@ -243,10 +255,12 @@ namespace Lib.Utils
                         return true;
                     }
                 }
+
                 lastOutputCol = inOutputCol;
                 valpos = 0;
                 return false;
             }
+
             while (ip < inputMappings.Length)
             {
                 var ch = inputMappings[ip++];
@@ -265,7 +279,7 @@ namespace Lib.Utils
                 }
                 else
                 {
-                    var b = (int)SourceMapBuilder.char2int[ch];
+                    var b = (int)SourceMapBuilder.Char2Int[ch];
                     if (b == 255)
                         throw new Exception("Invalid sourceMap");
                     value += (b & 31) << shift;
@@ -294,14 +308,198 @@ namespace Lib.Utils
                                 inSourceCol += value;
                                 break;
                         }
+
                         valpos++;
                         value = shift = 0;
                     }
                 }
             }
+
             commit();
             return res;
         }
     }
-}
 
+    public class SourceMapIterator
+    {
+        readonly string _content;
+        readonly string _mappings;
+        int _ip;
+        int _inOutputCol;
+        int _inSourceIndex;
+        int _inSourceLine;
+        int _inSourceCol;
+        int _lastOutputCol;
+        int _lastSourceIndex;
+        int _lastSourceLine;
+        int _lastSourceCol;
+        int _line;
+        int _col;
+        int _index;
+        bool _nextIsNewLine;
+        bool _inNoSource;
+        bool _lastNoSource;
+
+        public SourceMapIterator(string content, SourceMap sourceMap)
+        {
+            _content = content;
+            _mappings = sourceMap.mappings;
+            Reset();
+        }
+
+        void Reset()
+        {
+            _index = 0;
+            _line = 0;
+            _col = 0;
+            _ip = 0;
+            _inOutputCol = 0;
+            _inSourceIndex = 0;
+            _inSourceLine = 0;
+            _inSourceCol = 0;
+            _inNoSource = true;
+            _lastOutputCol = 0;
+            _lastSourceIndex = 0;
+            _lastSourceLine = 0;
+            _lastSourceCol = 0;
+            _lastNoSource = true;
+            _nextIsNewLine = false;
+            Next();
+        }
+
+        public void Next()
+        {
+            _index += _inOutputCol - _lastOutputCol;
+        again:
+            _lastOutputCol = _inOutputCol;
+            _lastSourceIndex = _inSourceIndex;
+            _lastSourceLine = _inSourceLine;
+            _lastSourceCol = _inSourceCol;
+            _lastNoSource = _inNoSource;
+
+            if (_nextIsNewLine)
+            {
+                _nextIsNewLine = false;
+                _inOutputCol = 0;
+                _lastOutputCol = 0;
+                _line++;
+                if (_index < _content.Length)
+                {
+                    if (_content[_index] == '\r') _index++;
+                    _index++;
+                }
+                _lastNoSource = true;
+                _inNoSource = true;
+            }
+
+            if (_ip >= _mappings.Length || _mappings[_ip] == ';')
+            {
+                _nextIsNewLine = true;
+                var newLineIndex = _index;
+                while (newLineIndex < _content.Length && _content[newLineIndex] != '\n') newLineIndex++;
+                _inOutputCol = _lastOutputCol + newLineIndex - _index;
+                if (_index < _content.Length && _inOutputCol > _lastOutputCol && _content[_index + _inOutputCol - _lastOutputCol - 1] == '\r')
+                {
+                    _inOutputCol--;
+                }
+
+                _ip++;
+                return;
+            }
+
+            var value = 0;
+            var shift = 0;
+            var valPos = 0;
+            while (_ip < _mappings.Length)
+            {
+                var ch = _mappings[_ip++];
+                if (ch == ';')
+                {
+                    _ip--;
+                    _inNoSource = valPos <= 1;
+                    if (_inOutputCol == _lastOutputCol) goto again;
+                    return;
+                }
+
+                if (ch == ',')
+                {
+                    if (valPos == 0)
+                        continue;
+                    _inNoSource = valPos <= 1;
+                    if (_inOutputCol == _lastOutputCol) goto again;
+                    return;
+                }
+
+                var b = (int)SourceMapBuilder.Char2Int[ch];
+                if (b == 255)
+                    throw new Exception("Invalid sourceMap");
+                value += (b & 31) << shift;
+                if ((b & 32) != 0)
+                {
+                    shift += 5;
+                }
+                else
+                {
+                    var shouldNegate = value & 1;
+                    value >>= 1;
+                    if (shouldNegate != 0)
+                        value = -value;
+                    switch (valPos)
+                    {
+                        case 0:
+                            _inOutputCol += value;
+                            break;
+                        case 1:
+                            _inSourceIndex += value;
+                            break;
+                        case 2:
+                            _inSourceLine += value;
+                            break;
+                        case 3:
+                            _inSourceCol += value;
+                            break;
+                    }
+
+                    valPos++;
+                    value = shift = 0;
+                }
+            }
+
+            _inNoSource = valPos <= 1;
+            if (_inOutputCol == _lastOutputCol) goto again;
+        }
+
+        public void SeekTo(int line, int col)
+        {
+            if (line < _line || line == _line && col < _col)
+            {
+                Reset();
+            }
+
+            while (line > _line)
+            {
+                if (EndOfContent) break;
+                Next();
+            }
+
+            if (line == _line)
+            {
+                while ((col > _inOutputCol) && !_nextIsNewLine)
+                {
+                    if (EndOfContent) break;
+                    Next();
+                }
+            }
+        }
+
+        public bool EndOfContent => _index >= _content.Length;
+        public int ColStart => _lastOutputCol;
+        public int ColEnd => _inOutputCol;
+        public int Line => _line;
+        public bool TillEndOfLine => _nextIsNewLine;
+        public ReadOnlySpan<char> ContentSpan => _content.AsSpan(_index, _inOutputCol - _lastOutputCol);
+        public int SourceIndex => _lastNoSource ? -1 : _lastSourceIndex;
+        public int SourceCol => _lastNoSource ? -1 : _lastSourceCol;
+        public int SourceLine => _lastNoSource ? -1 : _lastSourceLine;
+    }
+}

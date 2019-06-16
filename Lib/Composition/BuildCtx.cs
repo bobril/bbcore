@@ -26,6 +26,7 @@ namespace Lib.Composition
         public HashSet<string> Sources { get; set; }
 
         public BuildResult BuildResult { get; set; }
+        public HashSet<TSFileAdditionalInfo> ResultSet { get; set; }
 
         CancellationTokenSource _cts;
         public CancellationToken _cancelationToken;

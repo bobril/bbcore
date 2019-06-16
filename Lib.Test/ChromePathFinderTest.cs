@@ -36,7 +36,7 @@ namespace Lib.Test
             throw new NotImplementedException();
         }
 
-        public FsItemInfo GetItemInfo(string path)
+        public FsItemInfo GetItemInfo(ReadOnlySpan<char> path)
         {
             throw new NotImplementedException();
         }

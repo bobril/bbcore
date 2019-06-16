@@ -40,7 +40,7 @@ namespace Lib.Utils
             return path;
         }
 
-        public static string Parent(string path)
+        public static ReadOnlySpan<char> Parent(ReadOnlySpan<char> path)
         {
             if (path.Length == 0)
                 return null;
@@ -57,7 +57,7 @@ namespace Lib.Utils
                         p--;
                     if (p == 1)
                         return null;
-                    return path.Substring(0, p);
+                    return path.Slice(0, p);
                 }
                 if (path[p] == '/')
                     p--;
@@ -65,7 +65,7 @@ namespace Lib.Utils
                     p--;
                 if (p == 0)
                     return "/";
-                return path.Substring(0, p);
+                return path.Slice(0, p);
             }
             if (p <= 2)
                 return null;
@@ -77,9 +77,9 @@ namespace Lib.Utils
                 return null;
             if (p == 2)
             {
-                return path.Substring(0, 3);
+                return path.Slice(0, 3);
             }
-            return path.Substring(0, p);
+            return path.Slice(0, p);
         }
 
         static Regex _multiplierExtract = new Regex(@"@(\d+(?:\.\d+)?)\.(?:[^\.]+)$");
@@ -129,19 +129,29 @@ namespace Lib.Utils
             return sb.ToString();
         }
 
-        public static (string, string) SplitDirAndFile(string path)
+        internal static string GetFile(string fn)
         {
-            var dir = Parent(path);
-            if (dir == null)
-                return (null, path);
-            return (dir, path.Substring(dir.Length + 1));
+            SplitDirAndFile(fn, out var file);
+            return file.ToString();
         }
 
-        public static string Join(string dir1, string dir2)
+        public static ReadOnlySpan<char> SplitDirAndFile(ReadOnlySpan<char> path, out ReadOnlySpan<char> file)
+        {
+            var dir = Parent(path);
+            if (dir.Length == 0)
+            {
+                file = path;
+                return null;
+            }
+            file = path.Slice(dir.Length + 1);
+            return dir;
+        }
+
+        public static string Join(ReadOnlySpan<char> dir1, string dir2)
         {
             if (Path.IsPathRooted(dir2))
                 return dir2;
-            return Normalize(dir1 + "/" + dir2);
+            return Normalize(dir1.ToString() + "/" + dir2);
         }
 
         public static bool IsChildOf(string child, string parent)
@@ -179,42 +189,61 @@ namespace Lib.Utils
             return fileName.Substring(0, dotPos);
         }
 
-        public static IEnumerable<(string name, bool isDir)> EnumParts(string path)
+        public static bool EnumParts(ReadOnlySpan<char> path, ref int pos, out ReadOnlySpan<char> name, out bool isDir)
         {
-            var pos = 0;
+            if (pos < 0)
+            {
+                name = null;
+                isDir = false;
+                return false;
+            }
             var len = path.Length;
-            if (pos < len && path[pos] == '/')
-                pos++;
-            if (pos < len && path[pos] == '/')
+            if (pos == 0)
             {
-                int pos2 = path.IndexOf('/', 2);
+                if (pos < len && path[pos] == '/')
+                    pos++;
+                if (pos < len && path[pos] == '/')
+                {
+                    int pos2 = path.Slice(2).IndexOf("/");
+                    if (pos2 < 0)
+                    {
+                        name = path;
+                        isDir = true;
+                        pos = -1;
+                        return true;
+                    }
+                    name = path.Slice(2, pos2);
+                    isDir = true;
+                    pos = pos2 + 3;
+                    return true;
+                }
+            }
+            if (pos < len)
+            {
+                int pos2 = path.Slice(pos + 1).IndexOf("/");
                 if (pos2 < 0)
                 {
-                    yield return (path, true);
-                    yield break;
+                    name = path.Slice(pos);
+                    isDir = false;
+                    pos = -1;
+                    return true;
                 }
-                yield return (path.Substring(0, pos2), true);
-                pos = pos2 + 1;
+                name = path.Slice(pos, pos2 + 1);
+                isDir = true;
+                pos += pos2 + 2;
+                return true;
             }
-            while (pos < len)
-            {
-                int pos2 = path.IndexOf('/', pos + 1);
-                if (pos2 < 0)
-                {
-                    yield return (path.Substring(pos), false);
-                    yield break;
-                }
-                yield return (path.Substring(pos, pos2 - pos), true);
-                pos = pos2 + 1;
-            }
+            name = null;
+            isDir = false;
+            return false;
         }
 
-        public static string GetExtension(string path)
+        public static ReadOnlySpan<char> GetExtension(ReadOnlySpan<char> path)
         {
             var lastDotIndex = path.LastIndexOf('.');
-            if (lastDotIndex < 0)
-                return "";
-            return path.Substring(lastDotIndex + 1);
+            if (lastDotIndex < 1)
+                return ReadOnlySpan<char>.Empty;
+            return path.Slice(lastDotIndex + 1);
         }
 
         public static string PathToMimeType(string path)
@@ -267,6 +296,10 @@ namespace Lib.Utils
         public static string CommonDir(string p1, string p2)
         {
             var len = Math.Min(p1.Length, p2.Length);
+            if (len == p1.Length && (len < p2.Length && p2[len] == '/' || len == p2.Length) && p1.AsSpan().SequenceEqual(p2.AsSpan(0, len)))
+            {
+                return p1;
+            }
             var pos = 0;
 
             while (pos < len)
@@ -275,11 +308,17 @@ namespace Lib.Utils
                 var pos2 = p2.IndexOf('/', pos + 1);
                 if (pos1 < 0) pos1 = p1.Length;
                 if (pos2 < 0) pos2 = p2.Length;
-                if (pos1 != pos2 || p1.Substring(0, pos1) != p2.Substring(0, pos2))
+                if (pos1 != pos2 || !p1.AsSpan(0, pos1).SequenceEqual(p2.AsSpan(0, pos2)))
                     return p1.Substring(0, pos);
-                pos = pos1;    
+                pos = pos1;
             }
             return p1.Substring(0, pos);
+        }
+
+        internal static string DirToCreateDirectory(ReadOnlySpan<char> dir)
+        {
+            if (dir.Length == 0) return ".";
+            return dir.ToString();
         }
     }
 }

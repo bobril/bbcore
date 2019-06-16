@@ -47,10 +47,15 @@ namespace Lib.Composition
                 return new List<string> { urlLike };
             }
             var parts = ParseLocationRegexPar.Match(urlLike.Replace("()", ""));
+
             if (parts.Success)
-                return new List<string> { parts.Groups.ElementAtOrDefault(1)?.Value, parts.Groups.ElementAtOrDefault(2)?.Value, parts.Groups.ElementAtOrDefault(3)?.Value };
+            {
+                var gg = (IReadOnlyList<Group>)parts.Groups;
+                return new List<string> { gg.ElementAtOrDefault(1)?.Value, gg.ElementAtOrDefault(2)?.Value, gg.ElementAtOrDefault(3)?.Value };
+            }
             parts = ParseLocationRegex.Match(urlLike.Replace("()", ""));
-            return new List<string> { parts.Groups.ElementAtOrDefault(1)?.Value, parts.Groups.ElementAtOrDefault(2)?.Value, parts.Groups.ElementAtOrDefault(3)?.Value };
+            var g = (IReadOnlyList<Group>)parts.Groups;
+            return new List<string> { g.ElementAtOrDefault(1)?.Value, g.ElementAtOrDefault(2)?.Value, g.ElementAtOrDefault(3)?.Value };
         }
 
         static List<StackFrame> ParseV8OrIE(string stack)

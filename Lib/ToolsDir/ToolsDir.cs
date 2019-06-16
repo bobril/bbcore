@@ -185,9 +185,9 @@ namespace Lib.ToolsDir
                 packageInfo.LazyParseVersions(v => v == version, reader =>
                 {
                     var j = PackageJson.Parse(reader);
-                    var tgzName = PathUtils.SplitDirAndFile(j.Dist.Tarball).Item2;
-                    _logger.Info($"Downloading Tarball {tgzName}");
-                    task = npmr.GetPackageTgz("typescript", tgzName);
+                    PathUtils.SplitDirAndFile(j.Dist.Tarball, out var tgzName);
+                    _logger.Info($"Downloading Tarball {tgzName.ToString()}");
+                    task = npmr.GetPackageTgz("typescript", tgzName.ToString());
                 });
             }
             catch (Exception)
@@ -207,7 +207,7 @@ namespace Lib.ToolsDir
                     if (name.StartsWith("package/"))
                         name = name.Substring("package/".Length);
                     var fn = PathUtils.Join(dir, name);
-                    Directory.CreateDirectory(PathUtils.Parent(fn));
+                    Directory.CreateDirectory(PathUtils.DirToCreateDirectory(PathUtils.Parent(fn)));
                     using (var targetStream = File.Create(fn))
                     {
                         var buf = new byte[4096];

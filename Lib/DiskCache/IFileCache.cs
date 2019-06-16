@@ -9,7 +9,6 @@ namespace Lib.DiskCache
         byte[] ByteContent { get; }
         byte[] HashOfContent { get; }
         string Utf8Content { get; }
-        object AdditionalInfo { get; set; }
         void FreeCache();
     }
 }

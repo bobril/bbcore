@@ -26,7 +26,7 @@ namespace Lib.AssetsPlugin
             var projDir = _cache.TryGetItem(projectDir) as IDirectoryCache;
             if (projDir == null) return false;
             _cache.UpdateIfNeeded(projDir);
-            var assetsDir = projDir.TryGetChildNoVirtual(_assetsDirName) as IDirectoryCache;
+            var assetsDir = projDir.TryGetChild(_assetsDirName) as IDirectoryCache;
             if (assetsDir == null) return false;
             var srcPath = PathUtils.Join(projectDir, _srcDirName);
 

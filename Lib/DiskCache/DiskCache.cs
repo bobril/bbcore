@@ -38,7 +38,6 @@ namespace Lib.DiskCache
                     if (!_isInvalid && value)
                     {
                         foreach (var i in Items) i.IsInvalid = true;
-                        foreach (var i in VirtualFiles) i.IsInvalid = true;
                     }
 
                     var wasChange = _isInvalid != value;
@@ -88,7 +87,7 @@ namespace Lib.DiskCache
             public bool IsVirtual => false;
 
             public List<IItemCache> Items = new List<IItemCache>();
-            public List<IFileCache> VirtualFiles = new List<IFileCache>();
+
             int _changeId;
             bool _isInvalid;
             DiskCache _owner;
@@ -114,80 +113,25 @@ namespace Lib.DiskCache
 
             public IEnumerator<IItemCache> GetEnumerator()
             {
-                return VirtualFiles.Concat(Items).GetEnumerator();
+                return Items.GetEnumerator();
             }
 
-            public IItemCache TryGetChild(string name, bool preferReal)
+            public IItemCache TryGetChild(ReadOnlySpan<char> name)
             {
-                if (preferReal)
+                foreach (var item in Items)
                 {
-                    foreach (var item in Items)
+                    if (name.SequenceEqual(item.Name))
                     {
-                        if (item.Name == name)
-                        {
-                            return item;
-                        }
-                    }
-
-                    foreach (var item in VirtualFiles)
-                    {
-                        if (item.Name == name)
-                        {
-                            return item;
-                        }
-                    }
-
-                    foreach (var item in Items)
-                    {
-                        if (item.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return item;
-                        }
-                    }
-
-                    foreach (var item in VirtualFiles)
-                    {
-                        if (item.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return item;
-                        }
+                        return item;
                     }
                 }
-                else
+                foreach (var item in Items)
                 {
-                    foreach (var item in VirtualFiles)
+                    if (name.Equals(item.Name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (item.Name == name)
-                        {
-                            return item;
-                        }
-                    }
-
-                    foreach (var item in Items)
-                    {
-                        if (item.Name == name)
-                        {
-                            return item;
-                        }
-                    }
-
-                    foreach (var item in VirtualFiles)
-                    {
-                        if (item.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return item;
-                        }
-                    }
-
-                    foreach (var item in Items)
-                    {
-                        if (item.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return item;
-                        }
+                        return item;
                     }
                 }
-
                 return null;
             }
 
@@ -210,41 +154,6 @@ namespace Lib.DiskCache
                 var newItems = Items.ToList();
                 newItems.Remove(item);
                 Items = newItems;
-            }
-
-            public bool WriteVirtualFile(string name, string data)
-            {
-                lock (_owner._lock)
-                {
-                    foreach (var item in VirtualFiles)
-                    {
-                        if (item.Name == name)
-                        {
-                            if (((VirtualFileCache)item).Utf8Content == data)
-                                return false;
-                            ((VirtualFileCache)item).SetContent(data);
-                            return true;
-                        }
-                    }
-
-                    var vf = new VirtualFileCache(this, name);
-                    vf.SetContent(data);
-                    VirtualFiles.Add(vf);
-                    return true;
-                }
-            }
-
-            public IItemCache TryGetChildNoVirtual(string name)
-            {
-                foreach (var item in Items)
-                {
-                    if (item.Name == name)
-                    {
-                        return item;
-                    }
-                }
-
-                return null;
             }
         }
 
@@ -339,83 +248,6 @@ namespace Lib.DiskCache
         static byte[] CalcHash(byte[] value)
         {
             return _hashFunction.ComputeHash(value);
-        }
-
-        class VirtualFileCache : IFileCache
-        {
-            string _name;
-            string _fullName;
-            DateTime _modified;
-            int _changeId;
-            int _length;
-            string _content;
-            byte[] _hash;
-            IDirectoryCache _parent;
-
-            public VirtualFileCache(IDirectoryCache parent, string name)
-            {
-                _parent = parent;
-                _name = name;
-                _fullName = _parent.FullPath + "/" + name;
-            }
-
-            public void SetContent(string content)
-            {
-                _length = Encoding.UTF8.GetByteCount(content);
-                _content = content;
-                _hash = null;
-                _modified = DateTime.UtcNow;
-                _changeId++; // It is called always under lock
-                // don't NoteChange to parent because that's not really user modified input file
-            }
-
-            public DateTime Modified => _modified;
-
-            public ulong Length => (ulong)_length;
-
-            public byte[] ByteContent => Encoding.UTF8.GetBytes(_content);
-
-            public string Utf8Content => _content;
-
-            public object AdditionalInfo { get; set; }
-            public void FreeCache()
-            {
-            }
-
-            public string Name => _name;
-
-            public string FullPath => _fullName;
-
-            public IDirectoryCache Parent => _parent;
-
-            public int ChangeId => _changeId;
-
-            public bool IsFile => true;
-
-            public bool IsDirectory => false;
-
-            public bool IsInvalid { get; set; }
-
-            public bool IsStale
-            {
-                get => IsInvalid;
-                set => throw new InvalidOperationException();
-            }
-
-            public byte[] HashOfContent
-            {
-                get
-                {
-                    if (_hash == null)
-                    {
-                        _hash = CalcHash(ByteContent);
-                    }
-
-                    return _hash;
-                }
-            }
-
-            public bool IsVirtual => true;
         }
 
         class FileCache : IFileCache
@@ -533,7 +365,6 @@ namespace Lib.DiskCache
 
             public int ChangeId => _changeId;
 
-            public object AdditionalInfo { get; set; }
             public void FreeCache()
             {
                 _contentUtf8 = null;
@@ -560,32 +391,23 @@ namespace Lib.DiskCache
                     return _contentHash;
                 }
             }
-
-            public bool IsVirtual => false;
         }
 
-        public IItemCache TryGetItem(string path)
+        public IItemCache TryGetItem(ReadOnlySpan<char> path)
         {
             lock (_lock)
             {
-                return TryGetItemNoLock(path, false);
+                return TryGetItemNoLock(path);
             }
         }
 
-        public IItemCache TryGetItemPreferReal(string path)
-        {
-            lock (_lock)
-            {
-                return TryGetItemNoLock(path, true);
-            }
-        }
-
-        IItemCache TryGetItemNoLock(string path, bool preferReal)
+        IItemCache TryGetItemNoLock(ReadOnlySpan<char> path)
         {
             var directory = _root;
-            foreach ((string name, bool isDir) in PathUtils.EnumParts(path))
+            var pos = 0;
+            while (PathUtils.EnumParts(path, ref pos, out var name, out var isDir))
             {
-                var subItem = directory.TryGetChild(name, preferReal);
+                var subItem = directory.TryGetChild(name);
                 if (isDir)
                 {
                     if (subItem == null || !subItem.IsDirectory)
@@ -595,7 +417,7 @@ namespace Lib.DiskCache
                             return null;
                         }
 
-                        subItem = AddDirectoryFromName(name, directory, false, false);
+                        subItem = AddDirectoryFromName(name.ToString(), directory, false, false);
                         ((IDirectoryCache)subItem).IsFake = true;
                     }
 
@@ -617,11 +439,11 @@ namespace Lib.DiskCache
                     if (info.Exists && !info.IsDirectory)
                     {
                         UpdateIfNeededNoLock(directory);
-                        subItem = directory.TryGetChild(name, preferReal);
+                        subItem = directory.TryGetChild(name);
                     }
                     else
                     {
-                        subItem = AddDirectoryFromName(name, directory, false, !info.Exists);
+                        subItem = AddDirectoryFromName(name.ToString(), directory, false, !info.Exists);
                         if (info.Exists)
                             CheckUpdateIfNeededNoLock((IDirectoryCache)subItem);
                     }
@@ -700,7 +522,7 @@ namespace Lib.DiskCache
                 {
                     if (!directory.Filter((directory, fsi.Name, fsi.IsDirectory)))
                         continue;
-                    var item = directory.TryGetChildNoVirtual(fsi.Name);
+                    var item = directory.TryGetChild(fsi.Name);
                     if (item == null)
                     {
                         if (fsi.IsDirectory)

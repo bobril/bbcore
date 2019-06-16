@@ -13,10 +13,8 @@ namespace Lib.TSCompiler
         void MergeCompilerOptions(ITSCompilerOptions compilerOptions);
 
         string GetTSVersion();
+        TranspileResult Transpile(string fileName, string content);
         void CreateProgram(string currentDirectory, string[] mainFiles);
         bool CompileProgram();
-        string CommonSourceDirectory { get; }
-        void GatherSourceInfo();
-        bool EmitProgram();
     }
 }

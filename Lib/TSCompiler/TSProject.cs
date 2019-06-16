@@ -10,6 +10,7 @@ using System.Linq;
 using BTDB.Collections;
 using Lib.Registry;
 using Lib.Utils.Logger;
+using Njsast;
 
 namespace Lib.TSCompiler
 {
@@ -30,18 +31,20 @@ namespace Lib.TSCompiler
         public ProjectOptions ProjectOptions { get; set; }
         public int PackageJsonChangeId { get; set; }
         public bool IsRootProject { get; set; }
-        public TSFileAdditionalInfo MainFileInfo { get; set; }
 
         public HashSet<string> Dependencies;
         public HashSet<string> DevDependencies;
         public HashSet<string> UsedDependencies;
         public Dictionary<string, string> Assets;
         public string Name;
+        internal int IterationId;
+        internal StructList<string> NegativeChecks;
+        internal bool Valid;
 
         public void LoadProjectJson(bool forbiddenDependencyUpdate)
         {
             DiskCache.UpdateIfNeeded(Owner);
-            var packageJsonFile = Owner.TryGetChild("package.json", true);
+            var packageJsonFile = Owner.TryGetChild("package.json");
             if (packageJsonFile is IFileCache cache)
             {
                 var newChangeId = cache.ChangeId;
@@ -177,6 +180,7 @@ namespace Lib.TSCompiler
             }
             else
             {
+                PackageJsonChangeId = -1;
                 MainFile = "index.js";
                 Dependencies = new HashSet<string>();
                 DevDependencies = new HashSet<string>();
@@ -235,102 +239,75 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void Build(BuildCtx buildCtx)
+        public void Build(BuildCtx buildCtx, BuildResult buildResult, int iterationId)
         {
             var buildModuleCtx = new BuildModuleCtx()
             {
                 _buildCtx = buildCtx,
                 _owner = this,
-                _result = new BuildResult(),
+                _result = buildResult,
                 ToCheck = new OrderedHashSet<string>(),
-                ToCompile = new OrderedHashSet<string>(),
-                ToCompileDts = new OrderedHashSet<string>()
+                IterationId = iterationId
             };
-            ITSCompiler compiler = null;
+            buildCtx.ResultSet = buildModuleCtx.ResultSet;
             try
             {
                 ProjectOptions.BuildCache.StartTransaction();
-                compiler = buildCtx.CompilerPool.GetTs();
-                compiler.DiskCache = DiskCache;
-                compiler.Ctx = buildModuleCtx;
-                var compOpt = buildCtx.TSCompilerOptions.Clone();
-                compOpt.rootDir = Owner.FullPath;
-                compOpt.outDir = "_virtual";
-                compOpt.module = ModuleKind.Commonjs;
-                compOpt.declaration = true;
-                if (!ProjectOptions.TypeScriptVersionOverride && DevDependencies != null &&
-                    DevDependencies.Contains("typescript"))
-                    ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
-                else
-                    ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
-                compiler.MergeCompilerOptions(compOpt);
-                compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
-                var positionIndependentOptions = compiler.CompilerOptions.Clone();
-                positionIndependentOptions.rootDir = null;
-                var trueTSVersion = compiler.GetTSVersion();
-                buildCtx.ShowTsVersion(trueTSVersion);
-                ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(trueTSVersion,
-                    JsonConvert.SerializeObject(positionIndependentOptions, Formatting.None,
-                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
-                var wasSomeError = false;
-                do
+                ITSCompiler compiler = null;
+                try
                 {
-                    buildModuleCtx.ChangedDts = false;
-                    buildModuleCtx.CrawledCount = 0;
-                    buildModuleCtx.ToCheck.Clear();
-                    buildModuleCtx.ToCompile.Clear();
-                    buildModuleCtx.ToCompileDts.Clear();
-                    buildModuleCtx.LocalResolveCache.Clear();
-                    ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
-                    foreach (var src in buildCtx.Sources)
+                    compiler = buildCtx.CompilerPool.GetTs();
+                    compiler.DiskCache = DiskCache;
+                    var compOpt = buildCtx.TSCompilerOptions.Clone();
+                    compOpt.module = ModuleKind.Commonjs;
+                    compOpt.declaration = true;
+                    compOpt.emitBOM = false;
+                    compOpt.newLine = NewLineKind.LineFeed;
+                    if (!ProjectOptions.TypeScriptVersionOverride && DevDependencies != null &&
+                        DevDependencies.Contains("typescript"))
+                        ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
+                    else
+                        ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
+                    compiler.MergeCompilerOptions(compOpt);
+                    compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
+                    var positionIndependentOptions = compiler.CompilerOptions.Clone();
+                    ProjectOptions.FinalCompilerOptions = positionIndependentOptions.Clone();
+                    var trueTSVersion = compiler.GetTSVersion();
+                    buildCtx.ShowTsVersion(trueTSVersion);
+                    ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(trueTSVersion,
+                        JsonConvert.SerializeObject(positionIndependentOptions, Formatting.None,
+                            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                }
+                finally
+                {
+                    if (compiler != null)
+                        buildCtx.CompilerPool.ReleaseTs(compiler);
+                }
+                var wasSomeError = false;
+                if (buildModuleCtx._result.CommonSourceDirectory == null)
+                {
+                    buildModuleCtx._result.CommonSourceDirectory = Owner.FullPath;
+                }
+                buildModuleCtx.CrawledCount = 0;
+                buildModuleCtx.ToCheck.Clear();
+                ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
+                foreach (var src in buildCtx.Sources)
+                {
+                    buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, src), FileCompilationType.Unknown);
+                }
+
+                if (ProjectOptions.IncludeSources != null)
+                {
+                    foreach (var src in ProjectOptions.IncludeSources)
                     {
-                        buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
+                        buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, src), FileCompilationType.Unknown);
                     }
+                }
 
-                    if (ProjectOptions.IncludeSources != null)
-                    {
-                        foreach (var src in ProjectOptions.IncludeSources)
-                        {
-                            buildModuleCtx.CheckAdd(PathUtils.Join(compOpt.rootDir, src));
-                        }
-                    }
-
-                    buildModuleCtx.Crawl();
-                    if (buildModuleCtx.ToCompile.Count != 0)
-                    {
-                        if (buildCtx.Verbose)
-                            compiler.MeasurePerformance = true;
-                        var start = DateTime.UtcNow;
-                        buildModuleCtx.OutputedJsFiles = 0;
-                        buildModuleCtx.OutputedDtsFiles = 0;
-                        compiler.CreateProgram(Owner.FullPath,
-                            buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
-                        if (!compiler.CompileProgram())
-                        {
-                            wasSomeError = true;
-                            break;
-                        }
-
-                        ProjectOptions.CurrentBuildCommonSourceDirectory = compiler.CommonSourceDirectory;
-                        ProjectOptions.CommonSourceDirectory = ProjectOptions.CommonSourceDirectory == null
-                            ? compiler.CommonSourceDirectory
-                            : PathUtils.CommonDir(ProjectOptions.CommonSourceDirectory, compiler.CommonSourceDirectory);
-                        compiler.GatherSourceInfo();
-                        if (ProjectOptions.SpriteGeneration)
-                            ProjectOptions.SpriteGenerator.ProcessNew();
-                        if (!compiler.EmitProgram())
-                        {
-                            wasSomeError = true;
-                            break;
-                        }
-
-                        buildModuleCtx.UpdateCacheIds();
-                        Logger.Info(
-                            $"Compiled Src: {buildModuleCtx.ToCompile.Count} Dts: {buildModuleCtx.ToCompileDts.Count} => Js: {buildModuleCtx.OutputedJsFiles} Dts: {buildModuleCtx.OutputedDtsFiles} in {(DateTime.UtcNow - start).TotalSeconds:F1}s");
-                        buildModuleCtx.ToCompile.Clear();
-                        buildModuleCtx.Crawl();
-                    }
-                } while (buildModuleCtx.ChangedDts || 0 < buildModuleCtx.ToCompile.Count);
+                buildModuleCtx.Crawl();
+                ProjectOptions.CommonSourceDirectory = buildModuleCtx._result.CommonSourceDirectory;
+                if (ProjectOptions.SpriteGeneration)
+                    ProjectOptions.SpriteGenerator.ProcessNew();
 
                 if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError)
                     ProjectOptions.StoreResultToBuildCache(buildModuleCtx._result);
@@ -338,8 +315,6 @@ namespace Lib.TSCompiler
             }
             finally
             {
-                if (compiler != null)
-                    buildCtx.CompilerPool.ReleaseTs(compiler);
                 ProjectOptions.BuildCache.EndTransaction();
             }
         }
@@ -349,14 +324,14 @@ namespace Lib.TSCompiler
             string moduleName,
             out string diskName)
         {
-            if (projectDir.TryGetChildNoVirtual("node_modules") is IDirectoryCache pnmdir)
+            if (projectDir.TryGetChild("node_modules") is IDirectoryCache pnmdir)
             {
                 diskCache.UpdateIfNeeded(pnmdir);
-                if (pnmdir.TryGetChild(moduleName, true) is IDirectoryCache mdir)
+                if (pnmdir.TryGetChild(moduleName) is IDirectoryCache mdir)
                 {
                     diskName = mdir.Name;
                     diskCache.UpdateIfNeeded(mdir);
-                    return Get(mdir, diskCache, logger, diskName);
+                    return Create(mdir, diskCache, logger, diskName);
                 }
             }
 
@@ -365,11 +340,11 @@ namespace Lib.TSCompiler
                 if (diskCache.TryGetItem(PathUtils.Join(dir.FullPath, "node_modules")) is IDirectoryCache nmdir)
                 {
                     diskCache.UpdateIfNeeded(nmdir);
-                    if (nmdir.TryGetChild(moduleName, true) is IDirectoryCache mdir)
+                    if (nmdir.TryGetChild(moduleName) is IDirectoryCache mdir)
                     {
                         diskName = mdir.Name;
                         diskCache.UpdateIfNeeded(mdir);
-                        return Get(mdir, diskCache, logger, diskName);
+                        return Create(mdir, diskCache, logger, diskName);
                     }
                 }
 
@@ -380,28 +355,35 @@ namespace Lib.TSCompiler
             return null;
         }
 
-        public static TSProject Get(IDirectoryCache dir, IDiskCache diskCache, ILogger logger, string diskName)
+        public static TSProject Create(IDirectoryCache dir, IDiskCache diskCache, ILogger logger, string diskName)
         {
             if (dir == null)
                 return null;
-            if (dir.AdditionalInfo == null)
+            var proj = new TSProject
             {
-                var proj = new TSProject
-                {
-                    Owner = dir,
-                    DiskCache = diskCache,
-                    Logger = logger,
-                    Name = diskName,
-                    ProjectOptions = new ProjectOptions()
-                };
-                proj.ProjectOptions.Owner = proj;
-                dir.AdditionalInfo = proj;
-            }
-
-            return (TSProject)dir.AdditionalInfo;
+                Owner = dir,
+                DiskCache = diskCache,
+                Logger = logger,
+                Name = diskName,
+                Valid = true,
+                ProjectOptions = new ProjectOptions()
+            };
+            proj.ProjectOptions.Owner = proj;
+            return proj;
         }
 
-        public void FillOutputByAssets(RefDictionary<string, object> filesContent, HashSet<string> takenNames,
+        internal static TSProject CreateInvalid(string name)
+        {
+            var proj = new TSProject
+            {
+                Name = name,
+                Valid = false
+            };
+            return proj;
+        }
+
+
+        public void FillOutputByAssets(RefDictionary<string, object> filesContent, BuildResult buildResult,
             string nodeModulesDir, ProjectOptions projectOptions)
         {
             if (Assets == null) return;
@@ -409,16 +391,22 @@ namespace Lib.TSCompiler
             {
                 var fromModules = asset.Key.StartsWith("node_modules/");
                 var fullPath = fromModules ? nodeModulesDir : Owner.FullPath;
-                if (projectOptions.Owner.UsedDependencies == null)
-                    projectOptions.Owner.UsedDependencies = new HashSet<string>();
-                projectOptions.Owner.UsedDependencies.Add(PathUtils.EnumParts(asset.Key).Skip(1).Select(a => a.name)
-                    .First());
+                if (fromModules)
+                {
+                    if (projectOptions.Owner.UsedDependencies == null)
+                        projectOptions.Owner.UsedDependencies = new HashSet<string>();
+                    var pos = 0;
+                    PathUtils.EnumParts(asset.Key, ref pos, out var name, out var isDir);
+                    PathUtils.EnumParts(asset.Key, ref pos, out name, out isDir);
+                    projectOptions.Owner.UsedDependencies.Add(name.ToString());
+
+                }
                 var item = DiskCache.TryGetItem(PathUtils.Join(fullPath, asset.Key));
                 if (item == null || item.IsInvalid)
                     continue;
                 if (item is IFileCache)
                 {
-                    takenNames.Add(asset.Value);
+                    buildResult.TakenNames.Add(asset.Value);
                     filesContent.GetOrAddValueRef(asset.Value) = new Lazy<object>(() =>
                     {
                         var res = ((IFileCache)item).ByteContent;
@@ -428,13 +416,13 @@ namespace Lib.TSCompiler
                 }
                 else
                 {
-                    RecursiveAddFilesContent(item as IDirectoryCache, filesContent, takenNames, asset.Value);
+                    RecursiveAddFilesContent(item as IDirectoryCache, filesContent, buildResult, asset.Value);
                 }
             }
         }
 
         void RecursiveAddFilesContent(IDirectoryCache directory, RefDictionary<string, object> filesContent,
-            HashSet<string> takenNames, string destDir)
+            BuildResult buildResult, string destDir)
         {
             DiskCache.UpdateIfNeeded(directory);
             foreach (var child in directory)
@@ -442,10 +430,10 @@ namespace Lib.TSCompiler
                 if (child.IsInvalid)
                     continue;
                 var outPathFileName = destDir + "/" + child.Name;
-                takenNames.Add(outPathFileName);
+                buildResult.TakenNames.Add(outPathFileName);
                 if (child is IDirectoryCache)
                 {
-                    RecursiveAddFilesContent(child as IDirectoryCache, filesContent, takenNames, outPathFileName);
+                    RecursiveAddFilesContent(child as IDirectoryCache, filesContent, buildResult, outPathFileName);
                     continue;
                 }
 

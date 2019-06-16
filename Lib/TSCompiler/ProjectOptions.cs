@@ -16,6 +16,8 @@ using Lib.Utils;
 using Lib.Utils.Logger;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Njsast.Bobril;
+using Njsast.SourceMap;
 
 namespace Lib.TSCompiler
 {
@@ -37,7 +39,6 @@ namespace Lib.TSCompiler
         public bool SpriteGeneration;
         public SpriteHolder SpriteGenerator;
         public string BundlePngUrl;
-        public string BundleJsUrl;
         public bool GenerateSpritesTs;
         public string Variant;
         public bool NoHtml;
@@ -50,7 +51,6 @@ namespace Lib.TSCompiler
         public string JasmineDts;
         public List<string> TestSources;
         public List<string> ExampleSources;
-        public string BobrilJsxDts;
         public FastBundleBundler MainProjFastBundle;
         public FastBundleBundler TestProjFastBundle;
         public bool LiveReloadEnabled;
@@ -71,8 +71,6 @@ namespace Lib.TSCompiler
         public RefDictionary<string, object> FilesContent;
         internal string NpmRegistry;
 
-        public Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();
-        public HashSet<string> TakenNames = new HashSet<string>();
         public TaskCompletionSource<Unit> LiveReloadAwaiter = new TaskCompletionSource<Unit>();
         public IBuildCache BuildCache;
         internal uint ConfigurationBuildCacheId;
@@ -86,86 +84,12 @@ namespace Lib.TSCompiler
             }
         }
 
-        string ToShortName(int idx)
-        {
-            Span<char> res = stackalloc char[8];
-            var resLen = 0;
-            do
-            {
-                res[resLen++] = (char) (97 + idx % 26);
-                idx = idx / 26 - 1;
-            } while (idx >= 0);
-
-            return new string(res.Slice(0, resLen));
-        }
-
-        public string AllocateName(string niceName)
-        {
-            if (CompressFileNames)
-            {
-                string extension = PathUtils.GetExtension(niceName);
-                if (extension != "")
-                    extension = "." + extension;
-                int idx = 0;
-                Extension2LastNameIdx.TryGetValue(extension, out idx);
-                do
-                {
-                    niceName = ToShortName(idx) + extension;
-                    idx++;
-                    if (OutputSubDir != null)
-                        niceName = $"{OutputSubDir}/{niceName}";
-                } while (TakenNames.Contains(niceName));
-
-                Extension2LastNameIdx[extension] = idx;
-            }
-            else
-            {
-                if (OutputSubDir != null)
-                    niceName = OutputSubDir + "/" + niceName;
-                int counter = 0;
-                string extension = PathUtils.GetExtension(niceName);
-                if (extension != "")
-                    extension = "." + extension;
-                string prefix = niceName.Substring(0, niceName.Length - extension.Length);
-                while (TakenNames.Contains(niceName))
-                {
-                    counter++;
-                    niceName = prefix + counter.ToString() + extension;
-                }
-            }
-
-            TakenNames.Add(niceName);
-            return niceName;
-        }
-
-        public void SpriterInitialization()
+        public void SpriterInitialization(BuildResult buildResult)
         {
             if (SpriteGeneration && SpriteGenerator == null)
             {
                 SpriteGenerator = new SpriteHolder(Owner.DiskCache);
-                BundlePngUrl = AllocateName("bundle.png");
-            }
-
-            if (BundleJsUrl == null)
-                BundleJsUrl = AllocateName("bundle.js");
-        }
-
-        public void DetectBobrilJsxDts()
-        {
-            if (!BobrilJsx)
-            {
-                BobrilJsxDts = null;
-                return;
-            }
-
-            var item = Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, "node_modules/bobril/jsx.d.ts"));
-            if (item is IFileCache)
-            {
-                BobrilJsxDts = item.FullPath;
-            }
-            else
-            {
-                BobrilJsx = false;
+                BundlePngUrl = buildResult.AllocateName("bundle.png");
             }
         }
 
@@ -175,7 +99,7 @@ namespace Lib.TSCompiler
             if (Example == "")
             {
                 var item =
-                    (Owner.Owner.TryGetChild("example.ts", true) ?? Owner.Owner.TryGetChild("example.tsx", true)) as IFileCache;
+                    (Owner.Owner.TryGetChild("example.ts") ?? Owner.Owner.TryGetChild("example.tsx")) as IFileCache;
                 if (item != null)
                 {
                     res.Add(item.FullPath);
@@ -187,7 +111,7 @@ namespace Lib.TSCompiler
                 var item = Owner.DiskCache.TryGetItem(examplePath);
                 if (item is IDirectoryCache)
                 {
-                    foreach (var child in (IDirectoryCache) item)
+                    foreach (var child in (IDirectoryCache)item)
                     {
                         if (!(child is IFileCache))
                             continue;
@@ -249,7 +173,7 @@ namespace Lib.TSCompiler
                         continue;
                     RecursiveFileSearch(item as IDirectoryCache, diskCache, fileRegex, res);
                 }
-                else if (item is IFileCache && !item.IsVirtual)
+                else if (item is IFileCache)
                 {
                     if (item.Name == "jasmine.d.ts")
                     {
@@ -265,23 +189,23 @@ namespace Lib.TSCompiler
         }
 
         public void FillOutputByAdditionalResourcesDirectory(RefDictionary<string, object> filesContent,
-            Dictionary<string, TSProject> buildResultModules)
+            Dictionary<string, TSProject> buildResultModules, BuildResult buildResult)
         {
             var nodeModulesDir = Owner.Owner.FullPath;
-            Owner.FillOutputByAssets(filesContent, TakenNames, nodeModulesDir, this);
-            FillOutputByAssetsFromModules(filesContent, buildResultModules, nodeModulesDir);
+            Owner.FillOutputByAssets(filesContent, buildResult, nodeModulesDir, this);
+            FillOutputByAssetsFromModules(filesContent, buildResultModules, nodeModulesDir, buildResult);
             if (AdditionalResourcesDirectory == null)
                 return;
             var resourcesPath = PathUtils.Join(Owner.Owner.FullPath, AdditionalResourcesDirectory);
             var item = Owner.DiskCache.TryGetItem(resourcesPath);
             if (item is IDirectoryCache)
             {
-                RecursiveFillOutputByAdditionalResourcesDirectory(item as IDirectoryCache, resourcesPath, filesContent);
+                RecursiveFillOutputByAdditionalResourcesDirectory(item as IDirectoryCache, resourcesPath, filesContent, buildResult);
             }
         }
 
         void RecursiveFillOutputByAdditionalResourcesDirectory(IDirectoryCache directoryCache, string resourcesPath,
-            RefDictionary<string, object> filesContent)
+            RefDictionary<string, object> filesContent, BuildResult buildResult)
         {
             Owner.DiskCache.UpdateIfNeeded(directoryCache);
             foreach (var child in directoryCache)
@@ -289,21 +213,21 @@ namespace Lib.TSCompiler
                 if (child is IDirectoryCache)
                 {
                     RecursiveFillOutputByAdditionalResourcesDirectory(child as IDirectoryCache, resourcesPath,
-                        filesContent);
+                        filesContent, buildResult);
                     continue;
                 }
 
                 if (child.IsInvalid)
                     continue;
                 var outPathFileName = PathUtils.Subtract(child.FullPath, resourcesPath);
-                TakenNames.Add(outPathFileName);
+                buildResult.TakenNames.Add(outPathFileName);
                 if (child is IFileCache)
                 {
                     filesContent.GetOrAddValueRef(outPathFileName) =
                         new Lazy<object>(() =>
                         {
-                            var res = ((IFileCache) child).ByteContent;
-                            ((IFileCache) child).FreeCache();
+                            var res = ((IFileCache)child).ByteContent;
+                            ((IFileCache)child).FreeCache();
                             return res;
                         });
                 }
@@ -352,11 +276,11 @@ namespace Lib.TSCompiler
         }
 
         string _originalContent;
-        internal string CurrentBuildCommonSourceDirectory;
         internal string[] IncludeSources;
         internal bool TypeScriptVersionOverride;
         public HashSet<int> IgnoreDiagnostic;
         public string ObsoleteMessage;
+        internal ITSCompilerOptions FinalCompilerOptions;
 
         public void UpdateTSConfigJson()
         {
@@ -376,15 +300,11 @@ namespace Lib.TSCompiler
             var newConfigObject = new TSConfigJson
             {
                 compilerOptions = GetDefaultTSCompilerOptions()
-                    .Merge(new TSCompilerOptions {allowJs = false})
+                    .Merge(new TSCompilerOptions { allowJs = false })
                     .Merge(CompilerOptions),
                 files = new List<string>(2 + IncludeSources?.Length ?? 0),
-                include = new List<string> {"**/*"}
+                include = new List<string> { "**/*" }
             };
-            if (BobrilJsx)
-            {
-                newConfigObject.files.Add(PathUtils.Subtract(BobrilJsxDts, Owner.Owner.FullPath));
-            }
 
             if (TestSources.Count > 0)
             {
@@ -425,21 +345,21 @@ namespace Lib.TSCompiler
 
         public void StoreResultToBuildCache(BuildResult result)
         {
+            return;
             var bc = BuildCache;
             foreach (var f in result.RecompiledLast)
             {
                 if (f.TakenFromBuildCache)
                     continue;
-                if ((f.Type != FileCompilationType.TypeScript && f.Type != FileCompilationType.EsmJavaScript) || (f.SourceInfo != null && !f.SourceInfo.IsEmpty) ||
-                    f.LocalImports.Count != 0 || f.ModuleImports.Count != 0) continue;
+                if (f.Type != FileCompilationType.TypeScript && f.Type != FileCompilationType.EsmJavaScript) continue;
                 if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ConfigurationBuildCacheId) !=
                     null) continue;
                 var fbc = new TSFileBuildCache();
                 fbc.ConfigurationId = ConfigurationBuildCacheId;
                 fbc.ContentHash = f.Owner.HashOfContent;
-                fbc.DtsOutput = f.DtsLink?.Owner.Utf8Content;
                 fbc.JsOutput = f.Output;
                 fbc.MapLink = f.MapLink;
+                fbc.SourceInfo = f.SourceInfo;
                 bc.Store(fbc);
             }
         }
@@ -522,16 +442,94 @@ namespace Lib.TSCompiler
         static string GetStringProperty(JObject obj, string name, string @default)
         {
             if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
-                return (string) value;
+                return (string)value;
             return @default;
         }
 
         public void FillOutputByAssetsFromModules(RefDictionary<string, object> filesContent,
-            Dictionary<string, TSProject> modules, string nodeModulesDir)
+            Dictionary<string, TSProject> modules, string nodeModulesDir, BuildResult buildResult)
         {
             foreach (var keyValuePair in modules)
             {
-                keyValuePair.Value.FillOutputByAssets(filesContent, TakenNames, nodeModulesDir, this);
+                keyValuePair.Value.FillOutputByAssets(filesContent, buildResult, nodeModulesDir, this);
+            }
+        }
+
+        public void ApplySourceInfo(ISourceReplacer sourceReplacer, SourceInfo sourceInfo, BuildResult buildResult)
+        {
+            if (sourceInfo == null) return;
+
+            if (sourceInfo.Assets != null)
+            {
+                foreach (var a in sourceInfo.Assets)
+                {
+                    if (a.Name == null)
+                        continue;
+                    var assetName = a.Name;
+                    if (assetName.StartsWith("resource:"))
+                    {
+                        assetName = assetName.Substring(9);
+                    }
+                    sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol, "\"" + buildResult.ToOutputUrl(assetName) + "\"");
+                }
+            }
+
+            var trdb = TranslationDb;
+            if (trdb != null && sourceInfo.Translations != null)
+            {
+                foreach (var t in sourceInfo.Translations)
+                {
+                    if (t.Message == null)
+                        continue;
+                    if (t.JustFormat)
+                        continue;
+                    var id = trdb.AddToDB(t.Message, t.Hint, t.WithParams);
+                    var finalId = trdb.MapId(id);
+                    sourceReplacer.Replace(t.StartLine, t.StartCol, t.EndLine, t.EndCol, "" + finalId);
+                    sourceReplacer.Replace(t.StartHintLine, t.StartHintCol, t.EndHintLine, t.EndHintCol, null);
+                }
+            }
+
+            var styleDefs = sourceInfo.StyleDefs;
+            if (styleDefs != null)
+            {
+                var styleDefNaming = StyleDefNaming;
+                var styleDefPrefix = PrefixStyleNames;
+                foreach (var s in styleDefs)
+                {
+                    var skipEx = s.IsEx ? 1 : 0;
+                    if (s.UserNamed)
+                    {
+                        if (styleDefNaming == StyleDefNamingStyle.AddNames ||
+                            styleDefNaming == StyleDefNamingStyle.PreserveNames)
+                        {
+                            if (styleDefPrefix.Length > 0)
+                            {
+                                if (s.Name != null)
+                                {
+                                    sourceReplacer.Replace(s.StartLine, s.StartCol, s.EndLine, s.EndCol, "\"" + styleDefPrefix + s.Name + "\"");
+                                }
+                                else
+                                {
+                                    sourceReplacer.Replace(s.StartLine, s.StartCol, s.StartLine, s.StartCol, "\"" + styleDefPrefix + "\"+(");
+                                    sourceReplacer.Replace(s.EndLine, s.EndCol, s.EndLine, s.EndCol, ")");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            sourceReplacer.Replace(s.BeforeNameLine, s.BeforeNameCol, s.EndLine, s.EndCol, "");
+                        }
+                    }
+                    else
+                    {
+                        if (styleDefNaming == StyleDefNamingStyle.AddNames && s.Name != null)
+                        {
+                            var padArgs = (s.ArgCount == 1 + (s.IsEx ? 1 : 0)) ? ",undefined" : "";
+                            sourceReplacer.Replace(s.BeforeNameLine, s.BeforeNameCol, s.EndLine, s.EndCol, padArgs + ",\"" + styleDefPrefix + s.Name + "\"");
+                        }
+                    }
+                }
             }
         }
     }

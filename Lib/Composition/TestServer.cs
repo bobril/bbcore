@@ -7,6 +7,7 @@ using System.Reactive.Linq;
 using System.Collections.Generic;
 using Lib.Utils;
 using Lib.Utils.Logger;
+using Njsast.SourceMap;
 
 namespace Lib.Composition
 {

@@ -44,12 +44,12 @@ namespace Lib.Registry
 
         public bool IsUsedInProject(IDirectoryCache projectDirectory)
         {
-            return projectDirectory.TryGetChildNoVirtual("package-lock.json") is IFileCache;
+            return projectDirectory.TryGetChild("package-lock.json") is IFileCache;
         }
 
         public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
         {
-            var lockFile = projectDirectory.TryGetChildNoVirtual("package-lock.json") as IFileCache;
+            var lockFile = projectDirectory.TryGetChild("package-lock.json") as IFileCache;
             if (lockFile == null)
             {
                 yield break;
@@ -102,11 +102,11 @@ namespace Lib.Registry
         void RunNpmWithParam(IDirectoryCache projectDirectory, string param)
         {
             var fullPath = projectDirectory.FullPath;
-            var project = TSProject.Get(projectDirectory, _diskCache, _logger, null);
+            var project = TSProject.Create(projectDirectory, _diskCache, _logger, null);
             project.LoadProjectJson(true);
             if (project.ProjectOptions.NpmRegistry != null)
             {
-                if (!(projectDirectory.TryGetChildNoVirtual(".npmrc") is IFileCache))
+                if (!(projectDirectory.TryGetChild(".npmrc") is IFileCache))
                 {
                     File.WriteAllText(PathUtils.Join(fullPath, ".npmrc"),
                         "registry =" + project.ProjectOptions.NpmRegistry);
@@ -126,7 +126,7 @@ namespace Lib.Registry
         {
             _diskCache.UpdateIfNeeded(projectDirectory);
             File.Delete(PathUtils.Join(projectDirectory.FullPath, "package-lock.json"));
-            var dirToDelete = projectDirectory.TryGetChildNoVirtual("node_modules") as IDirectoryCache;
+            var dirToDelete = projectDirectory.TryGetChild("node_modules") as IDirectoryCache;
             RecursiveDelete(dirToDelete);
             Install(projectDirectory);
         }

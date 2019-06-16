@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using BTDB.ODBLayer;
 using Lib.Utils;
+using Njsast.Bobril;
+using Njsast.SourceMap;
 
 namespace Lib.BuildCache
 {
@@ -22,6 +24,8 @@ namespace Lib.BuildCache
 
     public class TSFileBuildCache
     {
+        internal SourceInfo SourceInfo;
+
         [PrimaryKey(1)]
         public byte[] ContentHash { get; set; }
         [PrimaryKey(2)]

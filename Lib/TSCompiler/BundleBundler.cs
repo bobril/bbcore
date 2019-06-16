@@ -34,7 +34,6 @@ namespace Lib.TSCompiler
         public void Build(bool compress, bool mangle, bool beautify)
         {
             var diskCache = Project.Owner.DiskCache;
-            var root = Project.Owner.Owner.FullPath;
             _jsFilesContent = new Dictionary<string, string>();
             var cssLink = "";
             var cssToBundle = new List<SourceFromPair>();
@@ -67,16 +66,15 @@ namespace Lib.TSCompiler
 
             if (cssToBundle.Count > 0)
             {
-                string cssPath = Project.AllocateName("bundle.css");
+                string cssPath = BuildResult.AllocateName("bundle.css");
                 var cssProcessor = new CssProcessor(Project.Tools);
                 var cssContent = cssProcessor.ConcatenateAndMinifyCss(cssToBundle, (string url, string from) =>
                 {
                     var full = PathUtils.Join(from, url);
                     var fullJustName = full.Split('?', '#')[0];
-                    var fileAdditionalInfo = BuildModuleCtx.AutodetectAndAddDependencyCore(Project, fullJustName,
-                        diskCache.TryGetItem(from) as IFileCache);
-                    FilesContent.GetOrAddValueRef(fileAdditionalInfo.OutputUrl) = fileAdditionalInfo.Owner.ByteContent;
-                    return PathUtils.SplitDirAndFile(fileAdditionalInfo.OutputUrl).Item2 +
+                    BuildResult.Path2FileInfo.TryGetValue(fullJustName, out var fileAdditionalInfo);
+                    FilesContent.GetOrAddValueRef(BuildResult.ToOutputUrl(fileAdditionalInfo)) = fileAdditionalInfo.Owner.ByteContent;
+                    return PathUtils.GetFile(fileAdditionalInfo.OutputUrl) +
                            full.Substring(fullJustName.Length);
                 }).Result;
                 FilesContent.GetOrAddValueRef(cssPath) = cssContent;
@@ -113,7 +111,7 @@ namespace Lib.TSCompiler
                 bundler.MainFiles = new[] {PathUtils.ChangeExtension(Project.MainFile, "js")};
             }
 
-            _mainJsBundleUrl = Project.BundleJsUrl;
+            _mainJsBundleUrl = BuildResult.BundleJsUrl;
             bundler.Compress = compress;
             bundler.Mangle = mangle;
             bundler.Beautify = beautify;
@@ -210,7 +208,7 @@ namespace Lib.TSCompiler
         {
             if (forName == "")
                 return _mainJsBundleUrl;
-            return Project.AllocateName(forName.Replace("/", "_") + ".js");
+            return BuildResult.AllocateName(forName.Replace("/", "_") + ".js");
         }
 
         public string ResolveRequire(string name, string from)
@@ -220,9 +218,10 @@ namespace Lib.TSCompiler
                 return PathUtils.Join(PathUtils.Parent(from), name) + ".js";
             }
 
-            var mname = PathUtils.EnumParts(name).First().name;
+            var pos = 0;
+            PathUtils.EnumParts(name, ref pos, out var mname, out _);
             var diskCache = Project.Owner.DiskCache;
-            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache.TryGetItem(PathUtils.Parent(from)) as IDirectoryCache, diskCache, Project.Owner.Logger, mname,
+            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache.TryGetItem(PathUtils.Parent(from)) as IDirectoryCache, diskCache, Project.Owner.Logger, mname.ToString(),
                 out var diskName);
             if (moduleInfo == null)
             {
@@ -255,11 +254,11 @@ namespace Lib.TSCompiler
 
             if (file == null)
                 return new List<string>();
-            var fileInfo = TSFileAdditionalInfo.Get(file, diskCache);
+            var fileInfo = TSFileAdditionalInfo.Create(file, diskCache);
             var sourceInfo = fileInfo.SourceInfo;
-            if (sourceInfo == null || sourceInfo.assets == null)
+            if (sourceInfo == null || sourceInfo.Assets == null)
                 return new List<string>();
-            return sourceInfo.assets.Select(i => i.name).Where(i => i.EndsWith(".js")).ToList();
+            return sourceInfo.Assets.Select(i => i.Name).Where(i => i.EndsWith(".js")).ToList();
         }
     }
 }

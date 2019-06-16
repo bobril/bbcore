@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Lib.DiskCache
 {
@@ -6,7 +7,7 @@ namespace Lib.DiskCache
     {
         bool IsMac { get; }
         bool IsUnixFs { get; }
-        FsItemInfo GetItemInfo(string path);
+        FsItemInfo GetItemInfo(ReadOnlySpan<char> path);
         IReadOnlyList<FsItemInfo> GetDirectoryContent(string path);
         byte[] ReadAllBytes(string path);
         string ReadAllUtf8(string path);

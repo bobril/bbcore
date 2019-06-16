@@ -4,11 +4,10 @@ using Lib.DiskCache;
 using Lib.ToolsDir;
 using Lib.Utils;
 using JavaScriptEngineSwitcher.Core;
-using System.Linq;
 using System.Diagnostics;
 using Newtonsoft.Json;
-using System.IO;
 using Lib.Utils.Logger;
+using System.Collections.Generic;
 
 namespace Lib.TSCompiler
 {
@@ -26,6 +25,8 @@ namespace Lib.TSCompiler
         public ILogger Logger { get; }
         public IDiskCache DiskCache { get; set; }
         public bool MeasurePerformance { get; set; }
+
+        TranspileResult _transpileResult;
 
         public ITSCompilerOptions CompilerOptions
         {
@@ -77,12 +78,6 @@ namespace Lib.TSCompiler
                 return _owner.Ctx.readFile(fullPath);
             }
 
-            public bool writeFile(string fileName, string data)
-            {
-                _owner.Ctx.writeFile(fileName, data);
-                return true;
-            }
-
             public bool dirExists(string directoryPath)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
@@ -129,6 +124,17 @@ namespace Lib.TSCompiler
             public void reportTypeScriptDiag(bool isError, int code, string text)
             {
                 if (isError) _owner._wasError = true;
+                var tr = _owner._transpileResult;
+                if (tr != null)
+                {
+                    if (tr.Diagnostics == null) tr.Diagnostics = new List<Diagnostic>();
+                    tr.Diagnostics.Add(new Diagnostic
+                    {
+                        IsError = isError,
+                        Code = code,
+                        Text = text
+                    });
+                }
                 if (_owner.MeasurePerformance)
                     Trace.WriteLine((isError ? "Error:" : "Warn:") + code + " " + text);
             }
@@ -136,14 +142,33 @@ namespace Lib.TSCompiler
             public void reportTypeScriptDiagFile(bool isError, int code, string text, string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
             {
                 if (isError) _owner._wasError = true;
-                _owner.Ctx.reportDiag(isError, code, text, fileName, startLine, startCharacter, endLine, endCharacter);
+                var tr = _owner._transpileResult;
+                if (tr != null)
+                {
+                    if (tr.Diagnostics == null) tr.Diagnostics = new List<Diagnostic>();
+                    tr.Diagnostics.Add(new Diagnostic
+                    {
+                        IsError = isError,
+                        Code = code,
+                        Text = text,
+                        FileName = fileName,
+                        StartLine = startLine,
+                        StartCol = startCharacter,
+                        EndLine = endLine,
+                        EndCol = endCharacter
+                    });
+                }
+                else
+                {
+                    _owner.Ctx.reportDiag(isError, code, text, fileName, startLine, startCharacter, endLine, endCharacter);
+                }
                 if (_owner.MeasurePerformance)
                     Trace.WriteLine((isError ? "Error:" : "Warn:") + code + " " + text + " " + fileName + ":" + startLine);
             }
 
             TSFileAdditionalInfo GetFileInfo(IFileCache file)
             {
-                return TSFileAdditionalInfo.Get(file, _owner.DiskCache);
+                return TSFileAdditionalInfo.Create(file, _owner.DiskCache);
             }
 
             TSFileAdditionalInfo GetFileInfo(string name)
@@ -196,34 +221,16 @@ namespace Lib.TSCompiler
                 }
                 if (text.StartsWith("node_modules/"))
                 {
-                    var dir = _owner._currentDirectory;
+                    var dir = _owner._currentDirectory.AsSpan();
                     while (dir != null)
                     {
                         var fp = PathUtils.Join(dir, text);
-                        if (!(_owner.DiskCache.TryGetItemPreferReal(fp)?.IsInvalid ?? true)) return fp;
+                        if (!(_owner.DiskCache.TryGetItem(fp)?.IsInvalid ?? true)) return fp;
                         dir = PathUtils.Parent(dir);
                     }
                     return text;
                 }
                 return PathUtils.Join(PathUtils.Parent(sourcePath), text);
-            }
-
-            public void reportSourceInfo(string fileName, string info)
-            {
-                var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner.Ctx.TryGetFile(fullPath);
-                if (file == null)
-                {
-                    return;
-                }
-                var fileInfo = GetFileInfo(file);
-                fileInfo.SourceInfo = JsonConvert.DeserializeObject<SourceInfo>(info);
-                _owner.Ctx.AddDependenciesFromSourceInfo(fileInfo);
-            }
-
-            public string getModifications(string fileName)
-            {
-                return JsonConvert.SerializeObject(_owner.Ctx.getPreEmitTransformations(fileName));
             }
         }
 
@@ -244,6 +251,22 @@ namespace Lib.TSCompiler
             return engine;
         }
 
+        public TranspileResult Transpile(string fileName, string content)
+        {
+            var engine = getJSEnviroment();
+            _transpileResult = new TranspileResult();
+            try
+            {
+                _transpileResult.JavaScript = engine.CallFunction("bbTranspile", fileName, content) as string;
+                _transpileResult.SourceMap = engine.CallFunction("bbGetLastSourceMap") as string;
+                return _transpileResult;
+            }
+            finally
+            {
+                _transpileResult = null;
+            }
+        }
+
         public void CreateProgram(string currentDirectory, string[] mainFiles)
         {
             _wasError = false;
@@ -259,7 +282,6 @@ namespace Lib.TSCompiler
 
         bool _wasError;
         string _currentDirectory;
-        TimeSpan _gatherTime;
 
         public bool CompileProgram()
         {
@@ -271,26 +293,6 @@ namespace Lib.TSCompiler
         }
 
         public string CommonSourceDirectory { get; private set; }
-
-        public void GatherSourceInfo()
-        {
-            var engine = getJSEnviroment();
-            var start = DateTime.UtcNow;
-            engine.CallFunction("bbGatherSourceInfo");
-            _gatherTime = DateTime.UtcNow - start;
-        }
-
-        public bool EmitProgram()
-        {
-            var engine = getJSEnviroment();
-            var res = engine.CallFunction<bool>("bbEmitProgram") && !_wasError;
-            if (MeasurePerformance)
-            {
-                Console.WriteLine(
-                    $"{engine.CallFunction("bbFinishTSPerformance")} GatherInfo: {_gatherTime.TotalMilliseconds:0}");
-            }
-            return res;
-        }
 
         public void Dispose()
         {

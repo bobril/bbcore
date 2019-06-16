@@ -43,12 +43,12 @@ namespace Lib.Registry
 
         public bool IsUsedInProject(IDirectoryCache projectDirectory)
         {
-            return projectDirectory.TryGetChildNoVirtual("yarn.lock") is IFileCache;
+            return projectDirectory.TryGetChild("yarn.lock") is IFileCache;
         }
 
         public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
         {
-            var yarnLockFile = projectDirectory.TryGetChildNoVirtual("yarn.lock") as IFileCache;
+            var yarnLockFile = projectDirectory.TryGetChild("yarn.lock") as IFileCache;
             if (yarnLockFile == null)
             {
                 return Enumerable.Empty<PackagePathVersion>();
@@ -113,11 +113,11 @@ namespace Lib.Registry
         void RunYarnWithParam(IDirectoryCache projectDirectory, string param)
         {
             var fullPath = projectDirectory.FullPath;
-            var project = TSProject.Get(projectDirectory, _diskCache, _logger, null);
+            var project = TSProject.Create(projectDirectory, _diskCache, _logger, null);
             project.LoadProjectJson(true);
             if (project.ProjectOptions.NpmRegistry != null)
             {
-                if (!(projectDirectory.TryGetChildNoVirtual(".npmrc") is IFileCache))
+                if (!(projectDirectory.TryGetChild(".npmrc") is IFileCache))
                 {
                     File.WriteAllText(PathUtils.Join(fullPath, ".npmrc"),
                         "registry =" + project.ProjectOptions.NpmRegistry);

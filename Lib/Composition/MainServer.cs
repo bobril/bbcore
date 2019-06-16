@@ -50,7 +50,7 @@ namespace Lib.Composition
             SendToAll("compilationStarted", null);
         }
 
-        public void NotifyCompilationFinished(int errors, int warnings, double time, IList<CompilationResultMessage> messages)
+        public void NotifyCompilationFinished(int errors, int warnings, double time, IList<Diagnostic> messages)
         {
             SendToAll("compilationFinished", new Dictionary<string, object> {
                 { "errors", errors },

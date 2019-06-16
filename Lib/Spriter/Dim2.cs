@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace Lib.Spriter
+﻿namespace Lib.Spriter
 {
     public struct Dim2
     {

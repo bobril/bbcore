@@ -16,15 +16,14 @@
     "module": "commonjs",
     "noEmitHelpers": true,
     "preserveConstEnums": false,
-    "reactNamespace": "React",
+    "reactNamespace": "b",
     "removeComments": false,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "sourceMap": true,
     "target": "es5",
-    "types": []
+    "resolveJsonModule": true
   },
-  "files": [],
   "include": [
     "**/*"
   ]
