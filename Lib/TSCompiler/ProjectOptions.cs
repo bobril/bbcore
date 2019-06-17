@@ -46,6 +46,7 @@ namespace Lib.TSCompiler
         public string JasmineVersion;
         public List<string> TestDirectories;
         public string PathToTranslations;
+        public bool TsconfigUpdate;
 
         public string HtmlHeadExpanded;
         public string MainFile;
@@ -317,6 +318,10 @@ namespace Lib.TSCompiler
 
         public void UpdateTSConfigJson()
         {
+            if (TsconfigUpdate == false)
+            {
+                return;
+            }
             var fsAbstration = Owner.DiskCache.FsAbstraction;
             var tsConfigPath = PathUtils.Join(Owner.Owner.FullPath, "tsconfig.json");
             if (_originalContent == null && fsAbstration.FileExists(tsConfigPath))
@@ -436,6 +441,7 @@ namespace Lib.TSCompiler
             TestDirectories = bobrilSection?["testDirectories"]?.Values<string>().ToList();
             Localize = bobrilSection?["localize"]?.Value<bool>() ?? Localize;
             PathToTranslations = GetStringProperty(bobrilSection, "pathToTranslations", null);
+            TsconfigUpdate = bobrilSection?["tsconfigUpdate"]?.Value<bool>() ?? true;
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)
