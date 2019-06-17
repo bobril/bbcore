@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+## 0.83.2
+
+### Added
+
+- allowing to disable update of tsconfig.json
+
 ## 0.83.1
 
 ### Fixed

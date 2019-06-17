@@ -76,6 +76,14 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 
 # Package.json - bobril section features
 
+## Update of tsconfig.json
+
+Build generates tsconfig.json by default. You can disable this feature by:
+
+    "bobril": {
+        "tsconfigUpdate": false
+    }
+
 ## Override localization
 
 By default localization is detected from exitence of dependency bobril-g11n. You can override it:
