@@ -25,6 +25,7 @@ namespace Lib.TSCompiler
         List<OutputSprite> _allSprites;
         List<OutputSprite> _newSprites;
         IReadOnlyList<ImageBytesWithQuality> _result;
+        Dictionary<string, TSFileAdditionalInfo> _imageCache = new Dictionary<string, TSFileAdditionalInfo>();
         bool _wasChange;
 
         public SpriteHolder(IDiskCache dc)
@@ -57,7 +58,7 @@ namespace Lib.TSCompiler
         {
             foreach (var sprite in sprites)
             {
-                if (sprite.Name != null && sprite.Height == 0 && sprite.Width == 0)
+                if (sprite.Name != null && sprite.Height == -1 && sprite.Width == -1)
                 {
                     if (FindSprite(_allSprites, sprite) < 0 && FindSprite(_newSprites, sprite) < 0)
                         _newSprites.Add(new OutputSprite { Me = sprite });
@@ -107,9 +108,13 @@ namespace Lib.TSCompiler
                 {
                     if (!item.IsFile || item.IsInvalid) continue;
                     var (Name, Quality) = PathUtils.ExtractQuality(item.Name);
-                    if (Name == fnF)
+                    if (Name.AsSpan().SequenceEqual(fnF))
                     {
-                        var fi = TSFileAdditionalInfo.Create(item as IFileCache, _dc);
+                        if (!_imageCache.TryGetValue(item.FullPath,out var fi))
+                        {
+                            fi = TSFileAdditionalInfo.Create(item as IFileCache, _dc);
+                            _imageCache.Add(item.FullPath, fi);
+                        }
                         if (fi.ImageCacheId != item.ChangeId)
                         {
                             _wasChange = true;
@@ -146,15 +151,15 @@ namespace Lib.TSCompiler
             for (int i = 0; i < sprites.Count; i++)
             {
                 var sprite = new OutputSprite { Me = sprites[i] };
-                if (sprite.Me.Name != null && sprite.Me.Height == 0 && sprite.Me.Width == 0)
+                if (sprite.Me.Name != null && sprite.Me.Height == -1 && sprite.Me.Width == -1)
                 {
                     var idx = FindSprite(_allSprites, sprite.Me);
                     var s = _allSprites[idx];
-                    if (sprite.Me.Height > 0)
+                    if (sprite.Me.Height >= 0)
                         sprite.oheight = Math.Min(s.oheight, sprite.Me.Height);
                     else
                         sprite.oheight = s.oheight;
-                    if (sprite.Me.Width > 0)
+                    if (sprite.Me.Width >= 0)
                         sprite.owidth = Math.Min(s.owidth, sprite.Me.Width);
                     else
                         sprite.owidth = s.owidth;
@@ -206,10 +211,9 @@ namespace Lib.TSCompiler
                         var sprite = _allSprites[j];
                         var fn = sprite.Me.Name;
                         var slice = FindBestSlice(sprite.slices, q);
-                        var f = _dc.TryGetItem(PathUtils.InjectQuality(fn, slice.quality));
-                        if (f is IFileCache)
+                        var fi = _imageCache[PathUtils.InjectQuality(fn, slice.quality)];
+                        if (fi != null)
                         {
-                            var fi = TSFileAdditionalInfo.Create(f as IFileCache, _dc);
                             var image = fi.Image;
                             if (sprite.Me.Color != null)
                             {

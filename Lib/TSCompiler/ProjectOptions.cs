@@ -474,6 +474,42 @@ namespace Lib.TSCompiler
                 }
             }
 
+            if (sourceInfo.Sprites != null)
+            {
+                if (SpriteGeneration)
+                {
+                    var spriteHolder = SpriteGenerator;
+                    var outputSprites = spriteHolder.Retrieve(sourceInfo.Sprites);
+                    foreach (var os in outputSprites)
+                    {
+                        var s = os.Me;
+                        if (s.Name == null)
+                            continue;
+                        if (s.HasColor == true && s.Color == null)
+                        {
+                            // Modify method name to b.spritebc and remove first parameter with sprite name
+                            sourceReplacer.Replace(s.StartLine, s.StartCol, s.ColorStartLine, s.ColorStartCol, sourceInfo.BobrilImport + ".spritebc(");
+                            // Replace parameters after color with sprite size and position
+                            sourceReplacer.Replace(s.ColorEndLine, s.ColorEndCol, s.EndLine, s.EndCol, "," + os.owidth + "," + os.oheight + "," + os.ox + "," + os.oy + ")");
+                        }
+                        else
+                        {
+                            // Modify method name to b.spriteb and replace parameters with sprite size and position
+                            sourceReplacer.Replace(s.StartLine, s.StartCol, s.EndLine, s.EndCol, sourceInfo.BobrilImport + ".spriteb(" + os.owidth + "," + os.oheight + "," + os.ox + "," + os.oy + ")");
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var s in sourceInfo.Sprites)
+                    {
+                        if (s.Name == null)
+                            continue;
+                        sourceReplacer.Replace(s.NameStartLine, s.NameStartCol, s.NameEndLine, s.NameEndCol, "\"" + buildResult.ToOutputUrl(s.Name) + "\"");
+                    }
+                }
+            }
+
             var trdb = TranslationDb;
             if (trdb != null && sourceInfo.Translations != null)
             {
