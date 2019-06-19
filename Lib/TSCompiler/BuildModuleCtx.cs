@@ -122,7 +122,7 @@ namespace Lib.TSCompiler
         }
 
         // returns "?" if error in resolving
-        public string ResolveImport(string from, string name)
+        public string ResolveImport(string from, string name, bool preferDts = false)
         {
             if (_result.ResolveCache.TryGetValue((from, name), out var res))
             {
@@ -206,6 +206,7 @@ namespace Lib.TSCompiler
                     if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
                     {
                         CheckAdd(jsItem.FullPath, FileCompilationType.JavaScript);
+                        res.FileNameJs = jsItem.FullPath;
                         parentInfo.ReportDependency(jsItem.FullPath);
                     }
                     else
@@ -218,7 +219,7 @@ namespace Lib.TSCompiler
                 {
                     CheckAdd(item.FullPath, IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript : FileCompilationType.EsmJavaScript);
                 }
-                return res.FileName;
+                return res.FileNameWithPreference(preferDts);
             }
             else
             {
@@ -254,7 +255,7 @@ namespace Lib.TSCompiler
                     relative = true;
                     goto relative;
                 }
-
+                
                 var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
                 res.FileName = mainFile;
                 CheckAdd(mainFile, IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript : moduleInfo.MainFileNeedsToBeCompiled ? FileCompilationType.EsmJavaScript : FileCompilationType.JavaScript);
@@ -390,8 +391,8 @@ namespace Lib.TSCompiler
                 else
                 {
                     var ext = PathUtils.GetExtension(fileName);
-                    if (ext == "css") info.Type = FileCompilationType.Css;
-                    else if (ext == "js" || ext == "jsx") info.Type = FileCompilationType.EsmJavaScript;
+                    if (ext.SequenceEqual("css")) info.Type = FileCompilationType.Css;
+                    else if (ext.SequenceEqual("js") || ext.SequenceEqual("jsx")) info.Type = FileCompilationType.EsmJavaScript;
                     else info.Type = FileCompilationType.Resource;
                 }
             }
@@ -427,32 +428,27 @@ namespace Lib.TSCompiler
                             break;
                         case FileCompilationType.Css:
                         case FileCompilationType.ImportedCss:
-                            if (!_owner.ProjectOptions.BundleCss)
+                            var cssProcessor = _buildCtx.CompilerPool.GetCss();
+                            try
                             {
-                                var cssProcessor = _buildCtx.CompilerPool.GetCss();
-                                try
-                                {
-                                    info.Output = cssProcessor.ProcessCss(info.Owner.Utf8Content,
-        ((TSFileAdditionalInfo)info).Owner.FullPath, (string url, string from) =>
+                                info.Output = cssProcessor.ProcessCss(info.Owner.Utf8Content,
+    ((TSFileAdditionalInfo)info).Owner.FullPath, (string url, string from) =>
+                                    {
+                                        var full = PathUtils.Join(from, url);
+                                        var fullJustName = full.Split('?', '#')[0];
+                                        var fileAdditionalInfo =
+                                            AutodetectAndAddDependency(fullJustName);
+                                        if (fileAdditionalInfo == null)
                                         {
-                                            var full = PathUtils.Join(from, url);
-                                            var fullJustName = full.Split('?', '#')[0];
-                                            var fileAdditionalInfo =
-                                                AutodetectAndAddDependency(fullJustName);
-                                            if (fileAdditionalInfo == null)
-                                            {
-                                                info.ReportDiag(true, -3, "Missing dependency " + url, 0, 0, 0, 0);
-                                            }
-                                            info.ReportDependency(fullJustName);
-                                            return PathUtils.Subtract(fileAdditionalInfo.OutputUrl,
-                                                        PathUtils.Parent(info.OutputUrl).ToString()) +
-                                                    full.Substring(fullJustName.Length);
-                                        }).Result;
-                                }
-                                finally
-                                {
-                                    _buildCtx.CompilerPool.ReleaseCss(cssProcessor);
-                                }
+                                            info.ReportDiag(true, -3, "Missing dependency " + url, 0, 0, 0, 0);
+                                        }
+                                        info.ReportDependency(fullJustName);
+                                        return url;
+                                    }).Result;
+                            }
+                            finally
+                            {
+                                _buildCtx.CompilerPool.ReleaseCss(cssProcessor);
                             }
                             break;
                     }

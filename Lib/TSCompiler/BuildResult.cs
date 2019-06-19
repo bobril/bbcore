@@ -13,6 +13,13 @@ namespace Lib.TSCompiler
         public TSProject Module;
         public StructList<string> NegativeChecks;
         public int IterationId;
+        public string FileNameJs;
+
+        internal string FileNameWithPreference(bool preferDts)
+        {
+            if (preferDts) return FileName;
+            return FileNameJs ?? FileName;
+        }
     }
 
     public class BuildResult

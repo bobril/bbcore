@@ -3,11 +3,11 @@ using Lib.Utils;
 using Lib.ToolsDir;
 using Lib.Bundler;
 using System.Linq;
-using System.IO;
 using Lib.CSSProcessor;
-using Lib.DiskCache;
 using System.Globalization;
 using BTDB.Collections;
+using System;
+using Njsast.SourceMap;
 
 namespace Lib.TSCompiler
 {
@@ -29,38 +29,21 @@ namespace Lib.TSCompiler
 
         // value could be string or byte[] or Lazy<string|byte[]>
         public RefDictionary<string, object> FilesContent;
-        Dictionary<string, string> _jsFilesContent;
 
         public void Build(bool compress, bool mangle, bool beautify)
         {
             var diskCache = Project.Owner.DiskCache;
-            _jsFilesContent = new Dictionary<string, string>();
             var cssLink = "";
             var cssToBundle = new List<SourceFromPair>();
             foreach (var source in BuildResult.Path2FileInfo)
             {
-                if (source.Value.Type == FileCompilationType.TypeScript ||
-                    source.Value.Type == FileCompilationType.EsmJavaScript ||
-                    source.Value.Type == FileCompilationType.JavaScript ||
-                    source.Value.Type == FileCompilationType.JavaScriptAsset)
-                {
-                    if (source.Value.Output == null)
-                        continue; // Skip d.ts
-                    _jsFilesContent[PathUtils.ChangeExtension(source.Key, "js").ToLowerInvariant()] =
-                        source.Value.Output;
-                }
-                else if (source.Value.Type == FileCompilationType.Json)
-                {
-                    _jsFilesContent[source.Key.ToLowerInvariant() + ".js"] =
-                        "Object.assign(module.exports, " + source.Value.Owner.Utf8Content + ");";
-                }
-                else if (source.Value.Type == FileCompilationType.Css || source.Value.Type == FileCompilationType.ImportedCss)
+                if (source.Value.Type == FileCompilationType.Css || source.Value.Type == FileCompilationType.ImportedCss)
                 {
                     cssToBundle.Add(new SourceFromPair(source.Value.Owner.Utf8Content, source.Value.Owner.FullPath));
                 }
                 else if (source.Value.Type == FileCompilationType.Resource)
                 {
-                    FilesContent.GetOrAddValueRef(source.Value.OutputUrl) = source.Value.Owner.ByteContent;
+                    FilesContent.GetOrAddValueRef(BuildResult.ToOutputUrl(source.Value)) = source.Value.Owner.ByteContent;
                 }
             }
 
@@ -104,11 +87,11 @@ namespace Lib.TSCompiler
             bundler.Callbacks = this;
             if (Project.ExampleSources.Count > 0)
             {
-                bundler.MainFiles = new[] {PathUtils.ChangeExtension(Project.ExampleSources[0], "js")};
+                bundler.MainFiles = new[] { Project.ExampleSources[0] };
             }
             else
             {
-                bundler.MainFiles = new[] {PathUtils.ChangeExtension(Project.MainFile, "js")};
+                bundler.MainFiles = new[] { Project.MainFile };
             }
 
             _mainJsBundleUrl = BuildResult.BundleJsUrl;
@@ -176,27 +159,34 @@ namespace Lib.TSCompiler
 
         public string ReadContent(string name)
         {
-            var normalized = name.ToLowerInvariant();
-            if (_jsFilesContent.TryGetValue(normalized, out var content))
+            if (!BuildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
             {
-                return content;
+                throw new InvalidOperationException("Bundler ReadContent does not exists:" + name);
             }
-
-            if (normalized.EndsWith(".js.js"))
+            if (fileInfo.Type == FileCompilationType.ImportedCss || fileInfo.Type == FileCompilationType.Css)
+                return "";
+            if (fileInfo.Type == FileCompilationType.Json)
             {
-                normalized = normalized.Substring(0, normalized.Length - 3);
-                if (_jsFilesContent.TryGetValue(normalized, out content))
-                {
-                    return content;
-                }
+                return "Object.assign(module.exports, " + fileInfo.Owner.Utf8Content + ");";
             }
-
-            if (normalized.EndsWith(".css.js"))
+            if (fileInfo.Type == FileCompilationType.JavaScriptAsset || fileInfo.Type == FileCompilationType.JavaScript || fileInfo.Type == FileCompilationType.EsmJavaScript)
+            {
+                return fileInfo.Output;
+            }
+            if (fileInfo.Type == FileCompilationType.TypeScriptDefinition)
             {
                 return "";
             }
-
-            throw new System.InvalidOperationException("Bundler Read Content does not exists:" + name);
+            if (fileInfo.Type == FileCompilationType.TypeScript)
+            {
+                var sourceMapBuilder = new SourceMapBuilder();
+                var adder = sourceMapBuilder.CreateSourceAdder(fileInfo.Output, fileInfo.MapLink);
+                var sourceReplacer = new SourceReplacer();
+                Project.ApplySourceInfo(sourceReplacer, fileInfo.SourceInfo, BuildResult);
+                sourceReplacer.Apply(adder);
+                return sourceMapBuilder.Content();
+            }
+            throw new InvalidOperationException("Bundler Read Content unknown type " + Enum.GetName(typeof(FileCompilationType), fileInfo.Type) + ":" + name);
         }
 
         public void WriteBundle(string name, string content)
@@ -213,29 +203,11 @@ namespace Lib.TSCompiler
 
         public string ResolveRequire(string name, string from)
         {
-            if (name.StartsWith("./") || name.StartsWith("../"))
+            if (!BuildResult.ResolveCache.TryGetValue((from, name), out var resolveResult))
             {
-                return PathUtils.Join(PathUtils.Parent(from), name) + ".js";
+                throw new Exception($"Bundler cannot resolve {name} from {from}");
             }
-
-            var pos = 0;
-            PathUtils.EnumParts(name, ref pos, out var mname, out _);
-            var diskCache = Project.Owner.DiskCache;
-            var moduleInfo = TSProject.FindInfoForModule(Project.Owner.Owner, diskCache.TryGetItem(PathUtils.Parent(from)) as IDirectoryCache, diskCache, Project.Owner.Logger, mname.ToString(),
-                out var diskName);
-            if (moduleInfo == null)
-            {
-                Project.Owner.Logger.Error($"Bundler cannot resolve {name} from {@from}");
-                return null;
-            }
-            if (mname.Length != name.Length)
-            {
-                return PathUtils.ChangeExtension(
-                    PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(mname.Length + 1)), "js");
-            }
-            var mainFile =
-                PathUtils.ChangeExtension(PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile), "js");
-            return mainFile;
+            return resolveResult.FileNameWithPreference(false);
         }
 
         public string TslibSource(bool withImport)
@@ -245,20 +217,14 @@ namespace Lib.TSCompiler
 
         public IList<string> GetPlainJsDependencies(string name)
         {
-            var diskCache = Project.Owner.DiskCache;
-            var file = diskCache.TryGetItem(PathUtils.ChangeExtension(name, "ts")) as IFileCache;
-            if (file == null)
+            if (!BuildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
             {
-                file = diskCache.TryGetItem(PathUtils.ChangeExtension(name, "tsx")) as IFileCache;
+                throw new InvalidOperationException("Bundler GetPlainJsDependencies does not exists:" + name);
             }
-
-            if (file == null)
-                return new List<string>();
-            var fileInfo = TSFileAdditionalInfo.Create(file, diskCache);
             var sourceInfo = fileInfo.SourceInfo;
             if (sourceInfo == null || sourceInfo.Assets == null)
                 return new List<string>();
-            return sourceInfo.Assets.Select(i => i.Name).Where(i => i.EndsWith(".js")).ToList();
+            return sourceInfo.Assets.Select(i => i.Name).Where(i => !i.StartsWith("resource:") && i.EndsWith(".js")).ToList();
         }
     }
 }
