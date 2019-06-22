@@ -23,9 +23,8 @@ namespace Njsast.ConstEval
         {
             if (JustModuleExports)
                 return null;
-            var fileName = _resolver.ResolveName(module);
+            var (fileName, content) = _resolver.ResolveAndLoad(module);
             if (fileName == null) return null;
-            var content = _resolver.LoadContent(fileName);
             if (content == null || !(export is string)) return null;
             try
             {

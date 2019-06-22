@@ -16,7 +16,6 @@ namespace Lib.BuildCache
         IObjectDB _odb;
         Func<IObjectDBTransaction, ITSConfigurationTable> _tsConfiguration;
         Func<IObjectDBTransaction, ITSFileBuildCacheTable> _tsRelation;
-        Func<IObjectDBTransaction, IHashedContentTable> _tsHashedContent;
         IObjectDBTransaction _tr;
         Mutex _mutex;
 
@@ -50,8 +49,7 @@ namespace Lib.BuildCache
             using (var tr = _odb.StartWritingTransaction().Result)
             {
                 _tsConfiguration = tr.InitRelation<ITSConfigurationTable>("tsconf");
-                _tsRelation = tr.InitRelation<ITSFileBuildCacheTable>("ts");
-                _tsHashedContent = tr.InitRelation<IHashedContentTable>("hashedContent");
+                _tsRelation = tr.InitRelation<ITSFileBuildCacheTable>("ts2");
                 tr.Commit();
             }
         }
@@ -84,12 +82,6 @@ namespace Lib.BuildCache
             return _tsRelation(_tr).FindByIdOrDefault(contentHash, configurationId);
         }
 
-        public string GetContentByHash(byte[] contentHash)
-        {
-            if (!IsEnabled) return null;
-            return _tsHashedContent(_tr).FindByIdOrDefault(contentHash)?.Content;
-        }
-
         public uint MapConfiguration(string tsversion, string compilerOptionsJson)
         {
             if (!IsEnabled) return 0;
@@ -119,13 +111,6 @@ namespace Lib.BuildCache
         {
             if (!IsEnabled) return;
             var relation = _tsRelation(_tr);
-            var existing = relation.FindByIdOrDefault(value.ContentHash, value.ConfigurationId);
-            if (existing != null)
-            {
-                if (CompareArrays(existing.LocalImports, value.LocalImports) && CompareArrays(existing.LocalImportsHashes, value.LocalImportsHashes)
-                    && CompareArrays(existing.ModuleImports, value.ModuleImports) && CompareArrays(existing.ModuleImportsHashes, value.ModuleImportsHashes))
-                    return;
-            }
             relation.Upsert(value);
         }
 
@@ -157,11 +142,6 @@ namespace Lib.BuildCache
                     return false;
             }
             return true;
-        }
-
-        public void Store(byte[] contentHash, string content)
-        {
-            _tsHashedContent(_tr).Insert(new HashedContent { ContentHash = contentHash, Content = content });
         }
     }
 }

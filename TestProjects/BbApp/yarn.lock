@@ -10,9 +10,9 @@ bobril-g11n@*:
     moment "^2.10.6"
 
 bobril@*:
-  version "11.3.1"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-11.3.1.tgz#30914d33955986e9495ac1fd077e2bcc55e3bf22"
-  integrity sha512-y4oSmozOP1qwn7KUmQtRZH394k0XNKD6vOnCueL5k+PQrJPuhOAUK3bOZqJslXCZp3lK9N3wxJ3v1TcLU6r5jQ==
+  version "11.4.1"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-11.4.1.tgz#200725c798c8e95e254dce1d7ed86d24d482772f"
+  integrity sha512-lYjGiP87cOrOapx4OLYIbo4V/yp7JO0yHTqGuDy3IXH/2AWTUiM4LdIRhSZbsCDlS9i7OUtGjN3H2h+yrCybRQ==
 
 moment@^2.10.6:
   version "2.24.0"

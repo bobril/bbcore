@@ -11,6 +11,7 @@ using Njsast.ConstEval;
 using Njsast.Bobril;
 using Njsast.Ast;
 using System.Collections.Generic;
+using Lib.BuildCache;
 
 namespace Lib.TSCompiler
 {
@@ -20,6 +21,7 @@ namespace Lib.TSCompiler
         public TSProject _owner;
         public BuildResult _result;
         public int IterationId;
+        TSFileAdditionalInfo _currentlyTranspiling;
 
         public void AddSource(TSFileAdditionalInfo file)
         {
@@ -223,15 +225,6 @@ namespace Lib.TSCompiler
             }
             else
             {
-                if (!_owner.ProjectOptions.AllowModuleDeepImport)
-                {
-                    if (!IsDts(parentInfo.Owner.Name) && (name.Contains('/') || name.Contains('\\')))
-                    {
-                        parentInfo.ReportDiag(true, -10, "Absolute import '" + name + "' must be just simple module name",
-                            0, 0, 0, 0);
-                        return null;
-                    }
-                }
                 var pos = 0;
                 PathUtils.EnumParts(name, ref pos, out var mn, out _);
                 var mname = mn.ToString();
@@ -255,7 +248,7 @@ namespace Lib.TSCompiler
                     relative = true;
                     goto relative;
                 }
-                
+
                 var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
                 res.FileName = mainFile;
                 CheckAdd(mainFile, IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript : moduleInfo.MainFileNeedsToBeCompiled ? FileCompilationType.EsmJavaScript : FileCompilationType.JavaScript);
@@ -272,7 +265,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        void TryToResolveFromBuildCache(TSFileAdditionalInfo itemInfo)
+        bool TryToResolveFromBuildCache(TSFileAdditionalInfo itemInfo)
         {
             itemInfo.TakenFromBuildCache = false;
             var bc = _owner.ProjectOptions.BuildCache;
@@ -283,8 +276,103 @@ namespace Lib.TSCompiler
                 var fbc = bc.FindTSFileBuildCache(hashOfContent, confId);
                 if (fbc != null)
                 {
-                    // TODO
+                    if (MatchingTranspilationDendencies(itemInfo.Owner, fbc.TranspilationDependencies))
+                    {
+                        itemInfo.Output = fbc.Output;
+                        itemInfo.MapLink = fbc.MapLink;
+                        itemInfo.SourceInfo = fbc.SourceInfo;
+                        itemInfo.TranspilationDependencies = fbc.TranspilationDependencies;
+                        itemInfo.TakenFromBuildCache = true;
+                        AddDependenciesFromSourceInfo(itemInfo);
+                        _owner.Logger.Info("Loaded from cache " + itemInfo.Owner.FullPath);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        bool MatchingTranspilationDendencies(IFileCache owner, List<DependencyTriplet> transpilationDependencies)
+        {
+            if (transpilationDependencies == null) return true;
+            var hashToName = new Dictionary<byte[], string>(StructuralEqualityComparer<byte[]>.Default);
+            hashToName.Add(owner.HashOfContent, owner.FullPath);
+            foreach (var dep in transpilationDependencies)
+            {
+                if (!hashToName.TryGetValue(dep.SourceHash, out var sourceName))
+                {
+                    return false;
+                }
+                var targetName = ResolveImport(sourceName, dep.Import);
+                _result.Path2FileInfo.TryGetValue(targetName, out var targetInfo);
+                if (!dep.TargetHash.AsSpan().SequenceEqual(targetInfo.Owner.HashOfContent))
+                {
+                    return false;
+                }
+                hashToName.Add(targetInfo.Owner.HashOfContent, targetInfo.Owner.FullPath);
+            }
+            return true;
+        }
+
+        bool TryToResolveFromBuildCacheCss(TSFileAdditionalInfo itemInfo)
+        {
+            itemInfo.TakenFromBuildCache = false;
+            var bc = _owner.ProjectOptions.BuildCache;
+            if (bc.IsEnabled)
+            {
+                var hashOfContent = itemInfo.Owner.HashOfContent;
+                var fbc = bc.FindTSFileBuildCache(hashOfContent, 0);
+                if (fbc != null)
+                {
+                    itemInfo.Output = fbc.Output;
+                    itemInfo.TranspilationDependencies = fbc.TranspilationDependencies;
                     itemInfo.TakenFromBuildCache = true;
+                    _owner.Logger.Info("Loaded from cache " + itemInfo.Owner.FullPath);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void StoreResultToBuildCache(BuildResult result)
+        {
+            var bc = _owner.ProjectOptions.BuildCache;
+            foreach (var f in result.RecompiledLast)
+            {
+                if (f.TakenFromBuildCache)
+                    continue;
+                if (f.Diagnostics.Count != 0)
+                    continue;
+                switch(f.Type)
+                {
+                    case FileCompilationType.TypeScript:
+                    case FileCompilationType.EsmJavaScript:
+                        {
+                            var fbc = new TSFileBuildCache();
+                            fbc.ConfigurationId = _owner.ProjectOptions.ConfigurationBuildCacheId;
+                            fbc.ContentHash = f.Owner.HashOfContent;
+                            fbc.Output = f.Output;
+                            fbc.MapLink = f.MapLink;
+                            fbc.SourceInfo = f.SourceInfo;
+                            fbc.TranspilationDependencies = f.TranspilationDependencies;
+                            bc.Store(fbc);
+                            f.TakenFromBuildCache = true;
+                            _owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
+                            break;
+                        }
+                    case FileCompilationType.Css:
+                    case FileCompilationType.ImportedCss:
+                        {
+                            var fbc = new TSFileBuildCache();
+                            fbc.ConfigurationId = 0;
+                            fbc.ContentHash = f.Owner.HashOfContent;
+                            fbc.Output = f.Output;
+                            fbc.TranspilationDependencies = f.TranspilationDependencies;
+                            bc.Store(fbc);
+                            f.TakenFromBuildCache = true;
+                            _owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
+                            break;
+                        }
                 }
             }
         }
@@ -330,7 +418,6 @@ namespace Lib.TSCompiler
                 ToCheck.Add(fullNameWithExtension);
             return info;
         }
-
 
         public string ExpandHtmlHead(string htmlHead)
         {
@@ -414,10 +501,13 @@ namespace Lib.TSCompiler
                             break;
                         case FileCompilationType.EsmJavaScript:
                         case FileCompilationType.TypeScript:
-                            info.Output = null;
-                            info.MapLink = null;
-                            info.SourceInfo = null;
-                            Transpile(info);
+                            if (!TryToResolveFromBuildCache(info))
+                            {
+                                info.Output = null;
+                                info.MapLink = null;
+                                info.SourceInfo = null;
+                                Transpile(info);
+                            }
                             break;
                         case FileCompilationType.JavaScriptAsset:
                         case FileCompilationType.JavaScript:
@@ -428,28 +518,27 @@ namespace Lib.TSCompiler
                             break;
                         case FileCompilationType.Css:
                         case FileCompilationType.ImportedCss:
-                            var cssProcessor = _buildCtx.CompilerPool.GetCss();
-                            try
+                            if (!TryToResolveFromBuildCacheCss(info))
                             {
-                                info.Output = cssProcessor.ProcessCss(info.Owner.Utf8Content,
-    ((TSFileAdditionalInfo)info).Owner.FullPath, (string url, string from) =>
-                                    {
-                                        var full = PathUtils.Join(from, url);
-                                        var fullJustName = full.Split('?', '#')[0];
-                                        var fileAdditionalInfo =
-                                            AutodetectAndAddDependency(fullJustName);
-                                        if (fileAdditionalInfo == null)
-                                        {
-                                            info.ReportDiag(true, -3, "Missing dependency " + url, 0, 0, 0, 0);
-                                        }
-                                        info.ReportDependency(fullJustName);
-                                        return url;
-                                    }).Result;
+
+                                var cssProcessor = _buildCtx.CompilerPool.GetCss();
+                                try
+                                {
+                                    info.Output = info.Owner.Utf8Content;
+                                    cssProcessor.ProcessCss(info.Owner.Utf8Content,
+        ((TSFileAdditionalInfo)info).Owner.FullPath, (string url, string from) =>
+        {
+            var urlJustName = url.Split('?', '#')[0];
+            info.ReportTranspilationDependency(null, urlJustName, null);
+            return url;
+        }).Wait();
+                                }
+                                finally
+                                {
+                                    _buildCtx.CompilerPool.ReleaseCss(cssProcessor);
+                                }
                             }
-                            finally
-                            {
-                                _buildCtx.CompilerPool.ReleaseCss(cssProcessor);
-                            }
+                            ReportDependenciesFromCss(info);
                             break;
                     }
                 }
@@ -459,6 +548,21 @@ namespace Lib.TSCompiler
                 CheckAdd(dep, FileCompilationType.Unknown);
             }
             return info;
+        }
+
+        private void ReportDependenciesFromCss(TSFileAdditionalInfo info)
+        {
+            foreach (var dep in info.TranspilationDependencies)
+            {
+                var fullJustName = PathUtils.Join(info.Owner.Parent.FullPath, dep.Import);
+                var fileAdditionalInfo =
+                    AutodetectAndAddDependency(fullJustName);
+                if (fileAdditionalInfo == null)
+                {
+                    info.ReportDiag(true, -3, "Missing dependency " + dep.Import, 0, 0, 0, 0);
+                }
+                info.ReportDependency(fullJustName);
+            }
         }
 
         void Transpile(TSFileAdditionalInfo info)
@@ -480,17 +584,29 @@ namespace Lib.TSCompiler
                     _buildCtx.CompilerPool.ReleaseTs(compiler);
             }
 
-            var parser = new Parser(new Options(), info.Output);
-            var toplevel = parser.Parse();
-            toplevel.FigureOutScope();
-            var ctx = new ResolvingConstEvalCtx(info.Owner.FullPath, this);
-            var sourceInfo = GatherBobrilSourceInfo.Gather(toplevel, ctx, (IConstEvalCtx myctx, string text) =>
+            var backupCurrentlyTranspiling = _currentlyTranspiling;
+            try
             {
-                var res = PathUtils.Join(PathUtils.Parent(myctx.SourceName), text);
-                return res;
-            });
-            info.SourceInfo = sourceInfo;
-            AddDependenciesFromSourceInfo(info);
+                if (_currentlyTranspiling == null)
+                {
+                    _currentlyTranspiling = info;
+                }
+                var parser = new Parser(new Options(), info.Output);
+                var toplevel = parser.Parse();
+                toplevel.FigureOutScope();
+                var ctx = new ResolvingConstEvalCtx(info.Owner.FullPath, this);
+                var sourceInfo = GatherBobrilSourceInfo.Gather(toplevel, ctx, (IConstEvalCtx myctx, string text) =>
+                {
+                    var res = PathUtils.Join(PathUtils.Parent(myctx.SourceName), text);
+                    return res;
+                });
+                info.SourceInfo = sourceInfo;
+                AddDependenciesFromSourceInfo(info);
+            }
+            finally
+            {
+                _currentlyTranspiling = backupCurrentlyTranspiling;
+            }
         }
 
         public void AddDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo)
@@ -603,15 +719,14 @@ namespace Lib.TSCompiler
             return file;
         }
 
-        public string ResolveName(JsModule module)
+        public (string fileName, string content) ResolveAndLoad(JsModule module)
         {
-            return ResolveImport(module.ImportedFrom, module.Name);
-        }
-
-        public string LoadContent(string fileName)
-        {
+            var fileName = ResolveImport(module.ImportedFrom, module.Name);
+            if (fileName == null || fileName == "?") return (null, null);
             var info = CrawlFile(fileName);
-            return info.Output;
+            _result.Path2FileInfo.TryGetValue(module.ImportedFrom, out var sourceInfo);
+            _currentlyTranspiling.ReportTranspilationDependency(sourceInfo.Owner.HashOfContent, module.Name, info.Owner.HashOfContent);
+            return (fileName, info.Output);
         }
     }
 }

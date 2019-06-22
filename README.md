@@ -67,7 +67,6 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 | -7     | Warn     | Problem with translation message                                                               |
 | -8     | Error    | Translation message must be compile time resolvable constant string, use f instead if intended |
 | -9     | Error    | Hint message must be compile time resolvable constant string                                   |
-| -10    | Error    | Absolute import name must be just simple module name                                           |
 | -11    | Warn     | Fixing local import with two slashes                                                           |
 | -12    | Warn     | Importing module without being in package.json as dependency                                   |
 | -13    | Warn     | Unused dependency in package.json                                                              |
@@ -75,12 +74,6 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 | -15    | Warn     | Cannot resolve import                                                                          |
 
 # Package.json - bobril section features
-
-## Disable Error -10 which forbids relative imports into modules
-
-    "bobril": {
-        "allowModuleDeepImport": true
-    }
 
 ## Warnings As Errors
 

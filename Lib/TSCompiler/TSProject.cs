@@ -283,7 +283,6 @@ namespace Lib.TSCompiler
                     if (compiler != null)
                         buildCtx.CompilerPool.ReleaseTs(compiler);
                 }
-                var wasSomeError = false;
                 if (buildModuleCtx._result.CommonSourceDirectory == null)
                 {
                     buildModuleCtx._result.CommonSourceDirectory = Owner.FullPath;
@@ -309,8 +308,8 @@ namespace Lib.TSCompiler
                 if (ProjectOptions.SpriteGeneration)
                     ProjectOptions.SpriteGenerator.ProcessNew();
 
-                if (ProjectOptions.BuildCache.IsEnabled && !wasSomeError)
-                    ProjectOptions.StoreResultToBuildCache(buildModuleCtx._result);
+                if (ProjectOptions.BuildCache.IsEnabled)
+                    buildModuleCtx.StoreResultToBuildCache(buildModuleCtx._result);
                 buildCtx.BuildResult = buildModuleCtx._result;
             }
             finally

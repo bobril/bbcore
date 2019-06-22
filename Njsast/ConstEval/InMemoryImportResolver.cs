@@ -15,22 +15,16 @@ namespace Njsast.ConstEval
             return this;
         }
 
-        public string ResolveName(JsModule module)
+        public (string fileName, string content) ResolveAndLoad(JsModule module)
         {
             if (module.Name.StartsWith("./", StringComparison.Ordinal) ||
                 module.Name.StartsWith("../", StringComparison.Ordinal))
             {
-                return PathUtils.Join(PathUtils.Parent(module.ImportedFrom), module.Name);
+                var fileName = PathUtils.Join(PathUtils.Parent(module.ImportedFrom), module.Name);
+                _content.TryGetValue(fileName, out var res);
+                return (fileName, res);
             }
-            return null;
-            //throw new NotSupportedException("InMemoryImportResolver supports only relative paths " +
-            //                                module.ImportedFrom + " " + module.Name);
-        }
-
-        public string LoadContent(string fileName)
-        {
-            _content.TryGetValue(fileName, out var res);
-            return res;
+            return (null, null);
         }
     }
 }

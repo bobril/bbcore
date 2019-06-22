@@ -49,7 +49,7 @@ let page = b.createVirtualComponent({
             {
                 tag: "p",
                 children: [
-                    "See examples on1 ",
+                    "See examples on ",
                     {
                         tag: "a",
                         attrs: { href: "https://github.com/Bobris/Bobril" },

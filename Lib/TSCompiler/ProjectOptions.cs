@@ -54,7 +54,6 @@ namespace Lib.TSCompiler
         public FastBundleBundler MainProjFastBundle;
         public FastBundleBundler TestProjFastBundle;
         public bool LiveReloadEnabled;
-        public bool AllowModuleDeepImport;
         public string TypeScriptVersion;
 
         public bool Localize;
@@ -343,27 +342,6 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void StoreResultToBuildCache(BuildResult result)
-        {
-            return;
-            var bc = BuildCache;
-            foreach (var f in result.RecompiledLast)
-            {
-                if (f.TakenFromBuildCache)
-                    continue;
-                if (f.Type != FileCompilationType.TypeScript && f.Type != FileCompilationType.EsmJavaScript) continue;
-                if (bc.FindTSFileBuildCache(f.Owner.HashOfContent, ConfigurationBuildCacheId) !=
-                    null) continue;
-                var fbc = new TSFileBuildCache();
-                fbc.ConfigurationId = ConfigurationBuildCacheId;
-                fbc.ContentHash = f.Owner.HashOfContent;
-                fbc.JsOutput = f.Output;
-                fbc.MapLink = f.MapLink;
-                fbc.SourceInfo = f.SourceInfo;
-                bc.Store(fbc);
-            }
-        }
-
         public void InitializeTranslationDb(string specificPath = null)
         {
             TranslationDb = new TranslationDb(Owner.DiskCache.FsAbstraction, new ConsoleLogger());
@@ -421,7 +399,6 @@ namespace Lib.TSCompiler
                 pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
             WarningsAsErrors = bobrilSection?["warningsAsErrors"]?.Value<bool>() ?? false;
             ObsoleteMessage = GetStringProperty(bobrilSection, "obsolete", null);
-            AllowModuleDeepImport = bobrilSection?["allowModuleDeepImport"]?.Value<bool>() ?? false;
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)

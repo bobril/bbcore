@@ -26,6 +26,13 @@ namespace Lib.TSCompiler
         TypeScriptDefinition
     }
 
+    public class DependencyTriplet
+    {
+        public byte[] SourceHash { get; set; }
+        public string Import { get; set; }
+        public byte[] TargetHash { get; set; }
+    }
+
     public class TSFileAdditionalInfo
     {
         public FileCompilationType Type;
@@ -34,6 +41,7 @@ namespace Lib.TSCompiler
         public string Output { get; set; }
         public SourceMap MapLink { get; set; }
         public SourceInfo SourceInfo { get; set; }
+        public List<DependencyTriplet> TranspilationDependencies { get; set; }
         public Image<Rgba32> Image { get; set; }
 
         public int ImageCacheId;
@@ -50,6 +58,7 @@ namespace Lib.TSCompiler
         {
             Diagnostics.Clear();
             Dependencies.Clear();
+            TranspilationDependencies = null;
         }
 
         public StructList<string> Dependencies;
@@ -62,6 +71,20 @@ namespace Lib.TSCompiler
         {
             if (Dependencies.IndexOf(fullname) >= 0) return;
             Dependencies.Add(fullname);
+        }
+
+        public void ReportTranspilationDependency(byte[] sourceHash, string import, byte[] targetHash)
+        {
+            if (TranspilationDependencies == null)
+            {
+                TranspilationDependencies = new List<DependencyTriplet>();
+            }
+            TranspilationDependencies.Add(new DependencyTriplet
+            {
+                SourceHash = sourceHash,
+                Import = import,
+                TargetHash = targetHash
+            });
         }
 
         public void ReportDiag(bool isError, int code, string text, int startLine, int startCharacter, int endLine,
