@@ -4,6 +4,6 @@ namespace Njsast.ConstEval
 {
     public interface IImportResolver
     {
-        (string fileName, string content) ResolveAndLoad(JsModule module);
+        (string fileName, AstToplevel content) ResolveAndLoad(JsModule module);
     }
 }

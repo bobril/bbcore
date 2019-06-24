@@ -1,4 +1,5 @@
-﻿using Njsast.ConstEval;
+﻿using System;
+using Njsast.ConstEval;
 using Njsast.Reader;
 
 namespace Njsast.Ast
@@ -27,9 +28,15 @@ namespace Njsast.Ast
 
             if (Thedef.IsSingleInit)
             {
-                return Thedef.VarInit == null || Thedef.VarInit.IsConstValue(ctx);
+                return (Thedef.VarInit == null && IsVarLetConst(Thedef.Orig[0])) || (Thedef.VarInit?.IsConstValue(ctx) ?? false);
             }
             return false;
+        }
+
+        static bool IsVarLetConst(AstSymbol astSymbol)
+        {
+            var t = astSymbol.GetType();
+            return t == typeof(AstSymbolVar) || t == typeof(AstSymbolLet) || t == typeof(AstSymbolConst);
         }
 
         public override object ConstValue(IConstEvalCtx ctx = null)
@@ -44,7 +51,7 @@ namespace Njsast.Ast
             }
             if (Thedef.IsSingleInit)
             {
-                if (Thedef.VarInit == null) return AstUndefined.Instance;
+                if (Thedef.VarInit == null) return IsVarLetConst(Thedef.Orig[0]) ? AstUndefined.Instance : null;
                 return Thedef.VarInit.ConstValue(ctx);
             }
             return null;

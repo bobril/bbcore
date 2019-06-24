@@ -78,6 +78,11 @@ namespace Njsast.Ast
 
         public override bool IsConstValue(IConstEvalCtx ctx = null)
         {
+            if (ctx != null && ctx.JustModuleExports)
+            {
+                if (this is AstSub) return false;
+                if (!(Expression is AstSymbolRef)) return false;
+            }
             return Expression.IsConstValue(ctx) && (Property is string || ((AstNode) Property).IsConstValue(ctx));
         }
 
@@ -86,6 +91,7 @@ namespace Njsast.Ast
             var expr = Expression.ConstValue(ctx);
             var prop = Property;
             if (prop is AstNode node) prop = node.ConstValue(ctx?.StripPathResolver());
+            if (prop == null) return null;
             prop = TypeConverter.ToString(prop);
             if (expr is IReadOnlyDictionary<object, object> dict)
             {
@@ -96,7 +102,7 @@ namespace Njsast.Ast
 
             if (expr is JsModule module && ctx != null)
             {
-                return ctx.ConstValue(module, prop);
+                return ctx.ConstValue(ctx, module, prop);
             }
 
             return null;

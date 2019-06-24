@@ -335,6 +335,7 @@ namespace Lib.TSCompiler
             var res = new Dictionary<string, string>();
             foreach (var source in BuildResult.Modules)
             {
+                if (!source.Value.Valid) continue;
                 res.TryAdd(source.Key.ToLowerInvariant(),
                     PathUtils.Subtract(PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(source.Value.MainFile)), root));
                 res.TryAdd(source.Key.ToLowerInvariant()+"/",

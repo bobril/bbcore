@@ -33,7 +33,7 @@ namespace Lib.TSCompiler
             return ResolveImport(parentInfo.Owner.FullPath, name);
         }
 
-        static readonly string[] ExtensionsToImport = { ".tsx", ".ts", ".d.ts", ".jsx", ".js" };
+        static readonly string[] ExtensionsToImport = { ".tsx", ".ts", ".d.ts", ".jsx", ".js", "" };
         static readonly string[] ExtensionsToImportFromJs = { ".jsx", ".js", "" };
 
         internal OrderedHashSet<string> ToCheck;
@@ -196,6 +196,11 @@ namespace Lib.TSCompiler
                     return ff;
                 })
                     .FirstOrDefault(i => i != null);
+                if (item == null)
+                {
+                    res.FileName = "?";
+                    return res.FileName;
+                }
                 res.FileName = item.FullPath;
                 if (item.FullPath.Substring(0, fn.Length) != fn)
                 {
@@ -309,7 +314,7 @@ namespace Lib.TSCompiler
                 {
                     return false;
                 }
-                hashToName.Add(targetInfo.Owner.HashOfContent, targetInfo.Owner.FullPath);
+                hashToName.TryAdd(targetInfo.Owner.HashOfContent, targetInfo.Owner.FullPath);
             }
             return true;
         }
@@ -343,7 +348,7 @@ namespace Lib.TSCompiler
                     continue;
                 if (f.Diagnostics.Count != 0)
                     continue;
-                switch(f.Type)
+                switch (f.Type)
                 {
                     case FileCompilationType.TypeScript:
                     case FileCompilationType.EsmJavaScript:
@@ -550,19 +555,20 @@ namespace Lib.TSCompiler
             return info;
         }
 
-        private void ReportDependenciesFromCss(TSFileAdditionalInfo info)
+        void ReportDependenciesFromCss(TSFileAdditionalInfo info)
         {
-            foreach (var dep in info.TranspilationDependencies)
-            {
-                var fullJustName = PathUtils.Join(info.Owner.Parent.FullPath, dep.Import);
-                var fileAdditionalInfo =
-                    AutodetectAndAddDependency(fullJustName);
-                if (fileAdditionalInfo == null)
+            if (info.TranspilationDependencies != null)
+                foreach (var dep in info.TranspilationDependencies)
                 {
-                    info.ReportDiag(true, -3, "Missing dependency " + dep.Import, 0, 0, 0, 0);
+                    var fullJustName = PathUtils.Join(info.Owner.Parent.FullPath, dep.Import);
+                    var fileAdditionalInfo =
+                        AutodetectAndAddDependency(fullJustName);
+                    if (fileAdditionalInfo == null)
+                    {
+                        info.ReportDiag(true, -3, "Missing dependency " + dep.Import, 0, 0, 0, 0);
+                    }
+                    info.ReportDependency(fullJustName);
                 }
-                info.ReportDependency(fullJustName);
-            }
         }
 
         void Transpile(TSFileAdditionalInfo info)
@@ -573,6 +579,7 @@ namespace Lib.TSCompiler
                 compiler = _buildCtx.CompilerPool.GetTs();
                 compiler.DiskCache = _owner.DiskCache;
                 compiler.CompilerOptions = _owner.ProjectOptions.FinalCompilerOptions;
+                _owner.Logger.Info("Transpiling " + info.Owner.FullPath);
                 var result = compiler.Transpile(info.Owner.FullPath, info.Owner.Utf8Content);
                 info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
                 info.MapLink = SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath);
@@ -595,11 +602,22 @@ namespace Lib.TSCompiler
                 var toplevel = parser.Parse();
                 toplevel.FigureOutScope();
                 var ctx = new ResolvingConstEvalCtx(info.Owner.FullPath, this);
-                var sourceInfo = GatherBobrilSourceInfo.Gather(toplevel, ctx, (IConstEvalCtx myctx, string text) =>
+
+                string resolver(IConstEvalCtx myctx, string text)
                 {
+                    if (text.StartsWith("resource:", StringComparison.Ordinal))
+                    {
+                        return "resource:" + resolver(myctx, text.Substring("resource:".Length));
+                    }
+                    if (text.StartsWith("node_modules/", StringComparison.Ordinal))
+                    {
+                        return ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length));
+                    }
                     var res = PathUtils.Join(PathUtils.Parent(myctx.SourceName), text);
                     return res;
-                });
+                }
+
+                var sourceInfo = GatherBobrilSourceInfo.Gather(toplevel, ctx, resolver);
                 info.SourceInfo = sourceInfo;
                 AddDependenciesFromSourceInfo(info);
             }
@@ -719,14 +737,35 @@ namespace Lib.TSCompiler
             return file;
         }
 
-        public (string fileName, string content) ResolveAndLoad(JsModule module)
+        Dictionary<string, AstToplevel> _parsedCache = new Dictionary<string, AstToplevel>();
+
+        public (string fileName, AstToplevel content) ResolveAndLoad(JsModule module)
         {
             var fileName = ResolveImport(module.ImportedFrom, module.Name);
             if (fileName == null || fileName == "?") return (null, null);
-            var info = CrawlFile(fileName);
+            if (_currentlyTranspiling.Owner.FullPath == fileName)
+            {
+                return (null, null);
+            }
             _result.Path2FileInfo.TryGetValue(module.ImportedFrom, out var sourceInfo);
+            var info = CrawlFile(fileName);
             _currentlyTranspiling.ReportTranspilationDependency(sourceInfo.Owner.HashOfContent, module.Name, info.Owner.HashOfContent);
-            return (fileName, info.Output);
+            if (_parsedCache.TryGetValue(fileName, out var toplevel))
+            {
+                return (fileName, toplevel);
+            }
+            try
+            {
+                var parser = new Parser(new Options(), info.Output);
+                toplevel = parser.Parse();
+                toplevel.FigureOutScope();
+                _parsedCache.Add(fileName, toplevel);
+                return (fileName, toplevel);
+            }
+            catch
+            {
+                return (fileName, null);
+            }
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Njsast.Bobril
                 return _ctx.ResolveRequire(name);
             }
 
-            public object ConstValue(JsModule module, object export)
+            public object ConstValue(IConstEvalCtx ctx, JsModule module, object export)
             {
                 if (module.Name == "bobril" && export is string expName)
                 {
@@ -42,7 +42,7 @@ namespace Njsast.Bobril
                     if (expName2 == "t" || expName2 == "f" || expName2 == "dt")
                         return new JsModuleExport(module.Name, expName2);
                 }
-                return _ctx.ConstValue(module, export);
+                return _ctx.ConstValue(ctx, module, export);
             }
 
             virtual public IConstEvalCtx StripPathResolver()

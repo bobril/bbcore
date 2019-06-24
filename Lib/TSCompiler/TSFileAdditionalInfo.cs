@@ -79,6 +79,11 @@ namespace Lib.TSCompiler
             {
                 TranspilationDependencies = new List<DependencyTriplet>();
             }
+            foreach(var dep in TranspilationDependencies)
+            {
+                if (dep.Import == import && dep.SourceHash.AsSpan().SequenceEqual(sourceHash))
+                    return;
+            }
             TranspilationDependencies.Add(new DependencyTriplet
             {
                 SourceHash = sourceHash,

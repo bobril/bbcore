@@ -265,6 +265,8 @@ namespace Njsast.Runtime
                     return "NaN";
                 case AstInfinity _:
                     return "Infinity";
+                case null:
+                    throw new ArgumentNullException(nameof(o));
                 default:
                     return ToString(ToPrimitiveString(o));
             }
