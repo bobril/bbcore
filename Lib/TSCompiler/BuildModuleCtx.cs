@@ -302,20 +302,34 @@ namespace Lib.TSCompiler
             if (transpilationDependencies == null) return true;
             var hashToName = new Dictionary<byte[], string>(StructuralEqualityComparer<byte[]>.Default);
             hashToName.Add(owner.HashOfContent, owner.FullPath);
-            foreach (var dep in transpilationDependencies)
+            var processed = new StructList<bool>();
+            processed.RepeatAdd(false, (uint)transpilationDependencies.Count);
+            bool somethingFailed;
+            do
             {
-                if (!hashToName.TryGetValue(dep.SourceHash, out var sourceName))
+                var somethingProcessed = false;
+                somethingFailed = false;
+                for (var i = 0u; i < processed.Count; i++)
                 {
-                    return false;
+                    if (processed[i]) continue;
+                    var dep = transpilationDependencies[(int)i];
+                    if (!hashToName.TryGetValue(dep.SourceHash, out var sourceName))
+                    {
+                        somethingFailed = true;
+                        continue;
+                    }
+                    somethingProcessed = true;
+                    processed[i] = true;
+                    var targetName = ResolveImport(sourceName, dep.Import);
+                    _result.Path2FileInfo.TryGetValue(targetName, out var targetInfo);
+                    if (!dep.TargetHash.AsSpan().SequenceEqual(targetInfo.Owner.HashOfContent))
+                    {
+                        return false;
+                    }
+                    hashToName.TryAdd(targetInfo.Owner.HashOfContent, targetInfo.Owner.FullPath);
                 }
-                var targetName = ResolveImport(sourceName, dep.Import);
-                _result.Path2FileInfo.TryGetValue(targetName, out var targetInfo);
-                if (!dep.TargetHash.AsSpan().SequenceEqual(targetInfo.Owner.HashOfContent))
-                {
-                    return false;
-                }
-                hashToName.TryAdd(targetInfo.Owner.HashOfContent, targetInfo.Owner.FullPath);
-            }
+                if (!somethingProcessed) return !somethingFailed;
+            } while (somethingFailed);
             return true;
         }
 
