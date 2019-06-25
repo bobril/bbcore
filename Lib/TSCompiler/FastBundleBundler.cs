@@ -77,7 +77,7 @@ namespace Lib.TSCompiler
                     Project.ApplySourceInfo(sourceReplacer, source.SourceInfo, BuildResult);
                     sourceReplacer.Apply(adder);
                     //sourceMapBuilder.AddSource(source.Output, source.MapLink);
-                    sourceMapBuilder.AddText("});");
+                    sourceMapBuilder.AddText("\n});");
                 }
                 else if (source.Type == FileCompilationType.Json)
                 {

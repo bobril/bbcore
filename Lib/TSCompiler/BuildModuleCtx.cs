@@ -82,7 +82,8 @@ namespace Lib.TSCompiler
                 {
                     if (dc.Name != name)
                     {
-
+                        // Create it with proper casing
+                        return ResolveModule(dc.Name);
                     }
                     module = TSProject.Create(dc, _owner.DiskCache, _owner.Logger, dc.Name);
                     module.LoadProjectJson(true);
@@ -289,7 +290,7 @@ namespace Lib.TSCompiler
                         itemInfo.TranspilationDependencies = fbc.TranspilationDependencies;
                         itemInfo.TakenFromBuildCache = true;
                         AddDependenciesFromSourceInfo(itemInfo);
-                        _owner.Logger.Info("Loaded from cache " + itemInfo.Owner.FullPath);
+                        //_owner.Logger.Info("Loaded from cache " + itemInfo.Owner.FullPath);
                         return true;
                     }
                 }
@@ -346,7 +347,7 @@ namespace Lib.TSCompiler
                     itemInfo.Output = fbc.Output;
                     itemInfo.TranspilationDependencies = fbc.TranspilationDependencies;
                     itemInfo.TakenFromBuildCache = true;
-                    _owner.Logger.Info("Loaded from cache " + itemInfo.Owner.FullPath);
+                    //_owner.Logger.Info("Loaded from cache " + itemInfo.Owner.FullPath);
                     return true;
                 }
             }
@@ -376,7 +377,7 @@ namespace Lib.TSCompiler
                             fbc.TranspilationDependencies = f.TranspilationDependencies;
                             bc.Store(fbc);
                             f.TakenFromBuildCache = true;
-                            _owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
+                            //_owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
                             break;
                         }
                     case FileCompilationType.Css:
@@ -389,7 +390,7 @@ namespace Lib.TSCompiler
                             fbc.TranspilationDependencies = f.TranspilationDependencies;
                             bc.Store(fbc);
                             f.TakenFromBuildCache = true;
-                            _owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
+                            //_owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
                             break;
                         }
                 }
@@ -593,7 +594,7 @@ namespace Lib.TSCompiler
                 compiler = _buildCtx.CompilerPool.GetTs();
                 compiler.DiskCache = _owner.DiskCache;
                 compiler.CompilerOptions = _owner.ProjectOptions.FinalCompilerOptions;
-                _owner.Logger.Info("Transpiling " + info.Owner.FullPath);
+                //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);
                 var result = compiler.Transpile(info.Owner.FullPath, info.Owner.Utf8Content);
                 info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
                 info.MapLink = SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath);

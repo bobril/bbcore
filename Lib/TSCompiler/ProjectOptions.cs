@@ -539,7 +539,7 @@ namespace Lib.TSCompiler
                         if (styleDefNaming == StyleDefNamingStyle.AddNames && s.Name != null)
                         {
                             var padArgs = (s.ArgCount == 1 + (s.IsEx ? 1 : 0)) ? ",undefined" : "";
-                            sourceReplacer.Replace(s.BeforeNameLine, s.BeforeNameCol, s.EndLine, s.EndCol, padArgs + ",\"" + styleDefPrefix + s.Name + "\"");
+                            sourceReplacer.Replace(s.BeforeNameLine, s.BeforeNameCol, s.BeforeNameLine, s.BeforeNameCol, padArgs + ",\"" + styleDefPrefix + s.Name + "\"");
                         }
                     }
                 }
