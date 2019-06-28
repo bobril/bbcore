@@ -415,6 +415,13 @@ namespace Lib.Composition
                 {
                     if (proj.Localize && bCommand.UpdateTranslations.Value)
                     {
+                        // Side effect of fastBundle is registering of all messages
+                        var fastBundle = new FastBundleBundler(_tools);
+                        fastBundle.FilesContent = filesContent;
+                        fastBundle.Project = proj;
+                        fastBundle.BuildResult = buildResult;
+                        fastBundle.ResultSet = ctx.ResultSet;
+                        fastBundle.Build("bb/base", "bundle.js.map");
                         proj.TranslationDb.SaveLangDbs(PathToTranslations(proj), true);
                     }
                     else

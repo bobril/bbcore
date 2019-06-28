@@ -217,23 +217,30 @@ namespace Njsast.Bobril
                                     for (var i = 0u; i < call.Args.Count; i++)
                                     {
                                         var arg = call.Args[i];
+                                        switch(i)
+                                        {
+                                            case 0:
+                                                sprite.NameStartLine = arg.Start.Line;
+                                                sprite.NameStartCol = arg.Start.Column;
+                                                sprite.NameEndLine = arg.End.Line;
+                                                sprite.NameEndCol = arg.End.Column;
+                                                break;
+                                            case 1:
+                                                sprite.ColorStartLine = arg.Start.Line;
+                                                sprite.ColorStartCol = arg.Start.Column;
+                                                sprite.ColorEndLine = arg.End.Line;
+                                                sprite.ColorEndCol = arg.End.Column;
+                                                break;
+                                        }
                                         var res = arg.ConstValue(i == 0 ? _evalCtxWithPath : _evalCtx);
                                         if (res != null)
                                             switch (i)
                                             {
                                                 case 0:
                                                     sprite.Name = res as string;
-                                                    sprite.NameStartLine = arg.Start.Line;
-                                                    sprite.NameStartCol = arg.Start.Column;
-                                                    sprite.NameEndLine = arg.End.Line;
-                                                    sprite.NameEndCol = arg.End.Column;
                                                     break;
                                                 case 1:
                                                     sprite.Color = res as string;
-                                                    sprite.ColorStartLine = arg.Start.Line;
-                                                    sprite.ColorStartCol = arg.Start.Column;
-                                                    sprite.ColorEndLine = arg.End.Line;
-                                                    sprite.ColorEndCol = arg.End.Column;
                                                     break;
                                                 case 2:
                                                     if (Runtime.TypeConverter.GetJsType(res) == Runtime.JsType.Number) sprite.Width = Runtime.TypeConverter.ToInt32(res);

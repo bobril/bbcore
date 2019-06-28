@@ -125,7 +125,7 @@ namespace Lib.TSCompiler
         }
 
         // returns "?" if error in resolving
-        public string ResolveImport(string from, string name, bool preferDts = false)
+        public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false)
         {
             if (_result.ResolveCache.TryGetValue((from, name), out var res))
             {
@@ -165,7 +165,7 @@ namespace Lib.TSCompiler
                     if (fc != null && !fc.IsInvalid)
                     {
                         res.FileName = fn;
-                        CheckAdd(fn, fn.EndsWith(".json") ? FileCompilationType.Json : FileCompilationType.ImportedCss);
+                        CheckAdd(fn, fn.EndsWith(".json") ? FileCompilationType.Json : (isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss));
                     }
                     else
                     {
@@ -626,7 +626,7 @@ namespace Lib.TSCompiler
                     }
                     if (text.StartsWith("node_modules/", StringComparison.Ordinal))
                     {
-                        return ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length));
+                        return ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false, true);
                     }
                     var res = PathUtils.Join(PathUtils.Parent(myctx.SourceName), text);
                     return res;
@@ -711,11 +711,6 @@ namespace Lib.TSCompiler
                                     "Problem with translation message \"" + t.Message + "\" " + err.ToString(), t.StartLine, t.StartCol, t.EndLine, t.EndCol);
                             }
                         }
-
-                        if (t.JustFormat)
-                            return;
-                        var id = trdb.AddToDB(t.Message, t.Hint, t.WithParams);
-                        var finalId = trdb.MapId(id);
                     });
                 }
             }

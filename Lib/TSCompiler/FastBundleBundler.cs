@@ -54,7 +54,9 @@ namespace Lib.TSCompiler
 
             sourceMapBuilder.AddText(_tools.TsLibSource);
             var cssLink = "";
-            foreach (var source in ResultSet)
+
+            var sortedResultSet = ResultSet.OrderBy(f => f.Owner.FullPath).ToArray();
+            foreach (var source in sortedResultSet)
             {
                 if (source.Type == FileCompilationType.JavaScriptAsset)
                 {
@@ -62,7 +64,7 @@ namespace Lib.TSCompiler
                 }
             }
 
-            foreach (var source in ResultSet)
+            foreach (var source in sortedResultSet)
             {
                 if (source.Type == FileCompilationType.TypeScript ||
                     source.Type == FileCompilationType.EsmJavaScript ||
