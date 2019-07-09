@@ -27,6 +27,7 @@ namespace Lib.TSCompiler
         public bool MeasurePerformance { get; set; }
 
         TranspileResult _transpileResult;
+        ITSCompilerOptions _lastCompilerOptions;
 
         public ITSCompilerOptions CompilerOptions
         {
@@ -37,18 +38,14 @@ namespace Lib.TSCompiler
             }
             set
             {
+                if (_lastCompilerOptions == value) return;
+                _lastCompilerOptions = value;
                 var engine = getJSEnviroment();
                 engine.CallFunction("bbSetCurrentCompilerOptions", JsonConvert.SerializeObject(value, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
             }
         }
 
         public ITSCompilerCtx Ctx { get; set; }
-
-        public void MergeCompilerOptions(ITSCompilerOptions compilerOptions)
-        {
-            var engine = getJSEnviroment();
-            engine.CallFunction("bbMergeCurrentCompilerOptions", JsonConvert.SerializeObject(compilerOptions, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
-        }
 
         class BBCallbacks
         {

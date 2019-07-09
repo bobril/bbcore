@@ -49,6 +49,7 @@ namespace Lib.TSCompiler
             {
                 var newChangeId = cache.ChangeId;
                 if (newChangeId == PackageJsonChangeId) return;
+                ProjectOptions.FinalCompilerOptions = null;
                 MainFileNeedsToBeCompiled = false;
                 JObject parsed;
                 try
@@ -241,59 +242,74 @@ namespace Lib.TSCompiler
 
         public void Build(BuildCtx buildCtx, BuildResult buildResult, int iterationId)
         {
+            var tryDetectChanges = !buildCtx.ProjectStructureChanged;
+            if (!buildResult.Incremental || !tryDetectChanges)
+            {
+                buildResult.RecompiledIncrementaly.Clear();
+            }
             var buildModuleCtx = new BuildModuleCtx()
             {
-                _buildCtx = buildCtx,
-                _owner = this,
-                _result = buildResult,
+                BuildCtx = buildCtx,
+                Owner = this,
+                Result = buildResult,
                 ToCheck = new OrderedHashSet<string>(),
                 IterationId = iterationId
             };
-            buildCtx.ResultSet = buildModuleCtx.ResultSet;
             try
             {
                 ProjectOptions.BuildCache.StartTransaction();
                 ITSCompiler compiler = null;
                 try
                 {
-                    compiler = buildCtx.CompilerPool.GetTs();
-                    compiler.DiskCache = DiskCache;
-                    var compOpt = buildCtx.TSCompilerOptions.Clone();
-                    compOpt.module = ModuleKind.Commonjs;
-                    compOpt.declaration = true;
-                    compOpt.emitBOM = false;
-                    compOpt.newLine = NewLineKind.LineFeed;
-                    if (!ProjectOptions.TypeScriptVersionOverride && DevDependencies != null &&
-                        DevDependencies.Contains("typescript"))
-                        ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
-                    else
-                        ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
-                    compiler.MergeCompilerOptions(compOpt);
-                    compiler.MergeCompilerOptions(ProjectOptions.CompilerOptions);
-                    var positionIndependentOptions = compiler.CompilerOptions.Clone();
-                    ProjectOptions.FinalCompilerOptions = positionIndependentOptions.Clone();
+                    if (!tryDetectChanges)
+                    {
+                        if (!ProjectOptions.TypeScriptVersionOverride && DevDependencies != null &&
+                            DevDependencies.Contains("typescript"))
+                            ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
+                        else
+                            ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
+                    }
+                    compiler = buildCtx.CompilerPool.GetTs(DiskCache, buildCtx.CompilerOptions);
                     var trueTSVersion = compiler.GetTSVersion();
                     buildCtx.ShowTsVersion(trueTSVersion);
                     ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(trueTSVersion,
-                        JsonConvert.SerializeObject(positionIndependentOptions, Formatting.None,
-                            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                        JsonConvert.SerializeObject(buildCtx.CompilerOptions, Formatting.None, TSCompilerOptions.GetSerializerSettings()));
                 }
                 finally
                 {
                     if (compiler != null)
                         buildCtx.CompilerPool.ReleaseTs(compiler);
                 }
-                if (buildModuleCtx._result.CommonSourceDirectory == null)
+                if (buildModuleCtx.Result.CommonSourceDirectory == null)
                 {
-                    buildModuleCtx._result.CommonSourceDirectory = Owner.FullPath;
+                    buildModuleCtx.Result.CommonSourceDirectory = Owner.FullPath;
+                }
+                if (tryDetectChanges)
+                {
+                    if (!buildModuleCtx.CrawlChanges())
+                    {
+                        buildResult.Incremental = true;
+                        goto noDependencyChangeDetected;
+                    }
+                    buildCtx.ProjectStructureChanged = true;
+                    buildResult.Incremental = false;
+                    foreach (var info in buildModuleCtx.Result.Path2FileInfo)
+                    {
+                        info.Value.IterationId = iterationId - 1;
+                    }
                 }
                 buildModuleCtx.CrawledCount = 0;
                 buildModuleCtx.ToCheck.Clear();
                 ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
-                foreach (var src in buildCtx.Sources)
-                {
-                    buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, src), FileCompilationType.Unknown);
-                }
+                if (buildCtx.MainFile != null) buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, buildCtx.MainFile), FileCompilationType.Unknown);
+                if (buildCtx.ExampleSources != null) foreach (var src in buildCtx.ExampleSources)
+                    {
+                        buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, src), FileCompilationType.Unknown);
+                    }
+                if (buildCtx.TestSources != null) foreach (var src in buildCtx.TestSources)
+                    {
+                        buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, src), FileCompilationType.Unknown);
+                    }
 
                 if (ProjectOptions.IncludeSources != null)
                 {
@@ -304,13 +320,22 @@ namespace Lib.TSCompiler
                 }
 
                 buildModuleCtx.Crawl();
-                ProjectOptions.CommonSourceDirectory = buildModuleCtx._result.CommonSourceDirectory;
+            noDependencyChangeDetected:;
+                ProjectOptions.CommonSourceDirectory = buildModuleCtx.Result.CommonSourceDirectory;
                 if (ProjectOptions.SpriteGeneration)
                     ProjectOptions.SpriteGenerator.ProcessNew();
-
+                var hasError = false;
+                foreach(var item in buildModuleCtx.Result.Path2FileInfo)
+                {
+                    if (item.Value.HasError)
+                    {
+                        hasError = true;
+                        break;
+                    }
+                }
+                buildModuleCtx.Result.HasError = hasError;
                 if (ProjectOptions.BuildCache.IsEnabled)
-                    buildModuleCtx.StoreResultToBuildCache(buildModuleCtx._result);
-                buildCtx.BuildResult = buildModuleCtx._result;
+                    buildModuleCtx.StoreResultToBuildCache(buildModuleCtx.Result);
             }
             finally
             {
@@ -380,7 +405,6 @@ namespace Lib.TSCompiler
             };
             return proj;
         }
-
 
         public void FillOutputByAssets(RefDictionary<string, object> filesContent, BuildResult buildResult,
             string nodeModulesDir, ProjectOptions projectOptions)

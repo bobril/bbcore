@@ -66,6 +66,7 @@ namespace Lib.TSCompiler
 
         public int IterationId;
         internal int ChangeId;
+        internal bool HasError;
 
         public void ReportDependency(string fullname)
         {

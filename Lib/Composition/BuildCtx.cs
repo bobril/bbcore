@@ -1,38 +1,98 @@
-﻿using Lib.CSSProcessor;
-using Lib.TSCompiler;
-using System;
+﻿using Lib.TSCompiler;
+using Lib.Utils.Logger;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace Lib.Composition
 {
     public class BuildCtx
     {
-        public BuildCtx(ICompilerPool compilerPool, bool verbose, Action<string> showTsVersion)
+        public BuildCtx(ICompilerPool compilerPool, bool verbose, ILogger logger)
         {
-            _cts = new CancellationTokenSource();
-            _cancelationToken = _cts.Token;
             Verbose = verbose;
             CompilerPool = compilerPool;
-            ShowTsVersion = showTsVersion;
+            Logger = logger;
         }
 
-        public void Cancel()
+        string _mainFile;
+        string _jasmineDts;
+        List<string> _exampleSources;
+        List<string> _testSources;
+        ITSCompilerOptions _compilerOptions;
+
+        public bool ProjectStructureChanged;
+
+        public string MainFile
         {
-            _cts.Cancel(true);
+            get { return _mainFile; }
+            set
+            {
+                if (!ReferenceEquals(value, _mainFile))
+                {
+                    _mainFile = value; ProjectStructureChanged = true;
+                }
+            }
+        }
+        public string JasmineDts
+        {
+            get { return _jasmineDts; }
+            set
+            {
+                if (!ReferenceEquals(value, _jasmineDts))
+                {
+                    _jasmineDts = value; ProjectStructureChanged = true;
+                }
+            }
         }
 
-        public TSCompilerOptions TSCompilerOptions { get; set; }
-        public HashSet<string> Sources { get; set; }
+        public List<string> ExampleSources
+        {
+            get { return _exampleSources; }
+            set
+            {
+                if (!ReferenceEquals(value, _exampleSources))
+                {
+                    _exampleSources = value; ProjectStructureChanged = true;
+                }
+            }
+        }
 
-        public BuildResult BuildResult { get; set; }
-        public HashSet<TSFileAdditionalInfo> ResultSet { get; set; }
+        public List<string> TestSources
+        {
+            get { return _testSources; }
+            set
+            {
+                if (!ReferenceEquals(value, _testSources))
+                {
+                    _testSources = value; ProjectStructureChanged = true;
+                }
+            }
+        }
 
-        CancellationTokenSource _cts;
-        public CancellationToken _cancelationToken;
+        public ITSCompilerOptions CompilerOptions
+        {
+            get { return _compilerOptions; }
+            set
+            {
+                if (!ReferenceEquals(value, _compilerOptions))
+                {
+                    _compilerOptions = value; ProjectStructureChanged = true;
+                }
+            }
+        }
+
         public bool Verbose;
         public ICompilerPool CompilerPool;
+        public ILogger Logger;
 
-        public Action<string> ShowTsVersion { get; set; }
+        string _lastTsVersion = null;
+
+        internal void ShowTsVersion(string version)
+        {
+            if (_lastTsVersion != version)
+            {
+                Logger.Info("Using TypeScript version " + version);
+                _lastTsVersion = version;
+            }
+        }
     }
 }

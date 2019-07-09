@@ -223,8 +223,6 @@ namespace Lib.DiskCache
                 IsInvalid = isInvalid
             };
             ((DirectoryCache)parent).Add(subDir);
-            if (!isInvalid)
-                ((DirectoryCache)parent).NoteChange();
             return subDir;
         }
 
@@ -240,7 +238,6 @@ namespace Lib.DiskCache
                 Length = fi.Length
             };
             ((DirectoryCache)directory).Add(subFile);
-            ((DirectoryCache)directory).NoteChange();
         }
 
         static SHA1 _hashFunction = new SHA1Managed();

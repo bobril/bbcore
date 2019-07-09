@@ -28,12 +28,14 @@ namespace Lib.Composition
         readonly ILogger _logger;
         private readonly int _parallelCompilations;
 
-        public ITSCompiler GetTs()
+        public ITSCompiler GetTs(DiskCache.IDiskCache diskCache, ITSCompilerOptions compilerOptions)
         {
             _semaphore.Wait();
-            if (_pool.TryTake(out var res))
-                return res;
-            return new TsCompiler(_toolsDir, _logger);
+            if (!_pool.TryTake(out var res))
+                res = new TsCompiler(_toolsDir, _logger);
+            res.DiskCache = diskCache;
+            if (compilerOptions != null) res.CompilerOptions = compilerOptions;
+            return res;
         }
 
         public void ReleaseTs(ITSCompiler value)

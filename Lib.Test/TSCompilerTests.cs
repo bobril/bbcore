@@ -183,8 +183,7 @@ namespace Lib.Test
         [Fact]
         public void TranspilerWorks()
         {
-            var ts = _compilerPool.GetTs();
-            ts.MergeCompilerOptions(new TSCompilerOptions { newLine = NewLineKind.LineFeed });
+            var ts = _compilerPool.GetTs(null, new TSCompilerOptions { newLine = NewLineKind.LineFeed });
             var res = ts.Transpile("index.ts", "let a: string = 'ahoj';");
             Assert.Equal("var a = 'ahoj';\n", res.JavaScript);
             _compilerPool.ReleaseTs(ts);

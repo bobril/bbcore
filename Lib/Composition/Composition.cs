@@ -398,13 +398,13 @@ namespace Lib.Composition
                 var buildResult = new BuildResult(proj);
                 proj.GenerateCode();
                 proj.SpriterInitialization(buildResult);
+                proj.RefreshCompilerOptions();
                 proj.RefreshMainFile();
                 proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
-                ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
-                ctx.Sources = new HashSet<string>();
-                ctx.Sources.Add(proj.MainFile);
-                proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
+                var ctx = new BuildCtx(_compilerPool, _verbose, _logger);
+                ctx.MainFile = proj.MainFile;
+                ctx.ExampleSources = proj.ExampleSources;
+                ctx.CompilerOptions = proj.FinalCompilerOptions;
                 proj.Owner.Build(ctx, buildResult, 1);
                 _compilerPool.FreeMemory().GetAwaiter();
                 var filesContent = new RefDictionary<string, object>();
@@ -420,8 +420,7 @@ namespace Lib.Composition
                         fastBundle.FilesContent = filesContent;
                         fastBundle.Project = proj;
                         fastBundle.BuildResult = buildResult;
-                        fastBundle.ResultSet = ctx.ResultSet;
-                        fastBundle.Build("bb/base", "bundle.js.map");
+                        fastBundle.Build("bb/base");
                         proj.TranslationDb.SaveLangDbs(PathToTranslations(proj), true);
                     }
                     else
@@ -432,9 +431,7 @@ namespace Lib.Composition
                             fastBundle.FilesContent = filesContent;
                             fastBundle.Project = proj;
                             fastBundle.BuildResult = buildResult;
-                            fastBundle.ResultSet = ctx.ResultSet;
-                            fastBundle.Build("bb/base", "bundle.js.map");
-                            buildResult.SourceMap = fastBundle.SourceMap;
+                            fastBundle.Build("bb/base");
                         }
                         else
                         {
@@ -473,24 +470,13 @@ namespace Lib.Composition
                 if (message.IsError)
                 {
                     _logger.Error(
-                        $"{message.FileName}({message.StartLine+1},{message.StartCol+1}): {message.Text} ({message.Code})");
+                        $"{message.FileName}({message.StartLine + 1},{message.StartCol + 1}): {message.Text} ({message.Code})");
                 }
                 else
                 {
                     _logger.Warn(
                         $"{message.FileName}({message.StartLine + 1},{message.StartCol + 1}): {message.Text} ({message.Code})");
                 }
-            }
-        }
-
-        string _lastTsVersion = null;
-
-        void ShowTsVersion(string version)
-        {
-            if (_lastTsVersion != version)
-            {
-                _logger.WriteLine("Using TypeScript version " + version);
-                _lastTsVersion = version;
             }
         }
 
@@ -531,16 +517,16 @@ namespace Lib.Composition
                 proj.StyleDefNaming = StyleDefNamingStyle.AddNames;
                 var testBuildResult = new BuildResult(proj);
                 proj.GenerateCode();
-                proj.SpriterInitialization(testBuildResult);
+                proj.RefreshCompilerOptions();
                 proj.RefreshMainFile();
                 proj.RefreshTestSources();
+                proj.SpriterInitialization(testBuildResult);
                 if (proj.TestSources != null && proj.TestSources.Count > 0)
                 {
-                    var ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
-                    ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
-                    ctx.Sources = new HashSet<string>();
-                    ctx.Sources.Add(proj.JasmineDts);
-                    proj.TestSources.ForEach(s => ctx.Sources.Add(s));
+                    var ctx = new BuildCtx(_compilerPool, _verbose, _logger);
+                    ctx.TestSources = proj.TestSources;
+                    ctx.JasmineDts = proj.JasmineDts;
+                    ctx.CompilerOptions = proj.FinalCompilerOptions;
                     proj.Owner.Build(ctx, testBuildResult, 1);
                     var fastBundle = new FastBundleBundler(_tools);
                     var filesContent = new RefDictionary<string, object>();
@@ -548,15 +534,13 @@ namespace Lib.Composition
                     fastBundle.FilesContent = filesContent;
                     fastBundle.Project = proj;
                     fastBundle.BuildResult = testBuildResult;
-                    fastBundle.ResultSet = ctx.ResultSet;
-                    fastBundle.Build("bb/base", "testbundle.js.map", true);
-                    testBuildResult.SourceMap = fastBundle.SourceMap;
-                    proj.TestProjFastBundle = fastBundle;
+                    fastBundle.Build("bb/base", true);
+                    fastBundle.BuildHtml(true);
                     proj.FilesContent = filesContent;
                     _compilerPool.FreeMemory().GetAwaiter();
                     if (testCommand.Dir.Value != null)
                         SaveFilesContentToDisk(filesContent, testCommand.Dir.Value);
-                    IncludeMessages(proj, proj.TestProjFastBundle, ref errors, ref warnings, messages,
+                    IncludeMessages(proj, testBuildResult, ref errors, ref warnings, messages,
                         messagesFromFiles,
                         proj.Owner.Owner.FullPath);
                     PrintMessages(messages);
@@ -578,9 +562,7 @@ namespace Lib.Composition
                             _logger.Success("Build successful. Starting Chrome to run tests in " +
                                             durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
 
-                            _testServer.StartTest("/test.html",
-                                new Dictionary<string, SourceMap> { { "testbundle.js", testBuildResult.SourceMap } },
-                                testCommand.SpecFilter.Value);
+                            _testServer.StartTest("/test.html", fastBundle.SourceMaps, testCommand.SpecFilter.Value);
                             StartChromeTest();
                             wait.WaitOne();
                             StopChromeTest();
@@ -664,28 +646,21 @@ namespace Lib.Composition
                 proj.Localize = false;
                 proj.Owner.InitializeOnce();
                 proj.Owner.UsedDependencies = new HashSet<string>();
+                var buildResult = new BuildResult(proj);
                 proj.GenerateCode();
+                proj.RefreshCompilerOptions();
                 proj.RefreshMainFile();
                 proj.RefreshTestSources();
-                var buildResult = new BuildResult(proj);
                 proj.SpriterInitialization(buildResult);
                 proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
-                ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
-                ctx.Sources = new HashSet<string>();
-                ctx.Sources.Add(proj.MainFile);
-                proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
+                var ctx = new BuildCtx(_compilerPool, _verbose, _logger);
+                ctx.MainFile = proj.MainFile;
+                ctx.ExampleSources = proj.ExampleSources;
+                ctx.TestSources = proj.TestSources;
+                ctx.JasmineDts = proj.TestSources != null ? proj.JasmineDts : null;
+                ctx.CompilerOptions = proj.FinalCompilerOptions;
                 proj.Owner.Build(ctx, buildResult, 1);
-                if (proj.TestSources != null && proj.TestSources.Count > 0)
-                {
-                    ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
-                    ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
-                    ctx.Sources = new HashSet<string>();
-                    ctx.Sources.Add(proj.JasmineDts);
-                    proj.TestSources.ForEach(s => ctx.Sources.Add(s));
-                    proj.Owner.Build(ctx, buildResult, 1);
-                }
-                var buildResultSet = ctx.BuildResult.Path2FileInfo.Values.ToHashSet();
+                var buildResultSet = buildResult.Path2FileInfo.Values.ToHashSet();
 
                 if (buildResultSet.Any(a => a.Diagnostics.Any(d => d.IsError)))
                 {
@@ -694,7 +669,7 @@ namespace Lib.Composition
                 }
 
                 var unused = new List<string>();
-                SearchUnused(buildResultSet.Select(i=>i.Owner.FullPath).ToHashSet(), proj.Owner.Owner, unused, "");
+                SearchUnused(buildResultSet.Select(i => i.Owner.FullPath).ToHashSet(), proj.Owner.Owner, unused, "");
                 _logger.WriteLine(
                     "Build finished total used: " + buildResultSet.Count + " total unused: " + unused.Count,
                     ConsoleColor.Cyan);
@@ -1017,12 +992,15 @@ namespace Lib.Composition
             _hasBuildWork.Set();
             _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200)).Subscribe((_) => _hasBuildWork.Set());
             var iterationId = 0;
+            var ctx = new BuildCtx(_compilerPool, _verbose, _logger);
             var buildResult = new BuildResult(_currentProject);
+            var fastBundle = new FastBundleBundler(_tools);
+            var filesContent = new RefDictionary<string, object>();
             Task.Run(() =>
             {
                 while (_hasBuildWork.WaitOne())
                 {
-                    if (!_dc.CheckForTrueChange())
+                    if (iterationId != 0 && !_dc.CheckForTrueChange())
                         continue;
                     _dc.ResetChange();
                     _hasBuildWork.Set();
@@ -1045,29 +1023,30 @@ namespace Lib.Composition
                         proj.OutputSubDir = versionDir;
                         proj.Owner.UsedDependencies = new HashSet<string>();
                         proj.GenerateCode();
+                        proj.RefreshCompilerOptions();
                         proj.RefreshMainFile();
                         proj.RefreshTestSources();
-                        proj.SpriterInitialization(buildResult);
                         proj.RefreshExampleSources();
+                        proj.SpriterInitialization(buildResult);
                         proj.UpdateTSConfigJson();
-                        if (buildResult==null) buildResult = new BuildResult(proj);
-                        var ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
-                        ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
-                        ctx.Sources = new HashSet<string>();
-                        ctx.Sources.Add(proj.MainFile);
-                        proj.ExampleSources.ForEach(s => ctx.Sources.Add(s));
+                        ctx.ProjectStructureChanged = false;
+                        ctx.MainFile = proj.MainFile;
+                        ctx.ExampleSources = proj.ExampleSources;
+                        ctx.TestSources = proj.TestSources;
+                        ctx.JasmineDts = proj.TestSources != null ? proj.JasmineDts : null;
+                        ctx.CompilerOptions = proj.FinalCompilerOptions;
                         proj.Owner.Build(ctx, buildResult, iterationId);
-                        var filesContent = new RefDictionary<string, object>();
-                        proj.FillOutputByAdditionalResourcesDirectory(filesContent, buildResult.Modules, buildResult);
-                        var fastBundle = new FastBundleBundler(_tools);
-                        fastBundle.FilesContent = filesContent;
-                        fastBundle.Project = proj;
-                        fastBundle.BuildResult = buildResult;
-                        fastBundle.ResultSet = ctx.ResultSet;
-                        fastBundle.Build("bb/base", "bundle.js.map");
-                        buildResult.SourceMap = fastBundle.SourceMap;
-                        proj.MainProjFastBundle = fastBundle;
-                        IncludeMessages(proj, proj.MainProjFastBundle, ref errors, ref warnings, messages,
+                        if (!buildResult.HasError)
+                        {
+                            proj.FillOutputByAdditionalResourcesDirectory(filesContent, buildResult.Modules, buildResult);
+                            fastBundle.FilesContent = filesContent;
+                            fastBundle.Project = proj;
+                            fastBundle.BuildResult = buildResult;
+                            fastBundle.Build("bb/base");
+                            fastBundle.BuildHtml();
+                            proj.FilesContent = filesContent;
+                        }
+                        IncludeMessages(proj, buildResult, ref errors, ref warnings, messages,
                             messagesFromFiles, proj.Owner.Owner.FullPath);
                         if (errors == 0 && proj.LiveReloadEnabled)
                         {
@@ -1077,36 +1056,15 @@ namespace Lib.Composition
 
                         if (proj.TestSources != null && proj.TestSources.Count > 0)
                         {
-                            ctx = new BuildCtx(_compilerPool, _verbose, ShowTsVersion);
-                            ctx.TSCompilerOptions = proj.GetDefaultTSCompilerOptions();
-                            ctx.Sources = new HashSet<string>();
-                            ctx.Sources.Add(proj.JasmineDts);
-                            proj.TestSources.ForEach(s => ctx.Sources.Add(s));
-                            proj.Owner.Build(ctx, buildResult, iterationId);
-                            fastBundle = new FastBundleBundler(_tools);
-                            fastBundle.FilesContent = filesContent;
-                            fastBundle.Project = proj;
-                            fastBundle.BuildResult = buildResult;
-                            fastBundle.ResultSet = ctx.ResultSet;
-                            fastBundle.Build("bb/base", "testbundle.js.map", true);
-                            proj.TestProjFastBundle = fastBundle;
-                            IncludeMessages(proj, proj.TestProjFastBundle, ref errors, ref warnings, messages,
-                                messagesFromFiles, proj.Owner.Owner.FullPath);
+                            fastBundle.BuildHtml(true);
                             if (errors == 0)
                             {
-                                _testServer.StartTest("/test.html",
-                                    new Dictionary<string, SourceMap>
-                                        {{"testbundle.js", fastBundle.SourceMap}});
+                                _testServer.StartTest("/test.html", fastBundle.SourceMaps);
                                 StartChromeTest();
                             }
                         }
-                        else
-                        {
-                            proj.TestProjFastBundle = null;
-                        }
 
-                        proj.FilesContent = filesContent;
-                        totalFiles += filesContent.Count;
+                        totalFiles += proj.FilesContent.Count;
                         if (errors == 0)
                         {
                             /*
@@ -1122,18 +1080,16 @@ namespace Lib.Composition
                         errors++;
                     }
 
-                    var duration = DateTime.UtcNow - start;
-                    _mainServer.NotifyCompilationFinished(errors, warnings, duration.TotalSeconds, messages);
+                    var duration = (DateTime.UtcNow - start).TotalSeconds;
+                    _mainServer.NotifyCompilationFinished(errors, warnings, duration, messages);
                     _notificationManager.SendNotification(
-                        NotificationParameters.CreateBuildParameters(errors, warnings, duration.TotalSeconds));
+                        NotificationParameters.CreateBuildParameters(errors, warnings, duration));
                     PrintMessages(messages);
                     var color = errors != 0 ? ConsoleColor.Red :
                         warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     _logger.WriteLine(
-                        $"Build done in {(DateTime.UtcNow - start).TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(totalFiles, "file")}",
+                        $"Build done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(totalFiles, "file")}",
                         color);
-                    _compilerPool.FreeMemory().GetAwaiter();
-                    _dc.ResetChange();
                 }
             });
         }
@@ -1173,13 +1129,6 @@ namespace Lib.Composition
             return $"{number} {word}{(number > 1 ? "s" : "")}";
         }
 
-        void IncludeMessages(ProjectOptions options, FastBundleBundler fastBundle, ref int errors, ref int warnings,
-            List<Diagnostic> messages, HashSet<string> messagesFromFiles, string rootPath)
-        {
-            IncludeMessages(options, fastBundle.BuildResult, ref errors, ref warnings, messages, messagesFromFiles,
-                rootPath);
-        }
-
         void IncludeMessages(ProjectOptions options, BuildResult buildResult, ref int errors, ref int warnings,
             List<Diagnostic> messages, HashSet<string> messagesFromFiles, string rootPath)
         {
@@ -1206,7 +1155,7 @@ namespace Lib.Composition
                         IsError = isError,
                         Text = d.Text,
                         Code = d.Code,
-                        StartLine= d.StartLine,
+                        StartLine = d.StartLine,
                         StartCol = d.StartCol,
                         EndLine = d.EndLine,
                         EndCol = d.EndCol

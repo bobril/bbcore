@@ -24,7 +24,6 @@ namespace Lib.ToolsDir
         public ToolsDir(string dir, ILogger logger)
         {
             _logger = logger;
-            _jasmineVersion = "299";
             lock (lockInitialization)
             {
                 Path = dir;
@@ -43,7 +42,7 @@ namespace Lib.ToolsDir
                     }
                 }
 
-                SetJasmineVersion("299");
+                SetJasmineVersion("330");
                 LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js");
                 JasmineCoreJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.js");
                 JasmineDts299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.d.ts");

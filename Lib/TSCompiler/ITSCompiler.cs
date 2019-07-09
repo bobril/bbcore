@@ -10,8 +10,6 @@ namespace Lib.TSCompiler
         bool MeasurePerformance { get; set; }
         ITSCompilerCtx Ctx { get; set; }
 
-        void MergeCompilerOptions(ITSCompilerOptions compilerOptions);
-
         string GetTSVersion();
         TranspileResult Transpile(string fileName, string content);
         void CreateProgram(string currentDirectory, string[] mainFiles);

@@ -51,8 +51,6 @@ namespace Lib.TSCompiler
         public string JasmineDts;
         public List<string> TestSources;
         public List<string> ExampleSources;
-        public FastBundleBundler MainProjFastBundle;
-        public FastBundleBundler TestProjFastBundle;
         public bool LiveReloadEnabled;
         public string TypeScriptVersion;
 
@@ -74,12 +72,25 @@ namespace Lib.TSCompiler
         public IBuildCache BuildCache;
         internal uint ConfigurationBuildCacheId;
 
+        public void RefreshCompilerOptions()
+        {
+            if (FinalCompilerOptions != null) return;
+            var compOpt = GetDefaultTSCompilerOptions();
+            compOpt.Merge(CompilerOptions);
+            FinalCompilerOptions = compOpt;
+        }
+
         public void RefreshMainFile()
         {
-            MainFile = PathUtils.Join(Owner.Owner.FullPath, Owner.MainFile);
-            if (!(Owner.DiskCache.TryGetItem(MainFile) is IFileCache))
+            var res = PathUtils.Join(Owner.Owner.FullPath, Owner.MainFile);
+            if (!(Owner.DiskCache.TryGetItem(res) is IFileCache))
             {
-                Owner.Logger.Warn("Main file " + MainFile + " not found");
+                Owner.Logger.Warn("Main file " + res + " not found");
+                res = null;
+            }
+            if (MainFile == null || res == null || MainFile != res)
+            {
+                MainFile = res;
             }
         }
 
@@ -98,7 +109,7 @@ namespace Lib.TSCompiler
             if (Example == "")
             {
                 var item =
-                    (Owner.Owner.TryGetChild("example.ts") ?? Owner.Owner.TryGetChild("example.tsx")) as IFileCache;
+                    (Owner.Owner.TryGetChild("example.tsx") ?? Owner.Owner.TryGetChild("example.ts")) as IFileCache;
                 if (item != null)
                 {
                     res.Add(item.FullPath);
@@ -119,7 +130,7 @@ namespace Lib.TSCompiler
                         var fn = child.FullPath;
                         if (fn.EndsWith(".d.ts"))
                             continue;
-                        if (fn.EndsWith(".ts") || fn.EndsWith(".tsx") || fn.EndsWith(".js") || fn.EndsWith(".jsx"))
+                        if (fn.EndsWith(".ts") || fn.EndsWith(".tsx"))
                             res.Add(fn);
                     }
                 }
@@ -127,9 +138,13 @@ namespace Lib.TSCompiler
                 {
                     res.Add(item.FullPath);
                 }
+                res.Sort(StringComparer.Ordinal);
             }
 
-            ExampleSources = res;
+            if (ExampleSources == null || !ExampleSources.SequenceEqual(res))
+            {
+                ExampleSources = res;
+            }
         }
 
         public void GenerateCode()
@@ -154,7 +169,10 @@ namespace Lib.TSCompiler
             }
 
             res.Sort(StringComparer.Ordinal);
-            TestSources = res;
+            if (TestSources == null || !TestSources.SequenceEqual(res))
+            {
+                TestSources = res;
+            }
         }
 
         void RecursiveFileSearch(IDirectoryCache owner, IDiskCache diskCache, Regex fileRegex, List<string> res)
@@ -238,11 +256,11 @@ namespace Lib.TSCompiler
             return new TSCompilerOptions
             {
                 sourceMap = true,
-                skipLibCheck = true,
+                skipLibCheck = false,
                 skipDefaultLibCheck = true,
                 target = ScriptTarget.Es5,
                 module = ModuleKind.Commonjs,
-                declaration = true,
+                declaration = false,
                 preserveConstEnums = false,
                 jsx = JsxEmit.React,
                 reactNamespace = BobrilJsx ? "b" : "React",
@@ -279,7 +297,7 @@ namespace Lib.TSCompiler
         internal bool TypeScriptVersionOverride;
         public HashSet<int> IgnoreDiagnostic;
         public string ObsoleteMessage;
-        internal ITSCompilerOptions FinalCompilerOptions;
+        public ITSCompilerOptions FinalCompilerOptions;
 
         public void UpdateTSConfigJson()
         {

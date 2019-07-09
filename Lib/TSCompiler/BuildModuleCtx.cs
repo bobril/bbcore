@@ -17,15 +17,15 @@ namespace Lib.TSCompiler
 {
     public class BuildModuleCtx : ITSCompilerCtx, IImportResolver
     {
-        public BuildCtx _buildCtx;
-        public TSProject _owner;
-        public BuildResult _result;
+        public BuildCtx BuildCtx;
+        public TSProject Owner;
+        public BuildResult Result;
         public int IterationId;
         TSFileAdditionalInfo _currentlyTranspiling;
 
         public void AddSource(TSFileAdditionalInfo file)
         {
-            _result.Path2FileInfo[file.Owner.FullPath] = file;
+            Result.Path2FileInfo[file.Owner.FullPath] = file;
         }
 
         public string resolveLocalImport(string name, TSFileAdditionalInfo parentInfo)
@@ -38,7 +38,6 @@ namespace Lib.TSCompiler
 
         internal OrderedHashSet<string> ToCheck;
         internal uint CrawledCount;
-        internal HashSet<TSFileAdditionalInfo> ResultSet = new HashSet<TSFileAdditionalInfo>();
 
         static bool IsDts(ReadOnlySpan<char> name)
         {
@@ -52,7 +51,7 @@ namespace Lib.TSCompiler
 
         public TSProject ResolveModule(string name)
         {
-            if (_result.Modules.TryGetValue(name, out var module))
+            if (Result.Modules.TryGetValue(name, out var module))
             {
                 if (module.IterationId == IterationId)
                     return module.Valid ? module : null;
@@ -70,10 +69,10 @@ namespace Lib.TSCompiler
             }
         again:;
             var negativeChecks = new StructList<string>();
-            var dir = _owner.Owner.FullPath;
+            var dir = Owner.Owner.FullPath;
             while (dir.Length > 0)
             {
-                var dc = _owner.DiskCache.TryGetItem(dir + "/node_modules/" + name) as IDirectoryCache;
+                var dc = Owner.DiskCache.TryGetItem(dir + "/node_modules/" + name) as IDirectoryCache;
                 if (dc == null || dc.IsInvalid)
                 {
                     negativeChecks.Add(dir + "/node_modules/" + name);
@@ -85,13 +84,13 @@ namespace Lib.TSCompiler
                         // Create it with proper casing
                         return ResolveModule(dc.Name);
                     }
-                    module = TSProject.Create(dc, _owner.DiskCache, _owner.Logger, dc.Name);
+                    module = TSProject.Create(dc, Owner.DiskCache, Owner.Logger, dc.Name);
                     module.LoadProjectJson(true);
                     if (module.PackageJsonChangeId != -1)
                     {
                         module.NegativeChecks.AddRange(negativeChecks.AsSpan());
                         module.IterationId = IterationId;
-                        _result.Modules[name] = module;
+                        Result.Modules[name] = module;
                         return module;
                     }
                 }
@@ -100,25 +99,25 @@ namespace Lib.TSCompiler
             module = TSProject.CreateInvalid(name);
             module.NegativeChecks.TransferFrom(ref negativeChecks);
             module.IterationId = IterationId;
-            _result.Modules[name] = module;
+            Result.Modules[name] = module;
             return null;
         }
 
         public bool CheckFileExistence(string name)
         {
-            var f = _owner.DiskCache.TryGetItem(name) as IFileCache;
+            var f = Owner.DiskCache.TryGetItem(name) as IFileCache;
             return f != null && !f.IsInvalid;
         }
 
         public bool CheckItemExistence(string name)
         {
-            var f = _owner.DiskCache.TryGetItem(name);
+            var f = Owner.DiskCache.TryGetItem(name);
             return f != null && !f.IsInvalid;
         }
 
         public void ReportMissingImport(string from, string name)
         {
-            if (_result.Path2FileInfo.TryGetValue(from, out var parentInfo))
+            if (Result.Path2FileInfo.TryGetValue(from, out var parentInfo))
             {
                 parentInfo.ReportDiag(false, -15, "Cannot resolve import '" + name + "'", 0, 0, 0, 0);
             }
@@ -127,7 +126,7 @@ namespace Lib.TSCompiler
         // returns "?" if error in resolving
         public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false)
         {
-            if (_result.ResolveCache.TryGetValue((from, name), out var res))
+            if (Result.ResolveCache.TryGetValue((from, name), out var res))
             {
                 if (res.IterationId == IterationId) return res.FileName;
                 if (res.FileName != null && !CheckFileExistence(res.FileName)) goto again;
@@ -140,7 +139,7 @@ namespace Lib.TSCompiler
             if (res == null)
             {
                 res = new ResolveResult();
-                _result.ResolveCache.Add((from, name), res);
+                Result.ResolveCache.Add((from, name), res);
             }
             else
             {
@@ -150,7 +149,7 @@ namespace Lib.TSCompiler
             }
             res.IterationId = IterationId;
             var relative = name.StartsWith("./") || name.StartsWith("../");
-            _result.Path2FileInfo.TryGetValue(from, out var parentInfo);
+            Result.Path2FileInfo.TryGetValue(from, out var parentInfo);
             string fn = null;
             if (relative)
             {
@@ -161,7 +160,7 @@ namespace Lib.TSCompiler
             {
                 if (fn.EndsWith(".json") || fn.EndsWith(".css"))
                 {
-                    var fc = _owner.DiskCache.TryGetItem(fn) as IFileCache;
+                    var fc = Owner.DiskCache.TryGetItem(fn) as IFileCache;
                     if (fc != null && !fc.IsInvalid)
                     {
                         res.FileName = fn;
@@ -178,7 +177,7 @@ namespace Lib.TSCompiler
                 var dirPath = PathUtils.Parent(fn).ToString();
                 var fileOnly = fn.Substring(dirPath.Length + 1);
                 IFileCache item = null;
-                var dc = _owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
+                var dc = Owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
                 if (dc == null || dc.IsInvalid)
                 {
                     res.FileName = "?";
@@ -225,7 +224,7 @@ namespace Lib.TSCompiler
                 }
                 else
                 {
-                    CheckAdd(item.FullPath, IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript : FileCompilationType.EsmJavaScript);
+                    CheckAdd(item.FullPath, IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript : isAsset ? FileCompilationType.JavaScriptAsset : FileCompilationType.EsmJavaScript);
                 }
                 return res.FileNameWithPreference(preferDts);
             }
@@ -274,11 +273,11 @@ namespace Lib.TSCompiler
         bool TryToResolveFromBuildCache(TSFileAdditionalInfo itemInfo)
         {
             itemInfo.TakenFromBuildCache = false;
-            var bc = _owner.ProjectOptions.BuildCache;
+            var bc = Owner.ProjectOptions.BuildCache;
             if (bc.IsEnabled)
             {
                 var hashOfContent = itemInfo.Owner.HashOfContent;
-                var confId = _owner.ProjectOptions.ConfigurationBuildCacheId;
+                var confId = Owner.ProjectOptions.ConfigurationBuildCacheId;
                 var fbc = bc.FindTSFileBuildCache(hashOfContent, confId);
                 if (fbc != null)
                 {
@@ -322,7 +321,7 @@ namespace Lib.TSCompiler
                     somethingProcessed = true;
                     processed[i] = true;
                     var targetName = ResolveImport(sourceName, dep.Import);
-                    _result.Path2FileInfo.TryGetValue(targetName, out var targetInfo);
+                    Result.Path2FileInfo.TryGetValue(targetName, out var targetInfo);
                     if (!dep.TargetHash.AsSpan().SequenceEqual(targetInfo.Owner.HashOfContent))
                     {
                         return false;
@@ -337,7 +336,7 @@ namespace Lib.TSCompiler
         bool TryToResolveFromBuildCacheCss(TSFileAdditionalInfo itemInfo)
         {
             itemInfo.TakenFromBuildCache = false;
-            var bc = _owner.ProjectOptions.BuildCache;
+            var bc = Owner.ProjectOptions.BuildCache;
             if (bc.IsEnabled)
             {
                 var hashOfContent = itemInfo.Owner.HashOfContent;
@@ -356,8 +355,8 @@ namespace Lib.TSCompiler
 
         public void StoreResultToBuildCache(BuildResult result)
         {
-            var bc = _owner.ProjectOptions.BuildCache;
-            foreach (var f in result.RecompiledLast)
+            var bc = Owner.ProjectOptions.BuildCache;
+            foreach (var f in result.RecompiledIncrementaly)
             {
                 if (f.TakenFromBuildCache)
                     continue;
@@ -369,7 +368,7 @@ namespace Lib.TSCompiler
                     case FileCompilationType.EsmJavaScript:
                         {
                             var fbc = new TSFileBuildCache();
-                            fbc.ConfigurationId = _owner.ProjectOptions.ConfigurationBuildCacheId;
+                            fbc.ConfigurationId = Owner.ProjectOptions.ConfigurationBuildCacheId;
                             fbc.ContentHash = f.Owner.HashOfContent;
                             fbc.Output = f.Output;
                             fbc.MapLink = f.MapLink;
@@ -405,32 +404,32 @@ namespace Lib.TSCompiler
         public void reportDiag(bool isError, int code, string text, string fileName, int startLine, int startCharacter,
             int endLine, int endCharacter)
         {
-            var fc = _owner.DiskCache.TryGetItem(fileName) as IFileCache;
+            var fc = Owner.DiskCache.TryGetItem(fileName) as IFileCache;
             if (fc == null)
             {
                 throw new Exception("Cannot found " + fileName);
             }
 
-            var fi = TSFileAdditionalInfo.Create(fc, _owner.DiskCache);
+            var fi = TSFileAdditionalInfo.Create(fc, Owner.DiskCache);
             fi.ReportDiag(isError, code, text, startLine, startCharacter, endLine, endCharacter);
         }
 
         public TSFileAdditionalInfo CheckAdd(string fullNameWithExtension, FileCompilationType compilationType)
         {
-            if (!_result.Path2FileInfo.TryGetValue(fullNameWithExtension, out var info))
+            if (!Result.Path2FileInfo.TryGetValue(fullNameWithExtension, out var info))
             {
-                var fc = _owner.DiskCache.TryGetItem(fullNameWithExtension) as IFileCache;
+                var fc = Owner.DiskCache.TryGetItem(fullNameWithExtension) as IFileCache;
                 if (fc == null || fc.IsInvalid) return null;
-                info = TSFileAdditionalInfo.Create(fc, _owner.DiskCache);
+                info = TSFileAdditionalInfo.Create(fc, Owner.DiskCache);
                 info.Type = compilationType;
-                _result.CommonSourceDirectory = PathUtils.CommonDir(_result.CommonSourceDirectory, fc.FullPath);
-                _result.Path2FileInfo.Add(fullNameWithExtension, info);
+                Result.CommonSourceDirectory = PathUtils.CommonDir(Result.CommonSourceDirectory, fc.FullPath);
+                Result.Path2FileInfo.Add(fullNameWithExtension, info);
             }
             else
             {
                 if (info.Owner.IsInvalid)
                 {
-                    _result.Path2FileInfo.Remove(fullNameWithExtension);
+                    Result.Path2FileInfo.Remove(fullNameWithExtension);
                     return null;
                 }
             }
@@ -445,14 +444,29 @@ namespace Lib.TSCompiler
                 (Match m) =>
                 {
                     var info = AutodetectAndAddDependency(
-                        PathUtils.Join(_owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)));
+                        PathUtils.Join(Owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)));
                     if (info == null)
                     {
-                        _owner.Logger.Error("HtmlHead in package.json missing dependency " + m.Value.Substring(2, m.Length - 4));
+                        Owner.Logger.Error("HtmlHead in package.json missing dependency " + m.Value.Substring(2, m.Length - 4));
                         return "";
                     }
-                    return _result.ToOutputUrl(info);
+                    return Result.ToOutputUrl(info);
                 });
+        }
+
+        bool _noDependencyCheck;
+        public bool CrawlChanges()
+        {
+            _noDependencyCheck = true;
+            foreach (var info in Result.Path2FileInfo)
+            {
+                CrawlInfo(info.Value);
+                if (!_noDependencyCheck)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public void Crawl()
@@ -468,108 +482,145 @@ namespace Lib.TSCompiler
 
         public TSFileAdditionalInfo CrawlFile(string fileName)
         {
-            var fileCache = _owner.DiskCache.TryGetItem(fileName) as IFileCache;
-            if (fileCache == null || fileCache.IsInvalid)
+            if (!Result.Path2FileInfo.TryGetValue(fileName, out var info))
             {
-                if (_buildCtx.Verbose)
-                    Console.WriteLine("Crawl skipping missing file " + fileName);
-                return null;
-            }
-
-            if (!_result.Path2FileInfo.TryGetValue(fileName, out var info))
-            {
-                info = TSFileAdditionalInfo.Create(fileCache, _owner.DiskCache);
+                if (_noDependencyCheck)
+                {
+                    _noDependencyCheck = false;
+                }
+                var fileCache = Owner.DiskCache.TryGetItem(fileName) as IFileCache;
+                if (fileCache == null || fileCache.IsInvalid)
+                {
+                    if (BuildCtx.Verbose)
+                        Owner.Logger.Warn("Crawl skipping missing file " + fileName);
+                    return null;
+                }
+                info = TSFileAdditionalInfo.Create(fileCache, Owner.DiskCache);
                 info.Type = FileCompilationType.Unknown;
-                _result.Path2FileInfo.Add(fileName, info);
+                Result.Path2FileInfo.Add(fileName, info);
             }
-
-            ResultSet.Add(info);
-
-            if (info.Type == FileCompilationType.Unknown)
+            else
             {
-                if (IsDts(fileName))
+                if (info.Owner.IsInvalid)
                 {
-                    info.Type = FileCompilationType.TypeScriptDefinition;
-                }
-                else if (IsTsOrTsx(fileName))
-                {
-                    info.Type = FileCompilationType.TypeScript;
-                }
-                else
-                {
-                    var ext = PathUtils.GetExtension(fileName);
-                    if (ext.SequenceEqual("css")) info.Type = FileCompilationType.Css;
-                    else if (ext.SequenceEqual("js") || ext.SequenceEqual("jsx")) info.Type = FileCompilationType.EsmJavaScript;
-                    else info.Type = FileCompilationType.Resource;
+                    if (BuildCtx.Verbose)
+                        Owner.Logger.Warn("Crawl skipping missing file " + fileName);
+                    return null;
                 }
             }
 
-            if (info.IterationId != IterationId)
+            if (_noDependencyCheck)
             {
-                info.IterationId = IterationId;
-                if (info.Owner.ChangeId != info.ChangeId)
+                if (info.IterationId != IterationId)
                 {
-                    info.ChangeId = info.Owner.ChangeId;
-                    _result.RecompiledLast.Add(info);
-                    info.StartCompiling();
-                    switch (info.Type)
+                    info.IterationId = IterationId;
+                    CrawlInfo(info);
+                }
+            }
+            else
+            {
+                if (info.Type == FileCompilationType.Unknown)
+                {
+                    if (IsDts(fileName))
                     {
-                        case FileCompilationType.Json:
+                        info.Type = FileCompilationType.TypeScriptDefinition;
+                    }
+                    else if (IsTsOrTsx(fileName))
+                    {
+                        info.Type = FileCompilationType.TypeScript;
+                    }
+                    else
+                    {
+                        var ext = PathUtils.GetExtension(fileName);
+                        if (ext.SequenceEqual("css")) info.Type = FileCompilationType.Css;
+                        else if (ext.SequenceEqual("js") || ext.SequenceEqual("jsx")) info.Type = FileCompilationType.EsmJavaScript;
+                        else info.Type = FileCompilationType.Resource;
+                    }
+                }
+
+                if (info.IterationId != IterationId)
+                {
+                    info.IterationId = IterationId;
+                    CrawlInfo(info);
+                }
+                foreach (var dep in info.Dependencies)
+                {
+                    CheckAdd(dep, FileCompilationType.Unknown);
+                }
+            }
+            return info;
+        }
+
+        void CrawlInfo(TSFileAdditionalInfo info)
+        {
+            if (info.Owner.ChangeId != info.ChangeId)
+            {
+                info.ChangeId = info.Owner.ChangeId;
+                Result.RecompiledIncrementaly.Add(info);
+                var oldDependencies = new StructList<string>();
+                if (_noDependencyCheck)
+                    oldDependencies.TransferFrom(ref info.Dependencies);
+                info.StartCompiling();
+                switch (info.Type)
+                {
+                    case FileCompilationType.Json:
+                        info.Output = null;
+                        info.MapLink = null;
+                        info.SourceInfo = null;
+                        break;
+                    case FileCompilationType.EsmJavaScript:
+                    case FileCompilationType.TypeScript:
+                        if (!TryToResolveFromBuildCache(info))
+                        {
                             info.Output = null;
                             info.MapLink = null;
                             info.SourceInfo = null;
-                            break;
-                        case FileCompilationType.EsmJavaScript:
-                        case FileCompilationType.TypeScript:
-                            if (!TryToResolveFromBuildCache(info))
-                            {
-                                info.Output = null;
-                                info.MapLink = null;
-                                info.SourceInfo = null;
-                                Transpile(info);
-                            }
-                            break;
-                        case FileCompilationType.JavaScriptAsset:
-                        case FileCompilationType.JavaScript:
-                            info.Output = info.Owner.Utf8Content;
-                            info.MapLink = SourceMap.Identity(info.Output, info.Owner.FullPath);
-                            break;
-                        case FileCompilationType.Resource:
-                            break;
-                        case FileCompilationType.Css:
-                        case FileCompilationType.ImportedCss:
-                            if (!TryToResolveFromBuildCacheCss(info))
-                            {
+                            Transpile(info);
+                        }
+                        break;
+                    case FileCompilationType.JavaScriptAsset:
+                    case FileCompilationType.JavaScript:
+                        info.Output = info.Owner.Utf8Content;
+                        info.MapLink = SourceMap.Identity(info.Output, info.Owner.FullPath);
+                        break;
+                    case FileCompilationType.Resource:
+                        break;
+                    case FileCompilationType.Css:
+                    case FileCompilationType.ImportedCss:
+                        if (!TryToResolveFromBuildCacheCss(info))
+                        {
 
-                                var cssProcessor = _buildCtx.CompilerPool.GetCss();
-                                try
-                                {
-                                    info.Output = info.Owner.Utf8Content;
-                                    cssProcessor.ProcessCss(info.Owner.Utf8Content,
+                            var cssProcessor = BuildCtx.CompilerPool.GetCss();
+                            try
+                            {
+                                info.Output = info.Owner.Utf8Content;
+                                cssProcessor.ProcessCss(info.Owner.Utf8Content,
         ((TSFileAdditionalInfo)info).Owner.FullPath, (string url, string from) =>
         {
             var urlJustName = url.Split('?', '#')[0];
             info.ReportTranspilationDependency(null, urlJustName, null);
             return url;
         }).Wait();
-                                }
-                                finally
-                                {
-                                    _buildCtx.CompilerPool.ReleaseCss(cssProcessor);
-                                }
                             }
-                            ReportDependenciesFromCss(info);
-                            break;
+                            finally
+                            {
+                                BuildCtx.CompilerPool.ReleaseCss(cssProcessor);
+                            }
+                        }
+                        ReportDependenciesFromCss(info);
+                        break;
+                }
+                if (_noDependencyCheck)
+                {
+                    if (!info.Dependencies.SequenceEqual(oldDependencies))
+                    {
+                        if (BuildCtx.Verbose)
+                            Owner.Logger.Info("Dependency change detected " + info.Owner.FullPath);
+                        _noDependencyCheck = false;
                     }
                 }
             }
-            foreach (var dep in info.Dependencies)
-            {
-                CheckAdd(dep, FileCompilationType.Unknown);
-            }
-            return info;
         }
-
         void ReportDependenciesFromCss(TSFileAdditionalInfo info)
         {
             if (info.TranspilationDependencies != null)
@@ -591,21 +642,40 @@ namespace Lib.TSCompiler
             ITSCompiler compiler = null;
             try
             {
-                compiler = _buildCtx.CompilerPool.GetTs();
-                compiler.DiskCache = _owner.DiskCache;
-                compiler.CompilerOptions = _owner.ProjectOptions.FinalCompilerOptions;
+                compiler = BuildCtx.CompilerPool.GetTs(Owner.DiskCache, BuildCtx.CompilerOptions);
                 //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);
                 var result = compiler.Transpile(info.Owner.FullPath, info.Owner.Utf8Content);
-                info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
-                info.MapLink = SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath);
-                info.ReportDiag(result.Diagnostics);
+                if (result.Diagnostics != null)
+                {
+                    info.ReportDiag(result.Diagnostics);
+                    info.HasError = result.Diagnostics.Any(d => d.IsError);
+                }
+                else
+                {
+                    info.HasError = false;
+                }
+                if (info.HasError)
+                {
+                    info.Output = null;
+                    info.MapLink = null;
+                }
+                else
+                {
+                    info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
+                    info.MapLink = SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath);
+                }
             }
             finally
             {
                 if (compiler != null)
-                    _buildCtx.CompilerPool.ReleaseTs(compiler);
+                    BuildCtx.CompilerPool.ReleaseTs(compiler);
             }
 
+            if (info.HasError)
+            {
+                info.SourceInfo = null;
+                return;
+            }
             var backupCurrentlyTranspiling = _currentlyTranspiling;
             try
             {
@@ -674,9 +744,9 @@ namespace Lib.TSCompiler
             });
             if (sourceInfo.Sprites != null)
             {
-                if (_owner.ProjectOptions.SpriteGeneration)
+                if (Owner.ProjectOptions.SpriteGeneration)
                 {
-                    var spriteHolder = _owner.ProjectOptions.SpriteGenerator;
+                    var spriteHolder = Owner.ProjectOptions.SpriteGenerator;
                     spriteHolder.Process(sourceInfo.Sprites);
                 }
                 else
@@ -695,7 +765,7 @@ namespace Lib.TSCompiler
             }
             if (sourceInfo.Translations != null)
             {
-                var trdb = _owner.ProjectOptions.TranslationDb;
+                var trdb = Owner.ProjectOptions.TranslationDb;
                 if (trdb != null)
                 {
                     sourceInfo.Translations.ForEach(t =>
@@ -727,7 +797,15 @@ namespace Lib.TSCompiler
 
         TSFileAdditionalInfo AutodetectAndAddDependency(string depName, bool forceResource = false)
         {
-            return CheckAdd(depName, forceResource ? FileCompilationType.Resource : FileCompilationType.Unknown);
+            if (forceResource)
+            {
+                return CheckAdd(depName, FileCompilationType.Resource);
+            }
+            if (depName.EndsWith(".js", StringComparison.Ordinal))
+            {
+                return CheckAdd(depName, FileCompilationType.JavaScriptAsset);
+            }
+            return CheckAdd(depName, FileCompilationType.Unknown);
         }
 
         public string readFile(string fullPath)
@@ -737,13 +815,13 @@ namespace Lib.TSCompiler
             {
                 return null;
             }
-            TSFileAdditionalInfo.Create(file, _owner.DiskCache).StartCompiling();
+            TSFileAdditionalInfo.Create(file, Owner.DiskCache).StartCompiling();
             return file.Utf8Content;
         }
 
         public IFileCache TryGetFile(string fullPath)
         {
-            var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
+            var file = Owner.DiskCache.TryGetItem(fullPath) as IFileCache;
             return file;
         }
 
@@ -757,12 +835,17 @@ namespace Lib.TSCompiler
             {
                 return (null, null);
             }
-            _result.Path2FileInfo.TryGetValue(module.ImportedFrom, out var sourceInfo);
+            Result.Path2FileInfo.TryGetValue(module.ImportedFrom, out var sourceInfo);
             var info = CrawlFile(fileName);
             _currentlyTranspiling.ReportTranspilationDependency(sourceInfo.Owner.HashOfContent, module.Name, info.Owner.HashOfContent);
             if (_parsedCache.TryGetValue(fileName, out var toplevel))
             {
                 return (fileName, toplevel);
+            }
+            if (info.Type == FileCompilationType.Json)
+            {
+                _parsedCache.Add(fileName, null);
+                return (fileName, null);
             }
             try
             {

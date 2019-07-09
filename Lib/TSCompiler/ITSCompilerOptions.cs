@@ -113,5 +113,6 @@ namespace Lib.TSCompiler
         IList<string> typeRoots { get; set; }
 
         ITSCompilerOptions Clone();
+        ITSCompilerOptions Merge(ITSCompilerOptions withInterface);
     }
 }

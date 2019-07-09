@@ -33,15 +33,16 @@ namespace Lib.TSCompiler
 
         public Dictionary<(string From, string Name), ResolveResult> ResolveCache = new Dictionary<(string From, string Name), ResolveResult>();
         public Dictionary<string, TSFileAdditionalInfo> Path2FileInfo = new Dictionary<string, TSFileAdditionalInfo>();
-        public HashSet<TSFileAdditionalInfo> RecompiledLast = new HashSet<TSFileAdditionalInfo>();
+        public HashSet<TSFileAdditionalInfo> RecompiledIncrementaly = new HashSet<TSFileAdditionalInfo>();
         public Dictionary<string, TSProject> Modules = new Dictionary<string, TSProject>();
         public string CommonSourceDirectory;
         public Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();
         public HashSet<string> TakenNames = new HashSet<string>();
+        public bool HasError;
+        public bool Incremental;
         public readonly bool CompressFileNames;
         public readonly string OutputSubDir;
         public readonly string BundleJsUrl;
-        public SourceMap SourceMap { get; internal set; }
 
         public string ToOutputUrl(string fileName)
         {
