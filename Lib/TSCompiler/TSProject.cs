@@ -293,6 +293,7 @@ namespace Lib.TSCompiler
                     }
                     buildCtx.ProjectStructureChanged = true;
                     buildResult.Incremental = false;
+                    buildModuleCtx.Result.JavaScriptAssets.Clear();
                     foreach (var info in buildModuleCtx.Result.Path2FileInfo)
                     {
                         info.Value.IterationId = iterationId - 1;

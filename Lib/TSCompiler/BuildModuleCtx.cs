@@ -435,6 +435,13 @@ namespace Lib.TSCompiler
             }
             if (!ToCheck.Contains(fullNameWithExtension))
                 ToCheck.Add(fullNameWithExtension);
+            if (info.Type == FileCompilationType.JavaScriptAsset)
+            {
+                if (Result.JavaScriptAssets.AddUnique(info) && _noDependencyCheck)
+                {
+                    _noDependencyCheck = false;
+                }
+            }
             return info;
         }
 

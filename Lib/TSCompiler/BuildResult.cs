@@ -34,6 +34,7 @@ namespace Lib.TSCompiler
         public Dictionary<(string From, string Name), ResolveResult> ResolveCache = new Dictionary<(string From, string Name), ResolveResult>();
         public Dictionary<string, TSFileAdditionalInfo> Path2FileInfo = new Dictionary<string, TSFileAdditionalInfo>();
         public HashSet<TSFileAdditionalInfo> RecompiledIncrementaly = new HashSet<TSFileAdditionalInfo>();
+        public StructList<TSFileAdditionalInfo> JavaScriptAssets;
         public Dictionary<string, TSProject> Modules = new Dictionary<string, TSProject>();
         public string CommonSourceDirectory;
         public Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();

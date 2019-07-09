@@ -77,9 +77,10 @@ namespace Lib.TSCompiler
             var cssLink = "";
 
             var sortedResultSet = incremental ? BuildResult.RecompiledIncrementaly.OrderBy(f => f.Owner.FullPath).ToArray() : BuildResult.Path2FileInfo.Values.OrderBy(f => f.Owner.FullPath).ToArray();
-            foreach (var source in sortedResultSet)
+
+            if (!incremental)
             {
-                if (source.Type == FileCompilationType.JavaScriptAsset)
+                foreach (var source in BuildResult.JavaScriptAssets)
                 {
                     sourceMapBuilder.AddSource(source.Output, source.MapLink);
                 }

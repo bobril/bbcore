@@ -35,17 +35,18 @@ namespace Njsast
         /// Adds value to a collection only if it is not already contained in collection
         /// </summary>
         /// <param name="value"></param>
-        public void AddUnique(in T value)
+        public bool AddUnique(in T value)
         {
             for (var i = 0u; i < _count; i++)
             {
                 if (value.Equals(_a[i]))
                 {
-                    return;
+                    return false;
                 }
             }
 
             Add(value);
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
