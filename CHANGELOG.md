@@ -4,12 +4,58 @@
 
 ### Added
 
+- masively speed up builds, incremental builds even more...
+
+### Temporary Removed
+
+- TypeScript type checking
+- detection of missing imports and spare dependencies
+
+## 0.84.0
+
+## 0.83.2
+
+### Added
+
+- allowing to disable update of tsconfig.json
+
+## 0.83.1
+
+### Fixed
+
+- Fixed focusing error in VSCode when common source root is not project root.
+
+## 0.83.0
+
+### Added
+
 - allowing to override autodetection of localization from package.json. And define directory for translations.
 
 ### Fixed
 
 - added workaround fix which should resolve pending status when loading resources in Chrome 75 running in Docker
 - global help also lists all commands.
+
+## 0.82.3
+
+### Fixed
+
+- Missing import from d.ts should be silently skipped.
+
+## 0.82.2
+
+### Fixed
+
+- assets can now define target dir as empty without crash
+- recompilation in interactive mode in some cases missed to include some modules to bundle
+
+## 0.82.1
+
+### Fixed
+
+- Don't show missing dependency from files which are in node_module directory.
+
+## 0.82.0
 
 ### Added
 
