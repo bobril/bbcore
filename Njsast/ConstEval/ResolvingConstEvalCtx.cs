@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Njsast.Ast;
-using Njsast.Reader;
 
 namespace Njsast.ConstEval
 {
@@ -29,11 +28,11 @@ namespace Njsast.ConstEval
                 return null;
             try
             {
-                var treeWalker = new ExportFinder((string)export);
+                var ctx2 = ctx.CreateForSourceName(fileName);
+                var treeWalker = new ExportFinder((string)export, ctx2);
                 treeWalker.Walk(content);
                 if (treeWalker.Result == null)
                     return null;
-                var ctx2 = ctx.CreateForSourceName(fileName);
                 var result = treeWalker.Result.ConstValue(ctx2);
                 if (result == null) return null;
                 if (treeWalker.CompleteResult)

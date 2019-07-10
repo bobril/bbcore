@@ -93,9 +93,10 @@ namespace Lib.DiskCache
             DiskCache _owner;
             bool _isWatcherRoot;
 
-            public DirectoryCache(DiskCache owner)
+            public DirectoryCache(DiskCache owner, bool isInvalid)
             {
                 _owner = owner;
+                _isInvalid = isInvalid;
             }
 
             internal void NoteChange()
@@ -173,7 +174,7 @@ namespace Lib.DiskCache
         {
             FsAbstraction = fsAbstraction;
             _directoryWatcherFactory = directoryWatcherFactory;
-            _root = new DirectoryCache(this);
+            _root = new DirectoryCache(this, false);
             _root.IsFake = true;
             IsUnixFs = fsAbstraction.IsUnixFs;
             if (IsUnixFs)
@@ -212,15 +213,14 @@ namespace Lib.DiskCache
 
         IDirectoryCache AddDirectoryFromName(string name, IDirectoryCache parent, bool isLink, bool isInvalid)
         {
-            var subDir = new DirectoryCache(this)
+            var subDir = new DirectoryCache(this, isInvalid)
             {
                 Name = name,
                 FullPath = parent.FullPath + (parent != _root ? "/" : "") + name,
                 Parent = parent,
                 Filter = DefaultFilter,
                 IsStale = true,
-                IsLink = isLink,
-                IsInvalid = isInvalid
+                IsLink = isLink
             };
             ((DirectoryCache)parent).Add(subDir);
             return subDir;
