@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Print original path in console messages relative to common root (that's behaviour change, but fixes also regression on focusing compilation errors from 0.83.1). Open original path in VSCode.
+
 ## 0.84.0
 
 ## 0.83.2

@@ -307,14 +307,12 @@ namespace Lib.TSCompiler
                             buildModuleCtx.ToCompile.Concat(buildModuleCtx.ToCompileDts).ToArray());
                         if (!compiler.CompileProgram())
                         {
+                            UpdateCommonDir(compiler);
                             wasSomeError = true;
                             break;
                         }
 
-                        ProjectOptions.CurrentBuildCommonSourceDirectory = compiler.CommonSourceDirectory;
-                        ProjectOptions.CommonSourceDirectory = ProjectOptions.CommonSourceDirectory == null
-                            ? compiler.CommonSourceDirectory
-                            : PathUtils.CommonDir(ProjectOptions.CommonSourceDirectory, compiler.CommonSourceDirectory);
+                        UpdateCommonDir(compiler);
                         compiler.GatherSourceInfo();
                         if (ProjectOptions.SpriteGeneration)
                             ProjectOptions.SpriteGenerator.ProcessNew();
@@ -342,6 +340,14 @@ namespace Lib.TSCompiler
                     buildCtx.CompilerPool.ReleaseTs(compiler);
                 ProjectOptions.BuildCache.EndTransaction();
             }
+        }
+
+        private void UpdateCommonDir(ITSCompiler compiler)
+        {
+            ProjectOptions.CurrentBuildCommonSourceDirectory = compiler.CommonSourceDirectory;
+            ProjectOptions.CommonSourceDirectory = ProjectOptions.CommonSourceDirectory == null
+                ? compiler.CommonSourceDirectory
+                : PathUtils.CommonDir(ProjectOptions.CommonSourceDirectory, compiler.CommonSourceDirectory);
         }
 
         public static TSProject FindInfoForModule(IDirectoryCache projectDir, IDirectoryCache dir, IDiskCache diskCache,

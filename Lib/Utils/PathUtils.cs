@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BTDB.StreamLayer;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -82,6 +83,13 @@ namespace Lib.Utils
             return path.Substring(0, p);
         }
 
+        public static string RealPath(string path)
+        {
+            var res = PlatformMethods.Instance.RealPath(path);
+            if (res == null) return path;
+            return Normalize(res);
+        }
+
         static Regex _multiplierExtract = new Regex(@"@(\d+(?:\.\d+)?)\.(?:[^\.]+)$");
 
         public static (string Name, float Quality) ExtractQuality(string name)
@@ -144,6 +152,8 @@ namespace Lib.Utils
             return Normalize(dir1 + "/" + dir2);
         }
 
+
+        // Direct child
         public static bool IsChildOf(string child, string parent)
         {
             if (child.Length <= parent.Length + 1)
@@ -153,6 +163,17 @@ namespace Lib.Utils
             if (child[parent.Length] != '/')
                 return false;
             if (child.IndexOf('/', parent.Length + 1) >= 0)
+                return false;
+            return true;
+        }
+
+        public static bool IsAnyChildOf(string child, string parent)
+        {
+            if (child.Length <= parent.Length + 1)
+                return false;
+            if (!child.StartsWith(parent, StringComparison.Ordinal))
+                return false;
+            if (child[parent.Length] != '/')
                 return false;
             return true;
         }
@@ -277,9 +298,27 @@ namespace Lib.Utils
                 if (pos2 < 0) pos2 = p2.Length;
                 if (pos1 != pos2 || p1.Substring(0, pos1) != p2.Substring(0, pos2))
                     return p1.Substring(0, pos);
-                pos = pos1;    
+                pos = pos1;
             }
             return p1.Substring(0, pos);
+        }
+
+        public static string ForDiagnosticDisplay(string name, string relativeTo, string rootToStayInside)
+        {
+            if (rootToStayInside == null) rootToStayInside = relativeTo;
+            var real = PlatformMethods.Instance.RealPath(name);
+            if (real != null)
+            {
+                real = Normalize(real);
+                if (real != name)
+                {
+                    if (IsAnyChildOf(real, rootToStayInside))
+                    {
+                        name = real;
+                    }
+                }
+            }
+            return Subtract(name, relativeTo);
         }
     }
 }

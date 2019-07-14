@@ -470,12 +470,12 @@ namespace Lib.Composition
                 if (message.IsError)
                 {
                     _logger.Error(
-                        $"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text} ({message.Code})");
+                        $"{message.FileName}({message.Pos[0]},{message.Pos[1]}): {message.Text} ({message.Code})");
                 }
                 else
                 {
                     _logger.Warn(
-                        $"{message.FileName}({(message.Pos[0])},{(message.Pos[1])}): {message.Text} ({message.Code})");
+                        $"{message.FileName}({message.Pos[0]},{message.Pos[1]}): {message.Text} ({message.Code})");
                 }
             }
         }
@@ -1270,7 +1270,7 @@ namespace Lib.Composition
                         warnings++;
                     messages.Add(new CompilationResultMessage
                     {
-                        FileName = PathUtils.Subtract(pathInfoPair.Key, rootPath),
+                        FileName = PathUtils.ForDiagnosticDisplay(pathInfoPair.Key, options.CommonSourceDirectory ?? rootPath, options.CommonSourceDirectory),
                         IsError = isError,
                         Text = d.text,
                         Code = d.code,
