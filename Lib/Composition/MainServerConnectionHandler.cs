@@ -41,7 +41,7 @@ namespace Lib.Composition
             {
                 case "focusPlace":
                     {
-                        var position = new Dictionary<string, object> { { "fn", PathUtils.Join(_mainServer.ProjectDir, data.Value<string>("fn")) }, { "pos", data.Value<JArray>("pos") } };
+                        var position = new Dictionary<string, object> { { "fn", PathUtils.RealPath(PathUtils.Join(_mainServer.ProjectDir, data.Value<string>("fn"))) }, { "pos", data.Value<JArray>("pos") } };
                         _mainServer.SendToAll(message, position);
                         break;
                     }

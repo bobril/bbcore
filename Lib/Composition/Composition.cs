@@ -1156,7 +1156,7 @@ namespace Lib.Composition
                         warnings++;
                     messages.Add(new Diagnostic
                     {
-                        FileName = PathUtils.Subtract(pathInfoPair.Key, rootPath),
+                        FileName = PathUtils.ForDiagnosticDisplay(pathInfoPair.Key, options.CommonSourceDirectory ?? rootPath, options.CommonSourceDirectory),
                         IsError = isError,
                         Text = d.Text,
                         Code = d.Code,
