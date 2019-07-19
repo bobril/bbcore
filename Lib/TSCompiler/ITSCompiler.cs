@@ -14,5 +14,7 @@ namespace Lib.TSCompiler
         void CreateProgram(string currentDirectory, string[] mainFiles);
         void UpdateProgram(string[] mainFiles);
         void TriggerUpdate();
+        void ClearDiagnostics();
+        Diagnostic[] GetDiagnostics();
     }
 }
