@@ -282,5 +282,12 @@ namespace Njsast
 
             return -1;
         }
+
+        public T[] ToArray()
+        {
+            var res = new T[_count];
+            _a.AsSpan().CopyTo(res);
+            return res;
+        }
     }
 }

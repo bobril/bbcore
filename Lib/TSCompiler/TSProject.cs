@@ -284,6 +284,7 @@ namespace Lib.TSCompiler
                 {
                     buildModuleCtx.Result.CommonSourceDirectory = Owner.FullPath;
                 }
+                buildCtx.StartTypeCheck(ProjectOptions);
                 if (tryDetectChanges)
                 {
                     if (!buildModuleCtx.CrawlChanges())

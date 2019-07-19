@@ -8,6 +8,7 @@ using System.Diagnostics;
 using Newtonsoft.Json;
 using Lib.Utils.Logger;
 using System.Collections.Generic;
+using Njsast;
 
 namespace Lib.TSCompiler
 {
@@ -24,7 +25,6 @@ namespace Lib.TSCompiler
 
         public ILogger Logger { get; }
         public IDiskCache DiskCache { get; set; }
-        public bool MeasurePerformance { get; set; }
 
         TranspileResult _transpileResult;
         ITSCompilerOptions _lastCompilerOptions;
@@ -45,8 +45,6 @@ namespace Lib.TSCompiler
             }
         }
 
-        public ITSCompilerCtx Ctx { get; set; }
-
         class BBCallbacks
         {
             TsCompiler _owner;
@@ -59,20 +57,23 @@ namespace Lib.TSCompiler
             public int? getChangeId(string fileName)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner.Ctx.TryGetFile(fullPath);
-                if (file == null)
+                var file = _owner.DiskCache.TryGetItem(fullPath);
+                if (file == null || file.IsInvalid)
                 {
                     return null;
                 }
                 return file.ChangeId;
             }
 
-#pragma warning disable IDE0060 // Remove unused parameter
-            public string readFile(string fileName, bool sourceCode)
-#pragma warning restore IDE0060 // Remove unused parameter
+            public string readFile(string fileName)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                return _owner.Ctx.readFile(fullPath);
+                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
+                if (file != null && !file.IsInvalid)
+                {
+                    return file.Utf8Content;
+                }
+                return null;
             }
 
             public bool dirExists(string directoryPath)
@@ -85,7 +86,7 @@ namespace Lib.TSCompiler
             public bool fileExists(string fileName)
             {
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-                var file = _owner.Ctx.TryGetFile(fullPath);
+                var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
                 return file != null && !file.IsInvalid;
             }
 
@@ -109,8 +110,8 @@ namespace Lib.TSCompiler
 
             public string realPath(string path)
             {
-                //Console.WriteLine("realPath:" + path);
-                return PathUtils.Normalize(path);
+                return path;
+                //return PathUtils.RealPath(path);
             }
 
             public void trace(string text)
@@ -120,7 +121,6 @@ namespace Lib.TSCompiler
 
             public void reportTypeScriptDiag(bool isError, int code, string text)
             {
-                if (isError) _owner._wasError = true;
                 var tr = _owner._transpileResult;
                 if (tr != null)
                 {
@@ -132,13 +132,24 @@ namespace Lib.TSCompiler
                         Text = text
                     });
                 }
-                if (_owner.MeasurePerformance)
-                    Trace.WriteLine((isError ? "Error:" : "Warn:") + code + " " + text);
+                else
+                {
+                    if (_owner.Logger.Verbose)
+                    {
+                        if (isError)
+                        {
+                            _owner.Logger.Error("TS" + code + ": " + text);
+                        }
+                        else
+                        {
+                            _owner.Logger.Info("TS" + code + ": " + text);
+                        }
+                    }
+                }
             }
 
             public void reportTypeScriptDiagFile(bool isError, int code, string text, string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
             {
-                if (isError) _owner._wasError = true;
                 var tr = _owner._transpileResult;
                 if (tr != null)
                 {
@@ -157,81 +168,23 @@ namespace Lib.TSCompiler
                 }
                 else
                 {
-                    _owner.Ctx.reportDiag(isError, code, text, fileName, startLine, startCharacter, endLine, endCharacter);
-                }
-                if (_owner.MeasurePerformance)
-                    Trace.WriteLine((isError ? "Error:" : "Warn:") + code + " " + text + " " + fileName + ":" + startLine);
-            }
-
-            TSFileAdditionalInfo GetFileInfo(IFileCache file)
-            {
-                return TSFileAdditionalInfo.Create(file, _owner.DiskCache);
-            }
-
-            TSFileAdditionalInfo GetFileInfo(string name)
-            {
-                var fullPath = PathUtils.Join(_owner._currentDirectory, name);
-                var file = _owner.Ctx.TryGetFile(fullPath);
-                return GetFileInfo(file);
-            }
-
-            // resolvedName:string|isExternalLibraryImport:boolean|extension:string(Ts,Tsx,Dts,Js,Jsx)
-            public string resolveModuleName(string name, string containingFile)
-            {
-                var additionalInfo = GetFileInfo(containingFile);
-                string res;
-                if (name.Length > 1 && name[0] == '.')
-                {
-                    if (name.Contains("//"))
+                    _owner._diagnostics.Add(new Diagnostic
                     {
-                        _owner.Ctx.reportDiag(false, -11, "Fixing local import with two slashes: " + name, additionalInfo.Owner.FullPath, 0, 0, 0, 0);
-                        name = name.Replace("//", "/");
-                    }
-                    var fullName = PathUtils.Join(PathUtils.Parent(containingFile), name);
-                    res = _owner.Ctx.resolveLocalImport(fullName, additionalInfo);
+                        IsError = isError,
+                        Code = code,
+                        Text = text,
+                        FileName = fileName,
+                        StartLine = startLine,
+                        StartCol = startCharacter,
+                        EndLine = endLine,
+                        EndCol = endCharacter
+                    });
                 }
-                else
-                {
-                    res = _owner.Ctx.resolveModuleMain(name, additionalInfo);
-                }
-                if (res == null) return "";
-                if (res.EndsWith(".d.ts"))
-                    return res + "|true|Dts";
-                if (res.EndsWith(".ts"))
-                    return res + "|false|Ts";
-                if (res.EndsWith(".tsx"))
-                    return res + "|false|Tsx";
-                if (res.EndsWith(".js"))
-                    return res + "|false|Js";
-                if (res.EndsWith(".jsx"))
-                    return res + "|false|Jsx";
-                if (res.EndsWith(".json"))
-                    return res + "|false|Json";
-                throw new ArgumentException("Unknown extension " + res + " in " + containingFile + " importing " + name);
-            }
-
-            public string resolvePathStringLiteral(string sourcePath, string text)
-            {
-                if (text.StartsWith("resource:"))
-                {
-                    return "resource:" + resolvePathStringLiteral(sourcePath, text.Substring(9));
-                }
-                if (text.StartsWith("node_modules/"))
-                {
-                    var dir = _owner._currentDirectory.AsSpan();
-                    while (dir != null)
-                    {
-                        var fp = PathUtils.Join(dir, text);
-                        if (!(_owner.DiskCache.TryGetItem(fp)?.IsInvalid ?? true)) return fp;
-                        dir = PathUtils.Parent(dir);
-                    }
-                    return text;
-                }
-                return PathUtils.Join(PathUtils.Parent(sourcePath), text);
             }
         }
 
         BBCallbacks _callbacks;
+        StructList<Diagnostic> _diagnostics = new StructList<Diagnostic>();
 
         IJsEngine _engine;
 
@@ -264,32 +217,38 @@ namespace Lib.TSCompiler
             }
         }
 
+        public void ClearDiagnostics()
+        {
+            _diagnostics.Clear();
+        }
+
+        public Diagnostic[] GetDiagnostics()
+        {
+            var res = _diagnostics.ToArray();
+            _diagnostics.ClearAndTruncate();
+            return res;
+        }
+
         public void CreateProgram(string currentDirectory, string[] mainFiles)
         {
-            _wasError = false;
             var engine = getJSEnviroment();
             _currentDirectory = currentDirectory;
-            if (MeasurePerformance)
-            {
-                engine.CallFunction("bbStartTSPerformance");
-            }
             engine.SetVariableValue("bbCurrentDirectory", currentDirectory);
-            engine.CallFunction("bbCreateProgram", string.Join('|', mainFiles));
+            engine.CallFunction("bbCreateWatchProgram", string.Join('|', mainFiles));
         }
 
-        bool _wasError;
-        string _currentDirectory;
-
-        public bool CompileProgram()
+        public void UpdateProgram(string[] mainFiles)
         {
             var engine = getJSEnviroment();
-            CommonSourceDirectory = (string)engine.CallFunction("bbCompileProgram");
-            if (CommonSourceDirectory.EndsWith("/"))
-                CommonSourceDirectory = CommonSourceDirectory.Substring(0, CommonSourceDirectory.Length - 1);
-            return !_wasError;
+            engine.CallFunction("bbUpdateSourceList", string.Join('|', mainFiles));
         }
+        string _currentDirectory;
 
-        public string CommonSourceDirectory { get; private set; }
+        public void TriggerUpdate()
+        {
+            var engine = getJSEnviroment();
+            engine.CallFunction("bbTriggerUpdate");
+        }
 
         public void Dispose()
         {

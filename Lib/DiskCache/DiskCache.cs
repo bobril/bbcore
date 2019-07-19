@@ -253,10 +253,8 @@ namespace Lib.DiskCache
             public string FullPath { get; set; }
 
             byte[] _contentBytes;
-            string _contentUtf8;
             byte[] _contentHash;
             bool _isStale;
-            int _changeId = 1;
             bool _isInvalid;
 
             public IDiskCache Owner { get; set; }
@@ -279,49 +277,27 @@ namespace Lib.DiskCache
                 get => _isStale;
                 set
                 {
-                    if (_contentBytes != null || _contentUtf8 != null)
+                    if (_contentBytes != null)
                     {
-                        if (_contentBytes != null)
+                        byte[] newBytes = null;
+                        try
                         {
-                            byte[] newBytes = null;
-                            try
-                            {
-                                newBytes = ((DiskCache)Owner).FsAbstraction.ReadAllBytes(FullPath);
-                            }
-                            catch
-                            {
-                                // ignore
-                            }
-
-                            if (newBytes != null && newBytes.SequenceEqual(_contentBytes))
-                            {
-                                _isStale = false;
-                                return;
-                            }
+                            newBytes = ((DiskCache)Owner).FsAbstraction.ReadAllBytes(FullPath);
                         }
-                        else
+                        catch
                         {
-                            string newUtf8 = null;
-                            try
-                            {
-                                newUtf8 = ((DiskCache)Owner).FsAbstraction.ReadAllUtf8(FullPath);
-                            }
-                            catch
-                            {
-                                // ignore
-                            }
-
-                            if (newUtf8 != null && newUtf8 == _contentUtf8)
-                            {
-                                _isStale = false;
-                                return;
-                            }
+                            // ignore
                         }
 
-                        _contentBytes = null;
-                        _contentUtf8 = null;
+                        if (newBytes != null && newBytes.SequenceEqual(_contentBytes))
+                        {
+                            _isStale = false;
+                            return;
+                        }
+
+                        _contentBytes = newBytes;
                         _contentHash = null;
-                        _changeId++;
+                        ChangeId++;
                         ((DirectoryCache)Parent)?.NoteChange();
                     }
 
@@ -349,22 +325,14 @@ namespace Lib.DiskCache
             {
                 get
                 {
-                    if (_contentUtf8 == null)
-                    {
-                        _contentUtf8 = _contentBytes == null
-                            ? ((DiskCache)Owner).FsAbstraction.ReadAllUtf8(FullPath)
-                            : Encoding.UTF8.GetString(_contentBytes);
-                    }
-
-                    return _contentUtf8;
+                    return Encoding.UTF8.GetString(ByteContent);
                 }
             }
 
-            public int ChangeId => _changeId;
+            public int ChangeId { get; private set; } = 1;
 
             public void FreeCache()
             {
-                _contentUtf8 = null;
                 _contentBytes = null;
                 _contentHash = null;
             }
@@ -375,14 +343,7 @@ namespace Lib.DiskCache
                 {
                     if (_contentHash == null)
                     {
-                        if (_contentUtf8 != null && _contentBytes == null)
-                        {
-                            _contentHash = CalcHash(Encoding.UTF8.GetBytes(_contentUtf8));
-                        }
-                        else
-                        {
-                            _contentHash = CalcHash(ByteContent);
-                        }
+                        _contentHash = CalcHash(ByteContent);
                     }
 
                     return _contentHash;
@@ -477,6 +438,7 @@ namespace Lib.DiskCache
         {
             if (!directory.IsStale)
                 return;
+            var wasFake = directory.IsFake;
             directory.IsFake = false;
             var fullPath = directory.FullPath;
             if (!FsAbstraction.GetItemInfo(fullPath).Exists)
@@ -512,7 +474,7 @@ namespace Lib.DiskCache
                 if (items != origItems)
                 {
                     ((DirectoryCache)directory).Items = items;
-                    ((DirectoryCache)directory).NoteChange();
+                    if (!wasFake) ((DirectoryCache)directory).NoteChange();
                 }
 
                 foreach (var fsi in fsis)

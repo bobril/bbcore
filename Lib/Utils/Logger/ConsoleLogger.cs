@@ -11,7 +11,7 @@ namespace Lib.Utils.Logger
     
     public class ConsoleLogger : IConsoleLogger
     {
-        ConsoleColor _previousColor = Console.ForegroundColor;
+        public bool Verbose { get; set; }
 
         public void WriteLine(string message)
         {
@@ -53,13 +53,12 @@ namespace Lib.Utils.Logger
 
         public void SetColor(ConsoleColor color)
         {
-            _previousColor = Console.ForegroundColor;
             Console.ForegroundColor = color;
         }
 
         public void ClearColor()
         {
-            Console.ForegroundColor = _previousColor;
+            Console.ResetColor();
         }
     }
 }

@@ -86,7 +86,10 @@ namespace Lib.Composition
             if (_command is CommonParametersBaseCommand commonParams)
             {
                 if (commonParams.Verbose.Value)
+                {
                     _verbose = true;
+                    _logger.Verbose = true;
+                }
                 if (commonParams.NoBuildCache.Value)
                     _buildCache = new DummyBuildCache();
                 else
@@ -401,7 +404,7 @@ namespace Lib.Composition
                 proj.RefreshCompilerOptions();
                 proj.RefreshMainFile();
                 proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _verbose, _logger);
+                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger);
                 ctx.MainFile = proj.MainFile;
                 ctx.ExampleSources = proj.ExampleSources;
                 ctx.CompilerOptions = proj.FinalCompilerOptions;
@@ -523,7 +526,7 @@ namespace Lib.Composition
                 proj.SpriterInitialization(testBuildResult);
                 if (proj.TestSources != null && proj.TestSources.Count > 0)
                 {
-                    var ctx = new BuildCtx(_compilerPool, _verbose, _logger);
+                    var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger);
                     ctx.TestSources = proj.TestSources;
                     ctx.JasmineDts = proj.JasmineDts;
                     ctx.CompilerOptions = proj.FinalCompilerOptions;
@@ -653,7 +656,7 @@ namespace Lib.Composition
                 proj.RefreshTestSources();
                 proj.SpriterInitialization(buildResult);
                 proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _verbose, _logger);
+                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger);
                 ctx.MainFile = proj.MainFile;
                 ctx.ExampleSources = proj.ExampleSources;
                 ctx.TestSources = proj.TestSources;
@@ -769,7 +772,7 @@ namespace Lib.Composition
             }
 
             _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
-            _compilerPool = new CompilerPool(_tools, _logger);
+            _compilerPool = new CompilerPool(_tools, _logger, 2);
             _notificationManager = new NotificationManager();
         }
 
@@ -997,7 +1000,7 @@ namespace Lib.Composition
             _hasBuildWork.Set();
             _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200)).Subscribe((_) => _hasBuildWork.Set());
             var iterationId = 0;
-            var ctx = new BuildCtx(_compilerPool, _verbose, _logger);
+            var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger);
             var buildResult = new BuildResult(_currentProject);
             var fastBundle = new FastBundleBundler(_tools);
             var filesContent = new RefDictionary<string, object>();

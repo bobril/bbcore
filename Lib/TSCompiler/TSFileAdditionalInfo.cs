@@ -117,7 +117,6 @@ namespace Lib.TSCompiler
 
         internal void ReportDiag(List<Diagnostic> diagnostics)
         {
-            if (diagnostics == null) return;
             foreach(var diag in diagnostics)
             {
                 Diagnostics.Add(diag);

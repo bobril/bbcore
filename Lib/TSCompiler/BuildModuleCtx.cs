@@ -15,7 +15,7 @@ using Lib.BuildCache;
 
 namespace Lib.TSCompiler
 {
-    public class BuildModuleCtx : ITSCompilerCtx, IImportResolver
+    public class BuildModuleCtx : IImportResolver
     {
         public BuildCtx BuildCtx;
         public TSProject Owner;
@@ -26,11 +26,6 @@ namespace Lib.TSCompiler
         public void AddSource(TSFileAdditionalInfo file)
         {
             Result.Path2FileInfo[file.Owner.FullPath] = file;
-        }
-
-        public string resolveLocalImport(string name, TSFileAdditionalInfo parentInfo)
-        {
-            return ResolveImport(parentInfo.Owner.FullPath, name);
         }
 
         static readonly string[] ExtensionsToImport = { ".tsx", ".ts", ".d.ts", ".jsx", ".js", "" };
@@ -394,24 +389,6 @@ namespace Lib.TSCompiler
                         }
                 }
             }
-        }
-
-        public string resolveModuleMain(string name, TSFileAdditionalInfo parentInfo)
-        {
-            return ResolveImport(parentInfo.Owner.FullPath, name);
-        }
-
-        public void reportDiag(bool isError, int code, string text, string fileName, int startLine, int startCharacter,
-            int endLine, int endCharacter)
-        {
-            var fc = Owner.DiskCache.TryGetItem(fileName) as IFileCache;
-            if (fc == null)
-            {
-                throw new Exception("Cannot found " + fileName);
-            }
-
-            var fi = TSFileAdditionalInfo.Create(fc, Owner.DiskCache);
-            fi.ReportDiag(isError, code, text, startLine, startCharacter, endLine, endCharacter);
         }
 
         public TSFileAdditionalInfo CheckAdd(string fullNameWithExtension, FileCompilationType compilationType)
@@ -813,23 +790,6 @@ namespace Lib.TSCompiler
                 return CheckAdd(depName, FileCompilationType.JavaScriptAsset);
             }
             return CheckAdd(depName, FileCompilationType.Unknown);
-        }
-
-        public string readFile(string fullPath)
-        {
-            var file = TryGetFile(fullPath);
-            if (file == null)
-            {
-                return null;
-            }
-            TSFileAdditionalInfo.Create(file, Owner.DiskCache).StartCompiling();
-            return file.Utf8Content;
-        }
-
-        public IFileCache TryGetFile(string fullPath)
-        {
-            var file = Owner.DiskCache.TryGetItem(fullPath) as IFileCache;
-            return file;
         }
 
         Dictionary<string, AstToplevel> _parsedCache = new Dictionary<string, AstToplevel>();

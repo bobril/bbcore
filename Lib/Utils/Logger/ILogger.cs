@@ -17,5 +17,6 @@ namespace Lib.Utils.Logger
         void Info(string message);
         void Warn(string message);
         void Error(string message);
+        bool Verbose { get; set; }
     }
 }

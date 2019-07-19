@@ -7,12 +7,12 @@ namespace Lib.TSCompiler
     {
         IDiskCache DiskCache { get; set; }
         ITSCompilerOptions CompilerOptions { get; set; }
-        bool MeasurePerformance { get; set; }
-        ITSCompilerCtx Ctx { get; set; }
-
         string GetTSVersion();
+
         TranspileResult Transpile(string fileName, string content);
+
         void CreateProgram(string currentDirectory, string[] mainFiles);
-        bool CompileProgram();
+        void UpdateProgram(string[] mainFiles);
+        void TriggerUpdate();
     }
 }

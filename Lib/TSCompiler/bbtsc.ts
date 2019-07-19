@@ -7,7 +7,7 @@ declare const bb: IBB;
 
 interface IBB {
     getChangeId(fileName: string): number | undefined;
-    readFile(fileName: string, sourceCode: boolean): string;
+    readFile(fileName: string): string;
     writeFile(fileName: string, data: string): boolean;
     dirExists(directoryPath: string): boolean;
     fileExists(fileName: string): boolean;
@@ -25,79 +25,6 @@ interface IBB {
         endLine: number,
         endCharacter: number
     ): void;
-    // resolvedName:string|isExternalLibraryImport:boolean|extension:string(Ts,Tsx,Dts,Js,Jsx)
-    resolveModuleName(name: string, containingFile: string): string;
-    resolvePathStringLiteral(sourcePath: string, text: string): string;
-    reportSourceInfo(fileName: string, info: string): void;
-    getModifications(fileName: string): string;
-}
-
-function createCompilerHost(setParentNodes?: boolean): ts.CompilerHost {
-    function getCanonicalFileName(fileName: string): string {
-        return fileName;
-    }
-
-    function getSourceFile(
-        fileName: string,
-        languageVersion: ts.ScriptTarget,
-        onError?: (message: string) => void
-    ): ts.SourceFile {
-        let text = bb.readFile(fileName, true);
-        if (text == undefined) {
-            if (onError) {
-                onError("Read Error in " + fileName);
-            }
-            throw new Error("Cannot getSourceFile " + fileName);
-        }
-        let res = ts.createSourceFile(fileName, text, languageVersion, setParentNodes);
-        return res;
-    }
-
-    function writeFile(
-        fileName: string,
-        data: string,
-        _writeByteOrderMark: boolean,
-        onError?: (message: string) => void
-    ) {
-        if (!bb.writeFile(fileName, data)) {
-            if (onError) {
-                onError("Write failed " + fileName);
-            }
-        }
-    }
-
-    return {
-        getSourceFile,
-        getDefaultLibLocation: () => bbDefaultLibLocation,
-        getDefaultLibFileName: options => bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options),
-        writeFile,
-        getCurrentDirectory: () => bbCurrentDirectory,
-        useCaseSensitiveFileNames: () => true,
-        getCanonicalFileName,
-        getNewLine: () => "\n",
-        fileExists: name => bb.fileExists(name),
-        readFile: fileName => bb.readFile(fileName, false),
-        trace: text => bb.trace(text),
-        directoryExists: dir => bb.dirExists(dir),
-        getEnvironmentVariable: (name: string) => {
-            bb.trace("Getting ENV " + name);
-            return "";
-        },
-        getDirectories: (name: string) => bb.getDirectories(name).split("|"),
-        realpath: path => bb.realPath(path),
-        resolveModuleNames(moduleNames: string[], containingFile: string): ts.ResolvedModuleFull[] {
-            return moduleNames.map(n => {
-                let r = bb.resolveModuleName(n, containingFile).split("|");
-                if (r.length < 3) return null as any;
-                let res: ts.ResolvedModuleFull = {
-                    resolvedFileName: r[0],
-                    isExternalLibraryImport: r[1] == "true",
-                    extension: (ts.Extension as any)[r[2]]
-                };
-                return res;
-            });
-        }
-    };
 }
 
 let compilerOptions = ts.getDefaultCompilerOptions();
@@ -181,4 +108,196 @@ function reportDiagnostics(diagnostics: ReadonlyArray<ts.Diagnostic>) {
     for (var i = 0; i < diagnostics.length; i++) {
         reportDiagnostic(diagnostics[i]);
     }
+}
+
+class FileWatcher {
+    path: string;
+    callback: ts.FileWatcherCallback;
+    changeId: number | undefined;
+    closed: boolean;
+
+    constructor(path: string, callback: ts.FileWatcherCallback) {
+        this.path = path;
+        this.callback = callback;
+        this.changeId = bb.getChangeId(path);
+        this.closed = false;
+    }
+
+    check() {
+        if (this.closed) return;
+        let newChangeId = bb.getChangeId(this.path);
+        const oldChangeId = this.changeId;
+        if (newChangeId !== oldChangeId) {
+            this.changeId = newChangeId;
+            this.callback(
+                this.path,
+                newChangeId === undefined
+                    ? ts.FileWatcherEventKind.Deleted
+                    : oldChangeId === undefined
+                    ? ts.FileWatcherEventKind.Created
+                    : ts.FileWatcherEventKind.Changed
+            );
+        }
+    }
+
+    close() {
+        if (this.closed) return;
+        this.closed = true;
+        watchDirMap.delete(this.path);
+    }
+}
+
+class DirWatcher {
+    path: string;
+    callback: ts.DirectoryWatcherCallback;
+    changeId: number | undefined;
+    recursive: boolean;
+    closed: boolean;
+
+    constructor(path: string, callback: ts.DirectoryWatcherCallback, recursive: boolean) {
+        this.path = path;
+        this.callback = callback;
+        this.recursive = recursive;
+        this.changeId = bb.getChangeId(path);
+        this.closed = false;
+    }
+
+    check() {
+        if (this.closed) return;
+        let newChangeId = bb.getChangeId(this.path);
+        const oldChangeId = this.changeId;
+        if (newChangeId !== oldChangeId) {
+            this.changeId = newChangeId;
+            this.callback(this.path);
+        }
+    }
+
+    close() {
+        if (this.closed) return;
+        this.closed = true;
+        watchDirMap.delete(this.path);
+    }
+}
+
+const watchFileMap: Map<string, FileWatcher> = new Map<string, FileWatcher>();
+const watchDirMap: Map<string, DirWatcher> = new Map<string, DirWatcher>();
+let launchBuild: (() => void) | undefined;
+
+const mySys: ts.System = {
+    args: [],
+    newLine: "\n",
+    useCaseSensitiveFileNames: true,
+    createDirectory() {},
+    write(s: string) {
+        bb.trace(s);
+    },
+    writeOutputIsTTY() {
+        return false;
+    },
+    setTimeout(...args: any) {
+        launchBuild = args[0];
+        return 1;
+    },
+    clearTimeout() {},
+    writeFile(path: string, _data: string, _writeOrderMark?: boolean) {
+        bb.trace("should not be called writeFile: " + path);
+    },
+    readFile(path: string, _encoding?: string): string {
+        return bb.readFile(path);
+    },
+    fileExists(path: string): boolean {
+        return bb.fileExists(path);
+    },
+    directoryExists(path: string): boolean {
+        return bb.dirExists(path);
+    },
+    getExecutingFilePath(): string {
+        return bbCurrentDirectory;
+    },
+    getCurrentDirectory(): string {
+        return bbCurrentDirectory;
+    },
+    exit(exitCode?: number) {
+        bb.trace("should not be called exit: " + exitCode);
+    },
+    resolvePath(path: string): string {
+        bb.trace("resolvePath:" + path);
+        return path;
+    },
+    getDirectories(path: string): string[] {
+        return bb.getDirectories(path).split("|");
+    },
+    realpath(path: string): string {
+        return bb.realPath(path);
+    },
+    readDirectory(
+        path: string,
+        _extensions?: ReadonlyArray<string>,
+        _exclude?: ReadonlyArray<string>,
+        _include?: ReadonlyArray<string>,
+        _depth?: number
+    ): string[] {
+        bb.trace("should not be called readDirectory: " + path);
+        return [];
+    },
+    watchFile(path: string, callback: ts.FileWatcherCallback, _pollingInterval?: number): ts.FileWatcher {
+        let res = watchFileMap.get(path);
+        if (res !== undefined) {
+            res.close();
+        }
+        res = new FileWatcher(path, callback);
+        watchFileMap.set(path, res);
+        return res;
+    },
+    watchDirectory(path: string, callback: ts.DirectoryWatcherCallback, recursive?: boolean): ts.FileWatcher {
+        let res = watchDirMap.get(path);
+        if (res !== undefined) {
+            res.close();
+        }
+        res = new DirWatcher(path, callback, recursive || false);
+        watchDirMap.set(path, res);
+        return res;
+    }
+};
+
+function reportWatchStatusChanged(diagnostic: ts.Diagnostic) {
+    bb.reportTypeScriptDiag(
+        diagnostic.category === ts.DiagnosticCategory.Error,
+        diagnostic.code,
+        ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
+    );
+}
+
+let watchProgram: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> | undefined;
+
+function bbCreateWatchProgram(fileNames: string) {
+    fixCompilerOptions();
+    compilerOptions.noEmit = true;
+    const host = ts.createWatchCompilerHost(
+        fileNames.split("|"),
+        compilerOptions,
+        mySys,
+        ts.createSemanticDiagnosticsBuilderProgram,
+        reportDiagnostic,
+        reportWatchStatusChanged
+    );
+
+    host.getDefaultLibLocation = () => bbDefaultLibLocation;
+    host.getDefaultLibFileName = options => bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options);
+    host.trace = s => {
+        bb.trace(s);
+    };
+    watchProgram = ts.createWatchProgram(host);
+}
+
+function bbUpdateSourceList(fileNames: string) {
+    watchProgram!.updateRootFileNames(fileNames.split("|"));
+}
+
+function bbTriggerUpdate() {
+    watchFileMap.forEach(w => w.check());
+    watchDirMap.forEach(w => w.check());
+    const launch = launchBuild;
+    launchBuild = undefined;
+    if (launch !== undefined) launch();
 }

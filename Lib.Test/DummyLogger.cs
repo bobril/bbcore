@@ -4,6 +4,8 @@ namespace Lib.Test
 {
     public class DummyLogger : ILogger
     {
+        public bool Verbose { get; set; }
+
         public void WriteLine(string message)
         {
         }
