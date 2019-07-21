@@ -56,6 +56,7 @@ namespace Lib.TSCompiler
 
             public int? getChangeId(string fileName)
             {
+                //_owner.Logger.Info("getChangeId " + fileName);
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
                 var file = _owner.DiskCache.TryGetItem(fullPath);
                 if (file == null || file.IsInvalid)
@@ -67,6 +68,7 @@ namespace Lib.TSCompiler
 
             public string readFile(string fileName)
             {
+                //_owner.Logger.Info("readFile " + fileName);
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
                 var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
                 if (file != null && !file.IsInvalid)
@@ -78,6 +80,7 @@ namespace Lib.TSCompiler
 
             public bool dirExists(string directoryPath)
             {
+                //_owner.Logger.Info("dirExists " + directoryPath);
                 var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
                 var dir = _owner.DiskCache.TryGetItem(fullPath) as IDirectoryCache;
                 return dir != null && !dir.IsInvalid;
@@ -85,6 +88,7 @@ namespace Lib.TSCompiler
 
             public bool fileExists(string fileName)
             {
+                //_owner.Logger.Info("fileExists " + fileName);
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
                 var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
                 return file != null && !file.IsInvalid;
@@ -92,6 +96,7 @@ namespace Lib.TSCompiler
 
             public string getDirectories(string directoryPath)
             {
+                //_owner.Logger.Info("getDirectories " + directoryPath);
                 var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
                 var dc = _owner.DiskCache.TryGetItem(fullPath) as IDirectoryCache;
                 if (dc == null || dc.IsInvalid)

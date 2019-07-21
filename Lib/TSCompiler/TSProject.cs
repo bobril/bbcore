@@ -284,7 +284,14 @@ namespace Lib.TSCompiler
                 {
                     buildModuleCtx.Result.CommonSourceDirectory = Owner.FullPath;
                 }
-                buildCtx.StartTypeCheck(ProjectOptions);
+                buildResult.TaskForSemanticCheck = buildCtx.StartTypeCheck().ContinueWith((task) =>
+                {
+                    if (task.IsCompletedSuccessfully)
+                    {
+                        buildResult.SemanticResult = task.Result;
+                        buildResult.NotifySemanticResult(task.Result);
+                    }
+                });
                 if (tryDetectChanges)
                 {
                     if (!buildModuleCtx.CrawlChanges())

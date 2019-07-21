@@ -3,17 +3,20 @@ using Lib.TSCompiler;
 using Lib.Utils.Logger;
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Lib.Composition
 {
     public class BuildCtx
     {
-        public BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger)
+        public BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger, string currentDirectory)
         {
             Verbose = verbose;
             CompilerPool = compilerPool;
             _diskCache = diskCache;
             Logger = logger;
+            _currentDirectory = currentDirectory;
         }
 
         string _currentDirectory;
@@ -112,31 +115,84 @@ namespace Lib.Composition
             }
         }
 
-        public void StartTypeCheck(ProjectOptions options)
+        enum TypeCheckChange
         {
-            if (_typeChecker != null && CompilerOptionsChanged)
-            {
-                CompilerPool.ReleaseTs(_typeChecker);
-                _typeChecker = null;
-            }
+            None = 0,
+            Small = 1,
+            Input = 2,
+            Options = 3
+        }
+
+        TypeCheckChange _cancelledTypeCheckType;
+
+        void DoTypeCheck(TypeCheckChange type)
+        {
             if (_typeChecker == null)
             {
-                _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
-                _typeChecker.ClearDiagnostics();
-                _typeChecker.CreateProgram(_currentDirectory, MakeSourceListArray());
+                type = TypeCheckChange.Options;
             }
-            else if (ProjectStructureChanged)
+            switch (type)
             {
-                _typeChecker.ClearDiagnostics();
-                _typeChecker.UpdateProgram(MakeSourceListArray());
-                _typeChecker.TriggerUpdate();
-            }
-            else
-            {
-                _typeChecker.ClearDiagnostics();
-                _typeChecker.TriggerUpdate();
+                case TypeCheckChange.None:
+                    return;
+                case TypeCheckChange.Small:
+                    _typeChecker.ClearDiagnostics();
+                    _typeChecker.TriggerUpdate();
+                    break;
+                case TypeCheckChange.Input:
+                    _typeChecker.ClearDiagnostics();
+                    _typeChecker.UpdateProgram(MakeSourceListArray());
+                    _typeChecker.TriggerUpdate();
+                    break;
+                case TypeCheckChange.Options:
+                    if (_typeChecker != null)
+                    {
+                        CompilerPool.ReleaseTs(_typeChecker);
+                        _typeChecker = null;
+                    }
+                    _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
+                    _typeChecker.ClearDiagnostics();
+                    _typeChecker.CreateProgram(_currentDirectory, MakeSourceListArray());
+                    break;
             }
             _lastSemantics = _typeChecker.GetDiagnostics();
+        }
+
+        TypeCheckChange DetectTypeCheckChange()
+        {
+            if (_typeChecker == null || CompilerOptionsChanged)
+            {
+                return TypeCheckChange.Options;
+            }
+            if (ProjectStructureChanged)
+            {
+                return TypeCheckChange.Input;
+            }
+            return TypeCheckChange.Small;
+        }
+
+        CancellationTokenSource _cancellation;
+        Task _typeCheckTask = Task.CompletedTask;
+
+        public Task<Diagnostic[]> StartTypeCheck()
+        {
+            _cancellation?.Cancel();
+            var cancellationTokenSource = new CancellationTokenSource();
+            _cancellation = cancellationTokenSource;
+            var current = DetectTypeCheckChange();
+            var res = _typeCheckTask.ContinueWith((_task, _state) => {
+                current = (TypeCheckChange)Math.Max((int)_cancelledTypeCheckType, (int)current);
+                _cancelledTypeCheckType = TypeCheckChange.None;
+                DoTypeCheck(current);
+                if (cancellationTokenSource.IsCancellationRequested)
+                {
+                    _cancelledTypeCheckType = current;
+                    return null;
+                }
+                return _lastSemantics;
+            }, null, _cancellation.Token, TaskContinuationOptions.RunContinuationsAsynchronously | TaskContinuationOptions.LongRunning, TaskScheduler.Default);
+            _typeCheckTask = res;
+            return res;
         }
 
         string[] MakeSourceListArray()

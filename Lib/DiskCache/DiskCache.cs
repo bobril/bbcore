@@ -43,7 +43,7 @@ namespace Lib.DiskCache
                     var wasChange = _isInvalid != value;
                     _isInvalid = value;
                     if (value) IsWatcherRoot = false;
-                    if (wasChange) NoteChange();
+                    if (wasChange) NoteChange(true);
                 }
             }
 
@@ -99,12 +99,13 @@ namespace Lib.DiskCache
                 _isInvalid = isInvalid;
             }
 
-            internal void NoteChange()
+            internal void NoteChange(bool wasChanged)
             {
-                _changeId++; // It is called always under lock
+                if (wasChanged)
+                    _changeId++; // It is called always under lock
                 if (Parent != null)
                 {
-                    ((DirectoryCache)Parent).NoteChange();
+                    ((DirectoryCache)Parent).NoteChange(false);
                 }
                 else
                 {
@@ -220,7 +221,8 @@ namespace Lib.DiskCache
                 Parent = parent,
                 Filter = DefaultFilter,
                 IsStale = true,
-                IsLink = isLink
+                IsLink = isLink,
+                IsFake = true
             };
             ((DirectoryCache)parent).Add(subDir);
             return subDir;
@@ -298,7 +300,7 @@ namespace Lib.DiskCache
                         _contentBytes = newBytes;
                         _contentHash = null;
                         ChangeId++;
-                        ((DirectoryCache)Parent)?.NoteChange();
+                        ((DirectoryCache)Parent)?.NoteChange(false);
                     }
 
                     _isStale = value;
@@ -368,17 +370,20 @@ namespace Lib.DiskCache
                 var subItem = directory.TryGetChild(name);
                 if (isDir)
                 {
-                    if (subItem == null || !subItem.IsDirectory)
+                    if (subItem == null)
                     {
                         if (!directory.IsFake)
                         {
                             return null;
                         }
 
-                        subItem = AddDirectoryFromName(name.ToString(), directory, false, false);
-                        ((IDirectoryCache)subItem).IsFake = true;
+                        var info = FsAbstraction.GetItemInfo(path.Slice(0,pos));
+                        subItem = AddDirectoryFromName(name.ToString(), directory, info.IsLink, !info.Exists || !info.IsDirectory);
                     }
-
+                    if (!subItem.IsDirectory)
+                    {
+                        return null;
+                    }
                     directory = (IDirectoryCache)subItem;
                     if (!directory.IsFake)
                         UpdateIfNeededNoLock(directory);
@@ -401,9 +406,17 @@ namespace Lib.DiskCache
                     }
                     else
                     {
-                        subItem = AddDirectoryFromName(name.ToString(), directory, false, !info.Exists);
+                        subItem = AddDirectoryFromName(name.ToString(), directory, info.IsLink, !info.Exists);
                         if (info.Exists)
-                            CheckUpdateIfNeededNoLock((IDirectoryCache)subItem);
+                        {
+                            UpdateIfNeededNoLock((IDirectoryCache)subItem);
+                            foreach (var item in (IDirectoryCache)subItem)
+                            {
+                                if (item is IDirectoryCache &&
+                                    (!((IDirectoryCache)item).IsStale || ((IDirectoryCache)item).IsFake))
+                                    CheckUpdateIfNeededNoLock((IDirectoryCache)item);
+                            }
+                        }
                     }
 
                     return subItem;
@@ -459,9 +472,12 @@ namespace Lib.DiskCache
                     names.Add(fsi.Name);
                 }
 
+                var realChildren = 0;
                 for (var i = items.Count - 1; i >= 0; i--)
                 {
                     var item = origItems[i];
+                    if (item.IsInvalid) continue;
+                    realChildren++;
                     if (!names.Contains(item.Name))
                     {
                         item.IsInvalid = true;
@@ -474,7 +490,11 @@ namespace Lib.DiskCache
                 if (items != origItems)
                 {
                     ((DirectoryCache)directory).Items = items;
-                    if (!wasFake) ((DirectoryCache)directory).NoteChange();
+                    if (!wasFake) ((DirectoryCache)directory).NoteChange(true);
+                }
+                else if (realChildren != fsis.Count)
+                {
+                    if (!wasFake) ((DirectoryCache)directory).NoteChange(true);
                 }
 
                 foreach (var fsi in fsis)

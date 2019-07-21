@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Lib.Utils;
 using Njsast;
 using Njsast.SourceMap;
@@ -41,6 +42,8 @@ namespace Lib.TSCompiler
         public HashSet<string> TakenNames = new HashSet<string>();
         public bool HasError;
         public bool Incremental;
+        public Task TaskForSemanticCheck;
+        internal Diagnostic[] SemanticResult;
         public readonly bool CompressFileNames;
         public readonly string OutputSubDir;
         public readonly string BundleJsUrl;
@@ -121,6 +124,13 @@ namespace Lib.TSCompiler
                 return ToOutputUrl(source.Owner.FullPath);
             }
             return source.OutputUrl;
+        }
+
+        public event Action<Diagnostic[]> OnSemanticResult;
+
+        internal void NotifySemanticResult(Diagnostic[] result)
+        {
+            OnSemanticResult?.Invoke(result);
         }
     }
 }
