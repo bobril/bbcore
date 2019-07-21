@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.86.0
+
 ### Added
 
 - masively speed up builds (type checking runs in parallel and is relatively slow), incremental builds even more...
