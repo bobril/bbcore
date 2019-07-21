@@ -4,11 +4,11 @@ using Lib.DiskCache;
 using Lib.ToolsDir;
 using Lib.Utils;
 using JavaScriptEngineSwitcher.Core;
-using System.Diagnostics;
 using Newtonsoft.Json;
 using Lib.Utils.Logger;
 using System.Collections.Generic;
 using Njsast;
+using System.Diagnostics;
 
 namespace Lib.TSCompiler
 {
@@ -96,7 +96,6 @@ namespace Lib.TSCompiler
 
             public string getDirectories(string directoryPath)
             {
-                //_owner.Logger.Info("getDirectories " + directoryPath);
                 var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
                 var dc = _owner.DiskCache.TryGetItem(fullPath) as IDirectoryCache;
                 if (dc == null || dc.IsInvalid)
@@ -104,12 +103,13 @@ namespace Lib.TSCompiler
                 var sb = new StringBuilder();
                 foreach (var item in dc)
                 {
-                    if (item is IDirectoryCache)
+                    if (item is IDirectoryCache && !item.IsInvalid)
                     {
                         if (sb.Length > 0) sb.Append('|');
                         sb.Append(item.Name);
                     }
                 }
+                //_owner.Logger.Info("getDirectories " + directoryPath + " "+sb.ToString());
                 return sb.ToString();
             }
 
@@ -119,9 +119,19 @@ namespace Lib.TSCompiler
                 //return PathUtils.RealPath(path);
             }
 
+            readonly Stopwatch _stopwatch = new Stopwatch();
+
             public void trace(string text)
             {
-                Console.WriteLine("TSCompiler trace:" + text);
+                if (!_owner.Logger.Verbose) return;
+                if (_stopwatch.IsRunning)
+                {
+                    _stopwatch.Stop();
+                    Console.WriteLine("Trace " + _stopwatch.ElapsedMilliseconds + "ms:" + text);
+                }
+                else
+                    Console.WriteLine("Trace:" + text);
+                _stopwatch.Restart();
             }
 
             public void reportTypeScriptDiag(bool isError, int code, string text)

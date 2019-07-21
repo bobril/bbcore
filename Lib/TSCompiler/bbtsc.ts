@@ -112,11 +112,12 @@ function reportDiagnostics(diagnostics: ReadonlyArray<ts.Diagnostic>) {
 
 class FileWatcher {
     path: string;
-    callback: ts.FileWatcherCallback;
+    callback: ts.FileWatcherCallback | undefined;
     changeId: number | undefined;
+    content?: string;
     closed: boolean;
 
-    constructor(path: string, callback: ts.FileWatcherCallback) {
+    constructor(path: string, callback?: ts.FileWatcherCallback) {
         this.path = path;
         this.callback = callback;
         this.changeId = bb.getChangeId(path);
@@ -129,19 +130,33 @@ class FileWatcher {
         const oldChangeId = this.changeId;
         if (newChangeId !== oldChangeId) {
             this.changeId = newChangeId;
-            this.callback(
-                this.path,
-                newChangeId === undefined
-                    ? ts.FileWatcherEventKind.Deleted
-                    : oldChangeId === undefined
-                    ? ts.FileWatcherEventKind.Created
-                    : ts.FileWatcherEventKind.Changed
-            );
+            if (this.callback != undefined)
+                this.callback(
+                    this.path,
+                    newChangeId === undefined
+                        ? ts.FileWatcherEventKind.Deleted
+                        : oldChangeId === undefined
+                        ? ts.FileWatcherEventKind.Created
+                        : ts.FileWatcherEventKind.Changed
+                );
+            this.content = undefined;
         }
+    }
+
+    getContent(): string | undefined {
+        let content = this.content;
+        if (content != undefined) return content;
+        if (this.changeId == undefined) {
+            return undefined;
+        }
+        content = bb.readFile(this.path);
+        this.content = content;
+        return content;
     }
 
     close() {
         if (this.closed) return;
+        bb.trace("Closed watching file " + this.path);
         this.closed = true;
         watchDirMap.delete(this.path);
     }
@@ -149,15 +164,13 @@ class FileWatcher {
 
 class DirWatcher {
     path: string;
-    callback: ts.DirectoryWatcherCallback;
+    callback: ts.DirectoryWatcherCallback | undefined;
     changeId: number | undefined;
-    recursive: boolean;
     closed: boolean;
 
-    constructor(path: string, callback: ts.DirectoryWatcherCallback, recursive: boolean) {
+    constructor(path: string, callback?: ts.DirectoryWatcherCallback) {
         this.path = path;
         this.callback = callback;
-        this.recursive = recursive;
         this.changeId = bb.getChangeId(path);
         this.closed = false;
     }
@@ -168,12 +181,14 @@ class DirWatcher {
         const oldChangeId = this.changeId;
         if (newChangeId !== oldChangeId) {
             this.changeId = newChangeId;
-            this.callback(this.path);
+            bb.trace("Watcher changed dir: " + this.path);
+            if (this.callback != undefined) this.callback(this.path);
         }
     }
 
     close() {
         if (this.closed) return;
+        bb.trace("Closed watching dir " + this.path);
         this.closed = true;
         watchDirMap.delete(this.path);
     }
@@ -203,13 +218,28 @@ const mySys: ts.System = {
         bb.trace("should not be called writeFile: " + path);
     },
     readFile(path: string, _encoding?: string): string {
-        return bb.readFile(path);
+        let res = watchFileMap.get(path);
+        if (res == undefined) {
+            res = new FileWatcher(path);
+            watchFileMap.set(path, res);
+        }
+        return res.getContent()!;
     },
     fileExists(path: string): boolean {
-        return bb.fileExists(path);
+        let res = watchFileMap.get(path);
+        if (res == undefined) {
+            res = new FileWatcher(path);
+            watchFileMap.set(path, res);
+        }
+        return res.changeId != undefined;
     },
     directoryExists(path: string): boolean {
-        return bb.dirExists(path);
+        let res = watchDirMap.get(path);
+        if (res == undefined) {
+            res = new DirWatcher(path);
+            watchDirMap.set(path, res);
+        }
+        return res.changeId != undefined;
     },
     getExecutingFilePath(): string {
         return bbCurrentDirectory;
@@ -243,18 +273,26 @@ const mySys: ts.System = {
     watchFile(path: string, callback: ts.FileWatcherCallback, _pollingInterval?: number): ts.FileWatcher {
         let res = watchFileMap.get(path);
         if (res !== undefined) {
+            if (res.callback == undefined) {
+                res.callback = callback;
+                return res;
+            }
             res.close();
         }
         res = new FileWatcher(path, callback);
         watchFileMap.set(path, res);
         return res;
     },
-    watchDirectory(path: string, callback: ts.DirectoryWatcherCallback, recursive?: boolean): ts.FileWatcher {
+    watchDirectory(path: string, callback: ts.DirectoryWatcherCallback, _recursive?: boolean): ts.FileWatcher {
         let res = watchDirMap.get(path);
         if (res !== undefined) {
+            if (res.callback == undefined) {
+                res.callback = callback;
+                return res;
+            }
             res.close();
         }
-        res = new DirWatcher(path, callback, recursive || false);
+        res = new DirWatcher(path, callback);
         watchDirMap.set(path, res);
         return res;
     }
@@ -295,9 +333,12 @@ function bbUpdateSourceList(fileNames: string) {
 }
 
 function bbTriggerUpdate() {
+    bb.trace("triggerUpdateStart");
     watchFileMap.forEach(w => w.check());
     watchDirMap.forEach(w => w.check());
     const launch = launchBuild;
     launchBuild = undefined;
+    bb.trace("watches updated File: " + watchFileMap.size + " Dir: " + watchDirMap.size);
     if (launch !== undefined) launch();
+    bb.trace("triggerUpdateFinish");
 }

@@ -84,6 +84,10 @@ namespace Lib.ToolsDir
                 {
                     _typeScriptJsContent = File.ReadAllText(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
 
+                    // Patch TS to generate d.ts also from node_modules directory (it makes much faster typecheck when changing something in node_modules)
+                    // function isSourceFileFromExternalLibrary must return always false!
+                    _typeScriptJsContent =
+                        _typeScriptJsContent.Replace("return !!sourceFilesFoundSearchingNodeModules.get(file.path);", "return false;");
                     // Patch TypeScript compiler to never generate useless __esmodule = true
                     _typeScriptJsContent =
                         _typeScriptJsContent.Replace("(shouldEmitUnderscoreUnderscoreESModule())", "(false)");

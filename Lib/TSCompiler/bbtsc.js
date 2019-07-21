@@ -77,26 +77,39 @@ var FileWatcher = /** @class */ (function () {
         var oldChangeId = this.changeId;
         if (newChangeId !== oldChangeId) {
             this.changeId = newChangeId;
-            this.callback(this.path, newChangeId === undefined
-                ? ts.FileWatcherEventKind.Deleted
-                : oldChangeId === undefined
-                    ? ts.FileWatcherEventKind.Created
-                    : ts.FileWatcherEventKind.Changed);
+            if (this.callback != undefined)
+                this.callback(this.path, newChangeId === undefined
+                    ? ts.FileWatcherEventKind.Deleted
+                    : oldChangeId === undefined
+                        ? ts.FileWatcherEventKind.Created
+                        : ts.FileWatcherEventKind.Changed);
+            this.content = undefined;
         }
+    };
+    FileWatcher.prototype.getContent = function () {
+        var content = this.content;
+        if (content != undefined)
+            return content;
+        if (this.changeId == undefined) {
+            return undefined;
+        }
+        content = bb.readFile(this.path);
+        this.content = content;
+        return content;
     };
     FileWatcher.prototype.close = function () {
         if (this.closed)
             return;
+        bb.trace("Closed watching file " + this.path);
         this.closed = true;
         watchDirMap.delete(this.path);
     };
     return FileWatcher;
 }());
 var DirWatcher = /** @class */ (function () {
-    function DirWatcher(path, callback, recursive) {
+    function DirWatcher(path, callback) {
         this.path = path;
         this.callback = callback;
-        this.recursive = recursive;
         this.changeId = bb.getChangeId(path);
         this.closed = false;
     }
@@ -107,12 +120,15 @@ var DirWatcher = /** @class */ (function () {
         var oldChangeId = this.changeId;
         if (newChangeId !== oldChangeId) {
             this.changeId = newChangeId;
-            this.callback(this.path);
+            bb.trace("Watcher changed dir: " + this.path);
+            if (this.callback != undefined)
+                this.callback(this.path);
         }
     };
     DirWatcher.prototype.close = function () {
         if (this.closed)
             return;
+        bb.trace("Closed watching dir " + this.path);
         this.closed = true;
         watchDirMap.delete(this.path);
     };
@@ -145,13 +161,28 @@ var mySys = {
         bb.trace("should not be called writeFile: " + path);
     },
     readFile: function (path, _encoding) {
-        return bb.readFile(path);
+        var res = watchFileMap.get(path);
+        if (res == undefined) {
+            res = new FileWatcher(path);
+            watchFileMap.set(path, res);
+        }
+        return res.getContent();
     },
     fileExists: function (path) {
-        return bb.fileExists(path);
+        var res = watchFileMap.get(path);
+        if (res == undefined) {
+            res = new FileWatcher(path);
+            watchFileMap.set(path, res);
+        }
+        return res.changeId != undefined;
     },
     directoryExists: function (path) {
-        return bb.dirExists(path);
+        var res = watchDirMap.get(path);
+        if (res == undefined) {
+            res = new DirWatcher(path);
+            watchDirMap.set(path, res);
+        }
+        return res.changeId != undefined;
     },
     getExecutingFilePath: function () {
         return bbCurrentDirectory;
@@ -179,18 +210,26 @@ var mySys = {
     watchFile: function (path, callback, _pollingInterval) {
         var res = watchFileMap.get(path);
         if (res !== undefined) {
+            if (res.callback == undefined) {
+                res.callback = callback;
+                return res;
+            }
             res.close();
         }
         res = new FileWatcher(path, callback);
         watchFileMap.set(path, res);
         return res;
     },
-    watchDirectory: function (path, callback, recursive) {
+    watchDirectory: function (path, callback, _recursive) {
         var res = watchDirMap.get(path);
         if (res !== undefined) {
+            if (res.callback == undefined) {
+                res.callback = callback;
+                return res;
+            }
             res.close();
         }
-        res = new DirWatcher(path, callback, recursive || false);
+        res = new DirWatcher(path, callback);
         watchDirMap.set(path, res);
         return res;
     }
@@ -214,10 +253,13 @@ function bbUpdateSourceList(fileNames) {
     watchProgram.updateRootFileNames(fileNames.split("|"));
 }
 function bbTriggerUpdate() {
+    bb.trace("triggerUpdateStart");
     watchFileMap.forEach(function (w) { return w.check(); });
     watchDirMap.forEach(function (w) { return w.check(); });
     var launch = launchBuild;
     launchBuild = undefined;
+    bb.trace("watches updated File: " + watchFileMap.size + " Dir: " + watchDirMap.size);
     if (launch !== undefined)
         launch();
+    bb.trace("triggerUpdateFinish");
 }

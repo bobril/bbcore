@@ -105,7 +105,7 @@ namespace Lib.DiskCache
                     _changeId++; // It is called always under lock
                 if (Parent != null)
                 {
-                    ((DirectoryCache)Parent).NoteChange(false);
+                    ((DirectoryCache)Parent).NoteChange(wasChanged);
                 }
                 else
                 {
