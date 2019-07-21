@@ -554,6 +554,7 @@ namespace Lib.TSCompiler
                         break;
                     case FileCompilationType.EsmJavaScript:
                     case FileCompilationType.TypeScript:
+                        info.HasError = false;
                         if (!TryToResolveFromBuildCache(info))
                         {
                             info.Output = null;

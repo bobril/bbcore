@@ -286,7 +286,7 @@ namespace Njsast
         public T[] ToArray()
         {
             var res = new T[_count];
-            _a.AsSpan().CopyTo(res);
+            AsSpan().CopyTo(res);
             return res;
         }
     }

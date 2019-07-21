@@ -243,6 +243,7 @@ namespace Lib.TSCompiler
         public void Build(BuildCtx buildCtx, BuildResult buildResult, int iterationId)
         {
             var tryDetectChanges = !buildCtx.ProjectStructureChanged;
+            buildResult.HasError = false;
             if (!buildResult.Incremental || !tryDetectChanges)
             {
                 buildResult.RecompiledIncrementaly.Clear();

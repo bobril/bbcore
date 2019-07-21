@@ -1013,20 +1013,25 @@ namespace Lib.Composition
             int errors = 0;
             int warnings = 0;
             var messages = new List<Diagnostic>();
+            // in case semantic check is faster than build it must be delayed publishing results.
+            var buildDoneTsc = new TaskCompletionSource<bool>();
             buildResult.OnSemanticResult += BuildResult_OnSemanticResult;
 
             void BuildResult_OnSemanticResult(Diagnostic[] obj)
             {
-                IncludeSemanticMessages(_currentProject, buildResult, ref errors, ref warnings, messages);
                 var duration = (DateTime.UtcNow - start).TotalSeconds;
-                _mainServer.NotifyCompilationFinished(errors, warnings, duration, messages);
-                _notificationManager.SendNotification(
-                    NotificationParameters.CreateBuildParameters(errors, warnings, duration));
-                PrintMessages(messages);
-                var color = errors != 0 ? ConsoleColor.Red :
-                    warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                _logger.WriteLine(
-                    $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}", color);
+                if (buildDoneTsc.Task.Result)
+                {
+                    IncludeSemanticMessages(_currentProject, buildResult, ref errors, ref warnings, messages);
+                    _mainServer.NotifyCompilationFinished(errors, warnings, duration, messages);
+                    _notificationManager.SendNotification(
+                        NotificationParameters.CreateBuildParameters(errors, warnings, duration));
+                    if (!buildResult.HasError) PrintMessages(messages);
+                    var color = errors != 0 ? ConsoleColor.Red :
+                        warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                    _logger.WriteLine(
+                        $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}", color);
+                }
             }
 
             Task.Run(() =>
@@ -1068,6 +1073,8 @@ namespace Lib.Composition
                         ctx.TestSources = proj.TestSources;
                         ctx.JasmineDts = proj.TestSources != null ? proj.JasmineDts : null;
                         ctx.CompilerOptions = proj.FinalCompilerOptions;
+                        buildDoneTsc.TrySetResult(false);
+                        buildDoneTsc = new TaskCompletionSource<bool>();
                         proj.Owner.Build(ctx, buildResult, iterationId);
                         if (!buildResult.HasError)
                         {
@@ -1080,6 +1087,7 @@ namespace Lib.Composition
                             proj.FilesContent = filesContent;
                         }
                         IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
+                        buildDoneTsc.TrySetResult(true);
                         if (errors == 0 && proj.LiveReloadEnabled)
                         {
                             proj.LiveReloadIdx++;
@@ -1088,15 +1096,16 @@ namespace Lib.Composition
 
                         if (proj.TestSources != null && proj.TestSources.Count > 0)
                         {
-                            fastBundle.BuildHtml(true);
                             if (errors == 0)
                             {
+                                fastBundle.BuildHtml(true);
                                 _testServer.StartTest("/test.html", fastBundle.SourceMaps);
                                 StartChromeTest();
                             }
                         }
 
-                        totalFiles += proj.FilesContent.Count;
+                        if (proj.FilesContent != null)
+                            totalFiles += proj.FilesContent.Count;
                     }
                     catch (Exception ex)
                     {
@@ -1191,11 +1200,7 @@ namespace Lib.Composition
                 if (options.IgnoreDiagnostic?.Contains(d.Code) ?? false)
                     continue;
                 var isError = d.IsError || options.WarningsAsErrors;
-                if (isError)
-                    errors++;
-                else
-                    warnings++;
-                messages.Add(new Diagnostic
+                var dd = new Diagnostic
                 {
                     FileName = PathUtils.ForDiagnosticDisplay(d.FileName, options.CommonSourceDirectory ?? rootPath, options.CommonSourceDirectory),
                     IsError = isError,
@@ -1205,7 +1210,15 @@ namespace Lib.Composition
                     StartCol = d.StartCol,
                     EndLine = d.EndLine,
                     EndCol = d.EndCol
-                });
+                };
+                if (!messages.Contains(dd))
+                {
+                    messages.Add(dd);
+                    if (isError)
+                        errors++;
+                    else
+                        warnings++;
+                }
             }
         }
 
