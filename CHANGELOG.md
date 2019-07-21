@@ -4,11 +4,10 @@
 
 ### Added
 
-- masively speed up builds, incremental builds even more...
+- masively speed up builds (type checking runs in parallel and is relatively slow), incremental builds even more...
 
 ### Temporary Removed
 
-- TypeScript type checking
 - detection of missing imports and spare dependencies
 
 ## 0.85.0

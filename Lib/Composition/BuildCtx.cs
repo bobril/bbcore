@@ -16,10 +16,9 @@ namespace Lib.Composition
             CompilerPool = compilerPool;
             _diskCache = diskCache;
             Logger = logger;
-            _currentDirectory = currentDirectory;
+            CurrentDirectory = currentDirectory;
         }
 
-        string _currentDirectory;
         string _mainFile;
         string _jasmineDts;
         List<string> _exampleSources;
@@ -27,17 +26,11 @@ namespace Lib.Composition
         ITSCompilerOptions _compilerOptions;
         ITSCompiler _typeChecker;
 
+        public bool BuildOnceOnly;
         public bool ProjectStructureChanged;
         public bool CompilerOptionsChanged;
 
-        public string CurrentDirectory
-        {
-            get { return _currentDirectory; }
-            set
-            {
-                _currentDirectory = value;
-            }
-        }
+        public string CurrentDirectory { get; set; }
 
         public string MainFile
         {
@@ -120,7 +113,8 @@ namespace Lib.Composition
             None = 0,
             Small = 1,
             Input = 2,
-            Options = 3
+            Options = 3,
+            Once = 4
         }
 
         TypeCheckChange _cancelledTypeCheckType;
@@ -130,6 +124,10 @@ namespace Lib.Composition
             if (_typeChecker == null)
             {
                 type = TypeCheckChange.Options;
+            }
+            if (BuildOnceOnly)
+            {
+                type = TypeCheckChange.Once;
             }
             switch (type)
             {
@@ -152,8 +150,21 @@ namespace Lib.Composition
                     }
                     _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
                     _typeChecker.ClearDiagnostics();
-                    _typeChecker.CreateProgram(_currentDirectory, MakeSourceListArray());
+                    _typeChecker.CreateProgram(CurrentDirectory, MakeSourceListArray());
                     break;
+                case TypeCheckChange.Once:
+                    if (_typeChecker != null)
+                    {
+                        CompilerPool.ReleaseTs(_typeChecker);
+                        _typeChecker = null;
+                    }
+                    _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
+                    _typeChecker.ClearDiagnostics();
+                    _typeChecker.CheckProgram(CurrentDirectory, MakeSourceListArray());
+                    _lastSemantics = _typeChecker.GetDiagnostics();
+                    CompilerPool.ReleaseTs(_typeChecker);
+                    _typeChecker = null;
+                    return;
             }
             _lastSemantics = _typeChecker.GetDiagnostics();
         }
@@ -182,15 +193,19 @@ namespace Lib.Composition
             var current = DetectTypeCheckChange();
             var res = _typeCheckTask.ContinueWith((_task, _state) => {
                 current = (TypeCheckChange)Math.Max((int)_cancelledTypeCheckType, (int)current);
-                _cancelledTypeCheckType = TypeCheckChange.None;
-                DoTypeCheck(current);
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
                     _cancelledTypeCheckType = current;
                     return null;
                 }
+                _cancelledTypeCheckType = TypeCheckChange.None;
+                DoTypeCheck(current);
+                if (cancellationTokenSource.IsCancellationRequested)
+                {
+                    return null;
+                }
                 return _lastSemantics;
-            }, null, _cancellation.Token, TaskContinuationOptions.RunContinuationsAsynchronously | TaskContinuationOptions.LongRunning, TaskScheduler.Default);
+            }, TaskContinuationOptions.RunContinuationsAsynchronously | TaskContinuationOptions.LongRunning);
             _typeCheckTask = res;
             return res;
         }

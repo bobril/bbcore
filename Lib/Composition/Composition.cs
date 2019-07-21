@@ -404,6 +404,7 @@ namespace Lib.Composition
                 proj.RefreshMainFile();
                 proj.RefreshExampleSources();
                 var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
+                ctx.BuildOnceOnly = true;
                 ctx.MainFile = proj.MainFile;
                 ctx.ExampleSources = proj.ExampleSources;
                 ctx.CompilerOptions = proj.FinalCompilerOptions;
@@ -530,6 +531,7 @@ namespace Lib.Composition
                 if (proj.TestSources != null && proj.TestSources.Count > 0)
                 {
                     var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
+                    ctx.BuildOnceOnly = true;
                     ctx.TestSources = proj.TestSources;
                     ctx.JasmineDts = proj.JasmineDts;
                     ctx.CompilerOptions = proj.FinalCompilerOptions;
@@ -659,6 +661,7 @@ namespace Lib.Composition
                 proj.SpriterInitialization(buildResult);
                 proj.RefreshExampleSources();
                 var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
+                ctx.BuildOnceOnly = true;
                 ctx.MainFile = proj.MainFile;
                 ctx.ExampleSources = proj.ExampleSources;
                 ctx.TestSources = proj.TestSources;

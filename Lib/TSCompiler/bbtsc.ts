@@ -342,3 +342,62 @@ function bbTriggerUpdate() {
     if (launch !== undefined) launch();
     bb.trace("triggerUpdateFinish");
 }
+
+function createCompilerHost(): ts.CompilerHost {
+    function getSourceFile(
+        fileName: string,
+        languageVersion: ts.ScriptTarget,
+        onError?: (message: string) => void
+    ): ts.SourceFile | undefined {
+        let text: string | undefined;
+        try {
+            text = bb.readFile(fileName);
+        } catch (e) {
+            if (onError) {
+                onError(e.message);
+            }
+            text = "";
+        }
+        return text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, false) : undefined;
+    }
+
+    const compilerHost: ts.CompilerHost = {
+        getSourceFile,
+        getDefaultLibLocation: () => bbDefaultLibLocation,
+        getDefaultLibFileName: options => bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options),
+        writeFile() {},
+        getCurrentDirectory: () => bbCurrentDirectory,
+        useCaseSensitiveFileNames: () => true,
+        getCanonicalFileName(path: string) {
+            return path;
+        },
+        getNewLine: () => "\n",
+        fileExists: fileName => bb.fileExists(fileName),
+        readFile: fileName => bb.readFile(fileName),
+        trace: (s: string) => bb.trace(s),
+        directoryExists: directoryName => bb.dirExists(directoryName),
+        getEnvironmentVariable(_name: string) {
+            return "";
+        },
+        getDirectories: (path: string) => mySys.getDirectories(path),
+        realpath(path: string) {
+            // It should call bb.realpath, but for now this is faster
+            return path;
+        },
+        readDirectory: (path, extensions, include, exclude, depth) =>
+            mySys.readDirectory(path, extensions, include, exclude, depth)
+    };
+    return compilerHost;
+}
+
+function bbCheckProgram(fileNames: string) {
+    fixCompilerOptions();
+    compilerOptions.noEmit = true;
+    const host = createCompilerHost();
+    let program = ts.createProgram(fileNames.split("|"), compilerOptions, host);
+    wasError = false;
+    reportDiagnostics(program.getGlobalDiagnostics());
+    reportDiagnostics(program.getSyntacticDiagnostics());
+    if (wasError) return;
+    reportDiagnostics(program.getSemanticDiagnostics());
+}

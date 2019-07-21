@@ -263,3 +263,58 @@ function bbTriggerUpdate() {
         launch();
     bb.trace("triggerUpdateFinish");
 }
+function createCompilerHost() {
+    function getSourceFile(fileName, languageVersion, onError) {
+        var text;
+        try {
+            text = bb.readFile(fileName);
+        }
+        catch (e) {
+            if (onError) {
+                onError(e.message);
+            }
+            text = "";
+        }
+        return text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, false) : undefined;
+    }
+    var compilerHost = {
+        getSourceFile: getSourceFile,
+        getDefaultLibLocation: function () { return bbDefaultLibLocation; },
+        getDefaultLibFileName: function (options) { return bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options); },
+        writeFile: function () { },
+        getCurrentDirectory: function () { return bbCurrentDirectory; },
+        useCaseSensitiveFileNames: function () { return true; },
+        getCanonicalFileName: function (path) {
+            return path;
+        },
+        getNewLine: function () { return "\n"; },
+        fileExists: function (fileName) { return bb.fileExists(fileName); },
+        readFile: function (fileName) { return bb.readFile(fileName); },
+        trace: function (s) { return bb.trace(s); },
+        directoryExists: function (directoryName) { return bb.dirExists(directoryName); },
+        getEnvironmentVariable: function (_name) {
+            return "";
+        },
+        getDirectories: function (path) { return mySys.getDirectories(path); },
+        realpath: function (path) {
+            // It should call bb.realpath, but for now this is faster
+            return path;
+        },
+        readDirectory: function (path, extensions, include, exclude, depth) {
+            return mySys.readDirectory(path, extensions, include, exclude, depth);
+        }
+    };
+    return compilerHost;
+}
+function bbCheckProgram(fileNames) {
+    fixCompilerOptions();
+    compilerOptions.noEmit = true;
+    var host = createCompilerHost();
+    var program = ts.createProgram(fileNames.split("|"), compilerOptions, host);
+    wasError = false;
+    reportDiagnostics(program.getGlobalDiagnostics());
+    reportDiagnostics(program.getSyntacticDiagnostics());
+    if (wasError)
+        return;
+    reportDiagnostics(program.getSemanticDiagnostics());
+}

@@ -252,6 +252,14 @@ namespace Lib.TSCompiler
             engine.CallFunction("bbCreateWatchProgram", string.Join('|', mainFiles));
         }
 
+        public void CheckProgram(string currentDirectory, string[] mainFiles)
+        {
+            var engine = getJSEnviroment();
+            _currentDirectory = currentDirectory;
+            engine.SetVariableValue("bbCurrentDirectory", currentDirectory);
+            engine.CallFunction("bbCheckProgram", string.Join('|', mainFiles));
+        }
+
         public void UpdateProgram(string[] mainFiles)
         {
             var engine = getJSEnviroment();
