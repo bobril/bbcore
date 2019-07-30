@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.86.1
+
 ### Fixed
 
 - Better error message when sprite is not image.
