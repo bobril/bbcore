@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.86.2
+
 ### Fixed
 
 - Semantic check missed IncludeSources. Also fixed one thread safe issue with displaing errors.
