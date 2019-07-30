@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Better error message when sprite is not image.
+- using do while could throw exception
+
 ## 0.86.0
 
 ### Added

@@ -101,7 +101,7 @@ namespace Lib.TSCompiler
         {
             if (SpriteGeneration && SpriteGenerator == null)
             {
-                SpriteGenerator = new SpriteHolder(Owner.DiskCache);
+                SpriteGenerator = new SpriteHolder(Owner.DiskCache, Owner.Logger);
                 BundlePngUrl = buildResult.AllocateName("bundle.png");
             }
         }

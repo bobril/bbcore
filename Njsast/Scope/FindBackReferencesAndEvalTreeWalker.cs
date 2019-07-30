@@ -115,6 +115,7 @@ namespace Njsast.Scope
                         case AstWith _:
                         case AstArray _:
                         case AstWhile _:
+                        case AstDo _:
                         case AstCase _:
                         case AstFor _:
                             usage |= SymbolUsage.Read;

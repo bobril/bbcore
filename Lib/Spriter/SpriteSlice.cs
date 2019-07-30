@@ -7,5 +7,4 @@
         public int width;
         public int height;
     }
-
 }

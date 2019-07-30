@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Lib.DiskCache;
 using Lib.Spriter;
 using Lib.Utils;
+using Lib.Utils.Logger;
 using Njsast.Bobril;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -21,6 +22,7 @@ namespace Lib.TSCompiler
     public class SpriteHolder : ISpritePlace
     {
         IDiskCache _dc;
+        ILogger _logger;
         Sprite2dPlacer _placer;
         List<OutputSprite> _allSprites;
         List<OutputSprite> _newSprites;
@@ -28,9 +30,10 @@ namespace Lib.TSCompiler
         Dictionary<string, TSFileAdditionalInfo> _imageCache = new Dictionary<string, TSFileAdditionalInfo>();
         bool _wasChange;
 
-        public SpriteHolder(IDiskCache dc)
+        public SpriteHolder(IDiskCache dc, ILogger logger)
         {
-            this._dc = dc;
+            _dc = dc;
+            _logger = logger;
             _placer = new Sprite2dPlacer();
             _allSprites = new List<OutputSprite>();
             _newSprites = new List<OutputSprite>();
@@ -118,7 +121,15 @@ namespace Lib.TSCompiler
                         if (fi.ImageCacheId != item.ChangeId)
                         {
                             _wasChange = true;
-                            fi.Image = Image.Load((item as IFileCache).ByteContent);
+                            try
+                            {
+                                fi.Image = Image.Load((item as IFileCache).ByteContent);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.Error("Failed to load sprite " + item.FullPath + " as image. " + ex.Message);
+                                continue;
+                            }
                             fi.ImageCacheId = item.ChangeId;
                         }
                         slices.Add(new SpriteSlice { name = item.Name, quality = Quality, width = fi.Image.Width, height = fi.Image.Height });
