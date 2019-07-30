@@ -23,6 +23,7 @@ namespace Lib.Composition
         string _jasmineDts;
         List<string> _exampleSources;
         List<string> _testSources;
+        string[] _additionalSources;
         ITSCompilerOptions _compilerOptions;
         ITSCompiler _typeChecker;
 
@@ -75,6 +76,18 @@ namespace Lib.Composition
                 if (!ReferenceEquals(value, _testSources))
                 {
                     _testSources = value; ProjectStructureChanged = true;
+                }
+            }
+        }
+
+        public string[] AdditionalSources
+        {
+            get { return _additionalSources; }
+            set
+            {
+                if (!ReferenceEquals(value, _additionalSources))
+                {
+                    _additionalSources = value; ProjectStructureChanged = true;
                 }
             }
         }
@@ -213,10 +226,11 @@ namespace Lib.Composition
         string[] MakeSourceListArray()
         {
             var res = new List<string>();
+            if (JasmineDts != null) res.Add(JasmineDts);
+            if (AdditionalSources != null) res.AddRange(AdditionalSources);
             if (MainFile != null) res.Add(MainFile);
             if (ExampleSources != null) res.AddRange(ExampleSources);
             if (TestSources != null) res.AddRange(TestSources);
-            if (JasmineDts != null) res.Add(JasmineDts);
             return res.ToArray();
         }
     }

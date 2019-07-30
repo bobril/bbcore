@@ -406,6 +406,7 @@ namespace Lib.Composition
                 var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
                 ctx.BuildOnceOnly = true;
                 ctx.MainFile = proj.MainFile;
+                ctx.AdditionalSources = proj.IncludeSources;
                 ctx.ExampleSources = proj.ExampleSources;
                 ctx.CompilerOptions = proj.FinalCompilerOptions;
                 proj.Owner.Build(ctx, buildResult, 1);
@@ -445,7 +446,7 @@ namespace Lib.Composition
                             bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
                         }
                         buildResult.TaskForSemanticCheck.Wait();
-                        IncludeSemanticMessages(proj, buildResult, ref errors, ref warnings, messages);
+                        messages = IncludeSemanticMessages(proj, buildResult, ref errors, ref warnings, messages);
 
                         if (errors == 0)
                         {
@@ -550,7 +551,7 @@ namespace Lib.Composition
                         SaveFilesContentToDisk(filesContent, testCommand.Dir.Value);
                     IncludeMessages(proj, testBuildResult, ref errors, ref warnings, messages);
                     testBuildResult.TaskForSemanticCheck.Wait();
-                    IncludeSemanticMessages(proj, testBuildResult, ref errors, ref warnings, messages);
+                    messages = IncludeSemanticMessages(proj, testBuildResult, ref errors, ref warnings, messages);
                     PrintMessages(messages);
                     if (testCommand.Dir.Value == null)
                     {
@@ -663,6 +664,7 @@ namespace Lib.Composition
                 var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
                 ctx.BuildOnceOnly = true;
                 ctx.MainFile = proj.MainFile;
+                ctx.AdditionalSources = proj.IncludeSources;
                 ctx.ExampleSources = proj.ExampleSources;
                 ctx.TestSources = proj.TestSources;
                 ctx.JasmineDts = proj.TestSources != null ? proj.JasmineDts : null;
@@ -1022,11 +1024,11 @@ namespace Lib.Composition
                 var duration = (DateTime.UtcNow - start).TotalSeconds;
                 if (buildDoneTsc.Task.Result)
                 {
-                    IncludeSemanticMessages(_currentProject, buildResult, ref errors, ref warnings, messages);
-                    _mainServer.NotifyCompilationFinished(errors, warnings, duration, messages);
+                    var allmess = IncludeSemanticMessages(_currentProject, buildResult, ref errors, ref warnings, messages);
+                    _mainServer.NotifyCompilationFinished(errors, warnings, duration, allmess);
                     _notificationManager.SendNotification(
                         NotificationParameters.CreateBuildParameters(errors, warnings, duration));
-                    if (!buildResult.HasError) PrintMessages(messages);
+                    if (!buildResult.HasError) PrintMessages(allmess);
                     var color = errors != 0 ? ConsoleColor.Red :
                         warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     _logger.WriteLine(
@@ -1069,6 +1071,7 @@ namespace Lib.Composition
                         ctx.CompilerOptionsChanged = false;
                         ctx.ProjectStructureChanged = false;
                         ctx.MainFile = proj.MainFile;
+                        ctx.AdditionalSources = proj.IncludeSources;
                         ctx.ExampleSources = proj.ExampleSources;
                         ctx.TestSources = proj.TestSources;
                         ctx.JasmineDts = proj.TestSources != null ? proj.JasmineDts : null;
@@ -1191,9 +1194,10 @@ namespace Lib.Composition
             }
         }
 
-        void IncludeSemanticMessages(ProjectOptions options, BuildResult buildResult, ref int errors, ref int warnings,
+        List<Diagnostic> IncludeSemanticMessages(ProjectOptions options, BuildResult buildResult, ref int errors, ref int warnings,
     List<Diagnostic> messages)
         {
+            var res = messages.ToList();
             var rootPath = options.Owner.Owner.FullPath;
             foreach (var d in buildResult.SemanticResult)
             {
@@ -1211,15 +1215,16 @@ namespace Lib.Composition
                     EndLine = d.EndLine,
                     EndCol = d.EndCol
                 };
-                if (!messages.Contains(dd))
+                if (!res.Contains(dd))
                 {
-                    messages.Add(dd);
+                    res.Add(dd);
                     if (isError)
                         errors++;
                     else
                         warnings++;
                 }
             }
+            return res;
         }
 
         public void StartChromeTest()
