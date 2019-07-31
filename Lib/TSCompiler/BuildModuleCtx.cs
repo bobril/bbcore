@@ -114,7 +114,7 @@ namespace Lib.TSCompiler
         {
             if (Result.Path2FileInfo.TryGetValue(from, out var parentInfo))
             {
-                parentInfo.ReportDiag(false, -15, "Cannot resolve import '" + name + "'", 0, 0, 0, 0);
+                parentInfo.ReportDiag(true, -15, "Cannot resolve import '" + name + "'", 0, 0, 0, 0);
             }
         }
 

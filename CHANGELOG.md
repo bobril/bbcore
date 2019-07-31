@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Missing import should be error and not warning
+
 ## 0.86.2
 
 ### Fixed
