@@ -190,8 +190,7 @@ function check(name, order, visited, cache, requiredAs) {
     let pureMatch = fileContent.match(/^\/\/ PureFuncs:.+/gm);
     if (pureMatch) {
         pureMatch.forEach(m => {
-            m
-                .toString()
+            m.toString()
                 .substr(m.indexOf(":") + 1)
                 .split(",")
                 .forEach(s => {
@@ -534,10 +533,10 @@ function bundle(project) {
     if (bundleNames.length > 1)
         detectBundleExportsImports(order, splitMap, cache, generateIdent);
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
-        let bundleAst = parse('(function(undefined){"use strict";\n' +
+        let bundleAst = (parse('(function(undefined){"use strict";\n' +
             bb.tslibSource(bundleNames.length > 1) +
             (project.compress === false ? emitGlobalDefines(project.defines) : "") +
-            "})()");
+            "})()"));
         let bodyAst = bundleAst.body[0].body.expression.body;
         let pureFuncs = Object.create(null);
         let topLevelNames = Object.create(null);
@@ -657,7 +656,9 @@ function bundle(project) {
                                     if (asts) {
                                         return renameSymbolWithReplace(asts, splitMap[currentBundleName]);
                                     }
-                                    throw new Error("In " + thedef.bbRequirePath + " cannot find " + extn);
+                                    // This is not error because it could be just TypeScript interface
+                                    // throw new Error("In " + thedef.bbRequirePath + " cannot find " + extn);
+                                    return newSymbolRef("undefined");
                                 }
                             }
                         }

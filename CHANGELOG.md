@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Fixed bundler to ignore reexporting interface by name.
 - Missing import should be error and not warning
 
 ## 0.86.2

@@ -75,6 +75,7 @@ namespace Lib.TSCompiler
                 {
                     return file.Utf8Content;
                 }
+                _owner.Logger.Info("ReadFile missing " + fullPath);
                 return null;
             }
 

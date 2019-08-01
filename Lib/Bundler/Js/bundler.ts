@@ -250,8 +250,7 @@ function check(
     let pureMatch = fileContent.match(/^\/\/ PureFuncs:.+/gm);
     if (pureMatch) {
         pureMatch.forEach(m => {
-            m
-                .toString()
+            m.toString()
                 .substr(m.indexOf(":") + 1)
                 .split(",")
                 .forEach(s => {
@@ -280,87 +279,89 @@ __bbe['${cached.shortname}']=module.exports; }).call(window);`);
     let walker = new TreeWalker((node: IAstNode, descend: () => void) => {
         if (node instanceof AST_Block) {
             (<IAstBlock>node).body = (<IAstBlock>node)
-                .body!.map((stm): IAstStatement | undefined => {
-                    if (stm instanceof AST_Directive && stm.value === "use strict") {
-                        return undefined;
-                    } else if (stm instanceof AST_SimpleStatement) {
-                        let stmbody = (<IAstSimpleStatement>stm).body!;
-                        let pea = patternAssignExports(stmbody);
-                        if (pea) {
-                            let newName = "__export_" + pea.name;
-                            if (selfExpNames[pea.name] && stmbody instanceof AST_Assign) {
-                                (<IAstAssign>stmbody).left = new AST_SymbolRef({
-                                    name: newName,
-                                    thedef: ast.variables!.get(newName)
+                .body!.map(
+                    (stm): IAstStatement | undefined => {
+                        if (stm instanceof AST_Directive && stm.value === "use strict") {
+                            return undefined;
+                        } else if (stm instanceof AST_SimpleStatement) {
+                            let stmbody = (<IAstSimpleStatement>stm).body!;
+                            let pea = patternAssignExports(stmbody);
+                            if (pea) {
+                                let newName = "__export_" + pea.name;
+                                if (selfExpNames[pea.name] && stmbody instanceof AST_Assign) {
+                                    (<IAstAssign>stmbody).left = new AST_SymbolRef({
+                                        name: newName,
+                                        thedef: ast.variables!.get(newName)
+                                    });
+                                    return stm;
+                                }
+                                if (isConstantSymbolRef(pea.value)) {
+                                    selfExpNames[pea.name] = true;
+                                    let def = <ISymbolDefEx>(<IAstSymbolRef>pea.value).thedef;
+                                    def.bbAlwaysClone = true;
+                                    def.bbExportedFrom = cachedName;
+                                    cached.selfexports.push({
+                                        name: pea.name,
+                                        node: pea.value
+                                    });
+                                    return undefined;
+                                }
+                                let newVar = new AST_Var({
+                                    start: stmbody.start,
+                                    end: stmbody.end,
+                                    definitions: [
+                                        new AST_VarDef({
+                                            name: new AST_SymbolVar({
+                                                name: newName,
+                                                start: stmbody.start,
+                                                end: stmbody.end
+                                            }),
+                                            value: pea.value
+                                        })
+                                    ]
                                 });
-                                return stm;
-                            }
-                            if (isConstantSymbolRef(pea.value)) {
+                                let symb = ast.def_variable!(newVar.definitions![0].name!);
+                                symb.undeclared = false;
+                                (<ISymbolDefEx>symb).bbAlwaysClone = true;
+                                (<ISymbolDefEx>symb).bbExportedFrom = cachedName;
                                 selfExpNames[pea.name] = true;
-                                let def = <ISymbolDefEx>(<IAstSymbolRef>pea.value).thedef;
-                                def.bbAlwaysClone = true;
-                                def.bbExportedFrom = cachedName;
                                 cached.selfexports.push({
                                     name: pea.name,
-                                    node: pea.value
-                                });
-                                return undefined;
-                            }
-                            let newVar = new AST_Var({
-                                start: stmbody.start,
-                                end: stmbody.end,
-                                definitions: [
-                                    new AST_VarDef({
-                                        name: new AST_SymbolVar({
-                                            name: newName,
-                                            start: stmbody.start,
-                                            end: stmbody.end
-                                        }),
-                                        value: pea.value
+                                    node: new AST_SymbolRef({
+                                        name: newName,
+                                        thedef: symb
                                     })
-                                ]
-                            });
-                            let symb = ast.def_variable!(newVar.definitions![0].name!);
-                            symb.undeclared = false;
-                            (<ISymbolDefEx>symb).bbAlwaysClone = true;
-                            (<ISymbolDefEx>symb).bbExportedFrom = cachedName;
-                            selfExpNames[pea.name] = true;
-                            cached.selfexports.push({
-                                name: pea.name,
-                                node: new AST_SymbolRef({
-                                    name: newName,
-                                    thedef: symb
-                                })
-                            });
-                            return newVar;
-                        }
-                        if (stmbody instanceof AST_Call) {
-                            let call = <IAstCall>stmbody;
-                            if (patternDefinePropertyExportsEsModule(call)) return undefined;
-                            if (call.args!.length === 1 && call.expression instanceof AST_SymbolRef) {
-                                let symb = <IAstSymbolRef>call.expression;
-                                if (symb.thedef === reexportDef || isReexport(symb.thedef)) {
-                                    let req = detectRequireCall(call.args![0]);
-                                    if (req != null) {
-                                        let reqr = bb.resolveRequire(req, name);
-                                        if (cached.requires.indexOf(reqr) < 0) cached.requires.push(reqr);
-                                        cached.selfexports.push({
-                                            reexport: reqr
-                                        });
-                                        return undefined;
+                                });
+                                return newVar;
+                            }
+                            if (stmbody instanceof AST_Call) {
+                                let call = <IAstCall>stmbody;
+                                if (patternDefinePropertyExportsEsModule(call)) return undefined;
+                                if (call.args!.length === 1 && call.expression instanceof AST_SymbolRef) {
+                                    let symb = <IAstSymbolRef>call.expression;
+                                    if (symb.thedef === reexportDef || isReexport(symb.thedef)) {
+                                        let req = detectRequireCall(call.args![0]);
+                                        if (req != null) {
+                                            let reqr = bb.resolveRequire(req, name);
+                                            if (cached.requires.indexOf(reqr) < 0) cached.requires.push(reqr);
+                                            cached.selfexports.push({
+                                                reexport: reqr
+                                            });
+                                            return undefined;
+                                        }
                                     }
                                 }
                             }
+                        } else if (stm instanceof AST_Defun) {
+                            let fnc = <IAstFunction>stm;
+                            if (fnc.name!.name === "__export") {
+                                reexportDef = fnc.name!.thedef;
+                                return undefined;
+                            }
                         }
-                    } else if (stm instanceof AST_Defun) {
-                        let fnc = <IAstFunction>stm;
-                        if (fnc.name!.name === "__export") {
-                            reexportDef = fnc.name!.thedef;
-                            return undefined;
-                        }
+                        return stm;
                     }
-                    return stm;
-                })
+                )
                 .filter(stm => {
                     return stm != null;
                 }) as IAstStatement[];
@@ -543,7 +544,7 @@ interface ISplitInfo {
 type SplitMap = { [name: string]: ISplitInfo };
 type NamesSet = { [name: string]: true };
 
-var number2Ident = (function () {
+var number2Ident = (function() {
     var leading = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_".split("");
     var digits = "0123456789".split("");
     var chars = leading.concat(digits);
@@ -615,11 +616,13 @@ function bundle(project: IBundleProject) {
     });
     if (bundleNames.length > 1) detectBundleExportsImports(order, splitMap, cache, generateIdent);
     for (let bundleIndex = 0; bundleIndex < bundleNames.length; bundleIndex++) {
-        let bundleAst = <IAstToplevel>parse(
-            '(function(undefined){"use strict";\n' +
-            bb.tslibSource(bundleNames.length > 1) +
-            (project.compress === false ? emitGlobalDefines(project.defines) : "") +
-            "})()"
+        let bundleAst = <IAstToplevel>(
+            parse(
+                '(function(undefined){"use strict";\n' +
+                    bb.tslibSource(bundleNames.length > 1) +
+                    (project.compress === false ? emitGlobalDefines(project.defines) : "") +
+                    "})()"
+            )
         );
         let bodyAst = (<IAstFunction>(<IAstCall>(<IAstSimpleStatement>bundleAst.body![0]).body).expression).body!;
         let pureFuncs: NamesSet = Object.create(null);
@@ -734,7 +737,9 @@ function bundle(project: IBundleProject) {
                                         if (asts) {
                                             return renameSymbolWithReplace(asts, splitMap[currentBundleName]);
                                         }
-                                        throw new Error("In " + thedef.bbRequirePath + " cannot find " + extn);
+                                        // This is not error because it could be just TypeScript interface
+                                        // throw new Error("In " + thedef.bbRequirePath + " cannot find " + extn);
+                                        return newSymbolRef("undefined");
                                     }
                                 }
                             }
@@ -838,29 +843,31 @@ function detectBundleExportsImports(
                 sourceSplit.directSplitsForcedLazy.add(targetSplit);
             }
         });
-        let walker = new TreeWalker((node: IAstNode): boolean => {
-            if (node instanceof AST_Symbol) {
-                let symb = <IAstSymbol>node;
-                if (symb.thedef == null) return false;
-                let reqPath = (<ISymbolDefEx>symb.thedef).bbRequirePath;
-                if (reqPath === undefined) return false;
-                let extf = cache[reqPath.toLowerCase()];
-                if (extf.difficult) return false;
-                let p = walker.parent();
-                if (p instanceof AST_PropAccess && typeof p.property === "string") {
-                    addSplitImportExport(sourceSplit, extf, p.property, splitMap, generateIdent);
-                } else if (p instanceof AST_VarDef && (<IAstVarDef>p).name === symb) {
+        let walker = new TreeWalker(
+            (node: IAstNode): boolean => {
+                if (node instanceof AST_Symbol) {
+                    let symb = <IAstSymbol>node;
+                    if (symb.thedef == null) return false;
+                    let reqPath = (<ISymbolDefEx>symb.thedef).bbRequirePath;
+                    if (reqPath === undefined) return false;
+                    let extf = cache[reqPath.toLowerCase()];
+                    if (extf.difficult) return false;
+                    let p = walker.parent();
+                    if (p instanceof AST_PropAccess && typeof p.property === "string") {
+                        addSplitImportExport(sourceSplit, extf, p.property, splitMap, generateIdent);
+                    } else if (p instanceof AST_VarDef && (<IAstVarDef>p).name === symb) {
+                        return false;
+                    } else {
+                        let keys = Object.keys(extf.exports!);
+                        keys.forEach(key => {
+                            addSplitImportExport(sourceSplit, extf, key, splitMap, generateIdent);
+                        });
+                    }
                     return false;
-                } else {
-                    let keys = Object.keys(extf.exports!);
-                    keys.forEach(key => {
-                        addSplitImportExport(sourceSplit, extf, key, splitMap, generateIdent);
-                    });
                 }
                 return false;
             }
-            return false;
-        });
+        );
         f.ast.walk!(walker);
     });
     var splitKeys = Object.keys(splitMap);

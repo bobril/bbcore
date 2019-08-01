@@ -1197,6 +1197,7 @@ namespace Lib.Composition
         List<Diagnostic> IncludeSemanticMessages(ProjectOptions options, BuildResult buildResult, ref int errors, ref int warnings,
     List<Diagnostic> messages)
         {
+            if (buildResult.SemanticResult == null) return messages;
             var res = messages.ToList();
             var rootPath = options.Owner.Owner.FullPath;
             foreach (var d in buildResult.SemanticResult)
