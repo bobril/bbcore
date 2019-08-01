@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.86.3
+
 ### Fixed
 
 - Fixed bundler to ignore reexporting interface by name.
