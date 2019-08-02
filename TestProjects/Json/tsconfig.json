@@ -2,7 +2,7 @@
   "compilerOptions": {
     "allowJs": false,
     "checkJs": false,
-    "declaration": true,
+    "declaration": false,
     "experimentalDecorators": true,
     "jsx": "react",
     "lib": [
@@ -16,15 +16,14 @@
     "module": "commonjs",
     "noEmitHelpers": true,
     "preserveConstEnums": false,
-    "reactNamespace": "React",
+    "reactNamespace": "b",
     "removeComments": false,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "skipDefaultLibCheck": true,
     "sourceMap": true,
     "target": "es5",
     "resolveJsonModule": true
   },
-  "files": [],
   "include": [
     "**/*"
   ]

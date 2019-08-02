@@ -167,7 +167,7 @@ namespace Lib.TSCompiler
                 return "";
             if (fileInfo.Type == FileCompilationType.Json)
             {
-                return "Object.assign(module.exports, " + fileInfo.Owner.Utf8Content + ");";
+                return fileInfo.Owner.Utf8Content;
             }
             if (fileInfo.Type == FileCompilationType.JavaScriptAsset || fileInfo.Type == FileCompilationType.JavaScript || fileInfo.Type == FileCompilationType.EsmJavaScript)
             {

@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require("fs");
-var path = require("path");
-var tslibSourceContent = fs.readFileSync("../../../TSCompiler/tslib.js", "utf-8");
-var importSourceContent = fs.readFileSync("../../../TSCompiler/import.js", "utf-8");
-var prefix = "";
-var currentTestDir = "";
-var errors = 0;
+const fs = require("fs");
+const path = require("path");
+const tslibSourceContent = fs.readFileSync("../../../TSCompiler/tslib.js", "utf-8");
+const importSourceContent = fs.readFileSync("../../../TSCompiler/import.js", "utf-8");
+let prefix = "";
+let currentTestDir = "";
+let errors = 0;
 function mkdir(dir) {
     if (dir === ".")
         return;
@@ -16,25 +16,25 @@ function mkdir(dir) {
     mkdir(parent);
     fs.mkdirSync(dir);
 }
-var bb = {
-    readContent: function (name) {
+const bb = {
+    readContent(name) {
         return fs.readFileSync(path.join("Inputs", currentTestDir, name), "utf-8");
     },
-    getPlainJsDependencies: function (name) {
-        var dirName = name.substr(0, name.length - 3);
+    getPlainJsDependencies(name) {
+        let dirName = name.substr(0, name.length - 3);
         name = path.join("Inputs", currentTestDir, dirName);
         if (fs.existsSync(name))
             return fs
                 .readdirSync(name)
-                .map(function (s) { return dirName + "/" + s; })
+                .map(s => dirName + "/" + s)
                 .join("|");
         return "";
     },
-    writeBundle: function (name, content) {
-        var outputName = prefix + "-" + name + ".js";
+    writeBundle(name, content) {
+        const outputName = prefix + "-" + name + ".js";
         fs.writeFileSync(path.join("Outputs", currentTestDir, outputName), content);
         if (fs.existsSync(path.join("Expected", currentTestDir, outputName))) {
-            var expected = fs.readFileSync(path.join("Expected", currentTestDir, outputName), "utf-8");
+            let expected = fs.readFileSync(path.join("Expected", currentTestDir, outputName), "utf-8");
             if (expected != content) {
                 console.log("ERROR Difference in " + path.join("Expected", currentTestDir, outputName));
                 errors++;
@@ -44,24 +44,29 @@ var bb = {
             console.log("New file " + path.join("Outputs", currentTestDir, outputName));
         }
     },
-    generateBundleName: function (forName) {
+    generateBundleName(forName) {
         if (forName === "")
             return "bundle";
         return forName.replace(/[\/\\]/g, "_");
     },
-    resolveRequire: function (name, from) {
+    resolveRequire(name, from) {
+        function addJs(name) {
+            if (name.endsWith(".json"))
+                return name;
+            return name + ".js";
+        }
         if (name.substr(0, 2) == "./")
-            return name.substr(2) + ".js";
-        return name + ".js";
+            return addJs(name.substr(2));
+        return addJs(name);
     },
-    tslibSource: function (withImport) {
+    tslibSource(withImport) {
         return tslibSourceContent + (withImport ? importSourceContent : "");
     }
 };
-var uglifyJsContent = fs.readFileSync("../uglify.js", "utf-8");
-var bundlerJsContent = fs.readFileSync("../bundler.js", "utf-8");
+const uglifyJsContent = fs.readFileSync("../uglify.js", "utf-8");
+const bundlerJsContent = fs.readFileSync("../bundler.js", "utf-8");
 var bundleImp = eval(uglifyJsContent + bundlerJsContent + "bundle;");
-var tests = fs.readdirSync("Inputs");
+let tests = fs.readdirSync("Inputs");
 mkdir("Expected");
 /*
 currentTestDir = "Split";
@@ -69,7 +74,7 @@ mkdir(path.join("Outputs", currentTestDir));
 prefix = "cb";
 bundleImp({ mainFiles: ["index.js"], compress: true, beautify: true, mangle: false, defines: { DEBUG: false } });
 */
-for (var i = 0; i < tests.length; i++) {
+for (let i = 0; i < tests.length; i++) {
     currentTestDir = tests[i];
     console.log(currentTestDir);
     mkdir(path.join("Outputs", currentTestDir));

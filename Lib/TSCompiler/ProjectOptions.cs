@@ -414,7 +414,7 @@ namespace Lib.TSCompiler
             }
 
             Variant = GetStringProperty(bobrilSection, "variant", "");
-            JasmineVersion = GetStringProperty(bobrilSection, "jasmineVersion", "2.99");
+            JasmineVersion = GetStringProperty(bobrilSection, "jasmineVersion", "330");
             NoHtml = bobrilSection?["nohtml"]?.Value<bool>() ?? Variant != "";
             Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
             HtmlHead = GetStringProperty(bobrilSection, "head",

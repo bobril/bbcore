@@ -1,6 +1,6 @@
 "use strict";
-var R = function (name, fn) {
-    R.m.set(name.toLowerCase(), { fn: fn, exports: undefined });
+var R = function (name, fnOrJson) {
+    R.m.set(name.toLowerCase(), typeof fnOrJson == "function" ? { fn: fnOrJson, exports: undefined } : { exports: fnOrJson });
 };
 R.t = this;
 R.m = new Map();

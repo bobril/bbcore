@@ -59,8 +59,12 @@ const bb: IBB = {
         return forName.replace(/[\/\\]/g, "_");
     },
     resolveRequire(name: string, from: string): string {
-        if (name.substr(0, 2) == "./") return name.substr(2) + ".js";
-        return name + ".js";
+        function addJs(name: string): string {
+            if (name.endsWith(".json")) return name;
+            return name + ".js";
+        }
+        if (name.substr(0, 2) == "./") return addJs(name.substr(2));
+        return addJs(name);
     },
     tslibSource(withImport: boolean) {
         return tslibSourceContent + (withImport ? importSourceContent : "");

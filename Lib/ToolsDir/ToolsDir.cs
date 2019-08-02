@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using JavaScriptEngineSwitcher.Core;
 using Lib.Registry;
@@ -234,7 +232,7 @@ namespace Lib.ToolsDir
 
         public void SetJasmineVersion(string version)
         {
-            _jasmineVersion = version ?? "299";
+            _jasmineVersion = version ?? "330";
         }
 
         public void SetTypeScriptVersion(string version)

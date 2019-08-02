@@ -248,6 +248,12 @@
         var m = o[Symbol.asyncIterator];
         return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
     };
+    var __makeTemplateObject = function(cooked, raw) {
+        Object.defineProperty(cooked, "raw", {
+            value: raw
+        });
+        return cooked;
+    };
     var DEBUG = false;
     var __export_aaa = 42;
     var __export_bbb = __export_aaa;

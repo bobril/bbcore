@@ -248,6 +248,12 @@ var __bbb={};(function(undefined) {
         var m = o[Symbol.asyncIterator];
         return m ? m.call(o) : typeof __values === "function" ? __values(o) : o[Symbol.iterator]();
     };
+    var __makeTemplateObject = function(cooked, raw) {
+        Object.defineProperty(cooked, "raw", {
+            value: raw
+        });
+        return cooked;
+    };
     var __import = function(url, prop) {
         var bbb = __bbb;
         var res = bbb[prop];

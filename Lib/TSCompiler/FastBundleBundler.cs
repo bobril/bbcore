@@ -106,9 +106,9 @@ namespace Lib.TSCompiler
                 else if (source.Type == FileCompilationType.Json)
                 {
                     sourceMapBuilder.AddText(
-                        $"R('{PathUtils.Subtract(source.Owner.FullPath, root)}',function(require, module, exports, global){{");
-                    sourceMapBuilder.AddText("Object.assign(exports, " + source.Owner.Utf8Content + ");");
-                    sourceMapBuilder.AddText("});");
+                        $"R('{PathUtils.Subtract(source.Owner.FullPath, root)}',");
+                    sourceMapBuilder.AddText(source.Owner.Utf8Content);
+                    sourceMapBuilder.AddText(");");
                 }
                 else if (source.Type == FileCompilationType.ImportedCss)
                 {

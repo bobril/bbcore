@@ -255,6 +255,8 @@
         return cooked;
     };
     var DEBUG = false;
-    console.log("lib");
-    console.log("main");
+    var __bbe = {};
+    __bbe["a"] = [ 1, 2, 3 ];
+    var j = __bbe["a"];
+    console.log(j[0]);
 })();

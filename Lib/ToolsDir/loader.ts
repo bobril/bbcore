@@ -8,12 +8,15 @@ type ModuleFun = (
 interface IR {
     (name: string, fn: ModuleFun): void;
     t: typeof globalThis;
-    m: Map<string, { fn: ModuleFun; exports: any }>;
+    m: Map<string, { fn?: ModuleFun; exports: any }>;
     r(name: string, parent: string): any;
     map?: { [name: string]: string };
 }
-const R: IR = function(name: string, fn: ModuleFun) {
-    R.m.set(name.toLowerCase(), { fn: fn, exports: undefined });
+const R: IR = function(name: string, fnOrJson: ModuleFun | any) {
+    R.m.set(
+        name.toLowerCase(),
+        typeof fnOrJson == "function" ? { fn: fnOrJson, exports: undefined } : { exports: fnOrJson }
+    );
 };
 R.t = this;
 R.m = new Map();
@@ -51,6 +54,6 @@ R.r = function(name: string, parent: string) {
     if (m == null) throw new Error("Module " + name + " in " + (parent || "/") + " not registered");
     if (m.exports !== undefined) return m.exports;
     m.exports = {};
-    m.fn.call(R.t, (name: string) => R.r(name, p), m, m.exports, R.t);
+    m.fn!.call(R.t, (name: string) => R.r(name, p), m, m.exports, R.t);
     return m.exports;
 };

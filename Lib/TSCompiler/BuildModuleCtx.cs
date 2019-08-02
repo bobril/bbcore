@@ -160,13 +160,9 @@ namespace Lib.TSCompiler
                     {
                         res.FileName = fn;
                         CheckAdd(fn, fn.EndsWith(".json") ? FileCompilationType.Json : (isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss));
+                        return res.FileName;
                     }
-                    else
-                    {
-                        res.NegativeChecks.Add(fn);
-                        res.FileName = "?";
-                    }
-                    return res.FileName;
+                    res.NegativeChecks.Add(fn);
                 }
 
                 var dirPath = PathUtils.Parent(fn).ToString();

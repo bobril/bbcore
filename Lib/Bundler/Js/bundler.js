@@ -165,27 +165,49 @@ function check(name, order, visited, cache, requiredAs) {
     if (cached !== undefined)
         return cached;
     let fileContent = bb.readContent(name);
+    let jsdeps = bb.getPlainJsDependencies(name).split("|");
+    if (jsdeps.length == 1 && jsdeps[0] == "")
+        jsdeps = [];
+    const cachedName = name.toLowerCase();
+    const isJson = name.endsWith(".json");
+    if (isJson) {
+        let shortname = numberToChars(globalDifficultCounter++);
+        cached = {
+            name,
+            shortname,
+            ast: parse(`__bbe['${shortname}']=${fileContent};`),
+            requires: [],
+            lazyRequires: [],
+            difficult: true,
+            json: true,
+            partOfBundle: requiredAs,
+            selfexports: [],
+            exports: undefined,
+            pureFuncs: Object.create(null),
+            plainJsDependencies: jsdeps
+        };
+        cache[cachedName] = cached;
+        order.push(cached);
+        return cached;
+    }
     //bb.log("============== START " + name);
     //console.log(fileContent);
     let ast = parse(fileContent);
     //console.log(ast.print_to_string({ beautify: true }));
     ast.figure_out_scope();
-    let jsdeps = bb.getPlainJsDependencies(name).split("|");
-    if (jsdeps.length == 1 && jsdeps[0] == "")
-        jsdeps = [];
     cached = {
         name,
         ast,
         requires: [],
         lazyRequires: [],
         difficult: false,
+        json: false,
         partOfBundle: requiredAs,
         selfexports: [],
         exports: undefined,
         pureFuncs: Object.create(null),
         plainJsDependencies: jsdeps
     };
-    const cachedName = name.toLowerCase();
     cache[cachedName] = cached;
     let pureMatch = fileContent.match(/^\/\/ PureFuncs:.+/gm);
     if (pureMatch) {
@@ -203,14 +225,12 @@ function check(name, order, visited, cache, requiredAs) {
     if (ast.globals.has("module")) {
         cached.difficult = true;
         cached.shortname = numberToChars(globalDifficultCounter++);
-        ast = parse(`(function(){ var exports = {}; var module = { exports: exports }; var global = this; ${bb.readContent(name)}
+        ast = parse(`(function(){ var exports = {}; var module = { exports: exports }; var global = this; ${fileContent}
 __bbe['${cached.shortname}']=module.exports; }).call(window);`);
         cached.ast = ast;
-        cache[name.toLowerCase()] = cached;
         order.push(cached);
         return cached;
     }
-    let exportsSymbol = ast.globals.get("exports");
     let unshiftToBody = [];
     let selfExpNames = Object.create(null);
     let varDecls = null;

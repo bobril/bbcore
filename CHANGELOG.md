@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Json import now works in IE11. Also supports arrays in root.
+
 ## 0.86.4
 
 ### Fixed
