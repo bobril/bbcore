@@ -268,6 +268,15 @@ namespace Njsast.SourceMap
                 {
                     if (commit())
                         return res;
+                    if (outputLine == line && lastOutputCol <= col)
+                    {
+                        if (lastSourceIndex < 0)
+                            return res;
+                        res.SourceName = sources[lastSourceIndex];
+                        res.Line = lastSourceLine + 1;
+                        res.Col = lastSourceCol + col - lastOutputCol;
+                        return res;
+                    }
                     inOutputCol = 0;
                     lastOutputCol = 0;
                     outputLine++;
