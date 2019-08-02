@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.86.4
+
 ### Fixed
 
 - Sourcemap search didn't work for last span at line
