@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.2-sdk-stretch AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0 AS build
 
 ARG VERSION=0.0.0
 
@@ -8,6 +8,7 @@ WORKDIR /app
 COPY nuget.config ./
 COPY bb/*.csproj ./bb/
 COPY Lib/*.csproj ./Lib/
+COPY Njsast/*.csproj ./Njsast/
 WORKDIR /app/bb
 RUN dotnet restore
 
@@ -15,12 +16,13 @@ RUN dotnet restore
 WORKDIR /app/
 COPY bb/. ./bb/
 COPY Lib/. ./Lib/
+COPY Njsast/. ./Njsast/
 WORKDIR /app/bb
 RUN dotnet publish -c Release -r linux-x64 -o out -p:Version=$VERSION.0
 RUN rm -r ./out/ru-ru
 RUN rm -r ./out/Resources
 
-FROM microsoft/dotnet:2.2-runtime-deps-stretch-slim AS runtime
+FROM mcr.microsoft.com/dotnet/core/runtime:3.0 AS runtime
 
 # Install deps + add Chrome, Nodejs, Yarn + clean up
 RUN apt-get update && apt-get install -y \
@@ -43,7 +45,6 @@ RUN apt-get update && apt-get install -y \
 	fonts-kacst \
 	fonts-symbola \
 	fonts-noto \
-	ttf-freefont \
 	nodejs \
 	yarn \
 	--no-install-recommends \
