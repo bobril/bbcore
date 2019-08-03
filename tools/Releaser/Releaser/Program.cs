@@ -146,7 +146,22 @@ namespace Releaser
 
         static void DockerBuild(string projDir, string version)
         {
-            var start = new ProcessStartInfo("docker", $"build . -t bobril/build --build-arg VERSION={version}")
+            try
+            {
+                RunDocker(projDir, $"build . -t bobril/build --build-arg VERSION={version}");
+                RunDocker(projDir, $"tag bobril/build bobril/build:{version}");
+                RunDocker(projDir, $"push bobril/build:{version}");
+                RunDocker(projDir, $"push bobril/build:latest");
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Docker build failed");
+            }
+        }
+
+        static void RunDocker(string projDir, string command)
+        {
+            var start = new ProcessStartInfo("docker", command)
             {
                 UseShellExecute = true,
                 WorkingDirectory = projDir
@@ -157,32 +172,7 @@ namespace Releaser
             if (process.ExitCode > 0)
             {
                 Console.WriteLine($"Exit code:{process.ExitCode}");
-                return;
-            }
-            start = new ProcessStartInfo("docker", $"tag bobril/build bobril/build:{version}")
-            {
-                UseShellExecute = true,
-                WorkingDirectory = projDir
-            };
-            Console.WriteLine($"Starting docker {start.Arguments}");
-            process = Process.Start(start);
-            process.WaitForExit();
-            if (process.ExitCode > 0)
-            {
-                Console.WriteLine($"Exit code:{process.ExitCode}");
-                return;
-            }
-            start = new ProcessStartInfo("docker", $"push bobril/build:{version}")
-            {
-                UseShellExecute = true,
-                WorkingDirectory = projDir
-            };
-            Console.WriteLine($"Starting docker {start.Arguments}");
-            process = Process.Start(start);
-            process.WaitForExit();
-            if (process.ExitCode > 0)
-            {
-                Console.WriteLine($"Exit code:{process.ExitCode}");
+                throw new Exception("Docker failed");
             }
         }
 
