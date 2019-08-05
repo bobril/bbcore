@@ -436,6 +436,7 @@ namespace Lib.Composition
                             fastBundle.Project = proj;
                             fastBundle.BuildResult = buildResult;
                             fastBundle.Build("bb/base");
+                            fastBundle.BuildHtml();
                         }
                         else
                         {

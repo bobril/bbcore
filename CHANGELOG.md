@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Missing index.html in `bb b -f 1`
+
 ## 0.87.0
 
 ### Fixed
