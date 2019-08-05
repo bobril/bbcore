@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.88.0
+
 ### Fixed
 
 - Missing index.html in `bb b -f 1`
