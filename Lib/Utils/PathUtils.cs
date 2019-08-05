@@ -344,6 +344,7 @@ namespace Lib.Utils
 
         public static string ForDiagnosticDisplay(string name, string relativeTo, string rootToStayInside)
         {
+            if (name == null) return null;
             if (rootToStayInside == null) rootToStayInside = relativeTo;
             var real = PlatformMethods.Instance.RealPath(name);
             if (real != null)

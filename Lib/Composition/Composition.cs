@@ -477,15 +477,31 @@ namespace Lib.Composition
         {
             foreach (var message in messages)
             {
-                if (message.IsError)
+                if (message.FileName == null)
                 {
-                    _logger.Error(
-                        $"{message.FileName}({message.StartLine + 1},{message.StartCol + 1}): {message.Text} ({message.Code})");
+                    if (message.IsError)
+                    {
+                        _logger.Error(
+                            $"Error: {message.Text} ({message.Code})");
+                    }
+                    else
+                    {
+                        _logger.Warn(
+                            $"Warning: {message.Text} ({message.Code})");
+                    }
                 }
                 else
                 {
-                    _logger.Warn(
-                        $"{message.FileName}({message.StartLine + 1},{message.StartCol + 1}): {message.Text} ({message.Code})");
+                    if (message.IsError)
+                    {
+                        _logger.Error(
+                            $"{message.FileName}({message.StartLine + 1},{message.StartCol + 1}): {message.Text} ({message.Code})");
+                    }
+                    else
+                    {
+                        _logger.Warn(
+                            $"{message.FileName}({message.StartLine + 1},{message.StartCol + 1}): {message.Text} ({message.Code})");
+                    }
                 }
             }
         }

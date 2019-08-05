@@ -161,6 +161,12 @@ namespace Lib.TSCompiler
                             _owner.Logger.Info("TS" + code + ": " + text);
                         }
                     }
+                    if (isError) _owner._diagnostics.Add(new Diagnostic
+                    {
+                        IsError = isError,
+                        Code = code,
+                        Text = text,
+                    });
                 }
             }
 

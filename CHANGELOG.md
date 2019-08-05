@@ -6,6 +6,7 @@
 
 - Missing index.html in `bb b -f 1`
 - Cache now includes relative file names for assets and sprites
+- Print global semantic errors and make build failed in such case
 
 ## 0.87.0
 
