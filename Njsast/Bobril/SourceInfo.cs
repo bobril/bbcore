@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using Njsast.SourceMap;
 
 namespace Njsast.Bobril
 {
@@ -40,6 +38,7 @@ namespace Njsast.Bobril
             public int EndCol { get; set; }
             public int EndLine { get; set; }
             public string Name { get; set; }
+            public string RelativeName { get; set; }
         }
 
         public List<Asset> Assets { get; set; }
@@ -51,6 +50,7 @@ namespace Njsast.Bobril
             public int EndCol { get; set; }
             public int EndLine { get; set; }
             public string Name { get; set; }
+            public string RelativeName { get; set; }
             public int NameStartCol { get; set; }
             public int NameStartLine { get; set; }
             public int NameEndCol { get; set; }

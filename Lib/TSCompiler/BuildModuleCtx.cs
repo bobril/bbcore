@@ -62,7 +62,7 @@ namespace Lib.TSCompiler
                 module.IterationId = IterationId;
                 return module.Valid ? module : null;
             }
-        again:;
+            again:;
             var negativeChecks = new StructList<string>();
             var dir = Owner.Owner.FullPath;
             while (dir.Length > 0)
@@ -130,7 +130,7 @@ namespace Lib.TSCompiler
                     if (CheckItemExistence(res.NegativeChecks[i])) goto again;
                 }
             }
-        again:;
+            again:;
             if (res == null)
             {
                 res = new ResolveResult();
@@ -150,7 +150,7 @@ namespace Lib.TSCompiler
             {
                 fn = PathUtils.Join(parentInfo.Owner.Parent.FullPath, name);
             }
-        relative:;
+            relative:;
             if (relative)
             {
                 if (fn.EndsWith(".json") || fn.EndsWith(".css"))
@@ -274,14 +274,21 @@ namespace Lib.TSCompiler
                 {
                     if (MatchingTranspilationDendencies(itemInfo.Owner, fbc.TranspilationDependencies))
                     {
-                        itemInfo.Output = fbc.Output;
-                        itemInfo.MapLink = fbc.MapLink;
-                        itemInfo.SourceInfo = fbc.SourceInfo;
-                        itemInfo.TranspilationDependencies = fbc.TranspilationDependencies;
-                        itemInfo.TakenFromBuildCache = true;
-                        AddDependenciesFromSourceInfo(itemInfo);
-                        //_owner.Logger.Info("Loaded from cache " + itemInfo.Owner.FullPath);
-                        return true;
+                        if (MakeSourceInfoAbsolute(fbc.SourceInfo, itemInfo.Owner.FullPath))
+                        {
+                            itemInfo.Output = fbc.Output;
+                            itemInfo.MapLink = fbc.MapLink;
+                            if (itemInfo.MapLink?.sources?.Count == 1)
+                            {
+                                itemInfo.MapLink.sources[0] = itemInfo.Owner.FullPath;
+                            }
+                            itemInfo.SourceInfo = fbc.SourceInfo;
+                            itemInfo.TranspilationDependencies = fbc.TranspilationDependencies;
+                            itemInfo.TakenFromBuildCache = true;
+                            AddDependenciesFromSourceInfo(itemInfo);
+                            //_owner.Logger.Info("Loaded from cache " + itemInfo.Owner.FullPath);
+                            return true;
+                        }
                     }
                 }
             }
@@ -363,6 +370,7 @@ namespace Lib.TSCompiler
                             fbc.ContentHash = f.Owner.HashOfContent;
                             fbc.Output = f.Output;
                             fbc.MapLink = f.MapLink;
+                            MakeSourceInfoRelative(f.SourceInfo, f.Owner.Parent.FullPath);
                             fbc.SourceInfo = f.SourceInfo;
                             fbc.TranspilationDependencies = f.TranspilationDependencies;
                             bc.Store(fbc);
@@ -691,6 +699,94 @@ namespace Lib.TSCompiler
             {
                 _currentlyTranspiling = backupCurrentlyTranspiling;
             }
+        }
+
+        public void MakeSourceInfoRelative(SourceInfo sourceInfo, string dir)
+        {
+            if (sourceInfo == null) return;
+            sourceInfo.Assets?.ForEach(a =>
+            {
+                if (a.Name == null)
+                {
+                    a.RelativeName = null;
+                    return;
+                }
+                a.RelativeName = ToRelativeName(a.Name, dir);
+            });
+            sourceInfo.Sprites?.ForEach(s =>
+            {
+                if (s.Name == null)
+                {
+                    s.RelativeName = null;
+                    return;
+                }
+                s.RelativeName = ToRelativeName(s.Name, dir);
+            });
+        }
+
+        string ToRelativeName(string name, string dir)
+        {
+            if (name.StartsWith("resource:"))
+            {
+                return "resource:" + ToRelativeName(name.Substring(9), dir);
+            }
+            if (PathUtils.IsAnyChildOf(name, dir))
+            {
+                var p = PathUtils.Subtract(name, dir);
+                if (!p.StartsWith("node_modules/") && !p.Contains("/node_modules/"))
+                    return "./" + p;
+            }
+            if (name.Contains("/node_modules/"))
+            {
+                return name.Split("/node_modules/").Last();
+            }
+            return "./" + PathUtils.Subtract(name, dir);
+        }
+
+        public bool MakeSourceInfoAbsolute(SourceInfo sourceInfo, string from)
+        {
+            if (sourceInfo == null) return true;
+            bool ok = true;
+            sourceInfo.Assets?.ForEach(a =>
+            {
+                if (a.RelativeName == null)
+                {
+                    if (a.Name != null)
+                    {
+                        ok = false;
+                    }
+                    return;
+                }
+                a.Name = ToAbsoluteName(a.RelativeName, from, ref ok);
+            });
+            sourceInfo.Sprites?.ForEach(s =>
+            {
+                if (s.RelativeName == null)
+                {
+                    if (s.Name != null)
+                    {
+                        ok = false;
+                    }
+                    return;
+                }
+                s.Name = ToAbsoluteName(s.RelativeName, from, ref ok);
+            });
+            return ok;
+        }
+
+        string ToAbsoluteName(string relativeName, string from, ref bool ok)
+        {
+            if (relativeName.StartsWith("resource:"))
+            {
+                return "resource:" + ToAbsoluteName(relativeName.Substring(9), from, ref ok);
+            }
+            var res = ResolveImport(from, relativeName, false, true);
+            if (res == null || res == "?")
+            {
+                ok = false;
+                return relativeName;
+            }
+            return res;
         }
 
         public void AddDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo)

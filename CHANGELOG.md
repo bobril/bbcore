@@ -5,6 +5,7 @@
 ### Fixed
 
 - Missing index.html in `bb b -f 1`
+- Cache now includes relative file names for assets and sprites
 
 ## 0.87.0
 
