@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.89.0
+
 ### Added
 
 - Nice error message when import is missing
