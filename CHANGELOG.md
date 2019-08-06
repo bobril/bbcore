@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Nice error message when import is missing
+
 ## 0.88.0
 
 ### Fixed

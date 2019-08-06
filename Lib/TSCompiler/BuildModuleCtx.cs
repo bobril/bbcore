@@ -319,6 +319,10 @@ namespace Lib.TSCompiler
                     somethingProcessed = true;
                     processed[i] = true;
                     var targetName = ResolveImport(sourceName, dep.Import);
+                    if (targetName == "?")
+                    {
+                        return false;
+                    }
                     Result.Path2FileInfo.TryGetValue(targetName, out var targetInfo);
                     if (!dep.TargetHash.AsSpan().SequenceEqual(targetInfo.Owner.HashOfContent))
                     {
@@ -796,7 +800,15 @@ namespace Lib.TSCompiler
                 return;
             sourceInfo.Imports?.ForEach(i =>
             {
-                fileInfo.ReportDependency(ResolveImport(fileInfo.Owner.FullPath, i.Name));
+                var resolved = ResolveImport(fileInfo.Owner.FullPath, i.Name);
+                if (resolved != null && resolved != "?")
+                {
+                    fileInfo.ReportDependency(resolved);
+                }
+                else
+                {
+                    fileInfo.ReportDiag(true, -3, "Missing import " + i.Name, i.StartLine, i.StartCol, i.EndLine, i.EndCol);
+                }
             });
             sourceInfo.Assets?.ForEach(a =>
             {

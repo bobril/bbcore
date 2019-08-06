@@ -207,7 +207,12 @@ namespace Lib.TSCompiler
             {
                 throw new Exception($"Bundler cannot resolve {name} from {from}");
             }
-            return resolveResult.FileNameWithPreference(false);
+            var res = resolveResult.FileNameWithPreference(false);
+            if (res == "?")
+            {
+                throw new Exception($"Bundler failed to resolve {name} from {from}");
+            }
+            return res;
         }
 
         public string TslibSource(bool withImport)
