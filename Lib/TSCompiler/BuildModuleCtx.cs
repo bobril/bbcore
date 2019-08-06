@@ -44,6 +44,11 @@ namespace Lib.TSCompiler
             return name.EndsWith(".ts") || name.EndsWith(".tsx");
         }
 
+        static bool IsTsOrTsxOrJsOrJsx(ReadOnlySpan<char> name)
+        {
+            return name.EndsWith(".ts") || name.EndsWith(".tsx") || name.EndsWith(".js") || name.EndsWith(".jsx");
+        }
+
         public TSProject ResolveModule(string name)
         {
             if (Result.Modules.TryGetValue(name, out var module))
@@ -213,9 +218,13 @@ namespace Lib.TSCompiler
                         // implementation for .d.ts file does not have same name, it needs to be added to build by b.asset("lib.js") and cannot have dependencies
                     }
                 }
-                else
+                else if (IsTsOrTsxOrJsOrJsx(item.Name))
                 {
                     CheckAdd(item.FullPath, IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript : isAsset ? FileCompilationType.JavaScriptAsset : FileCompilationType.EsmJavaScript);
+                }
+                else
+                {
+                    CheckAdd(item.FullPath, FileCompilationType.Unknown);
                 }
                 return res.FileNameWithPreference(preferDts);
             }

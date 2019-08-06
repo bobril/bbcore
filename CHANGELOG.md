@@ -9,6 +9,7 @@
 ### Fixed
 
 - sprite.ts generation
+- fix regression from 0.88.0 with cache
 
 ## 0.88.0
 
