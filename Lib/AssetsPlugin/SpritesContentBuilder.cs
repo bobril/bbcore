@@ -1,4 +1,5 @@
 ﻿using Lib.Utils;
+using System;
 
 namespace Lib.AssetsPlugin
 {
@@ -10,7 +11,7 @@ namespace Lib.AssetsPlugin
 
         public override bool ShouldSkip(string value)
         {
-            return PathUtils.GetExtension(value) != "png";
+            return !PathUtils.GetExtension(value).SequenceEqual("png");
         }
 
         public override void AddPropertyValue(string value)

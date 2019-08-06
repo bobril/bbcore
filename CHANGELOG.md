@@ -6,6 +6,10 @@
 
 - Nice error message when import is missing
 
+### Fixed
+
+- sprite.ts generation
+
 ## 0.88.0
 
 ### Fixed
@@ -15,6 +19,10 @@
 - Print global semantic errors and make build failed in such case
 
 ## 0.87.0
+
+### Change In Default
+
+- Jasmine 3.3 is now default version instead of old 2.99 version.
 
 ### Fixed
 
