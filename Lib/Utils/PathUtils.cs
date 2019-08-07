@@ -357,7 +357,7 @@ namespace Lib.Utils
                     }
                 }
             }
-            return Subtract(name, relativeTo);
+            return name;
         }
     }
 }

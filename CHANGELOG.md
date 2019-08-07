@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Paths to files in console are now absolute
+
 ## 0.89.0
 
 ### Added

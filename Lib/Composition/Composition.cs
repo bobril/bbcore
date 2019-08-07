@@ -26,7 +26,6 @@ using Lib.Registry;
 using Lib.Utils.Notification;
 using Lib.Translation;
 using Lib.Utils.Logger;
-using Njsast.SourceMap;
 
 namespace Lib.Composition
 {
