@@ -6,6 +6,10 @@
 
 - Paths to files in console are now absolute
 
+### Fixed
+
+- Crash with parsing jasmine timeout stack
+
 ## 0.89.0
 
 ### Added

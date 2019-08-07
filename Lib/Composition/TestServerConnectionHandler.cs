@@ -314,6 +314,10 @@ namespace Lib.Composition
             {
                 var message = messageAndStack.Value<string>("message");
                 var rawStack = messageAndStack.Value<string>("stack");
+                if (rawStack.StartsWith(message))
+                {
+                    rawStack = rawStack.Substring(message.Length);
+                }
                 yield return ConvertMessageAndStack(message, rawStack);
             }
         }
