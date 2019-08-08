@@ -462,7 +462,7 @@ namespace Lib.TSCompiler
             {
                 if (child.IsInvalid)
                     continue;
-                var outPathFileName = destDir + "/" + child.Name;
+                var outPathFileName = (destDir != "" ? destDir + "/" : "") + child.Name;
                 buildResult.TakenNames.Add(outPathFileName);
                 if (child is IDirectoryCache)
                 {

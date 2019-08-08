@@ -9,6 +9,8 @@
 ### Fixed
 
 - Crash with parsing jasmine timeout stack
+- Fix assets generation
+- Sprited images should not be in dist
 
 ## 0.89.0
 

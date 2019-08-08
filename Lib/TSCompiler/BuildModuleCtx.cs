@@ -429,6 +429,10 @@ namespace Lib.TSCompiler
             }
             if (!ToCheck.Contains(fullNameWithExtension))
                 ToCheck.Add(fullNameWithExtension);
+            if (info.Type == FileCompilationType.Unknown)
+            {
+                info.Type = compilationType;
+            }
             if (info.Type == FileCompilationType.JavaScriptAsset)
             {
                 if (Result.JavaScriptAssets.AddUnique(info) && _noDependencyCheck)
@@ -535,7 +539,6 @@ namespace Lib.TSCompiler
                         var ext = PathUtils.GetExtension(fileName);
                         if (ext.SequenceEqual("css")) info.Type = FileCompilationType.Css;
                         else if (ext.SequenceEqual("js") || ext.SequenceEqual("jsx")) info.Type = FileCompilationType.EsmJavaScript;
-                        else info.Type = FileCompilationType.Resource;
                     }
                 }
 
@@ -903,7 +906,19 @@ namespace Lib.TSCompiler
             {
                 return CheckAdd(depName, FileCompilationType.JavaScriptAsset);
             }
-            return CheckAdd(depName, FileCompilationType.Unknown);
+            if (depName.EndsWith(".css", StringComparison.Ordinal))
+            {
+                return CheckAdd(depName, FileCompilationType.Css);
+            }
+            var res = CheckAdd(depName, FileCompilationType.Unknown);
+            if (res != null)
+            {
+                if (res.Type == FileCompilationType.Unknown)
+                {
+                    res.Type = FileCompilationType.Resource;
+                }
+            }
+            return res;
         }
 
         Dictionary<string, AstToplevel> _parsedCache = new Dictionary<string, AstToplevel>();
