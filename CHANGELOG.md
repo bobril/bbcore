@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 3.5.3
+
 ### Fixed
 
 - Crash in special errors in tests in Jasmine 3.3
