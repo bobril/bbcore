@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Crash in special errors in tests in Jasmine 3.3
+
 ## 0.90.0
 
 ### Added
