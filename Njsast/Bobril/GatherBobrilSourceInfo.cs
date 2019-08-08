@@ -345,9 +345,21 @@ namespace Njsast.Bobril
 
             string ExpressionName()
             {
-                if (Parent() is AstVarDef varDef)
+                var parent = Parent();
+                if (parent is AstVarDef varDef)
                 {
                     if (varDef.Name is AstSymbol astSymbol)
+                    {
+                        return astSymbol.Name;
+                    }
+                }
+                if (parent is AstAssign assign)
+                {
+                    if (assign.Left is AstDot dot)
+                    {
+                        if (dot.Property is string) return (string)dot.Property;
+                    }
+                    if (assign.Left is AstSymbol astSymbol)
                     {
                         return astSymbol.Name;
                     }

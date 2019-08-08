@@ -5,6 +5,7 @@
 ### Fixed
 
 - Crash in special errors in tests in Jasmine 3.3
+- Detect expression name with code like `export const name = b.styleDef()`
 
 ## 0.90.0
 
