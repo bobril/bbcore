@@ -4,6 +4,7 @@ import * as deep from "bobril-g11n/src/jsonp";
 import lightSwitch from "./lightSwitch";
 import * as json from "./json.json";
 import "./polyfills";
+import * as styles from "./styles";
 
 interface IPageCtx extends b.IBobrilCtx {
     counter: number;
@@ -104,6 +105,7 @@ let page = b.createVirtualComponent({
                     "Number 123456.789 in format 0,0.00: " +
                     g.f("{arg, number, custom, format:{0,0.00}}", { arg: 123456.789 })
             },
+            b.style({ tag: "div", children: "blue on red" }, styles.style1, styles.style2),
             {
                 tag: "p",
                 children: "cs-CZ",
