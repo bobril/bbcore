@@ -549,6 +549,7 @@ namespace Lib.Composition
                 {
                     var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
                     ctx.BuildOnceOnly = true;
+                    ctx.AdditionalSources = proj.IncludeSources;
                     ctx.TestSources = proj.TestSources;
                     ctx.JasmineDts = proj.JasmineDts;
                     ctx.CompilerOptions = proj.FinalCompilerOptions;

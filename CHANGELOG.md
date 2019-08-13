@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- IncludeSources were not included in `bb test`.
+
 ## 0.91.0
 
 ### Changed
