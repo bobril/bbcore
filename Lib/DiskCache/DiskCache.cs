@@ -492,7 +492,7 @@ namespace Lib.DiskCache
                     ((DirectoryCache)directory).Items = items;
                     if (!wasFake) ((DirectoryCache)directory).NoteChange(true);
                 }
-                else if (realChildren != fsis.Count)
+                else if (realChildren != names.Count)
                 {
                     if (!wasFake) ((DirectoryCache)directory).NoteChange(true);
                 }
