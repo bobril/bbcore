@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.91.2
+
 ### Fixed
 
 - Infinite compile cycle when started in directory with .git
