@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.91.3
+
 ### Fixed
 
 - Special case lenticular-ts npm to not expect already bundled js in main and enable bundling.
