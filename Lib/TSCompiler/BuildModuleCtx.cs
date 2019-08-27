@@ -276,7 +276,16 @@ namespace Lib.TSCompiler
             var bc = Owner.ProjectOptions.BuildCache;
             if (bc.IsEnabled)
             {
-                var hashOfContent = itemInfo.Owner.HashOfContent;
+                byte[] hashOfContent;
+                try
+                {
+                    hashOfContent = itemInfo.Owner.HashOfContent;
+                }
+                catch
+                {
+                    // File was probably renamed or deleted
+                    return false;
+                }
                 var confId = Owner.ProjectOptions.ConfigurationBuildCacheId;
                 var fbc = bc.FindTSFileBuildCache(hashOfContent, confId);
                 if (fbc != null)
