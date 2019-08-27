@@ -69,8 +69,11 @@ namespace Lib.TSCompiler
                     if (parsedT.GetValue("main") is JValue mainV)
                     {
                         MainFile = PathUtils.Normalize(mainV.ToString());
-                        TypesMainFile = null;
-                        hasMain = true;
+                        if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
+                        {
+                            TypesMainFile = null;
+                            hasMain = true;
+                        }
                     }
                 }
 
@@ -98,7 +101,10 @@ namespace Lib.TSCompiler
                     {
                         MainFile = "index.js";
                     }
-
+                    if (parsed.GetValue("name") is JValue name && name.ToString()=="lenticular-ts")
+                    {
+                        MainFileNeedsToBeCompiled = true;
+                    }
                     if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "ts")))
                         is IFileCache fileAsTs)
                     {
