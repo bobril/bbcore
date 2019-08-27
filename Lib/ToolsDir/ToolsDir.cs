@@ -41,7 +41,7 @@ namespace Lib.ToolsDir
                 }
 
                 SetJasmineVersion("330");
-                LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js");
+                LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js").Replace("\"use strict\";","");
                 JasmineCoreJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.js");
                 JasmineDts299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.d.ts");
                 JasmineDtsPath299 = PathUtils.Join(Path, "jasmine.d.ts");

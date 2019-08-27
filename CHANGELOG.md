@@ -7,6 +7,7 @@
 - Special case lenticular-ts npm to not expect already bundled js in main and enable bundling.
 - Fix to ignore package.json typescript.main when it does not exist.
 - Maybe crash when renaming file.
+- Removed "use strict" from loader.js, so now it is again not in strict mode from start.
 
 ## 0.91.2
 
