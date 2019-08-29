@@ -5,6 +5,7 @@
 ### Fixed
 
 - js and css files in html head are treated like resources (not touched just copied to output dir).
+- patch TypeScript 3.6.2 bug https://github.com/microsoft/TypeScript/issues/33142
 
 ## 0.91.3
 

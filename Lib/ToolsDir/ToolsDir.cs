@@ -131,6 +131,9 @@ namespace Lib.ToolsDir
                         }
                     }
 
+                    // patch https://github.com/microsoft/TypeScript/issues/33142 in 3.6.2
+                    _typeScriptJsContent = _typeScriptJsContent.Replace("process.argv", "\"\"");
+
                     // Remove too defensive check for TS2742 - it is ok in Bobril-build to have relative paths into node_modules when in sandboxes
                     _typeScriptJsContent = _typeScriptJsContent.Replace(".indexOf(\"/node_modules/\") >= 0", "===null");
                 }
