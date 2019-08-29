@@ -8,6 +8,9 @@
     },
     "author": "",
     "license": "ISC",
+    "bobril": {
+        "head": "<script src=\"<<../temp/jshead.js>>\"></script>"
+    },
     "dependencies": {
         "bobril": "*"
     }

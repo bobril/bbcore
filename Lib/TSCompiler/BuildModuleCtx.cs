@@ -458,7 +458,7 @@ namespace Lib.TSCompiler
                 (Match m) =>
                 {
                     var info = AutodetectAndAddDependency(
-                        PathUtils.Join(Owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)));
+                        PathUtils.Join(Owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)), true);
                     if (info == null)
                     {
                         Owner.Logger.Error("HtmlHead in package.json missing dependency " + m.Value.Substring(2, m.Length - 4));
