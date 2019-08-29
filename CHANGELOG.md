@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.91.4
+
 ### Fixed
 
 - js and css files in html head are treated like resources (not touched just copied to output dir).
