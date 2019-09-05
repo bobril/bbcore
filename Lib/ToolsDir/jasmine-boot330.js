@@ -207,6 +207,9 @@
             hideDisabled: false,
             specFilter: specFilterFnc
         };
+        onerror = (function (msg, _url, _lineNo, _columnNo, error) {
+            bbTest("onerror", { message: msg, stack: error.stack });
+        });
         env.configure(config);
         var perfnow;
         if (window.performance) {

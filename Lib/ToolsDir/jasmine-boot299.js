@@ -204,6 +204,9 @@
         }
         env.specFilter = specFilterFnc;
         env.catchExceptions(true);
+        onerror = (function (msg, _url, _lineNo, _columnNo, error) {
+            bbTest("onerror", { message: msg, stack: error.stack });
+        });
         var perfnow;
         if (window.performance) {
             var p_1 = window.performance;

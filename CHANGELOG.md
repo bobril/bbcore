@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Test onerror handler to catch errors outside of suites.
+
 ## 0.91.4
 
 ### Fixed

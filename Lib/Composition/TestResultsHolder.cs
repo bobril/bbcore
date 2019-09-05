@@ -154,6 +154,7 @@ namespace Lib.Composition
             w.WriteAttributeString("tests", "" + TotalTests);
             w.WriteAttributeString("time", (Duration * 0.001).ToString("F4", CultureInfo.InvariantCulture));
             RecursiveWriteJUnit(w, this, "", flatTestSuites);
+            WriteJUnitSystemOut(w, this);
             w.WriteEndElement();
             w.WriteEndDocument();
             return sw.ToString();

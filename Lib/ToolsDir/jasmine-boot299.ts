@@ -215,6 +215,9 @@ declare var jasmineRequire: any;
         }
         env.specFilter = specFilterFnc;
         env.catchExceptions(true);
+        onerror = ((msg: string, _url: string, _lineNo: number, _columnNo: number, error: Error) => {
+            bbTest("onerror", { message: msg, stack: error.stack });
+        }) as any;
         var perfnow: () => number;
         if (window.performance) {
             let p = <any>window.performance;

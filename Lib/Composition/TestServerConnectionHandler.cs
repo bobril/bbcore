@@ -80,8 +80,11 @@ namespace Lib.Composition
                                     break;
                                 _curResults.TotalTests = (int)data;
                                 _suiteId = 0;
-                                _suiteStack = new Stack<SuiteOrTest>();
-                                _suiteStack.Push(_curResults);
+                                if (_suiteStack == null)
+                                {
+                                    _suiteStack = new Stack<SuiteOrTest>();
+                                    _suiteStack.Push(_curResults);
+                                }
                             }
 
                             _testServer.NotifyTestingStarted();
@@ -186,7 +189,7 @@ namespace Lib.Composition
                                     ParentId = _suiteStack.Peek().Id,
                                     Name = data.Value<string>("name"),
                                     Stack = ConvertMessageAndStack("", data.Value<string>("stack")).Stack
-                                        .Where(f => f.FileName != "testbundle.js").ToList(),
+                                        .Where(f => f.FileName != "bundle.js").ToList(),
                                     Nested = null,
                                     Duration = 0,
                                     Failure = false,
@@ -257,6 +260,28 @@ namespace Lib.Composition
                             _testServer.NotifySomeChange();
                             break;
                         }
+
+                    case "onerror":
+                    {
+                        if (_verbose) _logger.Error("onerror " + data);
+                        lock (_lock)
+                        {
+                            if (_curResults == null)
+                                break;
+                            _suiteId = 0;
+                            _suiteStack = new Stack<SuiteOrTest>();
+                            _suiteStack.Push(_curResults);
+                            _curResults.Failures.Add(ConvertMessageAndStack(data.Value<string>("message"),data.Value<string>("stack")));
+                            _logger.Error("Test onerror "+_curResults.Failures[^1].Message);
+                            _logger.Error(string.Join("\n", _curResults.Failures[^1].Stack));
+                            _curResults.Failure = true;
+                            _curResults.SuitesFailed ++;
+                        }
+
+                        _testServer.NotifyTestingStarted();
+                        _testServer.NotifySomeChange();
+                        break;
+                    }
                 }
             }
             catch (Exception ex)

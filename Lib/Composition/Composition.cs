@@ -853,7 +853,7 @@ namespace Lib.Composition
             // In Google Chrome 75 running from Docker have in same cases problem with loading of resources.
             // There was resources with pending status which is never resolved (but data was actually send by Kestrel
             // server to Chrome client)
-            // Task.Delay(10) is workaround fix which should prevent Chrome pending status 
+            // Task.Delay(10) is workaround fix which should prevent Chrome pending status
             await Task.Delay(10);
             var path = context.Request.Path;
             if (path == "/")
@@ -1002,10 +1002,10 @@ namespace Lib.Composition
             {
                 _testServer.OnTestResults.Subscribe((results) =>
                 {
-                    var color = results.TestsFailed != 0 ? ConsoleColor.Red :
+                    var color = (results.TestsFailed + results.SuitesFailed) != 0 ? ConsoleColor.Red :
                         results.TestsSkipped != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     _logger.WriteLine(
-                        $"Tests on {results.UserAgent} Failed: {results.TestsFailed} Skipped: {results.TestsSkipped} Total: {results.TotalTests} Duration: {results.Duration * 0.001:F1}s",
+                        $"Tests on {results.UserAgent} Failed: {results.TestsFailed}+{results.SuitesFailed} Skipped: {results.TestsSkipped} Total: {results.TotalTests} Duration: {results.Duration * 0.001:F1}s",
                         color);
                     _notificationManager.SendNotification(results.ToNotificationParameters());
                 });
