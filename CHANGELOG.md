@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Build must show same configuration errors like interactive build.
+
 ## 0.92.0
 
 ### Added

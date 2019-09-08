@@ -312,6 +312,7 @@ function bbCheckProgram(fileNames) {
     var host = createCompilerHost();
     var program = ts.createProgram(fileNames.split("|"), compilerOptions, host);
     wasError = false;
+    reportDiagnostics(program.getOptionsDiagnostics());
     reportDiagnostics(program.getGlobalDiagnostics());
     reportDiagnostics(program.getSyntacticDiagnostics());
     if (wasError)

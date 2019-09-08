@@ -9,6 +9,7 @@ using Lib.Utils.Logger;
 using System.Collections.Generic;
 using Njsast;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Lib.TSCompiler
 {
@@ -45,6 +46,8 @@ namespace Lib.TSCompiler
             }
         }
 
+        [SuppressMessage("ReSharper", "InconsistentNaming")]
+        [SuppressMessage("ReSharper", "UnusedMember.Local")]
         class BBCallbacks
         {
             TsCompiler _owner;
@@ -205,7 +208,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        BBCallbacks _callbacks;
+        readonly BBCallbacks _callbacks;
         StructList<Diagnostic> _diagnostics = new StructList<Diagnostic>();
 
         IJsEngine _engine;

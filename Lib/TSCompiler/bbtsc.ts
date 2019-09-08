@@ -396,6 +396,7 @@ function bbCheckProgram(fileNames: string) {
     const host = createCompilerHost();
     let program = ts.createProgram(fileNames.split("|"), compilerOptions, host);
     wasError = false;
+    reportDiagnostics(program.getOptionsDiagnostics());
     reportDiagnostics(program.getGlobalDiagnostics());
     reportDiagnostics(program.getSyntacticDiagnostics());
     if (wasError) return;
