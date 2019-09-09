@@ -5,6 +5,7 @@
 ### Fixed
 
 - Build must show same configuration errors like interactive build.
+- Attempt to make watch change detection to more reliable.
 
 ## 0.92.0
 

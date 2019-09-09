@@ -1022,7 +1022,8 @@ namespace Lib.Composition
         public void InitInteractiveMode(string versionDir, bool? localizeValue)
         {
             _hasBuildWork.Set();
-            _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200)).Subscribe((_) => _hasBuildWork.Set());
+            var throttled = _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200));
+            throttled.Merge(throttled.Delay(TimeSpan.FromMilliseconds(300))).Subscribe((_) => _hasBuildWork.Set());
             var iterationId = 0;
             var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath);
             var buildResult = new BuildResult(_currentProject);
