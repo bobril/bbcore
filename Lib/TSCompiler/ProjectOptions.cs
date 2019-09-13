@@ -56,7 +56,8 @@ namespace Lib.TSCompiler
         public List<string> ExampleSources;
         public bool LiveReloadEnabled;
         public string TypeScriptVersion;
-
+        public string BuildOutputDir;
+        
         public bool Localize;
         public string DefaultLanguage;
         public DepedencyUpdate DependencyUpdate;
@@ -442,6 +443,7 @@ namespace Lib.TSCompiler
             Localize = bobrilSection?["localize"]?.Value<bool>() ?? Localize;
             PathToTranslations = GetStringProperty(bobrilSection, "pathToTranslations", null);
             TsconfigUpdate = bobrilSection?["tsconfigUpdate"]?.Value<bool>() ?? true;
+            BuildOutputDir = GetStringProperty(bobrilSection,"buildOutputDir",null);
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)
