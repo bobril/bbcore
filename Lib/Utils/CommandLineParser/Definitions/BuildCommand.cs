@@ -8,7 +8,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         protected override string Description => "just build and stop";
 
-        public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString(description: "define where to put build result", words: new[] { "-d", "--dir" }, defaultValue: "./dist");
+        public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString(description: "define where to put build result", words: new[] { "-d", "--dir" }, defaultValue: null);    
 
         public CommandLineArgumentBool Fast { get; } = new CommandLineArgumentBool(description: "quick debuggable bundling", words: new[] { "-f", "--fast" });
 

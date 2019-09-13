@@ -450,7 +450,7 @@ namespace Lib.Composition
 
                         if (errors == 0)
                         {
-                            SaveFilesContentToDisk(filesContent, bCommand.Dir.Value);
+                            SaveFilesContentToDisk(filesContent, PathUtils.Join(proj.Owner.Owner.FullPath,bCommand.Dir.Value ?? proj.BuildOutputDir ?? "./dist"));
                             totalFiles += filesContent.Count;
                         }
                     }
