@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.93.0
+
 ### Added
 
 - allow to define default build path in `package.json`/`bobril`/`buildOutputDir` (default is `./dist`)
