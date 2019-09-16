@@ -85,7 +85,7 @@ Build generates tsconfig.json by default. You can disable this feature by:
 
 ## Override localization
 
-By default localization is detected from exitence of dependency bobril-g11n. You can override it:
+By default localization is detected from existence of dependency bobril-g11n. You can override it:
 
     "bobril": {
         "localize": true
@@ -98,6 +98,12 @@ By default localization is detected from exitence of dependency bobril-g11n. You
     }
 
 It is relative to project. Default is "translations".
+
+## Define default build path
+
+    "bobril": {
+        "buildOutputDir": "./dist"
+    }
 
 ## Where to find test sources
 
