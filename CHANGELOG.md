@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.94.0
+
 ### Added
 
 - support for `__spreadArrays` from tslib.
