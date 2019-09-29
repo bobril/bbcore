@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- support for `__spreadArrays` from tslib.
+
 ## 0.93.0
 
 ### Added
@@ -70,7 +74,7 @@
 
 - Crash with parsing jasmine timeout stack
 - Fix assets generation
-- Sprited images should not be in dist
+- Sprites images should not be in dist
 
 ## 0.89.0
 
