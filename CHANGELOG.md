@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Support for modules in namespace like @stomp/stompjs
+
 ## 0.94.0
 
 ### Added

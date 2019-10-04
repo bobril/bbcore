@@ -79,7 +79,7 @@ namespace Lib.TSCompiler
                 }
                 else
                 {
-                    if (dc.Name != name)
+                    if (dc.FullPath != dir + "/node_modules/" + name)
                     {
                         // Create it with proper casing
                         return ResolveModule(dc.Name);
@@ -232,7 +232,16 @@ namespace Lib.TSCompiler
             {
                 var pos = 0;
                 PathUtils.EnumParts(name, ref pos, out var mn, out _);
-                var mname = mn.ToString();
+                string mname;
+                if (name[0] == '@')
+                {
+                    PathUtils.EnumParts(name, ref pos, out var mn2, out _);
+                    mname = mn.ToString()+"/"+mn2.ToString();
+                }
+                else
+                {
+                    mname = mn.ToString();
+                }
                 var moduleInfo = ResolveModule(mname);
                 res.Module = moduleInfo;
                 if (moduleInfo == null)
@@ -241,7 +250,7 @@ namespace Lib.TSCompiler
                     res.FileName = "?";
                     return res.FileName;
                 }
-                if (mname != moduleInfo.Name)
+                if (PathUtils.GetFile(mname) != moduleInfo.Name)
                 {
                     parentInfo.ReportDiag(false, -2,
                         "Module import has wrong casing '" + mname + "' on disk '" + moduleInfo.Name + "'", 0, 0, 0, 0);
