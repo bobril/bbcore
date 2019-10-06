@@ -35,15 +35,15 @@ namespace Lib.TSCompiler
             var diskCache = Project.Owner.DiskCache;
             var cssLink = "";
             var cssToBundle = new List<SourceFromPair>();
-            foreach (var source in BuildResult.Path2FileInfo)
+            foreach (var source in BuildResult.Path2FileInfo.Values.OrderBy(f => f.Owner.FullPath).ToArray())
             {
-                if (source.Value.Type == FileCompilationType.Css || source.Value.Type == FileCompilationType.ImportedCss)
+                if (source.Type == FileCompilationType.Css || source.Type == FileCompilationType.ImportedCss)
                 {
-                    cssToBundle.Add(new SourceFromPair(source.Value.Owner.Utf8Content, source.Value.Owner.FullPath));
+                    cssToBundle.Add(new SourceFromPair(source.Owner.Utf8Content, source.Owner.FullPath));
                 }
-                else if (source.Value.Type == FileCompilationType.Resource)
+                else if (source.Type == FileCompilationType.Resource)
                 {
-                    FilesContent.GetOrAddValueRef(BuildResult.ToOutputUrl(source.Value)) = source.Value.Owner.ByteContent;
+                    FilesContent.GetOrAddValueRef(BuildResult.ToOutputUrl(source)) = source.Owner.ByteContent;
                 }
             }
 

@@ -6,6 +6,10 @@
 
 Support for modules in namespace like @stomp/stompjs
 
+### Fixed
+
+Build mode now sorts multiple css files for bundling in same way as interactive mode.
+
 ## 0.94.0
 
 ### Added
