@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.95.1
+
 ### Fixed
 
 Loader.js had to be also updated to support namespace modules.
