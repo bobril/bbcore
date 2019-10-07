@@ -7,6 +7,7 @@ using Lib.CSSProcessor;
 using System.Globalization;
 using BTDB.Collections;
 using System;
+using System.Text.RegularExpressions;
 using Njsast.SourceMap;
 
 namespace Lib.TSCompiler
@@ -60,7 +61,13 @@ namespace Lib.TSCompiler
                     return PathUtils.GetFile(fileAdditionalInfo.OutputUrl) +
                            full.Substring(fullJustName.Length);
                 }).Result;
-                FilesContent.GetOrAddValueRef(cssPath) = cssContent;
+                var cssImports = "";
+                foreach (var match in Regex.Matches(cssContent, "@import .*;"))
+                {
+                    cssImports += match.ToString();
+                    cssContent = cssContent.Replace(match.ToString(), "");
+                }
+                FilesContent.GetOrAddValueRef(cssPath) = cssImports + cssContent;
                 cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
             }
 

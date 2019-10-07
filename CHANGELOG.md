@@ -5,6 +5,7 @@
 ### Fixed
 
 Loader.js had to be also updated to support namespace modules.
+Css @import's are moved to beginning of bundled css.
 
 ## 0.95.0
 
