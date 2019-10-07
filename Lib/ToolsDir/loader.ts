@@ -36,6 +36,12 @@ R.r = function(name: string, parent: string) {
         p = newParts.join("/");
     } else {
         let parts = name.split("/");
+        if (parts.length >= 2) {
+            if (parts[0].charCodeAt(0) == 64) {
+                parts[0] = parts[0] + "/" + parts[1];
+                parts.splice(1, 1);
+            }
+        }
         if (parts.length <= 1) {
             p = R.map![name.toLowerCase()];
         } else {

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Loader.js had to be also updated to support namespace modules.
+
 ## 0.95.0
 
 ### Added
