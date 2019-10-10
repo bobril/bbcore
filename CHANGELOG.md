@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.95.2
+
 ### Fixed
 
 Special casing `@stomp/stompjs` to use `lib/stomp.js` as main file instead of `index.js`.
