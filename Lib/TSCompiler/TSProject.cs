@@ -101,10 +101,20 @@ namespace Lib.TSCompiler
                     {
                         MainFile = "index.js";
                     }
-                    if (parsed.GetValue("name") is JValue name && name.ToString()=="lenticular-ts")
+
+                    var name = parsed.GetValue("name") is JValue vname ? vname.ToString() : "";
+
+                    if (name=="lenticular-ts")
                     {
                         MainFileNeedsToBeCompiled = true;
                     }
+
+                    if (name == "@stomp/stompjs")
+                    {
+                        MainFile = "lib/stomp.js";
+                        TypesMainFile = "index.d.ts";
+                    }
+
                     if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "ts")))
                         is IFileCache fileAsTs)
                     {
