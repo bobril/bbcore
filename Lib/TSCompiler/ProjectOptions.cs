@@ -57,7 +57,7 @@ namespace Lib.TSCompiler
         public bool LiveReloadEnabled;
         public string TypeScriptVersion;
         public string BuildOutputDir;
-        
+
         public bool Localize;
         public string DefaultLanguage;
         public DepedencyUpdate DependencyUpdate;
@@ -277,6 +277,7 @@ namespace Lib.TSCompiler
                 skipLibCheck = false,
                 skipDefaultLibCheck = true,
                 target = ScriptTarget.Es5,
+                downlevelIteration = true,
                 module = ModuleKind.Commonjs,
                 declaration = false,
                 preserveConstEnums = false,
@@ -298,7 +299,7 @@ namespace Lib.TSCompiler
             if (Variant == "worker")
                 return new HashSet<string>
                 {
-                    "es5", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection", "webworker",
+                    "es5", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.generator", "es2015.collection", "webworker",
                     "webworker.importscripts"
                 };
             if (Variant == "serviceworker")
@@ -307,7 +308,7 @@ namespace Lib.TSCompiler
                     "es2017", "webworker"
                 };
             return new HashSet<string>
-                {"es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.collection"};
+                {"es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.generator", "es2015.collection"};
         }
 
         string _originalContent;

@@ -177,7 +177,7 @@ namespace Lib.Test
         [Fact]
         public void DefaultTypeScriptVersionDidntChanged()
         {
-            Assert.Equal("3.5.3", _tools.TypeScriptVersion);
+            Assert.Equal("3.6.4", _tools.TypeScriptVersion);
         }
 
         [Fact]

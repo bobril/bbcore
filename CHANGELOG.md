@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 3.6.4
+
+### Added
+
+- Enabled Generators in default configuration.
+
 ## 0.95.2
 
 ### Fixed
