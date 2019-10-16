@@ -224,7 +224,7 @@ namespace Lib.Composition
                                 if (status == "passed")
                                 {
                                 }
-                                else if (status == "skipped" || status == "pending" || status == "disabled")
+                                else if (status == "skipped" || status == "pending" || status == "disabled" || status == "excluded")
                                 {
                                     _curResults.TestsSkipped++;
                                     test.Skipped = true;

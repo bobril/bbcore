@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Correct counting of skipped tests with focused tests and Jasmine 3.3
+
 ## 0.96.0
 
 ### Changed
