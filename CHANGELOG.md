@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.96.1
+
 ### Fixed
 
 - Correct counting of skipped tests with focused tests and Jasmine 3.3
