@@ -62,11 +62,9 @@ namespace Lib.TSCompiler
                 //_owner.Logger.Info("getChangeId " + fileName);
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
                 var file = _owner.DiskCache.TryGetItem(fullPath);
-                if (file == null || file.IsInvalid)
-                {
-                    return null;
-                }
-                return file.ChangeId;
+                if (FileExistsIgnoreDtsIfTsExists(file))
+                    return file.ChangeId;
+                return null;
             }
 
             public string readFile(string fileName)
@@ -95,7 +93,23 @@ namespace Lib.TSCompiler
                 //_owner.Logger.Info("fileExists " + fileName);
                 var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
                 var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
-                return file != null && !file.IsInvalid;
+                return FileExistsIgnoreDtsIfTsExists(file);
+            }
+
+            static bool FileExistsIgnoreDtsIfTsExists(IItemCache file)
+            {
+                if (file == null || file.IsInvalid)
+                {
+                    return false;
+                }
+
+                if (!file.IsFile || !file.Name.EndsWith(".d.ts", StringComparison.Ordinal)) return true;
+                var nameImpl = file.Name.Substring(0, file.Name.Length - 5) + ".ts";
+                var file2 = file.Parent.TryGetChild(nameImpl);
+                if (file2 != null && !file2.IsInvalid)
+                    return false;
+                file2 = file.Parent.TryGetChild(nameImpl + "x");
+                return file2 == null || file2.IsInvalid;
             }
 
             public string getDirectories(string directoryPath)

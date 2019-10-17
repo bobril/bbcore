@@ -10,9 +10,9 @@ bobril-g11n@*:
     moment "^2.10.6"
 
 bobril@*:
-  version "12.0.0"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-12.0.0.tgz#5d81b00b54c7d20ac3a5b45a124fc1ed5be5bb76"
-  integrity sha512-ONuQa6casgOxzcneH1bXQBemHt3i4wrM0EOIRkDEmMQULdu1IaC506Te+LxuidvYx3bmgdDquoDxZR0mIAudbw==
+  version "13.0.2"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-13.0.2.tgz#1318b36adaec78d8d6b84cfd2f7706fd62ad8123"
+  integrity sha512-LcLZf8uKP3TvwTKjSGQNhaaRCDhUapH4oaK4YmHo3lzY4NNGpCY7okjlSndkoX5xQWmdky1+fOLELx4aklbd4Q==
 
 moment@^2.10.6:
   version "2.24.0"
@@ -20,6 +20,6 @@ moment@^2.10.6:
   integrity sha512-bV7f+6l2QigeBBZSM/6yTNq4P2fNpSWj/0e7jQcy87A8e7o2nAfP/34/2ky5Vw4B9S446EtIhodAzkFCcR4dQg==
 
 typescript@*:
-  version "3.6.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.6.2.tgz#105b0f1934119dde543ac8eb71af3a91009efe54"
-  integrity sha512-lmQ4L+J6mnu3xweP8+rOrUwzmN+MRAj7TgtJtDaXE5PMyX2kCrklhg3rvOsOIfNeAWMQWO2F1GPc1kMD2vLAfw==
+  version "3.6.4"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.6.4.tgz#b18752bb3792bc1a0281335f7f6ebf1bbfc5b91d"
+  integrity sha512-unoCll1+l+YK4i4F8f22TaNVPRHcD9PA3yCuZ8g5e0qGqlVlJ/8FSateOLLSagn+Yg5+ZwuPkL8LFUc0Jcvksg==

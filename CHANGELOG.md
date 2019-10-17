@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Prefer .ts(x) over .d.ts (should solve problem with Bobril 13)
+
 ## 0.96.1
 
 ### Fixed
