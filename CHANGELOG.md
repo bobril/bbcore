@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- TypeScript emulation of array spread improved so that it works also Bobx observable arrays on IE11.
+
 ## 0.96.2
 
 ### Fixed
