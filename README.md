@@ -155,6 +155,16 @@ Use this comment in source code with import to ignore this specific import (must
 
 # Environmental variables
 
+## Forcing Polling watcher
+
+Watcher inside Docker cannot use OS notification of filesystem changes. So by default BB inside docker uses polling implementation with 250ms check frequency. You modify this time in milliseconds by `BBWATCHER` variable, also without Docker it forces polling watcher:
+
+    set BBWATCHER=1000
+
 ## Disable yarn creating links
 
 Docker on Windows filesystem has limitation in creating links. To workaround this issue create environment variable `BBCoreNoLinks` with not empty value so bbcore will add `--no-bin-links` parameter to yarn command line.
+
+## Recognize when running in Docker
+
+It uses same variable like all other dotnet containers `DOTNET_RUNNING_IN_CONTAINER`.

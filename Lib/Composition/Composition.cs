@@ -89,6 +89,7 @@ namespace Lib.Composition
                     _verbose = true;
                     _logger.Verbose = true;
                 }
+
                 if (commonParams.NoBuildCache.Value)
                     _buildCache = new DummyBuildCache();
                 else
@@ -445,12 +446,15 @@ namespace Lib.Composition
                             bundle.BuildResult = buildResult;
                             bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
                         }
+
                         buildResult.TaskForSemanticCheck.Wait();
                         messages = IncludeSemanticMessages(proj, buildResult, ref errors, ref warnings, messages);
 
                         if (errors == 0)
                         {
-                            SaveFilesContentToDisk(filesContent, PathUtils.Join(proj.Owner.Owner.FullPath,bCommand.Dir.Value ?? proj.BuildOutputDir ?? "./dist"));
+                            SaveFilesContentToDisk(filesContent,
+                                PathUtils.Join(proj.Owner.Owner.FullPath,
+                                    bCommand.Dir.Value ?? proj.BuildOutputDir ?? "./dist"));
                             totalFiles += filesContent.Count;
                         }
                     }
@@ -556,7 +560,8 @@ namespace Lib.Composition
                     proj.Owner.Build(ctx, testBuildResult, 1);
                     var fastBundle = new FastBundleBundler(_tools);
                     var filesContent = new RefDictionary<string, object>();
-                    proj.FillOutputByAdditionalResourcesDirectory(filesContent, testBuildResult.Modules, testBuildResult);
+                    proj.FillOutputByAdditionalResourcesDirectory(filesContent, testBuildResult.Modules,
+                        testBuildResult);
                     fastBundle.FilesContent = filesContent;
                     fastBundle.Project = proj;
                     fastBundle.BuildResult = testBuildResult;
@@ -641,18 +646,18 @@ namespace Lib.Composition
                 var fileName = PathUtils.Join(dir, filesContent.KeyRef(index));
                 if (content is Lazy<object>)
                 {
-                    content = ((Lazy<object>)content).Value;
+                    content = ((Lazy<object>) content).Value;
                 }
 
                 Directory.CreateDirectory(PathUtils.DirToCreateDirectory(PathUtils.Parent(fileName)));
 
                 if (content is string)
                 {
-                    File.WriteAllText(fileName, (string)content, utf8WithoutBom);
+                    File.WriteAllText(fileName, (string) content, utf8WithoutBom);
                 }
                 else
                 {
-                    File.WriteAllBytes(fileName, (byte[])content);
+                    File.WriteAllBytes(fileName, (byte[]) content);
                 }
 
                 content = null;
@@ -802,9 +807,28 @@ namespace Lib.Composition
 
         public void InitDiskCache(bool withWatcher = false)
         {
-            _dc = _inDocker || !withWatcher
-                ? new DiskCache.DiskCache(new NativeFsAbstraction(), () => new DummyWatcher())
-                : new DiskCache.DiskCache(new NativeFsAbstraction(), () => new OsWatcher());
+            Func<IDirectoryWatcher> watcherFactory = () => (IDirectoryWatcher) new DummyWatcher();
+            if (withWatcher)
+            {
+                if (Environment.GetEnvironmentVariable("BBWATCHER") is {} delayStr &&
+                    uint.TryParse(delayStr, out var delay))
+                {
+                    _logger.Info("Using watcher with " + delay + "ms polling");
+                    watcherFactory = () => new PollingWatcher(TimeSpan.FromMilliseconds(delay));
+                }
+                else if (_inDocker)
+                {
+                    delay = 250;
+                    _logger.Info("Using watcher with " + delay + "ms polling");
+                    watcherFactory = () => new PollingWatcher(TimeSpan.FromMilliseconds(delay));
+                }
+                else
+                {
+                    watcherFactory = () => new OsWatcher();
+                }
+            }
+
+            _dc = new DiskCache.DiskCache(new NativeFsAbstraction(), watcherFactory);
         }
 
         public ProjectOptions AddProject(string path, bool enableSpritting)
@@ -820,7 +844,7 @@ namespace Lib.Composition
                 Tools = _tools,
                 BuildCache = _buildCache,
                 Owner = proj,
-                Defines = new Dictionary<string, bool> { { "DEBUG", true } },
+                Defines = new Dictionary<string, bool> {{"DEBUG", true}},
                 SpriteGeneration = enableSpritting
             };
             _currentProject = proj.ProjectOptions;
@@ -954,16 +978,16 @@ namespace Lib.Composition
                 context.Response.ContentType = PathUtils.PathToMimeType(pathWithoutFirstSlash);
                 if (content is Lazy<object>)
                 {
-                    content = ((Lazy<object>)content).Value;
+                    content = ((Lazy<object>) content).Value;
                 }
 
                 if (content is string)
                 {
-                    await context.Response.WriteAsync((string)content);
+                    await context.Response.WriteAsync((string) content);
                 }
                 else
                 {
-                    await context.Response.Body.WriteAsync((byte[])content, 0, ((byte[])content).Length);
+                    await context.Response.Body.WriteAsync((byte[]) content, 0, ((byte[]) content).Length);
                 }
 
                 return;
@@ -1042,7 +1066,8 @@ namespace Lib.Composition
                 var duration = (DateTime.UtcNow - start).TotalSeconds;
                 if (buildDoneTsc.Task.Result)
                 {
-                    var allmess = IncludeSemanticMessages(_currentProject, buildResult, ref errors, ref warnings, messages);
+                    var allmess = IncludeSemanticMessages(_currentProject, buildResult, ref errors, ref warnings,
+                        messages);
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration, allmess);
                     _notificationManager.SendNotification(
                         NotificationParameters.CreateBuildParameters(errors, warnings, duration));
@@ -1050,7 +1075,8 @@ namespace Lib.Composition
                     var color = errors != 0 ? ConsoleColor.Red :
                         warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     _logger.WriteLine(
-                        $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}", color);
+                        $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}",
+                        color);
                 }
             }
 
@@ -1099,7 +1125,8 @@ namespace Lib.Composition
                         proj.Owner.Build(ctx, buildResult, iterationId);
                         if (!buildResult.HasError)
                         {
-                            proj.FillOutputByAdditionalResourcesDirectory(filesContent, buildResult.Modules, buildResult);
+                            proj.FillOutputByAdditionalResourcesDirectory(filesContent, buildResult.Modules,
+                                buildResult);
                             fastBundle.FilesContent = filesContent;
                             fastBundle.Project = proj;
                             fastBundle.BuildResult = buildResult;
@@ -1107,6 +1134,7 @@ namespace Lib.Composition
                             fastBundle.BuildHtml();
                             proj.FilesContent = filesContent;
                         }
+
                         IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
                         buildDoneTsc.TrySetResult(true);
                         if (errors == 0 && proj.LiveReloadEnabled)
@@ -1199,7 +1227,8 @@ namespace Lib.Composition
                         warnings++;
                     messages.Add(new Diagnostic
                     {
-                        FileName = PathUtils.ForDiagnosticDisplay(pathInfoPair.Key, options.CommonSourceDirectory ?? rootPath, options.CommonSourceDirectory),
+                        FileName = PathUtils.ForDiagnosticDisplay(pathInfoPair.Key,
+                            options.CommonSourceDirectory ?? rootPath, options.CommonSourceDirectory),
                         IsError = isError,
                         Text = d.Text,
                         Code = d.Code,
@@ -1212,8 +1241,9 @@ namespace Lib.Composition
             }
         }
 
-        List<Diagnostic> IncludeSemanticMessages(ProjectOptions options, BuildResult buildResult, ref int errors, ref int warnings,
-    List<Diagnostic> messages)
+        List<Diagnostic> IncludeSemanticMessages(ProjectOptions options, BuildResult buildResult, ref int errors,
+            ref int warnings,
+            List<Diagnostic> messages)
         {
             if (buildResult.SemanticResult == null) return messages;
             var res = messages.ToList();
@@ -1225,7 +1255,8 @@ namespace Lib.Composition
                 var isError = d.IsError || options.WarningsAsErrors;
                 var dd = new Diagnostic
                 {
-                    FileName = PathUtils.ForDiagnosticDisplay(d.FileName, options.CommonSourceDirectory ?? rootPath, options.CommonSourceDirectory),
+                    FileName = PathUtils.ForDiagnosticDisplay(d.FileName, options.CommonSourceDirectory ?? rootPath,
+                        options.CommonSourceDirectory),
                     IsError = isError,
                     Text = d.Text,
                     Code = d.Code,
@@ -1243,6 +1274,7 @@ namespace Lib.Composition
                         warnings++;
                 }
             }
+
             return res;
         }
 

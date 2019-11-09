@@ -5,6 +5,7 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <LangVersion>8</LangVersion>
     <WarningsAsErrors />
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Bundler\Js\bundler.js" />

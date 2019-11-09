@@ -6,6 +6,7 @@
     <PlatformTarget>x64</PlatformTarget>
     <WarningsAsErrors />
     <LangVersion>8</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Lib/Lib.csproj" />
