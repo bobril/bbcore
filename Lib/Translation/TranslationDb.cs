@@ -239,7 +239,7 @@ namespace Lib.Translation
             return valueList;
         }
 
-        public bool ExportLanguages(string filePath, bool exportOnlyUntranslated = true, string specificLanguage = null, string specificPath = null)
+        public bool ExportLanguages(string filePath, bool exportOnlyUntranslated = true, string? specificLanguage = null, string? specificPath = null)
         {
             if (!string.IsNullOrEmpty(specificPath))
                 specificLanguage = GetLanguageFromSpecificPath(specificPath);
@@ -410,7 +410,7 @@ namespace Lib.Translation
 
         public IEnumerable<string> GetLanguages() => _loadedLanguages;
 
-        public bool ImportTranslatedLanguage(string pathFrom, string pathTo = null)
+        public bool ImportTranslatedLanguage(string pathFrom, string? pathTo = null)
         {
             var normalizedPath = PathUtils.Normalize(pathFrom);
             var language = Path.GetFileNameWithoutExtension(normalizedPath);

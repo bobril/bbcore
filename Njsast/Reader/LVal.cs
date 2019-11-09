@@ -9,7 +9,7 @@ namespace Njsast.Reader
         // Convert existing expression atom to assignable pattern
         // if possible.
         [ContractAnnotation("node:notnull=>notnull")]
-        AstNode ToAssignable([CanBeNull] AstNode node, bool isBinding = false)
+        AstNode? ToAssignable(AstNode? node, bool isBinding = false)
         {
             if (Options.EcmaVersion >= 6 && node != null)
             {
@@ -31,7 +31,7 @@ namespace Njsast.Reader
                         var newProperties = new StructList<AstNode>();
                         newProperties.Reserve(objectExpression.Properties.Count);
                         for (var i = 0; i < newProperties.Count; i++)
-                            newProperties[(uint) i] = ToAssignable(objectExpression.Properties[(uint) i], isBinding);
+                            newProperties[(uint) i] = ToAssignable(objectExpression.Properties[(uint) i], isBinding)!;
                         node = new AstDestructuring(this, node.Start, node.End, ref newProperties, false);
                         break;
 
@@ -41,7 +41,7 @@ namespace Njsast.Reader
                         break;
 
                     case AstExpansion spreadElement:
-                        spreadElement.Expression = ToAssignable(spreadElement.Expression, isBinding);
+                        spreadElement.Expression = ToAssignable(spreadElement.Expression, isBinding)!;
                         if (spreadElement.Expression is AstDefaultAssign)
                         {
                             Raise(spreadElement.Expression.Start, "Rest elements cannot have a default value");
@@ -56,7 +56,7 @@ namespace Njsast.Reader
                                 "Only '=' operator can be used for specifying default value.");
                         }
 
-                        var left = ToAssignable(assignmentExpression.Left, isBinding);
+                        var left = ToAssignable(assignmentExpression.Left, isBinding)!;
                         var right = assignmentExpression.Right;
                         node = new AstDefaultAssign(this, node.Start, node.End, left, right);
                         goto AssignmentPatternNode;
@@ -75,7 +75,7 @@ namespace Njsast.Reader
         }
 
         [ContractAnnotation("property:notnull=>notnull")]
-        AstObjectProperty ToAssignable([CanBeNull] AstObjectProperty property, bool isBinding = false)
+        AstObjectProperty? ToAssignable(AstObjectProperty? property, bool isBinding = false)
         {
             if (property == null)
                 return null;
@@ -83,7 +83,7 @@ namespace Njsast.Reader
             if (!(property is AstObjectKeyVal))
                 Raise(property.Start, "Object pattern can't contain getter or setter");
 
-            property.Value = ToAssignable(property.Value, isBinding);
+            property.Value = ToAssignable(property.Value, isBinding)!;
             return property;
         }
 
@@ -93,12 +93,12 @@ namespace Njsast.Reader
             for (var i = 0; i < expressionList.Count; i++)
             {
                 var element = expressionList[(uint) i];
-                if (element != null) expressionList[(uint) i] = ToAssignable(element, isBinding);
+                if (element != null) expressionList[(uint) i] = ToAssignable(element, isBinding)!;
             }
 
             if (expressionList.Count != 0)
             {
-                var last = expressionList[expressionList.Count - 1];
+                var last = expressionList.Last;
                 if (Options.EcmaVersion == 6 && isBinding && last is AstExpansion restElementNode &&
                     !(restElementNode.Expression is AstSymbol))
                 {
@@ -109,11 +109,11 @@ namespace Njsast.Reader
 
         // Parses spread element.
         [NotNull]
-        AstExpansion ParseSpread(DestructuringErrors refDestructuringErrors)
+        AstExpansion ParseSpread(DestructuringErrors? refDestructuringErrors)
         {
             var startLoc = Start;
             Next();
-            var argument = ParseMaybeAssign(false, refDestructuringErrors);
+            var argument = ParseMaybeAssign(Start, false, refDestructuringErrors);
             return new AstExpansion(this, startLoc, _lastTokEnd, argument);
         }
 
@@ -190,12 +190,12 @@ namespace Njsast.Reader
 
         // Parses assignment pattern around given atom if possible.
         [NotNull]
-        AstNode ParseMaybeDefault(Position startLoc, AstNode left = null)
+        AstNode ParseMaybeDefault(Position startLoc, AstNode? left = null)
         {
-            left = left ?? ParseBindingAtom();
+            left ??= ParseBindingAtom();
             if (Options.EcmaVersion < 6 || !Eat(TokenType.Eq))
                 return left;
-            var right = ParseMaybeAssign();
+            var right = ParseMaybeAssign(Start);
             return new AstDefaultAssign(this, startLoc, _lastTokEnd, left, right);
         }
 
@@ -205,8 +205,7 @@ namespace Njsast.Reader
         // var indicating that the lval creates a 'var' binding
         // let indicating that the lval creates a lexical ('let' or 'const') binding
         // null indicating that the binding should be checked for illegal identifiers, but not for duplicate references
-        void CheckLVal([NotNull] AstNode expr, bool isBinding, VariableKind? bindingType,
-            [CanBeNull] ISet<string> checkClashes = null)
+        void CheckLVal(AstNode expr, bool isBinding, VariableKind? bindingType, ISet<string>? checkClashes = null)
         {
             switch (expr)
             {

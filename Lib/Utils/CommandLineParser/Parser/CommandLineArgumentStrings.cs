@@ -20,7 +20,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <param name="words">Words</param>
         /// <param name="valuesCount">Count of values</param>
         /// <param name="defaultValue">Default value</param>
-        public CommandLineArgumentStrings(string description, string[] words, int valuesCount, string[] defaultValue = null) : base(description, words, defaultValue?.Length == valuesCount ? $" <{string.Join("> <", defaultValue)}> " : "")
+        public CommandLineArgumentStrings(string description, string[] words, int valuesCount, string[]? defaultValue = null) : base(description, words, defaultValue?.Length == valuesCount ? $" <{string.Join("> <", defaultValue)}> " : "")
         {
             Value = new string[valuesCount];
             if (defaultValue?.Length == valuesCount)

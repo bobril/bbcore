@@ -15,7 +15,7 @@ namespace Njsast.Reader
         public static readonly TokContext FExprGen = new TokContext("function", true, false, null, true);
         public static readonly TokContext FGen = new TokContext("function", false, false, null, true);
 
-        public TokContext(string token, bool isExpr, bool preserveSpace = false, Action<Parser> @override = null, bool generator = false)
+        public TokContext(string token, bool isExpr, bool preserveSpace = false, Action<Parser>? @override = null, bool generator = false)
         {
             Token = token;
             IsExpression = isExpr;
@@ -27,7 +27,7 @@ namespace Njsast.Reader
         public string Token { get; }
         public bool IsExpression { get; }
         public bool PreserveSpace { get; }
-        public Action<Parser> Override { get; }
+        public Action<Parser>? Override { get; }
         public bool Generator { get; }
     }
 }

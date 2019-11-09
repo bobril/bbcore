@@ -20,6 +20,12 @@ namespace Njsast.Ast
             w.Walk(Body);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            Body = (AstStatement)tt.Transform(Body);
+        }
+
         public override void CodeGen(OutputContext output)
         {
             Body.Print(output);

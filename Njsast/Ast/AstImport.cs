@@ -4,10 +4,10 @@ using Njsast.Reader;
 namespace Njsast.Ast
 {
     /// An `import` statement
-    public class AstImport : AstNode
+    public class AstImport : AstStatement
     {
         /// [AstSymbolImport] The name of the variable holding the module's default export.
-        public AstSymbolImport ImportedName;
+        public AstSymbolImport? ImportedName; // TODO not sure if it is correct that ImportName should be null
 
         /// [AstNameMapping*] The names of non-default imported variables
         public StructList<AstNameMapping> ImportedNames;
@@ -16,7 +16,7 @@ namespace Njsast.Ast
         public AstString ModuleName;
 
         public AstImport(Parser parser, Position startLoc, Position endLoc, AstString moduleName,
-            AstSymbolImport importName, ref StructList<AstNameMapping> specifiers) : base(parser, startLoc, endLoc)
+            AstSymbolImport? importName, ref StructList<AstNameMapping> specifiers) : base(parser, startLoc, endLoc)
         {
             ModuleName = moduleName;
             ImportedName = importName;
@@ -29,6 +29,15 @@ namespace Njsast.Ast
             w.Walk(ModuleName);
             w.Walk(ImportedName);
             w.WalkList(ImportedNames);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            ModuleName = (AstString) tt.Transform(ModuleName);
+            if (ImportedName != null)
+                ImportedName = (AstSymbolImport)tt.Transform(ImportedName);
+            tt.TransformList(ref ImportedNames);
         }
 
         public override void CodeGen(OutputContext output)

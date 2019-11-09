@@ -26,6 +26,13 @@ namespace Njsast.Ast
             w.Walk(ForeignName);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            Name = (AstSymbol)tt.Transform(Name);
+            ForeignName = (AstSymbol)tt.Transform(ForeignName);
+        }
+
         public override void CodeGen(OutputContext output)
         {
             var isImport = output.Parent() is AstImport;

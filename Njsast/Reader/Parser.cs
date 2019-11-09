@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
@@ -7,7 +8,7 @@ namespace Njsast.Reader
 {
     public sealed partial class Parser
     {
-        internal readonly string SourceFile;
+        internal readonly string? SourceFile;
         readonly string _input;
         bool _containsEsc;
         readonly Regex _keywords;
@@ -24,7 +25,7 @@ namespace Njsast.Reader
         bool _inGenerator;
         bool _inFunction;
         internal TokenType Type;
-        internal object Value;
+        internal object? Value;
         internal Position Start;
         internal Position End;
         Position _lastTokStart;
@@ -37,8 +38,14 @@ namespace Njsast.Reader
         bool _allowBreak;
         bool _allowContinue;
         bool _canBeDirective;
+        bool _wasImportKeyword;
 
-        public Parser(Options options, string input, int? startPos = null)
+        public static AstToplevel Parse(string input, Options? options = null)
+        {
+            return new Parser(options, input).Parse();
+        }
+
+        public Parser(Options? options, string input, int? startPos = null)
         {
             Options = options = Options.GetOptions(options);
             SourceFile = options.SourceFile;
@@ -134,5 +141,12 @@ namespace Njsast.Reader
         }
 
         public Options Options { get; }
+
+        object GetValue()
+        {
+            if (Value == null)
+                throw new NullReferenceException($"{nameof(Value)} is null");
+            return Value;
+        }
     }
 }

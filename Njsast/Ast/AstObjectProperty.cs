@@ -24,16 +24,22 @@ namespace Njsast.Ast
             Key = key;
             Value = value;
         }
-        
+
         public override void Visit(TreeWalker w)
         {
             base.Visit(w);
-            if (Key is AstNode)
-                w.Walk((AstNode) Key);
+            w.Walk(Key);
             w.Walk(Value);
         }
 
-        protected void PrintGetterSetter(OutputContext output, string type, bool @static)
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            Key = tt.Transform(Key);
+            Value = tt.Transform(Value);
+        }
+
+        protected void PrintGetterSetter(OutputContext output, string? type, bool @static)
         {
             if (@static)
             {
@@ -54,7 +60,7 @@ namespace Njsast.Ast
             else
             {
                 output.Print("[");
-                ((AstNode) Key).Print(output);
+                Key.Print(output);
                 output.Print("]");
             }
 

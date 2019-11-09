@@ -13,12 +13,12 @@ namespace Njsast.AstDump
         }
 
         int _indent;
-        string _main;
+        string? _main;
         StructList<string> _propLines = new StructList<string>();
 
         public void Indent()
         {
-            _lineSink.Print(_main);
+            _lineSink.Print(_main!);
             foreach (var propLine in _propLines)
                 _lineSink.Print(propLine);
             _propLines.Clear();
@@ -42,9 +42,9 @@ namespace Njsast.AstDump
                 _main += " [" + name + "]";
         }
 
-        public void PrintProp(string name, string value)
+        public void PrintProp(string name, string? value)
         {
-            _propLines.Add(new String(' ', _indent * 2 + 2) + name + ": " + System.Web.HttpUtility.JavaScriptStringEncode(value));
+            _propLines.Add(new string(' ', _indent * 2 + 2) + name + ": " + System.Web.HttpUtility.JavaScriptStringEncode(value));
         }
     }
 }

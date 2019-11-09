@@ -16,14 +16,14 @@ namespace Njsast.ConstEval
             return this;
         }
 
-        public (string fileName, AstToplevel content) ResolveAndLoad(JsModule module)
+        public (string? fileName, AstToplevel? content) ResolveAndLoad(JsModule module)
         {
             if (module.Name.StartsWith("./", StringComparison.Ordinal) ||
                 module.Name.StartsWith("../", StringComparison.Ordinal))
             {
                 var fileName = PathUtils.Join(PathUtils.Parent(module.ImportedFrom), module.Name);
                 _content.TryGetValue(fileName, out var res);
-                var parser = new Parser(new Options(), res);
+                var parser = new Parser(new Options(), res ?? "");
                 var toplevel = parser.Parse();
                 toplevel.FigureOutScope();
                 return (fileName, toplevel);

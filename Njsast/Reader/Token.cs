@@ -2,16 +2,15 @@
 {
     public struct Token
     {
-        object _value;
-        SourceLocation _location;
+        public TokenType Type { get; }
+        public object? Value { get; }
+        public SourceLocation Location { get; }
 
-        public Token(TokenType type, object value, SourceLocation location)
+        public Token(TokenType type, object? value, SourceLocation location)
         {
             Type = type;
-            _value = value;
-            _location = location;
+            Value = value;
+            Location = location;
         }
-
-        public TokenType Type { get; }
     }
 }

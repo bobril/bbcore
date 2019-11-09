@@ -1,5 +1,4 @@
 ﻿using System;
-using JetBrains.Annotations;
 
 namespace Njsast.Reader
 {
@@ -17,7 +16,11 @@ namespace Njsast.Reader
             return new Position(Line, Column + i, Index + i);
         }
 
-        [NotNull]
+        public string ToShortString()
+        {
+            return $"{Line + 1}:{Column + 1}";
+        }
+
         public override string ToString()
         {
             return $"(Line: {Line}, Column: {Column}, Index: {Index})";
@@ -28,7 +31,7 @@ namespace Njsast.Reader
             return Line == other.Line && Column == other.Column && Index == other.Index;
         }
 
-        public override bool Equals([CanBeNull] object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             return obj is Position position && Equals(position);

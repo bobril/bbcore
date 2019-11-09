@@ -7,17 +7,17 @@ namespace Njsast.Ast
     public class AstClass : AstScope
     {
         /// [AstSymbolClass|AstSymbolDefClass?] optional class name.
-        public AstSymbolDeclaration Name;
+        public AstSymbolDeclaration? Name;
 
         /// [AstNode]? optional parent class
-        public AstNode Extends;
+        public AstNode? Extends;
 
         /// [AstObjectProperty*] array of properties
         public StructList<AstObjectProperty> Properties;
 
         public bool Inlined;
 
-        public AstClass(Parser parser, Position startPos, Position endPos, AstSymbolDeclaration name, AstNode extends,
+        public AstClass(Parser parser, Position startPos, Position endPos, AstSymbolDeclaration? name, AstNode? extends,
             ref StructList<AstObjectProperty> properties) : base(parser, startPos, endPos)
         {
             Name = name;
@@ -31,6 +31,16 @@ namespace Njsast.Ast
             w.Walk(Name);
             w.Walk(Extends);
             w.WalkList(Properties);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            if (Name != null)
+                Name = (AstSymbolDeclaration)tt.Transform(Name);
+            if (Extends != null)
+                Extends = tt.Transform(Extends);
+            tt.TransformList(ref Properties);
         }
 
         public override void CodeGen(OutputContext output)

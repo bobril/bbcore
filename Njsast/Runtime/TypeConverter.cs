@@ -80,7 +80,7 @@ namespace Njsast.Runtime
         }
 
         /// http://www.ecma-international.org/ecma-262/5.1/#sec-9.3
-        public static double ToNumber(object o)
+        public static double ToNumber(object? o)
         {
             switch (o)
             {
@@ -233,7 +233,7 @@ namespace Njsast.Runtime
         }
 
         /// http://www.ecma-international.org/ecma-262/6.0/#sec-tostring
-        public static string ToString(object o)
+        public static string ToString(object? o)
         {
             switch (o)
             {
@@ -272,12 +272,12 @@ namespace Njsast.Runtime
             }
         }
 
-        public static object ToPrimitiveString(object o)
+        public static object? ToPrimitiveString(object o)
         {
             return ToPrimitive(o);
         }
 
-        public static object ToPrimitive(object o)
+        public static object? ToPrimitive(object o)
         {
             switch (o)
             {
@@ -318,7 +318,7 @@ namespace Njsast.Runtime
         {
             switch (o)
             {
-                case string s:
+                case string _:
                     return JsType.String;
                 case AstString _:
                     return JsType.String;
@@ -330,11 +330,11 @@ namespace Njsast.Runtime
                     return JsType.Boolean;
                 case double _:
                     return JsType.Number;
-                case AstNumber astNumber:
+                case AstNumber _:
                     return JsType.Number;
-                case int i:
+                case int _:
                     return JsType.Number;
-                case uint u:
+                case uint _:
                     return JsType.Number;
                 case AstUndefined _:
                     return JsType.Undefined;

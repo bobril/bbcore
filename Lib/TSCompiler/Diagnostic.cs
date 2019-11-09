@@ -13,7 +13,7 @@ namespace Lib.TSCompiler
         public int EndLine;
         public int EndCol;
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as Diagnostic);
         }

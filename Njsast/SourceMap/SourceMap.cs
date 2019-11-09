@@ -1,32 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
+using Njsast.Ast;
+using Njsast.Reader;
 using Njsast.Utils;
 
 namespace Njsast.SourceMap
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public class SourceMap
     {
         public SourceMap()
         {
+            sources = new List<string>();
+        }
+        public SourceMap(List<string> sources)
+        {
             version = 3;
+            this.sources = sources;
         }
 
         public int version { get; set; }
-        public string file { get; set; }
-        public string sourceRoot { get; set; }
+        public string? file { get; set; }
+        public string sourceRoot { get; set; } = string.Empty;
         public List<string> sources { get; set; }
-        public List<string> sourcesContent { get; set; }
-        public List<string> names { get; set; }
-        public string mappings { get; set; }
+        public List<string>? sourcesContent { get; set; }
+        public List<string>? names { get; set; }
+        public string mappings { get; set; } = string.Empty;
 
-        public const uint CacheLineSkip = 64;
+        public const uint CacheLineSkip = 8;
 
         [JsonIgnore]
-        /// cache for every multiply of CacheLineSkip output lines
-        SourceMapPositionTrinity[] _searchCache;
+        // cache for every multiply of CacheLineSkip output lines
+        SourceMapPositionTrinity[]? _searchCache;
 
         struct SourceMapPositionTrinity
         {
@@ -47,14 +56,13 @@ namespace Njsast.SourceMap
         public override string ToString()
         {
             return JsonConvert.SerializeObject(this,
-                new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+                new JsonSerializerSettings() {NullValueHandling = NullValueHandling.Ignore});
         }
 
         public static SourceMap Empty()
         {
             return new SourceMap
             {
-                sources = new List<string>(),
                 mappings = ""
             };
         }
@@ -63,16 +71,15 @@ namespace Njsast.SourceMap
         {
             var sb = new StringBuilder();
             sb.Append("AAAA");
-            var endsWithNL = SourceMapBuilder.EndsWithNL(content);
+            var endsWithNL = SourceMapBuilder.EndsWithNewLine(content);
             var len = content.Length - (endsWithNL ? 1 : 0);
             for (var i = 0; i < len; i++)
                 if (content[i] == '\n')
                     sb.Append(";AACA");
             if (endsWithNL)
                 sb.Append(";");
-            return new SourceMap
+            return new SourceMap(new List<string> {fileName})
             {
-                sources = new List<string> { fileName },
                 mappings = sb.ToString()
             };
         }
@@ -149,7 +156,7 @@ namespace Njsast.SourceMap
                 }
                 else
                 {
-                    var b = (int)SourceMapBuilder.Char2Int[ch];
+                    var b = (int) SourceMapBuilder.Char2Int[ch];
                     if (b == 255)
                         throw new Exception("Invalid sourceMap");
                     value += (b & 31) << shift;
@@ -183,6 +190,32 @@ namespace Njsast.SourceMap
             }
         }
 
+
+        class DerefVisitor : TreeWalker
+        {
+            readonly SourceMap _sourceMap;
+
+            public DerefVisitor(SourceMap sourceMap)
+            {
+                _sourceMap = sourceMap;
+            }
+
+            protected override void Visit(AstNode node)
+            {
+                var start = _sourceMap.FindPosition(node.Start.Line + 1, node.Start.Column + 1);
+                var end = _sourceMap.FindPosition(node.End.Line + 1, node.End.Column + 1);
+                if (!ReferenceEquals(start.SourceName, end.SourceName)) return;
+                node.Source = start.SourceName;
+                node.Start = new Position(start.Line - 1, start.Col - 1, -1);
+                node.End = new Position(end.Line - 1, end.Col - 1, -1);
+            }
+        }
+
+        public void ResolveInAst(AstNode node)
+        {
+            new DerefVisitor(this).Walk(node);
+        }
+
         public SourceCodePosition FindPosition(int line, int col)
         {
             if (_searchCache == null)
@@ -190,7 +223,7 @@ namespace Njsast.SourceMap
                 BuildSearchCache();
             }
 
-            var inputMappings = this.mappings;
+            var inputMappings = mappings;
             var outputLine = 1;
             var ip = 0;
             var inOutputCol = 0;
@@ -207,9 +240,9 @@ namespace Njsast.SourceMap
             var res = new SourceCodePosition();
             if (line > CacheLineSkip)
             {
-                var pos = (uint)(line - 1) / CacheLineSkip;
-                ref var entry = ref _searchCache[pos - 1];
-                outputLine = (int)(pos * CacheLineSkip);
+                var pos = (uint) (line - 1) / CacheLineSkip;
+                ref var entry = ref _searchCache![pos - 1];
+                outputLine = (int) (pos * CacheLineSkip);
                 ip = entry.Pos;
                 inSourceIndex = entry.Index;
                 inSourceLine = entry.Line;
@@ -277,6 +310,7 @@ namespace Njsast.SourceMap
                         res.Col = lastSourceCol + col - lastOutputCol;
                         return res;
                     }
+
                     inOutputCol = 0;
                     lastOutputCol = 0;
                     outputLine++;
@@ -288,7 +322,7 @@ namespace Njsast.SourceMap
                 }
                 else
                 {
-                    var b = (int)SourceMapBuilder.Char2Int[ch];
+                    var b = (int) SourceMapBuilder.Char2Int[ch];
                     if (b == 255)
                         throw new Exception("Invalid sourceMap");
                     value += (b & 31) << shift;
@@ -379,7 +413,7 @@ namespace Njsast.SourceMap
         public void Next()
         {
             _index += _inOutputCol - _lastOutputCol;
-        again:
+            again:
             _lastOutputCol = _inOutputCol;
             _lastSourceIndex = _inSourceIndex;
             _lastSourceLine = _inSourceLine;
@@ -397,6 +431,7 @@ namespace Njsast.SourceMap
                     if (_content[_index] == '\r') _index++;
                     _index++;
                 }
+
                 _lastNoSource = true;
                 _inNoSource = true;
             }
@@ -407,7 +442,8 @@ namespace Njsast.SourceMap
                 var newLineIndex = _index;
                 while (newLineIndex < _content.Length && _content[newLineIndex] != '\n') newLineIndex++;
                 _inOutputCol = _lastOutputCol + newLineIndex - _index;
-                if (_index < _content.Length && _inOutputCol > _lastOutputCol && _content[_index + _inOutputCol - _lastOutputCol - 1] == '\r')
+                if (_index < _content.Length && _inOutputCol > _lastOutputCol &&
+                    _content[_index + _inOutputCol - _lastOutputCol - 1] == '\r')
                 {
                     _inOutputCol--;
                 }
@@ -439,7 +475,7 @@ namespace Njsast.SourceMap
                     return;
                 }
 
-                var b = (int)SourceMapBuilder.Char2Int[ch];
+                var b = (int) SourceMapBuilder.Char2Int[ch];
                 if (b == 255)
                     throw new Exception("Invalid sourceMap");
                 value += (b & 31) << shift;

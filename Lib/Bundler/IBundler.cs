@@ -7,7 +7,7 @@ namespace Lib.Bundler
 {
     public interface IBundler
     {
-        IReadOnlyList<string> MainFiles { get; set; }
+        IReadOnlyList<string>? MainFiles { get; set; }
         /// <summary>
         /// Default is true
         /// </summary>
@@ -21,8 +21,8 @@ namespace Lib.Bundler
         /// </summary>
         bool Beautify { get; set; }
         IReadOnlyDictionary<string, object> Defines { get; set; }
-        
-        IBundlerCallback Callbacks { get; set; }
+
+        IBundlerCallback? Callbacks { get; set; }
 
         void Bundle();
     }

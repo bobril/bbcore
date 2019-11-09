@@ -21,6 +21,12 @@ namespace Njsast.Ast
             base.Visit(w);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            Expression = tt.Transform(Expression);
+            base.Transform(tt);
+        }
+
         public override void CodeGen(OutputContext output)
         {
             output.Print("with");

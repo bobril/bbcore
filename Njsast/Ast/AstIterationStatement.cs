@@ -12,6 +12,9 @@ namespace Njsast.Ast
 
         public bool IsBlockScope => true;
 
-        public AstScope BlockScope { get; set; }
+        public AstScope? BlockScope { get; set; }
+
+        public bool HasBreak { get; set; }
+        public bool HasContinue { get; set; }
     }
 }

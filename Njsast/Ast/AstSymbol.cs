@@ -9,13 +9,13 @@ namespace Njsast.Ast
     public class AstSymbol : AstNode
     {
         /// [AstScope/S] the current scope (not necessarily the definition scope)
-        public AstScope Scope;
+        public AstScope? Scope;
 
         /// [string] name of this symbol
         public string Name;
 
         /// [SymbolDef/S] the definition of this symbol
-        public SymbolDef Thedef;
+        public SymbolDef? Thedef;
 
         public SymbolUsage Usage;
 
@@ -30,7 +30,12 @@ namespace Njsast.Ast
             Name = symbol.Name;
         }
 
-        protected AstSymbol(Position startLoc, Position endLoc, string name) : base(startLoc, endLoc)
+        protected AstSymbol(string name)
+        {
+            Name = name;
+        }
+
+        protected AstSymbol(AstNode from, string name) : base(from)
         {
             Name = name;
         }
@@ -52,33 +57,33 @@ namespace Njsast.Ast
         {
             for (var s = Scope; s != null; s = s.ParentScope)
             {
-                s.Enclosed.AddUnique(Thedef);
+                s.Enclosed.AddUnique(Thedef!);
                 if (options.KeepFunctionNames)
                 {
-                    foreach (var keyValuePair in s.Functions)
+                    foreach (var keyValuePair in s.Functions!)
                     {
-                        Thedef.Scope.Enclosed.AddUnique(keyValuePair.Value);
+                        Thedef!.Scope.Enclosed.AddUnique(keyValuePair.Value);
                     }
                 }
 
-                if (s == Thedef.Scope) break;
+                if (s == Thedef!.Scope) break;
             }
         }
 
         public void Reference(ScopeOptions options)
         {
-            Thedef.References.Add(this);
+            Thedef!.References.Add(this);
             MarkEnclosed(options);
         }
 
         public bool Unreferenced()
         {
-            return Thedef.References.Count == 0 && !Thedef.Scope.Pinned();
+            return Thedef!.References.Count == 0 && !Thedef.Scope.Pinned();
         }
 
         public bool Global()
         {
-            return Thedef.Global;
+            return Thedef!.Global;
         }
     }
 }

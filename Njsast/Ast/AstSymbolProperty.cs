@@ -9,12 +9,7 @@ namespace Njsast.Ast
         {
         }
 
-        public override bool IsConstValue(IConstEvalCtx ctx = null)
-        {
-            return true;
-        }
-
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             return Name;
         }

@@ -2,6 +2,7 @@
 using Njsast.ConstEval;
 using Njsast.Output;
 using Njsast.Reader;
+using Njsast.SourceMap;
 
 namespace Njsast.Ast
 {
@@ -15,9 +16,9 @@ namespace Njsast.Ast
         public Position End;
 
         /// Name of original Source Code
-        public string Source;
+        public string? Source;
 
-        protected AstNode(Parser parser, Position startLoc, Position endLoc)
+        protected AstNode(Parser? parser, Position startLoc, Position endLoc)
         {
             Source = parser?.SourceFile;
             Start = startLoc;
@@ -44,7 +45,18 @@ namespace Njsast.Ast
             End = endLoc;
         }
 
+        protected AstNode(string source, Position startPos, Position endPos)
+        {
+            Source = source;
+            Start = startPos;
+            End = endPos;
+        }
+
         public virtual void Visit(TreeWalker w)
+        {
+        }
+
+        public virtual void Transform(TreeTransformer tt)
         {
         }
 
@@ -62,6 +74,7 @@ namespace Njsast.Ast
         public void Print(OutputContext output, bool forceParens = false)
         {
             output.PushNode(this);
+            output.AddMapping(Source, Start, true);
             if (forceParens || !output.HasParens() && NeedParens(output))
             {
                 output.Print("(");
@@ -76,21 +89,22 @@ namespace Njsast.Ast
             output.PopNode();
         }
 
-        public string PrintToString(OutputOptions options = null)
+        public string PrintToString(OutputOptions? options = null)
         {
             var o = new OutputContext(options);
             Print(o);
             return o.ToString();
         }
 
-        /// Optimistic test if this AST Tree is constant expression
-        public virtual bool IsConstValue(IConstEvalCtx ctx = null)
+        public void PrintToBuilder(SourceMapBuilder builder, OutputOptions? options = null)
         {
-            return false;
+            var o = new OutputContext(options, builder);
+            Print(o);
+            builder.AddMapping(null, 0, 0, false);
         }
 
         /// Returns null if not constant
-        public virtual object ConstValue(IConstEvalCtx ctx = null)
+        public virtual object? ConstValue(IConstEvalCtx? ctx = null)
         {
             return null;
         }

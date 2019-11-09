@@ -19,7 +19,7 @@ namespace Lib.Configuration
 
         public CfgDesc Describe(string key) => _description.Describe(key);
 
-        protected object HierarchicalGet(string key)
+        protected object? HierarchicalGet(string key)
         {
             var that = (IConfiguration)this;
             while (that != null)

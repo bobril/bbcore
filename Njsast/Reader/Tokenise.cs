@@ -67,7 +67,7 @@ namespace Njsast.Reader
         {
             // Identifier or keyword. '\uXXXX' sequences are allowed in
             // identifiers, so '\' also dispatches to that.
-            if (IsIdentifierStart(code, Options.EcmaVersion >= 6) || code == 92 /* '\' */)
+            if (IsIdentifierStart(code, Options.EcmaVersion >= 6) || code == CharCode.BackSlash /* '\' */)
             {
                 ReadWord();
                 return;
@@ -102,7 +102,7 @@ namespace Njsast.Reader
                 _pos = new Position(_pos.Line + 1, _pos.Index - lineStart, _pos.Index);
                 lastIndex = lineStart;
             }
-            //Options.onComment?.Invoke(true, input.Substring(startLocation.Index + 2, end - (startLocation.Index + 2)), new SourceLocation(startLocation, curPosition(), SourceFile));
+            Options.OnComment?.Invoke(true, _input.Substring(startLocation.Index + 2, end - (startLocation.Index + 2)), new SourceLocation(startLocation, _pos, SourceFile));
         }
 
         void SkipLineComment(int startSkip)
@@ -115,7 +115,7 @@ namespace Njsast.Reader
                 _pos = _pos.Increment(1);
                 ch = _input.Get(_pos.Index);
             }
-            //Options.onComment?.Invoke(false, input.Substring(start.Index + startSkip, pos.Index - (start.Index + startSkip)), new SourceLocation(start, curPosition(), SourceFile));
+            Options.OnComment?.Invoke(false, _input.Substring(start.Index + startSkip, _pos.Index - (start.Index + startSkip)), new SourceLocation(start, _pos, SourceFile));
         }
 
         // Called at the start of the parse and after every token. Skips
@@ -127,26 +127,26 @@ namespace Njsast.Reader
                 var ch = (int)_input[_pos.Index];
                 switch (ch)
                 {
-                    case 32:
-                    case 160: // ' '
+                    case CharCode.Space:
+                    case CharCode.NoBreakSpace:
                         _pos = _pos.Increment(1);
                         break;
-                    case 13:
+                    case CharCode.CarriageReturn:
                         if (_pos.Index + 1 < _input.Length && _input[_pos.Index + 1] == 10)
                             _pos = _pos.Increment(1);
-                        goto case 10;
-                    case 10:
-                    case 8232:
-                    case 8233:
+                        goto case CharCode.LineFeed;
+                    case CharCode.LineFeed:
+                    case CharCode.LineSeparator:
+                    case CharCode.ParagraphSeparator:
                         _pos = new Position(_pos.Line + 1, 0, _pos.Index + 1);
                         break;
-                    case 47: // '/'
+                    case CharCode.Slash:
                         switch ((int)_input.Get(_pos.Index + 1))
                         {
-                            case 42: // '*'
+                            case CharCode.Asterisk:
                                 SkipBlockComment();
                                 break;
-                            case 47:
+                            case CharCode.Slash:
                                 SkipLineComment(2);
                                 break;
                             default:
@@ -154,7 +154,7 @@ namespace Njsast.Reader
                         }
                         break;
                     default:
-                        if (ch > 8 && ch < 14 || ch >= 5760 && NonAsciIwhitespace.IsMatch(((char)ch).ToString()))
+                        if (ch > CharCode.BackSpace && ch < CharCode.ShiftOut || ch >= CharCode.OghamSpaceMark && NonAsciIwhitespace.IsMatch(((char)ch).ToString()))
                         {
                             _pos = _pos.Increment(1);
                             break;
@@ -171,7 +171,7 @@ namespace Njsast.Reader
         // maintains `context` and `exprAllowed`, and skips the space after
         // the token, so that the next one's `start` will point at the
         // right position.
-        void FinishToken(TokenType type, [CanBeNull] object val = null)
+        void FinishToken(TokenType type, object? val = null)
         {
             End = CurPosition();
             var prevType = Type;
@@ -193,15 +193,14 @@ namespace Njsast.Reader
         void readToken_dot()
         {
             var next = _input[_pos.Index + 1];
-            if (next >= 48 && next <= 57)
+            if (next >= CharCode.DigitZero && next <= CharCode.DigitNine)
             {
                 ReadNumber(true);
                 return;
             }
             var next2 = _input[_pos.Index + 2];
-            if (Options.EcmaVersion >= 6 && next == 46 && next2 == 46)
+            if (Options.EcmaVersion >= 6 && next == CharCode.Dot && next2 == CharCode.Dot)
             {
-                // 46 = dot '.'
                 _pos = _pos.Increment(3);
                 FinishToken(TokenType.Ellipsis);
             }
@@ -230,10 +229,10 @@ namespace Njsast.Reader
             // '%*'
             var next = _input.Get(_pos.Index + 1);
             var size = 1;
-            var tokentype = code == 42 ? TokenType.Star : TokenType.Modulo;
+            var tokentype = code == CharCode.Asterisk ? TokenType.Star : TokenType.Modulo;
 
             // exponentiation operator ** and **=
-            if (Options.EcmaVersion >= 7 && code == 42 && next == 42)
+            if (Options.EcmaVersion >= 7 && code == CharCode.Asterisk && next == CharCode.Asterisk)
             {
                 ++size;
                 tokentype = TokenType.Starstar;
@@ -542,7 +541,7 @@ namespace Njsast.Reader
             var val = ReadInt(radix);
             if (!val.HasValue)
             {
-                Raise(Start.Increment(2), "Expected number in radix " + radix);
+                throw NewSyntaxError(Start.Increment(2), "Expected number in radix " + radix);
             }
             if (IsIdentifierStart(FullCharCodeAtPos())) Raise(_pos, "Identifier directly after number");
             FinishToken(TokenType.Num, val.Value);

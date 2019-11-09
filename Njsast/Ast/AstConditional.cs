@@ -28,6 +28,14 @@ namespace Njsast.Ast
             w.Walk(Alternative);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            Condition = tt.Transform(Condition)!;
+            Consequent = tt.Transform(Consequent)!;
+            Alternative = tt.Transform(Alternative)!;
+        }
+
         public override void CodeGen(OutputContext output)
         {
             Condition.Print(output);
@@ -61,12 +69,7 @@ namespace Njsast.Ast
             return false;
         }
 
-        public override bool IsConstValue(IConstEvalCtx ctx = null)
-        {
-            return Condition.IsConstValue(ctx);
-        }
-
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             var cond = Condition.ConstValue(ctx?.StripPathResolver());
             if (cond == null) return null;

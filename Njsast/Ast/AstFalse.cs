@@ -7,7 +7,7 @@ namespace Njsast.Ast
     /// The `false` atom
     public class AstFalse : AstBoolean
     {
-        public AstFalse(Parser parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
+        public AstFalse(Parser? parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
         {
         }
 
@@ -20,7 +20,7 @@ namespace Njsast.Ast
 
         public static readonly object BoxedFalse = false;
 
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             return BoxedFalse;
         }

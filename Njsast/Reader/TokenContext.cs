@@ -49,7 +49,7 @@ namespace Njsast.Reader
 
         void UpdateContext(TokenType prevType)
         {
-            Action<Parser, TokenType> update;
+            Action<Parser, TokenType>? update;
             if (TokenInformation.Types[Type].Keyword != null && prevType == TokenType.Dot)
                 _exprAllowed = false;
             else if ((update = TokenInformation.Types[Type].UpdateContext) != null)

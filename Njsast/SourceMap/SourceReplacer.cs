@@ -14,7 +14,7 @@ namespace Njsast.SourceMap
             public string Content;
         }
 
-        StructList<Modification> _modifications = new StructList<Modification>();
+        StructList<Modification> _modifications;
 
         public void Apply(ISourceAdder sourceAdder)
         {

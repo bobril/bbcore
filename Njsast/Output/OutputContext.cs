@@ -4,34 +4,39 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Njsast.Ast;
 using Njsast.Reader;
+using Njsast.SourceMap;
 
 namespace Njsast.Output
 {
     public class OutputContext
     {
         public readonly OutputOptions Options;
+        SourceMapBuilder? _sourceMapBuilder;
         StructList<char> _storage = new StructList<char>();
         StructList<AstNode> _stack = new StructList<AstNode>();
-        bool _mightNeedSpace = false;
-        bool _mightNeedSemicolon = false;
+        bool _mightNeedSpace;
+        bool _mightNeedSemicolon;
         bool _frequencyCounting;
-        uint[] _frequency;
-        int _currentPos;
+        uint[] _frequency = new uint[128];
         int _currentCol;
-        int _currentLine;
         public int Indentation;
         const string _spaces = "                ";
         char _lastChar = char.MinValue;
 
-        public OutputContext(OutputOptions options = null)
+        public OutputContext(OutputOptions? options = null, SourceMapBuilder? sourceMapBuilder = null)
         {
             Options = options ?? new OutputOptions();
+            _sourceMapBuilder = sourceMapBuilder;
         }
 
         public void InitializeForFrequencyCounting()
         {
-            _frequencyCounting = true;
-            _frequency = new uint[128];
+            if (!_frequencyCounting)
+            {
+                _frequencyCounting = true;
+                return;
+            }
+            _frequency = new uint[128];    
         }
 
         public char[] FinishFrequencyCounting()
@@ -39,15 +44,16 @@ namespace Njsast.Output
             var letters = CountAndSort("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_");
             var numbers = CountAndSort("0123456789");
             letters.AddRange(numbers);
+            _frequencyCounting = false;
             return letters.ToArray();
         }
 
         List<char> CountAndSort(string chars)
         {
             var list = new List<(uint, char)>(chars.Length);
-            for (var i = 0; i < chars.Length; i++)
+            foreach (var ch in chars)
             {
-                list.Add((_frequency[chars[i]], chars[i]));
+                list.Add((_frequency[ch], ch));
             }
 
             list.Sort();
@@ -65,34 +71,41 @@ namespace Njsast.Output
             return new string(_storage.AsSpan());
         }
 
-        public void TruePrint(ReadOnlySpan<Char> text)
+        public void TruePrint(ReadOnlySpan<char> text)
         {
             if (text.Length == 0) return;
             if (_frequencyCounting)
             {
-                for (int i = 0; i < text.Length; i++)
+                foreach (var ch in text)
                 {
-                    var ch = text[i];
-                    if (ch<128) _frequency[ch]++;
+                    if (ch < 128) _frequency[ch]++;
                 }
-                _lastChar = text[text.Length - 1];
+
+                _lastChar = text[^1];
                 return;
             }
-            _storage.AddRange(text);
-            _currentPos += text.Length;
-            _lastChar = text[text.Length - 1];
+
+            if (_sourceMapBuilder != null)
+            {
+                _sourceMapBuilder.AddTextWithMapping(text);
+            }
+            else
+            {
+                _storage.AddRange(text);
+            }
+
+            _lastChar = text[^1];
             _currentCol += text.Length;
             var pos = text.IndexOf('\n');
             while (pos >= 0)
             {
                 text = text.Slice(pos + 1);
-                _currentLine++;
                 _currentCol = text.Length;
                 pos = text.IndexOf('\n');
             }
         }
 
-        public void Print(ReadOnlySpan<Char> text)
+        public void Print(ReadOnlySpan<char> text)
         {
             if (text.Length == 0) return;
             _needDotAfterNumber = false;
@@ -304,7 +317,7 @@ namespace Njsast.Output
             }
         }
 
-        class NoinWalker : TreeWalker
+        class NoInWalker : TreeWalker
         {
             internal bool Parens;
 
@@ -324,14 +337,14 @@ namespace Njsast.Output
             }
         }
 
-        public void ParenthesizeForNoin(AstNode node, bool noin)
+        public void ParenthesizeForNoIn(AstNode node, bool noIn)
         {
             var parens = false;
             // need to take some precautions here:
             //    https://github.com/mishoo/UglifyJS2/issues/60
-            if (noin)
+            if (noIn)
             {
-                var w = new NoinWalker();
+                var w = new NoInWalker();
                 w.Walk(node);
                 parens = w.Parens;
             }
@@ -339,26 +352,24 @@ namespace Njsast.Output
             node.Print(this, parens);
         }
 
-        public AstNode Parent(int distance = 0)
+        public AstNode? Parent(int distance = 0)
         {
-            if (distance > (int)_stack.Count - 2)
+            if (distance > (int) _stack.Count - 2)
                 return null;
             return _stack[(uint) (_stack.Count - 2 - distance)];
         }
 
-        public void AddMapping(Position position)
+        public void AddMapping(string? sourceFile, in Position position, bool allowMerge)
         {
             if (_frequencyCounting)
                 return;
-            // TODO
+            _sourceMapBuilder?.AddMapping(sourceFile, position.Line, position.Column, allowMerge);
         }
 
         public bool NeedConstructorParens(AstCall call)
         {
             // Always print parentheses with arguments
-            if (call.Args.Count > 0) return true;
-
-            return Options.Beautify;
+            return call.Args.Count > 0 || Options.Beautify;
         }
 
         public bool ShouldBreak()
@@ -378,6 +389,7 @@ namespace Njsast.Output
                 Print("a");
                 _frequency['a']--;
             }
+
             Print(name);
         }
 
@@ -390,7 +402,7 @@ namespace Njsast.Output
         public static bool OperatorEndsWithPlusOrMinus(Operator op)
         {
             var str = OperatorToString(op);
-            var ch = str[str.Length - 1];
+            var ch = str[^1];
             return ch == '+' || ch == '-';
         }
 
@@ -542,7 +554,8 @@ namespace Njsast.Output
         {
             var str = value.ToString("R", CultureInfo.InvariantCulture);
             Print(str);
-            _needDotAfterNumber = !(str.Contains('.',StringComparison.Ordinal) || str.Contains('e',StringComparison.OrdinalIgnoreCase));
+            _needDotAfterNumber = !(str.Contains('.', StringComparison.Ordinal) ||
+                                    str.Contains('e', StringComparison.OrdinalIgnoreCase));
         }
 
         public void PrintPropertyName(string name)
@@ -708,7 +721,7 @@ namespace Njsast.Output
         public bool FirstInStatement()
         {
             var node = Parent(-1); // Current Node
-            AstNode p;
+            AstNode? p;
             for (var i = 0; (p = Parent(i)) != null; i++)
             {
                 if (p is IAstStatementWithBody statementWithBody && statementWithBody.GetBody() == node)
@@ -733,56 +746,57 @@ namespace Njsast.Output
             return false;
         }
 
-        public static int Precedence(Operator op)
+        public static int Precedence(Operator @operator)
         {
-            switch (op)
+            return @operator switch
             {
-                case Operator.Assignment:
-                case Operator.PowerAssignment:
-                case Operator.ModulusAssignment:
-                case Operator.AdditionAssignment:
-                case Operator.DivisionAssignment:
-                case Operator.SubtractionAssignment:
-                case Operator.MultiplicationAssignment:
-                case Operator.BitwiseOrAssignment:
-                case Operator.LeftShiftAssignment:
-                case Operator.BitwiseAndAssignment:
-                case Operator.RightShiftAssignment:
-                case Operator.BitwiseXOrAssignment:
-                case Operator.RightShiftUnsignedAssignment:
-                    return 0;
-                case Operator.LogicalOr: return 1;
-                case Operator.LogicalAnd: return 2;
-                case Operator.BitwiseOr: return 3;
-                case Operator.BitwiseXOr: return 4;
-                case Operator.BitwiseAnd: return 5;
-                case Operator.Equals:
-                case Operator.NotEquals:
-                case Operator.StrictEquals:
-                case Operator.StrictNotEquals:
-                    return 6;
-                case Operator.LessThan:
-                case Operator.GreaterThan:
-                case Operator.LessEquals:
-                case Operator.GreaterEquals:
-                case Operator.In:
-                case Operator.InstanceOf:
-                    return 7;
-                case Operator.RightShift:
-                case Operator.LeftShift:
-                case Operator.RightShiftUnsigned:
-                    return 8;
-                case Operator.Addition:
-                case Operator.Subtraction:
-                    return 9;
-                case Operator.Multiplication:
-                case Operator.Division:
-                case Operator.Modulus:
-                    return 10;
-                case Operator.Power: return 11;
-                default:
-                    throw new ArgumentOutOfRangeException("operator", "Must be binary operator: " + op);
-            }
+                Operator.Assignment => 0,
+                Operator.PowerAssignment => 0,
+                Operator.ModulusAssignment => 0,
+                Operator.AdditionAssignment => 0,
+                Operator.DivisionAssignment => 0,
+                Operator.SubtractionAssignment => 0,
+                Operator.MultiplicationAssignment => 0,
+                Operator.BitwiseOrAssignment => 0,
+                Operator.LeftShiftAssignment => 0,
+                Operator.BitwiseAndAssignment => 0,
+                Operator.RightShiftAssignment => 0,
+                Operator.BitwiseXOrAssignment => 0,
+                Operator.RightShiftUnsignedAssignment => 0,
+                Operator.LogicalOr => 1,
+                Operator.LogicalAnd => 2,
+                Operator.BitwiseOr => 3,
+                Operator.BitwiseXOr => 4,
+                Operator.BitwiseAnd => 5,
+                Operator.Equals => 6,
+                Operator.NotEquals => 6,
+                Operator.StrictEquals => 6,
+                Operator.StrictNotEquals => 6,
+                Operator.LessThan => 7,
+                Operator.GreaterThan => 7,
+                Operator.LessEquals => 7,
+                Operator.GreaterEquals => 7,
+                Operator.In => 7,
+                Operator.InstanceOf => 7,
+                Operator.RightShift => 8,
+                Operator.LeftShift => 8,
+                Operator.RightShiftUnsigned => 8,
+                Operator.Addition => 9,
+                Operator.Subtraction => 9,
+                Operator.Multiplication => 10,
+                Operator.Division => 10,
+                Operator.Modulus => 10,
+                Operator.Power => 11,
+                _ => throw new ArgumentOutOfRangeException(nameof(@operator), $"Must be binary operator: {@operator}")
+            };
+        }
+
+        public bool NeedNodeParens(AstNode node)
+        {
+            PushNode(node);
+            var needParens = node.NeedParens(this);
+            PopNode();
+            return needParens;
         }
     }
 }

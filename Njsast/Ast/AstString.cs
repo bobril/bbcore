@@ -11,9 +11,6 @@ namespace Njsast.Ast
         /// [string] the contents of this string
         public readonly string Value;
 
-        // [string] the original quote character
-        //public string Quote;
-
         public AstString(Parser parser, Position startLoc, Position endLoc, string value) : base(parser, startLoc, endLoc)
         {
             Value = value;
@@ -35,7 +32,7 @@ namespace Njsast.Ast
             output.PrintString(Value);
         }
 
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             if (ctx != null) return ctx.ConstStringResolver(Value);
             return Value;

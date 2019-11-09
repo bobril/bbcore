@@ -1,11 +1,10 @@
 ﻿using System;
-using JetBrains.Annotations;
 
 namespace Njsast.Reader
 {
     public struct SourceLocation : IEquatable<SourceLocation>
     {
-        public SourceLocation(Position start, Position end, [CanBeNull] string sourceFile = null)
+        public SourceLocation(Position start, Position end, string? sourceFile = null)
         {
             Start = start;
             End = end;
@@ -14,9 +13,8 @@ namespace Njsast.Reader
 
         public Position Start { get; }
         public Position End { get; }
-        public string Source { get; }
+        public string? Source { get; }
 
-        [NotNull]
         public override string ToString()
         {
             if (Source == null)
@@ -29,7 +27,7 @@ namespace Njsast.Reader
             return Equals(Start, other.Start) && Equals(End, other.End);
         }
 
-        public override bool Equals([CanBeNull] object obj)
+        public override bool Equals(object? obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             return obj is SourceLocation location && Equals(location);

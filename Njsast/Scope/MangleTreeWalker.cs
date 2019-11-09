@@ -19,7 +19,7 @@ namespace Njsast.Scope
         {
             var output = new OutputContext();
             output.InitializeForFrequencyCounting();
-            topLevel.Print(output);
+            if (_options.FrequencyCounting) topLevel.Print(output);
             _options.Chars = output.FinishFrequencyCounting();
             Walk(topLevel);
             for (var i = 0u; i < _toMangle.Count; i++)
@@ -42,6 +42,8 @@ namespace Njsast.Scope
                 }
                 case AstScope scope:
                 {
+                    if (scope.Variables == null)
+                        break;
                     foreach (var def in scope.Variables.Values)
                     {
                         if (_options.Reserved.Contains(def.Name)) continue;
@@ -52,6 +54,8 @@ namespace Njsast.Scope
                 }
                 case IMayBeBlockScope blockScope when blockScope.IsBlockScope:
                 {
+                    if (blockScope.BlockScope?.Variables == null)
+                        break;
                     foreach (var def in blockScope.BlockScope.Variables.Values)
                     {
                         if (_options.Reserved.Contains(def.Name)) continue;
@@ -70,6 +74,8 @@ namespace Njsast.Scope
                     break;
                 }
                 case AstSymbolCatch symbolCatch:
+                    if (symbolCatch.Thedef == null)
+                        break;
                     _toMangle.Add(symbolCatch.Thedef);
                     break;
             }

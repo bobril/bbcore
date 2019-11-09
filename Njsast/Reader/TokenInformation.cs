@@ -44,7 +44,8 @@ namespace Njsast.Reader
             {"instanceof", TokenType.Instanceof},
             {"typeof", TokenType.Typeof},
             {"void", TokenType.Void},
-            {"delete", TokenType.Delete}
+            {"delete", TokenType.Delete},
+            {"yield", TokenType.Name} // TODO refactor TokenType.Yield used to ensure Yield keyword does not contains unicode sequence and preserve current functionality
         };
 
         static TokenInformation()
@@ -240,7 +241,7 @@ namespace Njsast.Reader
             name.UpdateContext = Parser.NameUpdateContext;
         }
 
-        public TokenInformation([CanBeNull] string keyword = null,
+        public TokenInformation(string? keyword = null,
             bool beforeExpr = false,
             bool startsExpr = false,
             bool isLoop = false,
@@ -277,13 +278,13 @@ namespace Njsast.Reader
             return new TokenInformation(keyword, beforeExpr, startsExpr, isLoop, prefix, postfix, binop);
         }
 
-        public string Keyword { get; }
+        public string? Keyword { get; }
         public bool BeforeExpression { get; }
         public bool StartsExpression { get; }
         public bool IsLoop { get; }
         public bool Prefix { get; }
         public bool Postfix { get; }
         public int BinaryOperation { get; }
-        public Action<Parser, TokenType> UpdateContext { get; internal set; }
+        public Action<Parser, TokenType>? UpdateContext { get; internal set; }
     }
 }

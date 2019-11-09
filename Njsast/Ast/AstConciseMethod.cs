@@ -37,7 +37,7 @@ namespace Njsast.Ast
 
         public override void CodeGen(OutputContext output)
         {
-            string type = null;
+            string? type = null;
             if (IsGenerator && Async)
             {
                 type = "async*";

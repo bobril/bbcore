@@ -26,6 +26,12 @@ namespace Njsast.Ast
             w.WalkList(Names);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            tt.TransformList(ref Names);
+        }
+
         public override void DumpScalars(IAstDumpWriter writer)
         {
             base.DumpScalars(writer);

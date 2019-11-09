@@ -353,7 +353,7 @@ namespace Lib.DiskCache
             }
         }
 
-        public IItemCache TryGetItem(ReadOnlySpan<char> path)
+        public IItemCache? TryGetItem(ReadOnlySpan<char> path)
         {
             lock (_lock)
             {
@@ -361,7 +361,7 @@ namespace Lib.DiskCache
             }
         }
 
-        IItemCache TryGetItemNoLock(ReadOnlySpan<char> path)
+        IItemCache? TryGetItemNoLock(ReadOnlySpan<char> path)
         {
             var directory = _root;
             var pos = 0;

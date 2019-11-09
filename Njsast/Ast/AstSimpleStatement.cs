@@ -14,10 +14,22 @@ namespace Njsast.Ast
             Body = body;
         }
 
+        public AstSimpleStatement(AstNode body) : base(body)
+        {
+            Body = body;
+        }
+
         public override void Visit(TreeWalker w)
         {
             base.Visit(w);
             w.Walk(Body);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            if (Body != TreeTransformer.Remove)
+                Body = tt.Transform(Body);
         }
 
         public override void CodeGen(OutputContext output)

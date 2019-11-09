@@ -8,7 +8,7 @@ namespace Njsast.ConstEval
     {
         readonly string _export;
         readonly IConstEvalCtx _ctx;
-        internal AstNode Result;
+        internal AstNode? Result;
         public bool CompleteResult;
 
         public ExportFinder(string export, IConstEvalCtx ctx)
@@ -33,7 +33,7 @@ namespace Njsast.ConstEval
                 }
             }
 
-            if (node is AstCall call && call.Expression is AstSymbol symbol && symbol.Name == "__export" && call.Args.Count == 1 && call.Args[0] is AstCall && call.Args[0].IsConstValue(_ctx))
+            if (node is AstCall call && call.Expression is AstSymbol symbol && symbol.Name == "__export" && call.Args.Count == 1 && call.Args[0] is AstCall)
             {
                 var module = call.Args[0].ConstValue(_ctx);
                 if (module is JsModule)

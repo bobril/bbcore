@@ -51,7 +51,7 @@ namespace Lib.AssetsPlugin
                 var propertyValue = propertyPair.Value;
                 if (propertyValue is string)
                 {
-                    if (ShouldSkip(propertyValue as string)) continue;
+                    if (ShouldSkip((string)propertyValue)) continue;
                 }
                 if (depth == 0)
                 {
@@ -62,17 +62,17 @@ namespace Lib.AssetsPlugin
                     AddIdent(depth);
                 }
 
-                if (propertyValue is IDictionary<string, object>)
+                if (propertyValue is IDictionary<string, object> dictionary)
                 {
                     AddObjectStart(propertyName, depth);
-                    RecursiveBuild(propertyValue as IDictionary<string, object>, depth + 1);
+                    RecursiveBuild(dictionary, depth + 1);
                     AddObjectEnd(depth);
                 }
                 else
                 {
                     _content.Append(SanitizePropertyName(propertyName));
                     _content.Append(GetPropertyNameValueSeparator(depth));
-                    AddPropertyValue(propertyValue as string);
+                    AddPropertyValue((string)propertyValue);
                     _content.Append(GetPropertyLineEnd(depth));
                 }
             }

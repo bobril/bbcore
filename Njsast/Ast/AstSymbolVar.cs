@@ -1,15 +1,17 @@
-﻿using Njsast.Reader;
-
-namespace Njsast.Ast
+﻿namespace Njsast.Ast
 {
     /// Symbol defining a variable
     public class AstSymbolVar : AstSymbolDeclaration
     {
-        public AstSymbolVar(AstSymbol name) : base(name, null)
+        public AstSymbolVar(AstSymbol name) : base(name)
         {
         }
 
-        public AstSymbolVar(Position start, Position end, string name) : base(start, end, name)
+        public AstSymbolVar(string name) : base(name)
+        {
+        }
+
+        public AstSymbolVar(AstNode from, string name) : base(from, name)
         {
         }
     }

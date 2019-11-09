@@ -20,11 +20,23 @@ namespace Njsast.Ast
             Args.TransferFrom(ref args);
         }
 
+        public AstCall(AstNode expression)
+        {
+            Expression = expression;
+        }
+
         public override void Visit(TreeWalker w)
         {
             base.Visit(w);
             w.Walk(Expression);
             w.WalkList(Args);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            Expression = tt.Transform(Expression)!;
+            tt.TransformList(ref Args);
         }
 
         public override void CodeGen(OutputContext output)
@@ -34,7 +46,7 @@ namespace Njsast.Ast
                 return;
             if (Expression is AstCall || Expression is AstLambda)
             {
-                output.AddMapping(Start);
+                output.AddMapping(Expression.Source, Start, false);
             }
 
             output.Print("(");
@@ -62,22 +74,7 @@ namespace Njsast.Ast
                    && assign.Left == p;
         }
 
-        public override bool IsConstValue(IConstEvalCtx ctx = null)
-        {
-            if (Expression is AstSymbolRef symb)
-            {
-                var def = symb.Thedef;
-                if (def == null || ctx == null || Args.Count != 1) return false;
-                if (def.Undeclared && def.Global && def.Name == "require")
-                {
-                    return Args[0].IsConstValue(ctx);
-                }
-            }
-
-            return false;
-        }
-
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             if (Expression is AstSymbolRef symb)
             {
@@ -85,9 +82,9 @@ namespace Njsast.Ast
                 if (def == null || ctx == null || Args.Count != 1) return null;
                 if (def.Undeclared && def.Global && def.Name == "require")
                 {
-                    var param = Args[0].ConstValue(ctx?.StripPathResolver());
+                    var param = Args[0].ConstValue(ctx.StripPathResolver());
                     if (!(param is string)) return null;
-                    return ctx.ResolveRequire((string) param);
+                    return ctx!.ResolveRequire((string) param);
                 }
             }
 

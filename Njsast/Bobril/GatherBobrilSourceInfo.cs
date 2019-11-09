@@ -8,7 +8,8 @@ namespace Njsast.Bobril
 {
     public class GatherBobrilSourceInfo
     {
-        public static SourceInfo Gather(AstNode toplevel, IConstEvalCtx ctx, Func<IConstEvalCtx, string, string> stringResolver)
+        public static SourceInfo Gather(AstNode toplevel, IConstEvalCtx ctx,
+            Func<IConstEvalCtx, string, string> stringResolver)
         {
             var evalCtx = new BobrilSpecialEvalWithPath(ctx, stringResolver);
             var gatherer = new GatherTreeWalker(evalCtx);
@@ -30,11 +31,12 @@ namespace Njsast.Bobril
                 return _ctx.ResolveRequire(name);
             }
 
-            public object ConstValue(IConstEvalCtx ctx, JsModule module, object export)
+            public object? ConstValue(IConstEvalCtx ctx, JsModule module, object export)
             {
                 if (module.Name == "bobril" && export is string expName)
                 {
-                    if (expName == "asset" || expName == "styleDef" || expName == "styleDefEx" || expName == "sprite") return new JsModuleExport(module.Name, expName);
+                    if (expName == "asset" || expName == "styleDef" || expName == "styleDefEx" || expName == "sprite")
+                        return new JsModuleExport(module.Name, expName);
                 }
 
                 if (module.Name == "bobril-g11n" && export is string expName2)
@@ -42,6 +44,7 @@ namespace Njsast.Bobril
                     if (expName2 == "t" || expName2 == "f" || expName2 == "dt")
                         return new JsModuleExport(module.Name, expName2);
                 }
+
                 return _ctx.ConstValue(ctx, module, export);
             }
 
@@ -64,7 +67,11 @@ namespace Njsast.Bobril
 
             public string SourceName => _ctx.SourceName;
 
-            public bool JustModuleExports { get => _ctx.JustModuleExports; set => _ctx.JustModuleExports = value; }
+            public bool JustModuleExports
+            {
+                get => _ctx.JustModuleExports;
+                set => _ctx.JustModuleExports = value;
+            }
         }
 
         class BobrilSpecialEvalWithPath : BobrilSpecialEval
@@ -72,7 +79,8 @@ namespace Njsast.Bobril
             BobrilSpecialEval _stripped;
             Func<IConstEvalCtx, string, string> _stringResolver;
 
-            public BobrilSpecialEvalWithPath(IConstEvalCtx ctx, Func<IConstEvalCtx, string, string> stringResolver) : base(ctx)
+            public BobrilSpecialEvalWithPath(IConstEvalCtx ctx, Func<IConstEvalCtx, string, string> stringResolver) :
+                base(ctx)
             {
                 _stripped = new BobrilSpecialEval(ctx);
                 _stringResolver = stringResolver;
@@ -109,11 +117,28 @@ namespace Njsast.Bobril
 
             protected override void Visit(AstNode node)
             {
-                if (node is AstCall call)
+                if (node.IsProcessEnv() is {} prop)
+                {
+                    var processEnv = new SourceInfo.ProcessEnv
+                    {
+                        Name = prop,
+                        StartLine = node.Start.Line,
+                        StartCol = node.Start.Column,
+                        EndLine = node.End.Line,
+                        EndCol = node.End.Column
+                    };
+                    if (SourceInfo.ProcessEnvs == null)
+                    {
+                        SourceInfo.ProcessEnvs = new List<SourceInfo.ProcessEnv>();
+                    }
+
+                    SourceInfo.ProcessEnvs.Add(processEnv);
+                }
+                else if (node is AstCall call)
                 {
                     if (call.Expression is AstSymbol expSymbol && call.Args.Count == 1)
                     {
-                        var def = expSymbol.Thedef;
+                        var def = expSymbol.Thedef!;
                         if (def.Global && def.Name == "require")
                         {
                             var arg = call.Args[0];
@@ -131,23 +156,26 @@ namespace Njsast.Bobril
                                 {
                                     SourceInfo.Imports = new List<SourceInfo.Import>();
                                 }
+
                                 SourceInfo.Imports.Add(imp);
                                 if (str.Value == "bobril" && SourceInfo.BobrilImport == null)
                                 {
                                     SourceInfo.BobrilImport = ExpressionName();
                                 }
-                                else if (str.Value == "bobril-g11n" && SourceInfo.BobrilG11nImport == null)
+                                else if (str.Value == "bobril-g11n" && SourceInfo.BobrilG11NImport == null)
                                 {
-                                    SourceInfo.BobrilG11nImport = ExpressionName();
+                                    SourceInfo.BobrilG11NImport = ExpressionName();
                                 }
                             }
                         }
+
                         return;
                     }
+
                     _evalCtx.JustModuleExports = true;
-                    if (call.Expression.IsConstValue(_evalCtx))
+                    var fn = call.Expression.ConstValue(_evalCtx);
+                    if (fn != null)
                     {
-                        var fn = call.Expression.ConstValue(_evalCtx);
                         _evalCtx.JustModuleExports = false;
                         if (fn is JsModuleExport exp)
                         {
@@ -168,6 +196,7 @@ namespace Njsast.Bobril
                                     {
                                         SourceInfo.Assets = new List<SourceInfo.Asset>();
                                     }
+
                                     SourceInfo.Assets.Add(asset);
                                 }
                                 else if (exp.ExportName == "styleDef" || exp.ExportName == "styleDefEx")
@@ -176,14 +205,15 @@ namespace Njsast.Bobril
                                     {
                                         IsEx = exp.ExportName == "styleDefEx"
                                     };
-                                    var argBeforeName = call.Args[Math.Min(1u + (styleDef.IsEx ? 1u : 0), call.Args.Count - 1)];
+                                    var argBeforeName =
+                                        call.Args[Math.Min(1u + (styleDef.IsEx ? 1u : 0), call.Args.Count - 1)];
                                     styleDef.ArgCount = call.Args.Count;
                                     styleDef.BeforeNameLine = argBeforeName.End.Line;
                                     styleDef.BeforeNameCol = argBeforeName.End.Column;
                                     if (call.Args.Count == 3 + (styleDef.IsEx ? 1 : 0))
                                     {
                                         styleDef.UserNamed = true;
-                                        var nameArg = call.Args[call.Args.Count - 1];
+                                        var nameArg = call.Args.Last;
                                         styleDef.StartLine = nameArg.Start.Line;
                                         styleDef.StartCol = nameArg.Start.Column;
                                         styleDef.EndLine = nameArg.End.Line;
@@ -194,10 +224,12 @@ namespace Njsast.Bobril
                                     {
                                         styleDef.Name = ExpressionName();
                                     }
+
                                     if (SourceInfo.StyleDefs == null)
                                     {
                                         SourceInfo.StyleDefs = new List<SourceInfo.StyleDef>();
                                     }
+
                                     SourceInfo.StyleDefs.Add(styleDef);
                                 }
                                 else if (exp.ExportName == "sprite")
@@ -217,7 +249,7 @@ namespace Njsast.Bobril
                                     for (var i = 0u; i < call.Args.Count; i++)
                                     {
                                         var arg = call.Args[i];
-                                        switch(i)
+                                        switch (i)
                                         {
                                             case 0:
                                                 sprite.NameStartLine = arg.Start.Line;
@@ -232,6 +264,7 @@ namespace Njsast.Bobril
                                                 sprite.ColorEndCol = arg.End.Column;
                                                 break;
                                         }
+
                                         var res = arg.ConstValue(i == 0 ? _evalCtxWithPath : _evalCtx);
                                         if (res != null)
                                             switch (i)
@@ -243,26 +276,33 @@ namespace Njsast.Bobril
                                                     sprite.Color = res as string;
                                                     break;
                                                 case 2:
-                                                    if (Runtime.TypeConverter.GetJsType(res) == Runtime.JsType.Number) sprite.Width = Runtime.TypeConverter.ToInt32(res);
+                                                    if (Runtime.TypeConverter.GetJsType(res) == Runtime.JsType.Number)
+                                                        sprite.Width = Runtime.TypeConverter.ToInt32(res);
                                                     break;
                                                 case 3:
-                                                    if (Runtime.TypeConverter.GetJsType(res) == Runtime.JsType.Number) sprite.Height = Runtime.TypeConverter.ToInt32(res);
+                                                    if (Runtime.TypeConverter.GetJsType(res) == Runtime.JsType.Number)
+                                                        sprite.Height = Runtime.TypeConverter.ToInt32(res);
                                                     break;
                                                 case 4:
-                                                    if (Runtime.TypeConverter.GetJsType(res) == Runtime.JsType.Number) sprite.X = Runtime.TypeConverter.ToInt32(res);
+                                                    if (Runtime.TypeConverter.GetJsType(res) == Runtime.JsType.Number)
+                                                        sprite.X = Runtime.TypeConverter.ToInt32(res);
                                                     break;
                                                 case 5:
-                                                    if (Runtime.TypeConverter.GetJsType(res) == Runtime.JsType.Number) sprite.Y = Runtime.TypeConverter.ToInt32(res);
+                                                    if (Runtime.TypeConverter.GetJsType(res) == Runtime.JsType.Number)
+                                                        sprite.Y = Runtime.TypeConverter.ToInt32(res);
                                                     break;
                                                 default:
-                                                    ReportErrorInJSNode(SourceInfo, call, -6, "b.sprite cannot have more than 6 parameters");
+                                                    ReportErrorInJSNode(SourceInfo, call, -6,
+                                                        "b.sprite cannot have more than 6 parameters");
                                                     break;
                                             }
                                     }
+
                                     if (SourceInfo.Sprites == null)
                                     {
                                         SourceInfo.Sprites = new List<SourceInfo.Sprite>();
                                     }
+
                                     SourceInfo.Sprites.Add(sprite);
                                 }
                             }
@@ -287,14 +327,17 @@ namespace Njsast.Bobril
                                         var pars = paramsArg as IDictionary<object, object>;
                                         if (pars != null)
                                         {
-                                            tr.KnownParams = pars.Keys.Select(a => a as string).Where(a => a != null).ToList();
+                                            tr.KnownParams = pars.Keys.Select(a => a as string).Where(a => a != null)
+                                                .ToList();
                                         }
                                     }
+
                                     if (SourceInfo.Translations == null)
                                         SourceInfo.Translations = new List<SourceInfo.Translation>();
                                     SourceInfo.Translations.Add(tr);
                                 }
-                                else if ((exp.ExportName == "t" || exp.ExportName == "dt") && call.Args.Count >= 1 && call.Args.Count <= 3)
+                                else if ((exp.ExportName == "t" || exp.ExportName == "dt") && call.Args.Count >= 1 &&
+                                         call.Args.Count <= 3)
                                 {
                                     var messageArg = call.Args[0];
                                     var tr = new SourceInfo.Translation
@@ -315,9 +358,11 @@ namespace Njsast.Bobril
                                             var pars = paramsValue as IDictionary<object, object>;
                                             if (pars != null)
                                             {
-                                                tr.KnownParams = pars.Keys.Select(a => a as string).Where(a => a != null).ToList();
+                                                tr.KnownParams = pars.Keys.Select(a => a as string)
+                                                    .Where(a => a != null).ToList();
                                             }
                                         }
+
                                         if (call.Args.Count >= 3)
                                         {
                                             var hintArg = call.Args[2];
@@ -329,6 +374,7 @@ namespace Njsast.Bobril
                                             tr.Hint = hintStr;
                                         }
                                     }
+
                                     if (SourceInfo.Translations == null)
                                         SourceInfo.Translations = new List<SourceInfo.Translation>();
                                     SourceInfo.Translations.Add(tr);
@@ -343,7 +389,7 @@ namespace Njsast.Bobril
                 }
             }
 
-            string ExpressionName()
+            string? ExpressionName()
             {
                 var parent = Parent();
                 if (parent is AstVarDef varDef)
@@ -353,17 +399,20 @@ namespace Njsast.Bobril
                         return astSymbol.Name;
                     }
                 }
+
                 if (parent is AstAssign assign)
                 {
                     if (assign.Left is AstDot dot)
                     {
-                        if (dot.Property is string) return (string)dot.Property;
+                        if (dot.Property is string) return (string) dot.Property;
                     }
+
                     if (assign.Left is AstSymbol astSymbol)
                     {
                         return astSymbol.Name;
                     }
                 }
+
                 return null;
             }
 
@@ -373,6 +422,7 @@ namespace Njsast.Bobril
                 {
                     sourceInfo.Diagnostics = new List<Diagnostic>();
                 }
+
                 var d = new Diagnostic
                 {
                     Code = code,

@@ -1,6 +1,4 @@
-﻿using Njsast.Reader;
-
-namespace Njsast.Ast
+﻿namespace Njsast.Ast
 {
     /// Symbol naming a function argument
     public class AstSymbolFunarg : AstSymbolVar
@@ -9,7 +7,11 @@ namespace Njsast.Ast
         {
         }
 
-        public AstSymbolFunarg(Position start, Position end, string name) : base(start, end, name)
+        public AstSymbolFunarg(string name) : base(name)
+        {
+        }
+
+        public AstSymbolFunarg(AstNode from, string name) : base(from, name)
         {
         }
     }

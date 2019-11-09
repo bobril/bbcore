@@ -9,7 +9,7 @@ namespace Njsast.Ast
         /// [AstNode*] array of expressions (at least two)
         public StructList<AstNode> Expressions;
 
-        public AstSequence(Parser parser, Position startLoc, Position endLoc, ref StructList<AstNode> expressions) :
+        public AstSequence(Parser? parser, Position startLoc, Position endLoc, ref StructList<AstNode> expressions) :
             base(parser, startLoc, endLoc)
         {
             Expressions.TransferFrom(ref expressions);
@@ -19,6 +19,12 @@ namespace Njsast.Ast
         {
             base.Visit(w);
             w.WalkList(Expressions);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            tt.TransformList(ref Expressions);
         }
 
         public override void CodeGen(OutputContext output)
@@ -47,7 +53,7 @@ namespace Njsast.Ast
                    || p is AstBinary // 1 + (2, 3) + 4 ==> 8
                    || p is AstVarDef // var a = (1, 2), b = a + a; ==> b == 4
                    // (1, {foo:2}).foo or (1, {foo:2})["foo"] ==> 2
-                   || p is AstPropAccess propAccess && propAccess.Expression == this 
+                   || p is AstPropAccess propAccess && propAccess.Expression == this
                    || p is AstArray // [ 1, (2, 3), 4 ] ==> [ 1, 3, 4 ]
                    || p is AstObjectProperty // { foo: (1, 2) }.foo ==> 2
                    // (false, true) ? (a = 10, b = 20) : (c = 30) ==> 20 (side effect, set a := 10 and b := 20)

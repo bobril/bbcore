@@ -6,7 +6,7 @@ namespace Njsast.Scope
     {
         readonly ScopeOptions _options;
 
-        public ScopeParser(ScopeOptions options = null)
+        public ScopeParser(ScopeOptions? options = null)
         {
             _options = options ?? new ScopeOptions();
         }

@@ -4,7 +4,7 @@ namespace Njsast
 {
     public class RegExp
     {
-        public string Pattern;
+        public string Pattern = string.Empty;
         public RegExpFlags Flags;
 
         public static RegExpFlags String2Flags(string mods)

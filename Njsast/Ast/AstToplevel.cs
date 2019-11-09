@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Njsast.Compress;
 using Njsast.Output;
 using Njsast.Reader;
 using Njsast.Scope;
@@ -9,16 +10,22 @@ namespace Njsast.Ast
     public class AstToplevel : AstScope
     {
         /// [Object/S] a map of name -> SymbolDef for all undeclared names
-        public Dictionary<string, SymbolDef> Globals;
+        public Dictionary<string, SymbolDef>? Globals;
+
+        bool _isScopeFigured;
 
         public AstToplevel(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
+        {
+        }
+
+        public AstToplevel()
         {
         }
 
         public SymbolDef DefGlobal(AstSymbol symbol)
         {
             var name = symbol.Name;
-            if (Globals.ContainsKey(name))
+            if (Globals!.ContainsKey(name))
             {
                 return Globals[name];
             }
@@ -60,18 +67,39 @@ namespace Njsast.Ast
 
         public override bool IsBlockScope => false;
 
-        public void FigureOutScope(ScopeOptions options = null)
+        public void FigureOutScope(ScopeOptions? options = null)
         {
             if (options == null) options = new ScopeOptions();
             new ScopeParser(options).FigureOutScope(this);
+            _isScopeFigured = true;
         }
 
-        public void Mangle(ScopeOptions options = null)
+        public void Mangle(ScopeOptions? options = null)
         {
-            if (options == null) options = new ScopeOptions();
+            options ??= new ScopeOptions();
             new ScopeParser(options).FigureOutScope(this);
+            options.BeforeMangling?.Invoke(this);
             var m = new MangleTreeWalker(options);
             m.Mangle(this);
+        }
+
+        public AstToplevel Compress(ICompressOptions? compressOptions = null, ScopeOptions? scopeOptions = null)
+        {
+            compressOptions ??= CompressOptions.Default;
+            scopeOptions ??= new ScopeOptions();
+            var iteration = 0;
+
+            var treeTransformer = new CompressTreeTransformer(compressOptions);
+            var transformed = this;
+            bool shouldIterateAgain;
+            do
+            {
+                if (!transformed._isScopeFigured || iteration > 0)
+                    transformed.FigureOutScope(scopeOptions);
+                transformed = (AstToplevel) treeTransformer.Compress(transformed, out shouldIterateAgain);
+            } while (shouldIterateAgain && ++iteration < compressOptions.MaxPasses);
+
+            return transformed;
         }
     }
 }

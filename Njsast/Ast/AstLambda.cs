@@ -8,7 +8,7 @@ namespace Njsast.Ast
     public class AstLambda : AstScope
     {
         /// [AstSymbolDeclaration?] the name of this function
-        public AstSymbolDeclaration Name;
+        public AstSymbolDeclaration? Name;
 
         /// [AstSymbolFunarg|AstDestructuring|AstExpansion|AstDefaultAssign*] array of function arguments, destructurings, or expanding arguments
         public StructList<AstNode> ArgNames;
@@ -22,7 +22,10 @@ namespace Njsast.Ast
         /// [boolean] is this method async
         public bool Async;
 
-        public AstLambda(Parser parser, Position startPos, Position endPos, AstSymbolDeclaration name,
+        /// Calling this function does not have visible side effect when its result is not used (null means unknown)
+        public bool? Pure;
+
+        public AstLambda(Parser parser, Position startPos, Position endPos, AstSymbolDeclaration? name,
             ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(parser,
             startPos, endPos)
         {
@@ -33,6 +36,10 @@ namespace Njsast.Ast
             Body.TransferFrom(ref body);
         }
 
+        protected AstLambda()
+        {
+        }
+
         public override void Visit(TreeWalker w)
         {
             w.Walk(Name);
@@ -40,20 +47,30 @@ namespace Njsast.Ast
             base.Visit(w);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            if (Name != null)
+                Name = (AstSymbolDeclaration)tt.Transform(Name);
+            tt.TransformList(ref ArgNames);
+            base.Transform(tt);
+        }
+
         public override void DumpScalars(IAstDumpWriter writer)
         {
             base.DumpScalars(writer);
             writer.PrintProp("IsGenerator", IsGenerator);
             writer.PrintProp("Async", Async);
+            writer.PrintProp("Pure", Pure ?? false);
+            writer.PrintProp("Impure", !Pure ?? false);
         }
 
-        public override void InitScopeVars(AstScope parentScope)
+        public override void InitScopeVars(AstScope? parentScope)
         {
             base.InitScopeVars(parentScope);
             UsesArguments = false;
             // Arrow functions cannot use arguments
             if (!(this is AstArrow))
-                DefVariable(new AstSymbolFunarg(Start, End, "arguments"), null);
+                DefVariable(new AstSymbolFunarg(this, "arguments"), null);
         }
 
         public override AstScope Resolve()
@@ -66,9 +83,9 @@ namespace Njsast.Ast
             DoPrint(output);
         }
 
-        public virtual void DoPrint(OutputContext output, bool nokeyword = false)
+        public virtual void DoPrint(OutputContext output, bool noKeyword = false)
         {
-            if (!nokeyword)
+            if (!noKeyword)
             {
                 if (Async)
                 {
@@ -88,11 +105,11 @@ namespace Njsast.Ast
                 }
             }
 
-            if (Name is AstSymbol)
+            if (Name != null)
             {
                 Name.Print(output);
             }
-            else if (nokeyword && Name != null)
+            else if (noKeyword && Name != null)
             {
                 output.Print("[");
                 Name.Print(output); // Computed method name

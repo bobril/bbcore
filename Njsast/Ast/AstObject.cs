@@ -22,10 +22,20 @@ namespace Njsast.Ast
             Properties = new StructList<AstObjectProperty>();
         }
 
+        public AstObject(AstNode from): base(from)
+        {
+        }
+
         public override void Visit(TreeWalker w)
         {
             base.Visit(w);
             w.WalkList(Properties);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            tt.TransformList(ref Properties);
         }
 
         public override void CodeGen(OutputContext output)
@@ -64,25 +74,10 @@ namespace Njsast.Ast
             return output.FirstInStatement();
         }
 
-        public override bool IsConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             var allowEvalObjectWithJustConstKeys = ctx?.AllowEvalObjectWithJustConstKeys ?? false;
-            for (var i = 0u; i < Properties.Count; i++)
-            {
-                var prop = Properties[i];
-                if (!(prop is AstObjectKeyVal keyVal))
-                    return false;
-                if (!keyVal.Key.IsConstValue(ctx)) return false;
-                if (!allowEvalObjectWithJustConstKeys && !keyVal.Value.IsConstValue(ctx)) return false;
-            }
-
-            return true;
-        }
-
-        public override object ConstValue(IConstEvalCtx ctx = null)
-        {
-            var allowEvalObjectWithJustConstKeys = ctx?.AllowEvalObjectWithJustConstKeys ?? false;
-            var res = new Dictionary<object, object>();
+            var res = new Dictionary<object, object?>();
             for (var i = 0u; i < Properties.Count; i++)
             {
                 var prop = Properties[i];

@@ -7,9 +7,6 @@ namespace Njsast.Ast
     /// An object setter property
     public class AstObjectSetter : AstObjectProperty
     {
-        // [string|undefined] the original quote character, if any
-        //public string Quote;
-
         /// [boolean] whether this is a static setter (classes only)
         public bool Static;
 

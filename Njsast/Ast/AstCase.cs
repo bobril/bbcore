@@ -21,6 +21,12 @@ namespace Njsast.Ast
             w.Walk(Expression);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            Expression = tt.Transform(Expression)!;
+        }
+
         public override void CodeGen(OutputContext output)
         {
             output.Print("case");

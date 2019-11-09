@@ -13,7 +13,7 @@ namespace Njsast.Ast
         public readonly double Value;
 
         /// [string] numeric value as string (optional)
-        public readonly string Literal;
+        public readonly string? Literal;
 
         public AstNumber(Parser parser, Position startLoc, Position endLoc, double value, string literal) : base(parser,
             startLoc, endLoc)
@@ -54,7 +54,7 @@ namespace Njsast.Ast
             return false;
         }
 
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             return Value;
         }

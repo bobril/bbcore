@@ -2,7 +2,7 @@
 {
     public class SourceCodePosition
     {
-        public string SourceName;
+        public string SourceName = string.Empty;
         public int Line;
         public int Col;
     }

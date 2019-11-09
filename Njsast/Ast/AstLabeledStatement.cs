@@ -12,12 +12,19 @@ namespace Njsast.Ast
         public AstLabeledStatement(Parser parser, Position startPos, Position endPos, AstStatement body, AstLabel label) : base(parser, startPos, endPos, body)
         {
             Label = label;
+            label.OfStatement = this;
         }
 
         public override void Visit(TreeWalker w)
         {
             w.Walk(Label);
             base.Visit(w);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            Label = (AstLabel)tt.Transform(Label);
+            base.Transform(tt);
         }
 
         public override void CodeGen(OutputContext output)

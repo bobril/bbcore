@@ -243,7 +243,7 @@ namespace Lib.Translation
             return val is ErrorAst;
         }
 
-        ErrorAst BuildError(string msg = null)
+        ErrorAst BuildError(string? msg = null)
         {
             if (msg == null) msg = _errorMsg;
             return new ErrorAst(msg, _pos - 1, _curLine, _curCol);

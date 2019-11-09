@@ -3,8 +3,11 @@ using Njsast.Ast;
 
 namespace Njsast.Reader
 {
+    public delegate void OnCommentAction(bool block, string content, SourceLocation sourceLocation);
+
     public sealed class Options
     {
+        public const int DefaultEcmaVersion = 7;
         // `ecmaVersion` indicates the ECMAScript version to parse. Must
         // be either 3, 5, 6 (2015), 7 (2016), or 8 (2017). This influences support
         // for strict mode, the set of reserved words, and support for
@@ -18,7 +21,7 @@ namespace Njsast.Reader
         // Set `allowReserved` to a boolean value to explicitly turn this on
         // an off. When this option has the value "never", reserved words
         // and keywords can also not be used as property names.
-        public object AllowReserved;
+        public object? AllowReserved;
         // When enabled, a return at the top level is not considered an
         // error.
         public bool AllowReturnOutsideFunction = false;
@@ -33,20 +36,20 @@ namespace Njsast.Reader
         // `program` option in subsequent parses. This will add the
         // toplevel forms of the parsed file to the `Program` (top) node
         // of an existing parse tree.
-        public AstToplevel Program = null;
+        public AstToplevel? Program = null;
         // When `locations` is on, you can pass this to record the source
         // file in every node's `loc` object.
-        public string SourceFile = null;
+        public string? SourceFile = null;
         public bool StartInFunction;
+        public OnCommentAction? OnComment;
 
-        [NotNull]
-        public static Options GetOptions([CanBeNull] Options options)
+        public static Options GetOptions(Options? options)
         {
             if (options == null)
                 options = new Options();
 
             if (options.EcmaVersion == 0)
-                options.EcmaVersion = 7;
+                options.EcmaVersion = DefaultEcmaVersion;
 
             if (options.EcmaVersion >= 2015)
                 options.EcmaVersion -= 2009;

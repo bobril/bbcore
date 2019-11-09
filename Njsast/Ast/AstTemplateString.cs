@@ -20,6 +20,12 @@ namespace Njsast.Ast
             w.WalkList(Segments);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            tt.TransformList(ref Segments);
+        }
+
         public override void CodeGen(OutputContext output)
         {
             var isTagged = output.Parent() is AstPrefixedTemplateString;

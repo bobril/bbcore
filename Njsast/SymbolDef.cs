@@ -6,9 +6,9 @@ namespace Njsast
     public class SymbolDef
     {
         public string Name;
-        public string MangledName;
+        public string? MangledName;
         public StructList<AstSymbol> Orig;
-        public AstNode Init;
+        public AstNode? Init;
         public int Eliminated;
         public AstScope Scope;
         public StructList<AstSymbol> References;
@@ -16,12 +16,14 @@ namespace Njsast
         public bool Global;
         public bool Export;
         public bool Undeclared;
-        public AstScope Defun;
-        public AstDestructuring Destructuring;
-        // let/const/var Name = VarInit. for var it is only for first declaration of var
-        public AstNode VarInit;
+        public AstScope? Defun;
 
-        public SymbolDef(AstScope scope, AstSymbol orig, AstNode init)
+        public AstDestructuring? Destructuring;
+
+        // let/const/var Name = VarInit. for var it is only for first declaration of var
+        public AstNode? VarInit;
+
+        public SymbolDef(AstScope scope, AstSymbol orig, AstNode? init)
         {
             Name = orig.Name;
             Scope = scope;
@@ -46,9 +48,9 @@ namespace Njsast
             }
         }
 
-        public SymbolDef Redefined()
+        public SymbolDef? Redefined()
         {
-            return Defun?.Variables.GetOrDefault(Name);
+            return Defun?.Variables?.GetOrDefault(Name);
         }
 
         public bool Unmangleable(ScopeOptions options)
@@ -65,10 +67,10 @@ namespace Njsast
 
         public void Mangle(ScopeOptions options)
         {
-            if (MangledName==null && !Unmangleable(options))
+            if (MangledName == null && !Unmangleable(options))
             {
-                var def= Redefined();
-                if (def!=null)
+                var def = Redefined();
+                if (def != null)
                     MangledName = def.MangledName ?? def.Name;
                 else
                     MangledName = Scope.NextMangled(options, this);

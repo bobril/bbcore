@@ -18,7 +18,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <param name="description">Description</param>
         /// <param name="words">Argument aliases</param>
         /// <param name="defaultValue">Default value</param>
-        public CommandLineArgumentString(string description, string[] words, string defaultValue = null) : base(description, words, defaultValue)
+        public CommandLineArgumentString(string description, string[] words, string? defaultValue = null) : base(description, words, defaultValue)
         {
             Value = defaultValue;
         }

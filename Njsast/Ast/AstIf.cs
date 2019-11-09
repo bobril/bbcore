@@ -10,10 +10,10 @@ namespace Njsast.Ast
         public AstNode Condition;
 
         /// [AstStatement?] the `else` part, or null if not present
-        public AstStatement Alternative;
+        public AstStatement? Alternative;
 
         public AstIf(Parser parser, Position startPos, Position endPos, AstNode condition, AstStatement body,
-            AstStatement alternative) : base(parser, startPos, endPos, body)
+            AstStatement? alternative) : base(parser, startPos, endPos, body)
         {
             Condition = condition;
             Alternative = alternative;
@@ -24,6 +24,18 @@ namespace Njsast.Ast
             w.Walk(Condition);
             base.Visit(w);
             w.Walk(Alternative);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            Condition = tt.Transform(Condition)!;
+            base.Transform(tt);
+            if (Alternative != null)
+            {
+                var alt = tt.Transform(Alternative);
+                Alternative = alt == TreeTransformer.Remove ? null : (AstStatement) alt;
+            }
+                
         }
 
         public override void CodeGen(OutputContext output)

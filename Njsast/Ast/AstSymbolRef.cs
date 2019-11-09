@@ -1,5 +1,4 @@
-﻿using System;
-using Njsast.ConstEval;
+﻿using Njsast.ConstEval;
 using Njsast.Reader;
 
 namespace Njsast.Ast
@@ -7,30 +6,28 @@ namespace Njsast.Ast
     /// Reference to some symbol (not definition/declaration)
     public class AstSymbolRef : AstSymbol
     {
-        protected AstSymbolRef(AstSymbol symbol) : base(symbol)
+        public AstSymbolRef(AstSymbol symbol) : base(symbol)
         {
         }
 
-        public AstSymbolRef(Parser parser, Position startPos, Position endPos, string name) : base(parser, startPos, endPos, name)
+        public AstSymbolRef(string name) : base(name)
         {
         }
 
-        public override bool IsConstValue(IConstEvalCtx ctx = null)
+        public AstSymbolRef(AstNode from, string name) : base(from, name)
         {
-            if (Thedef == null) return false;
-            if (Thedef.Global && Thedef.Undeclared)
-            {
-                if (Name == "Infinity") return true;
-                if (Name == "NaN") return true;
-                if (Name == "undefined") return true;
-                return false;
-            }
+        }
 
-            if (Thedef.IsSingleInit)
-            {
-                return (Thedef.VarInit == null && IsVarLetConst(Thedef.Orig[0])) || (Thedef.VarInit?.IsConstValue(ctx) ?? false);
-            }
-            return false;
+        public AstSymbolRef(AstNode from, SymbolDef def, SymbolUsage usage) : base(from, def.Name)
+        {
+            Thedef = def;
+            def.References.Add(this);
+            Usage = usage;
+        }
+
+        public AstSymbolRef(Parser parser, Position startPos, Position endPos, string name) : base(parser, startPos,
+            endPos, name)
+        {
         }
 
         static bool IsVarLetConst(AstSymbol astSymbol)
@@ -39,7 +36,7 @@ namespace Njsast.Ast
             return t == typeof(AstSymbolVar) || t == typeof(AstSymbolLet) || t == typeof(AstSymbolConst);
         }
 
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             if (Thedef == null) return null;
             if (Thedef.Global && Thedef.Undeclared)
@@ -49,11 +46,13 @@ namespace Njsast.Ast
                 if (Name == "undefined") return AstUndefined.Instance;
                 return null;
             }
+
             if (Thedef.IsSingleInit)
             {
                 if (Thedef.VarInit == null) return IsVarLetConst(Thedef.Orig[0]) ? AstUndefined.Instance : null;
                 return Thedef.VarInit.ConstValue(ctx);
             }
+
             return null;
         }
     }

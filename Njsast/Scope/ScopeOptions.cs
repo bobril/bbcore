@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Njsast.Ast;
 
 namespace Njsast.Scope
 {
@@ -6,9 +8,11 @@ namespace Njsast.Scope
     {
         public bool KeepFunctionNames = false;
         public bool KeepClassNames = true;
+        public bool FrequencyCounting = true;
         public bool TopLevel;
         public bool IgnoreEval;
         public HashSet<string> Reserved = new HashSet<string>();
+        public Action<AstNode>? BeforeMangling = null;
 
         public ScopeOptions()
         {
@@ -16,6 +20,6 @@ namespace Njsast.Scope
         }
 
         // More like context
-        public char[] Chars;
+        public char[] Chars = new char[0];
     }
 }

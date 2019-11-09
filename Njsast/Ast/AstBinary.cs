@@ -18,8 +18,15 @@ namespace Njsast.Ast
         /// [AstNode] right-hand side expression
         public AstNode Right;
 
-        public AstBinary(Parser parser, Position startLoc, Position endLoc, AstNode left, AstNode right, Operator op) :
+        public AstBinary(Parser? parser, Position startLoc, Position endLoc, AstNode left, AstNode right, Operator op) :
             base(parser, startLoc, endLoc)
+        {
+            Left = left;
+            Right = right;
+            Operator = op;
+        }
+
+        protected AstBinary(AstNode left, AstNode right, Operator op)
         {
             Left = left;
             Right = right;
@@ -33,6 +40,13 @@ namespace Njsast.Ast
             w.Walk(Right);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            Left = tt.Transform(Left)!;
+            Right = tt.Transform(Right)!;
+        }
+
         public override void DumpScalars(IAstDumpWriter writer)
         {
             base.DumpScalars(writer);
@@ -42,7 +56,7 @@ namespace Njsast.Ast
         public override void CodeGen(OutputContext output)
         {
             var op = Operator;
-            Left.Print(output);
+            Left.Print(output, Left is AstBinary && output.NeedNodeParens(Left));
             if (OutputContext.OperatorToString(op)[0] == '>' /* ">>" ">>>" ">" ">=" */
                 && Left is AstUnaryPostfix leftPostfix
                 && leftPostfix.Operator == Operator.DecrementPostfix)
@@ -72,7 +86,7 @@ namespace Njsast.Ast
                 output.Space();
             }
 
-            Right.Print(output);
+            Right.Print(output, Right is AstBinary && output.NeedNodeParens(Right));
         }
 
         public override bool NeedParens(OutputContext output)
@@ -101,36 +115,7 @@ namespace Njsast.Ast
             return false;
         }
 
-        public override bool IsConstValue(IConstEvalCtx ctx = null)
-        {
-            if (!Left.IsConstValue(ctx)) return false;
-            if (Operator == Operator.LogicalOr) return true;
-            if (Operator == Operator.LogicalAnd) return true;
-            if (!Right.IsConstValue(ctx?.StripPathResolver())) return false;
-            if (Operator == Operator.BitwiseOr) return true;
-            if (Operator == Operator.BitwiseAnd) return true;
-            if (Operator == Operator.BitwiseXOr) return true;
-            if (Operator == Operator.Addition) return true;
-            if (Operator == Operator.Subtraction) return true;
-            if (Operator == Operator.Multiplication) return true;
-            if (Operator == Operator.Division) return true;
-            if (Operator == Operator.Modulus) return true;
-            if (Operator == Operator.Power) return true;
-            if (Operator == Operator.Equals) return true;
-            if (Operator == Operator.NotEquals) return true;
-            if (Operator == Operator.StrictEquals) return true;
-            if (Operator == Operator.StrictNotEquals) return true;
-            if (Operator == Operator.LessThan) return true;
-            if (Operator == Operator.LessEquals) return true;
-            if (Operator == Operator.GreaterThan) return true;
-            if (Operator == Operator.GreaterEquals) return true;
-            if (Operator == Operator.LeftShift) return true;
-            if (Operator == Operator.RightShift) return true;
-            if (Operator == Operator.RightShiftUnsigned) return true;
-            return false;
-        }
-
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             var left = Left.ConstValue(ctx);
             if (left == null) return null;
@@ -251,7 +236,7 @@ namespace Njsast.Ast
             return null;
         }
 
-        static object LessThan(object left, object right)
+        static object LessThan(object? left, object? right)
         {
             if (left is string leftStr && right is string rightStr)
             {

@@ -26,6 +26,13 @@ namespace Njsast.Ast
             w.Walk(TemplateString);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            Prefix = tt.Transform(Prefix);
+            TemplateString = (AstTemplateString)tt.Transform(TemplateString);
+        }
+
         public override void CodeGen(OutputContext output)
         {
             var parenthesizeTag = Prefix is AstArrow

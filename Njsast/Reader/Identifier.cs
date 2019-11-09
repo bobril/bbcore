@@ -15,7 +15,7 @@ namespace Njsast.Reader
         const string StrictBindReservedWords = "eval|arguments";
 
         static readonly Regex Ecmascript5KeywordsRegex = new Regex("^(?:break|case|catch|continue|debugger|default|do|else|finally|for|function|if|return|switch|throw|try|var|while|with|null|true|false|instanceof|typeof|void|delete|new|in|this)$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        static readonly Regex Ecmascript6KeywordsRegex = new Regex("^(?:break|case|catch|continue|debugger|default|do|else|finally|for|function|if|return|switch|throw|try|var|while|with|null|true|false|instanceof|typeof|void|delete|new|in|this|const|class|extends|export|import|super)$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        static readonly Regex Ecmascript6KeywordsRegex = new Regex("^(?:break|case|catch|continue|debugger|default|do|else|finally|for|function|if|return|switch|throw|try|var|while|with|null|true|false|instanceof|typeof|void|delete|new|in|this|const|class|extends|export|import|super|yield)$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         static readonly Regex KeywordRelationalOperator = new Regex("^in(stanceof)?$");
 
@@ -109,11 +109,11 @@ namespace Njsast.Reader
         // Test whether a given character code starts an identifier.
         static bool IsIdentifierStart(int code, bool astral = false)
         {
-            if (code < 65) return code == 36;
-            if (code < 91) return true;
-            if (code < 97) return code == 95;
-            if (code < 123) return true;
-            if (code <= 0xffff) return code >= 0xaa && NonAsciIidentifierStart.IsMatch(char.ConvertFromUtf32(code));
+            if (code < CharCode.LatinCapitalLetterA) return code == CharCode.DollarSign;
+            if (code < CharCode.LeftSquareBracket) return true;
+            if (code < CharCode.LatinSmallLetterA) return code == CharCode.LowLine;
+            if (code < CharCode.LeftCurlyBracket) return true;
+            if (code <= 0xffff) return code >= CharCode.FeminineOrdinalIndicator /*0xaa*/ && NonAsciIidentifierStart.IsMatch(char.ConvertFromUtf32(code));
             if (astral == false) return false;
             return IsInAstralSet(code, AstralIdentifierStartCodes);
         }
@@ -121,13 +121,13 @@ namespace Njsast.Reader
         // Test whether a given character is part of an identifier.
         public static bool IsIdentifierChar(int code, bool astral = false)
         {
-            if (code < 48) return code == 36;
-            if (code < 58) return true;
-            if (code < 65) return false;
-            if (code < 91) return true;
-            if (code < 97) return code == 95;
-            if (code < 123) return true;
-            if (code <= 0xffff) return code >= 0xaa && NonAsciIidentifier.IsMatch(char.ConvertFromUtf32(code));
+            if (code < CharCode.DigitZero) return code == CharCode.DollarSign;
+            if (code < CharCode.Colon) return true;
+            if (code < CharCode.LatinCapitalLetterA) return false;
+            if (code < CharCode.LeftSquareBracket) return true;
+            if (code < CharCode.LatinSmallLetterA) return code == CharCode.LowLine;
+            if (code < CharCode.LeftCurlyBracket) return true;
+            if (code <= 0xffff) return code >= CharCode.FeminineOrdinalIndicator /*0xaa*/ && NonAsciIidentifier.IsMatch(char.ConvertFromUtf32(code));
             if (astral == false) return false;
             return IsInAstralSet(code, AstralIdentifierStartCodes) || IsInAstralSet(code, AstralIdentifierCodes);
         }

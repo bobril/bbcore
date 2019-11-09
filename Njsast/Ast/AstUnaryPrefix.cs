@@ -31,18 +31,7 @@ namespace Njsast.Ast
             Expression.Print(output);
         }
 
-        public override bool IsConstValue(IConstEvalCtx ctx = null)
-        {
-            if (!Expression.IsConstValue(ctx)) return false;
-            if (Operator == Operator.Void) return true;
-            if (Operator == Operator.Addition) return true;
-            if (Operator == Operator.Subtraction) return true;
-            if (Operator == Operator.LogicalNot) return true;
-            if (Operator == Operator.BitwiseNot) return true;
-            return false;
-        }
-
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             var v = Expression.ConstValue(ctx?.StripPathResolver());
             if (v == null) return null;

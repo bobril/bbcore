@@ -8,5 +8,9 @@ namespace Njsast.Ast
         public AstJump(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
         {
         }
+
+        protected AstJump()
+        {
+        }
     }
 }

@@ -7,10 +7,15 @@ namespace Njsast.Ast
     public class AstExit : AstJump
     {
         /// [AstNode?] the value returned or thrown by this statement; could be null for AstReturn
-        public AstNode Value;
+        public AstNode? Value;
 
-        public AstExit(Parser parser, Position startPos, Position endPos, AstNode value) : base(parser, startPos,
+        public AstExit(Parser parser, Position startPos, Position endPos, AstNode? value) : base(parser, startPos,
             endPos)
+        {
+            Value = value;
+        }
+
+        protected AstExit(AstNode? value)
         {
             Value = value;
         }
@@ -19,6 +24,13 @@ namespace Njsast.Ast
         {
             base.Visit(w);
             w.Walk(Value);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            if (Value != null)
+                Value = tt.Transform(Value)!;
         }
 
         public override void CodeGen(OutputContext output)

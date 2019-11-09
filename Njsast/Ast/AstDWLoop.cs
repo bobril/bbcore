@@ -19,5 +19,12 @@ namespace Njsast.Ast
             w.Walk(Condition);
             base.Visit(w);
         }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            Condition = tt.Transform(Condition)!;
+            base.Transform(tt);
+        }
+
     }
 }

@@ -3,7 +3,7 @@
     /// A constant declaration
     public class AstSymbolConst : AstSymbolBlockDeclaration
     {
-        public AstSymbolConst(AstSymbol name) : base(name, null)
+        public AstSymbolConst(AstSymbol name) : base(name)
         {
         }
     }

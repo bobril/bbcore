@@ -383,7 +383,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void InitializeTranslationDb(string specificPath = null)
+        public void InitializeTranslationDb(string? specificPath = null)
         {
             TranslationDb = new TranslationDb(Owner.DiskCache.FsAbstraction, new ConsoleLogger());
             TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");

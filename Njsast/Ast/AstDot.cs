@@ -11,17 +11,20 @@ namespace Njsast.Ast
         {
         }
 
+        public AstDot(AstNode expression, string propName) : base(expression, propName)
+        {
+        }
+
         public override void CodeGen(OutputContext output)
         {
-            Expression.Print(output);
+            Expression.Print(output, Expression is AstBinary && output.NeedNodeParens(Expression));
             if (output.NeedDotAfterNumber())
             {
                 output.Print(".");
             }
 
+            output.AddMapping(Expression.Source, Expression.End, false);
             output.Print(".");
-            // the name after dot would be mapped about here.
-            output.AddMapping(End);
             output.Print((string) Property);
         }
     }

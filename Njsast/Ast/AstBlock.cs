@@ -15,11 +15,15 @@ namespace Njsast.Ast
             Body.TransferFrom(ref body);
         }
 
-        public AstBlock(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
+        protected AstBlock(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
         {
         }
 
-        protected AstBlock(AstNode from) : base(from)
+        public AstBlock(AstNode from) : base(from)
+        {
+        }
+
+        protected AstBlock()
         {
         }
 
@@ -29,12 +33,18 @@ namespace Njsast.Ast
             w.WalkList(Body);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            tt.TransformList(ref Body);
+        }
+
         public override void CodeGen(OutputContext output)
         {
             output.PrintBraced(this, false);
         }
 
         public virtual bool IsBlockScope => true;
-        public AstScope BlockScope { get; set; }
+        public AstScope? BlockScope { get; set; }
     }
 }

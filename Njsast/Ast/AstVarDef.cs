@@ -10,10 +10,22 @@ namespace Njsast.Ast
         public AstNode Name;
 
         /// [AstNode?] initializer, or null of there's no initializer
-        public AstNode Value;
+        public AstNode? Value;
 
-        public AstVarDef(Parser parser, Position startLoc, Position endLoc, AstNode name, AstNode value = null) : base(
+        public AstVarDef(Parser parser, Position startLoc, Position endLoc, AstNode name, AstNode? value = null) : base(
             parser, startLoc, endLoc)
+        {
+            Name = name;
+            Value = value;
+        }
+
+        public AstVarDef(AstNode name, AstNode? value = null)
+        {
+            Name = name;
+            Value = value;
+        }
+
+        public AstVarDef(AstNode from, AstNode name, AstNode? value = null): base(from)
         {
             Name = name;
             Value = value;
@@ -26,6 +38,14 @@ namespace Njsast.Ast
             w.Walk(Value);
         }
 
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            Name = tt.Transform(Name);
+            if (Value != null)
+                Value = tt.Transform(Value);
+        }
+
         public override void CodeGen(OutputContext output)
         {
             Name.Print(output);
@@ -36,7 +56,7 @@ namespace Njsast.Ast
                 output.Space();
                 var p = output.Parent(1);
                 var noin = p is AstFor || p is AstForIn;
-                output.ParenthesizeForNoin(Value, noin);
+                output.ParenthesizeForNoIn(Value, noin);
             }
         }
     }

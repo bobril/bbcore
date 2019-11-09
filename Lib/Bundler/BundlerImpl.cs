@@ -12,12 +12,12 @@ namespace Lib.Bundler
         readonly IToolsDir _toolsDir;
         readonly BBCallbacks _bbCallbacks;
 
-        public IReadOnlyList<string> MainFiles { get; set; }
+        public IReadOnlyList<string>? MainFiles { get; set; }
         public bool Compress { get; set; }
         public bool Mangle { get; set; }
         public bool Beautify { get; set; }
         public IReadOnlyDictionary<string, object> Defines { get; set; }
-        public IBundlerCallback Callbacks { get; set; }
+        public IBundlerCallback? Callbacks { get; set; }
 
         public BundlerImpl(IToolsDir toolsDir)
         {

@@ -9,16 +9,16 @@ namespace Lib.Composition
 {
     class TestServerConnectionHandler : ILongPollingConnectionHandler
     {
-        ILongPollingConnection _connection;
+        ILongPollingConnection? _connection;
         TestServer _testServer;
-        string _specFilter;
-        string _userAgent;
-        string _url;
+        string? _specFilter;
+        string? _userAgent;
+        string? _url;
         int _runid;
-        TestResultsHolder _curResults;
+        TestResultsHolder? _curResults;
         int _suiteId;
-        Stack<SuiteOrTest> _suiteStack;
-        TestResultsHolder _oldResults;
+        Stack<SuiteOrTest>? _suiteStack;
+        TestResultsHolder? _oldResults;
         readonly object _lock = new object();
         readonly bool _verbose;
         readonly ILogger _logger;

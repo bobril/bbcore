@@ -8,14 +8,18 @@ namespace Njsast.Ast
     public class AstYield : AstNode
     {
         /// [AstNode?] the value returned or thrown by this statement; could be null (representing undefined) but only when is_star is set to false
-        public AstNode Expression;
+        public AstNode? Expression;
 
         /// [Boolean] Whether this is a yield or yield* statement
         public bool IsStar;
 
-        public AstYield(Parser parser, Position startLoc, Position endLoc, AstNode expression, bool isStar) : base(
+        public AstYield(Parser parser, Position startLoc, Position endLoc, AstNode? expression, bool isStar) : base(
             parser, startLoc, endLoc)
         {
+            if (isStar && expression == null)
+            {
+                throw Parser.NewSyntaxError(startLoc, "Expression is missing in yield*");
+            }
             Expression = expression;
             IsStar = isStar;
         }
@@ -24,6 +28,13 @@ namespace Njsast.Ast
         {
             base.Visit(w);
             w.Walk(Expression);
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            base.Transform(tt);
+            if (Expression != null)
+                Expression = tt.Transform(Expression);
         }
 
         public override void DumpScalars(IAstDumpWriter writer)

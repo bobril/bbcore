@@ -7,7 +7,7 @@ namespace Njsast.Ast
     /// The `null` atom
     public class AstNull : AstAtom
     {
-        public AstNull(Parser parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
+        public AstNull(Parser? parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
         {
         }
 
@@ -18,7 +18,7 @@ namespace Njsast.Ast
 
         static readonly AstNull Instance = new AstNull(null, new Position(), new Position());
 
-        public override object ConstValue(IConstEvalCtx ctx = null)
+        public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
             return Instance;
         }

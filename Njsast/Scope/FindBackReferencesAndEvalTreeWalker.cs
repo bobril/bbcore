@@ -21,7 +21,7 @@ namespace Njsast.Scope
         {
             if (node is AstLoopControl loopControl && loopControl.Label != null)
             {
-                loopControl.Label.Thedef.References.Add(loopControl);
+                loopControl.Label.Thedef!.References.Add(loopControl);
                 StopDescending();
                 return;
             }
@@ -45,18 +45,25 @@ namespace Njsast.Scope
                             {
                                 usage |= SymbolUsage.Write;
                                 var def = astSymbol.Thedef;
-                                if (def.Orig[0] == astSymbol && def.References.Count == 0 && Parent(2) == def.Scope)
+                                if (def!.Orig[0] == astSymbol && def.References.Count == 0 && Parent(2) == def.Scope)
                                 {
                                     def.VarInit = astVarDef.Value;
                                 }
                                 else
                                 {
-                                    def.References.Add(astSymbol);
+                                    def!.References.Add(astSymbol);
                                 }
                             }
 
                             if (astVarDef.Value == node)
                                 usage |= SymbolUsage.Read;
+
+                            // This handle case for(var init in object) where node structure is AstForIn > AstVar > AstVarDef 
+                            if (Parent(2) is AstForIn forIn && forIn.Init == Parent(1))
+                            {
+                                astSymbol.Thedef!.References.Add(astSymbol);
+                                usage |= SymbolUsage.Write;
+                            }
                             break;
                         case AstAssign astAssign:
                             if (astAssign.Left == node)
@@ -120,7 +127,7 @@ namespace Njsast.Scope
                         case AstFor _:
                             usage |= SymbolUsage.Read;
                             break;
-                        case AstNode parent:
+                        case { } parent:
                             throw new NotImplementedException("Symbol Usage Detection parent " + parent.GetType().Name);
                     }
 
@@ -139,7 +146,7 @@ namespace Njsast.Scope
                 }
 
 
-                var sym = astSymbolRef.Scope.FindVariable(name);
+                var sym = astSymbolRef.Scope?.FindVariable(name);
                 if (sym == null || Parent() is AstNameMapping && (Parent(1) as AstImport)?.ModuleName != null)
                 {
                     sym = _astToplevel.DefGlobal(astSymbolRef);
@@ -151,7 +158,7 @@ namespace Njsast.Scope
 
                 astSymbolRef.Thedef = sym;
                 astSymbolRef.Reference(_options);
-                if (astSymbolRef.Scope.IsBlockScope && !(sym.Orig[0] is AstSymbolBlockDeclaration))
+                if (astSymbolRef.Scope != null && astSymbolRef.Scope.IsBlockScope && !(sym.Orig[0] is AstSymbolBlockDeclaration))
                 {
                     astSymbolRef.Scope = astSymbolRef.Scope.DefunScope();
                 }
@@ -163,7 +170,7 @@ namespace Njsast.Scope
             // ensure mangling works if catch reuses a scope variable
             if (node is AstSymbolCatch astSymbolCatch)
             {
-                var def = astSymbolCatch.Thedef.Redefined();
+                var def = astSymbolCatch.Thedef!.Redefined();
                 if (def != null)
                 {
                     for (var s = astSymbolCatch.Scope; s != null; s = s.ParentScope)

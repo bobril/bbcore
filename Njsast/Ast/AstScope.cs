@@ -11,10 +11,10 @@ namespace Njsast.Ast
     public class AstScope : AstBlock
     {
         /// [Object/S] a map of name -> SymbolDef for all variables/functions defined in this scope
-        public Dictionary<string, SymbolDef> Variables;
+        public Dictionary<string, SymbolDef>? Variables;
 
         /// [Object/S] like `variables`, but only lists function declarations
-        public Dictionary<string, SymbolDef> Functions;
+        public Dictionary<string, SymbolDef>? Functions;
 
         public bool HasUseStrictDirective;
 
@@ -25,7 +25,7 @@ namespace Njsast.Ast
         public bool UsesEval;
 
         /// [AstScope?/S] link to the parent scope
-        public AstScope ParentScope;
+        public AstScope? ParentScope;
 
         /// [SymbolDef*/S] a list of all symbol definitions that are accessed from this scope or any subscopes
         public StructList<SymbolDef> Enclosed;
@@ -34,6 +34,10 @@ namespace Njsast.Ast
         public uint Cname;
 
         public AstScope(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
+        {
+        }
+
+        protected AstScope()
         {
         }
 
@@ -58,7 +62,7 @@ namespace Njsast.Ast
             writer.PrintProp("HasUseStrictDirective", HasUseStrictDirective);
         }
 
-        public virtual void InitScopeVars(AstScope parentScope)
+        public virtual void InitScopeVars(AstScope? parentScope)
         {
             Variables = new Dictionary<string, SymbolDef>();
             Functions = new Dictionary<string, SymbolDef>();
@@ -69,10 +73,10 @@ namespace Njsast.Ast
             Cname = 0;
         }
 
-        public SymbolDef DefVariable(AstSymbol symbol, AstNode init)
+        public SymbolDef DefVariable(AstSymbol symbol, AstNode? init)
         {
             SymbolDef def;
-            if (Variables.ContainsKey(symbol.Name))
+            if (Variables!.ContainsKey(symbol.Name))
             {
                 def = Variables[symbol.Name];
                 def.Orig.Add(symbol);
@@ -91,26 +95,26 @@ namespace Njsast.Ast
             return symbol.Thedef = def;
         }
 
-        public SymbolDef DefFunction(AstSymbol symbol, AstNode init)
+        public SymbolDef DefFunction(AstSymbol symbol, AstNode? init)
         {
             var def = DefVariable(symbol, init);
             if (def.Init == null || def.Init is AstDefun) def.Init = init;
-            if (!Functions.ContainsKey(symbol.Name))
+            if (!Functions!.ContainsKey(symbol.Name))
                 Functions.Add(symbol.Name, def);
             return def;
         }
 
-        public SymbolDef FindVariable(AstSymbol symbol)
+        public SymbolDef? FindVariable(AstSymbol symbol)
         {
             return FindVariable(symbol.Name);
         }
 
-        public SymbolDef FindVariable(string name)
+        public SymbolDef? FindVariable(string name)
         {
-            return Variables.ContainsKey(name) ? Variables[name] : ParentScope?.FindVariable(name);
+            return Variables!.ContainsKey(name) ? Variables[name] : ParentScope?.FindVariable(name);
         }
 
-        public virtual AstScope Resolve()
+        public virtual AstScope? Resolve()
         {
             return ParentScope;
         }
@@ -120,7 +124,7 @@ namespace Njsast.Ast
             var self = this;
             while (self.IsBlockScope)
             {
-                self = self.ParentScope;
+                self = self.ParentScope!;
             }
 
             return self;

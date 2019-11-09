@@ -23,7 +23,7 @@ namespace Njsast.Ast
             }
 
             var allowShortHand = output.Options.Shorthand;
-            string keyString = null;
+            string? keyString = null;
             if (Key is AstSymbol)
             {
                 keyString = GetName((AstSymbol) Key);
