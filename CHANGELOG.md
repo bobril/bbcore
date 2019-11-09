@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 3.7.2
+
 ### Added
 
 Interactive mode could now correctly watch for changes in Docker. There is also new BBWATCHER environmental variable to control responsiveness of such watcher. See README for details.
