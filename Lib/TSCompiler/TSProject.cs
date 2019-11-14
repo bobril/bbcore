@@ -285,6 +285,7 @@ namespace Lib.TSCompiler
                             ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
                         else
                             ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
+                        ProjectOptions.ExpandEnv();
                     }
                     compiler = buildCtx.CompilerPool.GetTs(DiskCache, buildCtx.CompilerOptions);
                     var trueTSVersion = compiler.GetTSVersion();

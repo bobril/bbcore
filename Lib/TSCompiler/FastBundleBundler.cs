@@ -362,7 +362,7 @@ namespace Lib.TSCompiler
             var res = new StringBuilder();
             foreach (var def in Project.Defines)
             {
-                var val = def.Value ? "true" : "false";
+                var val = def.Value.PrintToString();
                 res.Append($"var {def.Key} = {val};");
             }
 

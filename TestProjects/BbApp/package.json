@@ -21,7 +21,10 @@
         },
         "testDirectories": [
             "spec"
-        ]
+        ],
+        "envs": {
+            "Path": "env[\"Path\"]"
+        }
     },
     "author": "Bobris",
     "license": "MIT",

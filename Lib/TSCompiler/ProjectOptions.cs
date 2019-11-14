@@ -18,6 +18,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Njsast.Ast;
 using Njsast.Bobril;
+using Njsast.Reader;
+using Njsast.Runtime;
 using Njsast.SourceMap;
 
 namespace Lib.TSCompiler
@@ -27,8 +29,8 @@ namespace Lib.TSCompiler
         public IToolsDir Tools;
         public TSProject Owner;
         public string TestSourcesRegExp;
-        public Dictionary<string, AstNode>? Defines;
-        public Dictionary<string, AstNode>? ProcessEnvs;
+        public Dictionary<string, AstToplevel>? Defines;
+        public Dictionary<string, AstToplevel>? ProcessEnvs;
         public string Title;
         public string HtmlHead;
         public StyleDefNamingStyle StyleDefNaming;
@@ -50,6 +52,8 @@ namespace Lib.TSCompiler
         public string PathToTranslations;
         public bool TsconfigUpdate;
 
+        public Dictionary<string, string> ExpandedProcessEnvs;
+        public Dictionary<string, AstNode> ExpandedDefines;
         public string HtmlHeadExpanded;
         public string MainFile;
         public Dictionary<string, string> MainFileVariants;
@@ -77,6 +81,7 @@ namespace Lib.TSCompiler
         public TaskCompletionSource<Unit> LiveReloadAwaiter = new TaskCompletionSource<Unit>();
         public IBuildCache BuildCache;
         internal uint ConfigurationBuildCacheId;
+        public bool Debug = true;
 
         public void RefreshCompilerOptions()
         {
@@ -94,6 +99,7 @@ namespace Lib.TSCompiler
                 Owner.Logger.Warn("Main file " + res + " not found");
                 res = null;
             }
+
             if (MainFile == null || res == null || MainFile != res)
             {
                 MainFile = res;
@@ -127,7 +133,7 @@ namespace Lib.TSCompiler
                 var item = Owner.DiskCache.TryGetItem(examplePath);
                 if (item is IDirectoryCache)
                 {
-                    foreach (var child in (IDirectoryCache)item)
+                    foreach (var child in (IDirectoryCache) item)
                     {
                         if (!(child is IFileCache))
                             continue;
@@ -144,6 +150,7 @@ namespace Lib.TSCompiler
                 {
                     res.Add(item.FullPath);
                 }
+
                 res.Sort(StringComparer.Ordinal);
             }
 
@@ -175,7 +182,8 @@ namespace Lib.TSCompiler
                 {
                     foreach (var dir in TestDirectories)
                     {
-                        var dc = Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, dir)) as IDirectoryCache;
+                        var dc =
+                            Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, dir)) as IDirectoryCache;
                         if (dc != null && !dc.IsInvalid)
                         {
                             RecursiveFileSearch(dc, Owner.DiskCache, fileRegex, res);
@@ -237,7 +245,8 @@ namespace Lib.TSCompiler
             var item = Owner.DiskCache.TryGetItem(resourcesPath);
             if (item is IDirectoryCache)
             {
-                RecursiveFillOutputByAdditionalResourcesDirectory(item as IDirectoryCache, resourcesPath, filesContent, buildResult);
+                RecursiveFillOutputByAdditionalResourcesDirectory(item as IDirectoryCache, resourcesPath, filesContent,
+                    buildResult);
             }
         }
 
@@ -263,8 +272,8 @@ namespace Lib.TSCompiler
                     filesContent.GetOrAddValueRef(outPathFileName) =
                         new Lazy<object>(() =>
                         {
-                            var res = ((IFileCache)child).ByteContent;
-                            ((IFileCache)child).FreeCache();
+                            var res = ((IFileCache) child).ByteContent;
+                            ((IFileCache) child).FreeCache();
                             return res;
                         });
                 }
@@ -301,7 +310,8 @@ namespace Lib.TSCompiler
             if (Variant == "worker")
                 return new HashSet<string>
                 {
-                    "es5", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.generator", "es2015.collection", "webworker",
+                    "es5", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.generator", "es2015.collection",
+                    "webworker",
                     "webworker.importscripts"
                 };
             if (Variant == "serviceworker")
@@ -310,7 +320,10 @@ namespace Lib.TSCompiler
                     "es2017", "webworker"
                 };
             return new HashSet<string>
-                {"es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.generator", "es2015.collection"};
+            {
+                "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.generator",
+                "es2015.collection"
+            };
         }
 
         string _originalContent;
@@ -326,6 +339,7 @@ namespace Lib.TSCompiler
             {
                 return;
             }
+
             var fsAbstration = Owner.DiskCache.FsAbstraction;
             var tsConfigPath = PathUtils.Join(Owner.Owner.FullPath, "tsconfig.json");
             if (_originalContent == null && fsAbstration.FileExists(tsConfigPath))
@@ -342,10 +356,10 @@ namespace Lib.TSCompiler
             var newConfigObject = new TSConfigJson
             {
                 compilerOptions = GetDefaultTSCompilerOptions()
-                    .Merge(new TSCompilerOptions { allowJs = false })
+                    .Merge(new TSCompilerOptions {allowJs = false})
                     .Merge(CompilerOptions),
                 files = new List<string>(2 + IncludeSources?.Length ?? 0),
-                include = new List<string> { "**/*" }
+                include = new List<string> {"**/*"}
             };
 
             if (TestSources.Count > 0)
@@ -446,14 +460,31 @@ namespace Lib.TSCompiler
             Localize = bobrilSection?["localize"]?.Value<bool>() ?? Localize;
             PathToTranslations = GetStringProperty(bobrilSection, "pathToTranslations", null);
             TsconfigUpdate = bobrilSection?["tsconfigUpdate"]?.Value<bool>() ?? true;
-            BuildOutputDir = GetStringProperty(bobrilSection,"buildOutputDir",null);
+            BuildOutputDir = GetStringProperty(bobrilSection, "buildOutputDir", null);
             Defines = ParseDefines(bobrilSection?.GetValue("defines") as JObject);
+            if (!Defines!.ContainsKey("DEBUG"))
+            {
+                Defines!["DEBUG"] = Parser.Parse("DEBUG");
+            }
+
             ProcessEnvs = ParseDefines(bobrilSection?.GetValue("envs") as JObject);
+            if (!ProcessEnvs!.ContainsKey("NODE_ENV"))
+            {
+                ProcessEnvs!["NODE_ENV"] = Parser.Parse("DEBUG?\"development\":\"production\"");
+            }
         }
 
-        Dictionary<string, AstNode>? ParseDefines(JObject? jObject)
+        Dictionary<string, AstToplevel> ParseDefines(JObject? jObject)
         {
+            var res = new Dictionary<string, AstToplevel>();
+            if (jObject != null)
+                foreach (var (key, value) in jObject)
+                {
+                    if (value.Type != JTokenType.String) continue;
+                    res[key] = Parser.Parse((string) ((JValue) value).Value);
+                }
 
+            return res;
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)
@@ -474,7 +505,7 @@ namespace Lib.TSCompiler
         static string GetStringProperty(JObject obj, string name, string @default)
         {
             if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
-                return (string)value;
+                return (string) value;
             return @default;
         }
 
@@ -491,6 +522,18 @@ namespace Lib.TSCompiler
         {
             if (sourceInfo == null) return;
 
+            if (sourceInfo.ProcessEnvs != null)
+            {
+                foreach (var processEnv in sourceInfo.ProcessEnvs)
+                {
+                    if (processEnv.Name == null) continue;
+                    if (!ExpandedProcessEnvs.TryGetValue(processEnv.Name, out var value))
+                        continue;
+                    sourceReplacer.Replace(processEnv.StartLine, processEnv.StartCol, processEnv.EndLine,
+                        processEnv.EndCol, value);
+                }
+            }
+
             if (sourceInfo.Assets != null)
             {
                 foreach (var a in sourceInfo.Assets)
@@ -502,7 +545,9 @@ namespace Lib.TSCompiler
                     {
                         assetName = assetName.Substring(9);
                     }
-                    sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol, "\"" + buildResult.ToOutputUrl(assetName) + "\"");
+
+                    sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol,
+                        "\"" + buildResult.ToOutputUrl(assetName) + "\"");
                 }
             }
 
@@ -520,14 +565,18 @@ namespace Lib.TSCompiler
                         if (s.HasColor == true && s.Color == null)
                         {
                             // Modify method name to b.spritebc and remove first parameter with sprite name
-                            sourceReplacer.Replace(s.StartLine, s.StartCol, s.ColorStartLine, s.ColorStartCol, sourceInfo.BobrilImport + ".spritebc(");
+                            sourceReplacer.Replace(s.StartLine, s.StartCol, s.ColorStartLine, s.ColorStartCol,
+                                sourceInfo.BobrilImport + ".spritebc(");
                             // Replace parameters after color with sprite size and position
-                            sourceReplacer.Replace(s.ColorEndLine, s.ColorEndCol, s.EndLine, s.EndCol, "," + os.owidth + "," + os.oheight + "," + os.ox + "," + os.oy + ")");
+                            sourceReplacer.Replace(s.ColorEndLine, s.ColorEndCol, s.EndLine, s.EndCol,
+                                "," + os.owidth + "," + os.oheight + "," + os.ox + "," + os.oy + ")");
                         }
                         else
                         {
                             // Modify method name to b.spriteb and replace parameters with sprite size and position
-                            sourceReplacer.Replace(s.StartLine, s.StartCol, s.EndLine, s.EndCol, sourceInfo.BobrilImport + ".spriteb(" + os.owidth + "," + os.oheight + "," + os.ox + "," + os.oy + ")");
+                            sourceReplacer.Replace(s.StartLine, s.StartCol, s.EndLine, s.EndCol,
+                                sourceInfo.BobrilImport + ".spriteb(" + os.owidth + "," + os.oheight + "," + os.ox +
+                                "," + os.oy + ")");
                         }
                     }
                 }
@@ -537,7 +586,8 @@ namespace Lib.TSCompiler
                     {
                         if (s.Name == null)
                             continue;
-                        sourceReplacer.Replace(s.NameStartLine, s.NameStartCol, s.NameEndLine, s.NameEndCol, "\"" + buildResult.ToOutputUrl(s.Name) + "\"");
+                        sourceReplacer.Replace(s.NameStartLine, s.NameStartCol, s.NameEndLine, s.NameEndCol,
+                            "\"" + buildResult.ToOutputUrl(s.Name) + "\"");
                     }
                 }
             }
@@ -575,11 +625,13 @@ namespace Lib.TSCompiler
                             {
                                 if (s.Name != null)
                                 {
-                                    sourceReplacer.Replace(s.StartLine, s.StartCol, s.EndLine, s.EndCol, "\"" + styleDefPrefix + s.Name + "\"");
+                                    sourceReplacer.Replace(s.StartLine, s.StartCol, s.EndLine, s.EndCol,
+                                        "\"" + styleDefPrefix + s.Name + "\"");
                                 }
                                 else
                                 {
-                                    sourceReplacer.Replace(s.StartLine, s.StartCol, s.StartLine, s.StartCol, "\"" + styleDefPrefix + "\"+(");
+                                    sourceReplacer.Replace(s.StartLine, s.StartCol, s.StartLine, s.StartCol,
+                                        "\"" + styleDefPrefix + "\"+(");
                                     sourceReplacer.Replace(s.EndLine, s.EndCol, s.EndLine, s.EndCol, ")");
                                 }
                             }
@@ -594,11 +646,46 @@ namespace Lib.TSCompiler
                         if (styleDefNaming == StyleDefNamingStyle.AddNames && s.Name != null)
                         {
                             var padArgs = (s.ArgCount == 1 + (s.IsEx ? 1 : 0)) ? ",undefined" : "";
-                            sourceReplacer.Replace(s.BeforeNameLine, s.BeforeNameCol, s.BeforeNameLine, s.BeforeNameCol, padArgs + ",\"" + styleDefPrefix + s.Name + "\"");
+                            sourceReplacer.Replace(s.BeforeNameLine, s.BeforeNameCol, s.BeforeNameLine, s.BeforeNameCol,
+                                padArgs + ",\"" + styleDefPrefix + s.Name + "\"");
                         }
                     }
                 }
             }
+        }
+
+        public void ExpandEnv()
+        {
+            var constsInput = new Dictionary<string, AstNode>();
+            var definesOutput = new Dictionary<string, AstNode>();
+            constsInput["DEBUG"] = Debug ? (AstNode) AstTrue.Instance : AstFalse.Instance;
+            foreach (var (key, value) in Defines)
+            {
+                var clone = value.DeepClone();
+                clone.FigureOutScope();
+                clone = (AstToplevel) new EnvExpanderTransformer(constsInput, GetSystemEnvValue)
+                    .Transform(clone);
+                definesOutput[key] = TypeConverter.ToAst((clone.Body.Last as AstSimpleStatement)?.Body.ConstValue());
+            }
+
+            var envReplace = new Dictionary<string, string>();
+            foreach (var (key, value) in ProcessEnvs)
+            {
+                var clone = value.DeepClone();
+                clone.FigureOutScope();
+                clone = (AstToplevel) new EnvExpanderTransformer(definesOutput, GetSystemEnvValue)
+                    .Transform(clone);
+                envReplace[key] = TypeConverter.ToAst((clone.Body.Last as AstSimpleStatement)?.Body.ConstValue())
+                    .PrintToString();
+            }
+
+            ExpandedDefines = definesOutput;
+            ExpandedProcessEnvs = envReplace;
+        }
+
+        static string? GetSystemEnvValue(string arg)
+        {
+            return Environment.GetEnvironmentVariable(arg);
         }
     }
 }

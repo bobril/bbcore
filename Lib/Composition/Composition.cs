@@ -26,6 +26,8 @@ using Lib.Registry;
 using Lib.Utils.Notification;
 using Lib.Translation;
 using Lib.Utils.Logger;
+using Njsast.Ast;
+using Njsast.Reader;
 
 namespace Lib.Composition
 {
@@ -396,7 +398,7 @@ namespace Lib.Composition
                 proj.StyleDefNaming =
                     ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
                 proj.BundleCss = !bCommand.Fast.Value;
-                proj.Defines["DEBUG"] = bCommand.Fast.Value;
+                proj.Debug = bCommand.Fast.Value;
                 var buildResult = new BuildResult(proj);
                 proj.GenerateCode();
                 proj.SpriterInitialization(buildResult);
@@ -844,7 +846,6 @@ namespace Lib.Composition
                 Tools = _tools,
                 BuildCache = _buildCache,
                 Owner = proj,
-                Defines = new Dictionary<string, bool> {{"DEBUG", true}},
                 SpriteGeneration = enableSpritting
             };
             _currentProject = proj.ProjectOptions;

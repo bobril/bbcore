@@ -8,6 +8,7 @@ using System.Globalization;
 using BTDB.Collections;
 using System;
 using System.Text.RegularExpressions;
+using Njsast.Ast;
 using Njsast.SourceMap;
 
 namespace Lib.TSCompiler
@@ -33,7 +34,6 @@ namespace Lib.TSCompiler
 
         public void Build(bool compress, bool mangle, bool beautify)
         {
-            var diskCache = Project.Owner.DiskCache;
             var cssLink = "";
             var cssToBundle = new List<SourceFromPair>();
             foreach (var source in BuildResult.Path2FileInfo.Values.OrderBy(f => f.Owner.FullPath).ToArray())
@@ -108,7 +108,7 @@ namespace Lib.TSCompiler
             var defines = new Dictionary<string, object>();
             foreach (var p in Project.Defines)
             {
-                defines.Add(p.Key, p.Value);
+                defines.Add(p.Key, ((AstSimpleStatement)p.Value.Body.Last).Body.ConstValue());
             }
 
             bundler.Defines = defines;

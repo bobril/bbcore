@@ -8,7 +8,13 @@
 
 ### Added
 
-Interactive mode could now correctly watch for changes in Docker. There is also new BBWATCHER environmental variable to control responsiveness of such watcher. See README for details.
+- Support for `process.env.X` constants which are replaced during compilation by some constant. They don't directly read system environment, what whey do must be specified in `package.json` by JavaScript expression. There is default definition for `NODE_ENV` to be `DEBUG?"development":"production"` like in React/Node apps.
+
+- You can define global constants also using `package.json`. Till now there was only `DEBUG` which has default definition to be equal to build-in `DEBUG`.
+
+- In these definition you can use build-in `env` object which allows to get value of environmental variable. See examples in README.
+
+- Interactive mode could now correctly watch for changes in Docker. There is also new BBWATCHER environmental variable to control responsiveness of such watcher. See README for details.
 
 ## 0.96.3
 

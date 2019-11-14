@@ -75,6 +75,19 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 
 # Package.json - bobril section features
 
+## Define global contants and process.env
+
+global constants are defined using "defines" object. If `DEBUG` is not defined is it automatically defined as `DEBUG` build-in constant which is true in interactive, test modes and fast build mode. First are expanded all `defines`, than result of this expansion is input to `envs` expansion. In `envs` you define replacement for `process.env` object. If `NODE_ENV` is not defined is it automatically defined like in example below.
+
+```JSON
+    "defines": {
+        "DEBUG": "DEBUG"
+    },
+    "envs": {
+        "NODE_ENV": "DEBUG?\"development\":\"production\"",
+        "path": "env.Path"
+    }
+
 ## Update of tsconfig.json
 
 Build generates tsconfig.json by default. You can disable this feature by:
@@ -168,3 +181,4 @@ Docker on Windows filesystem has limitation in creating links. To workaround thi
 ## Recognize when running in Docker
 
 It uses same variable like all other dotnet containers `DOTNET_RUNNING_IN_CONTAINER`.
+```

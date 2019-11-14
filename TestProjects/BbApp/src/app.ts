@@ -6,6 +6,8 @@ import * as json from "./json.json";
 import "./polyfills";
 import * as styles from "./styles";
 
+declare var process: { env: Record<string, string> };
+
 interface IPageCtx extends b.IBobrilCtx {
     counter: number;
 }
@@ -94,6 +96,24 @@ let page = b.createVirtualComponent({
             {
                 tag: "p",
                 children: "Current locale: " + g.getLocale()
+            },
+            {
+                tag: "p",
+                children: "process.env.NODE_ENV: " + process.env.NODE_ENV
+            },
+            {
+                tag: "div",
+                style: { display: "table", tableLayout: "fixed", width: "100%" },
+                children: {
+                    tag: "div",
+                    style: {
+                        display: "table-cell",
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
+                        overflow: "hidden"
+                    },
+                    children: "Path: " + process.env.Path
+                }
             },
             {
                 tag: "p",
