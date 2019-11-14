@@ -6,13 +6,18 @@ namespace Njsast.Ast
     /// A key: value object property
     public class AstObjectKeyVal : AstObjectProperty
     {
-        public AstObjectKeyVal(Parser parser, Position startLoc, Position endLoc, AstNode key, AstNode value) : base(
-            parser, startLoc, endLoc, key, value)
+        public AstObjectKeyVal(string? source, Position startLoc, Position endLoc, AstNode key, AstNode value) : base(
+            source, startLoc, endLoc, key, value)
         {
         }
 
         public AstObjectKeyVal(AstNode key, AstNode value) : base(key, value)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstObjectKeyVal(Source, Start, End, Key, Value);
         }
 
         public override void CodeGen(OutputContext output)

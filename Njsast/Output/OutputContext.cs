@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Njsast.Ast;
 using Njsast.Reader;
@@ -36,7 +37,8 @@ namespace Njsast.Output
                 _frequencyCounting = true;
                 return;
             }
-            _frequency = new uint[128];    
+
+            _frequency = new uint[128];
         }
 
         public char[] FinishFrequencyCounting()
@@ -56,7 +58,7 @@ namespace Njsast.Output
                 list.Add((_frequency[ch], ch));
             }
 
-            list.Sort();
+            list = list.OrderBy(i => i.Item1).ToList(); // Stable sort
             var res = new List<char>(chars.Length);
             for (var i = 0; i < list.Count; i++)
             {

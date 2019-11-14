@@ -17,8 +17,8 @@ namespace Njsast.Ast
 
         public bool Inlined;
 
-        public AstClass(Parser parser, Position startPos, Position endPos, AstSymbolDeclaration? name, AstNode? extends,
-            ref StructList<AstObjectProperty> properties) : base(parser, startPos, endPos)
+        public AstClass(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, AstNode? extends,
+            ref StructList<AstObjectProperty> properties) : base(source, startPos, endPos)
         {
             Name = name;
             Extends = extends;

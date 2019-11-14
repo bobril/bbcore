@@ -13,10 +13,15 @@ namespace Njsast.Ast
         /// [Boolean] Whether the destructuring represents an object or array
         public bool IsArray;
 
-        public AstDestructuring(Parser parser, Position startLoc, Position endLoc, ref StructList<AstNode> names,
-            bool isArray) : base(parser, startLoc, endLoc)
+        public AstDestructuring(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> names,
+            bool isArray) : base(source, startLoc, endLoc)
         {
             Names.TransferFrom(ref names);
+            IsArray = isArray;
+        }
+
+        AstDestructuring(string? source, Position startLoc, Position endLoc, bool isArray) : base(source, startLoc, endLoc)
+        {
             IsArray = isArray;
         }
 
@@ -36,6 +41,13 @@ namespace Njsast.Ast
         {
             base.DumpScalars(writer);
             writer.PrintProp("IsArray", IsArray);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstDestructuring(Source, Start, End, IsArray);
+            res.Names.AddRange(Names.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

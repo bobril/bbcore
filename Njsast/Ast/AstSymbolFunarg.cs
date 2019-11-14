@@ -14,5 +14,10 @@
         public AstSymbolFunarg(AstNode from, string name) : base(from, name)
         {
         }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstSymbolFunarg(this);
+        }
     }
 }

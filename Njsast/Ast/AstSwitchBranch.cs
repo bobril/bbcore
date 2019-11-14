@@ -3,9 +3,9 @@
 namespace Njsast.Ast
 {
     /// Base class for `switch` branches
-    public class AstSwitchBranch : AstBlock
+    public abstract class AstSwitchBranch : AstBlock
     {
-        public AstSwitchBranch(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
+        protected AstSwitchBranch(string? source, Position startPos, Position endPos) : base(source, startPos, endPos)
         {
         }
 

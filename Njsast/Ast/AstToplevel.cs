@@ -14,12 +14,20 @@ namespace Njsast.Ast
 
         bool _isScopeFigured;
 
-        public AstToplevel(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
+        public AstToplevel(string? source, Position startPos, Position endPos) : base(source, startPos, endPos)
         {
         }
 
         public AstToplevel()
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstToplevel(Source, Start, End);
+            res.Body.AddRange(Body.AsReadOnlySpan());
+            res.HasUseStrictDirective = HasUseStrictDirective;
+            return res;
         }
 
         public SymbolDef DefGlobal(AstSymbol symbol)

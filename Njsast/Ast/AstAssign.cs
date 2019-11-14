@@ -6,13 +6,18 @@ namespace Njsast.Ast
     /// An assignment expression — `a = b + 5`
     public class AstAssign : AstBinary
     {
-        public AstAssign(Parser? parser, Position startLoc, Position endLoc, AstNode left, AstNode right, Operator op) :
-            base(parser, startLoc, endLoc, left, right, op)
+        public AstAssign(string? source, Position startLoc, Position endLoc, AstNode left, AstNode right, Operator op) :
+            base(source, startLoc, endLoc, left, right, op)
         {
         }
 
         public AstAssign(AstNode left, AstNode right, Operator op = Operator.Assignment) : base(left, right, op)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstAssign(Source, Start, End, Left, Right, Operator);
         }
 
         public override bool NeedParens(OutputContext output)

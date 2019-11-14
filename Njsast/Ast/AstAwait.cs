@@ -9,8 +9,8 @@ namespace Njsast.Ast
         /// [AstNode] the mandatory expression being awaited
         public AstNode Expression;
 
-        public AstAwait(Parser parser, Position startLoc, Position endLoc, AstNode expression) :
-            base(parser, startLoc, endLoc)
+        public AstAwait(string? source, Position startLoc, Position endLoc, AstNode expression) :
+            base(source, startLoc, endLoc)
         {
             Expression = expression;
         }
@@ -25,6 +25,11 @@ namespace Njsast.Ast
         {
             base.Transform(tt);
             Expression = tt.Transform(Expression)!;
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstAwait(Source, Start, End, Expression);
         }
 
         public override void CodeGen(OutputContext output)

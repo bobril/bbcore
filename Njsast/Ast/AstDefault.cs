@@ -6,8 +6,15 @@ namespace Njsast.Ast
     /// A `default` switch branch
     public class AstDefault : AstSwitchBranch
     {
-        public AstDefault(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
+        public AstDefault(string? source, Position startPos, Position endPos) : base(source, startPos, endPos)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstDefault(Source, Start, End);
+            res.Body.AddRange(Body.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

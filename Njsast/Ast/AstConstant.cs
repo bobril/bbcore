@@ -6,7 +6,7 @@ namespace Njsast.Ast
     /// Base class for all constants
     public abstract class AstConstant : AstNode
     {
-        protected AstConstant(Parser? parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
+        protected AstConstant(string? source, Position startPos, Position endPos) : base(source, startPos, endPos)
         {
         }
 

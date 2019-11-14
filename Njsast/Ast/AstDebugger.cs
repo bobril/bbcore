@@ -6,8 +6,13 @@ namespace Njsast.Ast
     /// Represents a debugger statement
     public class AstDebugger : AstStatement
     {
-        public AstDebugger(Parser parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
+        public AstDebugger(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstDebugger(Source, Start, End);
         }
 
         public override void CodeGen(OutputContext output)

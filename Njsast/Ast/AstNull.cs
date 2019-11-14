@@ -7,8 +7,17 @@ namespace Njsast.Ast
     /// The `null` atom
     public class AstNull : AstAtom
     {
-        public AstNull(Parser? parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
+        public AstNull(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
         {
+        }
+
+        AstNull()
+        {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstNull(Source, Start, End);
         }
 
         public override void CodeGen(OutputContext output)
@@ -16,7 +25,7 @@ namespace Njsast.Ast
             output.Print("null");
         }
 
-        static readonly AstNull Instance = new AstNull(null, new Position(), new Position());
+        static readonly AstNull Instance = new AstNull();
 
         public override object? ConstValue(IConstEvalCtx? ctx = null)
         {

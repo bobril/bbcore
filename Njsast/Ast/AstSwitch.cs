@@ -9,10 +9,22 @@ namespace Njsast.Ast
         /// [AstNode] the `switch` “discriminant”
         public AstNode Expression;
 
-        public AstSwitch(Parser parser, Position startPos, Position endPos, AstNode expression,
-            ref StructList<AstNode> body) : base(parser, startPos, endPos, ref body)
+        public AstSwitch(string? source, Position startPos, Position endPos, AstNode expression,
+            ref StructList<AstNode> body) : base(source, startPos, endPos, ref body)
         {
             Expression = expression;
+        }
+
+        AstSwitch(string? source, Position startPos, Position endPos, AstNode expression) : base(source, startPos, endPos)
+        {
+            Expression = expression;
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstSwitch(Source, Start, End, Expression);
+            res.Body.AddRange(Body.AsReadOnlySpan());
+            return res;
         }
 
         public override void Visit(TreeWalker w)

@@ -9,10 +9,15 @@ namespace Njsast.Ast
         /// [AstNode*] array of expressions (at least two)
         public StructList<AstNode> Expressions;
 
-        public AstSequence(Parser? parser, Position startLoc, Position endLoc, ref StructList<AstNode> expressions) :
-            base(parser, startLoc, endLoc)
+        public AstSequence(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> expressions) :
+            base(source, startLoc, endLoc)
         {
             Expressions.TransferFrom(ref expressions);
+        }
+
+        AstSequence(string? source, Position startLoc, Position endLoc) :
+            base(source, startLoc, endLoc)
+        {
         }
 
         public override void Visit(TreeWalker w)
@@ -25,6 +30,13 @@ namespace Njsast.Ast
         {
             base.Transform(tt);
             tt.TransformList(ref Expressions);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstSequence(Source, Start, End);
+            res.Expressions.AddRange(Expressions.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

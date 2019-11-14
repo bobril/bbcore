@@ -33,7 +33,7 @@ namespace Njsast.Ast
         /// [integer/S] current index for mangling variables (used internally by the mangler)
         public uint Cname;
 
-        public AstScope(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
+        protected AstScope(string? source, Position startPos, Position endPos) : base(source, startPos, endPos)
         {
         }
 
@@ -41,13 +41,13 @@ namespace Njsast.Ast
         {
         }
 
-        public AstScope(Parser parser, Position startPos, Position endPos, ref StructList<AstNode> body) : base(parser,
-            startPos, endPos, ref body)
+        public AstScope(AstNode from) : base(from)
         {
         }
 
-        public AstScope(AstNode from) : base(from)
+        public override AstNode ShallowClone()
         {
+            throw new InvalidOperationException("Cannot clone Scope");
         }
 
         public AstScope SetUseStrict(bool useStrict)

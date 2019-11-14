@@ -14,7 +14,7 @@ namespace Njsast.Ast
         /// Raw content of the segment
         public string Raw;
 
-        public AstTemplateSegment(Parser parser, Position startLoc, Position endLoc, string value, string raw) : base(parser, startLoc, endLoc)
+        public AstTemplateSegment(string? source, Position startLoc, Position endLoc, string value, string raw) : base(source, startLoc, endLoc)
         {
             Value = value;
             Raw = raw;
@@ -25,6 +25,11 @@ namespace Njsast.Ast
             base.DumpScalars(writer);
             writer.PrintProp("Value", Value);
             writer.PrintProp("Raw", Raw);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstTemplateSegment(Source, Start, End, Value, Raw);
         }
 
         public override void CodeGen(OutputContext output)

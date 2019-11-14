@@ -134,7 +134,7 @@ namespace Njsast.Reader
         [NotNull]
         public AstToplevel Parse()
         {
-            var node = Options.Program ?? new AstToplevel(this, Start, _lastTokEnd);
+            var node = Options.Program ?? new AstToplevel(SourceFile, Start, _lastTokEnd);
             NextToken();
             ParseTopLevel(node);
             return node;

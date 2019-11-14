@@ -9,8 +9,8 @@ namespace Njsast.Ast
         /// [AstNode] the `with` expression
         public AstNode Expression;
 
-        public AstWith(Parser parser, Position startPos, Position endPos, AstStatement body, AstNode expression) : base(
-            parser, startPos, endPos, body)
+        public AstWith(string? source, Position startPos, Position endPos, AstStatement body, AstNode expression) : base(
+            source, startPos, endPos, body)
         {
             Expression = expression;
         }
@@ -25,6 +25,11 @@ namespace Njsast.Ast
         {
             Expression = tt.Transform(Expression);
             base.Transform(tt);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstWith(Source, Start, End, Body, Expression);
         }
 
         public override void CodeGen(OutputContext output)

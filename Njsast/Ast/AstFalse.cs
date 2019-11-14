@@ -7,8 +7,13 @@ namespace Njsast.Ast
     /// The `false` atom
     public class AstFalse : AstBoolean
     {
-        public AstFalse(Parser? parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
+        public AstFalse(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstFalse(Source, Start, End);
         }
 
         public override void CodeGen(OutputContext output)

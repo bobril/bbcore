@@ -6,13 +6,18 @@ namespace Njsast.Ast
     /// A dotted property access expression
     public class AstDot : AstPropAccess
     {
-        public AstDot(Parser parser, Position startLoc, Position endLoc, AstNode expression, string property) : base(
-            parser, startLoc, endLoc, expression, property)
+        public AstDot(string? source, Position startLoc, Position endLoc, AstNode expression, string property) : base(
+            source, startLoc, endLoc, expression, property)
         {
         }
 
         public AstDot(AstNode expression, string propName) : base(expression, propName)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstDot(Source, Start, End, Expression, (string)Property);
         }
 
         public override void CodeGen(OutputContext output)

@@ -16,6 +16,7 @@ using Lib.Utils;
 using Lib.Utils.Logger;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Njsast.Ast;
 using Njsast.Bobril;
 using Njsast.SourceMap;
 
@@ -26,7 +27,8 @@ namespace Lib.TSCompiler
         public IToolsDir Tools;
         public TSProject Owner;
         public string TestSourcesRegExp;
-        public Dictionary<string, bool> Defines;
+        public Dictionary<string, AstNode>? Defines;
+        public Dictionary<string, AstNode>? ProcessEnvs;
         public string Title;
         public string HtmlHead;
         public StyleDefNamingStyle StyleDefNaming;
@@ -445,6 +447,13 @@ namespace Lib.TSCompiler
             PathToTranslations = GetStringProperty(bobrilSection, "pathToTranslations", null);
             TsconfigUpdate = bobrilSection?["tsconfigUpdate"]?.Value<bool>() ?? true;
             BuildOutputDir = GetStringProperty(bobrilSection,"buildOutputDir",null);
+            Defines = ParseDefines(bobrilSection?.GetValue("defines") as JObject);
+            ProcessEnvs = ParseDefines(bobrilSection?.GetValue("envs") as JObject);
+        }
+
+        Dictionary<string, AstNode>? ParseDefines(JObject? jObject)
+        {
+
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)

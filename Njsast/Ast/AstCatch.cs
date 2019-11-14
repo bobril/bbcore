@@ -9,10 +9,22 @@ namespace Njsast.Ast
         /// [AstSymbolCatch|AstDestructuring|AstExpansion|AstDefaultAssign] symbol for the exception
         public AstNode Argname;
 
-        public AstCatch(Parser parser, Position startPos, Position endPos, AstNode argname,
-            ref StructList<AstNode> body) : base(parser, startPos, endPos, ref body)
+        public AstCatch(string? source, Position startPos, Position endPos, AstNode argname,
+            ref StructList<AstNode> body) : base(source, startPos, endPos, ref body)
         {
             Argname = argname;
+        }
+
+        AstCatch(string? source, Position startPos, Position endPos, AstNode argname) : base(source, startPos, endPos)
+        {
+            Argname = argname;
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstCatch(Source, Start, End, Argname);
+            res.Body.AddRange(Body.AsReadOnlySpan());
+            return res;
         }
 
         public override void Visit(TreeWalker w)

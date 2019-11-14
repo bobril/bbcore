@@ -9,10 +9,17 @@ namespace Njsast.Ast
         /// [AstNode] the `case` expression
         public AstNode Expression;
 
-        public AstCase(Parser parser, Position startPos, Position endPos, AstNode expression) : base(parser, startPos,
+        public AstCase(string? source, Position startPos, Position endPos, AstNode expression) : base(source, startPos,
             endPos)
         {
             Expression = expression;
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstCase(Source, Start, End, Expression);
+            res.Body.AddRange(Body.AsReadOnlySpan());
+            return res;
         }
 
         public override void Visit(TreeWalker w)

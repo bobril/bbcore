@@ -9,7 +9,7 @@ namespace Njsast.Ast
         {
         }
 
-        public AstSymbolExport(Parser parser, Position startPos, Position endPos, string name) : base(parser, startPos, endPos, name)
+        public AstSymbolExport(string? source, Position startPos, Position endPos, string name) : base(source, startPos, endPos, name)
         {
         }
     }

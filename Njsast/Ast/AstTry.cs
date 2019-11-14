@@ -12,11 +12,24 @@ namespace Njsast.Ast
         /// [AstFinally?] the finally block, or null if not present
         public AstFinally? Bfinally;
 
-        public AstTry(Parser parser, Position startPos, Position endPos, ref StructList<AstNode> body, AstCatch? bcatch,
-            AstFinally? bfinally) : base(parser, startPos, endPos, ref body)
+        public AstTry(string? source, Position startPos, Position endPos, ref StructList<AstNode> body, AstCatch? bcatch,
+            AstFinally? bfinally) : base(source, startPos, endPos, ref body)
         {
             Bcatch = bcatch;
             Bfinally = bfinally;
+        }
+
+        AstTry(string? source, Position startPos, Position endPos, AstCatch? bcatch, AstFinally? bfinally) : base(source, startPos, endPos)
+        {
+            Bcatch = bcatch;
+            Bfinally = bfinally;
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstTry(Source, Start, End, Bcatch, Bfinally);
+            res.Body.AddRange(Body.AsReadOnlySpan());
+            return res;
         }
 
         public override void Visit(TreeWalker w)

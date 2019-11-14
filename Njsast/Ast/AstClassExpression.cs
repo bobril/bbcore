@@ -6,8 +6,8 @@ namespace Njsast.Ast
     /// A class expression.
     public class AstClassExpression : AstClass
     {
-        public AstClassExpression(Parser parser, Position startPos, Position endPos, AstSymbolDeclaration? name,
-            AstNode? extends, ref StructList<AstObjectProperty> properties) : base(parser, startPos, endPos, name,
+        public AstClassExpression(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
+            AstNode? extends, ref StructList<AstObjectProperty> properties) : base(source, startPos, endPos, name,
             extends, ref properties)
         {
         }

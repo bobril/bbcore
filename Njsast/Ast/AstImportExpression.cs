@@ -7,7 +7,7 @@ namespace Njsast.Ast
     {
         public AstNode ModuleName;
 
-        public AstImportExpression(Parser parser, Position startLoc, Position endLoc, AstNode moduleName) : base(parser, startLoc, endLoc)
+        public AstImportExpression(string? source, Position startLoc, Position endLoc, AstNode moduleName) : base(source, startLoc, endLoc)
         {
             ModuleName = moduleName;
         }
@@ -22,6 +22,11 @@ namespace Njsast.Ast
         {
             ModuleName = tt.Transform(ModuleName)!;
             base.Transform(tt);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstImportExpression(Source, Start, End, ModuleName);
         }
 
         public override void CodeGen(OutputContext output)

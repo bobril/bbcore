@@ -151,7 +151,7 @@ namespace Njsast.Bundler
         {
             if (node is AstToplevel toplevel)
             {
-                toplevel.Body.InsertRange(0, _bodyPrepend.AsSpan());
+                toplevel.Body.InsertRange(0, _bodyPrepend.AsReadOnlySpan());
             }
 
             return null;

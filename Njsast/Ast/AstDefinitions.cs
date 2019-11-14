@@ -4,15 +4,20 @@ using Njsast.Reader;
 namespace Njsast.Ast
 {
     /// Base class for `var` or `const` nodes (variable declarations/initializations)
-    public class AstDefinitions : AstStatement
+    public abstract class AstDefinitions : AstStatement
     {
         /// [AstVarDef*] array of variable definitions
         public StructList<AstVarDef> Definitions;
 
-        protected AstDefinitions(Parser parser, Position startPos, Position endPos, ref StructList<AstVarDef> definitions)
-            : base(parser, startPos, endPos)
+        protected AstDefinitions(string? source, Position startPos, Position endPos, ref StructList<AstVarDef> definitions)
+            : base(source, startPos, endPos)
         {
             Definitions.TransferFrom(ref definitions);
+        }
+
+        protected AstDefinitions(string? source, Position startPos, Position endPos)
+            : base(source, startPos, endPos)
+        {
         }
 
         protected AstDefinitions(ref StructList<AstVarDef> definitions)

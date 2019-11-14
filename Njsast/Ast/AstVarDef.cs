@@ -12,8 +12,8 @@ namespace Njsast.Ast
         /// [AstNode?] initializer, or null of there's no initializer
         public AstNode? Value;
 
-        public AstVarDef(Parser parser, Position startLoc, Position endLoc, AstNode name, AstNode? value = null) : base(
-            parser, startLoc, endLoc)
+        public AstVarDef(string? source, Position startLoc, Position endLoc, AstNode name, AstNode? value = null) : base(
+            source, startLoc, endLoc)
         {
             Name = name;
             Value = value;
@@ -44,6 +44,11 @@ namespace Njsast.Ast
             Name = tt.Transform(Name);
             if (Value != null)
                 Value = tt.Transform(Value);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstVarDef(Source, Start, End, Name, Value);
         }
 
         public override void CodeGen(OutputContext output)

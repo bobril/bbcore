@@ -12,10 +12,10 @@ namespace Njsast.Ast
         public AstNode Consequent;
         public AstNode Alternative;
 
-        public AstConditional(Parser parser, Position startLoc, Position endLoc, AstNode expr, AstNode consequent,
-            AstNode alternative) : base(parser, startLoc, endLoc)
+        public AstConditional(string? source, Position startLoc, Position endLoc, AstNode condition, AstNode consequent,
+            AstNode alternative) : base(source, startLoc, endLoc)
         {
-            Condition = expr;
+            Condition = condition;
             Consequent = consequent;
             Alternative = alternative;
         }
@@ -34,6 +34,11 @@ namespace Njsast.Ast
             Condition = tt.Transform(Condition)!;
             Consequent = tt.Transform(Consequent)!;
             Alternative = tt.Transform(Alternative)!;
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstConditional(Source, Start, End, Condition, Consequent, Alternative);
         }
 
         public override void CodeGen(OutputContext output)
@@ -73,9 +78,7 @@ namespace Njsast.Ast
         {
             var cond = Condition.ConstValue(ctx?.StripPathResolver());
             if (cond == null) return null;
-            if (TypeConverter.ToBoolean(cond))
-                return Consequent.ConstValue(ctx);
-            return Alternative.ConstValue(ctx);
+            return TypeConverter.ToBoolean(cond) ? Consequent.ConstValue(ctx) : Alternative.ConstValue(ctx);
         }
     }
 }

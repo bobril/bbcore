@@ -3,13 +3,13 @@
 namespace Njsast.Ast
 {
     /// Base class for do/while statements
-    public class AstDwLoop : AstIterationStatement
+    public abstract class AstDwLoop : AstIterationStatement
     {
         /// [AstNode] the loop condition.  Should not be instanceof AstStatement
         public AstNode Condition;
 
-        public AstDwLoop(Parser parser, Position startPos, Position endPos, AstNode test, AstStatement body)
-        : base(parser, startPos, endPos, body)
+        protected AstDwLoop(string? source, Position startPos, Position endPos, AstNode test, AstStatement body)
+        : base(source, startPos, endPos, body)
         {
             Condition = test;
         }
@@ -25,6 +25,5 @@ namespace Njsast.Ast
             Condition = tt.Transform(Condition)!;
             base.Transform(tt);
         }
-
     }
 }

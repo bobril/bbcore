@@ -9,8 +9,13 @@ namespace Njsast.Ast
         {
         }
 
-        public AstSymbolExportForeign(Parser parser, Position startPos, Position endPos, string name) : base(parser, startPos, endPos, name)
+        public AstSymbolExportForeign(string? source, Position startPos, Position endPos, string name) : base(source, startPos, endPos, name)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstSymbolExportForeign(Source, Start, End, Name);
         }
     }
 }

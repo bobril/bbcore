@@ -6,7 +6,7 @@ using Njsast.Scope;
 namespace Njsast.Ast
 {
     /// Base class for all symbols
-    public class AstSymbol : AstNode
+    public abstract class AstSymbol : AstNode
     {
         /// [AstScope/S] the current scope (not necessarily the definition scope)
         public AstScope? Scope;
@@ -19,7 +19,7 @@ namespace Njsast.Ast
 
         public SymbolUsage Usage;
 
-        protected AstSymbol(Parser parser, Position startLoc, Position endLoc, string name) : base(parser, startLoc,
+        protected AstSymbol(string? source, Position startLoc, Position endLoc, string name) : base(source, startLoc,
             endLoc)
         {
             Name = name;

@@ -13,8 +13,8 @@ namespace Njsast.Ast
         /// [Boolean] Whether this is a yield or yield* statement
         public bool IsStar;
 
-        public AstYield(Parser parser, Position startLoc, Position endLoc, AstNode? expression, bool isStar) : base(
-            parser, startLoc, endLoc)
+        public AstYield(string? source, Position startLoc, Position endLoc, AstNode? expression, bool isStar) : base(
+            source, startLoc, endLoc)
         {
             if (isStar && expression == null)
             {
@@ -41,6 +41,11 @@ namespace Njsast.Ast
         {
             base.DumpScalars(writer);
             writer.PrintProp("IsStar", IsStar);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstYield(Source, Start, End, Expression, IsStar);
         }
 
         public override void CodeGen(OutputContext output)

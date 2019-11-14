@@ -9,7 +9,7 @@ namespace Njsast.Ast
         /// [AstNode] an expression node (should not be instanceof AstStatement)
         public AstNode Body;
 
-        public AstSimpleStatement(Parser parser, Position startPos, Position endPos, AstNode body) : base(parser, startPos, endPos)
+        public AstSimpleStatement(string? source, Position startPos, Position endPos, AstNode body) : base(source, startPos, endPos)
         {
             Body = body;
         }
@@ -30,6 +30,11 @@ namespace Njsast.Ast
             base.Transform(tt);
             if (Body != TreeTransformer.Remove)
                 Body = tt.Transform(Body);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstSimpleStatement(Source, Start, End, Body);
         }
 
         public override void CodeGen(OutputContext output)

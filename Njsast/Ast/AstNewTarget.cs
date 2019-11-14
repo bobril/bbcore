@@ -6,8 +6,13 @@ namespace Njsast.Ast
     /// A reference to new.target
     public class AstNewTarget : AstNode
     {
-        public AstNewTarget(Parser parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
+        public AstNewTarget(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstNewTarget(Source, Start, End);
         }
 
         public override void CodeGen(OutputContext output)

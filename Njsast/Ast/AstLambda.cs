@@ -5,7 +5,7 @@ using Njsast.Reader;
 namespace Njsast.Ast
 {
     /// Base class for functions
-    public class AstLambda : AstScope
+    public abstract class AstLambda : AstScope
     {
         /// [AstSymbolDeclaration?] the name of this function
         public AstSymbolDeclaration? Name;
@@ -25,8 +25,8 @@ namespace Njsast.Ast
         /// Calling this function does not have visible side effect when its result is not used (null means unknown)
         public bool? Pure;
 
-        public AstLambda(Parser parser, Position startPos, Position endPos, AstSymbolDeclaration? name,
-            ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(parser,
+        protected AstLambda(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
+            ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(source,
             startPos, endPos)
         {
             Name = name;
@@ -34,6 +34,14 @@ namespace Njsast.Ast
             IsGenerator = isGenerator;
             Async = async;
             Body.TransferFrom(ref body);
+        }
+
+        protected AstLambda(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, bool isGenerator, bool async) : base(source,
+            startPos, endPos)
+        {
+            Name = name;
+            IsGenerator = isGenerator;
+            Async = async;
         }
 
         protected AstLambda()

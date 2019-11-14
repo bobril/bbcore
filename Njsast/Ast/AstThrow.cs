@@ -5,8 +5,13 @@ namespace Njsast.Ast
     /// A `throw` statement
     public class AstThrow : AstExit
     {
-        public AstThrow(Parser parser, Position startPos, Position endPos, AstNode value) : base(parser, startPos, endPos, value)
+        public AstThrow(string? source, Position startPos, Position endPos, AstNode value) : base(source, startPos, endPos, value)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstThrow(Source, Start, End, Value!);
         }
     }
 }

@@ -18,13 +18,6 @@ namespace Njsast.Ast
         /// Name of original Source Code
         public string? Source;
 
-        protected AstNode(Parser? parser, Position startLoc, Position endLoc)
-        {
-            Source = parser?.SourceFile;
-            Start = startLoc;
-            End = endLoc;
-        }
-
         protected AstNode(AstNode node)
         {
             Source = node.Source;
@@ -45,7 +38,7 @@ namespace Njsast.Ast
             End = endLoc;
         }
 
-        protected AstNode(string source, Position startPos, Position endPos)
+        protected AstNode(string? source, Position startPos, Position endPos)
         {
             Source = source;
             Start = startPos;
@@ -63,6 +56,8 @@ namespace Njsast.Ast
         public virtual void DumpScalars(IAstDumpWriter writer)
         {
         }
+
+        public abstract AstNode ShallowClone();
 
         public abstract void CodeGen(OutputContext output);
 

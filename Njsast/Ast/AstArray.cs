@@ -9,10 +9,14 @@ namespace Njsast.Ast
         /// [AstNode*] array of elements
         public StructList<AstNode> Elements;
 
-        public AstArray(Parser parser, Position startLoc, Position endLoc, ref StructList<AstNode> elements) : base(
-            parser, startLoc, endLoc)
+        public AstArray(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> elements) : base(
+            source, startLoc, endLoc)
         {
             Elements.TransferFrom(ref elements);
+        }
+
+        AstArray(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
+        {
         }
 
         public override void Visit(TreeWalker w)
@@ -25,6 +29,13 @@ namespace Njsast.Ast
         {
             base.Transform(tt);
             tt.TransformList(ref Elements);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstArray(Source, Start, End);
+            res.Elements.AddRange(Elements.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

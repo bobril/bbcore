@@ -25,6 +25,11 @@ namespace Njsast
                 throw new InvalidOperationException();
             }
 
+            public override AstNode ShallowClone()
+            {
+                throw new InvalidOperationException();
+            }
+
             public override void CodeGen(OutputContext output)
             {
                 throw new InvalidOperationException();
@@ -45,6 +50,11 @@ namespace Njsast
             public override void Transform(TreeTransformer tt)
             {
                 throw new InvalidOperationException();
+            }
+
+            public override AstNode ShallowClone()
+            {
+                return Remove;
             }
 
             public override void CodeGen(OutputContext output)

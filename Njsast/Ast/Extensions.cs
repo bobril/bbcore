@@ -4,20 +4,21 @@ namespace Njsast.Ast
 {
     public static class Extensions
     {
-        static bool IsGlobalSymbol(SymbolDef? symbol, string name)
+        public static string? IsGlobalSymbol(this SymbolDef? symbol)
         {
-            return symbol != null && symbol.Undeclared && symbol.Global && symbol.Name == name;
+            if (symbol != null && symbol.Undeclared && symbol.Global) return symbol.Name;
+            return null;
         }
 
-        public static bool IsRequireSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol, "require");
+        public static bool IsRequireSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol) == "require";
 
-        public static bool IsExportsSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol, "exports");
+        public static bool IsExportsSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol) == "exports";
 
-        public static bool IsPromiseSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol, "Promise");
+        public static bool IsPromiseSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol) == "Promise";
 
-        public static bool IsProcessSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol, "process");
+        public static bool IsProcessSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol) == "process";
 
-        public static bool IsTsReexportSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol, "__exportStar");
+        public static bool IsTsReexportSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol) == "__exportStar";
 
         public static bool IsParentScopeFor(this AstScope parentScope, AstScope? potentiallyNestedScope)
         {
@@ -134,7 +135,7 @@ namespace Njsast.Ast
             if (call.Args.Count != 3 || !call.Args[0].IsSymbolDef().IsExportsSymbol()) return false;
             if (!(call.Expression is AstPropAccess propAccess)) return false;
             if (propAccess.PropertyAsString != "defineProperty") return false;
-            return IsGlobalSymbol(propAccess.Expression.IsSymbolDef(), "Object");
+            return propAccess.Expression.IsSymbolDef().IsGlobalSymbol() == "Object";
         }
 
         public static bool IsConstantSymbolRef(this AstNode? node)
@@ -143,6 +144,12 @@ namespace Njsast.Ast
             if (def == null) return false;
             if (def.Undeclared) return false;
             return def.IsSingleInit;
+        }
+
+        public static T DeepClone<T>(this T node) where T: AstNode
+        {
+            var tr = new DeepCloneTransformer();
+            return (T)tr.Transform(node);
         }
     }
 }

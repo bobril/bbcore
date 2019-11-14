@@ -1,12 +1,11 @@
-﻿using Njsast.Output;
-using Njsast.Reader;
+﻿using Njsast.Reader;
 
 namespace Njsast.Ast
 {
     // Base class of all statements
-    public class AstStatement : AstNode
+    public abstract class AstStatement : AstNode
     {
-        public AstStatement(Parser? parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
+        protected AstStatement(string? source, Position startPos, Position endPos) : base(source, startPos, endPos)
         {
         }
 
@@ -16,11 +15,6 @@ namespace Njsast.Ast
 
         protected AstStatement()
         {
-        }
-
-        public override void CodeGen(OutputContext output)
-        {
-            throw new System.InvalidOperationException();
         }
     }
 }

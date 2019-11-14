@@ -7,8 +7,13 @@ namespace Njsast.Ast
     /// The `undefined` value
     public class AstUndefined : AstAtom
     {
-        public AstUndefined(Parser? parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
+        public AstUndefined(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstUndefined(Source, Start, End);
         }
 
         public override void CodeGen(OutputContext output)

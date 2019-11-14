@@ -12,8 +12,8 @@ namespace Njsast.Ast
         /// [AstSymbolExport|AstSymbolImport] The name as it is visible to this module.
         public AstSymbol Name;
 
-        public AstNameMapping(Parser parser, Position startLoc, Position endLoc, AstSymbol foreignName, AstSymbol name)
-            : base(parser, startLoc, endLoc)
+        public AstNameMapping(string? source, Position startLoc, Position endLoc, AstSymbol foreignName, AstSymbol name)
+            : base(source, startLoc, endLoc)
         {
             ForeignName = foreignName;
             Name = name;
@@ -31,6 +31,11 @@ namespace Njsast.Ast
             base.Transform(tt);
             Name = (AstSymbol)tt.Transform(Name);
             ForeignName = (AstSymbol)tt.Transform(ForeignName);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstNameMapping(Source, Start, End, ForeignName, Name);
         }
 
         public override void CodeGen(OutputContext output)

@@ -63,7 +63,7 @@ namespace Njsast.Bundler
             if (main.Body.Count == 0)
             {
                 beforeAdd?.Invoke(add);
-                main.Body.AddRange(add.Body.AsSpan());
+                main.Body.AddRange(add.Body.AsReadOnlySpan());
                 main.Variables = add.Variables;
                 main.Globals = add.Globals;
                 return;
@@ -72,7 +72,7 @@ namespace Njsast.Bundler
             renameWalker.Walk(add);
 
             beforeAdd?.Invoke(add);
-            main.Body.AddRange(add.Body.AsSpan());
+            main.Body.AddRange(add.Body.AsReadOnlySpan());
             foreach (var (_, symbolDef) in add.Variables!)
             {
                 main.Variables!.TryAdd(symbolDef.Name, symbolDef);

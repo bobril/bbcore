@@ -35,7 +35,7 @@ namespace Njsast.Ast
                     $"var {varName}=(function(){{ var exports = {{}}; var module = {{ exports: exports }}; var global = this; return module.exports; }}).call(window);")
                 .Parse();
             var mainFunc = (AstFunction) ((AstDot) ((AstCall) ((AstVar) toplevel.Body[0]).Definitions[0].Value!).Expression).Expression;
-            mainFunc.Body.InsertRange(^1, code.Body.AsSpan());
+            mainFunc.Body.InsertRange(^1, code.Body.AsReadOnlySpan());
             return (toplevel, (AstSymbolVar) ((AstVar) toplevel.Body[0]).Definitions[0].Name);
         }
 

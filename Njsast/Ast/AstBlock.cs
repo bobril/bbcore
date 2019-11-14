@@ -9,13 +9,13 @@ namespace Njsast.Ast
         /// [AstStatement*] an array of statements
         public StructList<AstNode> Body;
 
-        public AstBlock(Parser parser, Position startPos, Position endPos, ref StructList<AstNode> body) : base(
-            parser, startPos, endPos)
+        public AstBlock(string? source, Position startPos, Position endPos, ref StructList<AstNode> body) : base(
+            source, startPos, endPos)
         {
             Body.TransferFrom(ref body);
         }
 
-        protected AstBlock(Parser parser, Position startPos, Position endPos) : base(parser, startPos, endPos)
+        protected AstBlock(string? source, Position startPos, Position endPos) : base(source, startPos, endPos)
         {
         }
 
@@ -37,6 +37,13 @@ namespace Njsast.Ast
         {
             base.Transform(tt);
             tt.TransformList(ref Body);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstBlock(Source, Start, End);
+            res.Body.AddRange(Body.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

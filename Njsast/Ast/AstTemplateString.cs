@@ -9,9 +9,13 @@ namespace Njsast.Ast
         /// [AstNode*] One or more segments, starting with AstTemplateSegment. AstNode may follow AstTemplateSegment, but each AstNode must be followed by AstTemplateSegment.
         public StructList<AstNode> Segments;
 
-        public AstTemplateString(Parser parser, Position startLoc, Position endLoc, ref StructList<AstNode> segments) : base(parser, startLoc, endLoc)
+        public AstTemplateString(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> segments) : base(source, startLoc, endLoc)
         {
             Segments.TransferFrom(ref segments);
+        }
+
+        AstTemplateString(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
+        {
         }
 
         public override void Visit(TreeWalker w)
@@ -24,6 +28,13 @@ namespace Njsast.Ast
         {
             base.Transform(tt);
             tt.TransformList(ref Segments);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstTemplateString(Source, Start, End);
+            res.Segments.AddRange(Segments.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

@@ -11,10 +11,14 @@ namespace Njsast.Ast
         /// [AstObjectProperty*] array of properties
         public StructList<AstObjectProperty> Properties;
 
-        public AstObject(Parser parser, Position startLoc, Position endLoc,
-            ref StructList<AstObjectProperty> properties) : base(parser, startLoc, endLoc)
+        public AstObject(string? source, Position startLoc, Position endLoc,
+            ref StructList<AstObjectProperty> properties) : base(source, startLoc, endLoc)
         {
             Properties.TransferFrom(ref properties);
+        }
+
+        public AstObject(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
+        {
         }
 
         public AstObject()
@@ -36,6 +40,13 @@ namespace Njsast.Ast
         {
             base.Transform(tt);
             tt.TransformList(ref Properties);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstObject(Source, Start, End);
+            res.Properties.AddRange(Properties.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

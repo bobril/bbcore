@@ -6,6 +6,10 @@ namespace Njsast.Ast
     /// Reference to some symbol (not definition/declaration)
     public class AstSymbolRef : AstSymbol
     {
+        public AstSymbolRef(string? source, Position startLoc, Position endLoc, string name) : base(source, startLoc, endLoc, name)
+        {
+        }
+
         public AstSymbolRef(AstSymbol symbol) : base(symbol)
         {
         }
@@ -25,15 +29,15 @@ namespace Njsast.Ast
             Usage = usage;
         }
 
-        public AstSymbolRef(Parser parser, Position startPos, Position endPos, string name) : base(parser, startPos,
-            endPos, name)
-        {
-        }
-
         static bool IsVarLetConst(AstSymbol astSymbol)
         {
             var t = astSymbol.GetType();
             return t == typeof(AstSymbolVar) || t == typeof(AstSymbolLet) || t == typeof(AstSymbolConst);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstSymbolRef(Source, Start, End, Name);
         }
 
         public override object? ConstValue(IConstEvalCtx? ctx = null)

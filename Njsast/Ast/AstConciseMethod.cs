@@ -7,20 +7,17 @@ namespace Njsast.Ast
     /// An ES6 concise method inside an object or class
     public class AstConciseMethod : AstObjectProperty
     {
-        // [string|undefined] the original quote character, if any
-        //public string Quote;
-
-        /// [boolean] is this method static (classes only)
+        /// is this method static (classes only)
         public bool Static;
 
-        /// [boolean] is this a generator method
+        /// is this a generator method
         public bool IsGenerator;
 
-        /// [boolean] is this method async
+        /// is this method async
         public bool Async;
 
-        public AstConciseMethod(Parser parser, Position startLoc, Position endLoc, AstNode key, AstNode value,
-            bool @static, bool isGenerator, bool async) : base(parser, startLoc, endLoc, key, value)
+        public AstConciseMethod(string? source, Position startLoc, Position endLoc, AstNode key, AstNode value,
+            bool @static, bool isGenerator, bool async) : base(source, startLoc, endLoc, key, value)
         {
             Static = @static;
             IsGenerator = isGenerator;
@@ -33,6 +30,11 @@ namespace Njsast.Ast
             writer.PrintProp("Static", Static);
             writer.PrintProp("IsGenerator", IsGenerator);
             writer.PrintProp("Async", Async);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstConciseMethod(Source, Start, End, Key, Value, Static, IsGenerator, Async);
         }
 
         public override void CodeGen(OutputContext output)

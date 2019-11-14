@@ -5,7 +5,11 @@ namespace Njsast.Ast
     /// Base class for atoms
     public abstract class AstAtom : AstConstant
     {
-        public AstAtom(Parser? parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc)
+        protected AstAtom(string? source, Position startPos, Position endPos) : base(source, startPos, endPos)
+        {
+        }
+
+        protected AstAtom()
         {
         }
     }

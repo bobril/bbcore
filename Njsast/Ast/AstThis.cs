@@ -3,15 +3,20 @@ using Njsast.Reader;
 
 namespace Njsast.Ast
 {
-    /// The `this` symbol
+    /// The `this` symbol or `super` as AstSuper
     public class AstThis : AstSymbol
     {
-        public AstThis(Parser parser, Position startLoc, Position endLoc) : base(parser, startLoc, endLoc, "this")
+        public AstThis(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc, "this")
         {
         }
 
-        protected AstThis(Parser parser, Position startLoc, Position endLoc, string super) : base(parser, startLoc, endLoc, super)
+        protected AstThis(string? source, Position startLoc, Position endLoc, string super) : base(source, startLoc, endLoc, super)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstThis(Source, Start, End);
         }
 
         public override void CodeGen(OutputContext output)

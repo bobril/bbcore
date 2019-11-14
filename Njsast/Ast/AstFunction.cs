@@ -7,14 +7,28 @@ namespace Njsast.Ast
     /// A function expression
     public class AstFunction : AstLambda
     {
-        public AstFunction(Parser parser, Position startPos, Position endPos, AstSymbolDeclaration? name,
-            ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(parser,
+        public AstFunction(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
+            ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(source,
             startPos, endPos, name, ref argNames, isGenerator, async, ref body)
         {
         }
 
         public AstFunction()
         {
+        }
+
+        AstFunction(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, bool isGenerator, bool async) : base(source, startPos, endPos, name, isGenerator, async)
+        {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstFunction(Source, Start, End, Name, IsGenerator, Async);
+            res.Body.AddRange(Body.AsReadOnlySpan());
+            res.ArgNames.AddRange(ArgNames.AsReadOnlySpan());
+            res.HasUseStrictDirective = HasUseStrictDirective;
+            res.Pure = Pure;
+            return res;
         }
 
         public override bool NeedParens(OutputContext output)

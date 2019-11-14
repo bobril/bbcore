@@ -18,8 +18,8 @@ namespace Njsast.Ast
         /// [AstNode] right-hand side expression
         public AstNode Right;
 
-        public AstBinary(Parser? parser, Position startLoc, Position endLoc, AstNode left, AstNode right, Operator op) :
-            base(parser, startLoc, endLoc)
+        public AstBinary(string? source, Position startLoc, Position endLoc, AstNode left, AstNode right, Operator op) :
+            base(source, startLoc, endLoc)
         {
             Left = left;
             Right = right;
@@ -51,6 +51,11 @@ namespace Njsast.Ast
         {
             base.DumpScalars(writer);
             writer.PrintProp("Operator", Operator.ToString());
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstBinary(Source, Start, End, Left, Right, Operator);
         }
 
         public override void CodeGen(OutputContext output)

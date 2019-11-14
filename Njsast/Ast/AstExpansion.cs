@@ -9,7 +9,7 @@ namespace Njsast.Ast
         /// [AstNode] the thing to be expanded
         public AstNode Expression;
 
-        public AstExpansion(Parser parser, Position startLoc, Position endLoc, AstNode expression) : base(parser,
+        public AstExpansion(string? source, Position startLoc, Position endLoc, AstNode expression) : base(source,
             startLoc, endLoc)
         {
             Expression = expression;
@@ -25,6 +25,11 @@ namespace Njsast.Ast
         {
             base.Transform(tt);
             Expression = tt.Transform(Expression)!;
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstExpansion(Source, Start, End, Expression);
         }
 
         public override void CodeGen(OutputContext output)

@@ -9,10 +9,9 @@ namespace Njsast.Ast
         /// [AstLabel] a label definition
         public AstLabel Label;
 
-        public AstLabeledStatement(Parser parser, Position startPos, Position endPos, AstStatement body, AstLabel label) : base(parser, startPos, endPos, body)
+        public AstLabeledStatement(string? source, Position startPos, Position endPos, AstStatement body, AstLabel label) : base(source, startPos, endPos, body)
         {
             Label = label;
-            label.OfStatement = this;
         }
 
         public override void Visit(TreeWalker w)
@@ -25,6 +24,11 @@ namespace Njsast.Ast
         {
             Label = (AstLabel)tt.Transform(Label);
             base.Transform(tt);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstLabeledStatement(Source, Start, End, Body, Label);
         }
 
         public override void CodeGen(OutputContext output)

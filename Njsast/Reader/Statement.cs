@@ -36,6 +36,7 @@ namespace Njsast.Reader
                         _canBeDirective = false;
                     }
                 }
+
                 node.Body.Add(stmt);
             }
 
@@ -106,7 +107,8 @@ namespace Njsast.Reader
             {
                 case TokenType.Break:
                 case TokenType.Continue:
-                    return ParseBreakContinueStatement(startLocation, TokenInformation.Types[starttype].Keyword ?? string.Empty);
+                    return ParseBreakContinueStatement(startLocation,
+                        TokenInformation.Types[starttype].Keyword ?? string.Empty);
                 case TokenType.Debugger:
                     return ParseDebuggerStatement(startLocation);
                 case TokenType.Do:
@@ -162,6 +164,7 @@ namespace Njsast.Reader
                         _wasImportKeyword = true;
                         break;
                     }
+
                     if (!Options.AllowImportExportEverywhere)
                     {
                         if (!topLevel)
@@ -184,7 +187,8 @@ namespace Njsast.Reader
             var maybeName = Value;
             var expr = ParseExpression(startLocation);
             if (starttype == TokenType.Name && expr is AstSymbol identifierNode && Eat(TokenType.Colon))
-                return ParseLabelledStatement(startLocation, maybeName is string stringName ? stringName : string.Empty, identifierNode);
+                return ParseLabelledStatement(startLocation, maybeName is string stringName ? stringName : string.Empty,
+                    identifierNode);
             return ParseExpressionStatement(startLocation, expr);
         }
 
@@ -252,10 +256,10 @@ namespace Njsast.Reader
 
             if (isBreak)
             {
-                return new AstBreak(this, nodeStart, _lastTokEnd, label);
+                return new AstBreak(SourceFile, nodeStart, _lastTokEnd, label);
             }
 
-            return new AstContinue(this, nodeStart, _lastTokEnd, label);
+            return new AstContinue(SourceFile, nodeStart, _lastTokEnd, label);
         }
 
         [NotNull]
@@ -263,7 +267,7 @@ namespace Njsast.Reader
         {
             Next();
             Semicolon();
-            return new AstDebugger(this, nodeStart, _lastTokEnd);
+            return new AstDebugger(SourceFile, nodeStart, _lastTokEnd);
         }
 
         [NotNull]
@@ -284,7 +288,7 @@ namespace Njsast.Reader
             else
                 Semicolon();
 
-            return new AstDo(this, nodeStart, _lastTokEnd, test, body);
+            return new AstDo(SourceFile, nodeStart, _lastTokEnd, test, body);
         }
 
         // Disambiguating between a `for` and a `for`/`in` or `for`/`of`
@@ -312,15 +316,15 @@ namespace Njsast.Reader
                 AstDefinitions init;
                 if (kind == VariableKind.Let)
                 {
-                    init = new AstLet(this, startLoc, _lastTokEnd, ref declarations);
+                    init = new AstLet(SourceFile, startLoc, _lastTokEnd, ref declarations);
                 }
                 else if (kind == VariableKind.Const)
                 {
-                    init = new AstConst(this, startLoc, _lastTokEnd, ref declarations);
+                    init = new AstConst(SourceFile, startLoc, _lastTokEnd, ref declarations);
                 }
                 else
                 {
-                    init = new AstVar(this, startLoc, _lastTokEnd, ref declarations);
+                    init = new AstVar(SourceFile, startLoc, _lastTokEnd, ref declarations);
                 }
 
                 if ((Type == TokenType.In || Options.EcmaVersion >= 6 && IsContextual("of")) &&
@@ -364,9 +368,9 @@ namespace Njsast.Reader
             Next();
             var test = ParseParenExpression();
             // allow function declarations in branches, but only in non-strict mode
-            var consequent = (AstStatement) ParseStatement(!_strict && IsFunction());
-            var alternate = Eat(TokenType.Else) ? (AstStatement) ParseStatement(!_strict && IsFunction()) : null;
-            return new AstIf(this, nodeStart, _lastTokEnd, test, consequent, alternate);
+            var consequent = ParseStatement(!_strict && IsFunction());
+            var alternate = Eat(TokenType.Else) ? ParseStatement(!_strict && IsFunction()) : null;
+            return new AstIf(SourceFile, nodeStart, _lastTokEnd, test, consequent, alternate);
         }
 
         [NotNull]
@@ -387,7 +391,7 @@ namespace Njsast.Reader
                 Semicolon();
             }
 
-            return new AstReturn(this, nodeStart, _lastTokEnd, argument);
+            return new AstReturn(SourceFile, nodeStart, _lastTokEnd, argument);
         }
 
         [NotNull]
@@ -417,13 +421,13 @@ namespace Njsast.Reader
                     if (isCase)
                     {
                         var test = ParseExpression(Start);
-                        consequent = new AstCase(this, startLoc, startLoc, test);
+                        consequent = new AstCase(SourceFile, startLoc, startLoc, test);
                     }
                     else
                     {
                         if (sawDefault) RaiseRecoverable(_lastTokStart, "Multiple default clauses");
                         sawDefault = true;
-                        consequent = new AstDefault(this, startLoc, startLoc);
+                        consequent = new AstDefault(SourceFile, startLoc, startLoc);
                     }
 
                     cases.Add(consequent);
@@ -448,7 +452,7 @@ namespace Njsast.Reader
 
             Next(); // Closing brace
             _allowBreak = backupAllowBreak;
-            return new AstSwitch(this, nodeStart, _lastTokEnd, discriminant, ref cases);
+            return new AstSwitch(SourceFile, nodeStart, _lastTokEnd, discriminant, ref cases);
         }
 
         [NotNull]
@@ -459,7 +463,7 @@ namespace Njsast.Reader
                 Raise(_lastTokEnd, "Illegal newline after throw");
             var argument = ParseExpression(Start);
             Semicolon();
-            return new AstThrow(this, nodeStart, _lastTokEnd, argument);
+            return new AstThrow(SourceFile, nodeStart, _lastTokEnd, argument);
         }
 
         [NotNull]
@@ -476,11 +480,11 @@ namespace Njsast.Reader
                 var param = ParseBindingAtom();
                 EnterLexicalScope();
                 CheckLVal(param, true, VariableKind.Let);
-                param = new AstSymbolCatch((AstSymbol)param);
+                param = new AstSymbolCatch((AstSymbol) param);
                 Expect(TokenType.ParenR);
                 var body = ParseBlock(false);
                 ExitLexicalScope();
-                handler = new AstCatch(this, startLocation, _lastTokEnd, param, ref body.Body);
+                handler = new AstCatch(SourceFile, startLocation, _lastTokEnd, param, ref body.Body);
             }
 
             var startOfFinally = CurPosition();
@@ -488,9 +492,9 @@ namespace Njsast.Reader
             if (handler == null && finalizerBody == null)
                 Raise(nodeStart, "Missing catch or finally clause");
             var finalizer = finalizerBody != null
-                ? new AstFinally(this, startOfFinally, finalizerBody.End, ref finalizerBody.Body)
+                ? new AstFinally(SourceFile, startOfFinally, finalizerBody.End, ref finalizerBody.Body)
                 : null;
-            return new AstTry(this, nodeStart, _lastTokEnd, ref block.Body, handler, finalizer);
+            return new AstTry(SourceFile, nodeStart, _lastTokEnd, ref block.Body, handler, finalizer);
         }
 
         [NotNull]
@@ -502,16 +506,16 @@ namespace Njsast.Reader
             Semicolon();
             if (kind == VariableKind.Let)
             {
-                return new AstLet(this, nodeStart, _lastTokEnd, ref declarations);
+                return new AstLet(SourceFile, nodeStart, _lastTokEnd, ref declarations);
             }
 
             if (kind == VariableKind.Const)
             {
-                return new AstConst(this, nodeStart, _lastTokEnd, ref declarations);
+                return new AstConst(SourceFile, nodeStart, _lastTokEnd, ref declarations);
             }
 
             Debug.Assert(kind == VariableKind.Var);
-            return new AstVar(this, nodeStart, _lastTokEnd, ref declarations);
+            return new AstVar(SourceFile, nodeStart, _lastTokEnd, ref declarations);
         }
 
         [NotNull]
@@ -526,7 +530,7 @@ namespace Njsast.Reader
             var body = ParseStatement(false) as AstStatement;
             _allowBreak = backupAllowBreak;
             _allowContinue = backupAllowContinue;
-            return new AstWhile(this, nodeStart, _lastTokEnd, test, body);
+            return new AstWhile(SourceFile, nodeStart, _lastTokEnd, test, body);
         }
 
         [NotNull]
@@ -536,14 +540,14 @@ namespace Njsast.Reader
             Next();
             var @object = ParseParenExpression();
             var body = ParseStatement(false) as AstStatement;
-            return new AstWith(this, nodeStart, _lastTokEnd, body, @object);
+            return new AstWith(SourceFile, nodeStart, _lastTokEnd, body, @object);
         }
 
         [NotNull]
         AstEmptyStatement ParseEmptyStatement(Position nodeStart)
         {
             Next();
-            return new AstEmptyStatement(this, nodeStart, _lastTokEnd);
+            return new AstEmptyStatement(SourceFile, nodeStart, _lastTokEnd);
         }
 
         [NotNull]
@@ -555,7 +559,7 @@ namespace Njsast.Reader
                     Raise(expr.Start, "Label '" + maybeName + "' is already declared");
             }
 
-            var newlabel = new AstLabel(this, nodeStart, _lastTokEnd, maybeName);
+            var newlabel = new AstLabel(SourceFile, nodeStart, _lastTokEnd, maybeName);
             newlabel.IsLoop = TokenInformation.Types[Type].IsLoop;
             _labels.Add(newlabel);
             var body = ParseStatement(true);
@@ -565,7 +569,7 @@ namespace Njsast.Reader
                 RaiseRecoverable(body.Start, "Invalid labelled declaration");
             _labels.Pop();
 
-            return new AstLabeledStatement(this, nodeStart, _lastTokEnd, (AstStatement) body, newlabel);
+            return new AstLabeledStatement(SourceFile, nodeStart, _lastTokEnd, (AstStatement) body, newlabel);
         }
 
         [NotNull]
@@ -575,8 +579,9 @@ namespace Njsast.Reader
             {
                 _strict = true;
             }
+
             Semicolon();
-            return new AstSimpleStatement(this, nodeStart, _lastTokEnd, expr);
+            return new AstSimpleStatement(SourceFile, nodeStart, _lastTokEnd, expr);
         }
 
         // Parse a semicolon-enclosed block of statements, handling `"use
@@ -604,7 +609,7 @@ namespace Njsast.Reader
                 ExitLexicalScope();
             }
 
-            return new AstBlock(this, startLocation, _lastTokEnd, ref body);
+            return new AstBlock(SourceFile, startLocation, _lastTokEnd, ref body);
         }
 
         // Parse a regular `for` loop. The disambiguation code in
@@ -626,7 +631,7 @@ namespace Njsast.Reader
             var body = ParseStatement(false) as AstStatement;
             _allowBreak = backupAllowBreak;
             _allowContinue = backupAllowContinue;
-            return new AstFor(this, nodeStart, _lastTokEnd, body, init, test, update);
+            return new AstFor(SourceFile, nodeStart, _lastTokEnd, body, init, test, update);
         }
 
         // Parse a `for`/`in` and `for`/`of` loop, which are almost
@@ -648,10 +653,10 @@ namespace Njsast.Reader
             _allowContinue = backupAllowContinue;
             if (isIn)
             {
-                return new AstForIn(this, nodeStart, _lastTokEnd, body, init, right);
+                return new AstForIn(SourceFile, nodeStart, _lastTokEnd, body, init, right);
             }
 
-            return new AstForOf(this, nodeStart, _lastTokEnd, body, init, right);
+            return new AstForOf(SourceFile, nodeStart, _lastTokEnd, body, init, right);
         }
 
         // Parse a list of variable declarations.
@@ -676,7 +681,7 @@ namespace Njsast.Reader
                     Raise(_lastTokEnd, "Complex binding patterns require an initialization value");
                 }
 
-                var decl = new AstVarDef(this, startLocation, _lastTokEnd, id, init);
+                var decl = new AstVarDef(SourceFile, startLocation, _lastTokEnd, id, init);
                 declarations.Add(decl);
                 if (!Eat(TokenType.Comma)) break;
             }
@@ -709,7 +714,8 @@ namespace Njsast.Reader
         // Parse a function declaration or literal (depending on the
         // `isStatement` parameter).
         [NotNull]
-        AstLambda ParseFunction(Position startLoc, bool isStatement, bool isNullableId, bool allowExpressionBody = false,
+        AstLambda ParseFunction(Position startLoc, bool isStatement, bool isNullableId,
+            bool allowExpressionBody = false,
             bool isAsync = false)
         {
             var generator = false;
@@ -760,7 +766,8 @@ namespace Njsast.Reader
             {
                 if (id != null)
                     id = new AstSymbolDefun(id);
-                var astDefun = new AstDefun(this, startLoc, _lastTokEnd, id != null ? (AstSymbolDefun) id : null, ref parameters, generator,
+                var astDefun = new AstDefun(SourceFile, startLoc, _lastTokEnd, id != null ? (AstSymbolDefun) id : null,
+                    ref parameters, generator,
                     isAsync, ref body);
                 astDefun.SetUseStrict(useStrict);
                 return astDefun;
@@ -768,7 +775,8 @@ namespace Njsast.Reader
 
             if (id != null)
                 id = new AstSymbolLambda(id);
-            var astFunction = new AstFunction(this, startLoc, _lastTokEnd, id != null ? (AstSymbolLambda) id : null, ref parameters,
+            var astFunction = new AstFunction(SourceFile, startLoc, _lastTokEnd,
+                id != null ? (AstSymbolLambda) id : null, ref parameters,
                 generator, isAsync, ref body);
             astFunction.SetUseStrict(useStrict);
             return astFunction;
@@ -873,15 +881,15 @@ namespace Njsast.Reader
 
                 if (kind == PropertyKind.Get)
                 {
-                    body.Add(new AstObjectGetter(this, methodStart, _lastTokEnd, key, methodValue, @static));
+                    body.Add(new AstObjectGetter(SourceFile, methodStart, _lastTokEnd, key, methodValue, @static));
                 }
                 else if (kind == PropertyKind.Set)
                 {
-                    body.Add(new AstObjectSetter(this, methodStart, _lastTokEnd, key, methodValue, @static));
+                    body.Add(new AstObjectSetter(SourceFile, methodStart, _lastTokEnd, key, methodValue, @static));
                 }
                 else if (kind == PropertyKind.Method || kind == PropertyKind.Constructor)
                 {
-                    body.Add(new AstConciseMethod(this, methodStart, _lastTokEnd, key, methodValue, @static,
+                    body.Add(new AstConciseMethod(SourceFile, methodStart, _lastTokEnd, key, methodValue, @static,
                         isGenerator, isAsync));
                 }
                 else
@@ -892,16 +900,18 @@ namespace Njsast.Reader
 
             if (isStatement || isNullableId)
             {
-                return new AstClass(this, nodeStart, _lastTokEnd, id, superClass, ref body);
+                return new AstClass(SourceFile, nodeStart, _lastTokEnd, id != null ? new AstSymbolDefClass(id) : null,
+                    superClass, ref body);
             }
 
-            return new AstClassExpression(this, nodeStart, _lastTokEnd, id, superClass, ref body);
+            return new AstClassExpression(SourceFile, nodeStart, _lastTokEnd,
+                id != null ? new AstSymbolClass(id) : null, superClass, ref body);
         }
 
-        AstSymbolDeclaration? ParseClassId(bool isStatement)
+        AstSymbol? ParseClassId(bool isStatement)
         {
             if (Type == TokenType.Name)
-                return new AstSymbolDeclaration(ParseIdent());
+                return ParseIdent();
             if (isStatement)
             {
                 Raise(Start, "Unexpected token");
@@ -923,15 +933,15 @@ namespace Njsast.Reader
             if (Eat(TokenType.Star))
             {
                 var specifiers = new StructList<AstNameMapping>();
-                specifiers.Add(new AstNameMapping(this, _lastTokStart, _lastTokEnd,
-                    new AstSymbolExportForeign(this, _lastTokStart, _lastTokEnd, "*"),
-                    new AstSymbolExport(this, _lastTokStart, _lastTokEnd, "*")));
+                specifiers.Add(new AstNameMapping(SourceFile, _lastTokStart, _lastTokEnd,
+                    new AstSymbolExportForeign(SourceFile, _lastTokStart, _lastTokEnd, "*"),
+                    new AstSymbolExport(SourceFile, _lastTokStart, _lastTokEnd, "*")));
                 ExpectContextual("from");
                 if (Type != TokenType.String)
                     Raise(Start, "Unexpected token");
                 var source = ParseExpressionAtom(Start) as AstString;
                 Semicolon();
-                return new AstExport(this, nodeStart, _lastTokEnd, source, null, ref specifiers);
+                return new AstExport(SourceFile, nodeStart, _lastTokEnd, source, null, ref specifiers);
             }
 
             if (Eat(TokenType.Default))
@@ -957,7 +967,7 @@ namespace Njsast.Reader
                     Semicolon();
                 }
 
-                return new AstExport(this, nodeStart, _lastTokEnd, declaration, true);
+                return new AstExport(SourceFile, nodeStart, _lastTokEnd, declaration, true);
             }
             else
             {
@@ -974,7 +984,8 @@ namespace Njsast.Reader
                     }
                     else
                     {
-                        var declarationNode = (AstSymbolDeclaration) declaration; // TODO possible System.InvalidCastException
+                        var declarationNode =
+                            (AstSymbolDeclaration) declaration; // TODO possible System.InvalidCastException
                         CheckExport(exports, declarationNode.Name, declarationNode.Start);
                     }
                 }
@@ -1001,7 +1012,7 @@ namespace Njsast.Reader
                     Semicolon();
                 }
 
-                return new AstExport(this, nodeStart, _lastTokEnd, source, declaration, ref specifiers);
+                return new AstExport(SourceFile, nodeStart, _lastTokEnd, source, declaration, ref specifiers);
             }
         }
 
@@ -1074,7 +1085,7 @@ namespace Njsast.Reader
                 var local = ParseIdent(true);
                 var exported = EatContextual("as") ? ParseIdent(true) : local;
                 CheckExport(exports, exported.Name, exported.Start);
-                nodes.Add(new AstNameMapping(this, startLoc, _lastTokEnd, new AstSymbolExportForeign(local),
+                nodes.Add(new AstNameMapping(SourceFile, startLoc, _lastTokEnd, new AstSymbolExportForeign(local),
                     new AstSymbolExport(exported)));
             }
         }
@@ -1105,7 +1116,7 @@ namespace Njsast.Reader
             }
 
             Semicolon();
-            return new AstImport(this, nodeStart, _lastTokEnd, source, importName, ref importNames);
+            return new AstImport(SourceFile, nodeStart, _lastTokEnd, source, importName, ref importNames);
         }
 
         // Parses a comma-separated list of module imports.
@@ -1125,12 +1136,12 @@ namespace Njsast.Reader
             if (Type == TokenType.Star)
             {
                 var startLoc = Start;
-                var starSymbol = new AstSymbolImportForeign(this, Start, End, string.Empty);
+                var starSymbol = new AstSymbolImportForeign(SourceFile, Start, End, string.Empty);
                 Next();
                 ExpectContextual("as");
                 var local = ParseIdent();
                 CheckLVal(local, true, VariableKind.Let);
-                importNames.Add(new AstNameMapping(this, startLoc, _lastTokEnd, starSymbol,
+                importNames.Add(new AstNameMapping(SourceFile, startLoc, _lastTokEnd, starSymbol,
                     new AstSymbolImport(local)));
                 return;
             }
@@ -1159,14 +1170,14 @@ namespace Njsast.Reader
                 }
 
                 CheckLVal(local, true, VariableKind.Let);
-                importNames.Add(new AstNameMapping(this, startLoc, _lastTokEnd, new AstSymbolImportForeign(local),
+                importNames.Add(new AstNameMapping(SourceFile, startLoc, _lastTokEnd, new AstSymbolImportForeign(local),
                     new AstSymbolImport(imported)));
             }
         }
 
         bool IsUseStrictDirective([NotNull] AstNode statement)
         {
-            var literal2 = (AstString) ((AstSimpleStatement)statement).Body;
+            var literal2 = (AstString) ((AstSimpleStatement) statement).Body;
             return literal2.Value == "use strict";
         }
 

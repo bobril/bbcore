@@ -6,7 +6,6 @@ namespace Njsast.Reader
 {
     public sealed partial class Parser
     {
-        [NotNull]
         public static List<TokContext> InitialContext()
         {
             return new List<TokContext>
@@ -58,7 +57,7 @@ namespace Njsast.Reader
                 _exprAllowed = TokenInformation.Types[Type].BeforeExpression;
         }
 
-        internal static void ParenBraceRUpdateContext([NotNull] Parser parser, TokenType _)
+        internal static void ParenBraceRUpdateContext(Parser parser, TokenType _)
         {
             if (parser._context.Count == 1)
             {
@@ -73,19 +72,19 @@ namespace Njsast.Reader
             parser._exprAllowed = !@out.IsExpression;
         }
 
-        internal static void BraceLUpdateContext([NotNull] Parser parser, TokenType prevType)
+        internal static void BraceLUpdateContext(Parser parser, TokenType prevType)
         {
             parser._context.Add(parser.BraceIsBlock(prevType) ? TokContext.BStat : TokContext.BExpr);
             parser._exprAllowed = true;
         }
 
-        internal static void DollarBraceLUpdateContext([NotNull] Parser parser, TokenType prevType)
+        internal static void DollarBraceLUpdateContext(Parser parser, TokenType prevType)
         {
             parser._context.Add(TokContext.BTmpl);
             parser._exprAllowed = true;
         }
 
-        internal static void ParenLUpdateContext([NotNull] Parser parser, TokenType prevType)
+        internal static void ParenLUpdateContext(Parser parser, TokenType prevType)
         {
             var statementParens = prevType == TokenType.If || prevType == TokenType.For || prevType == TokenType.With || prevType == TokenType.While;
             parser._context.Add(statementParens ? TokContext.PStat : TokContext.PExpr);
@@ -97,7 +96,7 @@ namespace Njsast.Reader
             // tokExprAllowed stays unchanged
         }
 
-        internal static void FunctionClassUpdateContext([NotNull] Parser parser, TokenType prevType)
+        internal static void FunctionClassUpdateContext(Parser parser, TokenType prevType)
         {
             if (TokenInformation.Types[prevType].BeforeExpression && prevType != TokenType.Semi && prevType != TokenType.Else &&
                 !((prevType == TokenType.Colon || prevType == TokenType.BraceL) && parser.CurContext() == TokContext.BStat))
@@ -107,7 +106,7 @@ namespace Njsast.Reader
             parser._exprAllowed = false;
         }
 
-        internal static void BackQuoteUpdateContext([NotNull] Parser parser, TokenType prevType)
+        internal static void BackQuoteUpdateContext(Parser parser, TokenType prevType)
         {
             if (parser.CurContext() == TokContext.QTmpl)
                 parser._context.Pop();
@@ -116,7 +115,7 @@ namespace Njsast.Reader
             parser._exprAllowed = false;
         }
 
-        internal static void StarUpdateContext([NotNull] Parser parser, TokenType prevType)
+        internal static void StarUpdateContext(Parser parser, TokenType prevType)
         {
             if (prevType == TokenType.Function)
             {
@@ -129,7 +128,7 @@ namespace Njsast.Reader
             parser._exprAllowed = true;
         }
 
-        internal static void NameUpdateContext([NotNull] Parser parser, TokenType prevType)
+        internal static void NameUpdateContext(Parser parser, TokenType prevType)
         {
             var allowed = false;
             if (parser.Options.EcmaVersion >= 6)

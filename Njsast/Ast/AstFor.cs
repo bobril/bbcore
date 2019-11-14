@@ -15,8 +15,8 @@ namespace Njsast.Ast
         /// [AstNode?] the `for` update clause, or null if empty
         public AstNode? Step;
 
-        public AstFor(Parser parser, Position startPos, Position endPos, AstStatement body, AstNode? init,
-            AstNode? condition, AstNode? step) : base(parser, startPos, endPos, body)
+        public AstFor(string? source, Position startPos, Position endPos, AstStatement body, AstNode? init,
+            AstNode? condition, AstNode? step) : base(source, startPos, endPos, body)
         {
             Init = init;
             Condition = condition;
@@ -40,6 +40,11 @@ namespace Njsast.Ast
             if (Step != null)
                 Step = tt.Transform(Step);
             base.Transform(tt);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstFor(Source, Start, End, Body, Init, Condition, Step);
         }
 
         public override void CodeGen(OutputContext output)

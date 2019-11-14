@@ -6,8 +6,14 @@ namespace Njsast.Ast
     /// A `while` statement
     public class AstWhile : AstDwLoop
     {
-        public AstWhile(Parser parser, Position startPos, Position endPos, AstNode test, AstStatement body) : base(parser, startPos, endPos, test, body)
+        public AstWhile(string? source, Position startPos, Position endPos, AstNode test, AstStatement body) : base(
+            source, startPos, endPos, test, body)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstWhile(Source, Start, End, Condition, Body);
         }
 
         public override void CodeGen(OutputContext output)

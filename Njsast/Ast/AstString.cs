@@ -11,7 +11,7 @@ namespace Njsast.Ast
         /// [string] the contents of this string
         public readonly string Value;
 
-        public AstString(Parser parser, Position startLoc, Position endLoc, string value) : base(parser, startLoc, endLoc)
+        public AstString(string? source, Position startLoc, Position endLoc, string value) : base(source, startLoc, endLoc)
         {
             Value = value;
         }
@@ -25,6 +25,11 @@ namespace Njsast.Ast
         {
             base.DumpScalars(writer);
             writer.PrintProp("Value", Value);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstString(Source, Start, End, Value);
         }
 
         public override void CodeGen(OutputContext output)

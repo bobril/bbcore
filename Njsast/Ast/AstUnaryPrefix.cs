@@ -8,13 +8,18 @@ namespace Njsast.Ast
     /// Unary prefix expression, i.e. `typeof i` or `++i`
     public class AstUnaryPrefix : AstUnary
     {
-        public AstUnaryPrefix(Parser parser, Position startLoc, Position endLoc, Operator @operator, AstNode expression)
-            : base(parser, startLoc, endLoc, @operator, expression)
+        public AstUnaryPrefix(string? source, Position startLoc, Position endLoc, Operator @operator, AstNode expression)
+            : base(source, startLoc, endLoc, @operator, expression)
         {
         }
 
         public AstUnaryPrefix(Operator @operator, AstNode expression) : base(@operator, expression)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstUnaryPrefix(Source, Start, End, Operator, Expression);
         }
 
         public override void CodeGen(OutputContext output)

@@ -10,22 +10,21 @@ namespace Njsast.Ast
         /// [AstDefun|AstDefinitions|AstDefClass?] An exported definition
         public AstNode? ExportedDefinition;
 
-        /// [AstNode?] An exported value
         public AstNode? ExportedValue;
 
-        /// [Boolean] Whether this is the default exported value of this module
+        /// Whether this is the default exported value of this module
         public bool IsDefault;
 
         /// [AstNameMapping*?] List of exported names
         public StructList<AstNameMapping> ExportedNames;
 
-        /// [AstString?] Name of the file to load exports from
+        /// Name of the file to load exports from
         public AstString? ModuleName;
 
-        public AstExport(Parser parser, Position startPos, Position endPos, AstString? source, AstNode? declaration,
-            ref StructList<AstNameMapping> specifiers) : base(parser, startPos, endPos)
+        public AstExport(string? source, Position startPos, Position endPos, AstString? moduleName, AstNode? declaration,
+            ref StructList<AstNameMapping> specifiers) : base(source, startPos, endPos)
         {
-            ModuleName = source;
+            ModuleName = moduleName;
             if (declaration is AstDefun || declaration is AstDefinitions || declaration is AstDefClass)
             {
                 ExportedDefinition = declaration;
@@ -38,8 +37,8 @@ namespace Njsast.Ast
             ExportedNames.TransferFrom(ref specifiers);
         }
 
-        public AstExport(Parser parser, Position startPos, Position endPos, AstNode declaration, bool isDefault) : base(
-            parser, startPos, endPos)
+        public AstExport(string? source, Position startPos, Position endPos, AstNode declaration, bool isDefault) : base(
+            source, startPos, endPos)
         {
             if (declaration is AstDefun || declaration is AstDefinitions || declaration is AstDefClass)
             {
@@ -78,6 +77,14 @@ namespace Njsast.Ast
         {
             base.DumpScalars(writer);
             writer.PrintProp("IsDefault", IsDefault);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstExport(Source, Start, End, ExportedDefinition ?? ExportedValue!, IsDefault);
+            res.ModuleName = ModuleName;
+            res.ExportedNames.AddRange(ExportedNames.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

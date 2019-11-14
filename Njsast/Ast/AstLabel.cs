@@ -12,11 +12,10 @@ namespace Njsast.Ast
 
         public bool IsLoop;
 
-        public AstLabeledStatement? OfStatement;
-
         public string? MangledName;
 
-        public AstLabel(Parser parser, Position startLoc, Position endLoc, string name) : base(parser, startLoc, endLoc,
+        public AstLabel(string? source, Position startLoc, Position endLoc, string name) : base(source, startLoc,
+            endLoc,
             name)
         {
         }
@@ -25,6 +24,11 @@ namespace Njsast.Ast
         {
             base.DumpScalars(writer);
             writer.PrintProp("IsLoop", IsLoop);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstLabel(Source, Start, End, Name) {IsLoop = IsLoop};
         }
 
         public override void CodeGen(OutputContext output)

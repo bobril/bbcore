@@ -6,9 +6,14 @@ namespace Njsast.Ast
     /// A `do` statement
     public class AstDo : AstDwLoop
     {
-        public AstDo(Parser parser, Position startPos, Position endPos, AstNode test, AstStatement body)
-            : base(parser, startPos, endPos, test, body)
+        public AstDo(string? source, Position startPos, Position endPos, AstNode test, AstStatement body)
+            : base(source, startPos, endPos, test, body)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstDo(Source, Start, End, Condition, Body);
         }
 
         public override void CodeGen(OutputContext output)

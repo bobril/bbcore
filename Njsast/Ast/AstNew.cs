@@ -6,9 +6,20 @@ namespace Njsast.Ast
     /// An object instantiation.  Derives from a function call since it has exactly the same properties
     public class AstNew : AstCall
     {
-        public AstNew(Parser parser, Position startLoc, Position endLoc, AstNode expression,
-            ref StructList<AstNode> args) : base(parser, startLoc, endLoc, expression, ref args)
+        public AstNew(string? source, Position startLoc, Position endLoc, AstNode expression,
+            ref StructList<AstNode> args) : base(source, startLoc, endLoc, expression, ref args)
         {
+        }
+
+        AstNew(string? source, Position startLoc, Position endLoc, AstNode expression) : base(source, startLoc, endLoc, expression)
+        {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstNew(Source, Start, End, Expression);
+            res.Args.AddRange(Args.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

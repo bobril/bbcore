@@ -6,10 +6,24 @@ namespace Njsast.Ast
     /// An ES6 Arrow function ((a) => b)
     public class AstArrow : AstLambda
     {
-        public AstArrow(Parser parser, Position startPos, Position endPos, AstSymbolDeclaration? name,
-            ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(parser,
+        public AstArrow(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
+            ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(source,
             startPos, endPos, name, ref argNames, isGenerator, async, ref body)
         {
+        }
+
+        AstArrow(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, bool isGenerator, bool async) : base(source, startPos, endPos, name, isGenerator, async)
+        {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstArrow(Source, Start, End, Name, IsGenerator, Async);
+            res.Body.AddRange(Body.AsReadOnlySpan());
+            res.ArgNames.AddRange(ArgNames.AsReadOnlySpan());
+            res.HasUseStrictDirective = HasUseStrictDirective;
+            res.Pure = Pure;
+            return res;
         }
 
         public override void DoPrint(OutputContext output, bool noKeyword = false)
@@ -50,7 +64,7 @@ namespace Njsast.Ast
             if (needsParens)
                 output.Print(")");
         }
-        
+
         void PrintArrowBody(OutputContext output)
         {
             if (Body.Count == 1)
@@ -67,7 +81,7 @@ namespace Njsast.Ast
                     scope.CodeGen(output);
                     return;
                 }
-                
+
                 if (Body.Last is AstSimpleStatement simpleStatement)
                 {
                     simpleStatement.Body.Print(output);
@@ -84,7 +98,7 @@ namespace Njsast.Ast
                 {
                     array.CodeGen(output);
                     return;
-                } 
+                }
             }
 
             output.PrintBraced(Body, false);

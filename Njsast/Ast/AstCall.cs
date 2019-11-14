@@ -1,4 +1,5 @@
-﻿using Njsast.ConstEval;
+﻿using System.Reflection.Metadata.Ecma335;
+using Njsast.ConstEval;
 using Njsast.Output;
 using Njsast.Reader;
 
@@ -13,11 +14,16 @@ namespace Njsast.Ast
         /// [AstNode*] array of arguments
         public StructList<AstNode> Args;
 
-        public AstCall(Parser parser, Position startLoc, Position endLoc, AstNode expression,
-            ref StructList<AstNode> args) : base(parser, startLoc, endLoc)
+        public AstCall(string? source, Position startLoc, Position endLoc, AstNode expression,
+            ref StructList<AstNode> args) : base(source, startLoc, endLoc)
         {
             Expression = expression;
             Args.TransferFrom(ref args);
+        }
+
+        protected AstCall(string? source, Position startLoc, Position endLoc, AstNode expression) : base(source, startLoc, endLoc)
+        {
+            Expression = expression;
         }
 
         public AstCall(AstNode expression)
@@ -37,6 +43,13 @@ namespace Njsast.Ast
             base.Transform(tt);
             Expression = tt.Transform(Expression)!;
             tt.TransformList(ref Args);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstCall(Source, Start, End, Expression);
+            res.Args.AddRange(Args.AsReadOnlySpan());
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

@@ -15,7 +15,7 @@ namespace Njsast.Ast
         /// [string] numeric value as string (optional)
         public readonly string? Literal;
 
-        public AstNumber(Parser parser, Position startLoc, Position endLoc, double value, string literal) : base(parser,
+        public AstNumber(string? source, Position startLoc, Position endLoc, double value, string? literal) : base(source,
             startLoc, endLoc)
         {
             Value = value;
@@ -33,6 +33,11 @@ namespace Njsast.Ast
             base.DumpScalars(writer);
             writer.PrintProp("Value", Value.ToString(CultureInfo.InvariantCulture));
             writer.PrintProp("Literal", Literal);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstNumber(Source, Start, End, Value, Literal);
         }
 
         public override void CodeGen(OutputContext output)

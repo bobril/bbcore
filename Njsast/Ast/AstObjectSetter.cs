@@ -10,8 +10,8 @@ namespace Njsast.Ast
         /// [boolean] whether this is a static setter (classes only)
         public bool Static;
 
-        public AstObjectSetter(Parser parser, Position startLoc, Position endLoc, AstNode key, AstNode value,
-            bool @static) : base(parser, startLoc, endLoc, key, value)
+        public AstObjectSetter(string? source, Position startLoc, Position endLoc, AstNode key, AstNode value,
+            bool @static) : base(source, startLoc, endLoc, key, value)
         {
             Static = @static;
         }
@@ -20,6 +20,11 @@ namespace Njsast.Ast
         {
             base.DumpScalars(writer);
             writer.PrintProp("Static", Static);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstObjectSetter(Source, Start, End, Key, Value, Static);
         }
 
         public override void CodeGen(OutputContext output)

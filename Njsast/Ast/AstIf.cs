@@ -12,8 +12,8 @@ namespace Njsast.Ast
         /// [AstStatement?] the `else` part, or null if not present
         public AstStatement? Alternative;
 
-        public AstIf(Parser parser, Position startPos, Position endPos, AstNode condition, AstStatement body,
-            AstStatement? alternative) : base(parser, startPos, endPos, body)
+        public AstIf(string? source, Position startPos, Position endPos, AstNode condition, AstStatement body,
+            AstStatement? alternative) : base(source, startPos, endPos, body)
         {
             Condition = condition;
             Alternative = alternative;
@@ -35,7 +35,12 @@ namespace Njsast.Ast
                 var alt = tt.Transform(Alternative);
                 Alternative = alt == TreeTransformer.Remove ? null : (AstStatement) alt;
             }
-                
+
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstIf(Source, Start, End, Condition, Body, Alternative);
         }
 
         public override void CodeGen(OutputContext output)

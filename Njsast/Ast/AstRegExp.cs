@@ -10,8 +10,7 @@ namespace Njsast.Ast
         /// [RegExp] the actual regexp
         public RegExp Value;
 
-        public AstRegExp(Parser parser, Position startLoc, Position endLoc, RegExp value) : base(parser, startLoc,
-            endLoc)
+        public AstRegExp(string? source, Position startLoc, Position endLoc, RegExp value) : base(source, startLoc, endLoc)
         {
             Value = value;
         }
@@ -21,6 +20,11 @@ namespace Njsast.Ast
             base.DumpScalars(writer);
             writer.PrintProp("Pattern", Value.Pattern);
             writer.PrintProp("Flags", Value.Flags.ToString());
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstRegExp(Source, Start, End, Value);
         }
 
         public override void CodeGen(OutputContext output)

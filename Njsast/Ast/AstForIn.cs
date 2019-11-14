@@ -14,8 +14,8 @@ namespace Njsast.Ast
         /// [AstNode] the object that we're looping through
         public AstNode Object;
 
-        public AstForIn(Parser parser, Position startPos, Position endPos, AstStatement body, AstNode init,
-            AstNode @object) : base(parser, startPos, endPos, body)
+        public AstForIn(string? source, Position startPos, Position endPos, AstStatement body, AstNode init,
+            AstNode @object) : base(source, startPos, endPos, body)
         {
             Init = init;
             Object = @object;
@@ -33,6 +33,11 @@ namespace Njsast.Ast
             Init = tt.Transform(Init);
             Object = tt.Transform(Object);
             base.Transform(tt);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstForIn(Source, Start, End, Body, Init, Object);
         }
 
         public override void CodeGen(OutputContext output)

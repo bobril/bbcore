@@ -5,8 +5,13 @@ namespace Njsast.Ast
     /// Symbol naming a class's name. Lexically scoped to the class.
     public class AstSymbolClass : AstSymbolDeclaration
     {
-        public AstSymbolClass(Parser parser, Position startLoc, Position endLoc, string name, AstNode init) : base(parser, startLoc, endLoc, name, init)
+        public AstSymbolClass(AstSymbol from) : base(from)
         {
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return new AstSymbolClass(this);
         }
     }
 }

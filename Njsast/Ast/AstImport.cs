@@ -15,12 +15,19 @@ namespace Njsast.Ast
         /// [AstString] String literal describing where this module came from
         public AstString ModuleName;
 
-        public AstImport(Parser parser, Position startLoc, Position endLoc, AstString moduleName,
-            AstSymbolImport? importName, ref StructList<AstNameMapping> specifiers) : base(parser, startLoc, endLoc)
+        public AstImport(string? source, Position startLoc, Position endLoc, AstString moduleName,
+            AstSymbolImport? importName, ref StructList<AstNameMapping> specifiers) : base(source, startLoc, endLoc)
         {
             ModuleName = moduleName;
             ImportedName = importName;
             ImportedNames.TransferFrom(ref specifiers);
+        }
+
+        AstImport(string? source, Position startLoc, Position endLoc, AstString moduleName,
+            AstSymbolImport? importName) : base(source, startLoc, endLoc)
+        {
+            ModuleName = moduleName;
+            ImportedName = importName;
         }
 
         public override void Visit(TreeWalker w)
@@ -38,6 +45,13 @@ namespace Njsast.Ast
             if (ImportedName != null)
                 ImportedName = (AstSymbolImport)tt.Transform(ImportedName);
             tt.TransformList(ref ImportedNames);
+        }
+
+        public override AstNode ShallowClone()
+        {
+            var res = new AstImport(Source, Start, End, ModuleName, ImportedName);
+            res.ImportedNames.AddRange(ImportedNames);
+            return res;
         }
 
         public override void CodeGen(OutputContext output)

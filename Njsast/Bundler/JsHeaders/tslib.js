@@ -1,4 +1,4 @@
-var __extendStatics = Object.setPrototypeOf ||
+﻿var __extendStatics = Object.setPrototypeOf ||
     ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
     function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
 
@@ -111,9 +111,11 @@ var __read = function (o, n) {
 };
 
 var __spread = function () {
-    for (var ar = [], i = 0; i < arguments.length; i++)
-        ar = ar.concat(__read(arguments[i]));
-    return ar;
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
 };
 
 var __spreadArrays = function () {

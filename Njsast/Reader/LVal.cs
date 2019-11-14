@@ -32,12 +32,12 @@ namespace Njsast.Reader
                         newProperties.Reserve(objectExpression.Properties.Count);
                         for (var i = 0; i < newProperties.Count; i++)
                             newProperties[(uint) i] = ToAssignable(objectExpression.Properties[(uint) i], isBinding)!;
-                        node = new AstDestructuring(this, node.Start, node.End, ref newProperties, false);
+                        node = new AstDestructuring(SourceFile, node.Start, node.End, ref newProperties, false);
                         break;
 
                     case AstArray arrayExpression:
                         ToAssignableList(ref arrayExpression.Elements, isBinding);
-                        node = new AstDestructuring(this, node.Start, node.End, ref arrayExpression.Elements, true);
+                        node = new AstDestructuring(SourceFile, node.Start, node.End, ref arrayExpression.Elements, true);
                         break;
 
                     case AstExpansion spreadElement:
@@ -58,7 +58,7 @@ namespace Njsast.Reader
 
                         var left = ToAssignable(assignmentExpression.Left, isBinding)!;
                         var right = assignmentExpression.Right;
-                        node = new AstDefaultAssign(this, node.Start, node.End, left, right);
+                        node = new AstDefaultAssign(SourceFile, node.Start, node.End, left, right);
                         goto AssignmentPatternNode;
 
                     case AstDefaultAssign _:
@@ -114,7 +114,7 @@ namespace Njsast.Reader
             var startLoc = Start;
             Next();
             var argument = ParseMaybeAssign(Start, false, refDestructuringErrors);
-            return new AstExpansion(this, startLoc, _lastTokEnd, argument);
+            return new AstExpansion(SourceFile, startLoc, _lastTokEnd, argument);
         }
 
         [NotNull]
@@ -130,7 +130,7 @@ namespace Njsast.Reader
             }
 
             var argument = ParseBindingAtom();
-            return new AstExpansion(this, startLoc, _lastTokEnd, argument);
+            return new AstExpansion(SourceFile, startLoc, _lastTokEnd, argument);
         }
 
         // Parses lvalue (assignable) atom.
@@ -147,7 +147,7 @@ namespace Njsast.Reader
 
                         var elements = new StructList<AstNode>();
                         ParseBindingList(ref elements, TokenType.BracketR, true, true);
-                        return new AstDestructuring(this, startLoc, _lastTokEnd, ref elements, true);
+                        return new AstDestructuring(SourceFile, startLoc, _lastTokEnd, ref elements, true);
 
                     case TokenType.BraceL:
                         return ParseObj(true);
@@ -166,7 +166,7 @@ namespace Njsast.Reader
                 else Expect(TokenType.Comma);
                 if (allowEmpty && Type == TokenType.Comma)
                 {
-                    elts.Add(new AstHole(this, _lastTokStart, _lastTokEnd));
+                    elts.Add(new AstHole(SourceFile, _lastTokStart, _lastTokEnd));
                 }
                 else if (allowTrailingComma && AfterTrailingComma(close))
                 {
@@ -196,7 +196,7 @@ namespace Njsast.Reader
             if (Options.EcmaVersion < 6 || !Eat(TokenType.Eq))
                 return left;
             var right = ParseMaybeAssign(Start);
-            return new AstDefaultAssign(this, startLoc, _lastTokEnd, left, right);
+            return new AstDefaultAssign(SourceFile, startLoc, _lastTokEnd, left, right);
         }
 
         // Verify that a node is an lval — something that can be assigned

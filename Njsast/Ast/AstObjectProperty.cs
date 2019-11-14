@@ -12,8 +12,8 @@ namespace Njsast.Ast
         /// [AstNode] property value. For getters and setters this is an AstAccessor.
         public AstNode Value;
 
-        protected AstObjectProperty(Parser parser, Position startLoc, Position endLoc, AstNode key, AstNode value) : base(
-            parser, startLoc, endLoc)
+        protected AstObjectProperty(string? source, Position startLoc, Position endLoc, AstNode key, AstNode value) : base(
+            source, startLoc, endLoc)
         {
             Key = key;
             Value = value;
