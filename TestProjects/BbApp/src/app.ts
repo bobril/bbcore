@@ -7,6 +7,7 @@ import "./polyfills";
 import * as styles from "./styles";
 
 declare var process: { env: Record<string, string> };
+declare var DEBUG: boolean;
 
 interface IPageCtx extends b.IBobrilCtx {
     counter: number;
@@ -92,6 +93,10 @@ let page = b.createVirtualComponent({
                 tag: "span",
                 className: "glyphicon glyphicon-star",
                 attrs: { ariaHidden: true }
+            },
+            {
+                tag: "p",
+                children: "DEBUG: " + DEBUG
             },
             {
                 tag: "p",

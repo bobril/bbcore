@@ -360,7 +360,7 @@ namespace Lib.TSCompiler
         {
             if (Project.Defines == null) return "";
             var res = new StringBuilder();
-            foreach (var def in Project.Defines)
+            foreach (var def in Project.ExpandedDefines)
             {
                 var val = def.Value.PrintToString();
                 res.Append($"var {def.Key} = {val};");

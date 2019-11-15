@@ -106,9 +106,9 @@ namespace Lib.TSCompiler
             bundler.Mangle = mangle;
             bundler.Beautify = beautify;
             var defines = new Dictionary<string, object>();
-            foreach (var p in Project.Defines)
+            foreach (var p in Project.ExpandedDefines)
             {
-                defines.Add(p.Key, ((AstSimpleStatement)p.Value.Body.Last).Body.ConstValue());
+                defines.Add(p.Key, p.Value.ConstValue());
             }
 
             bundler.Defines = defines;

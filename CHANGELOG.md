@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- regression from 0.97.0 in DEBUG constant.
+
 ## 0.97.0
 
 ### Changed
