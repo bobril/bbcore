@@ -442,7 +442,7 @@ namespace Lib.Composition
                         }
                         else
                         {
-                            var bundle = new BundleBundler(_tools);
+                            var bundle = bCommand.NewBundler.Value ? (IBundler)new NjsastBundleBundler(_tools) : new BundleBundler(_tools);
                             bundle.FilesContent = filesContent;
                             bundle.Project = proj;
                             bundle.BuildResult = buildResult;

@@ -8,11 +8,13 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         protected override string Description => "just build and stop";
 
-        public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString(description: "define where to put build result", words: new[] { "-d", "--dir" }, defaultValue: null);    
+        public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString(description: "define where to put build result", words: new[] { "-d", "--dir" }, defaultValue: null);
 
         public CommandLineArgumentBool Fast { get; } = new CommandLineArgumentBool(description: "quick debuggable bundling", words: new[] { "-f", "--fast" });
 
         public CommandLineArgumentBool Compress { get; } = new CommandLineArgumentBool(description: "remove dead code", words: new[] { "-c", "--compress" }, defaultValue: true);
+
+        public CommandLineArgumentBool NewBundler { get; } = new CommandLineArgumentBool(description: "use new Njsast based bundler", words: new[] { "-x", "--newBundler" }, defaultValue: false);
 
         public CommandLineArgumentBool Mangle { get; } = new CommandLineArgumentBool(description: "minify names", words: new[] { "-m", "--mangle" }, defaultValue: true);
 

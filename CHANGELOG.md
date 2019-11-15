@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- New bundler from Njsast purely in C#. Currently not enabled by default, but could enabled by adding `bb b -x 1`
+
 ## 0.97.1
 
 ### Fixed

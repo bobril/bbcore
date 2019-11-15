@@ -118,6 +118,11 @@ namespace Njsast.Bundler
                             return exportedSymbol;
                         }
 
+                        if (sourceFile.WholeExport != null)
+                        {
+                            return null;
+                        }
+
                         // This is not error because it could be just TypeScript interface
                         return new AstSymbolRef("undefined");
                     }

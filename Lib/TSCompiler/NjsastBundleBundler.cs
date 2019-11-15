@@ -1,19 +1,20 @@
-﻿using System.Collections.Generic;
-using Lib.Utils;
-using Lib.ToolsDir;
-using Lib.Bundler;
-using System.Linq;
-using Lib.CSSProcessor;
-using System.Globalization;
-using BTDB.Collections;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
-using Njsast.Ast;
+using BTDB.Collections;
+using Lib.CSSProcessor;
+using Lib.ToolsDir;
+using Lib.Utils;
+using Njsast.Bundler;
+using Njsast.Compress;
+using Njsast.Output;
 using Njsast.SourceMap;
 
 namespace Lib.TSCompiler
 {
-    public class BundleBundler : IBundlerCallback, IBundler
+    public class NjsastBundleBundler : IBundler, IBundlerCtx
     {
         string _mainJsBundleUrl;
         string _bundlePng;
@@ -21,7 +22,7 @@ namespace Lib.TSCompiler
         string _indexHtml;
         readonly IToolsDir _tools;
 
-        public BundleBundler(IToolsDir tools)
+        public NjsastBundleBundler(IToolsDir tools)
         {
             _tools = tools;
         }
@@ -54,7 +55,7 @@ namespace Lib.TSCompiler
                 var cssProcessor = new CssProcessor(Project.Tools);
                 var cssContent = cssProcessor.ConcatenateAndMinifyCss(cssToBundle, (string url, string from) =>
                 {
-                    var full = PathUtils.Join(from, url);
+                    var full = PathUtils.Join(@from, url);
                     var fullJustName = full.Split('?', '#')[0];
                     BuildResult.Path2FileInfo.TryGetValue(fullJustName, out var fileAdditionalInfo);
                     FilesContent.GetOrAddValueRef(BuildResult.ToOutputUrl(fileAdditionalInfo)) = fileAdditionalInfo.Owner.ByteContent;
@@ -90,29 +91,29 @@ namespace Lib.TSCompiler
                 }
             }
 
-            var bundler = new BundlerImpl(_tools);
-            bundler.Callbacks = this;
+            _mainJsBundleUrl = BuildResult.BundleJsUrl;
+
+            var bundler = new Njsast.Bundler.BundlerImpl(this);
             if (Project.ExampleSources.Count > 0)
             {
-                bundler.MainFiles = new[] { Project.ExampleSources[0] };
+                bundler.PartToMainFilesMap = new Dictionary<string, IReadOnlyList<string>> { { "Bundle", new []{ Project.ExampleSources[0] } } };
             }
             else
             {
-                bundler.MainFiles = new[] { Project.MainFile };
+                bundler.PartToMainFilesMap = new Dictionary<string, IReadOnlyList<string>> { { "Bundle", new []{ Project.MainFile } } };
             }
 
-            _mainJsBundleUrl = BuildResult.BundleJsUrl;
-            bundler.Compress = compress;
+            bundler.CompressOptions = compress? CompressOptions.Default : null;
             bundler.Mangle = mangle;
-            bundler.Beautify = beautify;
+            bundler.OutputOptions = new OutputOptions {Beautify = beautify};
             var defines = new Dictionary<string, object>();
             foreach (var p in Project.ExpandedDefines)
             {
                 defines.Add(p.Key, p.Value.ConstValue());
             }
 
-            bundler.Defines = defines;
-            bundler.Bundle();
+            bundler.GlobalDefines = defines;
+            bundler.Run();
             if (!Project.NoHtml)
             {
                 BuildFastBundlerIndexHtml(cssLink);
@@ -164,8 +165,9 @@ namespace Lib.TSCompiler
             return res;
         }
 
-        public string ReadContent(string name)
+        public string? ReadContent(string name)
         {
+            if (name.EndsWith(".map", StringComparison.Ordinal)) return null;
             if (!BuildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
             {
                 throw new InvalidOperationException("Bundler ReadContent does not exists:" + name);
@@ -196,6 +198,11 @@ namespace Lib.TSCompiler
             throw new InvalidOperationException("Bundler Read Content unknown type " + Enum.GetName(typeof(FileCompilationType), fileInfo.Type) + ":" + name);
         }
 
+        public string JsHeaders(string forSplit, bool withImport)
+        {
+            return BundlerHelpers.JsHeaders(withImport);
+        }
+
         public void WriteBundle(string name, string content)
         {
             FilesContent.GetOrAddValueRef(name) = content;
@@ -203,38 +210,33 @@ namespace Lib.TSCompiler
 
         public string GenerateBundleName(string forName)
         {
-            if (forName == "")
+            if (forName == "Bundle")
                 return _mainJsBundleUrl;
             return BuildResult.AllocateName(forName.Replace("/", "_") + ".js");
         }
 
         public string ResolveRequire(string name, string from)
         {
-            if (!BuildResult.ResolveCache.TryGetValue((from, name), out var resolveResult))
+            if (!BuildResult.ResolveCache.TryGetValue((@from, name), out var resolveResult))
             {
-                throw new Exception($"Bundler cannot resolve {name} from {from}");
+                throw new Exception($"Bundler cannot resolve {name} from {@from}");
             }
             var res = resolveResult.FileNameWithPreference(false);
             if (res == "?")
             {
-                throw new Exception($"Bundler failed to resolve {name} from {from}");
+                throw new Exception($"Bundler failed to resolve {name} from {@from}");
             }
             return res;
         }
 
-        public string TslibSource(bool withImport)
-        {
-            return _tools.TsLibSource + (withImport ? _tools.ImportSource : "");
-        }
-
-        public IList<string> GetPlainJsDependencies(string name)
+        public IReadOnlyList<string> GetPlainJsDependencies(string name)
         {
             if (!BuildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
             {
                 throw new InvalidOperationException("Bundler GetPlainJsDependencies does not exists:" + name);
             }
             var sourceInfo = fileInfo.SourceInfo;
-            if (sourceInfo == null || sourceInfo.Assets == null)
+            if (sourceInfo?.Assets == null)
                 return new List<string>();
             return sourceInfo.Assets.Select(i => i.Name).Where(i => !i.StartsWith("resource:") && i.EndsWith(".js")).ToList();
         }
