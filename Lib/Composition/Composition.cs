@@ -442,10 +442,12 @@ namespace Lib.Composition
                         }
                         else
                         {
-                            var bundle = bCommand.NewBundler.Value ? (IBundler)new NjsastBundleBundler(_tools) : new BundleBundler(_tools);
+                            var bundle = bCommand.NewBundler.Value ? (IBundler)new NjsastBundleBundler(_tools, _logger) : new BundleBundler(_tools);
                             bundle.FilesContent = filesContent;
                             bundle.Project = proj;
                             bundle.BuildResult = buildResult;
+                            bundle.BuildSourceMap = bCommand.SourceMap.Value == "yes";
+                            bundle.SourceMapSourceRoot = bCommand.SourceMapRoot.Value;
                             bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
                         }
 

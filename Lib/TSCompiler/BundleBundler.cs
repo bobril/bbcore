@@ -29,6 +29,22 @@ namespace Lib.TSCompiler
         public ProjectOptions Project { get; set; }
         public BuildResult BuildResult { get; set; }
 
+        public bool BuildSourceMap
+        {
+            set
+            {
+                // ignore
+            }
+        }
+
+        public string? SourceMapSourceRoot
+        {
+            set
+            {
+                // ignore
+            }
+        }
+
         // value could be string or byte[] or Lazy<string|byte[]>
         public RefDictionary<string, object> FilesContent { get; set; }
 
@@ -57,7 +73,8 @@ namespace Lib.TSCompiler
                     var full = PathUtils.Join(from, url);
                     var fullJustName = full.Split('?', '#')[0];
                     BuildResult.Path2FileInfo.TryGetValue(fullJustName, out var fileAdditionalInfo);
-                    FilesContent.GetOrAddValueRef(BuildResult.ToOutputUrl(fileAdditionalInfo)) = fileAdditionalInfo.Owner.ByteContent;
+                    FilesContent.GetOrAddValueRef(BuildResult.ToOutputUrl(fileAdditionalInfo)) =
+                        fileAdditionalInfo.Owner.ByteContent;
                     return PathUtils.GetFile(fileAdditionalInfo.OutputUrl) +
                            full.Substring(fullJustName.Length);
                 }).Result;
@@ -67,6 +84,7 @@ namespace Lib.TSCompiler
                     cssImports += match.ToString();
                     cssContent = cssContent.Replace(match.ToString(), "");
                 }
+
                 FilesContent.GetOrAddValueRef(cssPath) = cssImports + cssContent;
                 cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
             }
@@ -80,7 +98,8 @@ namespace Lib.TSCompiler
                     _bundlePngInfo = new List<float>();
                     foreach (var slice in bundlePngContent)
                     {
-                        FilesContent.GetOrAddValueRef(PathUtils.InjectQuality(_bundlePng, slice.Quality)) = slice.Content;
+                        FilesContent.GetOrAddValueRef(PathUtils.InjectQuality(_bundlePng, slice.Quality)) =
+                            slice.Content;
                         _bundlePngInfo.Add(slice.Quality);
                     }
                 }
@@ -94,11 +113,11 @@ namespace Lib.TSCompiler
             bundler.Callbacks = this;
             if (Project.ExampleSources.Count > 0)
             {
-                bundler.MainFiles = new[] { Project.ExampleSources[0] };
+                bundler.MainFiles = new[] {Project.ExampleSources[0]};
             }
             else
             {
-                bundler.MainFiles = new[] { Project.MainFile };
+                bundler.MainFiles = new[] {Project.MainFile};
             }
 
             _mainJsBundleUrl = BuildResult.BundleJsUrl;
@@ -170,20 +189,25 @@ namespace Lib.TSCompiler
             {
                 throw new InvalidOperationException("Bundler ReadContent does not exists:" + name);
             }
+
             if (fileInfo.Type == FileCompilationType.ImportedCss || fileInfo.Type == FileCompilationType.Css)
                 return "";
             if (fileInfo.Type == FileCompilationType.Json)
             {
                 return fileInfo.Owner.Utf8Content;
             }
-            if (fileInfo.Type == FileCompilationType.JavaScriptAsset || fileInfo.Type == FileCompilationType.JavaScript || fileInfo.Type == FileCompilationType.EsmJavaScript)
+
+            if (fileInfo.Type == FileCompilationType.JavaScriptAsset ||
+                fileInfo.Type == FileCompilationType.JavaScript || fileInfo.Type == FileCompilationType.EsmJavaScript)
             {
                 return fileInfo.Output;
             }
+
             if (fileInfo.Type == FileCompilationType.TypeScriptDefinition)
             {
                 return "";
             }
+
             if (fileInfo.Type == FileCompilationType.TypeScript)
             {
                 var sourceMapBuilder = new SourceMapBuilder();
@@ -193,7 +217,9 @@ namespace Lib.TSCompiler
                 sourceReplacer.Apply(adder);
                 return sourceMapBuilder.Content();
             }
-            throw new InvalidOperationException("Bundler Read Content unknown type " + Enum.GetName(typeof(FileCompilationType), fileInfo.Type) + ":" + name);
+
+            throw new InvalidOperationException("Bundler Read Content unknown type " +
+                                                Enum.GetName(typeof(FileCompilationType), fileInfo.Type) + ":" + name);
         }
 
         public void WriteBundle(string name, string content)
@@ -214,11 +240,13 @@ namespace Lib.TSCompiler
             {
                 throw new Exception($"Bundler cannot resolve {name} from {from}");
             }
+
             var res = resolveResult.FileNameWithPreference(false);
             if (res == "?")
             {
                 throw new Exception($"Bundler failed to resolve {name} from {from}");
             }
+
             return res;
         }
 
@@ -233,10 +261,12 @@ namespace Lib.TSCompiler
             {
                 throw new InvalidOperationException("Bundler GetPlainJsDependencies does not exists:" + name);
             }
+
             var sourceInfo = fileInfo.SourceInfo;
             if (sourceInfo == null || sourceInfo.Assets == null)
                 return new List<string>();
-            return sourceInfo.Assets.Select(i => i.Name).Where(i => !i.StartsWith("resource:") && i.EndsWith(".js")).ToList();
+            return sourceInfo.Assets.Select(i => i.Name).Where(i => !i.StartsWith("resource:") && i.EndsWith(".js"))
+                .ToList();
         }
     }
 }

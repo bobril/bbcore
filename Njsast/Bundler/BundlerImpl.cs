@@ -1,22 +1,26 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Njsast.Ast;
 using Njsast.Compress;
 using Njsast.Output;
 using Njsast.Reader;
 using Njsast.Scope;
+using Njsast.SourceMap;
 
 namespace Njsast.Bundler
 {
     public interface IBundlerCtx
     {
-        string? ReadContent(string fileName);
-        IReadOnlyList<string> GetPlainJsDependencies(string fileName);
+        (string?, SourceMap.SourceMap?) ReadContent(string fileName);
+        IEnumerable<string> GetPlainJsDependencies(string fileName);
         string GenerateBundleName(string forName);
         string ResolveRequire(string name, string from);
         string JsHeaders(string forSplit, bool withImport);
         void WriteBundle(string name, string content);
+        void WriteBundle(string name, SourceMapBuilder content);
+        void ReportTime(string name, TimeSpan duration);
     }
 
     public class BundlerImpl
@@ -33,6 +37,7 @@ namespace Njsast.Bundler
         public ICompressOptions? CompressOptions;
         public bool Mangle;
         public bool MangleWithFrequencyCounting;
+        public bool GenerateSourceMap;
         public OutputOptions? OutputOptions;
         public IReadOnlyDictionary<string, object> GlobalDefines;
         readonly IBundlerCtx _ctx;
@@ -45,6 +50,7 @@ namespace Njsast.Bundler
 
         public void Run()
         {
+            var stopwatch = Stopwatch.StartNew();
             foreach (var (splitName, mainFileList) in PartToMainFilesMap)
             {
                 foreach (var mainFile in mainFileList)
@@ -62,6 +68,8 @@ namespace Njsast.Bundler
                     {ShortName = _ctx.GenerateBundleName(splitName), PropName = "ERROR", IsMainSplit = true};
             }
 
+            stopwatch.Stop();
+            _ctx.ReportTime("Parse", stopwatch.Elapsed);
             foreach (var (_, sourceFile) in _cache)
             {
                 if (sourceFile.NeedsWholeExport && sourceFile.WholeExport == null)
@@ -98,13 +106,15 @@ namespace Njsast.Bundler
 
             foreach (var (splitName, splitInfo) in _splitMap)
             {
-                var topLevelAst = new Parser(new Options(), _ctx.JsHeaders(splitName, lazySplitCounter > 0)).Parse();
+                var topLevelAst = Parser.Parse(_ctx.JsHeaders(splitName, lazySplitCounter > 0));
                 if (GlobalDefines != null && GlobalDefines.Count > 0)
                     topLevelAst.Body.Add(Helpers.EmitVarDefines(GlobalDefines));
                 topLevelAst.FigureOutScope();
                 foreach (var jsDependency in splitInfo.PlainJsDependencies)
                 {
-                    var jsAst = new Parser(new Options(), _ctx.ReadContent(jsDependency)!).Parse();
+                    var content = _ctx.ReadContent(jsDependency);
+                    var jsAst = Parser.Parse(content.Item1!);
+                    content.Item2?.ResolveInAst(jsAst);
                     jsAst.FigureOutScope();
                     _currentFileIdent = BundlerHelpers.FileNameToIdent(jsDependency);
                     BundlerHelpers.AppendToplevelWithRename(topLevelAst, jsAst, _currentFileIdent);
@@ -132,20 +142,42 @@ namespace Njsast.Bundler
 
                 if (CompressOptions != null)
                 {
+                    stopwatch = Stopwatch.StartNew();
                     topLevelAst.FigureOutScope();
                     topLevelAst = topLevelAst.Compress(CompressOptions);
+                    stopwatch.Stop();
+                    _ctx.ReportTime("Compress", stopwatch.Elapsed);
                 }
 
                 if (Mangle)
                 {
+                    stopwatch = Stopwatch.StartNew();
                     topLevelAst.Mangle(new ScopeOptions
                     {
                         FrequencyCounting = MangleWithFrequencyCounting, TopLevel = false,
                         BeforeMangling = IgnoreEvalInTwoScopes
                     });
+                    stopwatch.Stop();
+                    _ctx.ReportTime("Mangle", stopwatch.Elapsed);
                 }
 
-                _ctx.WriteBundle(splitInfo.ShortName!, topLevelAst.PrintToString(OutputOptions));
+                if (GenerateSourceMap)
+                {
+                    stopwatch = Stopwatch.StartNew();
+                    var builder = new SourceMapBuilder();
+                    topLevelAst.PrintToBuilder(builder, OutputOptions);
+                    stopwatch.Stop();
+                    _ctx.ReportTime("Print", stopwatch.Elapsed);
+                    _ctx.WriteBundle(splitInfo.ShortName!, builder);
+                }
+                else
+                {
+                    stopwatch = Stopwatch.StartNew();
+                    var content = topLevelAst.PrintToString(OutputOptions);
+                    stopwatch.Stop();
+                    _ctx.ReportTime("Print", stopwatch.Elapsed);
+                    _ctx.WriteBundle(splitInfo.ShortName!, content);
+                }
             }
         }
 
@@ -329,12 +361,8 @@ namespace Njsast.Bundler
 
         void Check(string fileName, string splitName)
         {
-            var content = _ctx.ReadContent(fileName);
+            var (content, sourceMap) = _ctx.ReadContent(fileName);
             if (content is null) throw new ApplicationException($"Content for {fileName} not found");
-            var sourceMapContent = _ctx.ReadContent(fileName + ".map");
-            var sourceMap = sourceMapContent != null
-                ? SourceMap.SourceMap.Parse(sourceMapContent, ".")
-                : SourceMap.SourceMap.Identity(content, fileName);
             var cached = BundlerHelpers.BuildSourceFile(fileName, content, sourceMap,
                 (from, name) => _ctx.ResolveRequire(name, from));
             cached.PartOfBundle = splitName;
