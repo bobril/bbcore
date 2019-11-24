@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.98.0
+
 ### Added
 
 - New bundler from Njsast purely in C#. Currently not enabled by default, but could enabled by adding `bb b -x 1`. New bundler allows to generate source map, enable by `-g yes`. Using `--sourceRoot ".."` define what should be written in source map sourceRoot field, default is `..` which nicely works with default `dist` output directory.
