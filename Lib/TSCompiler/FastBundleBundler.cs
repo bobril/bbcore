@@ -7,6 +7,7 @@ using System.Globalization;
 using BTDB.Collections;
 using Njsast.SourceMap;
 using System;
+using Njsast.Bundler;
 
 namespace Lib.TSCompiler
 {
@@ -71,7 +72,7 @@ namespace Lib.TSCompiler
                 sourceMapBuilder.AddText(_tools.LoaderJs);
                 if (Project.Defines != null) sourceMapBuilder.AddText(GetGlobalDefines());
                 sourceMapBuilder.AddText(GetModuleMap());
-                sourceMapBuilder.AddText(_tools.TsLibSource);
+                sourceMapBuilder.AddText(BundlerHelpers.JsHeaders(false));
             }
 
             var cssLink = "";

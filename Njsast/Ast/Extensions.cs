@@ -1,3 +1,4 @@
+using Njsast.AstDump;
 using Njsast.Reader;
 
 namespace Njsast.Ast
@@ -150,6 +151,14 @@ namespace Njsast.Ast
         {
             var tr = new DeepCloneTransformer();
             return (T)tr.Transform(node);
+        }
+
+        public static string DumpToString(this AstNode node, bool withoutPositions = false)
+        {
+            var strSink = new StringLineSink();
+            var dumper = new DumpAst(new AstDumpWriter(strSink, withoutPositions));
+            dumper.Walk(node);
+            return strSink.ToString();
         }
     }
 }

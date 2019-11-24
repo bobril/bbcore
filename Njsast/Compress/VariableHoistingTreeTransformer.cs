@@ -36,7 +36,7 @@ namespace Njsast.Compress
                 {
                     if (astForIn.Init != AstVar)
                         throw new NotImplementedException();
-                    if (AstVar.Definitions.Count > 1) 
+                    if (AstVar.Definitions.Count > 1)
                         throw new NotSupportedException();
 
                     astForIn.Init = new AstSymbolRef((AstSymbol)AstVarDef.Name);
@@ -98,7 +98,7 @@ namespace Njsast.Compress
                             return;
                         }
 
-                        if (astIf.Body is AstBlock bodyBlock && 
+                        if (astIf.Body is AstBlock bodyBlock &&
                             CreatedIfBlocks.Contains(bodyBlock))
                         {
                             bodyBlock.Body.ReplaceItem(AstVarDef, ConvertVariableDefinitionToAssignStatement());
@@ -186,10 +186,10 @@ namespace Njsast.Compress
             public bool IsUsedOnRightSideOfBinary { get; set; }
 
             public bool CanMoveInitialization =>
-                !IsPossiblyUsedInCall && 
+                !IsPossiblyUsedInCall &&
                 !IsUsedInConditionalStatement &&
                 !IsUsedOnRightSideOfBinary &&
-                ReadReferencesCount == 0 && 
+                ReadReferencesCount == 0 &&
                 UnknownReferencesCount == 0;
 
             public IVariableInitialization? FirstHoistableInitialization { get; set; }
@@ -230,8 +230,8 @@ namespace Njsast.Compress
             }
 
             // statement with body (body is also conditional) or conditional (ternary operator)
-            if (node is AstIterationStatement || 
-                node is AstIf || 
+            if (node is AstIterationStatement ||
+                node is AstIf ||
                 node is AstConditional)
                 return ProcessConditional(node);
 
@@ -340,7 +340,7 @@ namespace Njsast.Compress
                         AstNode? initNode;
                         (parentNode, initNode) = GetInitAndParentNode<AstBlock?, AstSimpleStatement?>();
 
-                        if (parentNode != null && 
+                        if (parentNode != null &&
                             initNode != null &&
                             ((AstBlock)parentNode).Body.IndexOf(initNode) != -1 &&
                             ((AstSimpleStatement)initNode).Body is AstAssign)
@@ -348,7 +348,7 @@ namespace Njsast.Compress
                             SetVariableInitialization(parentNode, initNode);
                             break;
                         }
-                        
+
                         (parentNode, initNode) = GetInitAndParentNode<AstBinary?, AstAssign?>();
 
                         if (parentNode != null && initNode != null)
@@ -356,12 +356,17 @@ namespace Njsast.Compress
                             SetVariableInitialization(parentNode, initNode);
                             break;
                         }
-                        
+
                         (parentNode, initNode) = GetInitAndParentNode<AstSequence?, AstAssign?>();
 
                         if (parentNode != null && initNode != null)
                         {
                             SetVariableInitialization(parentNode, initNode);
+                            break;
+                        }
+
+                        if (Parent() is AstSimpleStatement)
+                        {
                             break;
                         }
 
@@ -395,7 +400,7 @@ namespace Njsast.Compress
 
                 scopeVariableInfo.FirstHoistableInitialization = new VariableInitialization(parent, initialization);
                 _canPerformMergeDefAndInit = true;
-            } 
+            }
         }
 
         bool IsValueHoistable(AstNode value)
@@ -404,10 +409,10 @@ namespace Njsast.Compress
             {
                 if (_scopeVariableUsages.ContainsKey(astSymbolRef.Name))
                 {
-                    if (_scopeVariableUsages[astSymbolRef.Name].Definitions.Count == 0 || 
-                        !_scopeVariableUsages[astSymbolRef.Name].Definitions[0].CanMoveInitialization ||  
-                        _scopeVariableUsages[astSymbolRef.Name].ReadReferencesCount > 0 || 
-                        _scopeVariableUsages[astSymbolRef.Name].WriteReferencesCount > 0 || 
+                    if (_scopeVariableUsages[astSymbolRef.Name].Definitions.Count == 0 ||
+                        !_scopeVariableUsages[astSymbolRef.Name].Definitions[0].CanMoveInitialization ||
+                        _scopeVariableUsages[astSymbolRef.Name].ReadReferencesCount > 0 ||
+                        _scopeVariableUsages[astSymbolRef.Name].WriteReferencesCount > 0 ||
                         _scopeVariableUsages[astSymbolRef.Name].UnknownReferencesCount > 0)
                     {
                         return false;
@@ -469,13 +474,13 @@ namespace Njsast.Compress
                     {
                         SetIsAfterCall();
                     }
-                    
+
                     if (!IsValueHoistable(astVarDefinition.Value))
                     {
                         canMoveInitialization = false;
                     }
                 }
-                
+
                 if (!_scopeVariableUsages.ContainsKey(name))
                 {
                     _scopeVariableUsages[name] = SetCurrentState(new ScopeVariableUsageInfo());
@@ -488,11 +493,11 @@ namespace Njsast.Compress
                     throw new SemanticError($"Parent for {nameof(AstVar)} node was not found", astVar);
                 var variableDefinition =
                     new VariableDefinition(
-                        lastBlock, 
-                        parent, 
-                        astVar, 
-                        astVarDefinition, 
-                        usage.CanMoveInitialization && canMoveInitialization, 
+                        lastBlock,
+                        parent,
+                        astVar,
+                        astVarDefinition,
+                        usage.CanMoveInitialization && canMoveInitialization,
                         index++);
                 usage.Definitions.Add(variableDefinition);
             }
@@ -538,7 +543,7 @@ namespace Njsast.Compress
         AstScope HoistVariables(AstScope astScope)
         {
             var hoistedVariables = new Dictionary<string, AstVarDef>();
-            
+
             foreach (var scopeVariableUsageInfo in GetSortVariableUsageInfosDictionaryAsList())
             {
                 var variableName = scopeVariableUsageInfo.Key;

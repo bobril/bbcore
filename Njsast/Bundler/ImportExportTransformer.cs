@@ -113,7 +113,7 @@ namespace Njsast.Bundler
                     _sourceFile.Ast.Variables!.Add(newName, astSymbolVar.Thedef);
                     newVar.Definitions.Add(new AstVarDef(astSymbolVar, trueValue));
                     _exportName2VarNameMap[pea.Value.name] = astSymbolVar.Thedef;
-                    _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name, astSymbolVar));
+                    _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name, new AstSymbolRef(_sourceFile.Ast, astSymbolVar.Thedef, SymbolUsage.Unknown)));
                     return newVar;
                 }
             }

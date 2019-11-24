@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>netcoreapp3.0</TargetFramework>
@@ -6,10 +6,20 @@
         <RuntimeIdentifiers>linux-x64;win-x64;osx-x64</RuntimeIdentifiers>
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <PackageId>Njsast</PackageId>
+        <Version>0.1.0</Version> 
+        <Authors>Boris Letocha, Miroslav Pokorný</Authors>
+        <PackageProjectUrl>http://github.com/Bobris/Njsast</PackageProjectUrl>
+        <PackageLicenseUrl>http://www.opensource.org/licenses/mit-license.php</PackageLicenseUrl>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <Description>JavaScript AST Parsing, Optimization, Mangling, Bundling, Printing also with SourceMaps</Description>
+        <PackageTags>JavaScript AST Bundling Minification SourceMap</PackageTags>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <DebugSymbols>true</DebugSymbols>
+        <DebugType>embedded</DebugType> 
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="JetBrains.Annotations" Version="2018.3.0" />
       <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     </ItemGroup>
 

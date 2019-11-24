@@ -15,7 +15,7 @@ namespace Njsast.Ast
             Expressions.TransferFrom(ref expressions);
         }
 
-        AstSequence(string? source, Position startLoc, Position endLoc) :
+        public AstSequence(string? source, Position startLoc, Position endLoc) :
             base(source, startLoc, endLoc)
         {
         }
@@ -77,6 +77,18 @@ namespace Njsast.Ast
                    || p is AstYield // yield (foo, bar)
                    || p is AstExport // export default (foo, bar)
                 ;
+        }
+
+        public void AddIntelligently(AstNode node)
+        {
+            if (node == TreeTransformer.Remove)
+                return;
+            if (node is AstSequence seq)
+            {
+                Expressions.AddRange(seq.Expressions);
+                return;
+            }
+            Expressions.Add(node);
         }
     }
 }

@@ -53,9 +53,16 @@ namespace Njsast.Ast
                 output.Space();
             }
 
-            if (Key is AstSymbolMethod symbolMethod)
+            var keyString = Key switch
             {
-                output.PrintPropertyName(symbolMethod.Name);
+                AstString str => str.Value,
+                AstSymbol key => key.Name,
+                _ => null
+            };
+
+            if (keyString != null)
+            {
+                output.PrintPropertyName(keyString);
             }
             else
             {

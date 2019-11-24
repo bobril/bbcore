@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace Njsast.Reader
 {
@@ -259,14 +258,12 @@ namespace Njsast.Reader
             UpdateContext = null;
         }
 
-        [NotNull]
         static TokenInformation CreateBinaryOperation(int prec)
         {
             return new TokenInformation(beforeExpr: true, binaryOperation: prec);
         }
 
         // Succinct definitions of keyword token types
-        [NotNull]
         static TokenInformation CreateKeyword(string keyword,
             bool beforeExpr = false,
             bool startsExpr = false,

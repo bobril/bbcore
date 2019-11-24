@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
 using Njsast.Ast;
 
 namespace Njsast.Reader
@@ -131,7 +130,6 @@ namespace Njsast.Reader
             EnterFunctionScope();
         }
 
-        [NotNull]
         public AstToplevel Parse()
         {
             var node = Options.Program ?? new AstToplevel(SourceFile, Start, _lastTokEnd);

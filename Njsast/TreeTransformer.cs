@@ -8,11 +8,11 @@ namespace Njsast
     {
         class AstSpreadStructList<T> : AstNode where T : AstNode
         {
-            public readonly StructList<T> NodeList;
+            public readonly StructList<T> NodeList = new StructList<T>();
 
             public AstSpreadStructList(ref StructList<T> nodeList)
             {
-                NodeList = nodeList;
+                NodeList.TransferFrom(ref nodeList);
             }
 
             public override void Visit(TreeWalker w)
@@ -70,7 +70,7 @@ namespace Njsast
             return new AstSpreadStructList<AstNode>(ref block.Body);
         }
 
-        protected static AstNode SpreadStructList(StructList<AstNode> statements)
+        protected static AstNode SpreadStructList(ref StructList<AstNode> statements)
         {
             return new AstSpreadStructList<AstNode>(ref statements);
         }
@@ -81,6 +81,7 @@ namespace Njsast
             top.Transform(this);
         }
 
+        public bool Modified { get; set; }
         /// Before descend if returns non null, descending will be skipped and result directly returned from Transform
         protected abstract AstNode? Before(AstNode node, bool inList);
 
@@ -93,10 +94,16 @@ namespace Njsast
             try
             {
                 var x = Before(start, inList);
-                if (x != null) return x;
+                if (x != null)
+                {
+                    if (x != start) Modified = true;
+                    return x;
+                }
                 start.Transform(this);
                 x = After(start, inList);
-                return x ?? start;
+                if (x == null) return start;
+                if (x != start) Modified = true;
+                return x;
             }
             finally
             {
@@ -113,14 +120,18 @@ namespace Njsast
                 if (item == Remove)
                 {
                     list.RemoveAt(i);
+                    Modified = true;
                     i--;
                 }
                 else if (item is AstSpreadStructList<T> spreadList)
                 {
-                    list.ReplaceItem(originalNode, spreadList.NodeList);
+                    list.ReplaceItemAt(i, spreadList.NodeList);
+                    Modified = true;
                 }
                 else
                 {
+                    if (originalNode != item)
+                        Modified = true;
                     list[i] = (T)item;
                 }
             }

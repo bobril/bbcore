@@ -21,7 +21,7 @@ namespace Njsast.Compress
                 {
                     return astBinary.Left; // TODO tree transformer which remove alone symbol refs
                 }
-                
+
                 return astBinary;
             }
 
@@ -29,21 +29,9 @@ namespace Njsast.Compress
             {
                 DescendBinaryOrVar();
 
-                var defsToRemove = astVar.Definitions.Where(astVarDef => astVarDef.Value == Remove).ToList();
-
-                foreach (var astVarDef in defsToRemove)
-                {
-                    astVar.Definitions.RemoveItem(astVarDef);
-                }
-
-                if (astVar.Definitions.Count == 0)
-                {
-                    return inList ? Remove : new AstEmptyStatement();
-                }
-
                 return astVar;
             }
-            
+
             if (node is AstScope)
             {
                 var parent = Parent();
@@ -52,12 +40,12 @@ namespace Njsast.Compress
                 {
                     if (parent is AstAssign astAssign && astAssign.Left is AstSymbolRef symbolRef)
                     {
-                        symbolDef = symbolRef.Thedef;
-                        if (symbolDef!.Global && symbolDef!.Orig.Where(x => x is AstSymbolDeclaration).ToList().Count == 0)
+                        symbolDef = symbolRef.Thedef!;
+                        if (symbolDef.Global && symbolDef.Orig.Where(x => x is AstSymbolDeclaration).ToList().Count == 0)
                             return node;
                     }
-                    else 
-                        return node; 
+                    else
+                        return node;
                 }
 
                 if (parent is AstVarDef astVarDef)
@@ -74,10 +62,10 @@ namespace Njsast.Compress
                 {
                     if (symbolDef == null && astLambda.Name == null)
                         return node;
-                    
+
                     if (symbolDef == null)
                         symbolDef = astLambda.Name!.Thedef!;
-                    
+
                     var canBeRemoved = true;
                     var shouldPreserveName = false;
                     var definitionScope = symbolDef.Scope;
@@ -115,7 +103,7 @@ namespace Njsast.Compress
                         return Remove;
                     }
                 }
-                
+
                 Descend();
                 return node;
             }

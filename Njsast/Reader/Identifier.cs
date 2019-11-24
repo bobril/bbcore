@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
 
 namespace Njsast.Reader
 {
@@ -92,7 +91,7 @@ namespace Njsast.Reader
         // This has a complexity linear to the value of the code. The
         // assumption is that looking up astral identifier characters is
         // rare.
-        static bool IsInAstralSet(int code, [NotNull] IReadOnlyList<int> set)
+        static bool IsInAstralSet(int code, IReadOnlyList<int> set)
         {
             var pos = 0x10000;
             for (var i = 0; i < set.Count; i += 2)

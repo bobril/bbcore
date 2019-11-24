@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Serialization;
-using Njsast.Output;
+﻿using Njsast.Output;
 using Njsast.Reader;
 
 namespace Njsast.Ast

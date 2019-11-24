@@ -28,13 +28,12 @@ namespace Njsast.Ast
             }
 
             var allowShortHand = output.Options.Shorthand;
-            string? keyString = null;
-            if (Key is AstSymbol)
+            var keyString = Key switch
             {
-                keyString = GetName((AstSymbol) Key);
-            }
-            else if (Key is AstString str)
-                keyString = str.Value;
+                AstString str => str.Value,
+                AstSymbol key => GetName(key),
+                _ => null
+            };
 
             if (allowShortHand &&
                 Value is AstSymbol && keyString != null &&

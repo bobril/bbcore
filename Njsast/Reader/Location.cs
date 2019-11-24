@@ -1,6 +1,4 @@
-﻿using JetBrains.Annotations;
-
-namespace Njsast.Reader
+﻿namespace Njsast.Reader
 {
     public sealed partial class Parser
     {
@@ -9,7 +7,6 @@ namespace Njsast.Reader
         // the location of the error, attaches the position to the end
         // of the error message, and then raises a `SyntaxError` with that
         // message.
-        [ContractAnnotation("=> halt")]
         static void Raise(Position position, string message)
         {
             throw NewSyntaxError(position, message);

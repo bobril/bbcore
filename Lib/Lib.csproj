@@ -45,8 +45,6 @@
     <EmbeddedResource Include="ToolsDir\web.zip" />
     <EmbeddedResource Include="ToolsDir\webt.zip" />
     <EmbeddedResource Include="TSCompiler\bbtsc.js" />
-    <EmbeddedResource Include="TSCompiler\import.js" />
-    <EmbeddedResource Include="TSCompiler\tslib.js" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BTDB" Version="17.8.0" />

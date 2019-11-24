@@ -44,7 +44,7 @@ namespace Njsast.Bundler
             astVar.Definitions.Add(varDef);
             Ast.Body.Add(astVar);
             Ast.Variables!.Add(wholeExportName, symbolDef);
-            WholeExport = wholeExport;
+            WholeExport = new AstSymbolRef(Ast, symbolDef, SymbolUsage.Unknown);
         }
     }
 

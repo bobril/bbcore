@@ -105,6 +105,13 @@ namespace Njsast.Ast
                 if (!transformed._isScopeFigured || iteration > 0)
                     transformed.FigureOutScope(scopeOptions);
                 transformed = (AstToplevel) treeTransformer.Compress(transformed, out shouldIterateAgain);
+                if (compressOptions.EnableRemoveSideEffectFreeCode)
+                {
+                    transformed.FigureOutScope(scopeOptions);
+                    var tr = new RemoveSideEffectFreeCodeTreeTransformer();
+                    transformed = (AstToplevel)tr.Transform(transformed);
+                    if (tr.Modified) shouldIterateAgain = true;
+                }
             } while (shouldIterateAgain && ++iteration < compressOptions.MaxPasses);
 
             return transformed;

@@ -1,4 +1,3 @@
-using System;
 using Njsast.Ast;
 using Njsast.Reader;
 

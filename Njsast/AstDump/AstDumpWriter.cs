@@ -1,4 +1,3 @@
-using System;
 using Njsast.Ast;
 
 namespace Njsast.AstDump
@@ -6,10 +5,12 @@ namespace Njsast.AstDump
     public class AstDumpWriter : IAstDumpWriter
     {
         readonly ILineSink _lineSink;
+        readonly bool _withoutPositions;
 
-        public AstDumpWriter(ILineSink lineSink)
+        public AstDumpWriter(ILineSink lineSink, bool withoutPositions = false)
         {
             _lineSink = lineSink;
+            _withoutPositions = withoutPositions;
         }
 
         int _indent;
@@ -32,8 +33,15 @@ namespace Njsast.AstDump
 
         public void Print(AstNode node)
         {
-            _main = new String(' ', _indent * 2) + node.GetType().Name.Substring(3) + " " + (node.Start.Line + 1) +
-                    ":" + (node.Start.Column + 1) + " - " + (node.End.Line + 1) + ":" + (node.End.Column + 1);
+            if (_withoutPositions)
+            {
+                _main = new string(' ', _indent * 2) + node.GetType().Name.Substring(3);
+            }
+            else
+            {
+                _main = new string(' ', _indent * 2) + node.GetType().Name.Substring(3) + " " + (node.Start.Line + 1) +
+                        ":" + (node.Start.Column + 1) + " - " + (node.End.Line + 1) + ":" + (node.End.Column + 1);
+            }
         }
 
         public void PrintProp(string name, bool value)

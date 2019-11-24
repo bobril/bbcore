@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata.Ecma335;
-using Njsast.ConstEval;
+﻿using Njsast.ConstEval;
 using Njsast.Output;
 using Njsast.Reader;
 

@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Lib\Lib.csproj" />
+    <ProjectReference Include="..\Njsast\Njsast.csproj" />
   </ItemGroup>
 
 </Project>

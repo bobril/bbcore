@@ -21,6 +21,11 @@ namespace Njsast.Ast
             Value = value;
         }
 
+        public AstString(AstSymbol parseIdent): base(parseIdent.Source,parseIdent.Start,parseIdent.End)
+        {
+            Value = parseIdent.Name;
+        }
+
         public override void DumpScalars(IAstDumpWriter writer)
         {
             base.DumpScalars(writer);

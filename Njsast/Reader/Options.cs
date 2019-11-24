@@ -1,4 +1,3 @@
-using JetBrains.Annotations;
 using Njsast.Ast;
 
 namespace Njsast.Reader

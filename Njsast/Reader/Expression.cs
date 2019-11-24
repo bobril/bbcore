@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
 using Njsast.Ast;
 
 namespace Njsast.Reader
@@ -72,7 +71,7 @@ namespace Njsast.Reader
         // Object/class getters and setters are not allowed to clash —
         // either with each other or with an init property — and in
         // strict mode, init properties are also not allowed to be repeated.
-        void CheckPropertyClash([NotNull] AstObjectProperty prop, IDictionary<string, Property> propHash)
+        void CheckPropertyClash(AstObjectProperty prop, IDictionary<string, Property> propHash)
         {
             if (Options.EcmaVersion >= 6 &&
                 (prop is AstObjectGetter || prop is AstObjectSetter || prop is AstObjectKeyVal))
@@ -203,7 +202,7 @@ namespace Njsast.Reader
             return left;
         }
 
-        static Operator StringToOperator([NotNull] string s)
+        static Operator StringToOperator(string s)
         {
             switch (s)
             {
@@ -312,7 +311,6 @@ namespace Njsast.Reader
             return left;
         }
 
-        [NotNull]
         AstNode BuildBinary(Position startLoc, AstNode left, AstNode right, Operator op)
         {
             return new AstBinary(SourceFile, startLoc, _lastTokEnd, left, right, op);
@@ -394,8 +392,7 @@ namespace Njsast.Reader
             return result;
         }
 
-        [NotNull]
-        AstNode ParseSubscripts([NotNull] AstNode @base, Position startLoc, bool noCalls = false)
+        AstNode ParseSubscripts(AstNode @base, Position startLoc, bool noCalls = false)
         {
             var maybeAsyncArrow = Options.EcmaVersion >= 8 && @base is AstSymbol identifierNode &&
                                   identifierNode.Name == "async" &&
@@ -579,7 +576,6 @@ namespace Njsast.Reader
             throw NewSyntaxError(startLocation, "Unexpected token");
         }
 
-        [NotNull]
         AstNode ParseLiteral(double value)
         {
             var startLoc = Start;
@@ -686,7 +682,6 @@ namespace Njsast.Reader
         // not without wrapping it in parentheses. Thus, it uses the noCalls
         // argument to parseSubscripts to prevent it from consuming the
         // argument list
-        [NotNull]
         AstNode ParseNew()
         {
             var nodeStart = Start;
@@ -712,7 +707,6 @@ namespace Njsast.Reader
         static readonly Regex TemplateRawRegex = new Regex("\r\n?");
 
         // Parse template expression.
-        [NotNull]
         AstTemplateSegment ParseTemplateElement(ref bool isTagged)
         {
             var startLoc = Start;
@@ -738,7 +732,6 @@ namespace Njsast.Reader
             return new AstTemplateSegment(SourceFile, startLoc, _lastTokEnd, valueStr, rawStr);
         }
 
-        [NotNull]
         AstTemplateString ParseTemplate(bool isTagged = false)
         {
             var startLoc = Start;
@@ -760,7 +753,7 @@ namespace Njsast.Reader
             return new AstTemplateString(SourceFile, startLoc, _lastTokEnd, ref expressions);
         }
 
-        bool IsAsyncProp(bool computed, [NotNull] AstNode key)
+        bool IsAsyncProp(bool computed, AstNode key)
         {
             return !computed && key is AstSymbol identifierNode && identifierNode.Name == "async" &&
                    (Type == TokenType.Name || Type == TokenType.Num || Type == TokenType.String ||
@@ -769,7 +762,6 @@ namespace Njsast.Reader
         }
 
         // Parse an object literal or binding pattern.
-        [NotNull]
         AstNode ParseObj(bool isPattern, DestructuringErrors? refDestructuringErrors = null)
         {
             var startLoc = Start;
@@ -806,7 +798,6 @@ namespace Njsast.Reader
             return new AstObject(SourceFile, startLoc, _lastTokEnd, ref objProps);
         }
 
-        [NotNull]
         AstObjectProperty ParseProperty(bool isPattern, DestructuringErrors? refDestructuringErrors)
         {
             var isGenerator = false;
@@ -982,7 +973,6 @@ namespace Njsast.Reader
         }
 
         // Parse object or class method.
-        [NotNull]
         AstFunction ParseMethod(bool isGenerator, bool isAsync = false)
         {
             var startLoc = Start;
@@ -1054,7 +1044,6 @@ namespace Njsast.Reader
         }
 
         // Parse arrow function expression with given parameters.
-        [NotNull]
         AstNode ParseArrowExpression(Position startLoc, ref StructList<AstNode> parameters, bool isAsync = false)
         {
             var oldInGen = _inGenerator;
@@ -1252,7 +1241,6 @@ namespace Njsast.Reader
         // Parse the next token as an identifier. If `liberal` is true (used
         // when parsing properties), it will also convert keywords into
         // identifiers.
-        [NotNull]
         AstSymbol ParseIdent(bool liberal = false)
         {
             var startLocation = Start;
@@ -1290,7 +1278,6 @@ namespace Njsast.Reader
         }
 
         // Parses yield expression inside generator.
-        [NotNull]
         AstYield ParseYield()
         {
             if (_yieldPos.Line == 0) _yieldPos = Start;
@@ -1309,7 +1296,6 @@ namespace Njsast.Reader
             return new AstYield(SourceFile, startLoc, _lastTokEnd, argument, @delegate);
         }
 
-        [NotNull]
         AstAwait ParseAwait()
         {
             if (_awaitPos.Line == 0) _awaitPos = Start;

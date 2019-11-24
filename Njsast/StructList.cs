@@ -385,21 +385,20 @@ namespace Njsast
             _a![index] = newItem;
         }
 
-        public void ReplaceItem(T originalItem, in ReadOnlySpan<T> newItems)
+        public void ReplaceItemAt(Index index, in ReadOnlySpan<T> newItems)
         {
-            var index = IndexOf(originalItem);
-            if (index < 0)
-                throw new ArgumentOutOfRangeException(nameof(originalItem), originalItem, "Item not found in List");
+            var idx = index.GetOffset((int) _count);
+            if ((uint) idx > _count) ThrowIndexOutOfRange(idx);
             var itemsToInsert = newItems.Length;
             if (itemsToInsert == 0)
             {
-                RemoveAt(index);
+                RemoveAt(idx);
                 return;
             }
 
             if (itemsToInsert == 1)
             {
-                _a![index] = newItems[0];
+                _a![idx] = newItems[0];
                 return;
             }
 
@@ -409,8 +408,8 @@ namespace Njsast
 
             _count = totalCount;
 
-            AsSpan(index + 1, (int) _count - (int) itemsToInsert - index).CopyTo(AsSpan((int) (index + itemsToInsert)));
-            newItems.CopyTo(AsSpan(index));
+            AsSpan(idx + 1, (int) _count - itemsToInsert - idx).CopyTo(AsSpan(idx + itemsToInsert));
+            newItems.CopyTo(AsSpan(idx));
         }
 
         public void InsertRange(Index index, in ReadOnlySpan<T> values)

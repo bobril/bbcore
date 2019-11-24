@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
 
 namespace Njsast.Reader
 {
@@ -803,7 +802,7 @@ namespace Njsast.Reader
             }
         }
 
-        static int ParseInt([NotNull] string str, int @base)
+        static int ParseInt(string str, int @base)
         {
             if (@base > 10)
                 throw new NotImplementedException();
@@ -840,7 +839,6 @@ namespace Njsast.Reader
         //
         // Incrementally adds only escaped chars, adding other chunks as-is
         // as a micro-optimization.
-        [NotNull]
         string ReadWord1()
         {
             _containsEsc = false;

@@ -36,7 +36,7 @@ namespace Njsast.Compress
         {
             return options.EnableUnreachableCodeElimination && node is AstStatementWithBody;
         }
-        
+
         static readonly LoopControlFinderTreeWalker LoopControlFinderTreeWalker = new LoopControlFinderTreeWalker();
 
         static AstNode RemoveUnreachableCode(AstIf ifStatement, bool inList)
@@ -59,7 +59,7 @@ namespace Njsast.Compress
             }
 
             AstVar? declarations = null;
-            if (falsyStatement != null) 
+            if (falsyStatement != null)
                 declarations = GetDeclarations(falsyStatement);
 
             switch (statement)
@@ -67,15 +67,15 @@ namespace Njsast.Compress
                 case null:
                     return declarations ?? Remove;
                 default:
-                    if (declarations == null) 
+                    if (declarations == null)
                         return statement;
 
                     var statements = new StructList<AstNode>();
                     statements.Add(declarations);
                     statements.Add(statement);
-                    
-                    return inList 
-                        ? SpreadStructList(statements) 
+
+                    return inList
+                        ? SpreadStructList(ref statements)
                         : new AstBlock(ifStatement) {Body = statements};
             }
         }
@@ -116,7 +116,7 @@ namespace Njsast.Compress
                 return forStatement;
 
             var declarations = GetDeclarations(forStatement.Body);
-            
+
             if (forStatement.Init == null)
             {
                 return declarations ?? Remove;
@@ -126,13 +126,13 @@ namespace Njsast.Compress
                 ? forStatement.Init
                 : new AstSimpleStatement(forStatement.Init);
 
-            if (declarations == null) 
+            if (declarations == null)
                 return statement;
             var statements = new StructList<AstNode>();
             statements.Add(statement);
             statements.Add(declarations);
             return inList
-                ? SpreadStructList(statements)
+                ? SpreadStructList(ref statements)
                 : new AstBlock(forStatement) {Body = statements};
         }
 

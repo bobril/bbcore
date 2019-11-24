@@ -3,6 +3,8 @@ using System;
 using Xunit;
 using System.Collections.Generic;
 using Lib.Bundler;
+using Njsast.Bundler;
+using BundlerImpl = Lib.Bundler.BundlerImpl;
 
 namespace Lib.Test
 {
@@ -52,7 +54,7 @@ namespace Lib.Test
 
             public string TslibSource(bool withImport)
             {
-                return _owner._tools.TsLibSource + (withImport ? _owner._tools.ImportSource : "");
+                return BundlerHelpers.JsHeaders(withImport);
             }
 
             public void WriteBundle(string name, string content)

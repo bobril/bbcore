@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using JetBrains.Annotations;
+using System.Diagnostics.CodeAnalysis;
 using Njsast.Ast;
 
 namespace Njsast.Reader
@@ -8,7 +8,7 @@ namespace Njsast.Reader
     {
         // Convert existing expression atom to assignable pattern
         // if possible.
-        [ContractAnnotation("node:notnull=>notnull")]
+        [return: NotNullIfNotNull("node")]
         AstNode? ToAssignable(AstNode? node, bool isBinding = false)
         {
             if (Options.EcmaVersion >= 6 && node != null)
@@ -74,7 +74,7 @@ namespace Njsast.Reader
             return node;
         }
 
-        [ContractAnnotation("property:notnull=>notnull")]
+        [return: NotNullIfNotNull("property")]
         AstObjectProperty? ToAssignable(AstObjectProperty? property, bool isBinding = false)
         {
             if (property == null)
@@ -108,7 +108,6 @@ namespace Njsast.Reader
         }
 
         // Parses spread element.
-        [NotNull]
         AstExpansion ParseSpread(DestructuringErrors? refDestructuringErrors)
         {
             var startLoc = Start;
@@ -117,7 +116,6 @@ namespace Njsast.Reader
             return new AstExpansion(SourceFile, startLoc, _lastTokEnd, argument);
         }
 
-        [NotNull]
         AstNode ParseRestBinding()
         {
             var startLoc = Start;
@@ -134,7 +132,6 @@ namespace Njsast.Reader
         }
 
         // Parses lvalue (assignable) atom.
-        [NotNull]
         AstNode ParseBindingAtom()
         {
             if (Options.EcmaVersion >= 6)
@@ -189,7 +186,6 @@ namespace Njsast.Reader
         }
 
         // Parses assignment pattern around given atom if possible.
-        [NotNull]
         AstNode ParseMaybeDefault(Position startLoc, AstNode? left = null)
         {
             left ??= ParseBindingAtom();

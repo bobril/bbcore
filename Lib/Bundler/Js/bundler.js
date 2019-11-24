@@ -981,6 +981,7 @@ function printAst(project, bundleAst) {
 }
 function compressAst(project, bundleAst, pureFuncs) {
     if (project.compress !== false) {
+        var start = Date.now();
         buildScopesAndLieAboutEval(bundleAst);
         let compressor = Compressor({
             hoist_funs: false,
@@ -1010,16 +1011,18 @@ function compressAst(project, bundleAst, pureFuncs) {
             }
         });
         bundleAst = bundleAst.transform(compressor);
-        // in future to make another pass with removing function calls with empty body
+        bb.log("Compress took " + ((Date.now() - start) * 0.001).toFixed(1) + "s");
     }
     return bundleAst;
 }
 function mangleNames(project, bundleAst) {
     if (project.mangle !== false) {
+        var start = Date.now();
         buildScopesAndLieAboutEval(bundleAst);
         base54.reset();
         bundleAst.compute_char_frequency();
         bundleAst.mangle_names();
+        bb.log("Mangle took " + ((Date.now() - start) * 0.001).toFixed(1) + "s");
     }
 }
 function buildScopesAndLieAboutEval(bundleAst) {

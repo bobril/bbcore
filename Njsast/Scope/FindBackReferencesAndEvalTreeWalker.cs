@@ -33,7 +33,7 @@ namespace Njsast.Scope
                 {
                 }
                 else if (node is AstSymbolFunarg || node is AstSymbolDefun || node is AstSymbolLambda ||
-                         node is AstSymbolCatch || node is AstSymbolMethod || node is AstSymbolProperty)
+                         node is AstSymbolCatch || node is AstSymbolMethod)
                 {
                     usage |= SymbolUsage.Write;
                 }
@@ -58,7 +58,7 @@ namespace Njsast.Scope
                             if (astVarDef.Value == node)
                                 usage |= SymbolUsage.Read;
 
-                            // This handle case for(var init in object) where node structure is AstForIn > AstVar > AstVarDef 
+                            // This handle case for(var init in object) where node structure is AstForIn > AstVar > AstVarDef
                             if (Parent(2) is AstForIn forIn && forIn.Init == Parent(1))
                             {
                                 astSymbol.Thedef!.References.Add(astSymbol);
@@ -109,7 +109,17 @@ namespace Njsast.Scope
                             }
 
                             break;
-                        case AstObjectKeyVal _:
+                        case AstObjectKeyVal objectKeyVal:
+                            if (objectKeyVal.Key == astSymbol)
+                            {
+                                usage |= SymbolUsage.Write;
+                            }
+                            else
+                            {
+                                usage |= SymbolUsage.Read;
+                            }
+
+                            break;
                         case AstPropAccess _:
                         case AstCall _:
                         case AstSimpleStatement _:
@@ -126,6 +136,13 @@ namespace Njsast.Scope
                         case AstCase _:
                         case AstFor _:
                             usage |= SymbolUsage.Read;
+                            break;
+                        case AstConciseMethod conciseMethod:
+                            if (conciseMethod.Key == astSymbol)
+                            {
+                                usage |= SymbolUsage.Write;
+                            }
+
                             break;
                         case { } parent:
                             throw new NotImplementedException("Symbol Usage Detection parent " + parent.GetType().Name);

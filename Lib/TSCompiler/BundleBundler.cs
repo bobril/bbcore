@@ -9,7 +9,9 @@ using BTDB.Collections;
 using System;
 using System.Text.RegularExpressions;
 using Njsast.Ast;
+using Njsast.Bundler;
 using Njsast.SourceMap;
+using BundlerImpl = Lib.Bundler.BundlerImpl;
 
 namespace Lib.TSCompiler
 {
@@ -252,7 +254,7 @@ namespace Lib.TSCompiler
 
         public string TslibSource(bool withImport)
         {
-            return _tools.TsLibSource + (withImport ? _tools.ImportSource : "");
+            return BundlerHelpers.JsHeaders(withImport);
         }
 
         public IList<string> GetPlainJsDependencies(string name)

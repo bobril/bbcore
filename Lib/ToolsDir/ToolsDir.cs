@@ -58,8 +58,6 @@ namespace Lib.ToolsDir
                 WebtZip = ResourceUtils.GetZip("Lib.ToolsDir.webt.zip");
                 WebZip = ResourceUtils.GetZip("Lib.ToolsDir.web.zip");
                 _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
-                TsLibSource = ResourceUtils.GetText("Lib.TSCompiler.tslib.js");
-                ImportSource = ResourceUtils.GetText("Lib.TSCompiler.import.js");
                 LiveReloadJs = ResourceUtils.GetText("Lib.ToolsDir.liveReload.js");
             }
         }
@@ -169,11 +167,7 @@ namespace Lib.ToolsDir
         readonly JObject _localeDefs;
         string _proxyWeb;
         string _proxyWebt;
-
-        public string TsLibSource { get; }
-
-        public string ImportSource { get; }
-
+        
         public string LiveReloadJs { get; }
 
         public async Task DownloadAndExtractTS(string dir, string versionString)

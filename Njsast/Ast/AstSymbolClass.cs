@@ -1,6 +1,4 @@
-﻿using Njsast.Reader;
-
-namespace Njsast.Ast
+﻿namespace Njsast.Ast
 {
     /// Symbol naming a class's name. Lexically scoped to the class.
     public class AstSymbolClass : AstSymbolDeclaration

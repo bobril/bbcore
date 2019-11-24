@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace Njsast.Reader
 {
     static class Extensions
     {
-        public static T Pop<T>([NotNull] this IList<T> list)
+        public static T Pop<T>(this IList<T> list)
         {
             var item = list[list.Count - 1];
             list.RemoveAt(list.Count - 1);

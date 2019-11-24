@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using JetBrains.Annotations;
 using Njsast.Ast;
 
 namespace Njsast.Reader
@@ -12,7 +11,7 @@ namespace Njsast.Reader
         // statements, and wraps them in a Program node.  Optionally takes a
         // `program` argument.  If present, the statements will be appended
         // to its body instead of creating a new node.
-        void ParseTopLevel([NotNull] AstToplevel node)
+        void ParseTopLevel(AstToplevel node)
         {
             var exports = new Dictionary<string, bool>();
             _canBeDirective = true;
@@ -85,7 +84,6 @@ namespace Njsast.Reader
         // regular expression literal. This is to handle cases like
         // `if (foo) /blah/.exec(foo)`, where looking at the previous token
         // does not help.
-        [NotNull]
         AstStatement ParseStatement(bool declaration, bool topLevel = false,
             IDictionary<string, bool>? exports = null)
         {
@@ -192,7 +190,7 @@ namespace Njsast.Reader
             return ParseExpressionStatement(startLocation, expr);
         }
 
-        static VariableKind ToVariableKind([NotNull] string s)
+        static VariableKind ToVariableKind(string s)
         {
             switch (s)
             {
@@ -207,7 +205,6 @@ namespace Njsast.Reader
             }
         }
 
-        [NotNull]
         AstLoopControl ParseBreakContinueStatement(Position nodeStart, string keyword)
         {
             var isBreak = keyword == "break";
@@ -262,7 +259,6 @@ namespace Njsast.Reader
             return new AstContinue(SourceFile, nodeStart, _lastTokEnd, label);
         }
 
-        [NotNull]
         AstDebugger ParseDebuggerStatement(Position nodeStart)
         {
             Next();
@@ -270,7 +266,6 @@ namespace Njsast.Reader
             return new AstDebugger(SourceFile, nodeStart, _lastTokEnd);
         }
 
-        [NotNull]
         AstDo ParseDoStatement(Position nodeStart)
         {
             Next();
@@ -298,7 +293,6 @@ namespace Njsast.Reader
         // whether the next token is `in` or `of`. When there is no init
         // part (semicolon immediately after the opening parenthesis), it
         // is a regular `for` loop.
-        [NotNull]
         AstIterationStatement ParseForStatement(Position nodeStart)
         {
             Next();
@@ -350,7 +344,6 @@ namespace Njsast.Reader
             }
         }
 
-        [NotNull]
         AstLambda ParseFunctionStatement(Position nodeStart, bool isAsync)
         {
             Next();
@@ -362,7 +355,6 @@ namespace Njsast.Reader
             return Type == TokenType.Function || IsAsyncFunction();
         }
 
-        [NotNull]
         AstIf ParseIfStatement(Position nodeStart)
         {
             Next();
@@ -373,7 +365,6 @@ namespace Njsast.Reader
             return new AstIf(SourceFile, nodeStart, _lastTokEnd, test, consequent, alternate);
         }
 
-        [NotNull]
         AstReturn ParseReturnStatement(Position nodeStart)
         {
             if (!_inFunction && !Options.AllowReturnOutsideFunction)
@@ -394,7 +385,6 @@ namespace Njsast.Reader
             return new AstReturn(SourceFile, nodeStart, _lastTokEnd, argument);
         }
 
-        [NotNull]
         AstSwitch ParseSwitchStatement(Position nodeStart)
         {
             Next();
@@ -455,7 +445,6 @@ namespace Njsast.Reader
             return new AstSwitch(SourceFile, nodeStart, _lastTokEnd, discriminant, ref cases);
         }
 
-        [NotNull]
         AstThrow ParseThrowStatement(Position nodeStart)
         {
             Next();
@@ -466,7 +455,6 @@ namespace Njsast.Reader
             return new AstThrow(SourceFile, nodeStart, _lastTokEnd, argument);
         }
 
-        [NotNull]
         AstTry ParseTryStatement(Position nodeStart)
         {
             Next();
@@ -497,7 +485,6 @@ namespace Njsast.Reader
             return new AstTry(SourceFile, nodeStart, _lastTokEnd, ref block.Body, handler, finalizer);
         }
 
-        [NotNull]
         AstDefinitions ParseVarStatement(Position nodeStart, VariableKind kind)
         {
             Next();
@@ -518,7 +505,6 @@ namespace Njsast.Reader
             return new AstVar(SourceFile, nodeStart, _lastTokEnd, ref declarations);
         }
 
-        [NotNull]
         AstWhile ParseWhileStatement(Position nodeStart)
         {
             Next();
@@ -533,7 +519,6 @@ namespace Njsast.Reader
             return new AstWhile(SourceFile, nodeStart, _lastTokEnd, test, body);
         }
 
-        [NotNull]
         AstWith ParseWithStatement(Position nodeStart)
         {
             if (_strict) Raise(Start, "'with' in strict mode");
@@ -543,14 +528,12 @@ namespace Njsast.Reader
             return new AstWith(SourceFile, nodeStart, _lastTokEnd, body, @object);
         }
 
-        [NotNull]
         AstEmptyStatement ParseEmptyStatement(Position nodeStart)
         {
             Next();
             return new AstEmptyStatement(SourceFile, nodeStart, _lastTokEnd);
         }
 
-        [NotNull]
         AstLabeledStatement ParseLabelledStatement(Position nodeStart, string maybeName, AstSymbol expr)
         {
             foreach (var label in _labels)
@@ -572,7 +555,6 @@ namespace Njsast.Reader
             return new AstLabeledStatement(SourceFile, nodeStart, _lastTokEnd, (AstStatement) body, newlabel);
         }
 
-        [NotNull]
         AstSimpleStatement ParseExpressionStatement(Position nodeStart, AstNode expr)
         {
             if (_canBeDirective && expr is AstString directive && directive.Value == "use strict")
@@ -587,7 +569,6 @@ namespace Njsast.Reader
         // Parse a semicolon-enclosed block of statements, handling `"use
         // strict"` declarations when `allowStrict` is true (used for
         // function bodies).
-        [NotNull]
         AstBlock ParseBlock(bool createNewLexicalScope = true)
         {
             var startLocation = Start;
@@ -615,7 +596,6 @@ namespace Njsast.Reader
         // Parse a regular `for` loop. The disambiguation code in
         // `parseStatement` will already have parsed the init statement or
         // expression.
-        [NotNull]
         AstFor ParseFor(Position nodeStart, AstNode? init)
         {
             Expect(TokenType.Semi);
@@ -636,7 +616,6 @@ namespace Njsast.Reader
 
         // Parse a `for`/`in` and `for`/`of` loop, which are almost
         // same from parser's perspective.
-        [NotNull]
         AstForIn ParseForIn(Position nodeStart, AstNode init)
         {
             var isIn = Type == TokenType.In;
@@ -687,7 +666,6 @@ namespace Njsast.Reader
             }
         }
 
-        [NotNull]
         AstNode ParseVarId(VariableKind kind)
         {
             var id = ParseBindingAtom();
@@ -713,7 +691,6 @@ namespace Njsast.Reader
 
         // Parse a function declaration or literal (depending on the
         // `isStatement` parameter).
-        [NotNull]
         AstLambda ParseFunction(Position startLoc, bool isStatement, bool isNullableId,
             bool allowExpressionBody = false,
             bool isAsync = false)
@@ -791,7 +768,6 @@ namespace Njsast.Reader
 
         // Parse a class declaration or literal (depending on the
         // `isStatement` parameter).
-        [NotNull]
         AstClass ParseClass(Position nodeStart, bool isStatement, bool isNullableId)
         {
             Next();
@@ -926,7 +902,6 @@ namespace Njsast.Reader
         }
 
         // Parses module export declaration.
-        [NotNull]
         AstExport ParseExport(Position nodeStart, IDictionary<string, bool>? exports)
         {
             // export * from '...'
@@ -1175,13 +1150,13 @@ namespace Njsast.Reader
             }
         }
 
-        bool IsUseStrictDirective([NotNull] AstNode statement)
+        bool IsUseStrictDirective(AstNode statement)
         {
             var literal2 = (AstString) ((AstSimpleStatement) statement).Body;
             return literal2.Value == "use strict";
         }
 
-        bool IsDirectiveCandidate([NotNull] AstNode statement)
+        bool IsDirectiveCandidate(AstNode statement)
         {
             return statement is AstSimpleStatement expressionStatementNode &&
                    expressionStatementNode.Body is AstString &&

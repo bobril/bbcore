@@ -43,7 +43,11 @@ namespace Njsast.Ast
             base.Transform(tt);
             Name = tt.Transform(Name);
             if (Value != null)
+            {
                 Value = tt.Transform(Value);
+                if (Value == TreeTransformer.Remove)
+                    Value = null;
+            }
         }
 
         public override AstNode ShallowClone()
