@@ -156,7 +156,7 @@ namespace Njsast.Bundler
                     {
                         FrequencyCounting = MangleWithFrequencyCounting, TopLevel = false,
                         BeforeMangling = IgnoreEvalInTwoScopes
-                    });
+                    }, OutputOptions);
                     stopwatch.Stop();
                     _ctx.ReportTime("Mangle", stopwatch.Elapsed);
                 }

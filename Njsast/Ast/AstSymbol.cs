@@ -61,9 +61,10 @@ namespace Njsast.Ast
             {
                 // Faster AddUnique
                 var span = s.Enclosed.AsReadOnlySpan();
+                var def = Thedef!;
                 foreach (var symb in span)
                 {
-                    if (symb == Thedef!) goto alreadyExists;
+                    if (symb == def) goto alreadyExists;
                 }
                 s.Enclosed.Add(Thedef!);
                 alreadyExists:

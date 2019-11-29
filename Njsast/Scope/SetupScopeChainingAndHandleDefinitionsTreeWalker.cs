@@ -24,7 +24,8 @@ namespace Njsast.Scope
             if (node is IMayBeBlockScope blockScope && blockScope.IsBlockScope)
             {
                 var saveScope = _currentScope;
-                blockScope.BlockScope = _currentScope = new AstScope(node);
+                _currentScope = blockScope.BlockScope ?? new AstScope(node);
+                blockScope.BlockScope = _currentScope;
                 _currentScope.InitScopeVars(saveScope);
                 if (!(node is AstScope) && saveScope != null)
                 {

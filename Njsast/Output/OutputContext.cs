@@ -384,6 +384,11 @@ namespace Njsast.Output
             return _needDotAfterNumber;
         }
 
+        public void SetNeedDotAfterNumber()
+        {
+            _needDotAfterNumber = true;
+        }
+
         public void PrintName(string name)
         {
             if (_frequencyCounting)

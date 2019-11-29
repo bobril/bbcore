@@ -18,7 +18,13 @@ namespace Njsast.Ast
 
         public override void CodeGen(OutputContext output)
         {
-            output.Print("false");
+            if (!output.Options.ShortenBooleans)
+                output.Print("false");
+            else
+            {
+                output.Print("!1");
+                output.SetNeedDotAfterNumber();
+            }
         }
 
         public static AstFalse Instance = new AstFalse(null, new Position(), new Position());

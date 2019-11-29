@@ -8,16 +8,18 @@ namespace Njsast.Scope
         uint _labelIndex;
         StructList<SymbolDef> _toMangle;
         readonly ScopeOptions _options;
+        readonly OutputOptions? _outputOptions;
 
-        public MangleTreeWalker(ScopeOptions options)
+        public MangleTreeWalker(ScopeOptions options, OutputOptions? outputOptions = null)
         {
             _options = options;
+            _outputOptions = outputOptions;
             _toMangle = new StructList<SymbolDef>();
         }
 
         public void Mangle(AstToplevel topLevel)
         {
-            var output = new OutputContext();
+            var output = new OutputContext(_outputOptions);
             output.InitializeForFrequencyCounting();
             if (_options.FrequencyCounting) topLevel.Print(output);
             _options.Chars = output.FinishFrequencyCounting();

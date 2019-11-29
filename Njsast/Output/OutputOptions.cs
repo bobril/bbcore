@@ -13,5 +13,6 @@ namespace Njsast.Output
         public bool WrapIife = false;
         public bool Braces = false;
         public bool Shorthand = false;
+        public bool ShortenBooleans = false;
     }
 }

@@ -115,7 +115,7 @@ namespace Lib.TSCompiler
 
             bundler.CompressOptions = compress ? CompressOptions.FastDefault : null;
             bundler.Mangle = mangle;
-            bundler.OutputOptions = new OutputOptions {Beautify = beautify};
+            bundler.OutputOptions = new OutputOptions {Beautify = beautify, ShortenBooleans = !beautify};
             bundler.GenerateSourceMap = BuildSourceMap;
             var defines = new Dictionary<string, object>();
             foreach (var p in Project.ExpandedDefines)
