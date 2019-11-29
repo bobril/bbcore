@@ -365,6 +365,14 @@ namespace Njsast.Compress
                             break;
                         }
 
+                        (parentNode, initNode) = GetInitAndParentNode<AstReturn?, AstAssign?>();
+
+                        if (parentNode != null && initNode != null)
+                        {
+                            SetVariableInitialization(parentNode, initNode);
+                            break;
+                        }
+
                         if (Parent() is AstSimpleStatement)
                         {
                             break;

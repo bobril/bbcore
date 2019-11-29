@@ -22,6 +22,16 @@ namespace Njsast.Scope
             if (_options.FrequencyCounting) topLevel.Print(output);
             _options.Chars = output.FinishFrequencyCounting();
             Walk(topLevel);
+            foreach (var s in _options.Reserved)
+            {
+                var idx = AstScope.Debase54(_options.Chars, s);
+                if (idx >= 0) _options.ReservedOrIdentifier.Add((uint)idx);
+            }
+            foreach (var s in OutputContext.ReservedWords)
+            {
+                var idx = AstScope.Debase54(_options.Chars, s);
+                if (idx >= 0) _options.ReservedOrIdentifier.Add((uint)idx);
+            }
             for (var i = 0u; i < _toMangle.Count; i++)
             {
                 _toMangle[i].Mangle(_options);

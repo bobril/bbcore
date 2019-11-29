@@ -24,5 +24,19 @@ namespace Njsast.Compress
             EnableRemoveSideEffectFreeCode = true,
             MaxPasses = 10
         };
+
+        public static readonly ICompressOptions FastDefault = new CompressOptions
+        {
+            EnableUnreachableCodeElimination = false,
+            EnableEmptyStatementElimination = false,
+            EnableBlockElimination = false,
+            EnableBooleanCompress = false,
+            EnableFunctionReturnCompress = false,
+            EnableVariableHoisting = false,
+            EnableUnusedFunctionElimination = false,
+            EnableRemoveSideEffectFreeCode = true,
+            MaxPasses = 10
+        };
+
     }
 }

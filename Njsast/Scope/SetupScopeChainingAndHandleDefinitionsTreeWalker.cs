@@ -95,33 +95,33 @@ namespace Njsast.Scope
             }
             else if (node is AstSymbolLambda astSymbolLambda)
             {
-                _defun?.DefFunction(astSymbolLambda, astSymbolLambda.Name == "arguments" ? null : _defun);
+                _defun!.DefFunction(astSymbolLambda, astSymbolLambda.Name == "arguments" ? null : _defun);
             }
             else if (node is AstSymbolDefun astSymbolDefun)
             {
                 // This should be defined in the parent scope, as we encounter the
                 // AstDefun node before getting to its AstSymbol.
                 var symbol =
-                    (astSymbolDefun.Scope = _defun?.ParentScope?.DefunScope())?.DefFunction(astSymbolDefun, _defun);
+                    (astSymbolDefun.Scope = _defun!.ParentScope?.DefunScope())?.DefFunction(astSymbolDefun, _defun);
                 if (symbol != null)
                     MarkExport(symbol, 1);
             }
             else if (node is AstSymbolClass astSymbolClassNode)
             {
-                var symbol = _defun?.DefVariable(astSymbolClassNode, _defun);
+                var symbol = _defun!.DefVariable(astSymbolClassNode, _defun);
                 if (symbol != null)
                     MarkExport(symbol, 1);
             }
             else if (node is AstSymbolImport astSymbolImportNode)
             {
-                _currentScope?.DefVariable(astSymbolImportNode, null);
+                _currentScope!.DefVariable(astSymbolImportNode, null);
             }
             else if (node is AstSymbolDefClass astSymbolDefClassNode)
             {
                 // This deals with the name of the class being available
                 // inside the class.
                 var symbol =
-                    (astSymbolDefClassNode.Scope = _defun?.ParentScope)?.DefFunction(astSymbolDefClassNode, _defun); 
+                    (astSymbolDefClassNode.Scope = _defun?.ParentScope)?.DefFunction(astSymbolDefClassNode, _defun);
                 if (symbol != null)
                     MarkExport(symbol, 1);
             }
@@ -129,19 +129,14 @@ namespace Njsast.Scope
                      || node is AstSymbolLet
                      || node is AstSymbolConst)
             {
-                SymbolDef? def;
+                SymbolDef def;
                 if (node is AstSymbolBlockDeclaration astSymbolBlockDeclarationNode)
                 {
-                    def = _currentScope?.DefVariable(astSymbolBlockDeclarationNode, null);
+                    def = _currentScope!.DefVariable(astSymbolBlockDeclarationNode, null);
                 }
                 else
                 {
-                    def = _defun?.DefVariable((AstSymbol) node, null);
-                }
-
-                if (def == null)
-                {
-                    throw new NullReferenceException($"{nameof(def)} is null");
+                    def = _defun!.DefVariable((AstSymbol) node, null);
                 }
 
                 if (!def.Orig.All(sym =>
@@ -163,7 +158,7 @@ namespace Njsast.Scope
                 if (_defun != _currentScope)
                 {
                     ((AstSymbol) node).MarkEnclosed(_options);
-                    var def2 = _currentScope?.FindVariable((AstSymbol) node);
+                    var def2 = _currentScope!.FindVariable((AstSymbol) node);
                     if (((AstSymbol) node).Thedef != def2)
                     {
                         ((AstSymbol) node).Thedef = def2;
@@ -173,9 +168,8 @@ namespace Njsast.Scope
             }
             else if (node is AstSymbolCatch astSymbolCatch)
             {
-                var symbol = _currentScope?.DefVariable(astSymbolCatch, null);
-                if (symbol != null)
-                    symbol.Defun = _defun;
+                var symbol = _currentScope!.DefVariable(astSymbolCatch, null);
+                symbol.Defun = _defun;
             }
             else if (node is AstLabelRef labelRef)
             {
@@ -186,10 +180,12 @@ namespace Njsast.Scope
                         $"Undefined label {labelRef.Name} [{labelRef.Start.Line},{labelRef.Start.Column}]");
             }
 
+#if DEBUG
             if (!(_currentScope is AstToplevel) && (node is AstExport || node is AstImport))
             {
                 throw new Exception(node.PrintToString() + " statement may only appear at top level");
             }
+#endif
         }
 
         void MarkExport(SymbolDef def, int level)

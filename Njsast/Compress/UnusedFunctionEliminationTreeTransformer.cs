@@ -58,7 +58,7 @@ namespace Njsast.Compress
                         return node;
                 }
 
-                if (node is AstLambda astLambda && (inList || _isInBinaryOrVar))
+                if (node is AstLambda astLambda && !(Parent() is AstCall call && call.Expression==node) && (inList || _isInBinaryOrVar))
                 {
                     if (symbolDef == null && astLambda.Name == null)
                         return node;

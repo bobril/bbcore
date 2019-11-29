@@ -11,5 +11,9 @@ namespace Njsast.Compress
         bool EnableUnusedFunctionElimination { get; }
         bool EnableRemoveSideEffectFreeCode { get; }
         uint MaxPasses { get; }
+        bool NotUsingCompressTreeTransformer =>
+            !EnableUnreachableCodeElimination && !EnableEmptyStatementElimination &&
+            !EnableBlockElimination && !EnableBooleanCompress
+            && !EnableFunctionReturnCompress && !EnableVariableHoisting && !EnableUnusedFunctionElimination;
     }
 }

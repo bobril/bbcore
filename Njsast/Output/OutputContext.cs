@@ -593,7 +593,7 @@ namespace Njsast.Output
             "enum implements import interface package private protected public static super this " + KeywordsAtomStr +
             " " + KeywordsStr;
 
-        static readonly HashSet<string> ReservedWords = new HashSet<string>();
+        public static readonly HashSet<string> ReservedWords = new HashSet<string>();
 
         static OutputContext()
         {

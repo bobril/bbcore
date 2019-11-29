@@ -96,24 +96,41 @@ namespace Njsast.Ast
             compressOptions ??= CompressOptions.Default;
             scopeOptions ??= new ScopeOptions();
             var iteration = 0;
-
-            var treeTransformer = new CompressTreeTransformer(compressOptions);
             var transformed = this;
-            bool shouldIterateAgain;
-            do
-            {
-                if (!transformed._isScopeFigured || iteration > 0)
-                    transformed.FigureOutScope(scopeOptions);
-                transformed = (AstToplevel) treeTransformer.Compress(transformed, out shouldIterateAgain);
-                if (compressOptions.EnableRemoveSideEffectFreeCode)
-                {
-                    transformed.FigureOutScope(scopeOptions);
-                    var tr = new RemoveSideEffectFreeCodeTreeTransformer();
-                    transformed = (AstToplevel)tr.Transform(transformed);
-                    if (tr.Modified) shouldIterateAgain = true;
-                }
-            } while (shouldIterateAgain && ++iteration < compressOptions.MaxPasses);
+            var shouldIterateAgain = false;
 
+            if (compressOptions.NotUsingCompressTreeTransformer)
+            {
+                do
+                {
+                    if (!transformed._isScopeFigured)
+                        transformed.FigureOutScope(scopeOptions);
+                    if (compressOptions.EnableRemoveSideEffectFreeCode)
+                    {
+                        var tr = new RemoveSideEffectFreeCodeTreeTransformer();
+                        transformed = (AstToplevel)tr.Transform(transformed);
+                        if (tr.Modified) shouldIterateAgain = true;
+                        transformed._isScopeFigured = false;
+                    }
+                } while (shouldIterateAgain && ++iteration < compressOptions.MaxPasses);
+            }
+            else
+            {
+                var treeTransformer = new CompressTreeTransformer(compressOptions);
+                do
+                {
+                    if (!transformed._isScopeFigured || iteration > 0)
+                        transformed.FigureOutScope(scopeOptions);
+                    transformed = (AstToplevel) treeTransformer.Compress(transformed, out shouldIterateAgain);
+                    if (compressOptions.EnableRemoveSideEffectFreeCode)
+                    {
+                        transformed.FigureOutScope(scopeOptions);
+                        var tr = new RemoveSideEffectFreeCodeTreeTransformer();
+                        transformed = (AstToplevel)tr.Transform(transformed);
+                        if (tr.Modified) shouldIterateAgain = true;
+                    }
+                } while (shouldIterateAgain && ++iteration < compressOptions.MaxPasses);
+            }
             return transformed;
         }
     }

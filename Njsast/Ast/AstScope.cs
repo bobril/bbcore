@@ -139,44 +139,74 @@ namespace Njsast.Ast
         public static string Base54(ReadOnlySpan<char> chars, uint idx)
         {
             Span<char> buf = stackalloc char[8];
-            buf[0] = chars[(int) (idx % 54)];
-            idx = idx / 54;
+            idx = (uint)Math.DivRem((int) idx, 54, out var rem);
+            buf[0] = chars[rem];
             var resIdx = 1;
 
             while (idx > 0)
             {
                 idx--;
                 buf[resIdx++] = chars[(int) (idx % 64)];
-                idx = idx / 64;
+                idx /= 64;
             }
 
             return new string(buf.Slice(0, resIdx));
         }
 
-        public virtual string NextMangled(ScopeOptions options, SymbolDef symbolDef)
+        public static int Debase54(ReadOnlySpan<char> chars, ReadOnlySpan<char> value)
         {
-            var ext = Enclosed;
+            var res = 0L+chars.IndexOf(value[0]);
+            if (res < 0) return -1;
+            var multiplier = 54L;
+            for (var i = 1; i < value.Length; i++)
+            {
+                var rem = chars.IndexOf(value[i]);
+                if (rem < 0) return -1;
+                res += multiplier * rem + multiplier;
+                if (res > int.MaxValue) return -1;
+                multiplier *= 64;
+            }
+
+            return (int)res;
+        }
+
+        public virtual (string, uint) NextMangled(ScopeOptions options, SymbolDef symbolDef)
+        {
+            var ext = Enclosed.AsReadOnlySpan();
             while (true)
             {
                 again:
-                var m = Base54(options.Chars, Cname++);
-                if (!OutputContext.IsIdentifier(m)) continue; // skip over "do"
-
-                // https://github.com/mishoo/UglifyJS2/issues/242 -- do not
-                // shadow a name reserved from mangling.
-                if (options.Reserved.Contains(m)) continue;
+                var mangledIdx = Cname++;
+                // skip over "do" and do not shadow a name reserved from mangling.
+                if (options.ReservedOrIdentifier.Contains(mangledIdx)) continue;
 
                 // we must ensure that the mangled name does not shadow a name
                 // from some parent scope that is referenced in this or in
                 // inner scopes.
-                for (var i = 0u; i < ext.Count; i++)
+                foreach (var sym in ext)
                 {
-                    var sym = ext[i];
-                    var name = sym.MangledName ?? (sym.Unmangleable(options) ? sym.Name : null);
-                    if (m == name) goto again;
+                    var mIdx = sym.MangledIdx;
+                    if (mIdx == -2)
+                    {
+                        if (sym.Unmangleable(options))
+                        {
+                            mIdx = Debase54(options.Chars, sym.Name);
+                        }
+                        else
+                        {
+                            mIdx = -1;
+                        }
+
+                        sym.MangledIdx = mIdx;
+                    }
+                    if (mangledIdx == mIdx)
+                    {
+                        goto again;
+                    }
                 }
 
-                return m;
+                var m = Base54(options.Chars, mangledIdx);
+                return (m, mangledIdx);
             }
         }
     }

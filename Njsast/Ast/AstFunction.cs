@@ -56,7 +56,7 @@ namespace Njsast.Ast
             return false;
         }
 
-        public override string NextMangled(ScopeOptions options, SymbolDef symbolDef)
+        public override (string, uint) NextMangled(ScopeOptions options, SymbolDef symbolDef)
         {
             // in Safari strict mode, something like (function x(x){...}) is a syntax error;
             // a function expression's argument cannot shadow the function expression's name
@@ -69,7 +69,7 @@ namespace Njsast.Ast
             while (true)
             {
                 var name = base.NextMangled(options, symbolDef);
-                if (trickyName != name)
+                if (trickyName != name.Item1)
                     return name;
             }
         }

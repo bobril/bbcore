@@ -13,6 +13,7 @@ namespace Njsast.Scope
         public bool IgnoreEval;
         public HashSet<string> Reserved = new HashSet<string>();
         public Action<AstNode>? BeforeMangling = null;
+        internal HashSet<uint> ReservedOrIdentifier = new HashSet<uint>();
 
         public ScopeOptions()
         {

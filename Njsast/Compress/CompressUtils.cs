@@ -24,11 +24,11 @@ namespace Njsast.Compress
             var constReturnB = returnB.Value.ConstValue();
             return constReturnA != null && constReturnB != null && constReturnA.Equals(constReturnB);
         }
-        
+
         static bool IsSameCall(AstCall callA, AstCall callB)
         {
             // TODO write test for same call check
-            if (!(callA.Expression is AstSymbolRef symbolRefA && 
+            if (!(callA.Expression is AstSymbolRef symbolRefA &&
                   callB.Expression is AstSymbolRef symbolRefB) ||
                 !IsSameReference(symbolRefA, symbolRefB))
                 return false;
@@ -40,41 +40,41 @@ namespace Njsast.Compress
             {
                 var argA = argsA[i];
                 var argB = argsB[i];
-                // Constant 
+                // Constant
                 if (argA is AstConstant && argB is AstConstant)
                 {
+                    return false;
                     // TODO all possible cases => + tests
-                    throw new NotImplementedException();
                 }
                 // SymbolRef
-                if (argA is AstSymbolRef argSymbolRefA && 
+                if (argA is AstSymbolRef argSymbolRefA &&
                     argB is AstSymbolRef argSymbolRefB)
                 {
                     if (IsSameReference(argSymbolRefA, argSymbolRefB))
                         continue;
                     return false;
-                } 
+                }
                 // Call
                 if (argA is AstCall argCallA &&
                     argB is AstCall argCallB)
                 {
-                    if (IsSameCall(argCallA, argCallB)) 
+                    if (IsSameCall(argCallA, argCallB))
                         continue;
                     return false;
                 }
-                
+
+                return false;
                 // TODO another cases
-                throw new NotImplementedException();
             }
 
             return true;
         }
-        
+
         static bool IsSameReference(AstSymbolRef symbolRefA, AstSymbolRef symbolRefB)
         {
             return symbolRefA.Thedef == symbolRefB.Thedef;
         }
-        
+
         static StructList<AstNode> TrimEndingUndefined(StructList<AstNode> list)
         {
             var newList = new StructList<AstNode>(list);

@@ -113,7 +113,7 @@ namespace Lib.TSCompiler
                     {{"Bundle", new[] {Project.MainFile}}};
             }
 
-            bundler.CompressOptions = compress ? CompressOptions.Default : null;
+            bundler.CompressOptions = compress ? CompressOptions.FastDefault : null;
             bundler.Mangle = mangle;
             bundler.OutputOptions = new OutputOptions {Beautify = beautify};
             bundler.GenerateSourceMap = BuildSourceMap;
@@ -239,6 +239,7 @@ namespace Lib.TSCompiler
 
         public void WriteBundle(string name, string content)
         {
+            _logger.Info("Bundler created " + name + " with " + content.Length + " chars");
             FilesContent.GetOrAddValueRef(name) = content;
         }
 
@@ -246,9 +247,11 @@ namespace Lib.TSCompiler
         {
             content.AddText("//# sourceMappingURL=" + name + ".map");
             var source = content.Content();
+            var sm = content.Build(Project.CommonSourceDirectory, SourceMapSourceRoot ?? "..").ToString();
+            _logger.Info("Bundler created " + name + " with " + source.Length + " chars and sourcemap with " +
+                         sm.Length + " chars");
             FilesContent.GetOrAddValueRef(name) = source;
-            FilesContent.GetOrAddValueRef(name + ".map") =
-                content.Build(Project.CommonSourceDirectory, SourceMapSourceRoot ?? "..").ToString();
+            FilesContent.GetOrAddValueRef(name + ".map") = sm;
         }
 
         public void ReportTime(string name, TimeSpan duration)

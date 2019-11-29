@@ -9,19 +9,19 @@ namespace Njsast
         public string? MangledName;
         public StructList<AstSymbol> Orig;
         public AstNode? Init;
-        public int Eliminated;
         public AstScope Scope;
         public StructList<AstSymbol> References;
-        public int Replaced;
         public bool Global;
         public bool Export;
         public bool Undeclared;
+        public bool? UnmangleableCached;
         public AstScope? Defun;
 
         public AstDestructuring? Destructuring;
 
         // let/const/var Name = VarInit. for var it is only for first declaration of var
         public AstNode? VarInit;
+        internal int MangledIdx;
 
         public SymbolDef(AstScope scope, AstSymbol orig, AstNode? init)
         {
@@ -30,11 +30,10 @@ namespace Njsast
             Orig = new StructList<AstSymbol>();
             Orig.Add(orig);
             Init = init;
-            Eliminated = 0;
             References = new StructList<AstSymbol>();
-            Replaced = 0;
             Global = false;
             MangledName = null;
+            MangledIdx = -2;
             Undeclared = false;
             Defun = null;
         }
@@ -48,7 +47,7 @@ namespace Njsast
             }
         }
 
-        public bool OnlyDeclared => References.Count == 0;
+        public bool OnlyDeclared => References.Count == 0  && !Scope.Pinned();
         public bool NeverRead => References.All(s => s.Usage.HasFlag(SymbolUsage.Write) && !s.Usage.HasFlag(SymbolUsage.Read));
 
         public SymbolDef? Redefined()
@@ -58,26 +57,37 @@ namespace Njsast
 
         public bool Unmangleable(ScopeOptions options)
         {
+            if (UnmangleableCached.HasValue) return UnmangleableCached.Value;
             var orig = Orig[0];
-            return Global && !options.TopLevel
+            UnmangleableCached = Global && !options.TopLevel
                    || Export
                    || Undeclared
                    || !options.IgnoreEval && Scope.Pinned()
-                   || (orig is AstSymbolLambda || orig is AstSymbolDefun) && options.KeepFunctionNames
+                   || options.KeepFunctionNames && (orig is AstSymbolLambda || orig is AstSymbolDefun)
                    || orig is AstSymbolMethod
-                   || (orig is AstSymbolClass || orig is AstSymbolDefClass) && options.KeepClassNames;
+                   || options.KeepClassNames && (orig is AstSymbolClass || orig is AstSymbolDefClass);
+            return UnmangleableCached.Value;
         }
 
         public void Mangle(ScopeOptions options)
         {
-            if (MangledName == null && !Unmangleable(options))
+            if (MangledName != null || Unmangleable(options)) return;
+            var def = Redefined();
+            if (def != null)
             {
-                var def = Redefined();
-                if (def != null)
-                    MangledName = def.MangledName ?? def.Name;
+                if (def.MangledIdx >= 0)
+                {
+                    MangledName = def.MangledName;
+                    MangledIdx = def.MangledIdx;
+                }
                 else
-                    MangledName = Scope.NextMangled(options, this);
+                {
+                    MangledName = def.Name;
+                    MangledIdx = AstScope.Debase54(options.Chars, MangledName);
+                }
             }
+            else
+                (MangledName, MangledIdx) = ((string, int))Scope.NextMangled(options, this);
         }
     }
 }
