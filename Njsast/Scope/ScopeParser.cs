@@ -17,6 +17,7 @@ namespace Njsast.Scope
             treeWalker.Walk(toplevel);
             treeWalker = new FindBackReferencesAndEvalTreeWalker(_options, toplevel);
             treeWalker.Walk(toplevel);
+            _options.BeforeMangling?.Invoke(toplevel);
         }
     }
 }

@@ -4,6 +4,50 @@ using Njsast.Runtime;
 
 namespace Njsast.Compress
 {
+    public class GatherVarDeclarations : TreeWalker
+    {
+        AstNode _result = TreeTransformer.Remove;
+
+        public static AstNode Calc(AstNode? node)
+        {
+            if (node == null || node == TreeTransformer.Remove) return TreeTransformer.Remove;
+            var w = new GatherVarDeclarations();
+            w.Walk(node);
+            return w._result;
+        }
+
+        protected override void Visit(AstNode node)
+        {
+            switch (node)
+            {
+                case AstVar astVar:
+                {
+                    if (_result == TreeTransformer.Remove)
+                    {
+                        _result = astVar;
+                    }
+
+                    foreach (var varDef in astVar.Definitions)
+                    {
+                        varDef.Value = null;
+                        ((AstVar) _result).Definitions.AddUnique(varDef);
+                    }
+
+                    StopDescending();
+                    break;
+                }
+                case AstSimpleStatement _:
+                case AstDefinitions _:
+                case AstLambda _:
+                case AstClass _:
+                {
+                    StopDescending();
+                    break;
+                }
+            }
+        }
+    }
+
     public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
     {
         bool NeedValue = true;
@@ -20,6 +64,64 @@ namespace Njsast.Compress
                     }
                     case AstWith _:
                         return node;
+                    case AstDefun defun:
+                    {
+                        if (defun.Name!.IsSymbolDef()!.OnlyDeclared)
+                            return Remove;
+                        if (defun.Body.Count == 0) defun.Pure = true;
+                        return null;
+                    }
+                    case AstBlock block:
+                    {
+                        for (var i = 0; i < block.Body.Count; i++)
+                        {
+                            var si = block.Body[i];
+                            if (si is AstVar astVar && i < block.Body.Count - 1)
+                            {
+                                var si2 = block.Body[i + 1];
+                                if (si2 is AstVar astVar2)
+                                {
+                                    astVar.Definitions.AddRange(astVar2.Definitions);
+                                    block.Body.RemoveAt(i + 1);
+                                    Modified = true;
+                                    i--;
+                                }
+                            }
+                            else if (si is AstLet astLet && i < block.Body.Count - 1)
+                            {
+                                var si2 = block.Body[i + 1];
+                                if (si2 is AstLet astLet2)
+                                {
+                                    astLet.Definitions.AddRange(astLet2.Definitions);
+                                    block.Body.RemoveAt(i + 1);
+                                    Modified = true;
+                                    i--;
+                                }
+                            }
+                            else if (si is AstConst astConst && i < block.Body.Count - 1)
+                            {
+                                var si2 = block.Body[i + 1];
+                                if (si2 is AstConst astConst2)
+                                {
+                                    astConst.Definitions.AddRange(astConst2.Definitions);
+                                    block.Body.RemoveAt(i + 1);
+                                    Modified = true;
+                                    i--;
+                                }
+                            }
+                            else if (si is AstBlockStatement statement)
+                            {
+                                if (statement.BlockScope!.IsSafelyInlinenable())
+                                {
+                                    block.Body.ReplaceItemAt(i, statement.Body.AsReadOnlySpan());
+                                    Modified = true;
+                                    i--;
+                                }
+                            }
+                        }
+
+                        return null;
+                    }
                     case AstAssign assign:
                     {
                         if (assign.Operator == Operator.Assignment)
@@ -28,6 +130,20 @@ namespace Njsast.Compress
                             {
                                 return Transform(assign.Right);
                             }
+                        }
+
+                        return null;
+                    }
+                    case AstIf astIf:
+                    {
+                        var b = astIf.Condition.ConstValue();
+                        if (b != null)
+                        {
+                            return TypeConverter.ToBoolean(b)
+                                ? MakeBlockFrom(astIf, GatherVarDeclarations.Calc(astIf.Alternative),
+                                    Transform(astIf.Body))
+                                : MakeBlockFrom(astIf, GatherVarDeclarations.Calc(astIf.Body),
+                                    astIf.Alternative != null ? Transform(astIf.Alternative) : Remove);
                         }
 
                         return null;
@@ -367,6 +483,22 @@ namespace Njsast.Compress
                         return node;
                 }
             }
+        }
+
+        AstNode MakeBlockFrom(AstNode from, params AstNode[] statements)
+        {
+            var s = new StructList<AstNode>();
+            foreach (var node in statements)
+            {
+                if (node != Remove) s.Add(node);
+            }
+
+            if (s.Count == 0)
+                return Remove;
+            if (s.Count == 1)
+                return s[0];
+            var res = new AstBlockStatement(@from.Source, @from.Start, @from.End, ref s);
+            return res;
         }
 
         static bool IsWellKnownPureFunction(AstNode callExpression)

@@ -88,7 +88,6 @@ namespace Njsast.Ast
         {
             options ??= new ScopeOptions();
             new ScopeParser(options).FigureOutScope(this);
-            options.BeforeMangling?.Invoke(this);
             var m = new MangleTreeWalker(options, outputOptions);
             m.Mangle(this);
         }

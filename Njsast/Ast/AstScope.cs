@@ -209,5 +209,16 @@ namespace Njsast.Ast
                 return (m, mangledIdx);
             }
         }
+
+        public bool IsSafelyInlinenable()
+        {
+            foreach (var (name, def) in Variables!)
+            {
+                if (def.Orig[0] is AstSymbolLet || def.Orig[0] is AstSymbolConst)
+                    return false;
+            }
+
+            return true;
+        }
     }
 }

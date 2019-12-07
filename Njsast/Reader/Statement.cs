@@ -590,7 +590,7 @@ namespace Njsast.Reader
                 ExitLexicalScope();
             }
 
-            return new AstBlock(SourceFile, startLocation, _lastTokEnd, ref body);
+            return new AstBlockStatement(SourceFile, startLocation, _lastTokEnd, ref body);
         }
 
         // Parse a regular `for` loop. The disambiguation code in
