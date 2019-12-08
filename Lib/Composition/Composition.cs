@@ -480,10 +480,11 @@ namespace Lib.Composition
             Environment.ExitCode = errors != 0 ? 1 : 0;
         }
 
-        void PrintMessages(IList<Diagnostic> messages)
+        void PrintMessages(IList<Diagnostic> messages, bool onlySemantic = false)
         {
             foreach (var message in messages)
             {
+                if (onlySemantic && !message.IsSemantic) continue;
                 if (message.FileName == null)
                 {
                     if (message.IsError)
@@ -1074,7 +1075,7 @@ namespace Lib.Composition
                     _mainServer.NotifyCompilationFinished(errors, warnings, duration, allmess);
                     _notificationManager.SendNotification(
                         NotificationParameters.CreateBuildParameters(errors, warnings, duration));
-                    if (!buildResult.HasError) PrintMessages(allmess);
+                    if (!buildResult.HasError) PrintMessages(allmess, true);
                     var color = errors != 0 ? ConsoleColor.Red :
                         warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     _logger.WriteLine(
@@ -1270,6 +1271,7 @@ namespace Lib.Composition
                 };
                 if (!res.Contains(dd))
                 {
+                    dd.IsSemantic = true;
                     res.Add(dd);
                     if (isError)
                         errors++;

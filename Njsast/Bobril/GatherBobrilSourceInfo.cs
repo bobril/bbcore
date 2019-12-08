@@ -2,6 +2,7 @@ using Njsast.Ast;
 using Njsast.ConstEval;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace Njsast.Bobril
@@ -355,10 +356,9 @@ namespace Njsast.Bobril
                                         if (!(paramsValue is AstNull) && !(paramsValue is AstUndefined))
                                         {
                                             tr.WithParams = true;
-                                            var pars = paramsValue as IDictionary<object, object>;
-                                            if (pars != null)
+                                            if (paramsValue is IDictionary<object, object> pars)
                                             {
-                                                tr.KnownParams = pars.Keys.Select(a => a as string)
+                                                tr.KnownParams = pars.Keys.Select(a => a is double d?d.ToString(CultureInfo.InvariantCulture):a as string)
                                                     .Where(a => a != null).ToList();
                                             }
                                         }

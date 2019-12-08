@@ -5,6 +5,7 @@ namespace Lib.TSCompiler
     public class Diagnostic : IEquatable<Diagnostic>
     {
         public bool IsError;
+        public bool IsSemantic;
         public int Code;
         public string Text;
         public string FileName;

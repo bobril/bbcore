@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Lib.Translation
 {
@@ -22,6 +23,7 @@ namespace Lib.Translation
             Line = line;
             Column = column;
         }
+
         public string Message { get; }
         public int Position { get; }
         public int Line { get; }
@@ -57,7 +59,7 @@ namespace Lib.Translation
     {
         public ListAst(MessageAst first, MessageAst second)
         {
-            List = new List<MessageAst> { first, second };
+            List = new List<MessageAst> {first, second};
         }
 
         public void Add(MessageAst item)
@@ -65,7 +67,22 @@ namespace Lib.Translation
             List.Add(item);
         }
 
-        List<MessageAst> List { get; }
+        public List<MessageAst> List { get; }
+
+        public override void GatherParams(HashSet<string> pars)
+        {
+            List.ForEach(i => i.GatherParams(pars));
+        }
+    }
+
+    public class ConcatAst : MessageAst
+    {
+        public ConcatAst(ListAst from)
+        {
+            List = from.List;
+        }
+
+        public List<MessageAst> List { get; }
 
         public override void GatherParams(HashSet<string> pars)
         {
@@ -75,6 +92,28 @@ namespace Lib.Translation
 
     public class HashAst : MessageAst
     {
+    }
+
+    public class ElAst : MessageAst
+    {
+        public int Id;
+        public MessageAst? Value;
+
+        public override void GatherParams(HashSet<string> pars)
+        {
+            pars.Add(Id.ToString());
+            Value?.GatherParams(pars);
+        }
+    }
+
+    public class StartElAst : MessageAst
+    {
+        public int Id;
+    }
+
+    public class CloseElAst : MessageAst
+    {
+        public int Id;
     }
 
     public class FormatAst : MessageAst
@@ -174,17 +213,21 @@ namespace Lib.Translation
                 _curToken = _eOFToken;
                 return;
             }
+
             var ch = _sourceText[_pos++];
             if (ch == '\r' || ch == '\n')
             {
-                _nextLine++; _nextCol = 1;
+                _nextLine++;
+                _nextCol = 1;
                 if (ch == '\r' && _pos < _length && _sourceText[_pos] == '\n')
                 {
                     _pos++;
                 }
+
                 _curToken = '\n';
                 return;
             }
+
             _nextCol++;
             if (ch == '\\')
             {
@@ -193,6 +236,7 @@ namespace Lib.Translation
                     _curToken = '\\';
                     return;
                 }
+
                 ch = _sourceText[_pos++];
                 _nextCol++;
                 if (ch == '\\' || ch == '{' || ch == '}' || ch == '#')
@@ -200,26 +244,30 @@ namespace Lib.Translation
                     _curToken = ch;
                     return;
                 }
+
                 if (ch == 'u')
                 {
                     if (_pos + 4 <= _length)
                     {
                         if (uint.TryParse(_sourceText.AsSpan().Slice(_pos, 4), out var unicode))
                         {
-                            _curToken = (int)unicode;
+                            _curToken = (int) unicode;
                             _pos += 4;
                             _nextCol += 4;
                             return;
                         }
                     }
+
                     _errorMsg = "After \\u there must be 4 hex characters";
                     _curToken = _errorToken;
                     return;
                 }
+
                 _errorMsg = "After \\ there could be only one of \\{}#u characters";
                 _curToken = _errorToken;
                 return;
             }
+
             if (ch == '{')
             {
                 _curToken = _openBracketToken;
@@ -264,16 +312,65 @@ namespace Lib.Translation
             {
                 do
                 {
-                    _sb.Append((char)_curToken);
+                    _sb.Append((char) _curToken);
                     AdvanceNextToken();
-                }
-                while (_curToken >= 'A' && _curToken <= 'Z' || _curToken >= 'a' && _curToken <= 'z' || _curToken == '_' || _curToken >= '0' && _curToken <= '9');
+                } while (_curToken >= 'A' && _curToken <= 'Z' || _curToken >= 'a' && _curToken <= 'z' ||
+                         _curToken == '_' || _curToken >= '0' && _curToken <= '9');
             }
             else
             {
                 return BuildError("Expecting identifier [a-zA-Z_]");
             }
+
             return _sb.ToString();
+        }
+
+        object ParseIdentOrEl()
+        {
+            var res = ParseIdentificator();
+            if (!IsError(res)) return res;
+            _sb.Clear();
+            if (_curToken >= '0' && _curToken <= '9' || _curToken == '/')
+            {
+                do
+                {
+                    _sb.Append((char) _curToken);
+                    AdvanceNextToken();
+                } while (_curToken >= '0' && _curToken <= '9');
+
+                if (_curToken == '/')
+                {
+                    _sb.Append((char) _curToken);
+                    AdvanceNextToken();
+                }
+            }
+            else
+            {
+                return BuildError("Expecting identifier [a-zA-Z_] or element [/0-9]");
+            }
+
+            var str = _sb.ToString();
+            if (!uint.TryParse(str.Trim('/'), out var id))
+            {
+                return BuildError('"' + str + "\" is not valid element");
+            }
+
+            if (str.StartsWith('/'))
+            {
+                if (str.EndsWith('/'))
+                {
+                    return BuildError("Element id cannot start and end with slash: " + str);
+                }
+
+                return new CloseElAst {Id = (int) id};
+            }
+
+            if (str.EndsWith('/'))
+            {
+                return new ElAst {Id = (int) id};
+            }
+
+            return new StartElAst {Id = (int) id};
         }
 
         string ParseChars()
@@ -284,6 +381,7 @@ namespace Lib.Translation
                 AppendCurTokenToSb();
                 AdvanceNextToken();
             } while (_curToken >= 0 && _curToken != '\t' && _curToken != '\n' && _curToken != '\r' && _curToken != ' ');
+
             return _sb.ToString();
         }
 
@@ -292,9 +390,10 @@ namespace Lib.Translation
             _sb.Clear();
             do
             {
-                _sb.Append((char)_curToken);
+                _sb.Append((char) _curToken);
                 AdvanceNextToken();
             } while (_curToken >= '0' && _curToken <= '9');
+
             return int.Parse(_sb.ToString());
         }
 
@@ -313,47 +412,56 @@ namespace Lib.Translation
             return _curToken == _closeBracketToken;
         }
 
-        static HashSet<string> _numClasses = new HashSet<string> { "zero", "one", "two", "few", "many", "other" };
+        static HashSet<string> _numClasses = new HashSet<string> {"zero", "one", "two", "few", "many", "other"};
 
         MessageAst ParseFormat()
         {
             SkipWs();
             if (_curToken == _errorToken) return BuildError();
-            var identificator = ParseIdentificator();
-            if (IsError(identificator)) return (ErrorAst)identificator;
+            var ident = ParseIdentOrEl();
+            if (IsError(ident)) return (ErrorAst) ident;
             SkipWs();
             if (_curToken == _errorToken) return BuildError();
             if (IsCloseBracketToken())
             {
                 AdvanceNextToken();
-                return new FormatAst((string)identificator);
+                if (ident is MessageAst messageAst) return messageAst;
+                return new FormatAst((string) ident);
             }
+
+            if (ident is MessageAst)
+            {
+                return BuildError("Element cannot have parameters");
+            }
+
             if (!IsComma())
             {
                 return BuildError("Expecting \"}\" or \",\"");
             }
+
             AdvanceNextToken();
             SkipWs();
-            var res = new FormatAst((string)identificator);
+            var res = new FormatAst((string) ident);
             var name = ParseIdentificator();
-            if (IsError(name)) return (ErrorAst)name;
+            if (IsError(name)) return (ErrorAst) name;
             SkipWs();
             if (_curToken == _errorToken) return BuildError();
-            if ((string)name == "number" || (string)name == "time" || (string)name == "date")
+            if ((string) name == "number" || (string) name == "time" || (string) name == "date")
             {
-                res.Format = new FormatTypeAst((string)name);
+                res.Format = new FormatTypeAst((string) name);
                 if (IsCloseBracketToken())
                 {
                     AdvanceNextToken();
                     return res;
                 }
+
                 if (IsComma())
                 {
                     AdvanceNextToken();
                     SkipWs();
                     var style = ParseIdentificator();
-                    if (IsError(style)) return (ErrorAst)style;
-                    ((FormatTypeAst)res.Format).Style = (string)style;
+                    if (IsError(style)) return (ErrorAst) style;
+                    ((FormatTypeAst) res.Format).Style = (string) style;
                     while (true)
                     {
                         SkipWs();
@@ -363,12 +471,13 @@ namespace Lib.Translation
                             AdvanceNextToken();
                             return res;
                         }
+
                         if (IsComma())
                         {
                             AdvanceNextToken();
                             SkipWs();
                             var optionName = ParseIdentificator();
-                            if (IsError(optionName)) return (ErrorAst)optionName;
+                            if (IsError(optionName)) return (ErrorAst) optionName;
                             if (_curToken == ':')
                             {
                                 AdvanceNextToken();
@@ -381,33 +490,41 @@ namespace Lib.Translation
                                 else if (IsOpenBracketToken())
                                 {
                                     AdvanceNextToken();
-                                    val = ParseMsg(false);
+                                    val = ParseMsg(-1);
                                 }
                                 else
                                 {
                                     val = ParseIdentificatorAsAst();
                                 }
-                                if (IsError(val)) return (ErrorAst)val;
-                                ((FormatTypeAst)res.Format).Options.Add(new KeyValuePair<string, MessageAst>((string)optionName, val));
+
+                                if (IsError(val)) return (ErrorAst) val;
+                                ((FormatTypeAst) res.Format).Options.Add(
+                                    new KeyValuePair<string, MessageAst>((string) optionName, val));
                             }
                             else
                             {
-                                ((FormatTypeAst)res.Format).Options.Add(new KeyValuePair<string, MessageAst>((string)optionName, null));
+                                ((FormatTypeAst) res.Format).Options.Add(
+                                    new KeyValuePair<string, MessageAst>((string) optionName, null));
                             }
+
                             continue;
                         }
+
                         break;
                     }
                 }
+
                 return BuildError("Expecting \",\" or \"}\"");
             }
-            else if ((string)name == "plural" || (string)name == "selectordinal")
+
+            if ((string) name == "plural" || (string) name == "selectordinal")
             {
-                res.Format = new PluralAst((string)name != "plural");
+                res.Format = new PluralAst((string) name != "plural");
                 if (!IsComma())
                 {
                     return BuildError("Expecting \",\"");
                 }
+
                 AdvanceNextToken();
                 SkipWs();
                 var offsetAllowed = true;
@@ -417,6 +534,7 @@ namespace Lib.Translation
                     {
                         return BuildError("Expecting characters except \"{\", \"#\"");
                     }
+
                     var chars = ParseChars();
                     SkipWs();
                     if (offsetAllowed && chars.StartsWith("offset:"))
@@ -424,7 +542,7 @@ namespace Lib.Translation
                         var m = new Regex("^offset: *([0-9]+)$").Match(chars);
                         if (m.Success)
                         {
-                            ((PluralAst)res.Format).Offset = int.Parse(m.Groups[1].Value);
+                            ((PluralAst) res.Format).Offset = int.Parse(m.Groups[1].Value);
                         }
                         else if (chars == "offset:")
                         {
@@ -433,12 +551,15 @@ namespace Lib.Translation
                             {
                                 return BuildError("Expecting number");
                             }
-                            ((PluralAst)res.Format).Offset = ParseNumber();
+
+                            ((PluralAst) res.Format).Offset = ParseNumber();
                         }
                         else return BuildError("After \"offset:\" there must be number");
+
                         offsetAllowed = false;
                         continue;
                     }
+
                     offsetAllowed = false;
                     object selector;
                     if (new Regex("^=[0-9]+$").IsMatch(chars))
@@ -448,29 +569,36 @@ namespace Lib.Translation
                     else
                     {
                         selector = chars;
-                        if (!_numClasses.Contains(selector)) return BuildError("Selector " + selector + " is not one of " + string.Join(", ", _numClasses.ToArray()));
+                        if (!_numClasses.Contains(selector))
+                            return BuildError("Selector " + selector + " is not one of " +
+                                              string.Join(", ", _numClasses.ToArray()));
                     }
+
                     if (!IsOpenBracketToken())
                     {
                         return BuildError("Expecting \"{\"");
                     }
+
                     AdvanceNextToken();
-                    var value = ParseMsg(false);
+                    var value = ParseMsg(-1);
                     if (IsError(value)) return value;
-                    ((PluralAst)res.Format).Options.Add(new KeyValuePair<object, MessageAst>(selector, value));
+                    ((PluralAst) res.Format).Options.Add(new KeyValuePair<object, MessageAst>(selector, value));
                     SkipWs();
                 }
+
                 AdvanceNextToken();
                 return res;
             }
-            else if ((string)name == "select")
+
+            if ((string) name == "select")
             {
                 res.Format = new SelectAst();
-                var options = ((SelectAst)res.Format).Options;
+                var options = ((SelectAst) res.Format).Options;
                 if (!IsComma())
                 {
                     return BuildError("Expecting \",\"");
                 }
+
                 AdvanceNextToken();
                 SkipWs();
                 while (!IsCloseBracketToken())
@@ -479,6 +607,7 @@ namespace Lib.Translation
                     {
                         return BuildError("Expecting characters except \"{\", \"#\"");
                     }
+
                     var chars = ParseChars();
                     SkipWs();
                     object selector;
@@ -490,20 +619,25 @@ namespace Lib.Translation
                     {
                         selector = chars;
                     }
+
                     if (!IsOpenBracketToken())
                     {
                         return BuildError("Expecting \"{\"");
                     }
+
                     AdvanceNextToken();
-                    var value = ParseMsg(false);
+                    var value = ParseMsg(-1);
                     if (IsError(value)) return value;
                     options.Add(new KeyValuePair<object, MessageAst>(selector, value));
                     SkipWs();
                 }
+
                 AdvanceNextToken();
                 return res;
             }
-            return BuildError("Expecting one of \"number\", \"time\", \"date\", \"plural\", \"selectordinal\", \"select\".");
+
+            return BuildError(
+                "Expecting one of \"number\", \"time\", \"date\", \"plural\", \"selectordinal\", \"select\".");
         }
 
         MessageAst ParseNumberAsAst()
@@ -514,33 +648,70 @@ namespace Lib.Translation
         MessageAst ParseIdentificatorAsAst()
         {
             var res = ParseIdentificator();
-            if (IsError(res)) return (ErrorAst)res;
-            return new TextAst((string)res);
+            if (IsError(res)) return (ErrorAst) res;
+            return new TextAst((string) res);
         }
 
-        MessageAst ParseMsg(bool endWithEOF)
+        MessageAst ParseMsg(int endWithEOF)
         {
-            MessageAst res = null;
+            MessageAst? res = null;
+            var wrapByConcat = false;
+
+            MessageAst Normalize(MessageAst? res)
+            {
+                if (res == null) return new TextAst("");
+                if (wrapByConcat && (res is ListAst list)) return new ConcatAst(list);
+                return res;
+            }
+
             while (true)
             {
                 if (_curToken == _errorToken)
                 {
                     return BuildError();
                 }
+
                 if (_curToken == _eOFToken)
                 {
-                    if (endWithEOF)
+                    if (endWithEOF == -2)
                     {
-                        if (res == null) return new TextAst("");
-                        return res;
+                        return Normalize(res);
                     }
-                    return BuildError("Unexpected end of message missing \"}\"");
+
+                    if (endWithEOF >= 0)
+                    {
+                        return BuildError("Unexpected end of message. Missing end of element {/" + endWithEOF + "}");
+                    }
+
+                    return BuildError("Unexpected end of message. Missing \"}\"");
                 }
-                MessageAst val = null;
+
+                MessageAst val;
                 if (_curToken == _openBracketToken)
                 {
                     AdvanceNextToken();
                     val = ParseFormat();
+                    if (val is StartElAst start)
+                    {
+                        var nested = ParseMsg(start.Id);
+                        if (IsError(nested))
+                            return nested;
+                        wrapByConcat = true;
+                        val = new ElAst {Id = start.Id, Value = nested};
+                    }
+                    else if (val is CloseElAst close)
+                    {
+                        if (close.Id == endWithEOF)
+                        {
+                            return Normalize(res);
+                        }
+
+                        return BuildError($"Missing {{/{endWithEOF}}}, got {{/{close.Id}}} instead.");
+                    }
+                    else if (val is ElAst)
+                    {
+                        wrapByConcat = true;
+                    }
                 }
                 else if (_curToken == _hashToken)
                 {
@@ -549,13 +720,13 @@ namespace Lib.Translation
                 }
                 else if (_curToken == _closeBracketToken)
                 {
-                    if (endWithEOF)
+                    if (endWithEOF != -1)
                     {
                         return BuildError("Unexpected \"}\". Maybe you forgot to prefix it with \"\\\".");
                     }
+
                     AdvanceNextToken();
-                    if (res == null) return new TextAst("");
-                    return res;
+                    return Normalize(res);
                 }
                 else
                 {
@@ -565,15 +736,17 @@ namespace Lib.Translation
                         AppendCurTokenToSb();
                         AdvanceNextToken();
                     }
+
                     val = new TextAst(_sb.ToString());
                 }
+
                 if (IsError(val)) return val;
                 if (res == null) res = val;
                 else
                 {
                     if (res is ListAst)
                     {
-                        ((ListAst)res).Add(val);
+                        ((ListAst) res).Add(val);
                     }
                     else
                     {
@@ -586,7 +759,7 @@ namespace Lib.Translation
         void AppendCurTokenToSb()
         {
             if (_curToken <= 0xffff)
-                _sb.Append((char)_curToken);
+                _sb.Append((char) _curToken);
             else
                 _sb.Append(char.ConvertFromUtf32(_curToken));
         }
@@ -599,7 +772,7 @@ namespace Lib.Translation
             _nextLine = 1;
             _nextCol = 1;
             AdvanceNextToken();
-            return ParseMsg(true);
+            return ParseMsg(-2);
         }
     }
 }

@@ -2,6 +2,21 @@
 
 ## [unreleased]
 
+### Added
+
+- Support for bobril-g11n 5.0 translation of virtual dom messages (full TSX support will come later)
+
+```tsx
+g.t("Before{1/}After", { 1: () => <hr /> });
+g.t("Normal text {1}bold text {2}with{/2} {param}{/1}", { 
+    1: (p: b.IBobrilChildren) => <b>{p}</b>, 
+    2: (p: b.IBobrilChildren) => <i><u>{p}</u></i>, 
+    param: "parameter" 
+    });
+```
+
+- Fixes and speed up of Njsast based compression and mangling.
+
 ## 0.98.0
 
 ### Added

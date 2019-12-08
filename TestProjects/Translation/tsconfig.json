@@ -2,7 +2,8 @@
   "compilerOptions": {
     "allowJs": false,
     "checkJs": false,
-    "declaration": true,
+    "declaration": false,
+    "downlevelIteration": true,
     "experimentalDecorators": true,
     "jsx": "react",
     "lib": [
@@ -11,6 +12,7 @@
       "es2015.core",
       "es2015.promise",
       "es2015.iterable",
+      "es2015.generator",
       "es2015.collection"
     ],
     "module": "commonjs",
@@ -18,15 +20,12 @@
     "preserveConstEnums": false,
     "reactNamespace": "b",
     "removeComments": false,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "skipDefaultLibCheck": true,
     "sourceMap": true,
     "target": "es5",
-    "types": []
+    "resolveJsonModule": true
   },
-  "files": [
-    "node_modules/bobril/jsx.d.ts"
-  ],
   "include": [
     "**/*"
   ]
