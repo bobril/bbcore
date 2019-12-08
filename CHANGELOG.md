@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 0.99.0
+
 ### Added
 
 - Support for bobril-g11n 5.0 translation of virtual dom messages (full TSX support will come later)
