@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Testing iframe in `bb/test` page covers 100% of main window now.
+
 ## 0.99.0
 
 ### Added
@@ -10,11 +14,15 @@
 
 ```tsx
 g.t("Before{1/}After", { 1: () => <hr /> });
-g.t("Normal text {1}bold text {2}with{/2} {param}{/1}", { 
-    1: (p: b.IBobrilChildren) => <b>{p}</b>, 
-    2: (p: b.IBobrilChildren) => <i><u>{p}</u></i>, 
-    param: "parameter" 
-    });
+g.t("Normal text {1}bold text {2}with{/2} {param}{/1}", {
+  1: (p: b.IBobrilChildren) => <b>{p}</b>,
+  2: (p: b.IBobrilChildren) => (
+    <i>
+      <u>{p}</u>
+    </i>
+  ),
+  param: "parameter"
+});
 ```
 
 - Fixes and speed up of Njsast based compression and mangling.

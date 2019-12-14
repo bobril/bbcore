@@ -8,7 +8,7 @@ namespace Lib.Utils.Logger
         void SetColor(ConsoleColor color);
         void ClearColor();
     }
-    
+
     public class ConsoleLogger : IConsoleLogger
     {
         public bool Verbose { get; set; }

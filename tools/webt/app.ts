@@ -1,18 +1,17 @@
-import * as b from 'bobril';
-import * as longPollingClient from './longPollingClient';
+import * as b from "bobril";
+import * as longPollingClient from "./longPollingClient";
 
-let c = new longPollingClient.Connection('/bb/api/test');
+b.selectorStyleDef("body, html", { margin: 0, padding: 0, width: "100%", height: "100%" });
+
+let c = new longPollingClient.Connection("/bb/api/test");
 
 let connected = false;
-let wait = false;
-let disconnected = false;
-let testing = false;
 let testUrl = "";
 let iframe: HTMLIFrameElement = null;
 let reconnectDelay = 0;
 
 function reconnect() {
-    disconnected = false;
+    console.log("Connecting");
     c.connect();
     c.send("newClient", {
         userAgent: navigator.userAgent
@@ -21,8 +20,8 @@ function reconnect() {
 }
 
 c.onClose = () => {
+    console.log("Disconnected");
     connected = false;
-    disconnected = true;
     b.invalidate();
     if (reconnectDelay < 30000) reconnectDelay += 1000;
     setTimeout(() => {
@@ -38,17 +37,20 @@ c.onMessage = (c: longPollingClient.Connection, message: string, data: any) => {
     }
     switch (message) {
         case "wait": {
-            wait = true;
+            console.log("Waiting");
             b.invalidate();
             break;
         }
         case "test": {
-            testing = true;
             window["specFilter"] = data.specFilter;
             testUrl = data.url;
+            console.log("Testing:", data.url, data.specFilter);
             b.invalidate();
             if (iframe != null) document.body.removeChild(iframe);
             iframe = document.createElement("iframe");
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.style.border = "none";
             document.body.appendChild(iframe);
             iframe.src = testUrl;
             break;
@@ -62,19 +64,9 @@ c.onMessage = (c: longPollingClient.Connection, message: string, data: any) => {
 
 reconnect();
 
-b.init(() => {
-    if (disconnected) {
-        return [{ tag: "h2", children: "Disconnected" }, { tag: "p", children: "reload to try to connect again" }];
-    }
-    if (!connected) {
-        return [{ tag: "h2", children: "Connecting" }, { tag: "p", children: "wait ..." }];
-    }
-    if (wait) {
-        return [{ tag: "h2", children: "Waiting" }, { tag: "p", children: "ready to receive commands" }];
-    }
-    if (testing) {
-        return [{ tag: "h2", children: "Testing" }, { tag: "p", children: testUrl }];
-    }
-});
+b.init(() => undefined);
 
-window["bbTest"] = (message: string, data: any) => c.send(message, data);
+window["bbTest"] = (message: string, data: any) => {
+    if (message == "wholeDone") console.log("Testing finished in " + ((data as number) / 1000).toFixed(1) + "s");
+    c.send(message, data);
+};
