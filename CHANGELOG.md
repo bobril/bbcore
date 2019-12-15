@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.0.0
+
 ### Changed
 
 - Testing iframe in `bb/test` page covers 100% of main window now.
