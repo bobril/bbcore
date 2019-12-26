@@ -377,7 +377,6 @@ namespace Njsast.SourceMap
         int _lastSourceLine;
         int _lastSourceCol;
         int _line;
-        int _col;
         int _index;
         bool _nextIsNewLine;
         bool _inNoSource;
@@ -394,7 +393,6 @@ namespace Njsast.SourceMap
         {
             _index = 0;
             _line = 0;
-            _col = 0;
             _ip = 0;
             _inOutputCol = 0;
             _inSourceIndex = 0;
@@ -516,7 +514,7 @@ namespace Njsast.SourceMap
 
         public void SeekTo(int line, int col)
         {
-            if (line < _line || line == _line && col < _col)
+            if (line < _line || line == _line && col < _inOutputCol)
             {
                 Reset();
             }

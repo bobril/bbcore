@@ -94,10 +94,43 @@ namespace Njsast.Bobril
             public string? Hint { get; set; }
             public bool JustFormat { get; set; }
             public bool WithParams { get; set; }
-            public List<string?>? KnownParams { get; set; }
+            public List<string>? KnownParams { get; set; }
         }
 
         public List<Translation>? Translations { get; set; }
+
+        public enum ReplacementType
+        {
+            Normal,
+            MessageId,
+            MoveToPlace
+        }
+
+        public class Replacement
+        {
+            public ReplacementType Type { get; set; }
+            public int StartCol { get; set; }
+            public int StartLine { get; set; }
+            public int EndCol { get; set; }
+            public int EndLine { get; set; }
+            public int PlaceCol { get; set; }
+            public int PlaceLine { get; set; }
+            public string? Text { get; set; }
+        }
+
+        public class VdomTranslation
+        {
+            public int StartCol { get; set; }
+            public int StartLine { get; set; }
+            public int EndCol { get; set; }
+            public int EndLine { get; set; }
+            public string? Message { get; set; }
+            public string? Hint { get; set; }
+            public List<string>? KnownParams { get; set; }
+            public List<Replacement>? Replacements { get; set; }
+        }
+
+        public List<VdomTranslation>? VdomTranslations { get; set; }
 
         public class StyleDef
         {

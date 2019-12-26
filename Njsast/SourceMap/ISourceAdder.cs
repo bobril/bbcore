@@ -6,5 +6,6 @@ namespace Njsast.SourceMap
     {
         void Add(int fromLine, int fromCol, int toLine, int toCol);
         void Add(ReadOnlySpan<char> text);
+        void FlushLine();
     }
 }

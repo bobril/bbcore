@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Njsast.Utils;
 
 namespace Njsast.SourceMap
@@ -265,6 +266,12 @@ namespace Njsast.SourceMap
                 _owner._mappings.RepeatAdd(';', (uint) lines);
             }
 
+            public void FlushLine()
+            {
+                if (!EndsWithNewLine(_content))
+                    Add("\n");
+            }
+
             void SeekTo(int line, int col)
             {
                 if (line < _line || line == _line && col < _col)
@@ -499,6 +506,12 @@ namespace Njsast.SourceMap
                     CommitNewLine();
                     text = text.Slice(nl + 1);
                 }
+            }
+
+            public void FlushLine()
+            {
+                if (!EndsWithNewLine(_owner._content))
+                    Add("\n");
             }
         }
 
