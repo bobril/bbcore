@@ -5,13 +5,16 @@ b.init(() => {
   //console.log(g.t("Hello"));
   //console.log(g.t("World{p}", { p: "!" }));
   //console.log(g.t("{p}", { p: "?", pp: "not used" }));
-  return g.t("Normal text {1}bold text {2}with{/2} {param}{/1}", {
-    1: (p: b.IBobrilChildren) => <b>{p}</b>,
-    2: (p: b.IBobrilChildren) => (
-      <i>
-        <u>{p}</u>
-      </i>
-    ),
-    param: "parameter"
-  });
+  return (
+    <g.T param="parameter">
+      Normal text{" "}
+      <b>
+        bold text{" "}
+        <i>
+          <u>with</u>
+        </i>{" "}
+        {g.t("{param}")}
+      </b>
+    </g.T>
+  );
 });

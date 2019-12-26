@@ -882,6 +882,25 @@ namespace Lib.TSCompiler
                     });
                 }
             }
+
+            if (sourceInfo.VdomTranslations != null)
+            {
+                var trdb = Owner.ProjectOptions.TranslationDb;
+                if (trdb != null)
+                {
+                    sourceInfo.VdomTranslations.ForEach(t =>
+                    {
+                        if (t.Message == null)
+                            return;
+                        var err = trdb.CheckMessage(t.Message, t.KnownParams);
+                        if (err != null)
+                        {
+                            fileInfo.ReportDiag(false, -7,
+                                "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine, t.StartCol, t.EndLine, t.EndCol);
+                        }
+                    });
+                }
+            }
             if (sourceInfo.Translations != null)
             {
                 var trdb = Owner.ProjectOptions.TranslationDb;
@@ -897,7 +916,7 @@ namespace Lib.TSCompiler
                             if (err != null)
                             {
                                 fileInfo.ReportDiag(false, -7,
-                                    "Problem with translation message \"" + t.Message + "\" " + err.ToString(), t.StartLine, t.StartCol, t.EndLine, t.EndCol);
+                                    "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine, t.StartCol, t.EndLine, t.EndCol);
                             }
                         }
                     });

@@ -2,6 +2,23 @@
 
 ## [unreleased]
 
+### Added
+
+- Support for TSX translation with bobril-g11n 5.0
+
+```tsx
+<g.T hint="hint for translator" param="parameter">
+  Normal text{" "}
+  <b>
+    bold text{" "}
+    <i>
+      <u>with</u>
+    </i>{" "}
+    {g.t("{param}")}
+  </b>
+</g.T>
+```
+
 ## 1.0.0
 
 ### Changed

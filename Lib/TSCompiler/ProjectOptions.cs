@@ -593,6 +593,37 @@ namespace Lib.TSCompiler
             }
 
             var trdb = TranslationDb;
+            if (trdb != null && sourceInfo.VdomTranslations != null)
+            {
+                foreach (var t in sourceInfo.VdomTranslations)
+                {
+                    if (t.Message == null)
+                        continue;
+                    var repls = t.Replacements;
+                    if (repls == null)
+                        continue;
+                    var id = trdb.AddToDB(t.Message, t.Hint, true);
+                    var finalId = trdb.MapId(id);
+                    foreach (var rep in repls)
+                    {
+                        if (rep.Type == SourceInfo.ReplacementType.MoveToPlace)
+                        {
+                            sourceReplacer.Move(rep.StartLine, rep.StartCol, rep.EndLine, rep.EndCol, rep.PlaceLine,
+                                rep.PlaceCol);
+                            continue;
+                        }
+
+                        var tt = rep.Text;
+                        if (rep.Type == SourceInfo.ReplacementType.MessageId)
+                        {
+                            tt = "" + finalId;
+                        }
+
+                        sourceReplacer.Replace(rep.StartLine, rep.StartCol, rep.EndLine, rep.EndCol, tt ?? "");
+                    }
+                }
+            }
+
             if (trdb != null && sourceInfo.Translations != null)
             {
                 foreach (var t in sourceInfo.Translations)
