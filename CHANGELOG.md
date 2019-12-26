@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.1.0
+
 ### Added
 
 - Support for TSX translation with bobril-g11n 5.0
