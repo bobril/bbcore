@@ -38,7 +38,7 @@ namespace Lib.TSCompiler
         public Dictionary<string, string> Assets;
         public string Name;
         internal int IterationId;
-        internal StructList<string> NegativeChecks;
+        internal BTDB.Collections.StructList<string> NegativeChecks;
         internal bool Valid;
 
         public void LoadProjectJson(bool forbiddenDependencyUpdate)

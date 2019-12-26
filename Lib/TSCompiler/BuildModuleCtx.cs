@@ -68,7 +68,7 @@ namespace Lib.TSCompiler
                 return module.Valid ? module : null;
             }
             again:;
-            var negativeChecks = new StructList<string>();
+            var negativeChecks = new BTDB.Collections.StructList<string>();
             var dir = Owner.Owner.FullPath;
             while (dir.Length > 0)
             {
