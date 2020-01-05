@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.2.0
+
 ### Added
 
 - Support for ServiceWorkers/PWA and WebWorkers
