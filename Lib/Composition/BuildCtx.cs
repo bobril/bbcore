@@ -1,10 +1,14 @@
-﻿using Lib.DiskCache;
 using Lib.TSCompiler;
 using Lib.Utils.Logger;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BTDB.Collections;
+using Lib.DiskCache;
+using Lib.Utils;
+using Newtonsoft.Json;
 
 namespace Lib.Composition
 {
@@ -15,9 +19,11 @@ namespace Lib.Composition
             Verbose = verbose;
             CompilerPool = compilerPool;
             _diskCache = diskCache;
-            Logger = logger;
-            CurrentDirectory = currentDirectory;
+            _logger = logger;
+            _currentDirectory = currentDirectory;
         }
+
+        RefDictionary<string, BuildCtx?>? _subBuildCtxs;
 
         string _mainFile;
         string _jasmineDts;
@@ -27,96 +33,97 @@ namespace Lib.Composition
         ITSCompilerOptions _compilerOptions;
         ITSCompiler _typeChecker;
 
-        public bool BuildOnceOnly;
-        public bool ProjectStructureChanged;
-        public bool CompilerOptionsChanged;
+        bool _buildOnceOnly;
+        bool _projectStructureChanged;
+        bool _compilerOptionsChanged;
 
-        public string CurrentDirectory { get; set; }
+        readonly string _currentDirectory;
 
-        public string MainFile
+        string MainFile
         {
-            get { return _mainFile; }
+            get => _mainFile;
             set
             {
                 if (!ReferenceEquals(value, _mainFile))
                 {
-                    _mainFile = value; ProjectStructureChanged = true;
+                    _mainFile = value; _projectStructureChanged = true;
                 }
             }
         }
-        public string JasmineDts
+
+        string JasmineDts
         {
-            get { return _jasmineDts; }
+            get => _jasmineDts;
             set
             {
                 if (!ReferenceEquals(value, _jasmineDts))
                 {
-                    _jasmineDts = value; ProjectStructureChanged = true;
+                    _jasmineDts = value; _projectStructureChanged = true;
                 }
             }
         }
 
-        public List<string> ExampleSources
+        List<string> ExampleSources
         {
-            get { return _exampleSources; }
+            get => _exampleSources;
             set
             {
                 if (!ReferenceEquals(value, _exampleSources))
                 {
-                    _exampleSources = value; ProjectStructureChanged = true;
+                    _exampleSources = value; _projectStructureChanged = true;
                 }
             }
         }
 
-        public List<string> TestSources
+        List<string> TestSources
         {
-            get { return _testSources; }
+            get => _testSources;
             set
             {
                 if (!ReferenceEquals(value, _testSources))
                 {
-                    _testSources = value; ProjectStructureChanged = true;
+                    _testSources = value; _projectStructureChanged = true;
                 }
             }
         }
 
-        public string[] AdditionalSources
+        string[] AdditionalSources
         {
-            get { return _additionalSources; }
+            get => _additionalSources;
             set
             {
                 if (!ReferenceEquals(value, _additionalSources))
                 {
-                    _additionalSources = value; ProjectStructureChanged = true;
+                    _additionalSources = value; _projectStructureChanged = true;
                 }
             }
         }
 
         public ITSCompilerOptions CompilerOptions
         {
-            get { return _compilerOptions; }
+            get => _compilerOptions;
             set
             {
                 if (!ReferenceEquals(value, _compilerOptions))
                 {
-                    _compilerOptions = value; ProjectStructureChanged = true; CompilerOptionsChanged = true;
+                    _compilerOptions = value; _projectStructureChanged = true; _compilerOptionsChanged = true;
                 }
             }
         }
 
-        public bool Verbose;
-        public ICompilerPool CompilerPool;
+        public readonly bool Verbose;
+        public readonly ICompilerPool CompilerPool;
         readonly DiskCache.DiskCache _diskCache;
-        public ILogger Logger;
+        readonly ILogger _logger;
 
-        string _lastTsVersion = null;
-        private Diagnostic[] _lastSemantics;
+        string? _lastTsVersion;
+        List<Diagnostic>? _lastSemantics;
 
-        internal void ShowTsVersion(string version)
+        void ShowTsVersion(string version)
         {
             if (_lastTsVersion != version)
             {
-                Logger.Info("Using TypeScript version " + version);
+                _logger.Info("Using TypeScript version " + version);
                 _lastTsVersion = version;
             }
         }
@@ -138,7 +145,7 @@ namespace Lib.Composition
             {
                 type = TypeCheckChange.Options;
             }
-            if (BuildOnceOnly)
+            if (_buildOnceOnly)
             {
                 type = TypeCheckChange.Once;
             }
@@ -163,7 +170,7 @@ namespace Lib.Composition
                     }
                     _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
                     _typeChecker.ClearDiagnostics();
-                    _typeChecker.CreateProgram(CurrentDirectory, MakeSourceListArray());
+                    _typeChecker.CreateProgram(_currentDirectory, MakeSourceListArray());
                     break;
                 case TypeCheckChange.Once:
                     if (_typeChecker != null)
@@ -173,22 +180,22 @@ namespace Lib.Composition
                     }
                     _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
                     _typeChecker.ClearDiagnostics();
-                    _typeChecker.CheckProgram(CurrentDirectory, MakeSourceListArray());
-                    _lastSemantics = _typeChecker.GetDiagnostics();
+                    _typeChecker.CheckProgram(_currentDirectory, MakeSourceListArray());
+                    _lastSemantics = _typeChecker.GetDiagnostics().ToList();
                     CompilerPool.ReleaseTs(_typeChecker);
                     _typeChecker = null;
                     return;
             }
-            _lastSemantics = _typeChecker.GetDiagnostics();
+            _lastSemantics = _typeChecker.GetDiagnostics().ToList();
         }
 
         TypeCheckChange DetectTypeCheckChange()
         {
-            if (_typeChecker == null || CompilerOptionsChanged)
+            if (_typeChecker == null || _compilerOptionsChanged)
             {
                 return TypeCheckChange.Options;
             }
-            if (ProjectStructureChanged)
+            if (_projectStructureChanged)
             {
                 return TypeCheckChange.Input;
             }
@@ -198,7 +205,7 @@ namespace Lib.Composition
         CancellationTokenSource _cancellation;
         Task _typeCheckTask = Task.CompletedTask;
 
-        public Task<Diagnostic[]> StartTypeCheck()
+        public Task<List<Diagnostic>> StartTypeCheck()
         {
             _cancellation?.Cancel();
             var cancellationTokenSource = new CancellationTokenSource();
@@ -232,6 +239,210 @@ namespace Lib.Composition
             if (ExampleSources != null) res.AddRange(ExampleSources);
             if (TestSources != null) res.AddRange(TestSources);
             return res.ToArray();
+        }
+
+        public void Build(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult,
+            MainBuildResult mainBuildResult, int iterationId)
+        {
+            _buildOnceOnly = buildOnlyOnce;
+            _compilerOptionsChanged = false;
+            _projectStructureChanged = false;
+            MainFile = project.MainFile;
+            AdditionalSources = project.IncludeSources;
+            ExampleSources = project.ExampleSources;
+            TestSources = project.TestSources;
+            JasmineDts = project.TestSources != null ? project.JasmineDts : null;
+            CompilerOptions = project.FinalCompilerOptions;
+
+            var tsProject = project.Owner;
+            var tryDetectChanges = !_projectStructureChanged;
+            buildResult.HasError = false;
+            if (!buildResult.Incremental || !tryDetectChanges)
+            {
+                buildResult.RecompiledIncrementaly.Clear();
+            }
+
+            var buildModuleCtx = new BuildModuleCtx()
+            {
+                BuildCtx = this,
+                Owner = tsProject,
+                Result = buildResult,
+                MainResult = mainBuildResult,
+                ToCheck = new OrderedHashSet<string>(),
+                IterationId = iterationId
+            };
+            try
+            {
+                project.BuildCache.StartTransaction();
+                ITSCompiler compiler = null;
+                try
+                {
+                    if (!tryDetectChanges)
+                    {
+                        if (!project.TypeScriptVersionOverride && tsProject.DevDependencies != null &&
+                            tsProject.DevDependencies.Contains("typescript"))
+                            project.Tools.SetTypeScriptPath(tsProject.Owner.FullPath);
+                        else
+                            project.Tools.SetTypeScriptVersion(project.TypeScriptVersion);
+                        project.ExpandEnv();
+                    }
+
+                    compiler = CompilerPool.GetTs(tsProject.DiskCache, CompilerOptions);
+                    var trueTSVersion = compiler.GetTSVersion();
+                    ShowTsVersion(trueTSVersion);
+                    project.ConfigurationBuildCacheId = project.BuildCache.MapConfiguration(trueTSVersion,
+                        JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
+                            TSCompilerOptions.GetSerializerSettings()));
+                }
+                finally
+                {
+                    if (compiler != null)
+                        CompilerPool.ReleaseTs(compiler);
+                }
+
+                mainBuildResult.MergeCommonSourceDirectory(tsProject.Owner.FullPath);
+                buildResult.TaskForSemanticCheck = StartTypeCheck();
+                if (tryDetectChanges)
+                {
+                    if (!buildModuleCtx.CrawlChanges())
+                    {
+                        buildResult.Incremental = true;
+                        goto noDependencyChangeDetected;
+                    }
+
+                    _projectStructureChanged = true;
+                    buildResult.Incremental = false;
+                    buildResult.JavaScriptAssets.Clear();
+                    foreach (var info in buildResult.Path2FileInfo)
+                    {
+                        info.Value.IterationId = iterationId - 1;
+                    }
+                }
+
+                buildModuleCtx.CrawledCount = 0;
+                buildModuleCtx.ToCheck.Clear();
+                buildModuleCtx.ExpandHtmlHead(project.HtmlHead);
+                if (MainFile != null)
+                    buildModuleCtx.CheckAdd(PathUtils.Join(tsProject.Owner.FullPath, MainFile),
+                        FileCompilationType.Unknown);
+                if (ExampleSources != null)
+                    foreach (var src in ExampleSources)
+                    {
+                        buildModuleCtx.CheckAdd(PathUtils.Join(tsProject.Owner.FullPath, src),
+                            FileCompilationType.Unknown);
+                    }
+
+                if (TestSources != null)
+                    foreach (var src in TestSources)
+                    {
+                        buildModuleCtx.CheckAdd(PathUtils.Join(tsProject.Owner.FullPath, src),
+                            FileCompilationType.Unknown);
+                    }
+
+                if (project.IncludeSources != null)
+                {
+                    foreach (var src in project.IncludeSources)
+                    {
+                        buildModuleCtx.CheckAdd(PathUtils.Join(tsProject.Owner.FullPath, src),
+                            FileCompilationType.Unknown);
+                    }
+                }
+
+                buildModuleCtx.Crawl();
+                noDependencyChangeDetected: ;
+                if (project.SpriteGeneration) project.SpriteGenerator.ProcessNew();
+                var hasError = false;
+                foreach (var item in buildResult.Path2FileInfo)
+                {
+                    if (item.Value.HasError)
+                    {
+                        hasError = true;
+                        break;
+                    }
+                }
+
+                buildResult.HasError = hasError;
+                if (project.BuildCache.IsEnabled)
+                    buildModuleCtx.StoreResultToBuildCache(buildResult);
+            }
+            finally
+            {
+                project.BuildCache.EndTransaction();
+            }
+        }
+
+        public void BuildSubProjects(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult, MainBuildResult mainBuildResult, int iterationId)
+            {
+            if (buildResult.HasError)
+                return;
+            var newSubProjects = new RefDictionary<string, ProjectOptions?>();
+            var newSubBuildCtxs = new RefDictionary<string, BuildCtx>();
+            var newSubBuildResults = new RefDictionary<string, BuildResult>();
+            foreach (var item in buildResult.Path2FileInfo)
+            {
+                var si = item.Value.SourceInfo;
+                if (si?.Assets == null) continue;
+                foreach (var asset in si.Assets)
+                {
+                    if (asset.Name.StartsWith("project:"))
+                    {
+                        var projPath = asset.Name.Substring(8);
+                        newSubProjects.GetOrAddValueRef(projPath);
+                    }
+                }
+            }
+
+            foreach (var u in newSubProjects.Index)
+            {
+                var projectPath = newSubProjects.KeyRef(u);
+                if (newSubProjects.ValueRef(u) == null)
+                {
+                    if (project.SubProjects == null || !project.SubProjects.TryGetValue(projectPath, out var subProj))
+                    {
+                        var dirCache = _diskCache.TryGetItem(PathUtils.Join(project.Owner.Owner.FullPath, projectPath)) as IDirectoryCache;
+                        var tsproj = TSProject.Create(dirCache, _diskCache, _logger, null);
+                        tsproj.IsRootProject = true;
+                        if (tsproj.ProjectOptions.BuildCache == null)
+                            tsproj.ProjectOptions = new ProjectOptions
+                                {
+                                    Tools = project.Tools,
+                                    BuildCache = project.BuildCache,
+                                    Owner = tsproj,
+                                    ForbiddenDependencyUpdate = project.ForbiddenDependencyUpdate
+                                };
+                        subProj = tsproj.ProjectOptions;
+                    }
+                    newSubProjects.ValueRef(u) = subProj;
+                    subProj.UpdateFromProjectJson(false);
+                    subProj.RefreshCompilerOptions();
+                    subProj.RefreshMainFile();
+                    if (_subBuildCtxs == null || !_subBuildCtxs.TryGetValue(projectPath, out var subBuildCtx))
+                    {
+                        subBuildCtx = new BuildCtx(CompilerPool, _diskCache, Verbose, _logger, subProj.Owner.Owner.FullPath);
+                    }
+
+                    newSubBuildCtxs.GetOrAddValueRef(projectPath) = subBuildCtx;
+
+                    if (buildResult.SubBuildResults == null || !buildResult.SubBuildResults.TryGetValue(projectPath, out var subBuildResult))
+                    {
+                        subBuildResult = new BuildResult(mainBuildResult, subProj);
+                    }
+
+                    newSubBuildResults.GetOrAddValueRef(projectPath) = subBuildResult;
+                    subBuildCtx.Build(subProj, buildOnlyOnce, subBuildResult, mainBuildResult, iterationId);
+                    buildResult.HasError |= subBuildResult.HasError;
+                    buildResult.TaskForSemanticCheck = Task.WhenAll(buildResult.TaskForSemanticCheck,
+                        subBuildResult.TaskForSemanticCheck).ContinueWith(
+                        subresults =>
+                        {
+                            return subresults.Result.SelectMany(d=>d).ToList();
+                        });
+                }
+            }
+
+            project.SubProjects = newSubProjects;
+            _subBuildCtxs = newSubBuildCtxs;
+            buildResult.SubBuildResults = newSubBuildResults;
         }
     }
 }

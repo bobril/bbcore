@@ -40,7 +40,7 @@ namespace Lib.TSCompiler
         public IDiskCache DiskCache { get; set; }
         public string Output { get; set; }
         public SourceMap MapLink { get; set; }
-        public SourceInfo SourceInfo { get; set; }
+        public SourceInfo? SourceInfo { get; set; }
         public List<DependencyTriplet> TranspilationDependencies { get; set; }
         public Image<Rgba32> Image { get; set; }
 

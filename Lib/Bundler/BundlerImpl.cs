@@ -7,6 +7,9 @@ using System.Collections.Generic;
 
 namespace Lib.Bundler
 {
+    /// <summary>
+    /// Old Bundler implemented in JavaScript - uses UglifyJs for compression and minification
+    /// </summary>
     public class BundlerImpl : IBundler
     {
         readonly IToolsDir _toolsDir;

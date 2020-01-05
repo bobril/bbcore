@@ -1,25 +1,15 @@
-﻿using Lib.Composition;
 using Lib.DiskCache;
 using Lib.Utils;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using BTDB.Collections;
 using Lib.Registry;
 using Lib.Utils.Logger;
-using Njsast;
 
 namespace Lib.TSCompiler
 {
     public class TSProject
     {
-        bool _wasFirstInitialize;
-
-        public const string DefaultTypeScriptVersion = "3.7.2";
-
         public ILogger Logger { get; set; }
         public IDiskCache DiskCache { get; set; }
         public IDirectoryCache Owner { get; set; }
@@ -104,7 +94,7 @@ namespace Lib.TSCompiler
 
                     var name = parsed.GetValue("name") is JValue vname ? vname.ToString() : "";
 
-                    if (name=="lenticular-ts")
+                    if (name == "lenticular-ts")
                     {
                         MainFileNeedsToBeCompiled = true;
                     }
@@ -231,181 +221,6 @@ namespace Lib.TSCompiler
             return res;
         }
 
-        public void InitializeOnce()
-        {
-            if (_wasFirstInitialize)
-                return;
-            _wasFirstInitialize = true;
-            if (ProjectOptions.Localize)
-            {
-                ProjectOptions.InitializeTranslationDb();
-            }
-
-            var bbTslint = DevDependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
-            if (bbTslint != null)
-            {
-                var srcTsLint = PathUtils.Join(Owner.FullPath, $"node_modules/{bbTslint}/tslint.json");
-                var srcFile = DiskCache.TryGetItem(srcTsLint) as IFileCache;
-                var dstTsLint = PathUtils.Join(Owner.FullPath, "tslint.json");
-                if (srcFile != null && (!(DiskCache.TryGetItem(dstTsLint) is IFileCache dstFile) ||
-                                        !dstFile.HashOfContent.SequenceEqual(srcFile.HashOfContent)))
-                {
-                    File.WriteAllBytes(dstTsLint, srcFile.ByteContent);
-                    Console.WriteLine($"Updated tslint.json from {srcTsLint}");
-                }
-            }
-        }
-
-        public void Build(BuildCtx buildCtx, BuildResult buildResult, int iterationId)
-        {
-            var tryDetectChanges = !buildCtx.ProjectStructureChanged;
-            buildResult.HasError = false;
-            if (!buildResult.Incremental || !tryDetectChanges)
-            {
-                buildResult.RecompiledIncrementaly.Clear();
-            }
-            var buildModuleCtx = new BuildModuleCtx()
-            {
-                BuildCtx = buildCtx,
-                Owner = this,
-                Result = buildResult,
-                ToCheck = new OrderedHashSet<string>(),
-                IterationId = iterationId
-            };
-            try
-            {
-                ProjectOptions.BuildCache.StartTransaction();
-                ITSCompiler compiler = null;
-                try
-                {
-                    if (!tryDetectChanges)
-                    {
-                        if (!ProjectOptions.TypeScriptVersionOverride && DevDependencies != null &&
-                            DevDependencies.Contains("typescript"))
-                            ProjectOptions.Tools.SetTypeScriptPath(Owner.FullPath);
-                        else
-                            ProjectOptions.Tools.SetTypeScriptVersion(ProjectOptions.TypeScriptVersion);
-                        ProjectOptions.ExpandEnv();
-                    }
-                    compiler = buildCtx.CompilerPool.GetTs(DiskCache, buildCtx.CompilerOptions);
-                    var trueTSVersion = compiler.GetTSVersion();
-                    buildCtx.ShowTsVersion(trueTSVersion);
-                    ProjectOptions.ConfigurationBuildCacheId = ProjectOptions.BuildCache.MapConfiguration(trueTSVersion,
-                        JsonConvert.SerializeObject(buildCtx.CompilerOptions, Formatting.None, TSCompilerOptions.GetSerializerSettings()));
-                }
-                finally
-                {
-                    if (compiler != null)
-                        buildCtx.CompilerPool.ReleaseTs(compiler);
-                }
-                if (buildModuleCtx.Result.CommonSourceDirectory == null)
-                {
-                    buildModuleCtx.Result.CommonSourceDirectory = Owner.FullPath;
-                }
-                buildResult.TaskForSemanticCheck = buildCtx.StartTypeCheck().ContinueWith((task) =>
-                {
-                    if (task.IsCompletedSuccessfully)
-                    {
-                        buildResult.SemanticResult = task.Result;
-                        buildResult.NotifySemanticResult(task.Result);
-                    }
-                });
-                if (tryDetectChanges)
-                {
-                    if (!buildModuleCtx.CrawlChanges())
-                    {
-                        buildResult.Incremental = true;
-                        goto noDependencyChangeDetected;
-                    }
-                    buildCtx.ProjectStructureChanged = true;
-                    buildResult.Incremental = false;
-                    buildModuleCtx.Result.JavaScriptAssets.Clear();
-                    foreach (var info in buildModuleCtx.Result.Path2FileInfo)
-                    {
-                        info.Value.IterationId = iterationId - 1;
-                    }
-                }
-                buildModuleCtx.CrawledCount = 0;
-                buildModuleCtx.ToCheck.Clear();
-                ProjectOptions.HtmlHeadExpanded = buildModuleCtx.ExpandHtmlHead(ProjectOptions.HtmlHead);
-                if (buildCtx.MainFile != null) buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, buildCtx.MainFile), FileCompilationType.Unknown);
-                if (buildCtx.ExampleSources != null) foreach (var src in buildCtx.ExampleSources)
-                    {
-                        buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, src), FileCompilationType.Unknown);
-                    }
-                if (buildCtx.TestSources != null) foreach (var src in buildCtx.TestSources)
-                    {
-                        buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, src), FileCompilationType.Unknown);
-                    }
-
-                if (ProjectOptions.IncludeSources != null)
-                {
-                    foreach (var src in ProjectOptions.IncludeSources)
-                    {
-                        buildModuleCtx.CheckAdd(PathUtils.Join(Owner.FullPath, src), FileCompilationType.Unknown);
-                    }
-                }
-
-                buildModuleCtx.Crawl();
-            noDependencyChangeDetected:;
-                ProjectOptions.CommonSourceDirectory = buildModuleCtx.Result.CommonSourceDirectory;
-                if (ProjectOptions.SpriteGeneration)
-                    ProjectOptions.SpriteGenerator.ProcessNew();
-                var hasError = false;
-                foreach(var item in buildModuleCtx.Result.Path2FileInfo)
-                {
-                    if (item.Value.HasError)
-                    {
-                        hasError = true;
-                        break;
-                    }
-                }
-                buildModuleCtx.Result.HasError = hasError;
-                if (ProjectOptions.BuildCache.IsEnabled)
-                    buildModuleCtx.StoreResultToBuildCache(buildModuleCtx.Result);
-            }
-            finally
-            {
-                ProjectOptions.BuildCache.EndTransaction();
-            }
-        }
-
-        public static TSProject FindInfoForModule(IDirectoryCache projectDir, IDirectoryCache dir, IDiskCache diskCache,
-            ILogger logger,
-            string moduleName,
-            out string diskName)
-        {
-            if (projectDir.TryGetChild("node_modules") is IDirectoryCache pnmdir)
-            {
-                diskCache.UpdateIfNeeded(pnmdir);
-                if (pnmdir.TryGetChild(moduleName) is IDirectoryCache mdir)
-                {
-                    diskName = mdir.Name;
-                    diskCache.UpdateIfNeeded(mdir);
-                    return Create(mdir, diskCache, logger, diskName);
-                }
-            }
-
-            while (dir != null)
-            {
-                if (diskCache.TryGetItem(PathUtils.Join(dir.FullPath, "node_modules")) is IDirectoryCache nmdir)
-                {
-                    diskCache.UpdateIfNeeded(nmdir);
-                    if (nmdir.TryGetChild(moduleName) is IDirectoryCache mdir)
-                    {
-                        diskName = mdir.Name;
-                        diskCache.UpdateIfNeeded(mdir);
-                        return Create(mdir, diskCache, logger, diskName);
-                    }
-                }
-
-                dir = dir.Parent;
-            }
-
-            diskName = null;
-            return null;
-        }
-
         public static TSProject Create(IDirectoryCache dir, IDiskCache diskCache, ILogger logger, string diskName)
         {
             if (dir == null)
@@ -433,7 +248,7 @@ namespace Lib.TSCompiler
             return proj;
         }
 
-        public void FillOutputByAssets(RefDictionary<string, object> filesContent, BuildResult buildResult,
+        public void FillOutputByAssets(MainBuildResult buildResult,
             string nodeModulesDir, ProjectOptions projectOptions)
         {
             if (Assets == null) return;
@@ -449,30 +264,29 @@ namespace Lib.TSCompiler
                     PathUtils.EnumParts(asset.Key, ref pos, out var name, out var isDir);
                     PathUtils.EnumParts(asset.Key, ref pos, out name, out isDir);
                     projectOptions.Owner.UsedDependencies.Add(name.ToString());
-
                 }
+
                 var item = DiskCache.TryGetItem(PathUtils.Join(fullPath, asset.Key));
                 if (item == null || item.IsInvalid)
                     continue;
                 if (item is IFileCache)
                 {
                     buildResult.TakenNames.Add(asset.Value);
-                    filesContent.GetOrAddValueRef(asset.Value) = new Lazy<object>(() =>
+                    buildResult.FilesContent.GetOrAddValueRef(asset.Value) = new Lazy<object>(() =>
                     {
-                        var res = ((IFileCache)item).ByteContent;
-                        ((IFileCache)item).FreeCache();
+                        var res = ((IFileCache) item).ByteContent;
+                        ((IFileCache) item).FreeCache();
                         return res;
                     });
                 }
                 else
                 {
-                    RecursiveAddFilesContent(item as IDirectoryCache, filesContent, buildResult, asset.Value);
+                    RecursiveAddFilesContent(item as IDirectoryCache, buildResult, asset.Value);
                 }
             }
         }
 
-        void RecursiveAddFilesContent(IDirectoryCache directory, RefDictionary<string, object> filesContent,
-            BuildResult buildResult, string destDir)
+        void RecursiveAddFilesContent(IDirectoryCache directory, MainBuildResult buildResult, string destDir)
         {
             DiskCache.UpdateIfNeeded(directory);
             foreach (var child in directory)
@@ -483,17 +297,17 @@ namespace Lib.TSCompiler
                 buildResult.TakenNames.Add(outPathFileName);
                 if (child is IDirectoryCache)
                 {
-                    RecursiveAddFilesContent(child as IDirectoryCache, filesContent, buildResult, outPathFileName);
+                    RecursiveAddFilesContent(child as IDirectoryCache, buildResult, outPathFileName);
                     continue;
                 }
 
                 if (child is IFileCache)
                 {
-                    filesContent.GetOrAddValueRef(outPathFileName) =
+                    buildResult.FilesContent.GetOrAddValueRef(outPathFileName) =
                         new Lazy<object>(() =>
                         {
-                            var res = ((IFileCache)child).ByteContent;
-                            ((IFileCache)child).FreeCache();
+                            var res = ((IFileCache) child).ByteContent;
+                            ((IFileCache) child).FreeCache();
                             return res;
                         });
                 }

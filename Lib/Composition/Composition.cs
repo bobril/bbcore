@@ -26,8 +26,6 @@ using Lib.Registry;
 using Lib.Utils.Notification;
 using Lib.Translation;
 using Lib.Utils.Logger;
-using Njsast.Ast;
-using Njsast.Reader;
 
 namespace Lib.Composition
 {
@@ -41,6 +39,7 @@ namespace Lib.Composition
         WebServerHost _webServer;
         AutoResetEvent _hasBuildWork = new AutoResetEvent(true);
         ProjectOptions _currentProject;
+        MainBuildResult _mainBuildResult;
         CommandLineCommand _command;
         TestServer _testServer;
         ILongPollingServer _testServerLongPollingHandler;
@@ -141,7 +140,7 @@ namespace Lib.Composition
         void RunPackageAdd(PackageManagerAddCommand addCommand)
         {
             InitDiskCache();
-            var project = AddProject(PathUtils.Normalize(Environment.CurrentDirectory), false);
+            var project = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
             var currentNodePackageManager = new CurrentNodePackageManager(_dc, _logger);
             if (addCommand.PackageName.Value == null)
             {
@@ -156,7 +155,7 @@ namespace Lib.Composition
         void RunPackageUpgrade(PackageManagerUpgradeCommand upgradeCommand)
         {
             InitDiskCache();
-            var project = AddProject(PathUtils.Normalize(Environment.CurrentDirectory), false);
+            var project = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
             var currentNodePackageManager = new CurrentNodePackageManager(_dc, _logger);
             var before = currentNodePackageManager.GetLockedDependencies(project.Owner.Owner).ToArray();
             if (upgradeCommand.PackageName.Value == null)
@@ -192,14 +191,14 @@ namespace Lib.Composition
         void RunPackageInstall(PackageManagerInstallCommand installCommand)
         {
             InitDiskCache();
-            var project = AddProject(PathUtils.Normalize(Environment.CurrentDirectory), false);
+            var project = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
             new CurrentNodePackageManager(_dc, _logger).Install(project.Owner.Owner);
         }
 
         void RunTranslation(TranslationCommand tCommand)
         {
             InitDiskCache();
-            var project = AddProject(PathUtils.Normalize(Environment.CurrentDirectory), false);
+            var project = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
             TranslationDb trDb;
             var addLanguage = tCommand.AddLang.Value;
             if (addLanguage != null)
@@ -378,53 +377,40 @@ namespace Lib.Composition
         void RunBuild(BuildCommand bCommand)
         {
             InitDiskCache();
-            AddProject(PathUtils.Normalize(Environment.CurrentDirectory), bCommand.Sprite.Value);
+            _mainBuildResult = new MainBuildResult(!bCommand.Fast.Value, bCommand.VersionDir.Value);
+            var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            proj.SpriteGeneration = bCommand.Sprite.Value;
             _forbiddenDependencyUpdate = bCommand.NoUpdate.Value;
             var start = DateTime.UtcNow;
             var errors = 0;
             var warnings = 0;
             var messages = new List<Diagnostic>();
-            var totalFiles = 0;
-            var proj = _currentProject;
             try
             {
                 _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
-                proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
-                if (bCommand.Localize.Value != null)
-                    proj.Localize = bCommand.Localize.Value ?? false;
-                proj.Owner.InitializeOnce();
-                proj.OutputSubDir = bCommand.VersionDir.Value;
-                proj.CompressFileNames = !bCommand.Fast.Value;
+                proj.UpdateFromProjectJson(bCommand.Localize.Value);
                 proj.StyleDefNaming =
                     ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
                 proj.BundleCss = !bCommand.Fast.Value;
                 proj.Debug = bCommand.Fast.Value;
-                var buildResult = new BuildResult(proj);
+                var buildResult = new BuildResult(_mainBuildResult, proj);
                 proj.GenerateCode();
-                proj.SpriterInitialization(buildResult);
+                proj.SpriterInitialization(_mainBuildResult);
                 proj.RefreshCompilerOptions();
                 proj.RefreshMainFile();
                 proj.RefreshExampleSources();
                 var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
-                ctx.BuildOnceOnly = true;
-                ctx.MainFile = proj.MainFile;
-                ctx.AdditionalSources = proj.IncludeSources;
-                ctx.ExampleSources = proj.ExampleSources;
-                ctx.CompilerOptions = proj.FinalCompilerOptions;
-                proj.Owner.Build(ctx, buildResult, 1);
+                ctx.Build(proj, true, buildResult, _mainBuildResult, 1);
+                ctx.BuildSubProjects(proj, true, buildResult, _mainBuildResult, 1);
                 _compilerPool.FreeMemory().GetAwaiter();
-                var filesContent = new RefDictionary<string, object>();
-                proj.FillOutputByAdditionalResourcesDirectory(filesContent, buildResult.Modules, buildResult);
+                proj.FillOutputByAdditionalResourcesDirectory(buildResult.Modules, _mainBuildResult);
                 IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
                 if (errors == 0)
                 {
                     if (proj.Localize && bCommand.UpdateTranslations.Value)
                     {
                         // Side effect of fastBundle is registering of all messages
-                        var fastBundle = new FastBundleBundler(_tools);
-                        fastBundle.FilesContent = filesContent;
-                        fastBundle.Project = proj;
-                        fastBundle.BuildResult = buildResult;
+                        var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, proj, buildResult);
                         fastBundle.Build("bb/base");
                         proj.TranslationDb.SaveLangDbs(PathToTranslations(proj), true);
                         buildResult.TaskForSemanticCheck.Wait();
@@ -433,33 +419,32 @@ namespace Lib.Composition
                     {
                         if (bCommand.Fast.Value)
                         {
-                            var fastBundle = new FastBundleBundler(_tools);
-                            fastBundle.FilesContent = filesContent;
-                            fastBundle.Project = proj;
-                            fastBundle.BuildResult = buildResult;
+                            var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, proj, buildResult);
                             fastBundle.Build("bb/base");
                             fastBundle.BuildHtml();
                         }
                         else
                         {
-                            var bundle = bCommand.NewBundler.Value ? (IBundler)new NjsastBundleBundler(_tools, _logger) : new BundleBundler(_tools);
-                            bundle.FilesContent = filesContent;
-                            bundle.Project = proj;
-                            bundle.BuildResult = buildResult;
-                            bundle.BuildSourceMap = bCommand.SourceMap.Value == "yes";
-                            bundle.SourceMapSourceRoot = bCommand.SourceMapRoot.Value;
-                            bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value);
+                            var bundle = bCommand.NewBundler.Value
+                                ? (IBundler) new NjsastBundleBundler(_tools, _logger, _mainBuildResult, proj,
+                                    buildResult)
+                                : new BundleBundler(_tools, _mainBuildResult, proj, buildResult);
+                            bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value,
+                                bCommand.SourceMap.Value == "yes", bCommand.SourceMapRoot.Value);
                         }
 
-                        buildResult.TaskForSemanticCheck.Wait();
-                        messages = IncludeSemanticMessages(proj, buildResult, ref errors, ref warnings, messages);
+                        buildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
+                        {
+                            if (semanticDiag.IsCompletedSuccessfully)
+                                messages = IncludeSemanticMessages(proj, semanticDiag.Result, ref errors, ref warnings,
+                                    messages);
+                        }).Wait();
 
                         if (errors == 0)
                         {
-                            SaveFilesContentToDisk(filesContent,
+                            SaveFilesContentToDisk(_mainBuildResult.FilesContent,
                                 PathUtils.Join(proj.Owner.Owner.FullPath,
                                     bCommand.Dir.Value ?? proj.BuildOutputDir ?? "./dist"));
-                            totalFiles += filesContent.Count;
                         }
                     }
                 }
@@ -474,7 +459,7 @@ namespace Lib.Composition
             PrintMessages(messages);
             var color = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
             _logger.WriteLine(
-                $"Build done in {duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(totalFiles, "file")}",
+                $"Build done in {duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(_mainBuildResult.FilesContent.Count, "file")}",
                 color);
 
             Environment.ExitCode = errors != 0 ? 1 : 0;
@@ -522,9 +507,11 @@ namespace Lib.Composition
         void RunTest(TestCommand testCommand)
         {
             InitDiskCache();
+            _mainBuildResult = new MainBuildResult(false, null);
             InitTestServer();
             InitMainServer();
-            AddProject(PathUtils.Normalize(Environment.CurrentDirectory), testCommand.Sprite.Value);
+            var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
+            proj.SpriteGeneration = testCommand.Sprite.Value;
             int port = 0;
             if (int.TryParse(testCommand.Port.Value, out var portInInt))
             {
@@ -538,47 +525,36 @@ namespace Lib.Composition
             int warnings = 0;
             var messages = new List<Diagnostic>();
             var totalFiles = 0;
-            var proj = _currentProject;
             try
             {
                 _logger.WriteLine("Test build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
                 var testResults = new TestResultsHolder();
-                proj.Owner.LoadProjectJson(true);
-                if (testCommand.Localize.Value != null)
-                    proj.Localize = testCommand.Localize.Value ?? false;
-                proj.Owner.InitializeOnce();
+                proj.UpdateFromProjectJson(testCommand.Localize.Value);
                 proj.StyleDefNaming = StyleDefNamingStyle.AddNames;
-                var testBuildResult = new BuildResult(proj);
+                var testBuildResult = new BuildResult(_mainBuildResult, proj);
                 proj.GenerateCode();
                 proj.RefreshCompilerOptions();
-                proj.RefreshMainFile();
                 proj.RefreshTestSources();
-                proj.SpriterInitialization(testBuildResult);
+                proj.SpriterInitialization(_mainBuildResult);
                 if (proj.TestSources != null && proj.TestSources.Count > 0)
                 {
                     var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
-                    ctx.BuildOnceOnly = true;
-                    ctx.AdditionalSources = proj.IncludeSources;
-                    ctx.TestSources = proj.TestSources;
-                    ctx.JasmineDts = proj.JasmineDts;
-                    ctx.CompilerOptions = proj.FinalCompilerOptions;
-                    proj.Owner.Build(ctx, testBuildResult, 1);
-                    var fastBundle = new FastBundleBundler(_tools);
-                    var filesContent = new RefDictionary<string, object>();
-                    proj.FillOutputByAdditionalResourcesDirectory(filesContent, testBuildResult.Modules,
-                        testBuildResult);
-                    fastBundle.FilesContent = filesContent;
-                    fastBundle.Project = proj;
-                    fastBundle.BuildResult = testBuildResult;
+                    ctx.Build(proj, true, testBuildResult, _mainBuildResult, 1);
+                    ctx.BuildSubProjects(proj, true, testBuildResult, _mainBuildResult, 1);
+                    var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, proj, testBuildResult);
+                    proj.FillOutputByAdditionalResourcesDirectory(testBuildResult.Modules, _mainBuildResult);
                     fastBundle.Build("bb/base", true);
                     fastBundle.BuildHtml(true);
-                    proj.FilesContent = filesContent;
                     _compilerPool.FreeMemory().GetAwaiter();
                     if (testCommand.Dir.Value != null)
-                        SaveFilesContentToDisk(filesContent, testCommand.Dir.Value);
+                        SaveFilesContentToDisk(_mainBuildResult.FilesContent, testCommand.Dir.Value);
                     IncludeMessages(proj, testBuildResult, ref errors, ref warnings, messages);
-                    testBuildResult.TaskForSemanticCheck.Wait();
-                    messages = IncludeSemanticMessages(proj, testBuildResult, ref errors, ref warnings, messages);
+                    testBuildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
+                    {
+                        if (semanticDiag.IsCompletedSuccessfully)
+                            messages = IncludeSemanticMessages(proj, semanticDiag.Result, ref errors, ref warnings,
+                                messages);
+                    }).Wait();
                     PrintMessages(messages);
                     if (testCommand.Dir.Value == null)
                     {
@@ -673,30 +649,21 @@ namespace Lib.Composition
         {
             IfEnabledStartVerbosive();
             InitDiskCache();
-            var proj = AddProject(PathUtils.Normalize(Environment.CurrentDirectory), false);
+            _mainBuildResult = new MainBuildResult(false, null);
+            var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
             _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Cyan);
             try
             {
-                proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
-                proj.Localize = false;
-                proj.Owner.InitializeOnce();
-                proj.Owner.UsedDependencies = new HashSet<string>();
-                var buildResult = new BuildResult(proj);
+                proj.UpdateFromProjectJson(false);
+                var buildResult = new BuildResult(_mainBuildResult, proj);
                 proj.GenerateCode();
                 proj.RefreshCompilerOptions();
                 proj.RefreshMainFile();
                 proj.RefreshTestSources();
-                proj.SpriterInitialization(buildResult);
+                proj.SpriterInitialization(_mainBuildResult);
                 proj.RefreshExampleSources();
                 var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
-                ctx.BuildOnceOnly = true;
-                ctx.MainFile = proj.MainFile;
-                ctx.AdditionalSources = proj.IncludeSources;
-                ctx.ExampleSources = proj.ExampleSources;
-                ctx.TestSources = proj.TestSources;
-                ctx.JasmineDts = proj.TestSources != null ? proj.JasmineDts : null;
-                ctx.CompilerOptions = proj.FinalCompilerOptions;
-                proj.Owner.Build(ctx, buildResult, 1);
+                ctx.Build(proj, true, buildResult, _mainBuildResult, 1);
                 var buildResultSet = buildResult.Path2FileInfo.Values.ToHashSet();
 
                 if (buildResultSet.Any(a => a.Diagnostics.Any(d => d.IsError)))
@@ -766,11 +733,12 @@ namespace Lib.Composition
             }
 
             InitDiskCache(true);
+            _mainBuildResult = new MainBuildResult(false, command.VersionDir.Value);
             InitTestServer();
             InitMainServer();
-            AddProject(PathUtils.Normalize(Environment.CurrentDirectory), command.Sprite.Value);
+            SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory)).SpriteGeneration = command.Sprite.Value;
             StartWebServer(port, command.BindToAny.Value);
-            InitInteractiveMode(command.VersionDir.Value, command.Localize.Value);
+            InitInteractiveMode(command.Localize.Value);
             WaitForStop();
         }
 
@@ -806,7 +774,7 @@ namespace Lib.Composition
             }
 
             _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
-            _compilerPool = new CompilerPool(_tools, _logger, 2);
+            _compilerPool = new CompilerPool(_tools, _logger);
             _notificationManager = new NotificationManager();
         }
 
@@ -836,7 +804,7 @@ namespace Lib.Composition
             _dc = new DiskCache.DiskCache(new NativeFsAbstraction(), watcherFactory);
         }
 
-        public ProjectOptions AddProject(string path, bool enableSpritting)
+        public ProjectOptions SetMainProject(string path)
         {
             var projectDir = PathUtils.Normalize(new DirectoryInfo(path).FullName);
             var dirCache = _dc.TryGetItem(projectDir) as IDirectoryCache;
@@ -849,7 +817,7 @@ namespace Lib.Composition
                 Tools = _tools,
                 BuildCache = _buildCache,
                 Owner = proj,
-                SpriteGeneration = enableSpritting
+                ForbiddenDependencyUpdate = _forbiddenDependencyUpdate
             };
             _currentProject = proj.ProjectOptions;
             if (_mainServer != null)
@@ -942,7 +910,7 @@ namespace Lib.Composition
 
             if (path.StartsWithSegments("/bb/base", out var src))
             {
-                var srcPath = PathUtils.Join(_currentProject.CommonSourceDirectory, src.Value.Substring(1));
+                var srcPath = PathUtils.Join(_mainBuildResult.CommonSourceDirectory, src.Value.Substring(1));
                 var srcFileCache = _dc.TryGetItem(srcPath) as IFileCache;
                 if (srcFileCache != null)
                 {
@@ -975,7 +943,7 @@ namespace Lib.Composition
             }
 
             var pathWithoutFirstSlash = path.Value.Substring(1);
-            var filesContentFromCurrentProjectBuildResult = _currentProject.FilesContent;
+            var filesContentFromCurrentProjectBuildResult = _mainBuildResult.FilesContent;
             object content;
             if (FindInFilesContent(pathWithoutFirstSlash, filesContentFromCurrentProjectBuildResult, out content))
             {
@@ -1043,46 +1011,24 @@ namespace Lib.Composition
         public void InitMainServer()
         {
             _mainServer = new MainServer(() => _testServer.GetState());
+            _mainServer.MainBuildResult = _mainBuildResult;
             _mainServerLongPollingHandler = new LongPollingServer(_mainServer.NewConnectionHandler);
             _testServer.OnChange.Subscribe((_) => { _mainServer.NotifyTestServerChange(); });
         }
 
-        public void InitInteractiveMode(string versionDir, bool? localizeValue)
+        public void InitInteractiveMode(bool? localizeValue)
         {
             _hasBuildWork.Set();
             var throttled = _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200));
             throttled.Merge(throttled.Delay(TimeSpan.FromMilliseconds(300))).Subscribe((_) => _hasBuildWork.Set());
             var iterationId = 0;
             var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath);
-            var buildResult = new BuildResult(_currentProject);
-            var fastBundle = new FastBundleBundler(_tools);
-            var filesContent = new RefDictionary<string, object>();
+            var buildResult = new BuildResult(_mainBuildResult, _currentProject);
+            var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, _currentProject, buildResult);
             var start = DateTime.UtcNow;
             int errors = 0;
             int warnings = 0;
             var messages = new List<Diagnostic>();
-            // in case semantic check is faster than build it must be delayed publishing results.
-            var buildDoneTsc = new TaskCompletionSource<bool>();
-            buildResult.OnSemanticResult += BuildResult_OnSemanticResult;
-
-            void BuildResult_OnSemanticResult(Diagnostic[] obj)
-            {
-                var duration = (DateTime.UtcNow - start).TotalSeconds;
-                if (buildDoneTsc.Task.Result)
-                {
-                    var allmess = IncludeSemanticMessages(_currentProject, buildResult, ref errors, ref warnings,
-                        messages);
-                    _mainServer.NotifyCompilationFinished(errors, warnings, duration, allmess);
-                    _notificationManager.SendNotification(
-                        NotificationParameters.CreateBuildParameters(errors, warnings, duration));
-                    if (!buildResult.HasError) PrintMessages(allmess, true);
-                    var color = errors != 0 ? ConsoleColor.Red :
-                        warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                    _logger.WriteLine(
-                        $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}",
-                        color);
-                }
-            }
 
             Task.Run(() =>
             {
@@ -1098,49 +1044,44 @@ namespace Lib.Composition
                     errors = 0;
                     warnings = 0;
                     messages.Clear();
-                    var totalFiles = 0;
                     var proj = _currentProject;
                     _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Cyan);
                     try
                     {
-                        proj.Owner.LoadProjectJson(_forbiddenDependencyUpdate);
-                        if (localizeValue != null)
-                            proj.Localize = localizeValue ?? false;
-                        proj.Owner.InitializeOnce();
-                        proj.OutputSubDir = versionDir;
-                        proj.Owner.UsedDependencies = new HashSet<string>();
+                        proj.UpdateFromProjectJson(localizeValue);
                         proj.GenerateCode();
                         proj.RefreshCompilerOptions();
                         proj.RefreshMainFile();
                         proj.RefreshTestSources();
                         proj.RefreshExampleSources();
-                        proj.SpriterInitialization(buildResult);
+                        proj.SpriterInitialization(_mainBuildResult);
+                        ctx.Build(proj, false, buildResult, _mainBuildResult, iterationId);
+                        ctx.BuildSubProjects(proj, false, buildResult, _mainBuildResult, iterationId);
                         proj.UpdateTSConfigJson();
-                        ctx.CompilerOptionsChanged = false;
-                        ctx.ProjectStructureChanged = false;
-                        ctx.MainFile = proj.MainFile;
-                        ctx.AdditionalSources = proj.IncludeSources;
-                        ctx.ExampleSources = proj.ExampleSources;
-                        ctx.TestSources = proj.TestSources;
-                        ctx.JasmineDts = proj.TestSources != null ? proj.JasmineDts : null;
-                        ctx.CompilerOptions = proj.FinalCompilerOptions;
-                        buildDoneTsc.TrySetResult(false);
-                        buildDoneTsc = new TaskCompletionSource<bool>();
-                        proj.Owner.Build(ctx, buildResult, iterationId);
                         if (!buildResult.HasError)
                         {
-                            proj.FillOutputByAdditionalResourcesDirectory(filesContent, buildResult.Modules,
-                                buildResult);
-                            fastBundle.FilesContent = filesContent;
-                            fastBundle.Project = proj;
-                            fastBundle.BuildResult = buildResult;
+                            proj.FillOutputByAdditionalResourcesDirectory(buildResult.Modules, _mainBuildResult);
                             fastBundle.Build("bb/base");
                             fastBundle.BuildHtml();
-                            proj.FilesContent = filesContent;
                         }
 
                         IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
-                        buildDoneTsc.TrySetResult(true);
+                        buildResult.TaskForSemanticCheck.ContinueWith((Task<List<Diagnostic>> semanticDiag) =>
+                        {
+                            var duration = (DateTime.UtcNow - start).TotalSeconds;
+                            var allmess = IncludeSemanticMessages(_currentProject, semanticDiag.Result, ref errors,
+                                ref warnings,
+                                messages);
+                            _mainServer.NotifyCompilationFinished(errors, warnings, duration, allmess);
+                            _notificationManager.SendNotification(
+                                NotificationParameters.CreateBuildParameters(errors, warnings, duration));
+                            if (!buildResult.HasError) PrintMessages(allmess, true);
+                            var color = errors != 0 ? ConsoleColor.Red :
+                                warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                            _logger.WriteLine(
+                                $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}",
+                                color);
+                        }, TaskContinuationOptions.OnlyOnRanToCompletion);
                         if (errors == 0 && proj.LiveReloadEnabled)
                         {
                             proj.LiveReloadIdx++;
@@ -1156,9 +1097,6 @@ namespace Lib.Composition
                                 StartChromeTest();
                             }
                         }
-
-                        if (proj.FilesContent != null)
-                            totalFiles += proj.FilesContent.Count;
                     }
                     catch (Exception ex)
                     {
@@ -1172,7 +1110,7 @@ namespace Lib.Composition
                     var color = errors != 0 ? ConsoleColor.Red :
                         warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     _logger.WriteLine(
-                        $"Build done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(totalFiles, "file")}",
+                        $"Build done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(_mainBuildResult.FilesContent.Count, "file")}",
                         color);
                 }
             });
@@ -1232,7 +1170,7 @@ namespace Lib.Composition
                     messages.Add(new Diagnostic
                     {
                         FileName = PathUtils.ForDiagnosticDisplay(pathInfoPair.Key,
-                            options.CommonSourceDirectory ?? rootPath, options.CommonSourceDirectory),
+                            _mainBuildResult.CommonSourceDirectory ?? rootPath, _mainBuildResult.CommonSourceDirectory),
                         IsError = isError,
                         Text = d.Text,
                         Code = d.Code,
@@ -1243,24 +1181,34 @@ namespace Lib.Composition
                     });
                 }
             }
+
+            if (buildResult.SubBuildResults != null)
+            {
+                foreach (var subBuildResult in buildResult.SubBuildResults)
+                {
+                    IncludeMessages(options, subBuildResult.Value, ref errors, ref warnings, messages);
+                }
+            }
         }
 
-        List<Diagnostic> IncludeSemanticMessages(ProjectOptions options, BuildResult buildResult, ref int errors,
+        List<Diagnostic> IncludeSemanticMessages(ProjectOptions options, List<Diagnostic> semanticDiagnostics,
+            ref int errors,
             ref int warnings,
             List<Diagnostic> messages)
         {
-            if (buildResult.SemanticResult == null) return messages;
+            if (semanticDiagnostics.Count == 0) return messages;
             var res = messages.ToList();
             var rootPath = options.Owner.Owner.FullPath;
-            foreach (var d in buildResult.SemanticResult)
+            foreach (var d in semanticDiagnostics)
             {
                 if (options.IgnoreDiagnostic?.Contains(d.Code) ?? false)
                     continue;
                 var isError = d.IsError || options.WarningsAsErrors;
                 var dd = new Diagnostic
                 {
-                    FileName = PathUtils.ForDiagnosticDisplay(d.FileName, options.CommonSourceDirectory ?? rootPath,
-                        options.CommonSourceDirectory),
+                    FileName = PathUtils.ForDiagnosticDisplay(d.FileName,
+                        _mainBuildResult.CommonSourceDirectory ?? rootPath,
+                        _mainBuildResult.CommonSourceDirectory),
                     IsError = isError,
                     Text = d.Text,
                     Code = d.Code,

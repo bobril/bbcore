@@ -2,6 +2,29 @@
 
 ## [unreleased]
 
+### Added
+
+- Support for ServiceWorkers/PWA and WebWorkers
+  - `b.asset` support new `project:` prefix which needs to be followed by relative directory path with `project.json`
+  - target project must have defined `"bobril": { "variant": "worker" }` or `"bobril": { "variant": "serviceworker" }`
+  - service worker automatically defines `swBuildDate` (contains date of build in string), `swBuildId` (contains obfuscated date of build in string), `swFiles` (array with all files in compilation)
+  - example in `TestProjects/PWA/main`
+
+```ts
+import * as b from "bobril";
+import * as Comlink from "comlink";
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register(b.asset("project:../sw")).then(function() {
+    console.log("Service Worker Registered");
+  });
+}
+
+var obj = Comlink.wrap(
+  new Worker(b.asset("project:../worker"))
+)};
+```
+
 ## 1.1.0
 
 ### Added

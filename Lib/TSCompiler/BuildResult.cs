@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using BTDB.Collections;
 using Lib.Utils;
-using Njsast;
 using Njsast.SourceMap;
 
 namespace Lib.TSCompiler
@@ -11,8 +11,7 @@ namespace Lib.TSCompiler
     public class ResolveResult
     {
         public string FileName;
-        public TSProject Module;
-        public StructList<string> NegativeChecks;
+        public Njsast.StructList<string> NegativeChecks;
         public int IterationId;
         public string FileNameJs;
 
@@ -25,28 +24,26 @@ namespace Lib.TSCompiler
 
     public class BuildResult
     {
-        public BuildResult(ProjectOptions options)
+        readonly MainBuildResult _mainBuildResult;
+
+        public BuildResult(MainBuildResult mainBuildResult, ProjectOptions options)
         {
-            CompressFileNames = options.CompressFileNames;
-            OutputSubDir = options.OutputSubDir;
-            BundleJsUrl = AllocateName("bundle.js");
+            _mainBuildResult = mainBuildResult;
+            BundleJsUrl = _mainBuildResult.AllocateName(options.GetDefaultBundleJsName(), options.Variant != "serviceworker");
         }
 
-        public Dictionary<(string From, string Name), ResolveResult> ResolveCache = new Dictionary<(string From, string Name), ResolveResult>();
-        public Dictionary<string, TSFileAdditionalInfo> Path2FileInfo = new Dictionary<string, TSFileAdditionalInfo>();
-        public HashSet<TSFileAdditionalInfo> RecompiledIncrementaly = new HashSet<TSFileAdditionalInfo>();
-        public StructList<TSFileAdditionalInfo> JavaScriptAssets;
-        public Dictionary<string, TSProject> Modules = new Dictionary<string, TSProject>();
-        public string CommonSourceDirectory;
-        public Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();
-        public HashSet<string> TakenNames = new HashSet<string>();
+        public readonly Dictionary<(string From, string Name), ResolveResult> ResolveCache =
+            new Dictionary<(string From, string Name), ResolveResult>();
+
+        public readonly Dictionary<string, TSFileAdditionalInfo> Path2FileInfo = new Dictionary<string, TSFileAdditionalInfo>();
+        public readonly HashSet<TSFileAdditionalInfo> RecompiledIncrementaly = new HashSet<TSFileAdditionalInfo>();
+        public Njsast.StructList<TSFileAdditionalInfo> JavaScriptAssets;
+        public readonly Dictionary<string, TSProject> Modules = new Dictionary<string, TSProject>();
         public bool HasError;
         public bool Incremental;
-        public Task TaskForSemanticCheck;
-        internal Diagnostic[] SemanticResult;
-        public readonly bool CompressFileNames;
-        public readonly string OutputSubDir;
+        public Task<List<Diagnostic>> TaskForSemanticCheck;
         public readonly string BundleJsUrl;
+        public RefDictionary<string, BuildResult> SubBuildResults;
 
         public string ToOutputUrl(string fileName)
         {
@@ -58,64 +55,11 @@ namespace Lib.TSCompiler
             }
 
             if (info.OutputUrl == null)
-                info.OutputUrl = AllocateName(PathUtils.Subtract(fileName, CommonSourceDirectory));
+                info.OutputUrl =
+                    _mainBuildResult.AllocateName(PathUtils.Subtract(fileName, _mainBuildResult.CommonSourceDirectory));
             return info.OutputUrl;
         }
 
-        public string AllocateName(string niceName)
-        {
-            if (CompressFileNames)
-            {
-                string extension = PathUtils.GetExtension(niceName).ToString();
-                if (extension != "")
-                    extension = "." + extension;
-                int idx = 0;
-                Extension2LastNameIdx.TryGetValue(extension, out idx);
-                do
-                {
-                    niceName = ToShortName(idx) + extension;
-                    idx++;
-                    if (OutputSubDir != null)
-                        niceName = $"{OutputSubDir}/{niceName}";
-                } while (TakenNames.Contains(niceName));
-
-                Extension2LastNameIdx[extension] = idx;
-            }
-            else
-            {
-                if (OutputSubDir != null)
-                    niceName = OutputSubDir + "/" + niceName;
-                if (TakenNames.Contains(niceName))
-                {
-                    int counter = 0;
-                    string extension = PathUtils.GetExtension(niceName).ToString();
-                    if (extension != "")
-                        extension = "." + extension;
-                    string prefix = niceName.Substring(0, niceName.Length - extension.Length);
-                    while (TakenNames.Contains(niceName))
-                    {
-                        counter++;
-                        niceName = prefix + counter.ToString() + extension;
-                    }
-                }
-            }
-
-            TakenNames.Add(niceName);
-            return niceName;
-        }
-
-        static string ToShortName(int idx)
-        {
-            Span<char> res = stackalloc char[8];
-            var resLen = 0;
-            do
-            {
-                res[resLen++] = (char)(97 + idx % 26);
-                idx = idx / 26 - 1;
-            } while (idx >= 0);
-
-            return new string(res.Slice(0, resLen));
-        }
 
         internal string ToOutputUrl(TSFileAdditionalInfo source)
         {
@@ -123,14 +67,8 @@ namespace Lib.TSCompiler
             {
                 return ToOutputUrl(source.Owner.FullPath);
             }
+
             return source.OutputUrl;
-        }
-
-        public event Action<Diagnostic[]> OnSemanticResult;
-
-        internal void NotifySemanticResult(Diagnostic[] result)
-        {
-            OnSemanticResult?.Invoke(result);
         }
     }
 }

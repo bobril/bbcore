@@ -1,0 +1,25 @@
+{
+    "name": "sample",
+    "version": "1.0.0",
+    "description": "",
+    "typescript": {
+        "main": "index.ts"
+    },
+    "private": true,
+    "bobril": {
+        "variant": "serviceworker",
+        "jasmineVersion": "3.3",
+        "compilerOptions": {
+            "strict": true
+        }
+    },
+    "author": "Bobris",
+    "license": "MIT",
+    "prettier": {
+        "tabWidth": 4,
+        "printWidth": 120
+    },
+    "devDependencies": {
+        "typescript": "*"
+    }
+}

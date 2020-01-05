@@ -19,6 +19,10 @@ namespace Njsast.Ast
         {
         }
 
+        public AstArray()
+        {
+        }
+
         public override void Visit(TreeWalker w)
         {
             base.Visit(w);

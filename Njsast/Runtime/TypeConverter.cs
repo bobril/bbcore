@@ -42,6 +42,17 @@ namespace Njsast.Runtime
                 return res;
             }
 
+            if (o is IList<object> list)
+            {
+                var res = new AstArray();
+                foreach (var item in list)
+                {
+                    res.Elements.Add(ToAst(item));
+                }
+
+                return res;
+            }
+
             throw new NotImplementedException();
         }
 

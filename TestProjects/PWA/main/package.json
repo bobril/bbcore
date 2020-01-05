@@ -1,0 +1,29 @@
+{
+    "name": "sample",
+    "version": "1.0.0",
+    "description": "",
+    "typescript": {
+        "main": "app.tsx"
+    },
+    "private": true,
+    "bobril": {
+        "title": "Bobril PWA Sample",
+        "jasmineVersion": "3.3",
+        "compilerOptions": {
+            "strict": true
+        }
+    },
+    "author": "Bobris",
+    "license": "MIT",
+    "prettier": {
+        "tabWidth": 4,
+        "printWidth": 120
+    },
+    "dependencies": {
+        "bobril": "*",
+        "comlink": "^4.2.0"
+    },
+    "devDependencies": {
+        "typescript": "*"
+    }
+}

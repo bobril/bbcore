@@ -10,7 +10,7 @@ namespace Lib.Composition
 {
     public class CompilerPool : ICompilerPool
     {
-        public CompilerPool(IToolsDir toolsDir, ILogger logger, int parallelCompilations = 1)
+        public CompilerPool(IToolsDir toolsDir, ILogger logger, int parallelCompilations = 20)
         {
             _toolsDir = toolsDir;
             _logger = logger;
@@ -26,7 +26,7 @@ namespace Lib.Composition
 
         readonly IToolsDir _toolsDir;
         readonly ILogger _logger;
-        private readonly int _parallelCompilations;
+        readonly int _parallelCompilations;
 
         public ITSCompiler GetTs(DiskCache.IDiskCache diskCache, ITSCompilerOptions compilerOptions)
         {

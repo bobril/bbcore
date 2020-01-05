@@ -26,6 +26,8 @@ namespace Lib.TSCompiler
 {
     public class ProjectOptions
     {
+        public const string DefaultTypeScriptVersion = "3.7.2";
+
         public IToolsDir Tools;
         public TSProject Owner;
         public string TestSourcesRegExp;
@@ -39,7 +41,6 @@ namespace Lib.TSCompiler
         public bool BobrilJsx;
         public TSCompilerOptions CompilerOptions;
         public string AdditionalResourcesDirectory;
-        public string CommonSourceDirectory;
         public bool SpriteGeneration;
         public SpriteHolder SpriteGenerator;
         public string BundlePngUrl;
@@ -54,7 +55,6 @@ namespace Lib.TSCompiler
 
         public Dictionary<string, string> ExpandedProcessEnvs;
         public Dictionary<string, AstNode> ExpandedDefines;
-        public string HtmlHeadExpanded;
         public string MainFile;
         public Dictionary<string, string> MainFileVariants;
         public string JasmineDts;
@@ -67,15 +67,12 @@ namespace Lib.TSCompiler
         public bool Localize;
         public string DefaultLanguage;
         public DepedencyUpdate DependencyUpdate;
-        public string OutputSubDir;
-        public bool CompressFileNames;
         public bool BundleCss;
         public int LiveReloadIdx;
+        public RefDictionary<string, ProjectOptions?> SubProjects;
 
         public TranslationDb TranslationDb;
 
-        // value could be string or byte[]
-        public RefDictionary<string, object> FilesContent;
         internal string NpmRegistry;
 
         public TaskCompletionSource<Unit> LiveReloadAwaiter = new TaskCompletionSource<Unit>();
@@ -106,7 +103,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void SpriterInitialization(BuildResult buildResult)
+        public void SpriterInitialization(MainBuildResult buildResult)
         {
             if (SpriteGeneration && SpriteGenerator == null)
             {
@@ -233,33 +230,29 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void FillOutputByAdditionalResourcesDirectory(RefDictionary<string, object> filesContent,
-            Dictionary<string, TSProject> buildResultModules, BuildResult buildResult)
+        public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, TSProject> buildResultModules, MainBuildResult buildResult)
         {
             var nodeModulesDir = Owner.Owner.FullPath;
-            Owner.FillOutputByAssets(filesContent, buildResult, nodeModulesDir, this);
-            FillOutputByAssetsFromModules(filesContent, buildResultModules, nodeModulesDir, buildResult);
+            Owner.FillOutputByAssets(buildResult, nodeModulesDir, this);
+            FillOutputByAssetsFromModules(buildResult, buildResultModules, nodeModulesDir);
             if (AdditionalResourcesDirectory == null)
                 return;
             var resourcesPath = PathUtils.Join(Owner.Owner.FullPath, AdditionalResourcesDirectory);
             var item = Owner.DiskCache.TryGetItem(resourcesPath);
             if (item is IDirectoryCache)
             {
-                RecursiveFillOutputByAdditionalResourcesDirectory(item as IDirectoryCache, resourcesPath, filesContent,
-                    buildResult);
+                RecursiveFillOutputByAdditionalResourcesDirectory(buildResult, item as IDirectoryCache, resourcesPath);
             }
         }
 
-        void RecursiveFillOutputByAdditionalResourcesDirectory(IDirectoryCache directoryCache, string resourcesPath,
-            RefDictionary<string, object> filesContent, BuildResult buildResult)
+        void RecursiveFillOutputByAdditionalResourcesDirectory(MainBuildResult buildResult, IDirectoryCache directoryCache, string resourcesPath)
         {
             Owner.DiskCache.UpdateIfNeeded(directoryCache);
             foreach (var child in directoryCache)
             {
                 if (child is IDirectoryCache)
                 {
-                    RecursiveFillOutputByAdditionalResourcesDirectory(child as IDirectoryCache, resourcesPath,
-                        filesContent, buildResult);
+                    RecursiveFillOutputByAdditionalResourcesDirectory(buildResult, child as IDirectoryCache, resourcesPath);
                     continue;
                 }
 
@@ -269,7 +262,7 @@ namespace Lib.TSCompiler
                 buildResult.TakenNames.Add(outPathFileName);
                 if (child is IFileCache)
                 {
-                    filesContent.GetOrAddValueRef(outPathFileName) =
+                    buildResult.FilesContent.GetOrAddValueRef(outPathFileName) =
                         new Lazy<object>(() =>
                         {
                             var res = ((IFileCache) child).ByteContent;
@@ -326,12 +319,25 @@ namespace Lib.TSCompiler
             };
         }
 
+        public static readonly Regex ResourceLinkDetector = new Regex("<<[^>]+>>", RegexOptions.Compiled);
+
+        public string ExpandHtmlHead(BuildResult buildResult)
+        {
+            return ResourceLinkDetector.Replace(HtmlHead,
+                m =>
+                {
+                    var fn = PathUtils.Join(Owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4));
+                    return buildResult.ToOutputUrl(fn);
+                });
+        }
+
         string _originalContent;
         internal string[] IncludeSources;
         internal bool TypeScriptVersionOverride;
         public HashSet<int> IgnoreDiagnostic;
         public string ObsoleteMessage;
         public ITSCompilerOptions FinalCompilerOptions;
+        public bool ForbiddenDependencyUpdate;
 
         public void UpdateTSConfigJson()
         {
@@ -340,6 +346,14 @@ namespace Lib.TSCompiler
                 return;
             }
 
+            if (SubProjects != null)
+            {
+                foreach (var (name, subProject) in SubProjects)
+                {
+                    subProject.TsconfigUpdate = true;
+                    subProject.UpdateTSConfigJson();
+                }
+            }
             var fsAbstration = Owner.DiskCache.FsAbstraction;
             var tsConfigPath = PathUtils.Join(Owner.Owner.FullPath, "tsconfig.json");
             if (_originalContent == null && fsAbstration.FileExists(tsConfigPath))
@@ -362,7 +376,7 @@ namespace Lib.TSCompiler
                 include = new List<string> {"**/*"}
             };
 
-            if (TestSources.Count > 0)
+            if ((TestSources?.Count ?? 0) > 0)
             {
                 if (Tools.JasmineDtsPath == JasmineDts)
                 {
@@ -401,6 +415,11 @@ namespace Lib.TSCompiler
 
         public void InitializeTranslationDb(string? specificPath = null)
         {
+            if (TranslationDb != null)
+            {
+                TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
+                return;
+            }
             TranslationDb = new TranslationDb(Owner.DiskCache.FsAbstraction, new ConsoleLogger());
             TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
             if (specificPath == null)
@@ -428,7 +447,7 @@ namespace Lib.TSCompiler
             else
             {
                 TypeScriptVersionOverride = false;
-                TypeScriptVersion = TSProject.DefaultTypeScriptVersion;
+                TypeScriptVersion = DefaultTypeScriptVersion;
             }
 
             Variant = GetStringProperty(bobrilSection, "variant", "");
@@ -509,12 +528,12 @@ namespace Lib.TSCompiler
             return @default;
         }
 
-        public void FillOutputByAssetsFromModules(RefDictionary<string, object> filesContent,
-            Dictionary<string, TSProject> modules, string nodeModulesDir, BuildResult buildResult)
+        public void FillOutputByAssetsFromModules(MainBuildResult buildResult,
+            Dictionary<string, TSProject> modules, string nodeModulesDir)
         {
             foreach (var keyValuePair in modules)
             {
-                keyValuePair.Value.FillOutputByAssets(filesContent, buildResult, nodeModulesDir, this);
+                keyValuePair.Value.FillOutputByAssets(buildResult, nodeModulesDir, this);
             }
         }
 
@@ -541,6 +560,13 @@ namespace Lib.TSCompiler
                     if (a.Name == null)
                         continue;
                     var assetName = a.Name;
+                    if (assetName.StartsWith("project:"))
+                    {
+                        assetName = assetName.Substring(8);
+                        sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol,
+                            "\"" + buildResult.SubBuildResults.GetOrFakeValueRef(assetName).BundleJsUrl + "\"");
+                        continue;
+                    }
                     if (assetName.StartsWith("resource:"))
                     {
                         assetName = assetName.Substring(9);
@@ -717,6 +743,65 @@ namespace Lib.TSCompiler
         static string? GetSystemEnvValue(string arg)
         {
             return Environment.GetEnvironmentVariable(arg);
+        }
+
+        public string GetDefaultBundleJsName()
+        {
+            return Variant switch
+            {
+                "serviceworker" => "sw.js",
+                "worker" => "worker.js",
+                _ => "bundle.js"
+            };
+        }
+
+        public void InitializeLocalizationAndUpdateTsLintJson()
+        {
+            if (Localize)
+            {
+                InitializeTranslationDb();
+            }
+
+            var bbTslint = Owner.DevDependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
+            if (bbTslint != null)
+            {
+                var srcTsLint = PathUtils.Join(Owner.Owner.FullPath, $"node_modules/{bbTslint}/tslint.json");
+                var srcFile = Owner.DiskCache.TryGetItem(srcTsLint) as IFileCache;
+                var dstTsLint = PathUtils.Join(Owner.Owner.FullPath, "tslint.json");
+                if (srcFile != null && (!(Owner.DiskCache.TryGetItem(dstTsLint) is IFileCache dstFile) ||
+                                        !dstFile.HashOfContent.SequenceEqual(srcFile.HashOfContent)))
+                {
+                    File.WriteAllBytes(dstTsLint, srcFile.ByteContent);
+                    Console.WriteLine($"Updated tslint.json from {srcTsLint}");
+                }
+            }
+        }
+
+        public void UpdateFromProjectJson(bool? localizeValue)
+        {
+            Owner.LoadProjectJson(ForbiddenDependencyUpdate);
+            if (localizeValue.HasValue)
+                Localize = localizeValue.Value;
+            InitializeLocalizationAndUpdateTsLintJson();
+            Owner.UsedDependencies = new HashSet<string>();
+        }
+
+        public IReadOnlyDictionary<string, object> BuildDefines(MainBuildResult mainBuildResult)
+        {
+            var res = new Dictionary<string, object>();
+            if (Variant == "serviceworker")
+            {
+                var buildDate = DateTime.UtcNow;
+                res.Add("swBuildDate", buildDate.ToString("O"));
+                res.Add("swBuildId", MainBuildResult.ToShortName(buildDate.Ticks));
+                res.Add("swFiles", mainBuildResult.FilesContent.Select(a => a.Key).OrderBy(a => a).ToArray());
+            }
+            foreach (var p in ExpandedDefines)
+            {
+                res.Add(p.Key, p.Value.ConstValue());
+            }
+
+            return res;
         }
     }
 }

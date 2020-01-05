@@ -15,7 +15,7 @@ namespace Lib.TSCompiler
             return StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
         }
 
-        private static StructuralEqualityComparer<T> defaultComparer;
+        static StructuralEqualityComparer<T> defaultComparer;
         public static StructuralEqualityComparer<T> Default
         {
             get

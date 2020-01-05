@@ -2,7 +2,7 @@ using Njsast.Ast;
 
 namespace Njsast.Compress
 {
-    internal class EmptyStatementEliminationTreeTransformer : CompressModuleTreeTransformerBase
+    class EmptyStatementEliminationTreeTransformer : CompressModuleTreeTransformerBase
     {
         public EmptyStatementEliminationTreeTransformer(ICompressOptions options) : base(options)
         {

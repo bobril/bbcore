@@ -23,7 +23,9 @@ namespace Lib.Composition
             get => _project; internal set => _project = value;
         }
 
-        public string ProjectDir { get => _project.CommonSourceDirectory; }
+        public MainBuildResult MainBuildResult { get; set; }
+
+        public string ProjectDir { get => MainBuildResult.CommonSourceDirectory; }
 
         public Func<TestServerState> TestServerStateGetter => _testServerStateGetter;
 

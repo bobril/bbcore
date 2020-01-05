@@ -20,6 +20,7 @@ namespace Lib.TSCompiler
         public BuildCtx BuildCtx;
         public TSProject Owner;
         public BuildResult Result;
+        public MainBuildResult MainResult;
         public int IterationId;
         TSFileAdditionalInfo _currentlyTranspiling;
 
@@ -28,8 +29,8 @@ namespace Lib.TSCompiler
             Result.Path2FileInfo[file.Owner.FullPath] = file;
         }
 
-        static readonly string[] ExtensionsToImport = { ".tsx", ".ts", ".d.ts", ".jsx", ".js", "" };
-        static readonly string[] ExtensionsToImportFromJs = { ".jsx", ".js", "" };
+        static readonly string[] ExtensionsToImport = {".tsx", ".ts", ".d.ts", ".jsx", ".js", ""};
+        static readonly string[] ExtensionsToImportFromJs = {".jsx", ".js", ""};
 
         internal OrderedHashSet<string> ToCheck;
         internal uint CrawledCount;
@@ -59,15 +60,18 @@ namespace Lib.TSCompiler
                 {
                     if (CheckItemExistence(module.NegativeChecks[i])) goto again;
                 }
+
                 if (module.Valid)
                 {
                     module.LoadProjectJson(true);
                     if (module.PackageJsonChangeId == -1) goto again;
                 }
+
                 module.IterationId = IterationId;
                 return module.Valid ? module : null;
             }
-            again:;
+
+            again: ;
             var negativeChecks = new BTDB.Collections.StructList<string>();
             var dir = Owner.Owner.FullPath;
             while (dir.Length > 0)
@@ -84,6 +88,7 @@ namespace Lib.TSCompiler
                         // Create it with proper casing
                         return ResolveModule(dc.Name);
                     }
+
                     module = TSProject.Create(dc, Owner.DiskCache, Owner.Logger, dc.Name);
                     module.LoadProjectJson(true);
                     if (module.PackageJsonChangeId != -1)
@@ -94,8 +99,10 @@ namespace Lib.TSCompiler
                         return module;
                     }
                 }
+
                 dir = PathUtils.Parent(dir).ToString();
             }
+
             module = TSProject.CreateInvalid(name);
             module.NegativeChecks.TransferFrom(ref negativeChecks);
             module.IterationId = IterationId;
@@ -135,7 +142,8 @@ namespace Lib.TSCompiler
                     if (CheckItemExistence(res.NegativeChecks[i])) goto again;
                 }
             }
-            again:;
+
+            again: ;
             if (res == null)
             {
                 res = new ResolveResult();
@@ -144,9 +152,9 @@ namespace Lib.TSCompiler
             else
             {
                 res.FileName = null;
-                res.Module = null;
                 res.NegativeChecks.Clear();
             }
+
             res.IterationId = IterationId;
             var relative = name.StartsWith("./") || name.StartsWith("../");
             Result.Path2FileInfo.TryGetValue(from, out var parentInfo);
@@ -155,7 +163,8 @@ namespace Lib.TSCompiler
             {
                 fn = PathUtils.Join(parentInfo.Owner.Parent.FullPath, name);
             }
-            relative:;
+
+            relative: ;
             if (relative)
             {
                 if (fn.EndsWith(".json") || fn.EndsWith(".css"))
@@ -164,9 +173,13 @@ namespace Lib.TSCompiler
                     if (fc != null && !fc.IsInvalid)
                     {
                         res.FileName = fn;
-                        CheckAdd(fn, fn.EndsWith(".json") ? FileCompilationType.Json : (isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss));
+                        CheckAdd(fn,
+                            fn.EndsWith(".json")
+                                ? FileCompilationType.Json
+                                : (isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss));
                         return res.FileName;
                     }
+
                     res.NegativeChecks.Add(fn);
                 }
 
@@ -181,28 +194,33 @@ namespace Lib.TSCompiler
                     return res.FileName;
                 }
 
-                item = (parentInfo.Type == FileCompilationType.EsmJavaScript ? ExtensionsToImportFromJs : ExtensionsToImport).Select(ext =>
-                {
-                    var ff = dc.TryGetChild(fileOnly + ext) as IFileCache;
-                    if (ff == null || ff.IsInvalid)
+                item = (parentInfo.Type == FileCompilationType.EsmJavaScript
+                        ? ExtensionsToImportFromJs
+                        : ExtensionsToImport).Select(ext =>
                     {
-                        res.NegativeChecks.Add(dirPath + "/" + fileOnly + ext);
-                        return null;
-                    }
-                    return ff;
-                })
+                        var ff = dc.TryGetChild(fileOnly + ext) as IFileCache;
+                        if (ff == null || ff.IsInvalid)
+                        {
+                            res.NegativeChecks.Add(dirPath + "/" + fileOnly + ext);
+                            return null;
+                        }
+
+                        return ff;
+                    })
                     .FirstOrDefault(i => i != null);
                 if (item == null)
                 {
                     res.FileName = "?";
                     return res.FileName;
                 }
+
                 res.FileName = item.FullPath;
                 if (item.FullPath.Substring(0, fn.Length) != fn)
                 {
                     parentInfo.ReportDiag(false, -1,
                         "Local import has wrong casing '" + fn + "' on disk '" + item.FullPath + "'", 0, 0, 0, 0);
                 }
+
                 if (IsDts(item.Name))
                 {
                     CheckAdd(item.FullPath, FileCompilationType.TypeScriptDefinition);
@@ -220,12 +238,15 @@ namespace Lib.TSCompiler
                 }
                 else if (IsTsOrTsxOrJsOrJsx(item.Name))
                 {
-                    CheckAdd(item.FullPath, IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript : isAsset ? FileCompilationType.JavaScriptAsset : FileCompilationType.EsmJavaScript);
+                    CheckAdd(item.FullPath,
+                        IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript :
+                        isAsset ? FileCompilationType.JavaScriptAsset : FileCompilationType.EsmJavaScript);
                 }
                 else
                 {
                     CheckAdd(item.FullPath, FileCompilationType.Unknown);
                 }
+
                 return res.FileNameWithPreference(preferDts);
             }
             else
@@ -236,20 +257,21 @@ namespace Lib.TSCompiler
                 if (name[0] == '@')
                 {
                     PathUtils.EnumParts(name, ref pos, out var mn2, out _);
-                    mname = mn.ToString()+"/"+mn2.ToString();
+                    mname = mn.ToString() + "/" + mn2.ToString();
                 }
                 else
                 {
                     mname = mn.ToString();
                 }
+
                 var moduleInfo = ResolveModule(mname);
-                res.Module = moduleInfo;
                 if (moduleInfo == null)
                 {
                     ReportMissingImport(from, name);
                     res.FileName = "?";
                     return res.FileName;
                 }
+
                 if (PathUtils.GetFile(mname) != moduleInfo.Name)
                 {
                     parentInfo.ReportDiag(false, -2,
@@ -265,7 +287,10 @@ namespace Lib.TSCompiler
 
                 var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
                 res.FileName = mainFile;
-                CheckAdd(mainFile, IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript : moduleInfo.MainFileNeedsToBeCompiled ? FileCompilationType.EsmJavaScript : FileCompilationType.JavaScript);
+                CheckAdd(mainFile,
+                    IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript :
+                    moduleInfo.MainFileNeedsToBeCompiled ? FileCompilationType.EsmJavaScript :
+                    FileCompilationType.JavaScript);
 
                 if (moduleInfo.ProjectOptions?.ObsoleteMessage != null)
                 {
@@ -275,6 +300,7 @@ namespace Lib.TSCompiler
                             "Importing obsolete module: " + moduleInfo.ProjectOptions?.ObsoleteMessage, 0, 0, 0, 0);
                     }
                 }
+
                 return res.FileName;
             }
         }
@@ -295,6 +321,7 @@ namespace Lib.TSCompiler
                     // File was probably renamed or deleted
                     return false;
                 }
+
                 var confId = Owner.ProjectOptions.ConfigurationBuildCacheId;
                 var fbc = bc.FindTSFileBuildCache(hashOfContent, confId);
                 if (fbc != null)
@@ -309,6 +336,7 @@ namespace Lib.TSCompiler
                             {
                                 itemInfo.MapLink.sources[0] = itemInfo.Owner.FullPath;
                             }
+
                             itemInfo.SourceInfo = fbc.SourceInfo;
                             itemInfo.TranspilationDependencies = fbc.TranspilationDependencies;
                             itemInfo.TakenFromBuildCache = true;
@@ -319,6 +347,7 @@ namespace Lib.TSCompiler
                     }
                 }
             }
+
             return false;
         }
 
@@ -328,7 +357,7 @@ namespace Lib.TSCompiler
             var hashToName = new Dictionary<byte[], string>(StructuralEqualityComparer<byte[]>.Default);
             hashToName.Add(owner.HashOfContent, owner.FullPath);
             var processed = new StructList<bool>();
-            processed.RepeatAdd(false, (uint)transpilationDependencies.Count);
+            processed.RepeatAdd(false, (uint) transpilationDependencies.Count);
             bool somethingFailed;
             do
             {
@@ -337,12 +366,13 @@ namespace Lib.TSCompiler
                 for (var i = 0u; i < processed.Count; i++)
                 {
                     if (processed[i]) continue;
-                    var dep = transpilationDependencies[(int)i];
+                    var dep = transpilationDependencies[(int) i];
                     if (!hashToName.TryGetValue(dep.SourceHash, out var sourceName))
                     {
                         somethingFailed = true;
                         continue;
                     }
+
                     somethingProcessed = true;
                     processed[i] = true;
                     var targetName = ResolveImport(sourceName, dep.Import);
@@ -350,15 +380,19 @@ namespace Lib.TSCompiler
                     {
                         return false;
                     }
+
                     Result.Path2FileInfo.TryGetValue(targetName, out var targetInfo);
                     if (!dep.TargetHash.AsSpan().SequenceEqual(targetInfo.Owner.HashOfContent))
                     {
                         return false;
                     }
+
                     hashToName.TryAdd(targetInfo.Owner.HashOfContent, targetInfo.Owner.FullPath);
                 }
+
                 if (!somethingProcessed) return !somethingFailed;
             } while (somethingFailed);
+
             return true;
         }
 
@@ -379,6 +413,7 @@ namespace Lib.TSCompiler
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -395,33 +430,33 @@ namespace Lib.TSCompiler
                 {
                     case FileCompilationType.TypeScript:
                     case FileCompilationType.EsmJavaScript:
-                        {
-                            var fbc = new TSFileBuildCache();
-                            fbc.ConfigurationId = Owner.ProjectOptions.ConfigurationBuildCacheId;
-                            fbc.ContentHash = f.Owner.HashOfContent;
-                            fbc.Output = f.Output;
-                            fbc.MapLink = f.MapLink;
-                            MakeSourceInfoRelative(f.SourceInfo, f.Owner.Parent.FullPath);
-                            fbc.SourceInfo = f.SourceInfo;
-                            fbc.TranspilationDependencies = f.TranspilationDependencies;
-                            bc.Store(fbc);
-                            f.TakenFromBuildCache = true;
-                            //_owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
-                            break;
-                        }
+                    {
+                        var fbc = new TSFileBuildCache();
+                        fbc.ConfigurationId = Owner.ProjectOptions.ConfigurationBuildCacheId;
+                        fbc.ContentHash = f.Owner.HashOfContent;
+                        fbc.Output = f.Output;
+                        fbc.MapLink = f.MapLink;
+                        MakeSourceInfoRelative(f.SourceInfo, f.Owner.Parent.FullPath);
+                        fbc.SourceInfo = f.SourceInfo;
+                        fbc.TranspilationDependencies = f.TranspilationDependencies;
+                        bc.Store(fbc);
+                        f.TakenFromBuildCache = true;
+                        //_owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
+                        break;
+                    }
                     case FileCompilationType.Css:
                     case FileCompilationType.ImportedCss:
-                        {
-                            var fbc = new TSFileBuildCache();
-                            fbc.ConfigurationId = 0;
-                            fbc.ContentHash = f.Owner.HashOfContent;
-                            fbc.Output = f.Output;
-                            fbc.TranspilationDependencies = f.TranspilationDependencies;
-                            bc.Store(fbc);
-                            f.TakenFromBuildCache = true;
-                            //_owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
-                            break;
-                        }
+                    {
+                        var fbc = new TSFileBuildCache();
+                        fbc.ConfigurationId = 0;
+                        fbc.ContentHash = f.Owner.HashOfContent;
+                        fbc.Output = f.Output;
+                        fbc.TranspilationDependencies = f.TranspilationDependencies;
+                        bc.Store(fbc);
+                        f.TakenFromBuildCache = true;
+                        //_owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
+                        break;
+                    }
                 }
             }
         }
@@ -434,7 +469,7 @@ namespace Lib.TSCompiler
                 if (fc == null || fc.IsInvalid) return null;
                 info = TSFileAdditionalInfo.Create(fc, Owner.DiskCache);
                 info.Type = compilationType;
-                Result.CommonSourceDirectory = PathUtils.CommonDir(Result.CommonSourceDirectory, fc.FullPath);
+                MainResult.MergeCommonSourceDirectory(fc.FullPath);
                 Result.Path2FileInfo.Add(fullNameWithExtension, info);
             }
             else
@@ -445,12 +480,14 @@ namespace Lib.TSCompiler
                     return null;
                 }
             }
+
             if (!ToCheck.Contains(fullNameWithExtension))
                 ToCheck.Add(fullNameWithExtension);
             if (info.Type == FileCompilationType.Unknown)
             {
                 info.Type = compilationType;
             }
+
             if (info.Type == FileCompilationType.JavaScriptAsset)
             {
                 if (Result.JavaScriptAssets.AddUnique(info) && _noDependencyCheck)
@@ -458,26 +495,28 @@ namespace Lib.TSCompiler
                     _noDependencyCheck = false;
                 }
             }
+
             return info;
         }
 
-        public string ExpandHtmlHead(string htmlHead)
+        public void ExpandHtmlHead(string htmlHead)
         {
-            return new Regex("<<[^>]+>>").Replace(htmlHead,
-                (Match m) =>
+            var matches = ProjectOptions.ResourceLinkDetector.Matches(htmlHead);
+            for (var i = 0; i < matches.Count; i++)
+            {
+                var m = matches[i];
+                var info = AutodetectAndAddDependency(
+                    PathUtils.Join(Owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)), true);
+                if (info == null)
                 {
-                    var info = AutodetectAndAddDependency(
-                        PathUtils.Join(Owner.Owner.FullPath, m.Value.Substring(2, m.Length - 4)), true);
-                    if (info == null)
-                    {
-                        Owner.Logger.Error("HtmlHead in package.json missing dependency " + m.Value.Substring(2, m.Length - 4));
-                        return "";
-                    }
-                    return Result.ToOutputUrl(info);
-                });
+                    Owner.Logger.Error("HtmlHead in package.json missing dependency " +
+                                       m.Value.Substring(2, m.Length - 4));
+                }
+            }
         }
 
         bool _noDependencyCheck;
+
         public bool CrawlChanges()
         {
             _noDependencyCheck = true;
@@ -489,6 +528,7 @@ namespace Lib.TSCompiler
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -496,7 +536,7 @@ namespace Lib.TSCompiler
         {
             while (CrawledCount < ToCheck.Count)
             {
-                var fileName = ToCheck[(int)CrawledCount];
+                var fileName = ToCheck[(int) CrawledCount];
                 CrawledCount++;
 
                 CrawlFile(fileName);
@@ -511,6 +551,7 @@ namespace Lib.TSCompiler
                 {
                     _noDependencyCheck = false;
                 }
+
                 var fileCache = Owner.DiskCache.TryGetItem(fileName) as IFileCache;
                 if (fileCache == null || fileCache.IsInvalid)
                 {
@@ -518,6 +559,7 @@ namespace Lib.TSCompiler
                         Owner.Logger.Warn("Crawl skipping missing file " + fileName);
                     return null;
                 }
+
                 info = TSFileAdditionalInfo.Create(fileCache, Owner.DiskCache);
                 info.Type = FileCompilationType.Unknown;
                 Result.Path2FileInfo.Add(fileName, info);
@@ -556,7 +598,8 @@ namespace Lib.TSCompiler
                     {
                         var ext = PathUtils.GetExtension(fileName);
                         if (ext.SequenceEqual("css")) info.Type = FileCompilationType.Css;
-                        else if (ext.SequenceEqual("js") || ext.SequenceEqual("jsx")) info.Type = FileCompilationType.EsmJavaScript;
+                        else if (ext.SequenceEqual("js") || ext.SequenceEqual("jsx"))
+                            info.Type = FileCompilationType.EsmJavaScript;
                     }
                 }
 
@@ -565,11 +608,13 @@ namespace Lib.TSCompiler
                     info.IterationId = IterationId;
                     CrawlInfo(info);
                 }
+
                 foreach (var dep in info.Dependencies)
                 {
                     CheckAdd(dep, FileCompilationType.Unknown);
                 }
             }
+
             return info;
         }
 
@@ -600,6 +645,7 @@ namespace Lib.TSCompiler
                             info.SourceInfo = null;
                             Transpile(info);
                         }
+
                         break;
                     case FileCompilationType.JavaScriptAsset:
                     case FileCompilationType.JavaScript:
@@ -612,27 +658,28 @@ namespace Lib.TSCompiler
                     case FileCompilationType.ImportedCss:
                         if (!TryToResolveFromBuildCacheCss(info))
                         {
-
                             var cssProcessor = BuildCtx.CompilerPool.GetCss();
                             try
                             {
                                 info.Output = info.Owner.Utf8Content;
                                 cssProcessor.ProcessCss(info.Owner.Utf8Content,
-        ((TSFileAdditionalInfo)info).Owner.FullPath, (string url, string from) =>
-        {
-            var urlJustName = url.Split('?', '#')[0];
-            info.ReportTranspilationDependency(null, urlJustName, null);
-            return url;
-        }).Wait();
+                                    ((TSFileAdditionalInfo) info).Owner.FullPath, (string url, string from) =>
+                                    {
+                                        var urlJustName = url.Split('?', '#')[0];
+                                        info.ReportTranspilationDependency(null, urlJustName, null);
+                                        return url;
+                                    }).Wait();
                             }
                             finally
                             {
                                 BuildCtx.CompilerPool.ReleaseCss(cssProcessor);
                             }
                         }
+
                         ReportDependenciesFromCss(info);
                         break;
                 }
+
                 if (_noDependencyCheck)
                 {
                     if (!info.Dependencies.SequenceEqual(oldDependencies))
@@ -644,6 +691,7 @@ namespace Lib.TSCompiler
                 }
             }
         }
+
         void ReportDependenciesFromCss(TSFileAdditionalInfo info)
         {
             if (info.TranspilationDependencies != null)
@@ -656,6 +704,7 @@ namespace Lib.TSCompiler
                     {
                         info.ReportDiag(true, -3, "Missing dependency " + dep.Import, 0, 0, 0, 0);
                     }
+
                     info.ReportDependency(fullJustName);
                 }
         }
@@ -677,6 +726,7 @@ namespace Lib.TSCompiler
                 {
                     info.HasError = false;
                 }
+
                 if (info.HasError)
                 {
                     info.Output = null;
@@ -699,6 +749,7 @@ namespace Lib.TSCompiler
                 info.SourceInfo = null;
                 return;
             }
+
             var backupCurrentlyTranspiling = _currentlyTranspiling;
             try
             {
@@ -706,6 +757,7 @@ namespace Lib.TSCompiler
                 {
                     _currentlyTranspiling = info;
                 }
+
                 var parser = new Parser(new Options(), info.Output);
                 var toplevel = parser.Parse();
                 toplevel.FigureOutScope();
@@ -713,14 +765,21 @@ namespace Lib.TSCompiler
 
                 string resolver(IConstEvalCtx myctx, string text)
                 {
+                    if (text.StartsWith("project:", StringComparison.Ordinal))
+                    {
+                        return "project:" + resolver(myctx, text.Substring("project:".Length));
+                    }
+
                     if (text.StartsWith("resource:", StringComparison.Ordinal))
                     {
                         return "resource:" + resolver(myctx, text.Substring("resource:".Length));
                     }
+
                     if (text.StartsWith("node_modules/", StringComparison.Ordinal))
                     {
                         return ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false, true);
                     }
+
                     var res = PathUtils.Join(PathUtils.Parent(myctx.SourceName), text);
                     return res;
                 }
@@ -745,6 +804,7 @@ namespace Lib.TSCompiler
                     a.RelativeName = null;
                     return;
                 }
+
                 a.RelativeName = ToRelativeName(a.Name, dir);
             });
             sourceInfo.Sprites?.ForEach(s =>
@@ -754,6 +814,7 @@ namespace Lib.TSCompiler
                     s.RelativeName = null;
                     return;
                 }
+
                 s.RelativeName = ToRelativeName(s.Name, dir);
             });
         }
@@ -764,16 +825,19 @@ namespace Lib.TSCompiler
             {
                 return "resource:" + ToRelativeName(name.Substring(9), dir);
             }
+
             if (PathUtils.IsAnyChildOf(name, dir))
             {
                 var p = PathUtils.Subtract(name, dir);
                 if (!p.StartsWith("node_modules/") && !p.Contains("/node_modules/"))
                     return "./" + p;
             }
+
             if (name.Contains("/node_modules/"))
             {
                 return name.Split("/node_modules/").Last();
             }
+
             return "./" + PathUtils.Subtract(name, dir);
         }
 
@@ -789,8 +853,10 @@ namespace Lib.TSCompiler
                     {
                         ok = false;
                     }
+
                     return;
                 }
+
                 a.Name = ToAbsoluteName(a.RelativeName, from, ref ok);
             });
             sourceInfo.Sprites?.ForEach(s =>
@@ -801,8 +867,10 @@ namespace Lib.TSCompiler
                     {
                         ok = false;
                     }
+
                     return;
                 }
+
                 s.Name = ToAbsoluteName(s.RelativeName, from, ref ok);
             });
             return ok;
@@ -814,12 +882,14 @@ namespace Lib.TSCompiler
             {
                 return "resource:" + ToAbsoluteName(relativeName.Substring(9), from, ref ok);
             }
+
             var res = ResolveImport(from, relativeName, false, true);
             if (res == null || res == "?")
             {
                 ok = false;
                 return relativeName;
             }
+
             return res;
         }
 
@@ -837,7 +907,8 @@ namespace Lib.TSCompiler
                 }
                 else
                 {
-                    fileInfo.ReportDiag(true, -3, "Missing import " + i.Name, i.StartLine, i.StartCol, i.EndLine, i.EndCol);
+                    fileInfo.ReportDiag(true, -3, "Missing import " + i.Name, i.StartLine, i.StartCol, i.EndLine,
+                        i.EndCol);
                 }
             });
             sourceInfo.Assets?.ForEach(a =>
@@ -845,19 +916,31 @@ namespace Lib.TSCompiler
                 if (a.Name == null)
                     return;
                 var assetName = a.Name;
-                if (assetName.StartsWith("resource:"))
+                if (assetName.StartsWith("project:"))
+                {
+                    assetName = assetName.Substring(8) + "/package.json";
+                    if (!(Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, assetName)) is
+                        IFileCache))
+                    {
+                        fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
+                            a.EndLine, a.EndCol);
+                    }
+                }
+                else if (assetName.StartsWith("resource:"))
                 {
                     assetName = assetName.Substring(9);
                     if (ReportDependency(fileInfo, AutodetectAndAddDependency(assetName, true)) == null)
                     {
-                        fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol, a.EndLine, a.EndCol);
+                        fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
+                            a.EndLine, a.EndCol);
                     }
                 }
                 else
                 {
                     if (ReportDependency(fileInfo, AutodetectAndAddDependency(assetName)) == null)
                     {
-                        fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol, a.EndLine, a.EndCol);
+                        fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
+                            a.EndLine, a.EndCol);
                     }
                 }
             });
@@ -877,7 +960,8 @@ namespace Lib.TSCompiler
                         var assetName = s.Name;
                         if (ReportDependency(fileInfo, AutodetectAndAddDependency(assetName)) == null)
                         {
-                            fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, s.NameStartLine, s.NameStartCol, s.NameEndLine, s.NameEndCol);
+                            fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, s.NameStartLine,
+                                s.NameStartCol, s.NameEndLine, s.NameEndCol);
                         }
                     });
                 }
@@ -896,11 +980,13 @@ namespace Lib.TSCompiler
                         if (err != null)
                         {
                             fileInfo.ReportDiag(false, -7,
-                                "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine, t.StartCol, t.EndLine, t.EndCol);
+                                "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine,
+                                t.StartCol, t.EndLine, t.EndCol);
                         }
                     });
                 }
             }
+
             if (sourceInfo.Translations != null)
             {
                 var trdb = Owner.ProjectOptions.TranslationDb;
@@ -916,7 +1002,8 @@ namespace Lib.TSCompiler
                             if (err != null)
                             {
                                 fileInfo.ReportDiag(false, -7,
-                                    "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine, t.StartCol, t.EndLine, t.EndCol);
+                                    "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine,
+                                    t.StartCol, t.EndLine, t.EndCol);
                             }
                         }
                     });
@@ -930,6 +1017,7 @@ namespace Lib.TSCompiler
             {
                 owner.ReportDependency(dep.Owner.FullPath);
             }
+
             return dep;
         }
 
@@ -939,14 +1027,17 @@ namespace Lib.TSCompiler
             {
                 return CheckAdd(depName, FileCompilationType.Resource);
             }
+
             if (depName.EndsWith(".js", StringComparison.Ordinal))
             {
                 return CheckAdd(depName, FileCompilationType.JavaScriptAsset);
             }
+
             if (depName.EndsWith(".css", StringComparison.Ordinal))
             {
                 return CheckAdd(depName, FileCompilationType.Css);
             }
+
             var res = CheckAdd(depName, FileCompilationType.Unknown);
             if (res != null)
             {
@@ -955,6 +1046,7 @@ namespace Lib.TSCompiler
                     res.Type = FileCompilationType.Resource;
                 }
             }
+
             return res;
         }
 
@@ -968,18 +1060,22 @@ namespace Lib.TSCompiler
             {
                 return (null, null);
             }
+
             Result.Path2FileInfo.TryGetValue(module.ImportedFrom, out var sourceInfo);
             var info = CrawlFile(fileName);
-            _currentlyTranspiling.ReportTranspilationDependency(sourceInfo.Owner.HashOfContent, module.Name, info.Owner.HashOfContent);
+            _currentlyTranspiling.ReportTranspilationDependency(sourceInfo.Owner.HashOfContent, module.Name,
+                info.Owner.HashOfContent);
             if (_parsedCache.TryGetValue(fileName, out var toplevel))
             {
                 return (fileName, toplevel);
             }
+
             if (info.Type == FileCompilationType.Json)
             {
                 _parsedCache.Add(fileName, null);
                 return (fileName, null);
             }
+
             try
             {
                 var parser = new Parser(new Options(), info.Output);

@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "checkJs": false,
+    "declaration": false,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "jsx": "react",
+    "lib": [
+      "es2017",
+      "webworker"
+    ],
+    "module": "commonjs",
+    "noEmitHelpers": true,
+    "preserveConstEnums": false,
+    "reactNamespace": "b",
+    "removeComments": false,
+    "skipLibCheck": false,
+    "skipDefaultLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es5",
+    "resolveJsonModule": true
+  },
+  "include": [
+    "**/*"
+  ]
+}
