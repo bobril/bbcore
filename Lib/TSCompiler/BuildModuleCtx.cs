@@ -226,7 +226,7 @@ namespace Lib.TSCompiler
                     CheckAdd(item.FullPath, FileCompilationType.TypeScriptDefinition);
                     if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
                     {
-                        CheckAdd(jsItem.FullPath, FileCompilationType.JavaScript);
+                        CheckAdd(jsItem.FullPath, FileCompilationType.EsmJavaScript);
                         res.FileNameJs = jsItem.FullPath;
                         parentInfo.ReportDependency(jsItem.FullPath);
                     }

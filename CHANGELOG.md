@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+- All relative and deep *.js imports are now compiled and detected for dependencies.
+
+### Changed
+
+- Special handling of @stomp/stompjs updated to version 5+
+
 ## 1.2.0
 
 ### Added

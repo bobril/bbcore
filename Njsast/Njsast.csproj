@@ -15,8 +15,6 @@
         <Description>JavaScript AST Parsing, Optimization, Mangling, Bundling, Printing also with SourceMaps</Description>
         <PackageTags>JavaScript AST Bundling Minification SourceMap</PackageTags>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <DebugSymbols>true</DebugSymbols>
-        <DebugType>embedded</DebugType> 
     </PropertyGroup>
 
     <ItemGroup>

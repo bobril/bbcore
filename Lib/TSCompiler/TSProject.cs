@@ -101,8 +101,9 @@ namespace Lib.TSCompiler
 
                     if (name == "@stomp/stompjs")
                     {
-                        MainFile = "lib/stomp.js";
-                        TypesMainFile = "index.d.ts";
+                        MainFileNeedsToBeCompiled = true;
+                        MainFile = "esm6/index.js";
+                        TypesMainFile = "esm6/index.d.ts";
                     }
 
                     if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "ts")))
