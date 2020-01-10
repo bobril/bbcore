@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.3.0
+
 ### Added
 
 - All relative and deep *.js imports are now compiled and detected for dependencies.
