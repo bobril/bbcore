@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.4.0
+
 ### Added
 
 - All module \*.js imports are now compiled and detected for dependencies.
