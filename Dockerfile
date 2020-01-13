@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 
 ARG VERSION=0.0.0
 
@@ -22,7 +22,7 @@ RUN dotnet publish -c Release -r linux-x64 -o out -p:Version=$VERSION.0
 RUN rm -r ./out/ru-ru
 RUN rm -r ./out/Resources
 
-FROM mcr.microsoft.com/dotnet/core/runtime:3.0 AS runtime
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1 AS runtime
 
 # Install deps + add Chrome, Nodejs, Yarn + clean up
 RUN apt-get update && apt-get install -y \
