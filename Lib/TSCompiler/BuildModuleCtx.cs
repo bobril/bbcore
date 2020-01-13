@@ -269,6 +269,7 @@ namespace Lib.TSCompiler
                     mname = mn.ToString();
                 }
 
+                string? mainFileReplace = null;
                 if (mname.Length == name.Length && parentInfo != null)
                 {
                     var browserResolve = parentInfo.FromModule?.ProjectOptions?.BrowserResolve;
@@ -283,7 +284,7 @@ namespace Lib.TSCompiler
                                 goto relative;
                             }
 
-                            name = resolveReplace;
+                            mainFileReplace = resolveReplace.Substring(name.Length + 1);
                         }
                     }
                 }
@@ -307,6 +308,11 @@ namespace Lib.TSCompiler
                     fn = PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(mname.Length + 1));
                     relative = true;
                     goto relative;
+                }
+
+                if (mainFileReplace != null)
+                {
+                    moduleInfo.MainFile = mainFileReplace;
                 }
 
                 var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);

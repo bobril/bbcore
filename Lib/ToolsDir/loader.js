@@ -21,6 +21,8 @@ R.r = function (name, parent) {
                 newParts.push(part);
         }
         p = newParts.join("/");
+        if ((lp = R.map[p.toLowerCase()]))
+            p = lp;
     }
     else {
         var parts = name.split("/");

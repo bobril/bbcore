@@ -26,7 +26,8 @@ namespace Lib.TSCompiler
 
         readonly IToolsDir _tools;
 
-        public FastBundleBundler(IToolsDir tools, MainBuildResult mainBuildResult, ProjectOptions project, BuildResult buildResult)
+        public FastBundleBundler(IToolsDir tools, MainBuildResult mainBuildResult, ProjectOptions project,
+            BuildResult buildResult)
         {
             _tools = tools;
             _mainBuildResult = mainBuildResult;
@@ -81,7 +82,9 @@ namespace Lib.TSCompiler
 
             var cssLink = "";
 
-            var sortedResultSet = incremental ? _buildResult.RecompiledIncrementaly.OrderBy(f => f.Owner.FullPath).ToArray() : _buildResult.Path2FileInfo.Values.OrderBy(f => f.Owner.FullPath).ToArray();
+            var sortedResultSet = incremental
+                ? _buildResult.RecompiledIncrementaly.OrderBy(f => f.Owner.FullPath).ToArray()
+                : _buildResult.Path2FileInfo.Values.OrderBy(f => f.Owner.FullPath).ToArray();
 
             if (!incremental)
             {
@@ -130,7 +133,8 @@ namespace Lib.TSCompiler
                 }
                 else if (source.Type == FileCompilationType.Resource)
                 {
-                    _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) = source.Owner.ByteContent;
+                    _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) =
+                        source.Owner.ByteContent;
                 }
             }
 
@@ -143,7 +147,8 @@ namespace Lib.TSCompiler
                     _bundlePngInfo = new List<float>();
                     foreach (var slice in bundlePngContent)
                     {
-                        _mainBuildResult.FilesContent.GetOrAddValueRef(PathUtils.InjectQuality(_bundlePng, slice.Quality)) = slice.Content;
+                        _mainBuildResult.FilesContent.GetOrAddValueRef(
+                            PathUtils.InjectQuality(_bundlePng, slice.Quality)) = slice.Content;
                         _bundlePngInfo.Add(slice.Quality);
                     }
                 }
@@ -162,7 +167,8 @@ namespace Lib.TSCompiler
 
             if (_project.Localize)
             {
-                _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent, _mainBuildResult.OutputSubDir);
+                _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent,
+                    _mainBuildResult.OutputSubDir);
             }
 
             if (incremental)
@@ -171,11 +177,15 @@ namespace Lib.TSCompiler
                 _sourceMap2 = sourceMapBuilder.Build(root, sourceRoot);
                 _sourceMap2String = _sourceMap2.ToString();
                 _bundle2Js = sourceMapBuilder.Content();
-                _project.Owner.Logger.Info("JS Bundle length: " + _bundleJs.Length + " SourceMap length: " + _sourceMapString.Length + " Delta: " + _bundle2Js.Length + " SM:" + _sourceMap2String.Length + " T:" + (DateTime.UtcNow - start).TotalMilliseconds.ToString("F0") + "ms");
+                _project.Owner.Logger.Info("JS Bundle length: " + _bundleJs.Length + " SourceMap length: " +
+                                           _sourceMapString.Length + " Delta: " + _bundle2Js.Length + " SM:" +
+                                           _sourceMap2String.Length + " T:" +
+                                           (DateTime.UtcNow - start).TotalMilliseconds.ToString("F0") + "ms");
             }
             else
             {
-                sourceMapBuilder.AddText("//# sourceMappingURL="+PathUtils.GetFile(_buildResult.BundleJsUrl)+".map");
+                sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
+                                         ".map");
                 _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
                 _sourceMapString = _sourceMap.ToString();
                 _bundleJs = sourceMapBuilder.Content();
@@ -183,36 +193,42 @@ namespace Lib.TSCompiler
                 _sourceMap2String = null;
                 _bundle2Js = null;
                 _cssLink = cssLink;
-                _project.Owner.Logger.Info("JS Bundle length: " + _bundleJs.Length + " SourceMap length: " + _sourceMapString.Length + " T:" + (DateTime.UtcNow - start).TotalMilliseconds.ToString("F0") + "ms");
+                _project.Owner.Logger.Info("JS Bundle length: " + _bundleJs.Length + " SourceMap length: " +
+                                           _sourceMapString.Length + " T:" +
+                                           (DateTime.UtcNow - start).TotalMilliseconds.ToString("F0") + "ms");
             }
+
             _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.BundleJsUrl) = _bundleJs;
             _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.BundleJsUrl + ".map") = _sourceMapString;
             if (incremental)
             {
                 _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "bundle2.js") = _bundle2Js;
-                _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "bundle2.js.map") = _sourceMap2String;
+                _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "bundle2.js.map") =
+                    _sourceMap2String;
                 SourceMaps = new Dictionary<string, SourceMap>
                 {
-                    { PathUtils.GetFile(_buildResult.BundleJsUrl), _sourceMap },
-                    { "bundle2.js", _sourceMap2 }
+                    {PathUtils.GetFile(_buildResult.BundleJsUrl), _sourceMap},
+                    {"bundle2.js", _sourceMap2}
                 };
             }
             else
             {
                 SourceMaps = new Dictionary<string, SourceMap>
                 {
-                    { PathUtils.GetFile(_buildResult.BundleJsUrl), _sourceMap }
+                    {PathUtils.GetFile(_buildResult.BundleJsUrl), _sourceMap}
                 };
             }
 
             if (_project.SubProjects != null)
             {
                 var newSubBundlers = new RefDictionary<string, FastBundleBundler>();
-                foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a=>a.Value!.Variant=="serviceworker"))
+                foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a =>
+                    a.Value!.Variant == "serviceworker"))
                 {
                     if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                     {
-                        subBundler = new FastBundleBundler(_tools, _mainBuildResult, subProject, _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
+                        subBundler = new FastBundleBundler(_tools, _mainBuildResult, subProject,
+                            _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
                     }
 
                     newSubBundlers.GetOrAddValueRef(projPath) = subBundler;
@@ -265,8 +281,10 @@ namespace Lib.TSCompiler
             if (testProj)
             {
                 _mainBuildResult.FilesContent.GetOrAddValueRef("test.html") = _indexHtml;
-                _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-core.js") = _tools.JasmineCoreJs;
-                _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-boot.js") = _tools.JasmineBootJs;
+                _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-core.js") =
+                    _tools.JasmineCoreJs;
+                _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-boot.js") =
+                    _tools.JasmineBootJs;
             }
             else if (!_project.NoHtml)
             {
@@ -313,6 +331,7 @@ namespace Lib.TSCompiler
             {
                 liveReloadInclude = $@"<script src=""{_versionDirPrefix}liveReload.js"" charset=""utf-8""></script>";
             }
+
             _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
@@ -358,6 +377,7 @@ namespace Lib.TSCompiler
 
                 res.Append("]");
             }
+
             return res.ToString();
         }
 
@@ -401,9 +421,36 @@ namespace Lib.TSCompiler
             {
                 if (!source.Value.Valid) continue;
                 res.TryAdd(source.Key.ToLowerInvariant(),
-                    PathUtils.Subtract(PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(source.Value.MainFile)), root));
+                    PathUtils.Subtract(
+                        PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(source.Value.MainFile)),
+                        root));
                 res.TryAdd(source.Key.ToLowerInvariant() + "/",
                     PathUtils.Subtract(PathUtils.WithoutExtension(source.Value.Owner.FullPath), root));
+                var browserResolve = source.Value.ProjectOptions?.BrowserResolve;
+                if (browserResolve != null)
+                {
+                    foreach (var (key, value) in browserResolve)
+                    {
+                        if (key.StartsWith('.'))
+                        {
+                            res.TryAdd(
+                                PathUtils.Subtract(
+                                        PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(key)),
+                                        root)
+                                    .ToLowerInvariant(),
+                                PathUtils.Subtract(
+                                    PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(value)),
+                                    root));
+                        }
+                        else
+                        {
+                            res.TryAdd(key.ToLowerInvariant(),
+                                PathUtils.Subtract(
+                                    PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(value)),
+                                    root));
+                        }
+                    }
+                }
             }
 
             return $"R.map = {Newtonsoft.Json.JsonConvert.SerializeObject(res)};";

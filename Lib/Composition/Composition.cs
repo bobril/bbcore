@@ -1065,7 +1065,7 @@ namespace Lib.Composition
                         }
 
                         IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
-                        buildResult.TaskForSemanticCheck.ContinueWith((Task<List<Diagnostic>> semanticDiag) =>
+                        buildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
                         {
                             var duration = (DateTime.UtcNow - start).TotalSeconds;
                             var allmess = IncludeSemanticMessages(_currentProject, semanticDiag.Result, ref errors,
@@ -1190,12 +1190,12 @@ namespace Lib.Composition
             }
         }
 
-        List<Diagnostic> IncludeSemanticMessages(ProjectOptions options, List<Diagnostic> semanticDiagnostics,
+        List<Diagnostic> IncludeSemanticMessages(ProjectOptions options, List<Diagnostic>? semanticDiagnostics,
             ref int errors,
             ref int warnings,
             List<Diagnostic> messages)
         {
-            if (semanticDiagnostics.Count == 0) return messages;
+            if (semanticDiagnostics == null || semanticDiagnostics.Count == 0) return messages;
             var res = messages.ToList();
             var rootPath = options.Owner.Owner.FullPath;
             foreach (var d in semanticDiagnostics)

@@ -34,6 +34,7 @@ R.r = function(name: string, parent: string) {
             else newParts.push(part);
         }
         p = newParts.join("/");
+        if ((lp = R.map![p.toLowerCase()])) p = lp;
     } else {
         let parts = name.split("/");
         if (parts.length >= 2) {
