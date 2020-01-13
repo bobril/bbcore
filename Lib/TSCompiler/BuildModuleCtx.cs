@@ -24,11 +24,6 @@ namespace Lib.TSCompiler
         public int IterationId;
         TSFileAdditionalInfo _currentlyTranspiling;
 
-        public void AddSource(TSFileAdditionalInfo file)
-        {
-            Result.Path2FileInfo[file.Owner.FullPath] = file;
-        }
-
         static readonly string[] ExtensionsToImport = {".tsx", ".ts", ".d.ts", ".jsx", ".js", ""};
         static readonly string[] ExtensionsToImportFromJs = {".jsx", ".js", ""};
 
@@ -63,7 +58,7 @@ namespace Lib.TSCompiler
 
                 if (module.Valid)
                 {
-                    module.LoadProjectJson(true);
+                    module.LoadProjectJson(true, Owner.ProjectOptions);
                     if (module.PackageJsonChangeId == -1) goto again;
                 }
 
@@ -90,7 +85,7 @@ namespace Lib.TSCompiler
                     }
 
                     module = TSProject.Create(dc, Owner.DiskCache, Owner.Logger, dc.Name);
-                    module.LoadProjectJson(true);
+                    module.LoadProjectJson(true, Owner.ProjectOptions);
                     if (module.PackageJsonChangeId != -1)
                     {
                         module.NegativeChecks.AddRange(negativeChecks.AsSpan());
@@ -162,6 +157,16 @@ namespace Lib.TSCompiler
             if (relative)
             {
                 fn = PathUtils.Join(parentInfo.Owner.Parent.FullPath, name);
+                var browserResolve = parentInfo.FromModule?.ProjectOptions?.BrowserResolve;
+                if (browserResolve != null)
+                {
+                    var relativeToModule = PathUtils.Subtract(fn+".js", parentInfo.FromModule.Owner.FullPath);
+                    if (!relativeToModule.StartsWith("../")) relativeToModule = "./" + relativeToModule;
+                    if (browserResolve.TryGetValue(relativeToModule, out var resolveReplace))
+                    {
+                        fn = PathUtils.Join(parentInfo.FromModule.Owner.FullPath, resolveReplace);
+                    }
+                }
             }
 
             relative: ;
@@ -264,6 +269,25 @@ namespace Lib.TSCompiler
                     mname = mn.ToString();
                 }
 
+                if (mname.Length == name.Length && parentInfo != null)
+                {
+                    var browserResolve = parentInfo.FromModule?.ProjectOptions?.BrowserResolve;
+                    if (browserResolve != null)
+                    {
+                        if (browserResolve.TryGetValue(name, out var resolveReplace))
+                        {
+                            if (!resolveReplace.StartsWith(name + "/"))
+                            {
+                                fn = PathUtils.Join(parentInfo.FromModule.Owner.FullPath, resolveReplace);
+                                relative = true;
+                                goto relative;
+                            }
+
+                            name = resolveReplace;
+                        }
+                    }
+                }
+
                 var moduleInfo = ResolveModule(mname);
                 if (moduleInfo == null)
                 {
@@ -288,9 +312,7 @@ namespace Lib.TSCompiler
                 var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
                 res.FileName = mainFile;
                 CheckAdd(mainFile,
-                    IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript :
-                    moduleInfo.MainFileNeedsToBeCompiled ? FileCompilationType.EsmJavaScript :
-                    FileCompilationType.JavaScript);
+                    IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript : FileCompilationType.EsmJavaScript);
 
                 if (moduleInfo.ProjectOptions?.ObsoleteMessage != null)
                 {

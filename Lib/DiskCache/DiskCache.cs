@@ -51,6 +51,7 @@ namespace Lib.DiskCache
 
             public bool IsFake { get; set; }
             public bool IsLink { get; set; }
+            public object? Project { get; set; }
 
             public bool IsWatcherRoot
             {

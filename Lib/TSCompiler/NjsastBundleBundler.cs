@@ -213,7 +213,7 @@ namespace Lib.TSCompiler
             }
 
             if (fileInfo.Type == FileCompilationType.JavaScriptAsset ||
-                fileInfo.Type == FileCompilationType.JavaScript || fileInfo.Type == FileCompilationType.EsmJavaScript)
+                fileInfo.Type == FileCompilationType.JavaScript)
             {
                 if (BuildSourceMap)
                     return (fileInfo.Output, SourceMap.Identity(fileInfo.Output, fileInfo.Owner.FullPath));
@@ -225,7 +225,7 @@ namespace Lib.TSCompiler
                 return ("", null);
             }
 
-            if (fileInfo.Type == FileCompilationType.TypeScript)
+            if (fileInfo.Type == FileCompilationType.TypeScript || fileInfo.Type == FileCompilationType.EsmJavaScript)
             {
                 if (BuildSourceMap)
                 {

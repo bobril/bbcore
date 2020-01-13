@@ -15,8 +15,6 @@ namespace Lib.TSCompiler
         public IDirectoryCache Owner { get; set; }
         public string MainFile { get; set; }
 
-        public bool MainFileNeedsToBeCompiled;
-
         public string TypesMainFile { get; set; }
         public ProjectOptions ProjectOptions { get; set; }
         public int PackageJsonChangeId { get; set; }
@@ -31,7 +29,7 @@ namespace Lib.TSCompiler
         internal BTDB.Collections.StructList<string> NegativeChecks;
         internal bool Valid;
 
-        public void LoadProjectJson(bool forbiddenDependencyUpdate)
+        public void LoadProjectJson(bool forbiddenDependencyUpdate, ProjectOptions? parentProjectOptions)
         {
             DiskCache.UpdateIfNeeded(Owner);
             var packageJsonFile = Owner.TryGetChild("package.json");
@@ -40,7 +38,6 @@ namespace Lib.TSCompiler
                 var newChangeId = cache.ChangeId;
                 if (newChangeId == PackageJsonChangeId) return;
                 ProjectOptions.FinalCompilerOptions = null;
-                MainFileNeedsToBeCompiled = false;
                 JObject parsed;
                 try
                 {
@@ -67,18 +64,27 @@ namespace Lib.TSCompiler
                     }
                 }
 
-                if (parsed.GetValue("module") is JValue moduleV)
+                if (!hasMain && parsed.GetValue("browser") is JValue browserMain)
                 {
-                    MainFile = PathUtils.Normalize(moduleV.ToString());
-                    MainFileNeedsToBeCompiled = true;
+                    MainFile = PathUtils.Normalize(browserMain.ToString());
                     if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
                     {
                         hasMain = true;
-                        if (parsed.GetValue("typings") is JValue mainV)
-                        {
-                            TypesMainFile = PathUtils.Normalize(mainV.ToString());
-                        }
                     }
+                }
+
+                if (!hasMain && parsed.GetValue("module") is JValue moduleV)
+                {
+                    MainFile = PathUtils.Normalize(moduleV.ToString());
+                    if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
+                    {
+                        hasMain = true;
+                    }
+                }
+
+                if (parsed.GetValue("typings") is JValue typingsV)
+                {
+                    TypesMainFile = PathUtils.Normalize(typingsV.ToString());
                 }
 
                 if (!hasMain)
@@ -86,6 +92,10 @@ namespace Lib.TSCompiler
                     if (parsed.GetValue("main") is JValue mainV2)
                     {
                         MainFile = PathUtils.Normalize(mainV2.ToString());
+                        if (PathUtils.GetExtension(MainFile).IsEmpty)
+                        {
+                            MainFile += ".js";
+                        }
                     }
                     else
                     {
@@ -94,16 +104,10 @@ namespace Lib.TSCompiler
 
                     var name = parsed.GetValue("name") is JValue vname ? vname.ToString() : "";
 
-                    if (name == "lenticular-ts")
-                    {
-                        MainFileNeedsToBeCompiled = true;
-                    }
-
                     if (name == "@stomp/stompjs")
                     {
-                        MainFileNeedsToBeCompiled = true;
                         MainFile = "esm6/index.js";
-                        TypesMainFile = "esm6/index.d.ts";
+                        hasMain = true;
                     }
 
                     if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "ts")))
@@ -235,6 +239,7 @@ namespace Lib.TSCompiler
                 Valid = true,
                 ProjectOptions = new ProjectOptions()
             };
+            dir.Project = proj;
             proj.ProjectOptions.Owner = proj;
             return proj;
         }

@@ -1,0 +1,15 @@
+{
+  "name": "compleximports",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "@types/sockjs-client": "^1.1.1",
+    "sockjs-client": "^1.4.0"
+  },
+  "browser": {
+    "sockjs-client": "sockjs-client/dist/sockjs.js"
+  }
+}

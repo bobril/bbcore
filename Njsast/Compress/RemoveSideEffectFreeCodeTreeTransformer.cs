@@ -279,6 +279,8 @@ namespace Njsast.Compress
                         return Remove;
                     case AstSymbolRef _:
                         return Remove;
+                    case AstThis _:
+                        return Remove;
                     case AstWith _:
                         return node;
                     case AstArray arr:

@@ -14,7 +14,8 @@ namespace Njsast.Bundler
         public static string GetText(string name)
         {
             using var stream = typeof(BundlerHelpers).Assembly.GetManifestResourceStream(name);
-            using var reader = new StreamReader(stream ?? throw new NotImplementedException("Resource missing "+name), Encoding.UTF8);
+            using var reader = new StreamReader(stream ?? throw new NotImplementedException("Resource missing " + name),
+                Encoding.UTF8);
             return reader.ReadToEnd();
         }
 
@@ -32,7 +33,7 @@ namespace Njsast.Bundler
             Func<string, string, string> resolver)
         {
             AstToplevel toplevel;
-            AstSymbol symbol;
+            AstSymbol? symbol;
             if (PathUtils.GetExtension(name) == "json")
             {
                 (toplevel, symbol) = Helpers.EmitVarDefineJson(content, name);
@@ -48,17 +49,26 @@ namespace Njsast.Bundler
             toplevel.FigureOutScope();
             if (toplevel.Globals!.ContainsKey("module"))
             {
-                (toplevel, symbol) = Helpers.EmitCommonJsWrapper(toplevel);
+                (toplevel, symbol) = Helpers.IfPossibleEmitModuleExportsJsWrapper(toplevel);
+                if (symbol == null)
+                {
+                    (toplevel, symbol) = Helpers.EmitCommonJsWrapper(toplevel);
+                }
                 toplevel.FigureOutScope();
-                return new SourceFile(name, toplevel) {WholeExport = symbol};
+                var sourceFile = new SourceFile(name, toplevel) {WholeExport = symbol};
+                new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
+                return sourceFile;
             }
-
-            var sourceFile = new SourceFile(name, toplevel);
-            new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
-            return sourceFile;
+            else
+            {
+                var sourceFile = new SourceFile(name, toplevel);
+                new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
+                return sourceFile;
+            }
         }
 
-        public static void AppendToplevelWithRename(AstToplevel main, AstToplevel add, string suffix, Action<AstToplevel>? beforeAdd = null)
+        public static void AppendToplevelWithRename(AstToplevel main, AstToplevel add, string suffix,
+            Action<AstToplevel>? beforeAdd = null)
         {
             if (main.Body.Count == 0)
             {
@@ -68,6 +78,7 @@ namespace Njsast.Bundler
                 main.Globals = add.Globals;
                 return;
             }
+
             var renameWalker = new ToplevelRenameWalker(main.Variables!, suffix);
             renameWalker.Walk(add);
 
@@ -124,7 +135,7 @@ namespace Njsast.Bundler
             func.ArgNames.Add(new AstSymbolFunarg("undefined"));
             func.HasUseStrictDirective = true;
             func.Body.TransferFrom(ref topLevelAst.Body);
-            topLevelAst.Body.Add(new AstSimpleStatement(new AstUnaryPrefix(Operator.LogicalNot,new AstCall(func))));
+            topLevelAst.Body.Add(new AstSimpleStatement(new AstUnaryPrefix(Operator.LogicalNot, new AstCall(func))));
         }
 
         public static string FileNameToIdent(string fn)

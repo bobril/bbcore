@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -52,11 +53,11 @@ namespace Lib.TSCompiler
         public List<string> TestDirectories;
         public string PathToTranslations;
         public bool TsconfigUpdate;
+        public Dictionary<string, string>? BrowserResolve;
 
         public Dictionary<string, string> ExpandedProcessEnvs;
         public Dictionary<string, AstNode> ExpandedDefines;
         public string MainFile;
-        public Dictionary<string, string> MainFileVariants;
         public string JasmineDts;
         public List<string> TestSources;
         public List<string> ExampleSources;
@@ -67,7 +68,6 @@ namespace Lib.TSCompiler
         public bool Localize;
         public string DefaultLanguage;
         public DepedencyUpdate DependencyUpdate;
-        public bool BundleCss;
         public int LiveReloadIdx;
         public RefDictionary<string, ProjectOptions?> SubProjects;
 
@@ -230,7 +230,8 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, TSProject> buildResultModules, MainBuildResult buildResult)
+        public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, TSProject> buildResultModules,
+            MainBuildResult buildResult)
         {
             var nodeModulesDir = Owner.Owner.FullPath;
             Owner.FillOutputByAssets(buildResult, nodeModulesDir, this);
@@ -245,14 +246,16 @@ namespace Lib.TSCompiler
             }
         }
 
-        void RecursiveFillOutputByAdditionalResourcesDirectory(MainBuildResult buildResult, IDirectoryCache directoryCache, string resourcesPath)
+        void RecursiveFillOutputByAdditionalResourcesDirectory(MainBuildResult buildResult,
+            IDirectoryCache directoryCache, string resourcesPath)
         {
             Owner.DiskCache.UpdateIfNeeded(directoryCache);
             foreach (var child in directoryCache)
             {
                 if (child is IDirectoryCache)
                 {
-                    RecursiveFillOutputByAdditionalResourcesDirectory(buildResult, child as IDirectoryCache, resourcesPath);
+                    RecursiveFillOutputByAdditionalResourcesDirectory(buildResult, child as IDirectoryCache,
+                        resourcesPath);
                     continue;
                 }
 
@@ -354,6 +357,7 @@ namespace Lib.TSCompiler
                     subProject.UpdateTSConfigJson();
                 }
             }
+
             var fsAbstration = Owner.DiskCache.FsAbstraction;
             var tsConfigPath = PathUtils.Join(Owner.Owner.FullPath, "tsconfig.json");
             if (_originalContent == null && fsAbstration.FileExists(tsConfigPath))
@@ -420,6 +424,7 @@ namespace Lib.TSCompiler
                 TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
                 return;
             }
+
             TranslationDb = new TranslationDb(Owner.DiskCache.FsAbstraction, new ConsoleLogger());
             TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
             if (specificPath == null)
@@ -431,6 +436,13 @@ namespace Lib.TSCompiler
 
         public void FillProjectOptionsFromPackageJson(JObject parsed)
         {
+            var browserValue = parsed?.GetValue("browser");
+            BrowserResolve = null;
+            if (browserValue != null && browserValue.Type == JTokenType.Object)
+            {
+                BrowserResolve = browserValue.ToObject<Dictionary<string, string>>();
+            }
+
             Localize = Owner.Dependencies?.Contains("bobril-g11n") ?? false;
             TestSourcesRegExp = "^.*?(?:\\.s|S)pec(?:\\.d)?\\.ts(?:x)?$";
             if (parsed?.GetValue("publishConfig") is JObject publishConfigSection)
@@ -567,6 +579,7 @@ namespace Lib.TSCompiler
                             "\"" + buildResult.SubBuildResults.GetOrFakeValueRef(assetName).BundleJsUrl + "\"");
                         continue;
                     }
+
                     if (assetName.StartsWith("resource:"))
                     {
                         assetName = assetName.Substring(9);
@@ -779,7 +792,7 @@ namespace Lib.TSCompiler
 
         public void UpdateFromProjectJson(bool? localizeValue)
         {
-            Owner.LoadProjectJson(ForbiddenDependencyUpdate);
+            Owner.LoadProjectJson(ForbiddenDependencyUpdate, this);
             if (localizeValue.HasValue)
                 Localize = localizeValue.Value;
             InitializeLocalizationAndUpdateTsLintJson();
@@ -796,6 +809,7 @@ namespace Lib.TSCompiler
                 res.Add("swBuildId", MainBuildResult.ToShortName(buildDate.Ticks));
                 res.Add("swFiles", mainBuildResult.FilesContent.Select(a => a.Key).OrderBy(a => a).ToArray());
             }
+
             foreach (var p in ExpandedDefines)
             {
                 res.Add(p.Key, p.Value.ConstValue());

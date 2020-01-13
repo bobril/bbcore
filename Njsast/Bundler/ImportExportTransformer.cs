@@ -24,7 +24,12 @@ namespace Njsast.Bundler
             var req = node.IsRequireCall();
             if (req != null)
             {
-                _sourceFile.Requires.Add(_resolver.Invoke(_sourceFile.Name, req));
+                var resolvedName = _resolver.Invoke(_sourceFile.Name, req);
+                _sourceFile.Requires.Add(resolvedName);
+                if (!(Parent() is AstVarDef) && !(Parent() is AstSimpleStatement))
+                {
+                    _sourceFile.NeedsWholeImportsFrom.AddUnique(resolvedName);
+                }
                 return node;
             }
 

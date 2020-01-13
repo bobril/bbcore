@@ -46,7 +46,7 @@ namespace Lib.TSCompiler
 
         public int ImageCacheId;
         public string OutputUrl { get; set; }
-        public string FromModule;
+        public TSProject FromModule;
 
         public bool TakenFromBuildCache;
 
@@ -112,7 +112,12 @@ namespace Lib.TSCompiler
         public static TSFileAdditionalInfo Create(IFileCache file, IDiskCache diskCache)
         {
             if (file == null) return null;
-            return new TSFileAdditionalInfo {Owner = file, DiskCache = diskCache};
+            var dir = file.Parent;
+            while (dir != null && dir.Project == null)
+            {
+                dir = dir.Parent;
+            }
+            return new TSFileAdditionalInfo {Owner = file, DiskCache = diskCache, FromModule = dir?.Project as TSProject};
         }
 
         internal void ReportDiag(List<Diagnostic> diagnostics)

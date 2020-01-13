@@ -114,7 +114,7 @@ namespace Lib.Registry
         {
             var fullPath = projectDirectory.FullPath;
             var project = TSProject.Create(projectDirectory, _diskCache, _logger, null);
-            project.LoadProjectJson(true);
+            project.LoadProjectJson(true, null);
             if (project.ProjectOptions.NpmRegistry != null)
             {
                 if (!(projectDirectory.TryGetChild(".npmrc") is IFileCache))

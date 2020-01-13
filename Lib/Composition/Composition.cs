@@ -391,7 +391,6 @@ namespace Lib.Composition
                 proj.UpdateFromProjectJson(bCommand.Localize.Value);
                 proj.StyleDefNaming =
                     ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
-                proj.BundleCss = !bCommand.Fast.Value;
                 proj.Debug = bCommand.Fast.Value;
                 var buildResult = new BuildResult(_mainBuildResult, proj);
                 proj.GenerateCode();

@@ -2,11 +2,19 @@
 
 ## [unreleased]
 
+### Added
+
+- All module \*.js imports are now compiled and detected for dependencies.
+- Support for `browser` in `package.json` by [spec](https://github.com/defunctzombie/package-browser-field-spec)
+  - Additionally if you define `"browser" : { "module_name": "module_name/dist/bundle.js" }` it override main js file for module imported by its name.
+- Njsast based bundler supports bundling of `module.exports =` commonjs pattern. For example it is capable of bundling `sockjs-client` as is.
+- `process.env.X` replacement works in js files too.
+
 ## 1.3.0
 
 ### Added
 
-- All relative and deep *.js imports are now compiled and detected for dependencies.
+- All relative and deep \*.js imports are now compiled and detected for dependencies.
 
 ### Changed
 

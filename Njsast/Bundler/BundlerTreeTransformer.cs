@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Njsast.Ast;
 
 namespace Njsast.Bundler
@@ -58,6 +59,17 @@ namespace Njsast.Bundler
                     return Remove;
             }
 
+            if (node.IsRequireCall() is {} eagerReqName)
+            {
+                var resolvedName = _ctx.ResolveRequire(eagerReqName, _currentSourceFile!.Name);
+                if (!_cache.TryGetValue(resolvedName, out var reqSource))
+                    throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
+                                                   _currentSourceFile!.Name);
+                Debug.Assert(_currentSourceFile!.NeedsWholeImportsFrom.IndexOf(resolvedName) >= 0);
+                var theDef = CheckIfNewlyUsedSymbolIsUnique(reqSource.WholeExport!);
+                return new AstSymbolRef(node, theDef, SymbolUsage.Read);
+            }
+
             if (node.IsLazyImportCall() is {} lazyReqName)
             {
                 var resolvedName = _ctx.ResolveRequire(lazyReqName, _currentSourceFile!.Name);
@@ -73,10 +85,12 @@ namespace Njsast.Bundler
                     call.Args.Add(new AstString(propName));
                     return call;
                 }
+
                 var result = new AstCall(new AstSymbolRef("__import"));
                 result.Args.Add(new AstString(splitInfo.ShortName!));
                 result.Args.Add(new AstString(propName));
-                for (var i = splitInfo.ExpandedSplitsForcedLazy.Count; i-->0;) {
+                for (var i = splitInfo.ExpandedSplitsForcedLazy.Count; i-- > 0;)
+                {
                     var usedSplit = splitInfo.ExpandedSplitsForcedLazy[i];
                     var call = new AstCall(new AstSymbolRef("__import"));
                     call.Args.Add(new AstString(usedSplit.ShortName!));
@@ -87,6 +101,7 @@ namespace Njsast.Bundler
                     call.Args.Add(func);
                     result = call;
                 }
+
                 return result;
             }
 
@@ -138,6 +153,7 @@ namespace Njsast.Bundler
             {
                 astSymbol = importFromOtherBundle.Ref!;
             }
+
             var astSymbolDef = astSymbol.Thedef!;
             var oldName = astSymbolDef.Name;
             if (!_rootVariables.TryGetValue(oldName, out var rootSymbol))
