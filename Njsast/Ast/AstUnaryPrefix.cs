@@ -38,6 +38,8 @@ namespace Njsast.Ast
 
         public override object? ConstValue(IConstEvalCtx? ctx = null)
         {
+            if (Operator == Operator.TypeOf)
+                return null;
             var v = Expression.ConstValue(ctx?.StripPathResolver());
             if (v == null) return null;
             if (Operator == Operator.Void) return AstUndefined.Instance;
