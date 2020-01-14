@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.4.1
+
 ### Fixed
 
 - Many regressions from 1.3 and 1.4 versions.
