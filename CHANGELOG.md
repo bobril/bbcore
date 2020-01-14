@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Many regressions from 1.3 and 1.4 versions.
+
 ## 1.4.0
 
 ### Added

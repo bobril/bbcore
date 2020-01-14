@@ -277,6 +277,11 @@ namespace Lib.TSCompiler
                     {
                         if (browserResolve.TryGetValue(name, out var resolveReplace))
                         {
+                            if (resolveReplace == null)
+                            {
+                                res.FileName = "<empty>";
+                                return res.FileName;
+                            }
                             if (!resolveReplace.StartsWith(name + "/"))
                             {
                                 fn = PathUtils.Join(parentInfo.FromModule.Owner.FullPath, resolveReplace);

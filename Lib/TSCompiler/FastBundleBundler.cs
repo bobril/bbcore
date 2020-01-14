@@ -433,21 +433,41 @@ namespace Lib.TSCompiler
                     {
                         if (key.StartsWith('.'))
                         {
-                            res.TryAdd(
-                                PathUtils.Subtract(
-                                        PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(key)),
-                                        root)
-                                    .ToLowerInvariant(),
-                                PathUtils.Subtract(
-                                    PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(value)),
-                                    root));
+                            if (value == null)
+                            {
+                                res.TryAdd(
+                                    PathUtils.Subtract(
+                                            PathUtils.Join(source.Value.Owner.FullPath,
+                                                PathUtils.WithoutExtension(key)),
+                                            root)
+                                        .ToLowerInvariant(), "<empty>");
+                            }
+                            else
+                            {
+                                res.TryAdd(
+                                    PathUtils.Subtract(
+                                            PathUtils.Join(source.Value.Owner.FullPath,
+                                                PathUtils.WithoutExtension(key)),
+                                            root)
+                                        .ToLowerInvariant(),
+                                    PathUtils.Subtract(
+                                        PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(value)),
+                                        root));
+                            }
                         }
                         else
                         {
-                            res.TryAdd(key.ToLowerInvariant(),
-                                PathUtils.Subtract(
-                                    PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(value)),
-                                    root));
+                            if (value == null)
+                            {
+                                res.TryAdd(key.ToLowerInvariant(), "<empty>");
+                            }
+                            else
+                            {
+                                res.TryAdd(key.ToLowerInvariant(),
+                                    PathUtils.Subtract(
+                                        PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(value)),
+                                        root));
+                            }
                         }
                     }
                 }

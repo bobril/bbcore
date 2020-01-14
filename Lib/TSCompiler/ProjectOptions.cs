@@ -53,7 +53,7 @@ namespace Lib.TSCompiler
         public List<string> TestDirectories;
         public string PathToTranslations;
         public bool TsconfigUpdate;
-        public Dictionary<string, string>? BrowserResolve;
+        public Dictionary<string, string?>? BrowserResolve;
 
         public Dictionary<string, string> ExpandedProcessEnvs;
         public Dictionary<string, AstNode> ExpandedDefines;
@@ -440,7 +440,7 @@ namespace Lib.TSCompiler
             BrowserResolve = null;
             if (browserValue != null && browserValue.Type == JTokenType.Object)
             {
-                BrowserResolve = browserValue.ToObject<Dictionary<string, string>>();
+                BrowserResolve = browserValue.ToObject<Dictionary<string, object>>(). ToDictionary(p=>p.Key,p=>p.Value as string);
             }
 
             Localize = Owner.Dependencies?.Contains("bobril-g11n") ?? false;
