@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.5.0
+
 ### Added
 
 - All bundlers does not use inline script in html anymore, so it allows stricter CSP policy.
