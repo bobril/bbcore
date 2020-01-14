@@ -21,6 +21,7 @@ namespace Njsast.Bundler
         void WriteBundle(string name, string content);
         void WriteBundle(string name, SourceMapBuilder content);
         void ReportTime(string name, TimeSpan duration);
+        void ModifyBundle(string name, AstToplevel topLevelAst);
     }
 
     public class BundlerImpl
@@ -164,6 +165,8 @@ namespace Njsast.Bundler
                     stopwatch.Stop();
                     _ctx.ReportTime("Mangle", stopwatch.Elapsed);
                 }
+
+                _ctx.ModifyBundle(splitInfo.ShortName!, topLevelAst);
 
                 if (GenerateSourceMap)
                 {

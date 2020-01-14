@@ -2,6 +2,7 @@
 # yarn lockfile v1
 
 
-bobril@^8.8.1:
-  version "8.8.1"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.8.1.tgz#0bdb995a6fc52682379a2a1b297db64f961305c8"
+bobril@*:
+  version "14.0.1"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-14.0.1.tgz#06e242557a8da3aaae192fe3c2bfb86f49534921"
+  integrity sha512-BYWJHmI5eMdvvbMhvEO/hd9Qfd6WFgwJjs3QSWP7UDkNszNqhvqwctRQQTx6j/Zh1x/gWRPeIWPcR6jxmOsW+w==

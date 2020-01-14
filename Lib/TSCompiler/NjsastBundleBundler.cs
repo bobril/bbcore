@@ -8,9 +8,11 @@ using Lib.CSSProcessor;
 using Lib.ToolsDir;
 using Lib.Utils;
 using Lib.Utils.Logger;
+using Njsast.Ast;
 using Njsast.Bundler;
 using Njsast.Compress;
 using Njsast.Output;
+using Njsast.Reader;
 using Njsast.SourceMap;
 
 namespace Lib.TSCompiler
@@ -24,7 +26,8 @@ namespace Lib.TSCompiler
         readonly IToolsDir _tools;
         readonly ILogger _logger;
 
-        public NjsastBundleBundler(IToolsDir tools, ILogger logger, MainBuildResult mainBuildResult, ProjectOptions project, BuildResult buildResult)
+        public NjsastBundleBundler(IToolsDir tools, ILogger logger, MainBuildResult mainBuildResult,
+            ProjectOptions project, BuildResult buildResult)
         {
             _tools = tools;
             _logger = logger;
@@ -54,7 +57,8 @@ namespace Lib.TSCompiler
                 }
                 else if (source.Type == FileCompilationType.Resource)
                 {
-                    _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) = source.Owner.ByteContent;
+                    _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) =
+                        source.Owner.ByteContent;
                 }
             }
 
@@ -92,7 +96,8 @@ namespace Lib.TSCompiler
                     _bundlePngInfo = new List<float>();
                     foreach (var slice in bundlePngContent)
                     {
-                        _mainBuildResult.FilesContent.GetOrAddValueRef(PathUtils.InjectQuality(_bundlePng, slice.Quality)) =
+                        _mainBuildResult.FilesContent.GetOrAddValueRef(
+                                PathUtils.InjectQuality(_bundlePng, slice.Quality)) =
                             slice.Content;
                         _bundlePngInfo.Add(slice.Quality);
                     }
@@ -132,11 +137,13 @@ namespace Lib.TSCompiler
             if (_project.SubProjects != null)
             {
                 var newSubBundlers = new RefDictionary<string, NjsastBundleBundler>();
-                foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a=>a.Value!.Variant=="serviceworker"))
+                foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a =>
+                    a.Value!.Variant == "serviceworker"))
                 {
                     if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                     {
-                        subBundler = new NjsastBundleBundler(_tools, _logger, _mainBuildResult, subProject, _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
+                        subBundler = new NjsastBundleBundler(_tools, _logger, _mainBuildResult, subProject,
+                            _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
                     }
 
                     newSubBundlers.GetOrAddValueRef(projPath) = subBundler;
@@ -154,17 +161,18 @@ namespace Lib.TSCompiler
         void BuildFastBundlerIndexHtml(string cssLink)
         {
             _indexHtml =
-                $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{_project.ExpandHtmlHead(_buildResult)}<title>{_project.Title}</title>{cssLink}</head><body>{InitG11n()}<script src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
+                $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{_project.ExpandHtmlHead(_buildResult)}<title>{_project.Title}</title>{cssLink}</head><body><script src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
         }
 
         string InitG11n()
         {
             if (!_project.Localize && _bundlePng == null)
                 return "";
-            var res = "<script>";
+            var res = "";
             if (_project.Localize)
             {
-                _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent, _mainBuildResult.OutputSubDir);
+                _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent,
+                    _mainBuildResult.OutputSubDir);
                 res +=
                     $"function g11nPath(s){{return\"./{_mainBuildResult.OutputSubDirPrefix}\"+s.toLowerCase()+\".js\"}};";
                 if (_project.DefaultLanguage != null)
@@ -189,9 +197,10 @@ namespace Lib.TSCompiler
 
                     res += "]";
                 }
+
+                res += ";";
             }
 
-            res += "</script>";
             return res;
         }
 
@@ -277,6 +286,16 @@ namespace Lib.TSCompiler
         {
             _logger.Info("Bundler phase " + name + " took " +
                          duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
+        }
+
+        public void ModifyBundle(string name, AstToplevel topLevelAst)
+        {
+            if (name != _mainJsBundleUrl)
+                return;
+            var srcToInject = InitG11n();
+            if (srcToInject == "")
+                return;
+            topLevelAst.Body.InsertRange(0, Parser.Parse(srcToInject).Body);
         }
 
         public string GenerateBundleName(string forName)

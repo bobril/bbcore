@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+- All bundlers does not use inline script in html anymore, so it allows stricter CSP policy.
+
+### Fixed
+
+- Spritting was broken in fast bundler
+
 ## 1.4.1
 
 ### Fixed

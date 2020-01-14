@@ -145,14 +145,14 @@ namespace Lib.TSCompiler
         void BuildFastBundlerIndexHtml(string cssLink)
         {
             _indexHtml =
-                $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{_project.ExpandHtmlHead(_buildResult)}<title>{_project.Title}</title>{cssLink}</head><body>{InitG11n()}<script src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
+                $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{_project.ExpandHtmlHead(_buildResult)}<title>{_project.Title}</title>{cssLink}</head><body><script src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
         }
 
         string InitG11n()
         {
             if (!_project.Localize && _bundlePng == null)
                 return "";
-            var res = "<script>";
+            var res = "";
             if (_project.Localize)
             {
                 _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent, _mainBuildResult.OutputSubDir);
@@ -182,7 +182,7 @@ namespace Lib.TSCompiler
                 }
             }
 
-            res += "</script>";
+            res += ";";
             return res;
         }
 
@@ -227,6 +227,8 @@ namespace Lib.TSCompiler
 
         public void WriteBundle(string name, string content)
         {
+            if (name == _mainJsBundleUrl)
+                content = InitG11n() + content;
             _mainBuildResult.FilesContent.GetOrAddValueRef(name) = content;
         }
 
