@@ -140,7 +140,7 @@ namespace Njsast.Bobril
                 }
                 else if (node is AstCall call)
                 {
-                    if (call.Expression is AstSymbol expSymbol && call.Args.Count == 1)
+                    if (call.Expression is AstSymbol expSymbol && !(call.Expression is AstThis) && call.Args.Count == 1)
                     {
                         var def = expSymbol.Thedef!;
                         if (def.Global && def.Name == "require")

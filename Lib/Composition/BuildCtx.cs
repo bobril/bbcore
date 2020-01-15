@@ -384,6 +384,7 @@ namespace Lib.Composition
                 if (si?.Assets == null) continue;
                 foreach (var asset in si.Assets)
                 {
+                    if (asset.Name == null) continue;
                     if (asset.Name.StartsWith("project:"))
                     {
                         var projPath = asset.Name.Substring(8);
