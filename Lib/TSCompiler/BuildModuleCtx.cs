@@ -947,7 +947,11 @@ namespace Lib.TSCompiler
             sourceInfo.Assets?.ForEach(a =>
             {
                 if (a.Name == null)
+                {
+                    fileInfo.ReportDiag(true, -5, "First parameter of b.asset must be resolved as constant string", a.StartLine, a.StartCol, a.EndLine,
+                        a.EndCol);
                     return;
+                }
                 var assetName = a.Name;
                 if (assetName.StartsWith("project:"))
                 {

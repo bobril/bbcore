@@ -7,7 +7,7 @@
     },
     "bobril": {
         "title": "Bobril Hello World",
-        "head": "<link rel=\"icon\" href=\"<<src/light.png>>\">",
+        "head": "<link rel=\"icon\" href=\"<<../ImageQuality/assets/light.png>>\">",
         "jasmineVersion": "3.3",
         "additionalResourcesDirectory": "assets-app",
         "prefixStyleDefs": "pref1x",

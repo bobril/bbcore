@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Reimplemented -5 error with not constant `b.asset` parameter.
+- Fixed crash with immutable.js `this(x)`
+
 ## 1.5.0
 
 ### Added
