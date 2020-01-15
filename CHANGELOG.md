@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.5.1
+
 ### Fixed
 
 - Reimplemented -5 error with not constant `b.asset` parameter.
