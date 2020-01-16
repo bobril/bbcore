@@ -45,11 +45,11 @@ namespace Njsast.Reader
             }
         }
 
-        public int Line { get; }
+        public readonly int Line;
 
-        public int Column { get; }
+        public readonly int Column;
 
-        public int Index { get; }
+        public readonly int Index;
 
         public static bool operator ==(Position left, Position right)
         {

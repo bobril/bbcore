@@ -434,12 +434,16 @@ namespace Njsast.SourceMap
                     }
                 }
 
+                Debug.Assert(_lastOutputCol >= 0);
                 AddVlq(ref _owner._mappings, _lastOutputCol - _lastOutputLastCol);
                 _lastOutputLastCol = _lastOutputCol;
                 _lastOutputCol = _lastOutputColEnd;
 
                 if (_lastSourceIndex != -1)
                 {
+                    Debug.Assert(_lastSourceIndex >= 0);
+                    Debug.Assert(_lastSourceLine >= 0);
+                    Debug.Assert(_lastSourceCol >= 0);
                     AddVlq(ref _owner._mappings, _lastSourceIndex - _owner._lastSourceIndex);
                     _owner._lastSourceIndex = _lastSourceIndex;
                     AddVlq(ref _owner._mappings, _lastSourceLine - _owner._lastSourceLine);
@@ -572,12 +576,16 @@ namespace Njsast.SourceMap
                 }
             }
 
+            Debug.Assert(_newOutputCol >= 0);
             AddVlq(ref _mappings, _newOutputCol - _lastOutputCol);
             _lastOutputCol = _newOutputCol;
             _newOutputCol = _newOutputColEnd;
 
             if (_newSourceIndex != -1)
             {
+                Debug.Assert(_newSourceIndex >= 0);
+                Debug.Assert(_newSourceLine >= 0);
+                Debug.Assert(_newSourceCol >= 0);
                 AddVlq(ref _mappings, _newSourceIndex - _lastSourceIndex);
                 _lastSourceIndex = _newSourceIndex;
                 AddVlq(ref _mappings, _newSourceLine - _lastSourceLine);
@@ -591,6 +599,12 @@ namespace Njsast.SourceMap
 
         void Commit(int colCount, int sourceIndex, int sourceLine, int sourceCol, bool allowMerge)
         {
+            if (sourceIndex != -1)
+            {
+                Debug.Assert(sourceLine >= 0);
+                Debug.Assert(sourceCol >= 0);
+            }
+
             if (_newOutputColEnd == _newOutputCol)
             {
                 _newOutputColEnd += colCount;

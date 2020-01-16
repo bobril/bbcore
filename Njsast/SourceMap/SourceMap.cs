@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -205,7 +206,14 @@ namespace Njsast.SourceMap
                 var start = _sourceMap.FindPosition(node.Start.Line + 1, node.Start.Column + 1);
                 var end = _sourceMap.FindPosition(node.End.Line + 1, node.End.Column + 1);
                 if (!ReferenceEquals(start.SourceName, end.SourceName)) return;
-                node.Source = start.SourceName;
+                if (start.SourceName == "")
+                {
+                    node.Source = null;
+                }
+                else
+                {
+                    node.Source = start.SourceName;
+                }
                 node.Start = new Position(start.Line - 1, start.Col - 1, -1);
                 node.End = new Position(end.Line - 1, end.Col - 1, -1);
             }

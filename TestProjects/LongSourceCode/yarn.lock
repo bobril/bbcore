@@ -3,5 +3,6 @@
 
 
 bobril@^8.6.1:
-  version "8.6.1"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.6.1.tgz#01dfd75e1ef50233c33cd6e5ccfc7bc65a54454e"
+  version "8.21.0"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-8.21.0.tgz#8feb9a19af5f94a872147a0ddfa154c2a453ca81"
+  integrity sha512-mli2FZCd8PkA0F+v8kruuvof9t7VIYLiIO5XJNdKAyGO5gMw3tAjhKzYj71CN8YPhMySWh4TOObBXin0npChmQ==
