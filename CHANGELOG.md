@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Option to disable calculation of common project root (`"preserveProjectRoot": true` in `bobril` section in `package.json`)
+
 ## 1.5.1
 
 ### Fixed

@@ -9,6 +9,7 @@ namespace Lib.TSCompiler
     {
         public readonly bool CompressFileNames;
         public readonly string OutputSubDir;
+        public bool PreserveProjectRoot;
 
         public readonly string OutputSubDirPrefix;
 
@@ -47,7 +48,7 @@ namespace Lib.TSCompiler
             else
             {
                 if (allowCompressAndPlacingInSubDir && OutputSubDir != null)
-                    niceName = OutputSubDirPrefix + niceName;
+                    niceName = PathUtils.Normalize(OutputSubDirPrefix + niceName);
                 if (TakenNames.Contains(niceName))
                 {
                     var counter = 0;
@@ -82,8 +83,15 @@ namespace Lib.TSCompiler
 
         public void MergeCommonSourceDirectory(string path)
         {
-            CommonSourceDirectory =
-                CommonSourceDirectory == null ? path : PathUtils.CommonDir(CommonSourceDirectory, path);
+            if (PreserveProjectRoot)
+            {
+                CommonSourceDirectory ??= path;
+            }
+            else
+            {
+                CommonSourceDirectory =
+                    CommonSourceDirectory == null ? path : PathUtils.CommonDir(CommonSourceDirectory, path);
+            }
         }
     }
 }

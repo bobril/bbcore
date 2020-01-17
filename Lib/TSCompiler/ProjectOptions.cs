@@ -49,6 +49,7 @@ namespace Lib.TSCompiler
         public string Variant;
         public bool NoHtml;
         public bool WarningsAsErrors;
+        public bool PreserveProjectRoot;
         public string JasmineVersion;
         public List<string> TestDirectories;
         public string PathToTranslations;
@@ -503,6 +504,7 @@ namespace Lib.TSCompiler
             {
                 ProcessEnvs!["NODE_ENV"] = Parser.Parse("DEBUG?\"development\":\"production\"");
             }
+            PreserveProjectRoot = bobrilSection?["preserveProjectRoot"]?.Value<bool>() ?? false;
         }
 
         Dictionary<string, AstToplevel> ParseDefines(JObject? jObject)

@@ -244,6 +244,8 @@ namespace Lib.Composition
         public void Build(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult,
             MainBuildResult mainBuildResult, int iterationId)
         {
+            if (project.PreserveProjectRoot)
+                mainBuildResult.PreserveProjectRoot = true;
             _buildOnceOnly = buildOnlyOnce;
             _compilerOptionsChanged = false;
             _projectStructureChanged = false;

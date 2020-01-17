@@ -167,6 +167,12 @@ Use this comment in source code with import to ignore this specific import (must
         }
     }
 
+## How to disable autodetection of common project root
+
+    "bobril": {
+        "preserveProjectRoot": true
+    }
+
 # Environmental variables
 
 ## Forcing Polling watcher
