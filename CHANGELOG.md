@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 3.7.4
+
 ### Added
 
 - Option to disable calculation of common project root (`"preserveProjectRoot": true` in `bobril` section in `package.json`)
