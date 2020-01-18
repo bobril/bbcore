@@ -62,5 +62,8 @@ R.r = function(name: string, parent: string) {
     if (m.exports !== undefined) return m.exports;
     m.exports = {};
     m.fn!.call(R.t, (name: string) => R.r(name, p), m, m.exports, R.t);
+    if ((typeof m.exports === "function" || typeof m.exports === "object") && !("default" in m.exports)) {
+        Object.defineProperty(m.exports, "default", { value: m.exports, enumerable: false });
+    }
     return m.exports;
 };
