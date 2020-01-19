@@ -206,6 +206,10 @@ namespace Lib.TSCompiler
 
         public (string?, SourceMap?) ReadContent(string name)
         {
+            if (name == "<empty>")
+            {
+                return ("module.exports = {};", null);
+            }
             if (!_buildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
             {
                 throw new InvalidOperationException("Bundler ReadContent does not exists:" + name);
@@ -323,6 +327,9 @@ namespace Lib.TSCompiler
 
         public IEnumerable<string> GetPlainJsDependencies(string name)
         {
+            if (name == "<empty>")
+                return Array.Empty<string>();
+
             if (!_buildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
             {
                 throw new InvalidOperationException("Bundler GetPlainJsDependencies does not exists:" + name);
@@ -330,7 +337,7 @@ namespace Lib.TSCompiler
 
             var sourceInfo = fileInfo.SourceInfo;
             if (sourceInfo?.Assets == null)
-                return new List<string>();
+                return Array.Empty<string>();
             return sourceInfo.Assets.Select(i => i.Name).Where(i => !i.StartsWith("resource:") && i.EndsWith(".js"))
                 .ToList();
         }

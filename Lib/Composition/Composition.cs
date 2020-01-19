@@ -424,7 +424,7 @@ namespace Lib.Composition
                         }
                         else
                         {
-                            var bundle = bCommand.NewBundler.Value
+                            var bundle = bCommand.NewBundler.Value || proj.ForceNewBundler
                                 ? (IBundler) new NjsastBundleBundler(_tools, _logger, _mainBuildResult, proj,
                                     buildResult)
                                 : new BundleBundler(_tools, _mainBuildResult, proj, buildResult);

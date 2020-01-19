@@ -122,6 +122,11 @@ namespace Njsast.Bundler
                     var propName = propAccess.PropertyAsString;
                     if (propName != null)
                     {
+                        if (sourceFile.OnlyWholeExport && propName == "default")
+                        {
+                            var theDef = CheckIfNewlyUsedSymbolIsUnique(sourceFile.WholeExport!);
+                            return new AstSymbolRef(node, theDef, SymbolUsage.Read);
+                        }
                         if (sourceFile.Exports!.TryGetValue(propName, out var exportedSymbol))
                         {
                             if (exportedSymbol is AstSymbol trueSymbol)

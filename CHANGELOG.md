@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+- Option to force use new bundler (`"forceNewBundler": true` in `bobril` section in `package.json`)
+- Many fixes and small features to be able to bundle `socket.io-client` npm module (only fast and new bundler works)
+
 ## 1.6.0
 
 ### Changed

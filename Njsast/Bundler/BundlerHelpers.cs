@@ -46,6 +46,7 @@ namespace Njsast.Bundler
                 new Parser(new Options {SourceFile = name, OnComment = commentListener.OnComment}, content).Parse();
             commentListener.Walk(toplevel);
             sourceMap?.ResolveInAst(toplevel);
+            UnwrapIIFE(toplevel);
             toplevel.FigureOutScope();
             if (toplevel.Globals!.ContainsKey("module"))
             {
@@ -55,7 +56,7 @@ namespace Njsast.Bundler
                     (toplevel, symbol) = Helpers.EmitCommonJsWrapper(toplevel);
                 }
                 toplevel.FigureOutScope();
-                var sourceFile = new SourceFile(name, toplevel) {WholeExport = symbol};
+                var sourceFile = new SourceFile(name, toplevel) {WholeExport = symbol, OnlyWholeExport = true };
                 new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
                 return sourceFile;
             }
@@ -138,11 +139,25 @@ namespace Njsast.Bundler
             topLevelAst.Body.Add(new AstSimpleStatement(new AstUnaryPrefix(Operator.LogicalNot, new AstCall(func))));
         }
 
+        public static void UnwrapIIFE(AstToplevel topLevelAst)
+        {
+            if (topLevelAst.Body.Count != 1)
+                return;
+            var node = topLevelAst.Body[0];
+            if (node is AstSimpleStatement simple && simple.Body is AstCall call && call.Args.Count == 0 && call.Expression is AstFunction fnc &&
+                fnc.ArgNames.Count == 0)
+            {
+                topLevelAst.Body.ReplaceItemAt(0,fnc.Body.AsReadOnlySpan());
+            }
+        }
+
         public static string FileNameToIdent(string fn)
         {
             if (fn.LastIndexOf('/') >= 0) fn = fn.Substring(fn.LastIndexOf('/') + 1);
             if (fn.IndexOf('.') >= 0) fn = fn.Substring(0, fn.IndexOf('.'));
             fn = fn.Replace('-', '_');
+            fn = fn.Replace('<', '_');
+            fn = fn.Replace('>', '_');
             return fn;
         }
     }

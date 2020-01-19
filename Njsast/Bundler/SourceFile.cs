@@ -16,6 +16,7 @@ namespace Njsast.Bundler
         public string? PartOfBundle;
         public StructList<string> NeedsWholeImportsFrom = new StructList<string>();
         public bool NeedsWholeExport;
+        public bool OnlyWholeExport;
         /// list of file name and export name
         public StructList<(string, string)> NeedsImports = new StructList<(string, string)>();
 
@@ -24,6 +25,7 @@ namespace Njsast.Bundler
             Name = name;
             Ast = ast;
         }
+
 
         public void CreateWholeExport()
         {
