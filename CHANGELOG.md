@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.7.0
+
 ### Added
 
 - Option to force use new bundler (`"forceNewBundler": true` in `bobril` section in `package.json`)
