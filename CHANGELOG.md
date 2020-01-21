@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.8.0
+
 ### Added
 
 - Option to proxy all unknown requests to project defined url including websockets (`"proxyUrl": "http://localhost:3001"` in `bobril` section in `package.json`)
