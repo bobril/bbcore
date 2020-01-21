@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using ProxyKit;
 
 namespace Lib.WebServer
 {
@@ -92,15 +93,19 @@ namespace Lib.WebServer
         IWebHost BuildWebHost(int port)
         {
             return new WebHostBuilder().UseKestrel(config =>
-            {
-                config.AddServerHeader = false;
-                config.Limits.MaxRequestBodySize = int.MaxValue;
-                config.ApplicationSchedulingMode = Microsoft.AspNetCore.Server.Kestrel.Transport.Abstractions.Internal.SchedulingMode.Inline;
-                config.Listen(BindToAny ? IPAddress.Any : IPAddress.Loopback, port);
-                if (!InDocker)
-                    config.Listen(BindToAny ? IPAddress.IPv6Any : IPAddress.IPv6Loopback, port);
-            })
-            .Configure(a => a.Run(Handler))
+                {
+                    config.AddServerHeader = false;
+                    config.Limits.MaxRequestBodySize = int.MaxValue;
+                    config.Listen(BindToAny ? IPAddress.Any : IPAddress.Loopback, port);
+                    if (!InDocker)
+                        config.Listen(BindToAny ? IPAddress.IPv6Any : IPAddress.IPv6Loopback, port);
+                })
+                .ConfigureServices(s => { s.AddProxy(); })
+                .Configure(a =>
+                {
+                    a.UseWebSockets();
+                    a.Run(Handler);
+                })
             .Build();
         }
 

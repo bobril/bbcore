@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+- Option to proxy all unknown requests to project defined url including websockets (`"proxyUrl": "http://localhost:3001"` in `bobril` section in `package.json`)
+- Chrome on Linux could be installed by Snap
+
 ## 1.7.0
 
 ### Added

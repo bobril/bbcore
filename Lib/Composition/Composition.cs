@@ -14,6 +14,7 @@ using Lib.Utils.CommandLineParser.Definitions;
 using Lib.Utils.CommandLineParser.Parser;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Lib.Chrome;
@@ -26,6 +27,9 @@ using Lib.Registry;
 using Lib.Utils.Notification;
 using Lib.Translation;
 using Lib.Utils.Logger;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using ProxyKit;
 
 namespace Lib.Composition
 {
@@ -964,8 +968,56 @@ namespace Lib.Composition
                 return;
             }
 
-            context.Response.StatusCode = 404;
-            await context.Response.WriteAsync("Not found " + path);
+            var proxy = _mainBuildResult.ProxyUrl;
+            if (proxy != null)
+            {
+                if (context.WebSockets.IsWebSocketRequest)
+                {
+                    var wsproxy = new WebSocketProxyMiddleware(httpContext => Task.CompletedTask, new ProvideProxyOptions(), new Uri("ws"+proxy.Substring(4)), new NullLogger<WebSocketProxyMiddleware>());
+                    await wsproxy.Invoke(context);
+                }
+                else
+                {
+                    var httpproxy = new ProxyMiddleware<HandleProxyRequestWrapper>(null, new HandleProxyRequestWrapper(context =>
+                        context
+                            .ForwardTo(proxy)
+                            .AddXForwardedHeaders()
+                            .Send()));
+                    await httpproxy.Invoke(context);
+                }
+            }
+            else
+            {
+                context.Response.StatusCode = 404;
+                await context.Response.WriteAsync("Not found " + path);
+            }
+        }
+
+        class HandleProxyRequestWrapper : IProxyHandler
+        {
+            readonly HandleProxyRequest _handleProxyRequest;
+
+            public HandleProxyRequestWrapper(HandleProxyRequest handleProxyRequest)
+            {
+                _handleProxyRequest = handleProxyRequest;
+            }
+
+            public Task<HttpResponseMessage> HandleProxyRequest(HttpContext httpContext)
+                => _handleProxyRequest(httpContext);
+        }
+        class ProvideProxyOptions : IOptionsMonitor<ProxyOptions>
+        {
+            public ProxyOptions Get(string name)
+            {
+                return CurrentValue;
+            }
+
+            public IDisposable OnChange(Action<ProxyOptions, string> listener)
+            {
+                return null;
+            }
+
+            public ProxyOptions CurrentValue => new ProxyOptions();
         }
 
         static bool FindInFilesContent(string pathWithoutFirstSlash,
@@ -1048,6 +1100,7 @@ namespace Lib.Composition
                     try
                     {
                         proj.UpdateFromProjectJson(localizeValue);
+                        _mainBuildResult.ProxyUrl = proj.ProxyUrl;
                         proj.GenerateCode();
                         proj.RefreshCompilerOptions();
                         proj.RefreshMainFile();

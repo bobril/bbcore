@@ -173,6 +173,14 @@ Use this comment in source code with import to ignore this specific import (must
         "preserveProjectRoot": true
     }
 
+## Proxy all requests in interactive mode to defined url
+
+Useful if your API server does not uses CORS, so proxy requests through bobril-build localhost:8080. It includes support for WebSockets connections. Url have to start with `http://` or `https://`.
+
+    "bobril": {
+        "proxyUrl": "http://localhost:3001"
+    }
+
 # Environmental variables
 
 ## Forcing Polling watcher

@@ -19,6 +19,7 @@ namespace Lib.TSCompiler
         readonly Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();
 
         public string? CommonSourceDirectory;
+        public string? ProxyUrl;
 
         public MainBuildResult(bool compressFileNames, string? outputSubDir)
         {

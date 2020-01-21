@@ -56,6 +56,7 @@ namespace Lib.TSCompiler
         public string PathToTranslations;
         public bool TsconfigUpdate;
         public Dictionary<string, string?>? BrowserResolve;
+        public string? ProxyUrl;
 
         public Dictionary<string, string> ExpandedProcessEnvs;
         public Dictionary<string, AstNode> ExpandedDefines;
@@ -507,6 +508,7 @@ namespace Lib.TSCompiler
             }
             PreserveProjectRoot = bobrilSection?["preserveProjectRoot"]?.Value<bool>() ?? false;
             ForceNewBundler = bobrilSection?["forceNewBundler"]?.Value<bool>() ?? false;
+            ProxyUrl = GetStringProperty(bobrilSection, "proxyUrl", null);
         }
 
         Dictionary<string, AstToplevel> ParseDefines(JObject? jObject)
