@@ -1,0 +1,19 @@
+{
+  "name": "Quill-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index",
+  "author": "",
+  "license": "ISC",
+  "bobril": {
+    "compilerOptions": {
+      "allowSyntheticDefaultImports": true
+    }
+  },
+  "dependencies": {
+    "@types/quill": "^2.0.3",
+    "bobril": "*",
+    "quill": "^1.3.7",
+    "quill-delta": "^4.2.1"
+  }
+}
