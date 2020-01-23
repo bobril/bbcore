@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.9.0
+
 ### Changed
 
 - By default enable `allowSyntheticDefaultImports`
