@@ -300,6 +300,7 @@ namespace Lib.TSCompiler
                 removeComments = false,
                 types = null,
                 resolveJsonModule = true,
+                allowSyntheticDefaultImports = true,
                 lib = GetDefaultTSLibs()
             };
         }

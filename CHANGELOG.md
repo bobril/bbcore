@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Changed
+
+- By default enable `allowSyntheticDefaultImports`
+
+### Fixed
+
+- Minification in new bundler for Quill library.
+
 ## 1.8.0
 
 ### Added

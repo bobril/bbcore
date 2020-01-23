@@ -6,6 +6,7 @@
   "author": "",
   "license": "ISC",
   "bobril": {
+    "forceNewBundler": true,
     "compilerOptions": {
       "allowSyntheticDefaultImports": true
     }

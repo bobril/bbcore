@@ -22,7 +22,7 @@ namespace Njsast.Ast
 
         public override void CodeGen(OutputContext output)
         {
-            Expression.Print(output, Expression is AstBinary && output.NeedNodeParens(Expression));
+            Expression.Print(output, (Expression is AstBinary || Expression is AstNew) && output.NeedNodeParens(Expression));
             if (output.NeedDotAfterNumber())
             {
                 output.Print(".");

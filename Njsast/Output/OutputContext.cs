@@ -567,7 +567,7 @@ namespace Njsast.Output
 
         public void PrintPropertyName(string name)
         {
-            if (uint.TryParse(name, out var _))
+            if (!name.StartsWith('+') && uint.TryParse(name, out var _))
             {
                 Print(name);
             }
