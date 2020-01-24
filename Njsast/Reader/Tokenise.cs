@@ -513,9 +513,9 @@ namespace Njsast.Reader
         // Read an integer in the given radix. Return null if zero digits
         // were read, the integer value otherwise. When `len` is given, this
         // will return `null` unless the integer has exactly `len` digits.
-        int? ReadInt(int radix, int? len = null)
+        long? ReadInt(int radix, int? len = null)
         {
-            var total = 0;
+            var total = 0L;
             var start = _pos;
             for (var i = 0; !len.HasValue || i < len; ++i)
             {
@@ -831,7 +831,7 @@ namespace Njsast.Reader
                 InvalidStringToken(codePos, "Bad character escape sequence");
                 return 0;
             }
-            return n.Value;
+            return (int)n.Value;
         }
 
         // Read an identifier, and return it as a string. Sets `this.containsEsc`

@@ -528,7 +528,7 @@ namespace Njsast.Reader
                     Next();
                     return new AstRegExp(SourceFile, startLocation, _lastTokEnd, r);
                 case TokenType.Num:
-                    if (Value is int intValue)
+                    if (Value is long intValue)
                         return ParseLiteral(intValue);
                     return ParseLiteral((double) GetValue());
                 case TokenType.String:

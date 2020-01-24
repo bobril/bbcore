@@ -136,7 +136,9 @@ namespace Njsast.Bundler
             func.ArgNames.Add(new AstSymbolFunarg("undefined"));
             func.HasUseStrictDirective = true;
             func.Body.TransferFrom(ref topLevelAst.Body);
-            topLevelAst.Body.Add(new AstSimpleStatement(new AstUnaryPrefix(Operator.LogicalNot, new AstCall(func))));
+            var call = new AstCall(new AstDot(func, "call"));
+            call.Args.AddRef()=new AstThis(null, new Position(), new Position() );
+            topLevelAst.Body.Add(new AstSimpleStatement(new AstUnaryPrefix(Operator.LogicalNot, call)));
         }
 
         public static void UnwrapIIFE(AstToplevel topLevelAst)
