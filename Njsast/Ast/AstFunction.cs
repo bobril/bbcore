@@ -33,7 +33,7 @@ namespace Njsast.Ast
 
         public override bool NeedParens(OutputContext output)
         {
-            if (output.FirstInStatement())
+            if (!output.HasParens() && output.FirstInStatement())
             {
                 return true;
             }

@@ -70,7 +70,7 @@ namespace Njsast.Ast
         {
             output.PushNode(this);
             output.AddMapping(Source, Start, true);
-            if (forceParens || !output.HasParens() && NeedParens(output))
+            if (forceParens || NeedParens(output))
             {
                 output.Print("(");
                 CodeGen(output);
