@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.9.1
+
 ### Fixed
 
 - Another bugs squashed in bundler (`this` is not undefined and hex numbers bigger than 32bit)
