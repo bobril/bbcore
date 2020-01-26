@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Another bugs squashed in bundler (missing parentis)
+
 ## 1.9.1
 
 ### Fixed
