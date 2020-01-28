@@ -55,7 +55,10 @@ R.r = function (name, parent) {
     m.exports = {};
     m.fn.call(R.t, function (name) { return R.r(name, p); }, m, m.exports, R.t);
     if ((typeof m.exports === "function" || typeof m.exports === "object") && !("default" in m.exports)) {
-        Object.defineProperty(m.exports, "default", { value: m.exports, enumerable: false });
+        try {
+            Object.defineProperty(m.exports, "default", { value: m.exports, enumerable: false });
+        }
+        catch (_a) { }
     }
     return m.exports;
 };

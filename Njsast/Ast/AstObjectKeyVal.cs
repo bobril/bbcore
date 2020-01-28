@@ -1,4 +1,5 @@
-﻿using Njsast.Output;
+﻿using System.Globalization;
+using Njsast.Output;
 using Njsast.Reader;
 
 namespace Njsast.Ast
@@ -31,6 +32,7 @@ namespace Njsast.Ast
             var keyString = Key switch
             {
                 AstString str => str.Value,
+                AstNumber num => num.Value.ToString("R", CultureInfo.InvariantCulture),
                 AstSymbol key => GetName(key),
                 _ => null
             };

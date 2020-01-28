@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Another bug squashed in bundler (unneeded brackets)
+- IE11 fast bundler compatibility with module.exports = location
+
 ## 1.9.2
 
 ### Fixed

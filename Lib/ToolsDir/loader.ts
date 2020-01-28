@@ -63,7 +63,9 @@ R.r = function(name: string, parent: string) {
     m.exports = {};
     m.fn!.call(R.t, (name: string) => R.r(name, p), m, m.exports, R.t);
     if ((typeof m.exports === "function" || typeof m.exports === "object") && !("default" in m.exports)) {
-        Object.defineProperty(m.exports, "default", { value: m.exports, enumerable: false });
+        try {
+            Object.defineProperty(m.exports, "default", { value: m.exports, enumerable: false });
+        } catch {}
     }
     return m.exports;
 };
