@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.9.3
+
 ### Fixed
 
 - Another bug squashed in bundler (unneeded brackets)
