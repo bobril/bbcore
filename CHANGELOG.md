@@ -5,6 +5,7 @@
 ### Fixed
 
 - Wrong splitting of long lines in minification in new bundler.
+- Fix export shadowing global in both bundlers.
 
 ## 1.9.3
 

@@ -188,8 +188,16 @@
         return ar;
     };
     var __spread = function() {
-        for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
-        return ar;
+        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+        for (var r = Array(s), k = 0, i = 0; i < il; i++) for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, 
+        k++) r[k] = a[j];
+        return r;
+    };
+    var __spreadArrays = function() {
+        for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+        for (var r = Array(s), k = 0, i = 0; i < il; i++) for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, 
+        k++) r[k] = a[j];
+        return r;
     };
     var __await = function(v) {
         return this instanceof __await ? (this.v = v, this) : new __await(v);

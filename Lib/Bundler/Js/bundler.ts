@@ -538,6 +538,9 @@ function captureTopLevelVarsFromTslibSource(bundleAst: IAstToplevel, topLevelNam
             if (key[0] == "_") topLevelNames[key] = true;
         }
     );
+    bundleAst.globals!.each((val, key) => {
+        topLevelNames[key] = true;
+    });
 }
 
 interface ISplitInfo {
@@ -965,6 +968,9 @@ function renameGlobalVarsAndBuildPureFuncList(
         if (f.partOfBundle !== currentBundleName) return;
         if (f.difficult) return;
         let suffix = fileNameToIdent(f.name);
+        f.ast.globals!.each((val, key) => {
+            topLevelNames[key] = true;
+        });
         let walker = new TreeWalker((node: IAstNode, descend: () => void) => {
             if (node instanceof AST_Scope) {
                 node.variables!.each((symb, name) => {

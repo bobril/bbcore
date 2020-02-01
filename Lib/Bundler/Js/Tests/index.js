@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const path = require("path");
-const tslibSourceContent = fs.readFileSync("../../../TSCompiler/tslib.js", "utf-8");
-const importSourceContent = fs.readFileSync("../../../TSCompiler/import.js", "utf-8");
+const tslibSourceContent = fs.readFileSync("tslib.js", "utf-8");
+const importSourceContent = fs.readFileSync("import.js", "utf-8");
 let prefix = "";
 let currentTestDir = "";
 let errors = 0;
@@ -61,6 +61,9 @@ const bb = {
     },
     tslibSource(withImport) {
         return tslibSourceContent + (withImport ? importSourceContent : "");
+    },
+    log(text) {
+        console.log(text);
     }
 };
 const uglifyJsContent = fs.readFileSync("../uglify.js", "utf-8");

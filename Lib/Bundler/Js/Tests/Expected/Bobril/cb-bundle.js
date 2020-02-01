@@ -902,19 +902,19 @@
                 reject.call(this, e);
             }
         }
-        function Promise(fn) {
+        function Promise_bobril(fn) {
             this.s = null, this.v = null, this.d = [], doResolve(fn, bind(resolve, this), bind(reject, this));
         }
-        Promise.prototype.then = function(onFulfilled, onRejected) {
+        Promise_bobril.prototype.then = function(onFulfilled, onRejected) {
             var me = this;
-            return new Promise(function(resolve, reject) {
+            return new Promise_bobril(function(resolve, reject) {
                 handle.call(me, [ onFulfilled, onRejected, resolve, reject ]);
             });
-        }, Promise.prototype.catch = function(onRejected) {
+        }, Promise_bobril.prototype.catch = function(onRejected) {
             return this.then(undefined, onRejected);
-        }, Promise.all = function() {
+        }, Promise_bobril.all = function() {
             var args = [].slice.call(1 === arguments.length && __export_isArray(arguments[0]) ? arguments[0] : arguments);
-            return new Promise(function(resolve, reject) {
+            return new Promise_bobril(function(resolve, reject) {
                 if (0 !== args.length) for (var remaining = args.length, i_bobril = 0; i_bobril < args.length; i_bobril++) res(i_bobril, args[i_bobril]); else resolve(args);
                 function res(i_bobril, val) {
                     try {
@@ -930,19 +930,19 @@
                     }
                 }
             });
-        }, Promise.resolve = function(value) {
-            return value && "object" == typeof value && value.constructor === Promise ? value : new Promise(function(resolve) {
+        }, Promise_bobril.resolve = function(value) {
+            return value && "object" == typeof value && value.constructor === Promise_bobril ? value : new Promise_bobril(function(resolve) {
                 resolve(value);
             });
-        }, Promise.reject = function(value) {
-            return new Promise(function(_resolve, reject) {
+        }, Promise_bobril.reject = function(value) {
+            return new Promise_bobril(function(_resolve, reject) {
                 reject(value);
             });
-        }, Promise.race = function(values) {
-            return new Promise(function(resolve, reject) {
+        }, Promise_bobril.race = function(values) {
+            return new Promise_bobril(function(resolve, reject) {
                 for (var i_bobril = 0, len = values.length; i_bobril < len; i_bobril++) values[i_bobril].then(resolve, reject);
             });
-        }, window.Promise = Promise;
+        }, window.Promise = Promise_bobril;
     }(), 9 === ieVersion() ? function() {
         function addFilter(s, v) {
             null == s.zoom && (s.zoom = "1");

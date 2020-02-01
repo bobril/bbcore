@@ -2,8 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { mkdirSync } from "fs";
 
-const tslibSourceContent = fs.readFileSync("../../../TSCompiler/tslib.js", "utf-8");
-const importSourceContent = fs.readFileSync("../../../TSCompiler/import.js", "utf-8");
+const tslibSourceContent = fs.readFileSync("tslib.js", "utf-8");
+const importSourceContent = fs.readFileSync("import.js", "utf-8");
 
 let prefix = "";
 let currentTestDir = "";
@@ -25,6 +25,7 @@ interface IBB {
     generateBundleName(forName: string): string;
     resolveRequire(name: string, from: string): string;
     tslibSource(withImport: boolean): string;
+    log(text: string): void;
 }
 
 const bb: IBB = {
@@ -68,6 +69,9 @@ const bb: IBB = {
     },
     tslibSource(withImport: boolean) {
         return tslibSourceContent + (withImport ? importSourceContent : "");
+    },
+    log(text: string) {
+        console.log(text);
     }
 };
 
