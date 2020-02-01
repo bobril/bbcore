@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Wrong splitting of long lines in minification in new bundler.
+
 ## 1.9.3
 
 ### Fixed

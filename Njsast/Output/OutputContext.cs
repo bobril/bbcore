@@ -119,7 +119,7 @@ namespace Njsast.Output
                 _mightNeedSemicolon = false;
                 if (_lastChar == ':' && ch == '}' || _lastChar != ';' && ch != ';' && ch != '}')
                 {
-                    if (_currentCol < Options.MaxLineLen || "([+*/-,.`".Contains(ch)
+                    if (_currentCol < Options.MaxLineLen || "\n([+*/-,.`".Contains(ch)
                     ) // these characters cannot be on start of new line without semicolon
                     {
                         TruePrint(";");
@@ -203,7 +203,7 @@ namespace Njsast.Output
             }
             else
             {
-                if (_currentCol > Options.MaxLineLen)
+                if (!_mightNeedSemicolon && _currentCol > Options.MaxLineLen)
                 {
                     Print("\n");
                 }
