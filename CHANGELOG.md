@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.10.0
+
 ### Changed
 
 - New bundler is now default.
