@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- New bundler is now default.
+
 ### Fixed
 
 - Wrong splitting of long lines in minification in new bundler.
