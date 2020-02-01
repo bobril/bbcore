@@ -80,7 +80,7 @@ namespace Njsast.Bundler
                 return;
             }
 
-            var renameWalker = new ToplevelRenameWalker(main.Variables!, suffix);
+            var renameWalker = new ToplevelRenameWalker(main.Variables!, main.Globals!, suffix);
             renameWalker.Walk(add);
 
             beforeAdd?.Invoke(add);
@@ -96,10 +96,10 @@ namespace Njsast.Bundler
             }
         }
 
-        public static string MakeUniqueName(string name, IReadOnlyDictionary<string, SymbolDef> existing,
+        public static string MakeUniqueName(string name, IReadOnlyDictionary<string, SymbolDef> existing, IReadOnlyDictionary<string, SymbolDef> globals,
             string? suffix)
         {
-            if (!existing.ContainsKey(name)) return name;
+            if (!existing.ContainsKey(name) && !globals.ContainsKey(name)) return name;
             var prefix = suffix != null ? name + suffix : name;
             string newName;
             var index = suffix == null ? 1 : 0;
@@ -108,7 +108,7 @@ namespace Njsast.Bundler
                 index++;
                 newName = prefix;
                 if (index > 1) newName += index.ToString();
-            } while (existing.ContainsKey(newName));
+            } while (existing.ContainsKey(newName) || globals.ContainsKey(newName));
 
             return newName;
         }

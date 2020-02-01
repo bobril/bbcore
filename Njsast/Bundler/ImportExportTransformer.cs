@@ -30,6 +30,7 @@ namespace Njsast.Bundler
                 {
                     _sourceFile.NeedsWholeImportsFrom.AddUnique(resolvedName);
                 }
+
                 return node;
             }
 
@@ -60,6 +61,7 @@ namespace Njsast.Bundler
                     _sourceFile.NeedsImports.AddUnique((wholeImportFile, propName));
                     return node;
                 }
+
                 _sourceFile.NeedsWholeImportsFrom.AddUnique(wholeImportFile);
                 return node;
             }
@@ -111,14 +113,16 @@ namespace Njsast.Bundler
                     }
 
                     var newName =
-                        BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast.Variables!, "");
+                        BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast.Variables!,
+                            _sourceFile.Ast.Globals!, "");
                     var newVar = new AstVar(stmBody);
                     var astSymbolVar = new AstSymbolVar(stmBody, newName);
                     astSymbolVar.Thedef = new SymbolDef(_sourceFile.Ast, astSymbolVar, trueValue);
                     _sourceFile.Ast.Variables!.Add(newName, astSymbolVar.Thedef);
                     newVar.Definitions.Add(new AstVarDef(astSymbolVar, trueValue));
                     _exportName2VarNameMap[pea.Value.name] = astSymbolVar.Thedef;
-                    _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name, new AstSymbolRef(_sourceFile.Ast, astSymbolVar.Thedef, SymbolUsage.Unknown)));
+                    _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name,
+                        new AstSymbolRef(_sourceFile.Ast, astSymbolVar.Thedef, SymbolUsage.Unknown)));
                     return newVar;
                 }
             }
@@ -137,7 +141,8 @@ namespace Njsast.Bundler
                     return new AstSymbolRef(node, varName, SymbolUsage.Unknown);
                 }
 
-                var newName = BundlerHelpers.MakeUniqueName("__export_" + name, _sourceFile.Ast.Variables!, "");
+                var newName = BundlerHelpers.MakeUniqueName("__export_" + name, _sourceFile.Ast.Variables!,
+                    _sourceFile.Ast.Globals!, "");
                 var newVar = new AstVar(node);
                 var astSymbolVar = new AstSymbolVar(node, newName);
                 astSymbolVar.Thedef = new SymbolDef(_sourceFile.Ast, astSymbolVar, null);
