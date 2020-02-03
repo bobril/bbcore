@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fix export another shadowing global bug in just in new bundler.
+
 ## 1.10.0
 
 ### Changed

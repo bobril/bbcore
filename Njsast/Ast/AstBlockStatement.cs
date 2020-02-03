@@ -13,6 +13,10 @@ namespace Njsast.Ast
         {
         }
 
+        public AstBlockStatement(AstNode from): base(from)
+        {
+        }
+
         public override AstNode ShallowClone()
         {
             var res = new AstBlockStatement(Source, Start, End);

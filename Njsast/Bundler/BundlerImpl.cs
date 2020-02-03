@@ -121,6 +121,15 @@ namespace Njsast.Bundler
                     BundlerHelpers.AppendToplevelWithRename(topLevelAst, jsAst, _currentFileIdent);
                 }
 
+                foreach (var sourceFile in _order)
+                {
+                    if (sourceFile.PartOfBundle != splitName) continue;
+                    foreach (var keyValuePair in sourceFile.Ast.Globals!)
+                    {
+                        topLevelAst.Globals!.TryAdd(keyValuePair.Key, keyValuePair.Value);
+                    }
+                }
+
                 AddExternallyImportedFromOtherBundles(topLevelAst, splitInfo);
                 foreach (var sourceFile in _order)
                 {
