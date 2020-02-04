@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Lib.DiskCache;
 using Lib.Spriter;
@@ -12,10 +13,7 @@ using Njsast.Bobril;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Processing.Drawing;
 using SixLabors.ImageSharp.Processing.Processors;
-using SixLabors.ImageSharp.Processing.Transforms;
-using SixLabors.Primitives;
 
 namespace Lib.TSCompiler
 {
@@ -216,7 +214,6 @@ namespace Lib.TSCompiler
                 var resultImage = new Image<Rgba32>((int)Math.Ceiling(_placer.Dim.Width * q), (int)Math.Ceiling(_placer.Dim.Height * q));
                 resultImage.Mutate(c =>
                 {
-                    c.Fill(Rgba32.Transparent);
                     for (int j = 0; j < _allSprites.Count; j++)
                     {
                         var sprite = _allSprites[j];
@@ -228,7 +225,7 @@ namespace Lib.TSCompiler
                             var image = fi.Image;
                             if (sprite.Me.Color != null)
                             {
-                                Rgba32 rgbColor = ParseColor(sprite.Me.Color);
+                                var rgbColor = ParseColor(sprite.Me.Color);
                                 image = image.Clone(operation =>
                                 {
                                     operation.ApplyProcessor(new Recolor(rgbColor));
@@ -238,9 +235,9 @@ namespace Lib.TSCompiler
                             {
                                 if (q != slice.quality)
                                     operation = operation.Resize((int)Math.Round(image.Width * q / slice.quality), (int)Math.Round(image.Height * q / slice.quality));
-                                operation.Crop(new Rectangle(new Point((int)(q * sprite.Me.X), (int)(q * sprite.Me.Y)), new Size((int)(sprite.owidth * q), (int)(sprite.oheight * q))));
+                                operation.Crop(new Rectangle(new Point((int)(q * Math.Max(0,sprite.Me.X)), (int)(q * Math.Max(0,sprite.Me.Y))), new Size((int)(sprite.owidth * q), (int)(sprite.oheight * q))));
                             });
-                            c.DrawImage(new GraphicsOptions(), image, new Point((int)(sprite.ox * q), (int)(sprite.oy * q)));
+                            c.DrawImage(image, new Point((int)(sprite.ox * q), (int)(sprite.oy * q)), new GraphicsOptions());
                         }
                     }
                 });
@@ -301,7 +298,61 @@ namespace Lib.TSCompiler
             throw new InvalidDataException("Cannot parse color " + color);
         }
 
-        class Recolor : IImageProcessor<Rgba32>
+        class RealRecolor : IImageProcessor<Rgba32>
+        {
+            Rgba32 _rgbColor;
+            Image<Rgba32> _source;
+            Rectangle _sourceRectangle;
+
+            public RealRecolor(Rgba32 rgbColor, Image<Rgba32> source, Rectangle sourceRectangle)
+            {
+                _rgbColor = rgbColor;
+                _source = source;
+                _sourceRectangle = sourceRectangle;
+            }
+
+            public void Execute()
+            {
+                var cgray = new Bgr24(128, 128, 128);
+                var frame = _source.Frames.RootFrame;
+                if (_rgbColor.A == 255)
+                {
+                    for (var y = 0; y < frame.Height; y++)
+                    for (var x = 0; x < frame.Width; x++)
+                    {
+                        var c = frame[x, y];
+                        if (cgray.Equals(c.Bgr))
+                        {
+                            var alpha = c.A;
+                            c = _rgbColor;
+                            c.A = alpha;
+                            frame[x, y] = c;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int y = 0; y < frame.Height; y++)
+                    for (int x = 0; x < frame.Width; x++)
+                    {
+                        var c = frame[x, y];
+                        if (cgray.Equals(c.Bgr))
+                        {
+                            var alpha = c.A;
+                            c = _rgbColor;
+                            c.A = (byte)(((c.A * alpha) * 32897) >> 23); // clever divide by 255
+                            frame[x, y] = c;
+                        }
+                    }
+                }
+            }
+
+            public void Dispose()
+            {
+            }
+        }
+
+        class Recolor : IImageProcessor
         {
             Rgba32 _rgbColor;
 
@@ -310,43 +361,12 @@ namespace Lib.TSCompiler
                 _rgbColor = rgbColor;
             }
 
-            public void Apply(Image<Rgba32> source, Rectangle sourceRectangle)
+            public IImageProcessor<TPixel> CreatePixelSpecificProcessor<TPixel>(SixLabors.ImageSharp.Configuration configuration, Image<TPixel> source,
+                Rectangle sourceRectangle) where TPixel : struct, IPixel<TPixel>
             {
-                var cgray = new Bgr24(128, 128, 128);
-                var frame = source.Frames.RootFrame;
-                var crgb = new Bgr24();
-                if (_rgbColor.A == 255)
-                {
-                    for (int y = 0; y < frame.Height; y++)
-                        for (int x = 0; x < frame.Width; x++)
-                        {
-                            var c = frame[x, y];
-                            c.ToBgr24(ref crgb);
-                            if (cgray.Equals(crgb))
-                            {
-                                var alpha = c.A;
-                                c = _rgbColor;
-                                c.A = alpha;
-                                frame[x, y] = c;
-                            }
-                        }
-                }
-                else
-                {
-                    for (int y = 0; y < frame.Height; y++)
-                        for (int x = 0; x < frame.Width; x++)
-                        {
-                            var c = frame[x, y];
-                            c.ToBgr24(ref crgb);
-                            if (cgray.Equals(crgb))
-                            {
-                                var alpha = c.A;
-                                c = _rgbColor;
-                                c.A = (byte)(((c.A * alpha) * 32897) >> 23); // clever divide by 255
-                                frame[x, y] = c;
-                            }
-                        }
-                }
+                if (typeof(TPixel)==typeof(Rgba32))
+                    return Unsafe.As<IImageProcessor<TPixel>>(new RealRecolor(_rgbColor, Unsafe.As<Image<Rgba32>>(source), sourceRectangle));
+                throw new NotSupportedException();
             }
         }
     }
