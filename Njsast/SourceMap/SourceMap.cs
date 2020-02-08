@@ -205,7 +205,13 @@ namespace Njsast.SourceMap
             {
                 var start = _sourceMap.FindPosition(node.Start.Line + 1, node.Start.Column + 1);
                 var end = _sourceMap.FindPosition(node.End.Line + 1, node.End.Column + 1);
-                if (!ReferenceEquals(start.SourceName, end.SourceName)) return;
+                if (!ReferenceEquals(start.SourceName, end.SourceName))
+                {
+                    if (end.SourceName == null)
+                    {
+                    }
+                    return;
+                }
                 if (start.SourceName == "")
                 {
                     node.Source = null;
@@ -366,7 +372,15 @@ namespace Njsast.SourceMap
                 }
             }
 
-            commit();
+            if (!commit())
+            {
+                if (lastSourceIndex >= 0)
+                {
+                    res.SourceName = sources[lastSourceIndex];
+                    res.Line = lastSourceLine + 1;
+                    res.Col = lastSourceCol + 1;
+                }
+            }
             return res;
         }
     }
