@@ -16,17 +16,17 @@ namespace Lib.WebServer
     {
         class Connection : ILongPollingConnection
         {
-            ILongPollingConnectionHandler _handler;
+            readonly ILongPollingConnectionHandler _handler;
             public string UserAgent { get; set; }
             public string Id => _id;
 
             LongPollingServer _owner;
-            string _id;
-            int _closed; // 0/1 = false/true - Interlocked.Exhange is not for bools :-(
+            readonly string _id;
+            int _closed; // 0/1 = false/true - Interlocked.Exchange is not for bools :-(
             TaskCompletionSource<Unit> _responseEnder;
             HttpContext _response;
             Timer _timeOut;
-            List<(string, object)> _toSend;
+            readonly List<(string, object)> _toSend;
 
             internal Connection(LongPollingServer owner, ILongPollingConnectionHandler handler)
             {
@@ -47,13 +47,12 @@ namespace Lib.WebServer
 
             void Retimeout()
             {
-                if (_timeOut != null)
-                    _timeOut.Change(15000, Timeout.Infinite);
+                _timeOut?.Change(15000, Timeout.Infinite);
             }
 
             public void Send(string message, object data)
             {
-                var response = _response;
+                HttpContext response;
                 lock (_toSend)
                 {
                     _toSend.Add((message, data));
@@ -78,8 +77,8 @@ namespace Lib.WebServer
                 {
                     _handler.OnClose(this);
                 }
-                var response = _response;
-                var ender = _responseEnder;
+                HttpContext response;
+                TaskCompletionSource<Unit> ender;
                 lock (_toSend)
                 {
                     response = _response;
@@ -156,7 +155,7 @@ namespace Lib.WebServer
             {
                 if (_response == response)
                 {
-                    var ender = _responseEnder;
+                    TaskCompletionSource<Unit> ender;
                     lock (_toSend)
                     {
                         if (_response != response)
