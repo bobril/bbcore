@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using Newtonsoft.Json;
 
 namespace Lib.Composition
 {
@@ -11,6 +12,8 @@ namespace Lib.Composition
     {
         public string UserAgent;
         public bool Running;
+        [JsonIgnore]
+        public uint[]? CoverageData;
         public int SuitesFailed;
         public int TestsFailed;
         public int TestsSkipped;
@@ -36,7 +39,8 @@ namespace Lib.Composition
                 TestsFailed = TestsFailed,
                 TestsFinished = TestsFinished,
                 TestsSkipped = TestsSkipped,
-                TotalTests = TotalTests
+                TotalTests = TotalTests,
+                CoverageData = CoverageData
             };
         }
 

@@ -27,6 +27,9 @@
     "target": "es5",
     "resolveJsonModule": true
   },
+  "files": [
+    "C:/Users/boris/.bbcore/dev/jasmine330.d.ts"
+  ],
   "include": [
     "**/*"
   ]

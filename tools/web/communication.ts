@@ -57,6 +57,11 @@ c.onMessage = (c: longPollingClient.Connection, message: string, data: any) => {
             b.invalidate();
             break;
         }
+        case "setCoverage": {
+            s.coverage = data.value;
+            b.invalidate();
+            break;
+        }
         default: {
             console.log("Unknown message: " + message, data);
             break;
@@ -74,4 +79,8 @@ export function runAction(id: string) {
 
 export function setLiveReload(value: boolean) {
     c.send("setLiveReload", { value });
+}
+
+export function setCoverage(value: boolean) {
+    c.send("setCoverage", { value });
 }

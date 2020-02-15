@@ -245,6 +245,29 @@ declare var jasmineRequire: any;
             },
             jasmineDone: () => {
                 bbTest("wholeDone", perfnow() - totalStart);
+                var cov = (window as any).__c0v as Uint32Array;
+                if (cov != undefined) {
+                    let pos = 0;
+                    const sendPart = () => {
+                        while (pos < cov.length && cov[pos] === 0) pos++;
+                        if (pos < cov.length) {
+                            let maxlen = Math.min(cov.length - pos, 1024);
+                            let len = maxlen - 1;
+                            while (cov[pos + len] === 0) len--;
+                            len++;
+                            bbTest("coverageReportPart", {
+                                start: pos,
+                                data: Array.prototype.slice.call(cov.slice(pos, pos + len))
+                            });
+                            pos += maxlen;
+                            setTimeout(sendPart, 10);
+                        } else {
+                            bbTest("coverageReportFinished", { length: cov.length });
+                        }
+                    };
+                    bbTest("coverageReportStarted", { length: cov.length });
+                    setTimeout(sendPart, 10);
+                }
             },
             suiteStarted: (result: { description: string; fullName: string }) => {
                 bbTest("suiteStart", result.description);

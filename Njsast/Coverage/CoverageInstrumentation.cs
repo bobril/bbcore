@@ -28,6 +28,18 @@ namespace Njsast.Coverage
 
                     return node;
                 }
+                case AstBinary astBinary:
+                {
+                    if (astBinary.Operator == Operator.LogicalAnd || astBinary.Operator == Operator.LogicalOr)
+                    {
+                        astBinary.Left = Transform(astBinary.Left);
+                        astBinary.Left = InstrumentCondition(astBinary.Left);
+                        astBinary.Right = Transform(astBinary.Right);
+                        return node;
+                    }
+
+                    return null;
+                }
                 case AstBlockStatement blockStatement:
                     InstrumentBlock(ref blockStatement.Body);
                     return node;
@@ -53,7 +65,7 @@ namespace Njsast.Coverage
                     astConditional.Alternative = Transform(astConditional.Alternative);
                     return node;
                 case AstSequence astSequence:
-                    InstrumentBlock(ref astSequence.Expressions);
+                    InstrumentBlock(ref astSequence.Expressions, true);
                     return node;
                 case AstLambda lambda:
                     InstrumentBlock(ref lambda.Body);
@@ -90,28 +102,61 @@ namespace Njsast.Coverage
             }
         }
 
-        void InstrumentBlock(ref StructList<AstNode> block)
+        void InstrumentBlock(ref StructList<AstNode> block, bool seq = false)
         {
             var input = new StructList<AstNode>();
             input.TransferFrom(ref block);
             block.Reserve(input.Count * 2);
             for (var i = 0; i < input.Count; i++)
             {
-                var idx = _owner.LastIndex++;
-                var call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
-                call.Args.Add(new AstNumber(idx));
-                block.Add(new AstSimpleStatement(call));
                 var ii = input[i];
-                _owner.StatementInfos.Add(new InstrumentedStatementInfo
+                if (ShouldStatementCover(ii))
                 {
-                    FileName = ii.Source,
-                    Start = ii.Start,
-                    End = ii.End,
-                    Index = idx
-                });
+                    var idx = _owner.LastIndex++;
+                    var call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
+                    call.Args.Add(new AstNumber(idx));
+                    if (seq)
+                    {
+                        block.Add(call);
+                    }
+                    else
+                    {
+                        block.Add(new AstSimpleStatement(call));
+                    }
+                    _owner.StatementInfos.Add(new InstrumentedStatementInfo
+                    {
+                        FileName = ii.Source,
+                        Start = ii.Start,
+                        End = ii.End,
+                        Index = idx
+                    });
+                }
                 ii = Transform(ii);
                 block.Add(ii);
             }
+        }
+
+        static bool ShouldStatementCover(AstNode node)
+        {
+            if (node.Source == null)
+                return false;
+            if (node is AstDefun || node is AstClass || node is AstImport || node is AstExport)
+                return false;
+            if (node.IsExportsAssign(true).HasValue)
+                return false;
+            if (node.IsDefinePropertyExportsEsModule())
+                return false;
+            return true;
+        }
+
+        static bool ShouldConditionCover(AstNode node)
+        {
+            if (node.Source == null)
+                return false;
+            // Don't cover trivial conditions
+            if (node is AstFalse || node is AstTrue)
+                return false;
+            return true;
         }
 
         static AstBlockStatement MakeBlockStatement(AstStatement statement)
@@ -124,6 +169,8 @@ namespace Njsast.Coverage
 
         AstNode InstrumentCondition(AstNode condition)
         {
+            if (!ShouldConditionCover(condition))
+                return condition;
             var idx = _owner.LastIndex;
             _owner.LastIndex += 2;
             var res = new AstCall(new AstSymbolRef(_owner.FncNameCond));

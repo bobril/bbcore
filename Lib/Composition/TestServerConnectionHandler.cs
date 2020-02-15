@@ -22,6 +22,7 @@ namespace Lib.Composition
         readonly object _lock = new object();
         readonly bool _verbose;
         readonly ILogger _logger;
+        uint[] _coverageData;
 
         public TestServerConnectionHandler(TestServer testServer)
         {
@@ -280,6 +281,27 @@ namespace Lib.Composition
 
                         _testServer.NotifyTestingStarted();
                         _testServer.NotifySomeChange();
+                        break;
+                    }
+
+                    case "coverageReportStarted":
+                    {
+                        _coverageData = new uint[data.Value<int>("length")];
+                        break;
+                    }
+
+                    case "coverageReportPart":
+                    {
+                        var start = data.Value<int>("start");
+                        var dataPart = data.Value<JArray>("data").Select(t=>t.Value<uint>()).ToList();
+                        dataPart.CopyTo(_coverageData, start);
+                        break;
+                    }
+
+                    case "coverageReportFinished":
+                    {
+                        _oldResults.CoverageData = _coverageData;
+                        _testServer.OnCoverageResults.OnNext(_oldResults);
                         break;
                     }
                 }

@@ -68,6 +68,7 @@ export let testSvrDataVersion = 0;
 export let building = false;
 export let actions: IAction[] = [];
 export let liveReload = false;
+export let coverage = false;
 export let lastBuildResult: {
     errors: number;
     warnings: number;

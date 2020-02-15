@@ -21,6 +21,8 @@ using Lib.Chrome;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 using BTDB.Collections;
 using Lib.BuildCache;
 using Lib.Registry;
@@ -29,6 +31,7 @@ using Lib.Translation;
 using Lib.Utils.Logger;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Njsast.Reader;
 using ProxyKit;
 
 namespace Lib.Composition
@@ -898,6 +901,12 @@ namespace Lib.Composition
                 return;
             }
 
+            if (path == "/bb/api/getFileCoverage")
+            {
+                await HandleJsonApi<GetFileCoverageRequest, GetFileCoverageResponse>(context, GetFileCoverage);
+                return;
+            }
+
             if (path.StartsWithSegments("/bb/api/liveReload", out var liveIdx))
             {
                 while (_currentProject.LiveReloadIdx == int.Parse(liveIdx.Value.Substring(1)))
@@ -973,16 +982,19 @@ namespace Lib.Composition
             {
                 if (context.WebSockets.IsWebSocketRequest)
                 {
-                    var wsproxy = new WebSocketProxyMiddleware(httpContext => Task.CompletedTask, new ProvideProxyOptions(), new Uri("ws"+proxy.Substring(4)), new NullLogger<WebSocketProxyMiddleware>());
+                    var wsproxy = new WebSocketProxyMiddleware(httpContext => Task.CompletedTask,
+                        new ProvideProxyOptions(), new Uri("ws" + proxy.Substring(4)),
+                        new NullLogger<WebSocketProxyMiddleware>());
                     await wsproxy.Invoke(context);
                 }
                 else
                 {
-                    var httpproxy = new ProxyMiddleware<HandleProxyRequestWrapper>(null, new HandleProxyRequestWrapper(context =>
-                        context
-                            .ForwardTo(proxy)
-                            .AddXForwardedHeaders()
-                            .Send()));
+                    var httpproxy = new ProxyMiddleware<HandleProxyRequestWrapper>(null,
+                        new HandleProxyRequestWrapper(context =>
+                            context
+                                .ForwardTo(proxy)
+                                .AddXForwardedHeaders()
+                                .Send()));
                     await httpproxy.Invoke(context);
                 }
             }
@@ -991,6 +1003,212 @@ namespace Lib.Composition
                 context.Response.StatusCode = 404;
                 await context.Response.WriteAsync("Not found " + path);
             }
+        }
+
+        static async Task HandleJsonApi<TReq, TResp>(HttpContext context, Func<TReq, TResp> func)
+        {
+            var reqBody = await new StreamReader(context.Request.Body, Encoding.UTF8).ReadToEndAsync();
+            var req = System.Text.Json.JsonSerializer.Deserialize<TReq>(reqBody,
+                new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase});
+            var resp = func(req);
+            context.Response.ContentType = "application/json";
+            await System.Text.Json.JsonSerializer.SerializeAsync(context.Response.Body, resp,
+                new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase});
+        }
+
+        GetFileCoverageResponse GetFileCoverage(GetFileCoverageRequest req)
+        {
+            var resp = new GetFileCoverageResponse();
+            resp.Status = "Unknown";
+            var wholeState = _testServer.GetState();
+            if (_mainBuildResult.CommonSourceDirectory == null)
+                return resp;
+            var fn = PathUtils.Subtract(PathUtils.Normalize(req.FileName), _mainBuildResult.CommonSourceDirectory!);
+            if (wholeState.Agents.Count == 0)
+                return resp;
+            if (!_currentProject.CoverageEnabled)
+                return resp;
+            var instr = _currentProject.CoverageInstrumentation;
+            if (instr == null)
+                return resp;
+            uint[]? coverageData = null;
+            foreach (var testResultsHolder in wholeState.Agents)
+            {
+                var ncd = testResultsHolder.CoverageData;
+                if (ncd == null) continue;
+                if (coverageData == null)
+                {
+                    coverageData = ncd.ToArray();
+                }
+                else if (coverageData.Length == ncd.Length)
+                {
+                    for (var i = 0; i < ncd.Length; i++)
+                    {
+                        coverageData[i] += ncd[i];
+                    }
+                }
+            }
+
+            if (coverageData == null)
+            {
+                resp.Status = "Calculating";
+                return resp;
+            }
+
+            resp.Ranges = new List<int>();
+            var r = resp.Ranges;
+
+            foreach (var statementInfo in instr.StatementInfos)
+            {
+                if (statementInfo.FileName != fn) continue;
+                RemoveOrSplitRange(r, statementInfo.Start, statementInfo.End);
+                r.Add(0);
+                r.Add(statementInfo.Start.Line);
+                r.Add(statementInfo.Start.Column);
+                r.Add(statementInfo.End.Line);
+                r.Add(statementInfo.End.Column);
+                r.Add((int) coverageData[statementInfo.Index]);
+            }
+
+            foreach (var conditionInfo in instr.ConditionInfos)
+            {
+                if (conditionInfo.FileName != fn) continue;
+                RemoveOrSplitRange(r, conditionInfo.Start, conditionInfo.End);
+                r.Add(1);
+                r.Add(conditionInfo.Start.Line);
+                r.Add(conditionInfo.Start.Column);
+                r.Add(conditionInfo.End.Line);
+                r.Add(conditionInfo.End.Column);
+                r.Add((int) coverageData[conditionInfo.Index]);
+                r.Add((int) coverageData[conditionInfo.Index + 1]);
+            }
+
+            resp.Status = "Done";
+            return resp;
+        }
+
+        struct Pos : IEquatable<Pos>
+        {
+            public Pos(int line, int col)
+            {
+                Line = line;
+                Col = col;
+            }
+
+            public Pos(Position pos)
+            {
+                Line = pos.Line;
+                Col = pos.Column;
+            }
+
+            public readonly int Line;
+            public readonly int Col;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            ulong Key() => ((ulong) Line << 32) + (ulong) Col;
+
+            public bool Equals(Pos other)
+            {
+                return Line == other.Line && Col == other.Col;
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is Pos other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Line, Col);
+            }
+
+            public static bool operator ==(Pos left, Pos right)
+            {
+                return left.Equals(right);
+            }
+
+            public static bool operator !=(Pos left, Pos right)
+            {
+                return !left.Equals(right);
+            }
+
+            public static bool operator <(Pos left, Pos right)
+            {
+                return left.Key() < right.Key();
+            }
+
+            public static bool operator >(Pos left, Pos right)
+            {
+                return left.Key() > right.Key();
+            }
+
+            public static bool operator <=(Pos left, Pos right)
+            {
+                return left.Key() <= right.Key();
+            }
+
+            public static bool operator >=(Pos left, Pos right)
+            {
+                return left.Key() >= right.Key();
+            }
+        }
+
+        void RemoveOrSplitRange(List<int> r, Position startPosition, Position endPosition)
+        {
+            var start = new Pos(startPosition);
+            var end = new Pos(endPosition);
+            for (var i = 0; i < r.Count;)
+            {
+                var cStart = new Pos(r[i + 1], r[i + 2]);
+                if (start <= cStart)
+                {
+                    i += CovCommandLen(r[i]);
+                    continue;
+                }
+                var cEnd = new Pos(r[i + 3], r[i + 4]);
+                if (end >= cEnd)
+                {
+                    i += CovCommandLen(r[i]);
+                    continue;
+                }
+                if (start == cStart)
+                {
+                    if (end == cEnd)
+                    {
+                        r.RemoveRange(i, CovCommandLen(r[i]));
+                        continue;
+                    }
+
+                    r[i + 1] = end.Line;
+                    r[i + 2] = end.Col;
+                }
+                else
+                {
+                    if (end == cEnd)
+                    {
+                        r[i + 3] = start.Line;
+                        r[i + 4] = start.Col;
+                    }
+                    else
+                    {
+                        r[i + 3] = start.Line;
+                        r[i + 4] = start.Col;
+                        r.Add(r[i]);
+                        r.Add(end.Line);
+                        r.Add(end.Col);
+                        r.Add(cEnd.Line);
+                        r.Add(cEnd.Col);
+                        r.AddRange(r.Skip(i + 5).Take(CovCommandLen(r[i]) - 5));
+                    }
+                }
+
+                i += CovCommandLen(r[i]);
+            }
+        }
+
+        static int CovCommandLen(int command)
+        {
+            return command == 0 ? 6 : 7;
         }
 
         class HandleProxyRequestWrapper : IProxyHandler
@@ -1005,6 +1223,7 @@ namespace Lib.Composition
             public Task<HttpResponseMessage> HandleProxyRequest(HttpContext httpContext)
                 => _handleProxyRequest(httpContext);
         }
+
         class ProvideProxyOptions : IOptionsMonitor<ProxyOptions>
         {
             public ProxyOptions Get(string name)
@@ -1056,6 +1275,10 @@ namespace Lib.Composition
                         color);
                     _notificationManager.SendNotification(results.ToNotificationParameters());
                 });
+                _testServer.OnCoverageResults.Subscribe((results) =>
+                {
+                    _logger.Info($"Coverage from {results.UserAgent} received");
+                });
             }
         }
 
@@ -1064,7 +1287,8 @@ namespace Lib.Composition
             _mainServer = new MainServer(() => _testServer.GetState());
             _mainServer.MainBuildResult = _mainBuildResult;
             _mainServerLongPollingHandler = new LongPollingServer(_mainServer.NewConnectionHandler);
-            _testServer.OnChange.Subscribe((_) => { _mainServer.NotifyTestServerChange(); });
+            _testServer.OnChange.Subscribe(_ => { _mainServer.NotifyTestServerChange(); });
+            _testServer.OnCoverageResults.Subscribe(_ => { _mainServer.NotifyCoverageChange(); });
         }
 
         public void InitInteractiveMode(bool? localizeValue)
@@ -1316,7 +1540,7 @@ namespace Lib.Composition
 
         public void WaitForStop()
         {
-            Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs args) =>
+            Console.CancelKeyPress += (sender, args) =>
             {
                 ExitWithCleanUp();
                 args.Cancel = true;

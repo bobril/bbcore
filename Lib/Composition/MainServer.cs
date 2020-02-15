@@ -68,5 +68,12 @@ namespace Lib.Composition
                 return;
             SendToAll("testUpdated", _testServerStateGetter());
         }
+
+        public void NotifyCoverageChange()
+        {
+            if (Clients.IsEmpty)
+                return;
+            SendToAll("coverageUpdated", null);
+        }
     }
 }

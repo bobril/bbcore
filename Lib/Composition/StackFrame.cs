@@ -105,20 +105,18 @@ namespace Lib.Composition
                     // Safari eval frames only have function names and nothing else
                     return new StackFrame() { FunctionName = line, Args = new List<string>() };
                 }
-                else
+
+                var tokens = line.Split('@');
+                var locationParts = ExtractLocation(tokens.Last());
+                var functionName = string.Join('@', tokens.SkipLast(1));
+                return new StackFrame
                 {
-                    var tokens = line.Split('@');
-                    var locationParts = ExtractLocation(tokens.Last());
-                    var functionName = string.Join('@', tokens.SkipLast(1));
-                    return new StackFrame
-                    {
-                        FunctionName = functionName,
-                        Args = new List<string>(),
-                        FileName = locationParts.ElementAtOrDefault(0),
-                        LineNumber = int.Parse(locationParts.ElementAtOrDefault(1) ?? "0"),
-                        ColumnNumber = int.Parse(locationParts.ElementAtOrDefault(2) ?? "0")
-                    };
-                }
+                    FunctionName = functionName,
+                    Args = new List<string>(),
+                    FileName = locationParts.ElementAtOrDefault(0),
+                    LineNumber = int.Parse(locationParts.ElementAtOrDefault(1) ?? "0"),
+                    ColumnNumber = int.Parse(locationParts.ElementAtOrDefault(2) ?? "0")
+                };
             }).ToList();
         }
 

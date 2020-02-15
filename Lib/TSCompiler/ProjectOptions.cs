@@ -19,6 +19,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Njsast.Ast;
 using Njsast.Bobril;
+using Njsast.Coverage;
 using Njsast.Reader;
 using Njsast.Runtime;
 using Njsast.SourceMap;
@@ -64,6 +65,7 @@ namespace Lib.TSCompiler
         public List<string> TestSources;
         public List<string> ExampleSources;
         public bool LiveReloadEnabled;
+        public bool CoverageEnabled;
         public string TypeScriptVersion;
         public string BuildOutputDir;
 
@@ -344,6 +346,7 @@ namespace Lib.TSCompiler
         public string ObsoleteMessage;
         public ITSCompilerOptions FinalCompilerOptions;
         public bool ForbiddenDependencyUpdate;
+        public CoverageInstrumentation? CoverageInstrumentation;
 
         public void UpdateTSConfigJson()
         {

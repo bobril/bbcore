@@ -8,6 +8,9 @@ using Njsast.SourceMap;
 using System;
 using BTDB.Collections;
 using Njsast.Bundler;
+using Njsast.Coverage;
+using Njsast.Output;
+using Njsast.Reader;
 using Njsast.Runtime;
 
 namespace Lib.TSCompiler
@@ -48,6 +51,8 @@ namespace Lib.TSCompiler
         public void Build(string sourceRoot, bool testProj = false, bool allowIncremental = true)
         {
             _versionDirPrefix = "";
+            var coverage = _project.CoverageEnabled;
+            if (coverage) allowIncremental = false;
             if (_mainBuildResult.OutputSubDir != null)
                 _versionDirPrefix = _mainBuildResult.OutputSubDir + "/";
             var root = _mainBuildResult.CommonSourceDirectory;
@@ -187,8 +192,23 @@ namespace Lib.TSCompiler
                 sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
                                          ".map");
                 _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
-                _sourceMapString = _sourceMap.ToString();
                 _bundleJs = sourceMapBuilder.Content();
+                if (coverage)
+                {
+                    var toplevel = Parser.Parse(_bundleJs);
+                    _sourceMap.ResolveInAst(toplevel);
+                    var coverageInst = new CoverageInstrumentation();
+                    _project.CoverageInstrumentation = coverageInst;
+                    toplevel = coverageInst.Instrument(toplevel);
+                    coverageInst.AddCountingHelpers(toplevel);
+                    sourceMapBuilder = new SourceMapBuilder();
+                    toplevel.PrintToBuilder(sourceMapBuilder, new OutputOptions { Beautify = true});
+                    sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
+                                             ".map");
+                    _sourceMap = sourceMapBuilder.Build(sourceRoot, sourceRoot);
+                    _bundleJs = sourceMapBuilder.Content();
+                }
+                _sourceMapString = _sourceMap.ToString();
                 _sourceMap2 = null;
                 _sourceMap2String = null;
                 _bundle2Js = null;

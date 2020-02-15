@@ -51,6 +51,18 @@ function createNavbar(): b.IBobrilChildren {
                     },
                     "Live reload"
                 )
+            ),
+            bs.NavbarNavItem(
+                { active: s.coverage, style: styles.navbar },
+                bs.A(
+                    {
+                        onClick: () => {
+                            com.setCoverage(!s.coverage);
+                        },
+                        style: styles.navbarItem
+                    },
+                    "Coverage"
+                )
             )
         ])
     ]);

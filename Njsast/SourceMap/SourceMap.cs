@@ -207,19 +207,15 @@ namespace Njsast.SourceMap
                 var end = _sourceMap.FindPosition(node.End.Line + 1, node.End.Column + 1);
                 if (!ReferenceEquals(start.SourceName, end.SourceName))
                 {
-                    if (end.SourceName == null)
+                    if (end.SourceName != "")
                     {
+                        return;
                     }
-                    return;
+
+                    end.Line = start.Line + node.End.Line - node.Start.Line;
+                    end.Col = start.Col + node.End.Column - node.Start.Column;
                 }
-                if (start.SourceName == "")
-                {
-                    node.Source = null;
-                }
-                else
-                {
-                    node.Source = start.SourceName;
-                }
+                node.Source = start.SourceName == "" ? null : start.SourceName;
                 node.Start = new Position(start.Line - 1, start.Col - 1, -1);
                 node.End = new Position(end.Line - 1, end.Col - 1, -1);
             }
@@ -248,7 +244,7 @@ namespace Njsast.SourceMap
             var value = 0;
             var valpos = 0;
             var lastOutputCol = 0;
-            var lastSourceIndex = 0;
+            var lastSourceIndex = -1;
             var lastSourceLine = 0;
             var lastSourceCol = 0;
             var res = new SourceCodePosition();
@@ -272,6 +268,7 @@ namespace Njsast.SourceMap
                     return true;
                 if (valpos == 0)
                 {
+                    lastSourceIndex = -1;
                     return false;
                 }
 

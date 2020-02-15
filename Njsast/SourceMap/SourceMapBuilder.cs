@@ -635,7 +635,7 @@ namespace Njsast.SourceMap
         }
 
         string? _sourceFileCache;
-        int _sourceIndexCache;
+        int _sourceIndexCache = -1;
 
         public void AddMapping(string? sourceFile, int line, int col, bool allowMerge)
         {

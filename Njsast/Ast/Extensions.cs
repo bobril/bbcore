@@ -117,26 +117,46 @@ namespace Njsast.Ast
             return null;
         }
 
-        public static (string name, AstNode? value)? IsExportsAssign(this AstNode node)
+        public static (string name, AstNode? value)? IsExportsAssign(this AstNode node, bool allowLocalExports = false)
         {
+            if (node is AstSimpleStatement simpleStatement)
+            {
+                node = simpleStatement.Body;
+            }
+
             if (!(node is AstAssign assign)) return null;
             if (assign.Operator != Operator.Assignment) return null;
             if (!(assign.Left is AstPropAccess propAccess)) return null;
-            if (!propAccess.Expression.IsSymbolDef().IsExportsSymbol())
-                return null;
+            if (allowLocalExports)
+            {
+                if (!(propAccess.Expression is AstSymbolRef symb) || symb.Name != "exports") return null;
+            }
+            else
+            {
+                if (!propAccess.Expression.IsSymbolDef().IsExportsSymbol()) return null;
+            }
             var name = propAccess.PropertyAsString;
-            if (name != null)
-                return (name, assign.Right);
+            if (name != null) return (name, assign.Right);
             return null;
         }
 
         /// return true is parameter is Object.defineProperty(exports, "__esModule", { value: true })
-        public static bool IsDefinePropertyExportsEsModule(this AstCall call)
+        public static bool IsDefinePropertyExportsEsModule(this AstNode node)
         {
-            if (call.Args.Count != 3 || !call.Args[0].IsSymbolDef().IsExportsSymbol()) return false;
-            if (!(call.Expression is AstPropAccess propAccess)) return false;
-            if (propAccess.PropertyAsString != "defineProperty") return false;
-            return propAccess.Expression.IsSymbolDef().IsGlobalSymbol() == "Object";
+            if (node is AstCall call)
+            {
+                if (call.Args.Count != 3 || !call.Args[0].IsSymbolDef().IsExportsSymbol()) return false;
+                if (!(call.Expression is AstPropAccess propAccess)) return false;
+                if (propAccess.PropertyAsString != "defineProperty") return false;
+                return propAccess.Expression.IsSymbolDef().IsGlobalSymbol() == "Object";
+            }
+
+            if (node is AstSimpleStatement simpleStatement)
+            {
+                return simpleStatement.Body.IsDefinePropertyExportsEsModule();
+            }
+
+            return false;
         }
 
         public static bool IsConstantSymbolRef(this AstNode? node)
@@ -147,10 +167,10 @@ namespace Njsast.Ast
             return def.IsSingleInit;
         }
 
-        public static T DeepClone<T>(this T node) where T: AstNode
+        public static T DeepClone<T>(this T node) where T : AstNode
         {
             var tr = new DeepCloneTransformer();
-            return (T)tr.Transform(node);
+            return (T) tr.Transform(node);
         }
 
         public static string DumpToString(this AstNode node, bool withoutPositions = false)
