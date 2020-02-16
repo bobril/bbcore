@@ -48,7 +48,19 @@ namespace Lib.Composition
         {
             try
             {
-                switch (message)
+                var hashPos = message.IndexOf('#');
+                var pureMessage = message;
+                if (hashPos >= 0)
+                {
+                    if (int.TryParse(message.Substring(hashPos + 1), out var runid) && runid != _runid)
+                    {
+                        if (_logger.Verbose)
+                            _logger.Info("Ignoring " + message + " because current runid is " + _runid);
+                        return;
+                    }
+                    pureMessage = message.Substring(0, hashPos);
+                }
+                switch (pureMessage)
                 {
                     case "newClient":
                         {
@@ -380,7 +392,7 @@ namespace Lib.Composition
         void DoStart()
         {
             InitCurResults();
-            _connection.Send("test", new { specFilter = _specFilter, url = _url });
+            _connection.Send("test", new { specFilter = _specFilter, url = _url+"#"+_runid });
         }
 
         void InitCurResults()

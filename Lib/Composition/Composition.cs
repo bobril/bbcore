@@ -1515,6 +1515,16 @@ namespace Lib.Composition
                 _chromeProcessFactory = new ChromeProcessFactory(_inDocker, chromePath);
             }
 
+            if (_chromeProcess != null)
+            {
+                var state = _testServer.GetState();
+                if (!state.Agents.Exists(a => a.UserAgent.Contains("Headless")))
+                {
+                    _logger.Warn("Headless chrome not responding - restarting");
+                    _chromeProcess.Dispose();
+                    _chromeProcess = null;
+                }
+            }
             if (_chromeProcess == null)
             {
                 try

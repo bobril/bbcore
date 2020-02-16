@@ -21,7 +21,8 @@ namespace Lib.Chrome
         readonly bool _inDocker;
         public string ChromePath { get; }
 
-        public ChromeProcessFactory(bool inDocker, string chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
+        public ChromeProcessFactory(bool inDocker,
+            string chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
         {
             _inDocker = inDocker;
             ChromePath = chromePath;
@@ -43,23 +44,18 @@ namespace Lib.Chrome
                 chromeProcessArgs.Add("--no-sandbox");
                 chromeProcessArgs.Add("--remote-debugging-address=0.0.0.0");
             }
+
             chromeProcessArgs.Add($"--remote-debugging-port={9223}");
             chromeProcessArgs.Add("--headless");
             chromeProcessArgs.Add("--disable-gpu");
             chromeProcessArgs.Add("--no-first-run");
-            chromeProcessArgs.Add("\""+urlToOpen+"\"");
+            chromeProcessArgs.Add("\"" + urlToOpen + "\"");
             var processStartInfo = new ProcessStartInfo(ChromePath, string.Join(" ", chromeProcessArgs));
             processStartInfo.RedirectStandardError = true;
             processStartInfo.RedirectStandardOutput = true;
             var chromeProcess = Process.Start(processStartInfo);
-            chromeProcess.ErrorDataReceived += (e, d) =>
-            {
-                Console.Write(d.Data);
-            };
-            chromeProcess.OutputDataReceived += (e, d) =>
-            {
-                Console.Write(d.Data);
-            };
+            chromeProcess.ErrorDataReceived += (e, d) => { Console.Write(d.Data); };
+            chromeProcess.OutputDataReceived += (e, d) => { Console.Write(d.Data); };
             return new LocalChromeProcess(directoryInfo, chromeProcess);
         }
 
@@ -72,6 +68,7 @@ namespace Lib.Chrome
             public LocalChromeProcess(DirectoryInfo userDirectory, Process process)
             {
                 Process = process;
+                process.Exited += (sender, args) => { Console.WriteLine("Chromium exited with " + process.ExitCode); };
                 _userDirectory = userDirectory;
                 _disposeHandler = (s, e) => Dispose();
                 _unhandledExceptionHandler = (s, e) => Dispose();
@@ -104,7 +101,10 @@ namespace Lib.Chrome
                         };
                         Process.Start(processStartInfo).WaitForExit();
                     }
-                    catch (Exception ex) { Console.WriteLine(ex); }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
                 }
                 else
                 {
@@ -117,6 +117,7 @@ namespace Lib.Chrome
                         // ignored
                     }
                 }
+
                 Process.WaitForExit();
                 var repetition = 0;
                 while (repetition++ < 5)

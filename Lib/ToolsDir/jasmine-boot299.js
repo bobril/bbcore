@@ -180,6 +180,7 @@
         }
         return result + arr_obj.join(", ") + "\n" + repeatString(_indent, stack_length - 1) + "}";
     }
+    var testId = window.location.hash;
     function realLog(message) {
         var stack;
         var err = new Error();
@@ -192,7 +193,7 @@
                 stack = err.stack || err.stacktrace;
             }
         }
-        bbTest("consoleLog", { message: message, stack: stack });
+        bbTest("consoleLog" + testId, { message: message, stack: stack });
     }
     var bbTest = window.parent.bbTest;
     if (bbTest) {
@@ -205,7 +206,7 @@
         env.specFilter = specFilterFnc;
         env.catchExceptions(true);
         onerror = (function (msg, _url, _lineNo, _columnNo, error) {
-            bbTest("onerror", { message: msg, stack: error.stack });
+            bbTest("onerror" + testId, { message: msg, stack: error.stack });
         });
         var perfnow;
         if (window.performance) {
@@ -227,23 +228,23 @@
         var totalStart_1 = 0;
         env.addReporter({
             jasmineStarted: function (suiteInfo) {
-                bbTest("wholeStart", suiteInfo.totalSpecsDefined);
+                bbTest("wholeStart" + testId, suiteInfo.totalSpecsDefined);
                 totalStart_1 = perfnow();
             },
             jasmineDone: function () {
-                bbTest("wholeDone", perfnow() - totalStart_1);
+                bbTest("wholeDone" + testId, perfnow() - totalStart_1);
             },
             suiteStarted: function (result) {
-                bbTest("suiteStart", result.description);
+                bbTest("suiteStart" + testId, result.description);
                 stack_1.push(perfnow());
             },
             specStarted: function (result) {
-                bbTest("testStart", { name: result.description, stack: result.stack });
+                bbTest("testStart" + testId, { name: result.description, stack: result.stack });
                 specStart_1 = perfnow();
             },
             specDone: function (result) {
                 var duration = perfnow() - specStart_1;
-                bbTest("testDone", {
+                bbTest("testDone" + testId, {
                     name: result.description,
                     duration: duration,
                     status: result.status,
@@ -252,7 +253,7 @@
             },
             suiteDone: function (result) {
                 var duration = perfnow() - stack_1.pop();
-                bbTest("suiteDone", {
+                bbTest("suiteDone" + testId, {
                     name: result.description,
                     duration: duration,
                     status: result.status,

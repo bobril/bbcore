@@ -179,6 +179,7 @@
         }
         return result + arr_obj.join(", ") + "\n" + repeatString(_indent, stack_length - 1) + "}";
     }
+    var testId = window.location.hash;
     function realLog(message) {
         var stack;
         var err = new Error();
@@ -191,7 +192,7 @@
                 stack = err.stack || err.stacktrace;
             }
         }
-        bbTest("consoleLog", { message: message, stack: stack });
+        bbTest("consoleLog" + testId, { message: message, stack: stack });
     }
     var bbTest = window.parent.bbTest;
     if (bbTest) {
@@ -208,7 +209,7 @@
             specFilter: specFilterFnc
         };
         onerror = (function (msg, _url, _lineNo, _columnNo, error) {
-            bbTest("onerror", { message: msg, stack: error.stack });
+            bbTest("onerror" + testId, { message: msg, stack: error.stack });
         });
         env.configure(config);
         var perfnow;
@@ -231,11 +232,11 @@
         var totalStart_1 = 0;
         env.addReporter({
             jasmineStarted: function (suiteInfo) {
-                bbTest("wholeStart", suiteInfo.totalSpecsDefined);
+                bbTest("wholeStart" + testId, suiteInfo.totalSpecsDefined);
                 totalStart_1 = perfnow();
             },
             jasmineDone: function () {
-                bbTest("wholeDone", perfnow() - totalStart_1);
+                bbTest("wholeDone" + testId, perfnow() - totalStart_1);
                 var cov = window.__c0v;
                 if (cov != undefined) {
                     var pos_1 = 0;
@@ -248,7 +249,7 @@
                             while (cov[pos_1 + len] === 0)
                                 len--;
                             len++;
-                            bbTest("coverageReportPart", {
+                            bbTest("coverageReportPart" + testId, {
                                 start: pos_1,
                                 data: Array.prototype.slice.call(cov.slice(pos_1, pos_1 + len))
                             });
@@ -256,24 +257,24 @@
                             setTimeout(sendPart_1, 10);
                         }
                         else {
-                            bbTest("coverageReportFinished", { length: cov.length });
+                            bbTest("coverageReportFinished" + testId, { length: cov.length });
                         }
                     };
-                    bbTest("coverageReportStarted", { length: cov.length });
+                    bbTest("coverageReportStarted" + testId, { length: cov.length });
                     setTimeout(sendPart_1, 10);
                 }
             },
             suiteStarted: function (result) {
-                bbTest("suiteStart", result.description);
+                bbTest("suiteStart" + testId, result.description);
                 stack_1.push(perfnow());
             },
             specStarted: function (result) {
-                bbTest("testStart", { name: result.description, stack: result.stack });
+                bbTest("testStart" + testId, { name: result.description, stack: result.stack });
                 specStart_1 = perfnow();
             },
             specDone: function (result) {
                 var duration = perfnow() - specStart_1;
-                bbTest("testDone", {
+                bbTest("testDone" + testId, {
                     name: result.description,
                     duration: duration,
                     status: result.status,
@@ -282,7 +283,7 @@
             },
             suiteDone: function (result) {
                 var duration = perfnow() - stack_1.pop();
-                bbTest("suiteDone", {
+                bbTest("suiteDone" + testId, {
                     name: result.description,
                     duration: duration,
                     status: result.status,

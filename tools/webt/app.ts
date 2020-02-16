@@ -67,6 +67,11 @@ reconnect();
 b.init(() => undefined);
 
 window["bbTest"] = (message: string, data: any) => {
-    if (message == "wholeDone") console.log("Testing finished in " + ((data as number) / 1000).toFixed(1) + "s");
+    if (message.substr(0, 5) == "whole") {
+        console.log(message);
+    }
+    if (message.substr(0, 9) == "wholeDone") {
+        console.log("Testing finished in " + ((data as number) / 1000).toFixed(1) + "s");
+    }
     c.send(message, data);
 };

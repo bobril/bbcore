@@ -2,9 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+- Coverage (unfinished, disabled by default)
+
 ### Fixed
 
 - Wrong code generated in new bundler for nested export usage before declaration.
+- Autorestart headless chrome if stopped responding.
 
 ## 1.10.1
 

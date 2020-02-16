@@ -40,16 +40,14 @@ export class Connection {
     }
 
     close() {
-        if (this.closed)
-            return;
+        if (this.closed) return;
         if (this.longPolling) {
             this.longPolling.abort();
             this.longPolling = null;
         }
         this.closed = true;
         this.toSend = [];
-        if (this.onClose != null)
-            this.onClose(this);
+        if (this.onClose != null) this.onClose(this);
         this.reSendTimer();
     }
 
@@ -78,7 +76,11 @@ export class Connection {
         let m = data.m;
         if (Array.isArray(m)) {
             for (let i = 0; i < m.length; i++) {
-                this.onMessage(this, m[i].m, m[i].d);
+                try {
+                    this.onMessage(this, m[i].m, m[i].d);
+                } catch (err) {
+                    console.error("onMessage exception ", m[i], err);
+                }
             }
         }
         return true;
@@ -86,13 +88,12 @@ export class Connection {
 
     private doSend() {
         this.sendTimer = -1;
-        if ((this.closed && this.id === '') || this.processingBatch)
-            return;
+        if ((this.closed && this.id === "") || this.processingBatch) return;
         var xhr = new (<any>window).XMLHttpRequest();
         xhr.open("POST", this.url, true);
         xhr.onabort = () => {
             this.close();
-        }
+        };
         xhr.onreadystatechange = () => {
             if (xhr.readyState === 4) {
                 this.processingBatch = false;
@@ -100,28 +101,24 @@ export class Connection {
                     this.close();
                 } else {
                     if (!this.parseResponse(xhr.responseText)) {
-                        this.id = '';
+                        this.id = "";
                         this.close();
                         return;
                     }
-                    if (!this.longPolling)
-                        this.startLongPolling();
+                    if (!this.longPolling) this.startLongPolling();
                     this.startHeartBeat();
                 }
-                if (this.toSend.length > 0)
-                    this.doSend();
+                if (this.toSend.length > 0) this.doSend();
             }
-        }
+        };
         this.processingBatch = true;
         xhr.send(JSON.stringify(this.closed ? { id: this.id, close: true } : { id: this.id, m: this.toSend }));
-        if (this.closed)
-            this.id = "";
+        if (this.closed) this.id = "";
         this.toSend = [];
     }
 
     private startLongPolling() {
-        if (this.closed || this.id === '')
-            return;
+        if (this.closed || this.id === "") return;
         var xhr = new (<any>window).XMLHttpRequest();
         xhr.open("POST", this.url, true);
         xhr.onreadystatechange = () => {
@@ -131,7 +128,7 @@ export class Connection {
                     this.startLongPolling();
                 } else {
                     if (!this.parseResponse(xhr.responseText)) {
-                        this.id = '';
+                        this.id = "";
                         this.close();
                         return;
                     }
@@ -139,7 +136,7 @@ export class Connection {
                     this.startHeartBeat();
                 }
             }
-        }
+        };
         xhr.send(JSON.stringify({ id: this.id }));
         this.longPolling = xhr;
     }
