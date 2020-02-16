@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.11.0
+
 ### Added
 
 - Coverage (unfinished, disabled by default)
