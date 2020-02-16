@@ -244,6 +244,7 @@ namespace Njsast.Output
                 Indentation += Options.IndentLevel;
                 if (hasUseStrictDirective)
                 {
+                    AddMapping(null, new Position(), true);
                     Indent();
                     Print("\"use strict\"");
                     ForceSemicolon();

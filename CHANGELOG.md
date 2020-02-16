@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Wrong code generated in new bundler for nested export usage before declaration.
+
 ## 1.10.1
 
 ### Fixed

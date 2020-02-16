@@ -115,15 +115,33 @@ namespace Njsast.Bundler
                     var newName =
                         BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast.Variables!,
                             _sourceFile.Ast.Globals!, "");
-                    var newVar = new AstVar(stmBody);
-                    var astSymbolVar = new AstSymbolVar(stmBody, newName);
-                    astSymbolVar.Thedef = new SymbolDef(_sourceFile.Ast, astSymbolVar, trueValue);
-                    _sourceFile.Ast.Variables!.Add(newName, astSymbolVar.Thedef);
-                    newVar.Definitions.Add(new AstVarDef(astSymbolVar, trueValue));
-                    _exportName2VarNameMap[pea.Value.name] = astSymbolVar.Thedef;
-                    _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name,
-                        new AstSymbolRef(_sourceFile.Ast, astSymbolVar.Thedef, SymbolUsage.Unknown)));
-                    return newVar;
+                    if (Parent(1) != null)
+                    {
+                        var newVar = new AstVar(stmBody);
+                        var astSymbolVar = new AstSymbolVar(stmBody, newName);
+                        astSymbolVar.Thedef = new SymbolDef(_sourceFile.Ast, astSymbolVar, null);
+                        _sourceFile.Ast.Variables!.Add(newName, astSymbolVar.Thedef);
+                        newVar.Definitions.Add(new AstVarDef(astSymbolVar));
+                        _exportName2VarNameMap[pea.Value.name] = astSymbolVar.Thedef;
+                        _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name,
+                            new AstSymbolRef(_sourceFile.Ast, astSymbolVar.Thedef, SymbolUsage.Unknown)));
+                        _sourceFile.Ast.Body.Add(newVar);
+                        ((AstAssign) stmBody).Left =
+                            new AstSymbolRef(((AstAssign) stmBody).Left, astSymbolVar.Thedef, SymbolUsage.Write);
+                        return node;
+                    }
+                    else
+                    {
+                        var newVar = new AstVar(stmBody);
+                        var astSymbolVar = new AstSymbolVar(stmBody, newName);
+                        astSymbolVar.Thedef = new SymbolDef(_sourceFile.Ast, astSymbolVar, trueValue);
+                        _sourceFile.Ast.Variables!.Add(newName, astSymbolVar.Thedef);
+                        newVar.Definitions.Add(new AstVarDef(astSymbolVar, trueValue));
+                        _exportName2VarNameMap[pea.Value.name] = astSymbolVar.Thedef;
+                        _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name,
+                            new AstSymbolRef(_sourceFile.Ast, astSymbolVar.Thedef, SymbolUsage.Unknown)));
+                        return newVar;
+                    }
                 }
             }
 

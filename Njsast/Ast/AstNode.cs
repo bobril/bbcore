@@ -69,7 +69,11 @@ namespace Njsast.Ast
         public void Print(OutputContext output, bool forceParens = false)
         {
             output.PushNode(this);
-            output.AddMapping(Source, Start, true);
+            if (this is AstToplevel)
+                output.AddMapping(null, new Position(), true);
+            else
+                output.AddMapping(Source, Start, true);
+
             if (forceParens || NeedParens(output))
             {
                 output.Print("(");
