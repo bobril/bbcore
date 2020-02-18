@@ -5,11 +5,11 @@ namespace Njsast.Bundler
 {
     class ToplevelRenameWalker : TreeWalker
     {
-        readonly IReadOnlyDictionary<string, SymbolDef> _untouchables;
+        readonly IDictionary<string, SymbolDef> _untouchables;
         readonly IReadOnlyDictionary<string, SymbolDef> _globals;
         readonly string _suffix;
 
-        public ToplevelRenameWalker(IReadOnlyDictionary<string, SymbolDef> untouchables,
+        public ToplevelRenameWalker(IDictionary<string, SymbolDef> untouchables,
             IReadOnlyDictionary<string, SymbolDef> globals, string suffix)
         {
             _untouchables = untouchables;
@@ -32,6 +32,7 @@ namespace Njsast.Bundler
             }
 
             if (!haveToRename) return;
+            var wasRename = false;
             foreach (var (name, symbol) in scope.Variables!)
             {
                 if (!_untouchables.ContainsKey(name) && !_globals.ContainsKey(name)) continue;
@@ -45,6 +46,26 @@ namespace Njsast.Bundler
                 } while (_untouchables.ContainsKey(newName) || _globals.ContainsKey(newName));
 
                 Helpers.RenameSymbol(symbol, newName);
+                if (scope is AstToplevel)
+                {
+                    _untouchables[newName] = symbol;
+                    wasRename = true;
+                }
+            }
+
+            while (wasRename)
+            {
+                wasRename = false;
+                foreach (var (name, symbol) in scope.Variables!)
+                {
+                    if (name != symbol.Name)
+                    {
+                        scope.Variables!.Remove(name);
+                        scope.Variables!.Add(symbol.Name, symbol);
+                        wasRename = true;
+                        break;
+                    }
+                }
             }
         }
     }
