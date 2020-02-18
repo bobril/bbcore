@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.11.1
+
 ### Fixed
 
 - Wrong renaming in new bundler
