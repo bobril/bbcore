@@ -1,0 +1,10 @@
+{
+  "name": "JsonResource",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "bobril": "^14.1.1",
+    "bobx": "^0.28.0"
+  }
+}

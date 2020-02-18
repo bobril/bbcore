@@ -567,7 +567,9 @@ namespace Lib.TSCompiler
                 {
                     if (processEnv.Name == null) continue;
                     if (!ExpandedProcessEnvs.TryGetValue(processEnv.Name, out var value))
-                        continue;
+                    {
+                        value = "undefined";
+                    }
                     sourceReplacer.Replace(processEnv.StartLine, processEnv.StartCol, processEnv.EndLine,
                         processEnv.EndCol, value);
                 }

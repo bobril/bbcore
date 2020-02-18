@@ -24,7 +24,6 @@
     "skipLibCheck": false,
     "skipDefaultLibCheck": true,
     "sourceMap": true,
-    "strict": true,
     "target": "es5",
     "resolveJsonModule": true
   },

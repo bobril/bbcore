@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+Undefined `process.env.XXX` is now replaced by `unknown` instead of left as is.
+
 ## 1.11.1
 
 ### Fixed

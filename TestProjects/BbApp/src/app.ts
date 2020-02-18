@@ -107,6 +107,10 @@ let page = b.createVirtualComponent({
                 children: "process.env.NODE_ENV: " + process.env.NODE_ENV
             },
             {
+                tag: "p",
+                children: "process.env.UnKnOwN: " + process.env.UnKnOwN
+            },
+            {
                 tag: "div",
                 style: { display: "table", tableLayout: "fixed", width: "100%" },
                 children: {
