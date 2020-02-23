@@ -1,29 +1,22 @@
-import "bobril"; // For Promise polyfill
-import * as g from "bobril-g11n";
+import "bobril"; // Promotion :-)
 
-describe("Demo suite", () => {
+describe("Coverage suite", () => {
     it("works", () => {
-        console.log("Hello from console.log", { complex: true, obj: 42 });
         expect(1 + 1).toBe(2);
     });
 
-    function exampleFailure(result: number) {
-        expect(1 + 2).toBe(result);
-    }
-
-    it("even more stuff works or doesn't", () => {
-        exampleFailure(4);
+    it("reveals uncovered", () => {
+        if (3 < 1) {
+            console.log("Never get here");
+        }
     });
 
-    describe("Nested suite", () => {
-        it("nests", () => {
-            console.time("Yes");
-            console.dir(it);
-            console.timeEnd("Yes");
-        });
-    });
-
-    it("Translation in tests", () => {
-        expect(g.t("Hello")).toBe("Hello");
+    it("supports more complex conditions", () => {
+        for (let i = 0; i < 10; i++) {
+            if (i % 2 == 0 && i > 9) {
+                console.log("no no!");
+            }
+            if (i == 7) break;
+        }
     });
 });

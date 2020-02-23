@@ -1,77 +1,20 @@
-﻿using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using Njsast.Utils;
+
+namespace Njsast.Utils
+{
+}
 
 namespace Njsast.SourceMap
 {
     public class SourceReplacer : ISourceReplacer
     {
-        struct Pos : IEquatable<Pos>
-        {
-            public Pos(int line, int col)
-            {
-                Line = line;
-                Col = col;
-            }
-
-            public readonly int Line;
-            public readonly int Col;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            ulong Key() => ((ulong) Line << 32) + (ulong) Col;
-
-            public bool Equals(Pos other)
-            {
-                return Line == other.Line && Col == other.Col;
-            }
-
-            public override bool Equals(object? obj)
-            {
-                return obj is Pos other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(Line, Col);
-            }
-
-            public static bool operator ==(Pos left, Pos right)
-            {
-                return left.Equals(right);
-            }
-
-            public static bool operator !=(Pos left, Pos right)
-            {
-                return !left.Equals(right);
-            }
-
-            public static bool operator <(Pos left, Pos right)
-            {
-                return left.Key() < right.Key();
-            }
-
-            public static bool operator >(Pos left, Pos right)
-            {
-                return left.Key() > right.Key();
-            }
-
-            public static bool operator <=(Pos left, Pos right)
-            {
-                return left.Key() <= right.Key();
-            }
-
-            public static bool operator >=(Pos left, Pos right)
-            {
-                return left.Key() >= right.Key();
-            }
-        }
-
         struct Modification
         {
-            public Pos From;
-            public Pos To;
-            public Pos Start;
-            public Pos End;
+            public LineCol From;
+            public LineCol To;
+            public LineCol Start;
+            public LineCol End;
             public string? Content;
 
             public bool IsUseless => From == To && Start == End && string.IsNullOrEmpty(Content);
@@ -81,7 +24,7 @@ namespace Njsast.SourceMap
 
         public void Apply(ISourceAdder sourceAdder)
         {
-            var cur = new Pos(0, 0);
+            var cur = new LineCol(0, 0);
             for (var i = 0u; i < _modifications.Count; i++)
             {
                 ref var m = ref _modifications[i];
@@ -110,8 +53,8 @@ namespace Njsast.SourceMap
 
         public void Replace(int fromLine, int fromCol, int toLine, int toCol, string? content)
         {
-            var removeFrom = new Pos(fromLine, fromCol);
-            var removeTo = new Pos(toLine, toCol);
+            var removeFrom = new LineCol(fromLine, fromCol);
+            var removeTo = new LineCol(toLine, toCol);
             Debug.Assert(removeFrom <= removeTo);
             if (removeFrom == removeTo && string.IsNullOrEmpty(content))
                 return;
@@ -126,8 +69,8 @@ namespace Njsast.SourceMap
                     {
                         if (removeTo == m.End)
                         {
-                            m.Start = new Pos(0, 0);
-                            m.End = new Pos(0, 0);
+                            m.Start = new LineCol(0, 0);
+                            m.End = new LineCol(0, 0);
                             if (!string.IsNullOrEmpty(content))
                                 m.Content = string.IsNullOrEmpty(m.Content) ? content : content + m.Content;
                             if (m.IsUseless)
@@ -141,8 +84,8 @@ namespace Njsast.SourceMap
                             m = ref _modifications[++i];
                             inserted2.From = m.From;
                             inserted2.To = m.From;
-                            inserted2.Start = new Pos(0, 0);
-                            inserted2.End = new Pos(0, 0);
+                            inserted2.Start = new LineCol(0, 0);
+                            inserted2.End = new LineCol(0, 0);
                             inserted2.Content = content;
                         }
 
@@ -175,16 +118,16 @@ namespace Njsast.SourceMap
             ref var inserted = ref _modifications.Insert(l);
             inserted.From = removeFrom;
             inserted.To = removeTo;
-            inserted.Start = new Pos(0, 0);
-            inserted.End = new Pos(0, 0);
+            inserted.Start = new LineCol(0, 0);
+            inserted.End = new LineCol(0, 0);
             inserted.Content = content;
         }
 
         public void Move(int fromLine, int fromCol, int toLine, int toCol, int placeLine, int placeCol)
         {
-            var from = new Pos(fromLine, fromCol);
-            var to = new Pos(toLine, toCol);
-            var place = new Pos(placeLine, placeCol);
+            var from = new LineCol(fromLine, fromCol);
+            var to = new LineCol(toLine, toCol);
+            var place = new LineCol(placeLine, placeCol);
             if (from == to || from == place)
                 return;
             var l = 0u;
@@ -229,8 +172,8 @@ namespace Njsast.SourceMap
             inserted = ref _modifications.Insert(l);
             inserted.From = from;
             inserted.To = to;
-            inserted.Start = new Pos(0, 0);
-            inserted.End = new Pos(0, 0);
+            inserted.Start = new LineCol(0, 0);
+            inserted.End = new LineCol(0, 0);
             inserted.Content = null;
         }
     }

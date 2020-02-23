@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Njsast.Coverage;
 
 namespace Njsast
 {
@@ -19,6 +20,12 @@ namespace Njsast
                 _a = new T[_count];
                 Array.Copy(from._a!, _a, _count);
             }
+        }
+
+        public StructList(T[] from)
+        {
+            _a = from;
+            _count = (uint)from.Length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

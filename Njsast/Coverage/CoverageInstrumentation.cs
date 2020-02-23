@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Njsast.Ast;
 using Njsast.Reader;
 
@@ -18,13 +20,13 @@ namespace Njsast.Coverage
             {
                 case AstIf astIf:
                 {
-                    astIf.Condition = Transform(astIf.Condition);
-                    astIf.Condition = InstrumentCondition(astIf.Condition);
                     astIf.Body = (AstStatement) Transform(MakeBlockStatement(astIf.Body));
                     if (astIf.Alternative != null)
                     {
                         astIf.Alternative = (AstStatement) Transform(MakeBlockStatement(astIf.Alternative!));
                     }
+                    astIf.Condition = InstrumentCondition(astIf.Condition);
+                    astIf.Condition = Transform(astIf.Condition);
 
                     return node;
                 }
@@ -32,9 +34,9 @@ namespace Njsast.Coverage
                 {
                     if (astBinary.Operator == Operator.LogicalAnd || astBinary.Operator == Operator.LogicalOr)
                     {
-                        astBinary.Left = Transform(astBinary.Left);
-                        astBinary.Left = InstrumentCondition(astBinary.Left);
                         astBinary.Right = Transform(astBinary.Right);
+                        astBinary.Left = InstrumentCondition(astBinary.Left);
+                        astBinary.Left = Transform(astBinary.Left);
                         return node;
                     }
 
@@ -68,11 +70,11 @@ namespace Njsast.Coverage
                     InstrumentBlock(ref astSequence.Expressions, true);
                     return node;
                 case AstLambda lambda:
-                    InstrumentBlock(ref lambda.Body);
+                    InstrumentFunction(lambda);
                     return node;
                 case AstSwitchBranch astSwitchBranch:
                     InstrumentBlock(ref astSwitchBranch.Body);
-                    return node;
+                    return InstrumentSwitchCase(astSwitchBranch);
                 case AstDwLoop astWhile:
                     astWhile.Condition = InstrumentCondition(astWhile.Condition);
                     astWhile.Body = (AstStatement) Transform(MakeBlockStatement(astWhile.Body));
@@ -81,7 +83,7 @@ namespace Njsast.Coverage
                 {
                     if (astFor.Init != null) astFor.Init = Transform(astFor.Init);
                     if (astFor.Condition != null) astFor.Condition = InstrumentCondition(astFor.Condition);
-                    if (astFor.Step != null) astFor.Step = Transform(astFor.Step);
+                    if (astFor.Step != null) astFor.Step = InstrumentExpression(Transform(astFor.Step));
                     astFor.Body = (AstStatement) Transform(MakeBlockStatement(astFor.Body));
                     return node;
                 }
@@ -100,6 +102,58 @@ namespace Njsast.Coverage
                 default:
                     return null;
             }
+        }
+
+        void InstrumentFunction(AstLambda lambda)
+        {
+            if (lambda.Source == null)
+            {
+                InstrumentBlock(ref lambda.Body);
+                return;
+            }
+            var idx = _owner.LastIndex++;
+            var call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
+            call.Args.Add(new AstNumber(idx));
+            lambda.Body.Insert(0) = new AstSimpleStatement(call);
+            _owner.GetForFile(lambda.Source)
+                .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Function, idx, lambda.Start, lambda.End));
+            var input = new StructList<AstNode>();
+            input.TransferFrom(ref lambda.Body);
+            lambda.Body.Reserve(input.Count * 2-1);
+            lambda.Body.Add(input[0]);
+            for (var i = 1; i < input.Count; i++)
+            {
+                var ii = input[i];
+                if (ShouldStatementCover(ii))
+                {
+                    if (i != 1)
+                    {
+                        idx = _owner.LastIndex++;
+                        call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
+                        call.Args.Add(new AstNumber(idx));
+                        lambda.Body.Add(new AstSimpleStatement(call));
+                    }
+                    _owner.GetForFile(ii.Source!)
+                        .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Statement, idx, ii.Start, ii.End));
+                }
+                ii = Transform(ii);
+                lambda.Body.Add(ii);
+            }
+        }
+
+        AstNode InstrumentExpression(AstNode node)
+        {
+            if (node is AstSequence) return node;
+            if (node.Source == null) return node;
+            var res = new AstSequence(node);
+            var idx = _owner.LastIndex++;
+            var call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
+            call.Args.Add(new AstNumber(idx));
+            res.Expressions.Add(call);
+            res.Expressions.Add(node);
+            _owner.GetForFile(node.Source)
+                .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Statement, idx, node.Start, node.End));
+            return res;
         }
 
         void InstrumentBlock(ref StructList<AstNode> block, bool seq = false)
@@ -123,13 +177,8 @@ namespace Njsast.Coverage
                     {
                         block.Add(new AstSimpleStatement(call));
                     }
-                    _owner.StatementInfos.Add(new InstrumentedStatementInfo
-                    {
-                        FileName = ii.Source,
-                        Start = ii.Start,
-                        End = ii.End,
-                        Index = idx
-                    });
+                    _owner.GetForFile(ii.Source!)
+                        .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Statement, idx, ii.Start, ii.End));
                 }
                 ii = Transform(ii);
                 block.Add(ii);
@@ -146,7 +195,38 @@ namespace Njsast.Coverage
                 return false;
             if (node.IsDefinePropertyExportsEsModule())
                 return false;
+            if (IsVarRequire(node))
+                return false;
             return true;
+        }
+
+        static bool IsVarRequire(AstNode node)
+        {
+            if (node is AstVar astVar)
+            {
+                if (astVar.Definitions.Count == 1 && astVar.Definitions[0].Value is AstCall call)
+                {
+                    return IsRequireCall(call);
+                }
+            }
+
+            if (node is AstSimpleStatement astSimpleStatement)
+            {
+                if (astSimpleStatement.Body is AstCall call)
+                {
+                    return IsRequireCall(call);
+                }
+            }
+
+            return false;
+        }
+
+        static bool IsRequireCall(AstCall call)
+        {
+            if (call.Args.Count == 1 && call.Expression is AstSymbolRef symb && symb.Name == "require" &&
+                call.Args[0] is AstString)
+                return true;
+            return false;
         }
 
         static bool ShouldConditionCover(AstNode node)
@@ -176,14 +256,21 @@ namespace Njsast.Coverage
             var res = new AstCall(new AstSymbolRef(_owner.FncNameCond));
             res.Args.Add(condition);
             res.Args.Add(new AstNumber(idx));
-            _owner.ConditionInfos.Add(new InstrumentedConditionInfo
-            {
-                FileName = condition.Source,
-                Start = condition.Start,
-                End = condition.End,
-                Index = idx
-            });
+            _owner.GetForFile(condition.Source!)
+                .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Condition, idx, condition.Start, condition.End));
             return res;
+        }
+
+        AstSwitchBranch InstrumentSwitchCase(AstSwitchBranch branch)
+        {
+            if (branch.Source == null) return branch;
+            var idx = _owner.LastIndex++;
+            var call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
+            call.Args.Add(new AstNumber(idx));
+            branch.Body.Insert(0) = new AstSimpleStatement(call);
+            _owner.GetForFile(branch.Source)
+                .AddInfo(new InstrumentedInfo(InstrumentedInfoType.SwitchBranch, idx, branch.Start, branch.End));
+            return branch;
         }
 
         protected override AstNode? After(AstNode node, bool inList)
@@ -194,8 +281,7 @@ namespace Njsast.Coverage
 
     public class CoverageInstrumentation
     {
-        public StructList<InstrumentedStatementInfo> StatementInfos;
-        public StructList<InstrumentedConditionInfo> ConditionInfos;
+        public Dictionary<string, InstrumentedFile> InstrumentedFiles;
         public int LastIndex;
         public readonly string StorageName;
         public readonly string FncNameCond;
@@ -203,8 +289,7 @@ namespace Njsast.Coverage
 
         public CoverageInstrumentation(string storageName = "__c0v")
         {
-            StatementInfos = new StructList<InstrumentedStatementInfo>();
-            ConditionInfos = new StructList<InstrumentedConditionInfo>();
+            InstrumentedFiles = new Dictionary<string, InstrumentedFile>();
             StorageName = storageName;
             FncNameCond = storageName + "C";
             FncNameStatement = storageName + "S";
@@ -223,5 +308,37 @@ namespace Njsast.Coverage
                 $"var {StorageName}=new Uint32Array({LastIndex});{globalThis}.{StorageName}={StorageName};function {FncNameStatement}(i){{{StorageName}[i]++;}}function {FncNameCond}(r,i){{{StorageName}[i+(r?1:0)]++;return r}}");
             toplevel.Body.InsertRange(0, tla.Body);
         }
+
+        internal InstrumentedFile GetForFile(string name)
+        {
+            if (!InstrumentedFiles.TryGetValue(name, out var res))
+            {
+                res = new InstrumentedFile(name);
+                InstrumentedFiles.Add(name, res);
+            }
+
+            return res;
+        }
+
+        public void CleanUp(ITextFileReader? reader)
+        {
+            foreach (var (name,fileInfo) in InstrumentedFiles)
+            {
+                fileInfo.Sort();
+                if (reader != null)
+                {
+                    var content = reader.ReadUtf8(name);
+                    if (!content.IsEmpty)
+                    {
+                        fileInfo.PruneWhiteSpace(content);
+                    }
+                }
+            }
+        }
+    }
+
+    public interface ITextFileReader
+    {
+        ReadOnlySpan<byte> ReadUtf8(string fileName);
     }
 }

@@ -4,9 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace Njsast.Coverage
 {
-    public class InstrumentedStatementInfoConverter : JsonConverter<InstrumentedStatementInfo>
+    public class InstrumentedInfoConverter : JsonConverter<InstrumentedInfo>
     {
-        public override InstrumentedStatementInfo Read(
+        public override InstrumentedInfo Read(
             ref Utf8JsonReader reader,
             Type typeToConvert,
             JsonSerializerOptions options) =>
@@ -14,14 +14,14 @@ namespace Njsast.Coverage
 
         public override void Write(
             Utf8JsonWriter writer,
-            InstrumentedStatementInfo value,
+            InstrumentedInfo value,
             JsonSerializerOptions options)
         {
             writer.WriteStartObject();
+            writer.WriteString("type", value.Type.ToString());
             writer.WriteNumber("index", value.Index);
-            if (value.FileName != null) writer.WriteString("fileName", value.FileName);
-            writer.WriteString("start", value.Start.ToShortString());
-            writer.WriteString("end", value.End.ToShortString());
+            writer.WriteString("start", value.Start.ToString());
+            writer.WriteString("end", value.End.ToString());
             writer.WriteEndObject();
         }
     }

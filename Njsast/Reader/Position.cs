@@ -1,4 +1,5 @@
 ﻿using System;
+using Njsast.Utils;
 
 namespace Njsast.Reader
 {
@@ -9,6 +10,11 @@ namespace Njsast.Reader
             Line = line;
             Column = column;
             Index = index;
+        }
+
+        public static implicit operator LineCol(Position pos)
+        {
+            return new LineCol(pos);
         }
 
         public Position Increment(int i)

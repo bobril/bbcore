@@ -7,6 +7,7 @@ using System.Globalization;
 using Njsast.SourceMap;
 using System;
 using BTDB.Collections;
+using Lib.DiskCache;
 using Njsast.Bundler;
 using Njsast.Coverage;
 using Njsast.Output;
@@ -201,6 +202,7 @@ namespace Lib.TSCompiler
                     _project.CoverageInstrumentation = coverageInst;
                     toplevel = coverageInst.Instrument(toplevel);
                     coverageInst.AddCountingHelpers(toplevel);
+                    coverageInst.CleanUp(new SourceReader(_project.Owner.DiskCache, _mainBuildResult.CommonSourceDirectory));
                     sourceMapBuilder = new SourceMapBuilder();
                     toplevel.PrintToBuilder(sourceMapBuilder, new OutputOptions { Beautify = true});
                     sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
@@ -505,6 +507,28 @@ namespace Lib.TSCompiler
             }
 
             return "";
+        }
+    }
+
+    public class SourceReader : ITextFileReader
+    {
+        readonly IDiskCache _diskCache;
+        readonly string _root;
+
+        public SourceReader(IDiskCache diskCache, string root)
+        {
+            _diskCache = diskCache;
+            _root = root;
+        }
+
+        public ReadOnlySpan<byte> ReadUtf8(string fileName)
+        {
+            var item = _diskCache.TryGetItem(PathUtils.Join(_root,fileName));
+            if (item.IsFile && !item.IsInvalid)
+            {
+                return ((IFileCache) item).ByteContent;
+            }
+            return new ReadOnlySpan<byte>();
         }
     }
 }

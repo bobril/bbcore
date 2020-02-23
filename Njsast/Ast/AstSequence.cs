@@ -20,6 +20,10 @@ namespace Njsast.Ast
         {
         }
 
+        public AstSequence(AstNode from) : base(from)
+        {
+        }
+
         public override void Visit(TreeWalker w)
         {
             base.Visit(w);
@@ -88,6 +92,7 @@ namespace Njsast.Ast
                 Expressions.AddRange(seq.Expressions);
                 return;
             }
+
             Expressions.Add(node);
         }
     }

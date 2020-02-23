@@ -31,6 +31,7 @@ using Lib.Translation;
 using Lib.Utils.Logger;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Njsast.Coverage;
 using Njsast.Reader;
 using ProxyKit;
 
@@ -1058,157 +1059,55 @@ namespace Lib.Composition
             resp.Ranges = new List<int>();
             var r = resp.Ranges;
 
-            foreach (var statementInfo in instr.StatementInfos)
+            if (instr.InstrumentedFiles.TryGetValue(fn, out var instrumentedFile))
             {
-                if (statementInfo.FileName != fn) continue;
-                RemoveOrSplitRange(r, statementInfo.Start, statementInfo.End);
-                r.Add(0);
-                r.Add(statementInfo.Start.Line);
-                r.Add(statementInfo.Start.Column);
-                r.Add(statementInfo.End.Line);
-                r.Add(statementInfo.End.Column);
-                r.Add((int) coverageData[statementInfo.Index]);
+                var cf = new CoverageFile(fn, instrumentedFile);
+                cf.AddHits(coverageData);
+                foreach (var coverageInfo in cf.Infos)
+                {
+                    var info = coverageInfo.Source;
+                    switch (info.Type)
+                    {
+                        case InstrumentedInfoType.Statement:
+                            r.Add(0);
+                            r.Add(info.Start.Line);
+                            r.Add(info.Start.Col);
+                            r.Add(info.End.Line);
+                            r.Add(info.End.Col);
+                            r.Add((int)coverageInfo.Hits);
+                            break;
+                        case InstrumentedInfoType.Condition:
+                            r.Add(1);
+                            r.Add(info.Start.Line);
+                            r.Add(info.Start.Col);
+                            r.Add(info.End.Line);
+                            r.Add(info.End.Col);
+                            r.Add((int)coverageInfo.Hits);
+                            r.Add((int)coverageInfo.SecondaryHits);
+                            break;
+                        case InstrumentedInfoType.Function:
+                            r.Add(2);
+                            r.Add(info.Start.Line);
+                            r.Add(info.Start.Col);
+                            r.Add(info.End.Line);
+                            r.Add(info.End.Col);
+                            r.Add((int)coverageInfo.Hits);
+                            break;
+                        case InstrumentedInfoType.SwitchBranch:
+                            r.Add(3);
+                            r.Add(info.Start.Line);
+                            r.Add(info.Start.Col);
+                            r.Add(info.End.Line);
+                            r.Add(info.End.Col);
+                            r.Add((int)coverageInfo.Hits);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                }
             }
-
-            foreach (var conditionInfo in instr.ConditionInfos)
-            {
-                if (conditionInfo.FileName != fn) continue;
-                RemoveOrSplitRange(r, conditionInfo.Start, conditionInfo.End);
-                r.Add(1);
-                r.Add(conditionInfo.Start.Line);
-                r.Add(conditionInfo.Start.Column);
-                r.Add(conditionInfo.End.Line);
-                r.Add(conditionInfo.End.Column);
-                r.Add((int) coverageData[conditionInfo.Index]);
-                r.Add((int) coverageData[conditionInfo.Index + 1]);
-            }
-
             resp.Status = "Done";
             return resp;
-        }
-
-        struct Pos : IEquatable<Pos>
-        {
-            public Pos(int line, int col)
-            {
-                Line = line;
-                Col = col;
-            }
-
-            public Pos(Position pos)
-            {
-                Line = pos.Line;
-                Col = pos.Column;
-            }
-
-            public readonly int Line;
-            public readonly int Col;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            ulong Key() => ((ulong) Line << 32) + (ulong) Col;
-
-            public bool Equals(Pos other)
-            {
-                return Line == other.Line && Col == other.Col;
-            }
-
-            public override bool Equals(object? obj)
-            {
-                return obj is Pos other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(Line, Col);
-            }
-
-            public static bool operator ==(Pos left, Pos right)
-            {
-                return left.Equals(right);
-            }
-
-            public static bool operator !=(Pos left, Pos right)
-            {
-                return !left.Equals(right);
-            }
-
-            public static bool operator <(Pos left, Pos right)
-            {
-                return left.Key() < right.Key();
-            }
-
-            public static bool operator >(Pos left, Pos right)
-            {
-                return left.Key() > right.Key();
-            }
-
-            public static bool operator <=(Pos left, Pos right)
-            {
-                return left.Key() <= right.Key();
-            }
-
-            public static bool operator >=(Pos left, Pos right)
-            {
-                return left.Key() >= right.Key();
-            }
-        }
-
-        void RemoveOrSplitRange(List<int> r, Position startPosition, Position endPosition)
-        {
-            var start = new Pos(startPosition);
-            var end = new Pos(endPosition);
-            for (var i = 0; i < r.Count;)
-            {
-                var cStart = new Pos(r[i + 1], r[i + 2]);
-                if (start <= cStart)
-                {
-                    i += CovCommandLen(r[i]);
-                    continue;
-                }
-                var cEnd = new Pos(r[i + 3], r[i + 4]);
-                if (end >= cEnd)
-                {
-                    i += CovCommandLen(r[i]);
-                    continue;
-                }
-                if (start == cStart)
-                {
-                    if (end == cEnd)
-                    {
-                        r.RemoveRange(i, CovCommandLen(r[i]));
-                        continue;
-                    }
-
-                    r[i + 1] = end.Line;
-                    r[i + 2] = end.Col;
-                }
-                else
-                {
-                    if (end == cEnd)
-                    {
-                        r[i + 3] = start.Line;
-                        r[i + 4] = start.Col;
-                    }
-                    else
-                    {
-                        r[i + 3] = start.Line;
-                        r[i + 4] = start.Col;
-                        r.Add(r[i]);
-                        r.Add(end.Line);
-                        r.Add(end.Col);
-                        r.Add(cEnd.Line);
-                        r.Add(cEnd.Col);
-                        r.AddRange(r.Skip(i + 5).Take(CovCommandLen(r[i]) - 5));
-                    }
-                }
-
-                i += CovCommandLen(r[i]);
-            }
-        }
-
-        static int CovCommandLen(int command)
-        {
-            return command == 0 ? 6 : 7;
         }
 
         class HandleProxyRequestWrapper : IProxyHandler
