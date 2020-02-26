@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+Updated dependencies.
+
 ## 1.12.0
 
 ### Added
