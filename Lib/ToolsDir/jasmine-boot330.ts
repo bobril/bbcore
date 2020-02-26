@@ -253,7 +253,7 @@ declare var jasmineRequire: any;
                     const sendPart = () => {
                         while (pos < cov.length && cov[pos] === 0) pos++;
                         if (pos < cov.length) {
-                            let maxlen = Math.min(cov.length - pos, 1024);
+                            let maxlen = Math.min(cov.length - pos, 10240);
                             let len = maxlen - 1;
                             while (cov[pos + len] === 0) len--;
                             len++;
@@ -262,13 +262,17 @@ declare var jasmineRequire: any;
                                 data: Array.prototype.slice.call(cov.slice(pos, pos + len))
                             });
                             pos += maxlen;
-                            setTimeout(sendPart, 10);
+                            if (pos == cov.length) {
+                                sendPart();
+                            } else {
+                                setTimeout(sendPart, 10);
+                            }
                         } else {
                             bbTest("coverageReportFinished" + testId, { length: cov.length });
                         }
                     };
                     bbTest("coverageReportStarted" + testId, { length: cov.length });
-                    setTimeout(sendPart, 10);
+                    sendPart();
                 }
             },
             suiteStarted: (result: { description: string; fullName: string }) => {

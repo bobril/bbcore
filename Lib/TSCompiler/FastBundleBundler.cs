@@ -294,7 +294,7 @@ namespace Lib.TSCompiler
             {
                 BuildFastBundlerTestHtml(_project.TestSources, root, _cssLink);
             }
-            else if (!_project.NoHtml)
+            else if (!_project.NoHtml && _project.MainFile != null)
             {
                 BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(_project.MainFile, root)),
                     _cssLink);

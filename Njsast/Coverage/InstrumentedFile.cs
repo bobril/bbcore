@@ -20,7 +20,15 @@ namespace Njsast.Coverage
         {
             foreach (var ii in Infos)
             {
-                if (info.Start <= ii.Start && ii.End <= info.Start)
+                if (ii.Start < info.Start && info.Start < ii.End)
+                {
+                    ii.End = info.Start;
+                }
+                else if (ii.Start < info.End && info.End < ii.End)
+                {
+                    ii.Start = info.End;
+                }
+                else if (info.Start <= ii.Start && ii.End <= info.Start)
                 {
                     if (info.Start == ii.Start)
                     {
@@ -50,13 +58,12 @@ namespace Njsast.Coverage
 
         public void Sort()
         {
-            for (int i = 0; i < Infos.Count; i++)
+            for (var i = 0; i < Infos.Count; i++)
             {
-                if (Infos[i].Start == Infos[i].End)
-                {
-                    Infos.RemoveAt(i);
-                    i--;
-                }
+                var info = Infos[i];
+                if (info.Start != info.End) continue;
+                Infos.RemoveAt(i);
+                i--;
             }
 
             Infos = new StructList<InstrumentedInfo>(Infos.OrderBy(i => i.Start).ToArray());

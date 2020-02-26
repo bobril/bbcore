@@ -1,4 +1,8 @@
-import "bobril"; // Promotion :-)
+var i = 0;
+
+if (i % 2 == 0 && i > 9) {
+    console.log("no no!");
+}
 
 describe("Coverage suite", () => {
     it("works", () => {
@@ -14,7 +18,7 @@ describe("Coverage suite", () => {
     it("supports more complex conditions", () => {
         for (let i = 0; i < 10; i++) {
             if (i % 2 == 0 && i > 9) {
-                console.log("no no!");
+                console.log("no no");
             }
             if (i == 7) break;
         }
