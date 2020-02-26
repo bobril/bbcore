@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.12.1
+
 ### Changed
 
 Updated dependencies.
