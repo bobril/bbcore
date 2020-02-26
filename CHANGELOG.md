@@ -10,6 +10,10 @@ Allow to use `-v` parameter also for `bb test` command.
 
 Undefined `process.env.XXX` is now replaced by `unknown` instead of left as is.
 
+### Fixed
+
+Don't crash on syntax errors (for these TS compiles invalid code, without reporting error itself)
+
 ## 1.11.1
 
 ### Fixed

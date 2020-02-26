@@ -160,7 +160,7 @@ namespace Lib.TSCompiler
                 var browserResolve = parentInfo.FromModule?.ProjectOptions?.BrowserResolve;
                 if (browserResolve != null)
                 {
-                    var relativeToModule = PathUtils.Subtract(fn+".js", parentInfo.FromModule.Owner.FullPath);
+                    var relativeToModule = PathUtils.Subtract(fn + ".js", parentInfo.FromModule.Owner.FullPath);
                     if (!relativeToModule.StartsWith("../")) relativeToModule = "./" + relativeToModule;
                     if (browserResolve.TryGetValue(relativeToModule, out var resolveReplace))
                     {
@@ -282,6 +282,7 @@ namespace Lib.TSCompiler
                                 res.FileName = "<empty>";
                                 return res.FileName;
                             }
+
                             if (!resolveReplace.StartsWith(name + "/"))
                             {
                                 fn = PathUtils.Join(parentInfo.FromModule.Owner.FullPath, resolveReplace);
@@ -821,6 +822,13 @@ namespace Lib.TSCompiler
                 info.SourceInfo = sourceInfo;
                 AddDependenciesFromSourceInfo(info);
             }
+            catch (SyntaxError error)
+            {
+                var pos = info.MapLink?.FindPosition(error.Position.Line, error.Position.Column) ??
+                          new SourceCodePosition {Line = error.Position.Line, Col = error.Position.Column};
+                info.ReportDiag(true, -16, error.Message, pos.Line, pos.Col, pos.Line, pos.Col);
+                info.SourceInfo = null;
+            }
             finally
             {
                 _currentlyTranspiling = backupCurrentlyTranspiling;
@@ -948,10 +956,12 @@ namespace Lib.TSCompiler
             {
                 if (a.Name == null)
                 {
-                    fileInfo.ReportDiag(true, -5, "First parameter of b.asset must be resolved as constant string", a.StartLine, a.StartCol, a.EndLine,
+                    fileInfo.ReportDiag(true, -5, "First parameter of b.asset must be resolved as constant string",
+                        a.StartLine, a.StartCol, a.EndLine,
                         a.EndCol);
                     return;
                 }
+
                 var assetName = a.Name;
                 if (assetName.StartsWith("project:"))
                 {
