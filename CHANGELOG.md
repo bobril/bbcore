@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.12.0
+
 ### Added
 
 Allow to use `-v` parameter also for `bb test` command.
