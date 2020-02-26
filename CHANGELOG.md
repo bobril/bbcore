@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Allow to use `-v` parameter also for `bb test` command.
+
 ### Changed
 
 Undefined `process.env.XXX` is now replaced by `unknown` instead of left as is.

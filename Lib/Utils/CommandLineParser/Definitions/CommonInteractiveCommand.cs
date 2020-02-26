@@ -10,10 +10,6 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentBool Sprite { get; } =
             new CommandLineArgumentBool("enable/disable creation of sprites", new[] {"--sprite"}, false);
 
-        public CommandLineArgumentString VersionDir { get; } =
-            new CommandLineArgumentString("store all resources except index.html in this directory",
-                new[] {"-v", "--versiondir"});
-
         public CommandLineArgumentSwitch BindToAny { get; } =
             new CommandLineArgumentSwitch("allow to receive connections from external computers",
                 new[] {"--bindToAny"});

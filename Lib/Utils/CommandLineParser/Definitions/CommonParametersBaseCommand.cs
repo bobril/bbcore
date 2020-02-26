@@ -10,5 +10,9 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         public CommandLineArgumentSwitch NoBuildCache { get; } =
             new CommandLineArgumentSwitch("forbid using Build Cache", new[] {"--nocache"});
+
+        public CommandLineArgumentString VersionDir { get; } =
+            new CommandLineArgumentString("store all resources except index.html in this directory",
+                new[] {"-v", "--versiondir"});
     }
 }

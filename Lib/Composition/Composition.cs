@@ -514,7 +514,7 @@ namespace Lib.Composition
         void RunTest(TestCommand testCommand)
         {
             InitDiskCache();
-            _mainBuildResult = new MainBuildResult(false, null);
+            _mainBuildResult = new MainBuildResult(false, testCommand.VersionDir.Value);
             InitTestServer();
             InitMainServer();
             var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
@@ -656,7 +656,7 @@ namespace Lib.Composition
         {
             IfEnabledStartVerbosive();
             InitDiskCache();
-            _mainBuildResult = new MainBuildResult(false, null);
+            _mainBuildResult = new MainBuildResult(false, findUnusedCommand.VersionDir.Value);
             var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
             _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Cyan);
             try

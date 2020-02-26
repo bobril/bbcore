@@ -46,10 +46,6 @@ namespace Lib.Utils.CommandLineParser.Definitions
             new CommandLineArgumentBool(description: "update translations",
                 words: new[] {"-u", "--updateTranslations"});
 
-        public CommandLineArgumentString VersionDir { get; } = new CommandLineArgumentString(
-            description: "store all resources except index.html in this directory",
-            words: new[] {"-v", "--versiondir"});
-
         public CommandLineArgumentSwitch NoUpdate { get; } =
             new CommandLineArgumentSwitch(description: "do not install dependencies at start",
                 words: new[] {"-n", "--noupdate"});
