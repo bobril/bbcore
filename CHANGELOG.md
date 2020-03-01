@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.13.0
+
 ### Added
 
 Test command can generate coverage. `bb test -c json-summary` will create `coverage-summary.json`. `bb test -c none` will just print total coverage percentages.
