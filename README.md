@@ -72,6 +72,7 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 | -13    | Warn     | Unused dependency in package.json                                                              |
 | -14    | Warn     | Importing obsolete module: reason                                                              |
 | -15    | Warn     | Cannot resolve import                                                                          |
+| -16    | Error    | Syntactic Error                                                                                |
 
 # Package.json - bobril section features
 

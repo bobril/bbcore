@@ -9,6 +9,7 @@ namespace Njsast.Coverage
     public class InstrumentedFile
     {
         public string FileName;
+        public bool Important;
         public StructList<InstrumentedInfo> Infos;
 
         public InstrumentedFile(string name)

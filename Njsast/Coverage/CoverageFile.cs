@@ -1,18 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Njsast.Utils;
 
 namespace Njsast.Coverage
 {
     public class CoverageFile
     {
+        public string Name;
         public string FileName;
+        public bool Important;
         public CoverageStats? Stats;
         public StructList<CoverageInfo> Infos;
 
         public CoverageFile(string fileName, InstrumentedFile file)
         {
             FileName = fileName;
+            Name = PathUtils.Name(fileName);
+            Important = file.Important;
             Infos = new StructList<CoverageInfo>();
             Infos.Reserve(file.Infos.Count);
             foreach (var info in file.Infos)
@@ -36,7 +41,7 @@ namespace Njsast.Coverage
 
         public void CalcStats()
         {
-            Stats = new CoverageStats();
+            Stats = new CoverageStats(Name, FileName);
             var stats = Stats;
             var linesCovered = new HashSet<int>();
             var linesUncovered = new HashSet<int>();
@@ -140,8 +145,8 @@ namespace Njsast.Coverage
                 Math.Max(Math.Max(Math.Max(stats.StatementsMaxHits, stats.FunctionsMaxHits), stats.ConditionsMaxHits),
                     stats.SwitchBranchesMaxHits);
             stats.LinesTotal = (uint) linesCovered.Union(linesUncovered).Count();
-            stats.LinesCoveredFully = (uint) linesCovered.Count;
             stats.LinesCoveredPartially = (uint) linesCovered.Intersect(linesUncovered).Count();
+            stats.LinesCoveredFully = (uint) linesCovered.Count - stats.LinesCoveredPartially;
         }
     }
 }

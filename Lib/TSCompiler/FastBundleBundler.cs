@@ -192,24 +192,28 @@ namespace Lib.TSCompiler
             {
                 sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
                                          ".map");
-                _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
-                _bundleJs = sourceMapBuilder.Content();
                 if (coverage)
                 {
+                    _sourceMap = sourceMapBuilder.Build(".", ".");
+                    _bundleJs = sourceMapBuilder.Content();
                     var toplevel = Parser.Parse(_bundleJs);
                     _sourceMap.ResolveInAst(toplevel);
                     var coverageInst = new CoverageInstrumentation();
                     _project.CoverageInstrumentation = coverageInst;
                     toplevel = coverageInst.Instrument(toplevel);
                     coverageInst.AddCountingHelpers(toplevel);
-                    coverageInst.CleanUp(new SourceReader(_project.Owner.DiskCache, _mainBuildResult.CommonSourceDirectory));
+                    coverageInst.CleanUp(new SourceReader(_project.Owner.DiskCache,
+                        _mainBuildResult.CommonSourceDirectory));
+                    if (_project.MainFile != null)
+                        MarkImportant(_project.MainFile, _buildResult, new HashSet<string>(), coverageInst);
                     sourceMapBuilder = new SourceMapBuilder();
-                    toplevel.PrintToBuilder(sourceMapBuilder, new OutputOptions { Beautify = true});
+                    toplevel.PrintToBuilder(sourceMapBuilder, new OutputOptions {Beautify = true});
                     sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
                                              ".map");
-                    _sourceMap = sourceMapBuilder.Build(sourceRoot, sourceRoot);
-                    _bundleJs = sourceMapBuilder.Content();
                 }
+                _sourceMap = sourceMapBuilder.Build(sourceRoot, sourceRoot);
+                _bundleJs = sourceMapBuilder.Content();
+
                 _sourceMapString = _sourceMap.ToString();
                 _sourceMap2 = null;
                 _sourceMap2String = null;
@@ -262,6 +266,25 @@ namespace Lib.TSCompiler
             else
             {
                 _subBundlers = null;
+            }
+        }
+
+        void MarkImportant(string fn, BuildResult buildResult, HashSet<string> visited,
+            CoverageInstrumentation coverageInst)
+        {
+            if (visited.Contains(fn))
+                return;
+            visited.Add(fn);
+            if (!buildResult.Path2FileInfo.TryGetValue(fn, out var fi))
+                return;
+            foreach (var dependency in fi.Dependencies)
+            {
+                MarkImportant(dependency, buildResult, visited, coverageInst);
+            }
+
+            if (coverageInst.InstrumentedFiles.TryGetValue(fn, out var instFile))
+            {
+                instFile.Important = true;
             }
         }
 
@@ -523,11 +546,12 @@ namespace Lib.TSCompiler
 
         public ReadOnlySpan<byte> ReadUtf8(string fileName)
         {
-            var item = _diskCache.TryGetItem(PathUtils.Join(_root,fileName));
+            var item = _diskCache.TryGetItem(PathUtils.Join(_root, fileName));
             if (item.IsFile && !item.IsInvalid)
             {
                 return ((IFileCache) item).ByteContent;
             }
+
             return new ReadOnlySpan<byte>();
         }
     }

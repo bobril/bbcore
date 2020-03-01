@@ -3,12 +3,15 @@ using System.Collections.Concurrent;
 using Lib.TSCompiler;
 using System;
 using System.Collections.Generic;
+using System.Reactive;
+using System.Reactive.Subjects;
 
 namespace Lib.Composition
 {
     class MainServer
     {
         public readonly ConcurrentDictionary<MainServerConnectionHandler, MainServerConnectionHandler> Clients = new ConcurrentDictionary<MainServerConnectionHandler, MainServerConnectionHandler>();
+        public readonly Subject<Unit> OnRequestRebuild = new Subject<Unit>();
 
         public MainServer(Func<TestServerState> testServerStateGetter)
         {
@@ -74,6 +77,11 @@ namespace Lib.Composition
             if (Clients.IsEmpty)
                 return;
             SendToAll("coverageUpdated", null);
+        }
+
+        public void NotifyRequestRebuild()
+        {
+            OnRequestRebuild.OnNext(Unit.Default);
         }
     }
 }

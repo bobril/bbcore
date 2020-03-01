@@ -10,7 +10,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <summary>
         /// Value
         /// </summary>
-        public string Value { get; private set; }
+        public string? Value { get; private set; }
 
         /// <summary>
         /// Constructor

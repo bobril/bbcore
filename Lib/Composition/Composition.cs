@@ -21,7 +21,6 @@ using Lib.Chrome;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using BTDB.Collections;
 using Lib.BuildCache;
@@ -32,7 +31,6 @@ using Lib.Utils.Logger;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Njsast.Coverage;
-using Njsast.Reader;
 using ProxyKit;
 
 namespace Lib.Composition
@@ -525,6 +523,8 @@ namespace Lib.Composition
                 port = portInInt;
             }
 
+            proj.CoverageEnabled = testCommand.Coverage.Value != null;
+
             StartWebServer(port, false);
             var start = DateTime.UtcNow;
             int errors = 0;
@@ -541,6 +541,7 @@ namespace Lib.Composition
                 var testBuildResult = new BuildResult(_mainBuildResult, proj);
                 proj.GenerateCode();
                 proj.RefreshCompilerOptions();
+                proj.RefreshMainFile();
                 proj.RefreshTestSources();
                 proj.SpriterInitialization(_mainBuildResult);
                 if (proj.TestSources != null && proj.TestSources.Count > 0)
@@ -569,12 +570,25 @@ namespace Lib.Composition
                         if (errors == 0)
                         {
                             var wait = new Semaphore(0, 1);
+                            var wait2 = new Semaphore(0, 1);
                             _testServer.OnTestResults.Subscribe(results =>
                             {
                                 testFailures = results.TestsFailed + results.SuitesFailed;
                                 testResults = results;
                                 wait.Release();
                             });
+                            if (proj.CoverageEnabled)
+                            {
+                                _testServer.OnCoverageResults.Subscribe(results =>
+                                {
+                                    var covInstr = proj.CoverageInstrumentation;
+                                    covInstr.BuildCoveredFiles(_mainBuildResult.CommonSourceDirectory);
+                                    covInstr.AddHits(results.CoverageData!);
+                                    covInstr.CalcStats(true);
+                                    wait2.Release();
+                                });
+                            }
+
                             var durationb = DateTime.UtcNow - start;
 
                             _logger.Success("Build successful. Starting Chrome to run tests in " +
@@ -583,6 +597,7 @@ namespace Lib.Composition
                             _testServer.StartTest("/test.html", fastBundle.SourceMaps, testCommand.SpecFilter.Value);
                             StartChromeTest();
                             wait.WaitOne();
+                            wait2.WaitOne();
                             StopChromeTest();
                         }
                     }
@@ -605,6 +620,26 @@ namespace Lib.Composition
                 "Test done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " +
                 Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " +
                 Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure"), color);
+            if (proj.CoverageEnabled)
+            {
+                var covInstr = proj.CoverageInstrumentation;
+                var stats = covInstr.DirectoryStats[""];
+                _logger.Info("Total coverage statement: " + stats.StatementsPercentageText + " condition: " +
+                             stats.ConditionsPercentageText + " function: " + stats.FunctionsPercentageText +
+                             " switch branch: " + stats.SwitchBranchesPercentageText + " line: " +
+                             stats.LinesPercentageText);
+                switch (testCommand.Coverage.Value)
+                {
+                    case "json-summary":
+                        new CoverageJsonSummaryReporter(covInstr).Run();
+                        break;
+                    case "none":
+                        break;
+                    default:
+                        _logger.Error("Unknown coverage reporter " + testCommand.Coverage.Value);
+                        break;
+                }
+            }
 
             Environment.ExitCode = (errors + testFailures) != 0 ? 1 : 0;
         }
@@ -1024,7 +1059,7 @@ namespace Lib.Composition
             var wholeState = _testServer.GetState();
             if (_mainBuildResult.CommonSourceDirectory == null)
                 return resp;
-            var fn = PathUtils.Subtract(PathUtils.Normalize(req.FileName), _mainBuildResult.CommonSourceDirectory!);
+            var fn = PathUtils.Normalize(req.FileName);
             if (wholeState.Agents.Count == 0)
                 return resp;
             if (!_currentProject.CoverageEnabled)
@@ -1074,7 +1109,7 @@ namespace Lib.Composition
                             r.Add(info.Start.Col);
                             r.Add(info.End.Line);
                             r.Add(info.End.Col);
-                            r.Add((int)coverageInfo.Hits);
+                            r.Add((int) coverageInfo.Hits);
                             break;
                         case InstrumentedInfoType.Condition:
                             r.Add(1);
@@ -1082,8 +1117,8 @@ namespace Lib.Composition
                             r.Add(info.Start.Col);
                             r.Add(info.End.Line);
                             r.Add(info.End.Col);
-                            r.Add((int)coverageInfo.Hits);
-                            r.Add((int)coverageInfo.SecondaryHits);
+                            r.Add((int) coverageInfo.Hits);
+                            r.Add((int) coverageInfo.SecondaryHits);
                             break;
                         case InstrumentedInfoType.Function:
                             r.Add(2);
@@ -1091,7 +1126,7 @@ namespace Lib.Composition
                             r.Add(info.Start.Col);
                             r.Add(info.End.Line);
                             r.Add(info.End.Col);
-                            r.Add((int)coverageInfo.Hits);
+                            r.Add((int) coverageInfo.Hits);
                             break;
                         case InstrumentedInfoType.SwitchBranch:
                             r.Add(3);
@@ -1099,13 +1134,14 @@ namespace Lib.Composition
                             r.Add(info.Start.Col);
                             r.Add(info.End.Line);
                             r.Add(info.End.Col);
-                            r.Add((int)coverageInfo.Hits);
+                            r.Add((int) coverageInfo.Hits);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
                 }
             }
+
             resp.Status = "Done";
             return resp;
         }
@@ -1204,6 +1240,11 @@ namespace Lib.Composition
             int warnings = 0;
             var messages = new List<Diagnostic>();
 
+            _mainServer.OnRequestRebuild.Subscribe(_ =>
+            {
+                _dc.NotifyChange();
+                _hasBuildWork.Set();
+            });
             Task.Run(() =>
             {
                 while (_hasBuildWork.WaitOne())
@@ -1424,6 +1465,7 @@ namespace Lib.Composition
                     _chromeProcess = null;
                 }
             }
+
             if (_chromeProcess == null)
             {
                 try

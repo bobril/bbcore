@@ -167,7 +167,7 @@ namespace Lib.DiskCache
 
         Subject<Unit> _changeSubject = new Subject<Unit>();
 
-        void NotifyChange()
+        public void NotifyChange()
         {
             _changed = true;
         }

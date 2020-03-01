@@ -60,14 +60,14 @@ namespace Lib.Composition
                 case "setLiveReload":
                 {
                     _mainServer.Project.LiveReloadEnabled = data.Value<bool>("value");
-                    // TODO: force recompile
+                    _mainServer.NotifyRequestRebuild();
                     _mainServer.SendToAll("setLiveReload", data);
                     break;
                 }
                 case "setCoverage":
                 {
                     _mainServer.Project.CoverageEnabled = data.Value<bool>("value");
-                    // TODO: force recompile
+                    _mainServer.NotifyRequestRebuild();
                     _mainServer.SendToAll("setCoverage", data);
                     break;
                 }

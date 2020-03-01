@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Njsast.Ast;
 using Njsast.Reader;
+using Njsast.Utils;
 
 namespace Njsast.Coverage
 {
@@ -25,6 +26,7 @@ namespace Njsast.Coverage
                     {
                         astIf.Alternative = (AstStatement) Transform(MakeBlockStatement(astIf.Alternative!));
                     }
+
                     astIf.Condition = InstrumentCondition(astIf.Condition);
                     astIf.Condition = Transform(astIf.Condition);
 
@@ -111,6 +113,7 @@ namespace Njsast.Coverage
                 InstrumentBlock(ref lambda.Body);
                 return;
             }
+
             var idx = _owner.LastIndex++;
             var call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
             call.Args.Add(new AstNumber(idx));
@@ -119,7 +122,7 @@ namespace Njsast.Coverage
                 .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Function, idx, lambda.Start, lambda.End));
             var input = new StructList<AstNode>();
             input.TransferFrom(ref lambda.Body);
-            lambda.Body.Reserve(input.Count * 2-1);
+            lambda.Body.Reserve(input.Count * 2 - 1);
             lambda.Body.Add(input[0]);
             for (var i = 1; i < input.Count; i++)
             {
@@ -133,9 +136,11 @@ namespace Njsast.Coverage
                         call.Args.Add(new AstNumber(idx));
                         lambda.Body.Add(new AstSimpleStatement(call));
                     }
+
                     _owner.GetForFile(ii.Source!)
                         .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Statement, idx, ii.Start, ii.End));
                 }
+
                 ii = Transform(ii);
                 lambda.Body.Add(ii);
             }
@@ -177,9 +182,11 @@ namespace Njsast.Coverage
                     {
                         block.Add(new AstSimpleStatement(call));
                     }
+
                     _owner.GetForFile(ii.Source!)
                         .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Statement, idx, ii.Start, ii.End));
                 }
+
                 ii = Transform(ii);
                 block.Add(ii);
             }
@@ -282,6 +289,8 @@ namespace Njsast.Coverage
     public class CoverageInstrumentation
     {
         public Dictionary<string, InstrumentedFile> InstrumentedFiles;
+        public Dictionary<string, CoverageFile> CoveredFiles;
+        public Dictionary<string, CoverageStats> DirectoryStats;
         public int LastIndex;
         public readonly string StorageName;
         public readonly string FncNameCond;
@@ -290,6 +299,8 @@ namespace Njsast.Coverage
         public CoverageInstrumentation(string storageName = "__c0v")
         {
             InstrumentedFiles = new Dictionary<string, InstrumentedFile>();
+            CoveredFiles = new Dictionary<string, CoverageFile>();
+            DirectoryStats = new Dictionary<string, CoverageStats>();
             StorageName = storageName;
             FncNameCond = storageName + "C";
             FncNameStatement = storageName + "S";
@@ -322,7 +333,7 @@ namespace Njsast.Coverage
 
         public void CleanUp(ITextFileReader? reader)
         {
-            foreach (var (name,fileInfo) in InstrumentedFiles)
+            foreach (var (name, fileInfo) in InstrumentedFiles)
             {
                 fileInfo.Sort();
                 if (reader != null)
@@ -333,6 +344,72 @@ namespace Njsast.Coverage
                         fileInfo.PruneWhiteSpace(content);
                     }
                 }
+            }
+        }
+
+        public void BuildCoveredFiles(string? commonRoot = null)
+        {
+            CoveredFiles.Clear();
+            foreach (var keyValuePair in InstrumentedFiles)
+            {
+                var fn = keyValuePair.Key;
+                if (commonRoot != null)
+                {
+                    fn = PathUtils.Subtract(fn, commonRoot);
+                }
+                CoveredFiles[fn] = new CoverageFile(fn, keyValuePair.Value);
+            }
+        }
+
+        public void AddHits(ReadOnlySpan<uint> hits)
+        {
+            if (CoveredFiles.Count == 0)
+                BuildCoveredFiles();
+            foreach (var keyValuePair in CoveredFiles)
+            {
+                keyValuePair.Value.AddHits(hits);
+            }
+        }
+
+        public void CalcStats(bool justImportant = false)
+        {
+            DirectoryStats[""] = new CoverageStats("Total", "");
+            foreach (var keyValuePair in CoveredFiles)
+            {
+                keyValuePair.Value.CalcStats();
+                if (justImportant && !keyValuePair.Value.Important) continue;
+                var d = keyValuePair.Key;
+                object? link = keyValuePair.Value;
+                do
+                {
+                    d = PathUtils.Parent(d);
+                    object? nextLink;
+                    if (!DirectoryStats.TryGetValue(d, out var stats))
+                    {
+                        stats = new CoverageStats(PathUtils.Name(d), d);
+                        DirectoryStats[d] = stats;
+                        nextLink = stats;
+                    }
+                    else
+                    {
+                        nextLink = null;
+                    }
+
+                    if (link != null)
+                    {
+                        if (link is CoverageStats)
+                        {
+                            stats.SubDirectories.Add((CoverageStats)link);
+                        }
+                        else
+                        {
+                            stats.SubFiles.Add((CoverageFile) link);
+                        }
+                    }
+                    stats.Add(keyValuePair.Value.Stats!);
+
+                    link = nextLink;
+                } while (d != "");
             }
         }
     }

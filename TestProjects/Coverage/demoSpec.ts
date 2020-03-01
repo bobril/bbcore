@@ -1,9 +1,14 @@
-var i = 16;
+import * as index from "./index";
 
-if (i % 2 == 0 && i > 9) {
-  console.log("no no");
-}
+it("sums", () => {
+  expect(index.plus(1, 2)).toBe(3);
+});
 
-it("sdff", () => {
-  expect(1 + 2).toBe(5);
+describe("fizzbuzz", () => {
+  it("one", () => {
+    expect(index.fizzbuzz(1)).toBe(1);
+  });
+  it("three", () => {
+    expect(index.fizzbuzz(3)).toBe("fizz");
+  });
 });

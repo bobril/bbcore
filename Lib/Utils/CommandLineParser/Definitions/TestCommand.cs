@@ -25,5 +25,11 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString("where to just write test bundle", words: new[] { "-d", "--dir" });
 
         public CommandLineArgumentString SpecFilter { get; } = new CommandLineArgumentString("enable/disable tests matching a pattern", words: new[] { "-f", "--filter" });
+
+        public CommandLineArgumentEnumValues Coverage { get; } = new CommandLineArgumentEnumValues(
+            "calculate code coverage",
+            new[] {"-c", "--coverage"},
+            new[] { "json-summary", "none" }
+        );
     }
 }
