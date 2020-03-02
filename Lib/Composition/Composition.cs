@@ -569,13 +569,13 @@ namespace Lib.Composition
                         messages = null;
                         if (errors == 0)
                         {
-                            var wait = new Semaphore(0, 1);
-                            var wait2 = new Semaphore(0, 1);
+                            var waitForTestResults = new Semaphore(0, 1);
+                            var waitForCoverage = new Semaphore(0, 1);
                             _testServer.OnTestResults.Subscribe(results =>
                             {
                                 testFailures = results.TestsFailed + results.SuitesFailed;
                                 testResults = results;
-                                wait.Release();
+                                waitForTestResults.Release();
                             });
                             if (proj.CoverageEnabled)
                             {
@@ -585,7 +585,7 @@ namespace Lib.Composition
                                     covInstr.BuildCoveredFiles(_mainBuildResult.CommonSourceDirectory);
                                     covInstr.AddHits(results.CoverageData!);
                                     covInstr.CalcStats(true);
-                                    wait2.Release();
+                                    waitForCoverage.Release();
                                 });
                             }
 
@@ -596,8 +596,11 @@ namespace Lib.Composition
 
                             _testServer.StartTest("/test.html", fastBundle.SourceMaps, testCommand.SpecFilter.Value);
                             StartChromeTest();
-                            wait.WaitOne();
-                            wait2.WaitOne();
+                            waitForTestResults.WaitOne();
+                            if (proj.CoverageEnabled)
+                            {
+                                waitForCoverage.WaitOne();
+                            }
                             StopChromeTest();
                         }
                     }
