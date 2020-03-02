@@ -298,6 +298,7 @@ namespace Lib.Composition
 
                     case "coverageReportStarted":
                     {
+                        if (_verbose) _logger.Info("coverageReportStarted " + data);
                         _coverageData = new uint[data.Value<int>("length")];
                         break;
                     }
@@ -305,6 +306,7 @@ namespace Lib.Composition
                     case "coverageReportPart":
                     {
                         var start = data.Value<int>("start");
+                        if (_verbose) _logger.Info("coverageReportPart " + start);
                         var dataPart = data.Value<JArray>("data").Select(t=>t.Value<uint>()).ToList();
                         dataPart.CopyTo(_coverageData, start);
                         break;
@@ -312,6 +314,7 @@ namespace Lib.Composition
 
                     case "coverageReportFinished":
                     {
+                        if (_verbose) _logger.Info("coverageReportFinished");
                         _oldResults.CoverageData = _coverageData;
                         _testServer.OnCoverageResults.OnNext(_oldResults);
                         break;

@@ -4,72 +4,86 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using Lib.Utils;
 
 namespace Lib.Chrome
 {
-    public interface IChromeProcess : IDisposable
+    public interface IBrowserProcess : IDisposable
     {
     }
 
-    public interface IChromeProcessFactory
+    public interface IBrowserProcessFactory
     {
-        IChromeProcess Create(string urlToOpen);
+        IBrowserProcess Create(string urlToOpen);
     }
 
-    public class ChromeProcessFactory : IChromeProcessFactory
+    public class BrowserProcessFactory : IBrowserProcessFactory
     {
         readonly bool _inDocker;
-        public string ChromePath { get; }
+        readonly string _browserPath;
+        readonly bool _isFirefox;
 
-        public ChromeProcessFactory(bool inDocker,
-            string chromePath = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
+        public BrowserProcessFactory(bool inDocker,
+            string browserPath = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe")
         {
             _inDocker = inDocker;
-            ChromePath = chromePath;
+            _browserPath = browserPath;
+            _isFirefox = PathUtils.GetFile(PathUtils.Normalize(browserPath))
+                .Contains("firefox", StringComparison.OrdinalIgnoreCase);
         }
 
-        public IChromeProcess Create(string urlToOpen)
+        public IBrowserProcess Create(string urlToOpen)
         {
-            var chromeProcessArgs = new List<string>();
+            var processArgs = new List<string>();
             DirectoryInfo directoryInfo = null;
-            if (!_inDocker)
+            if (_isFirefox)
             {
-                var path = Path.GetRandomFileName();
-                directoryInfo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), path));
-                chromeProcessArgs.Add($"--user-data-dir=\"{directoryInfo.FullName}\"");
-                chromeProcessArgs.Add("--bwsi");
+                processArgs.Add("-headless");
             }
             else
             {
-                chromeProcessArgs.Add("--no-sandbox");
-                chromeProcessArgs.Add("--remote-debugging-address=0.0.0.0");
-            }
+                if (!_inDocker)
+                {
+                    var path = Path.GetRandomFileName();
+                    directoryInfo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), path));
+                    processArgs.Add($"--user-data-dir=\"{directoryInfo.FullName}\"");
+                    processArgs.Add("--bwsi");
+                }
+                else
+                {
+                    processArgs.Add("--no-sandbox");
+                    processArgs.Add("--remote-debugging-address=0.0.0.0");
+                }
 
-            chromeProcessArgs.Add($"--remote-debugging-port={9223}");
-            chromeProcessArgs.Add("--headless");
-            chromeProcessArgs.Add("--disable-gpu");
-            chromeProcessArgs.Add("--no-first-run");
-            chromeProcessArgs.Add("\"" + urlToOpen + "\"");
-            var processStartInfo = new ProcessStartInfo(ChromePath, string.Join(" ", chromeProcessArgs));
+                processArgs.Add($"--remote-debugging-port={9223}");
+                processArgs.Add("--headless");
+                processArgs.Add("--disable-gpu");
+                processArgs.Add("--no-first-run");
+                processArgs.Add("--disable-background-timer-throttling");
+            }
+            processArgs.Add("\"" + urlToOpen + "\"");
+            var processStartInfo = new ProcessStartInfo(_browserPath, string.Join(" ", processArgs));
             processStartInfo.RedirectStandardError = true;
             processStartInfo.RedirectStandardOutput = true;
             var chromeProcess = Process.Start(processStartInfo);
             chromeProcess.ErrorDataReceived += (e, d) => { Console.Write(d.Data); };
             chromeProcess.OutputDataReceived += (e, d) => { Console.Write(d.Data); };
-            return new LocalChromeProcess(directoryInfo, chromeProcess);
+            return new LocalBrowserProcess(directoryInfo, chromeProcess, _isFirefox);
         }
 
-        public class LocalChromeProcess : IChromeProcess
+        public class LocalBrowserProcess : IBrowserProcess
         {
             readonly DirectoryInfo _userDirectory;
+            readonly bool _isFirefox;
             readonly EventHandler _disposeHandler;
             readonly UnhandledExceptionEventHandler _unhandledExceptionHandler;
 
-            public LocalChromeProcess(DirectoryInfo userDirectory, Process process)
+            public LocalBrowserProcess(DirectoryInfo? userDirectory, Process process, bool isFirefox)
             {
                 Process = process;
-                process.Exited += (sender, args) => { Console.WriteLine("Chromium exited with " + process.ExitCode); };
+                process.Exited += (sender, args) => { Console.WriteLine("Headless browser stopped with " + process.ExitCode); };
                 _userDirectory = userDirectory;
+                _isFirefox = isFirefox;
                 _disposeHandler = (s, e) => Dispose();
                 _unhandledExceptionHandler = (s, e) => Dispose();
                 AppDomain.CurrentDomain.DomainUnload += _disposeHandler;
@@ -85,7 +99,7 @@ namespace Lib.Chrome
                 AppDomain.CurrentDomain.DomainUnload -= _disposeHandler;
                 AppDomain.CurrentDomain.ProcessExit -= _disposeHandler;
                 AppDomain.CurrentDomain.UnhandledException -= _unhandledExceptionHandler;
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                if (!_isFirefox && Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
                     // On Windows Chrome locks pma file with some child process, so we have to kill whole process tree
                     try

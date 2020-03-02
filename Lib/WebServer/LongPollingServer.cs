@@ -196,6 +196,8 @@ namespace Lib.WebServer
                 await context.Response.WriteAsync("Only POST allowed");
                 return;
             }
+
+            context.Response.ContentType = "application/json";
             var jsonString = await new StreamReader(context.Request.Body, Encoding.UTF8).ReadToEndAsync();
             JObject data;
             try

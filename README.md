@@ -76,7 +76,7 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 
 # Package.json - bobril section features
 
-## Define global contants and process.env
+## Define global constants and process.env
 
 global constants are defined using "defines" object. If `DEBUG` is not defined is it automatically defined as `DEBUG` build-in constant which is true in interactive, test modes and fast build mode. First are expanded all `defines`, than result of this expansion is input to `envs` expansion. In `envs` you define replacement for `process.env` object. If `NODE_ENV` is not defined is it automatically defined like in example below.
 
@@ -189,6 +189,10 @@ Useful if your API server does not uses CORS, so proxy requests through bobril-b
 Watcher inside Docker cannot use OS notification of filesystem changes. So by default BB inside docker uses polling implementation with 250ms check frequency. You modify this time in milliseconds by `BBWATCHER` variable, also without Docker it forces polling watcher:
 
     set BBWATCHER=1000
+
+## Specify path to browser used for testing
+
+    set BBBROWSER=C:/Program Files (x86)/Google/Chrome/Application/chrome.exe
 
 ## Disable yarn creating links
 

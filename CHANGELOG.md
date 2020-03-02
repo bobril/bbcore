@@ -2,6 +2,17 @@
 
 ## [unreleased]
 
+### Added
+
+Use BBBROWSER environmental variable to specify path to browser executable.
+Added support for headless Firefox.
+On Windows Firefox is preferred over Chrome.
+
+### Fixed
+
+Coverage works also for Jasmine 2.99.
+BB test works again also without coverage.
+
 ## 1.13.0
 
 ### Added

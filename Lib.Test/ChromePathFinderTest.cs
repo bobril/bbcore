@@ -60,36 +60,36 @@ namespace Lib.Test
         [Fact]
         void ReturnsWindowsPathIfNotUnixFs()
         {
-            var chromePath = ChromePathFinder.GetChromePath(new FakeFs(false, @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"));
-            Assert.Equal(@"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe", chromePath);
+            var chromePath = BrowserPathFinder.GetBrowserPath(new FakeFs(false, @"C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"));
+            Assert.Equal(@"C:/Program Files (x86)/Google/Chrome/Application/chrome.exe", chromePath);
         }
 
         [Fact]
         void ReturnsLinuxPathIfIsUnixFs()
         {
-            var chromePath = ChromePathFinder.GetChromePath(new FakeFs(true, "/opt/google/chrome/google-chrome"));
+            var chromePath = BrowserPathFinder.GetBrowserPath(new FakeFs(true, "/opt/google/chrome/google-chrome"));
             Assert.Equal("/opt/google/chrome/google-chrome", chromePath);
         }
 
         [Fact]
         void ReturnsLinuxChromiumPathIfIsUnixFsAndChromeNotInstalled()
         {
-            var chromePath = ChromePathFinder.GetChromePath(new FakeFs(true, "/usr/bin/chromium"));
+            var chromePath = BrowserPathFinder.GetBrowserPath(new FakeFs(true, "/usr/bin/chromium"));
             Assert.Equal("/usr/bin/chromium", chromePath);
         }
 
         [Fact]
         void ReturnsLinuxChromiumBrowserPathIfIsUnixFsAndChromeNotInstalled()
         {
-            var chromePath = ChromePathFinder.GetChromePath(new FakeFs(true, "/usr/bin/chromium-browser"));
+            var chromePath = BrowserPathFinder.GetBrowserPath(new FakeFs(true, "/usr/bin/chromium-browser"));
             Assert.Equal("/usr/bin/chromium-browser", chromePath);
         }
 
         [Fact]
         void ThrowsExceptionWhenChromeNorChromiumIsNotFound()
         {
-            Exception ex = Assert.Throws<Exception>(() => ChromePathFinder.GetChromePath(new FakeFs(true)));
-            Assert.Equal("Chrome not found. Install Google Chrome or Chromium.", ex.Message);
+            Exception ex = Assert.Throws<Exception>(() => BrowserPathFinder.GetBrowserPath(new FakeFs(true)));
+            Assert.Contains("Browser not found", ex.Message);
         }
     }
 

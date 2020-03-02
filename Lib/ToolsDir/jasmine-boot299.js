@@ -233,6 +233,37 @@
             },
             jasmineDone: function () {
                 bbTest("wholeDone" + testId, perfnow() - totalStart_1);
+                var cov = window.__c0v;
+                if (cov != undefined) {
+                    var pos_1 = 0;
+                    var sendPart_1 = function () {
+                        while (pos_1 < cov.length && cov[pos_1] === 0)
+                            pos_1++;
+                        if (pos_1 < cov.length) {
+                            var maxlen = Math.min(cov.length - pos_1, 10240);
+                            var len = maxlen - 1;
+                            while (cov[pos_1 + len] === 0)
+                                len--;
+                            len++;
+                            bbTest("coverageReportPart" + testId, {
+                                start: pos_1,
+                                data: Array.prototype.slice.call(cov.slice(pos_1, pos_1 + len))
+                            });
+                            pos_1 += maxlen;
+                            if (pos_1 == cov.length) {
+                                sendPart_1();
+                            }
+                            else {
+                                setTimeout(sendPart_1, 10);
+                            }
+                        }
+                        else {
+                            bbTest("coverageReportFinished" + testId, { length: cov.length });
+                        }
+                    };
+                    bbTest("coverageReportStarted" + testId, { length: cov.length });
+                    sendPart_1();
+                }
             },
             suiteStarted: function (result) {
                 bbTest("suiteStart" + testId, result.description);

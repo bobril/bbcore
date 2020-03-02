@@ -51,8 +51,8 @@ namespace Lib.Composition
         ILongPollingServer _testServerLongPollingHandler;
         MainServer _mainServer;
         ILongPollingServer _mainServerLongPollingHandler;
-        IChromeProcessFactory _chromeProcessFactory;
-        IChromeProcess _chromeProcess;
+        IBrowserProcessFactory _browserProcessFactory;
+        IBrowserProcess _browserProcess;
         IBuildCache _buildCache;
         bool _verbose;
         bool _forbiddenDependencyUpdate;
@@ -1452,28 +1452,28 @@ namespace Lib.Composition
 
         public void StartChromeTest()
         {
-            if (_chromeProcessFactory == null)
+            if (_browserProcessFactory == null)
             {
-                var chromePath = ChromePathFinder.GetChromePath(new NativeFsAbstraction());
-                _chromeProcessFactory = new ChromeProcessFactory(_inDocker, chromePath);
+                var chromePath = BrowserPathFinder.GetBrowserPath(new NativeFsAbstraction());
+                _browserProcessFactory = new BrowserProcessFactory(_inDocker, chromePath);
             }
 
-            if (_chromeProcess != null)
+            if (_browserProcess != null)
             {
                 var state = _testServer.GetState();
                 if (!state.Agents.Exists(a => a.UserAgent.Contains("Headless")))
                 {
                     _logger.Warn("Headless chrome not responding - restarting");
-                    _chromeProcess.Dispose();
-                    _chromeProcess = null;
+                    _browserProcess.Dispose();
+                    _browserProcess = null;
                 }
             }
 
-            if (_chromeProcess == null)
+            if (_browserProcess == null)
             {
                 try
                 {
-                    _chromeProcess = _chromeProcessFactory.Create($"http://localhost:{_webServer.Port}/bb/test/");
+                    _browserProcess = _browserProcessFactory.Create($"http://localhost:{_webServer.Port}/bb/test/");
                 }
                 catch (Exception ex)
                 {
@@ -1485,10 +1485,10 @@ namespace Lib.Composition
 
         public void StopChromeTest()
         {
-            if (_chromeProcess != null)
+            if (_browserProcess != null)
             {
-                _chromeProcess.Dispose();
-                _chromeProcess = null;
+                _browserProcess.Dispose();
+                _browserProcess = null;
             }
         }
 
