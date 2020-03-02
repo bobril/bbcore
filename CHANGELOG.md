@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.14.0
+
 ### Added
 
 Use BBBROWSER environmental variable to specify path to browser executable.
