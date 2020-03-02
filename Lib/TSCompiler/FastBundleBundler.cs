@@ -211,7 +211,7 @@ namespace Lib.TSCompiler
                     sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
                                              ".map");
                 }
-                _sourceMap = sourceMapBuilder.Build(sourceRoot, sourceRoot);
+                _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
                 _bundleJs = sourceMapBuilder.Content();
 
                 _sourceMapString = _sourceMap.ToString();

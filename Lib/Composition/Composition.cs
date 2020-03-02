@@ -595,13 +595,13 @@ namespace Lib.Composition
                                             durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
 
                             _testServer.StartTest("/test.html", fastBundle.SourceMaps, testCommand.SpecFilter.Value);
-                            StartChromeTest();
+                            StartHeadlessBrowserTest();
                             waitForTestResults.WaitOne();
                             if (proj.CoverageEnabled)
                             {
                                 waitForCoverage.WaitOne();
                             }
-                            StopChromeTest();
+                            StopBrowserTest();
                         }
                     }
                 }
@@ -1313,7 +1313,7 @@ namespace Lib.Composition
                             {
                                 fastBundle.BuildHtml(true);
                                 _testServer.StartTest("/test.html", fastBundle.SourceMaps);
-                                StartChromeTest();
+                                StartHeadlessBrowserTest();
                             }
                         }
                     }
@@ -1450,23 +1450,12 @@ namespace Lib.Composition
             return res;
         }
 
-        public void StartChromeTest()
+        public void StartHeadlessBrowserTest()
         {
             if (_browserProcessFactory == null)
             {
                 var chromePath = BrowserPathFinder.GetBrowserPath(new NativeFsAbstraction());
                 _browserProcessFactory = new BrowserProcessFactory(_inDocker, chromePath);
-            }
-
-            if (_browserProcess != null)
-            {
-                var state = _testServer.GetState();
-                if (!state.Agents.Exists(a => a.UserAgent.Contains("Headless")))
-                {
-                    _logger.Warn("Headless chrome not responding - restarting");
-                    _browserProcess.Dispose();
-                    _browserProcess = null;
-                }
             }
 
             if (_browserProcess == null)
@@ -1477,13 +1466,13 @@ namespace Lib.Composition
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Failed To Start Chrome Headless");
-                    Console.WriteLine(ex);
+                    _logger.Error("Failed To Start Headless Browser");
+                    _logger.Error(ex.ToString());
                 }
             }
         }
 
-        public void StopChromeTest()
+        public void StopBrowserTest()
         {
             if (_browserProcess != null)
             {
@@ -1513,8 +1502,8 @@ namespace Lib.Composition
 
         public void ExitWithCleanUp()
         {
-            _logger.WriteLine("Stopping Chrome");
-            StopChromeTest();
+            _logger.WriteLine("Stopping Headless Browser");
+            StopBrowserTest();
             _logger.WriteLine("Exitting");
             Environment.Exit(0);
         }
