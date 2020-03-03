@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.15.0
+
 ### Added
 
 Autodetect important files for code coverage. Resolve links in workspaces. Don't files only in node_modules are not considered important.
