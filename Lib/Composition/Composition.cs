@@ -17,13 +17,13 @@ using System.Linq;
 using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using Lib.Chrome;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
 using System.Text.Json;
 using BTDB.Collections;
 using Lib.BuildCache;
+using Lib.HeadlessBrowser;
 using Lib.Registry;
 using Lib.Utils.Notification;
 using Lib.Translation;
@@ -591,7 +591,7 @@ namespace Lib.Composition
 
                             var durationb = DateTime.UtcNow - start;
 
-                            _logger.Success("Build successful. Starting Chrome to run tests in " +
+                            _logger.Success("Build successful. Starting Headless browser to run tests in " +
                                             durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
 
                             _testServer.StartTest("/test.html", fastBundle.SourceMaps, testCommand.SpecFilter.Value);
@@ -1454,8 +1454,8 @@ namespace Lib.Composition
         {
             if (_browserProcessFactory == null)
             {
-                var chromePath = BrowserPathFinder.GetBrowserPath(new NativeFsAbstraction());
-                _browserProcessFactory = new BrowserProcessFactory(_inDocker, chromePath);
+                var browserPath = BrowserPathFinder.GetBrowserPath(new NativeFsAbstraction());
+                _browserProcessFactory = new BrowserProcessFactory(_inDocker, browserPath);
             }
 
             if (_browserProcess == null)

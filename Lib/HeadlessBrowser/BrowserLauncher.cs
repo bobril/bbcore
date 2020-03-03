@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading;
 using Lib.Utils;
 
-namespace Lib.Chrome
+namespace Lib.HeadlessBrowser
 {
     public interface IBrowserProcess : IDisposable
     {

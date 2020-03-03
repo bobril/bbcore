@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Lib.Chrome;
 using Lib.DiskCache;
+using Lib.HeadlessBrowser;
 using Xunit;
 
 

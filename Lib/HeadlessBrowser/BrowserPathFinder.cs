@@ -1,7 +1,7 @@
 using System;
 using Lib.DiskCache;
 
-namespace Lib.Chrome
+namespace Lib.HeadlessBrowser
 {
     public static class BrowserPathFinder
     {
