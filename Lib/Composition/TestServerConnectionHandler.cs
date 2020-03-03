@@ -281,9 +281,6 @@ namespace Lib.Composition
                         {
                             if (_curResults == null)
                                 break;
-                            _suiteId = 0;
-                            _suiteStack = new Stack<SuiteOrTest>();
-                            _suiteStack.Push(_curResults);
                             _curResults.Failures.Add(ConvertMessageAndStack(data.Value<string>("message"),data.Value<string>("stack")));
                             _logger.Error("Test onerror "+_curResults.Failures[^1].Message);
                             _logger.Error(string.Join("\n", _curResults.Failures[^1].Stack));

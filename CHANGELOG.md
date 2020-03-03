@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+Hopefully random error in testing.
+Firefox now correctly starts and is killed. And uses its one Profile `bb` which automatically creates.
+
 ## 1.14.0
 
 ### Added
