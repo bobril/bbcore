@@ -8,6 +8,7 @@ namespace Lib.Chrome
         static readonly string[] WindowsBrowserPaths =
         {
             "c:/Program Files/Mozilla Firefox/firefox.exe",
+            "c:/Program Files (x86)/Mozilla Firefox/firefox.exe",
             "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"
         };
 

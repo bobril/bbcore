@@ -38,7 +38,21 @@ namespace Lib.Chrome
             DirectoryInfo directoryInfo = null;
             if (_isFirefox)
             {
-                processArgs.Add("-headless");
+                processArgs.Add("-CreateProfile bb");
+                try
+                {
+                    var processStartInfoInit = new ProcessStartInfo(_browserPath, string.Join(" ", processArgs));
+                    var initProcess = Process.Start(processStartInfoInit);
+                    initProcess?.WaitForExit();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                processArgs.Clear();
+                processArgs.Add("--headless");
+                processArgs.Add("--no-remote");
+                processArgs.Add("-P bb");
             }
             else
             {
@@ -65,25 +79,23 @@ namespace Lib.Chrome
             var processStartInfo = new ProcessStartInfo(_browserPath, string.Join(" ", processArgs));
             processStartInfo.RedirectStandardError = true;
             processStartInfo.RedirectStandardOutput = true;
-            var chromeProcess = Process.Start(processStartInfo);
-            chromeProcess.ErrorDataReceived += (e, d) => { Console.Write(d.Data); };
-            chromeProcess.OutputDataReceived += (e, d) => { Console.Write(d.Data); };
-            return new LocalBrowserProcess(directoryInfo, chromeProcess, _isFirefox);
+            var browserProcess = Process.Start(processStartInfo);
+            browserProcess.ErrorDataReceived += (e, d) => { Console.Write(d.Data); };
+            browserProcess.OutputDataReceived += (e, d) => { Console.Write(d.Data); };
+            return new LocalBrowserProcess(directoryInfo, browserProcess);
         }
 
         public class LocalBrowserProcess : IBrowserProcess
         {
             readonly DirectoryInfo _userDirectory;
-            readonly bool _isFirefox;
             readonly EventHandler _disposeHandler;
             readonly UnhandledExceptionEventHandler _unhandledExceptionHandler;
 
-            public LocalBrowserProcess(DirectoryInfo? userDirectory, Process process, bool isFirefox)
+            public LocalBrowserProcess(DirectoryInfo? userDirectory, Process process)
             {
                 Process = process;
                 process.Exited += (sender, args) => { Console.WriteLine("Headless browser stopped with " + process.ExitCode); };
                 _userDirectory = userDirectory;
-                _isFirefox = isFirefox;
                 _disposeHandler = (s, e) => Dispose();
                 _unhandledExceptionHandler = (s, e) => Dispose();
                 AppDomain.CurrentDomain.DomainUnload += _disposeHandler;
@@ -99,7 +111,7 @@ namespace Lib.Chrome
                 AppDomain.CurrentDomain.DomainUnload -= _disposeHandler;
                 AppDomain.CurrentDomain.ProcessExit -= _disposeHandler;
                 AppDomain.CurrentDomain.UnhandledException -= _unhandledExceptionHandler;
-                if (!_isFirefox && Environment.OSVersion.Platform == PlatformID.Win32NT)
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
                     // On Windows Chrome locks pma file with some child process, so we have to kill whole process tree
                     try
