@@ -199,6 +199,7 @@ namespace Lib.TSCompiler
                     var toplevel = Parser.Parse(_bundleJs);
                     _sourceMap.ResolveInAst(toplevel);
                     var coverageInst = new CoverageInstrumentation();
+                    coverageInst.RealPath = PathUtils.RealPath;
                     _project.CoverageInstrumentation = coverageInst;
                     toplevel = coverageInst.Instrument(toplevel);
                     coverageInst.AddCountingHelpers(toplevel);
@@ -211,6 +212,7 @@ namespace Lib.TSCompiler
                     sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
                                              ".map");
                 }
+
                 _sourceMap = sourceMapBuilder.Build(root, sourceRoot);
                 _bundleJs = sourceMapBuilder.Content();
 
@@ -284,7 +286,8 @@ namespace Lib.TSCompiler
 
             if (coverageInst.InstrumentedFiles.TryGetValue(fn, out var instFile))
             {
-                instFile.Important = true;
+                if (instFile.RealName != null || !fn.Contains("node_modules"))
+                    instFile.Important = true;
             }
         }
 

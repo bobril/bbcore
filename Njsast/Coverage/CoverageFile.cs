@@ -9,13 +9,15 @@ namespace Njsast.Coverage
     {
         public string Name;
         public string FileName;
+        public string? RealName;
         public bool Important;
         public CoverageStats? Stats;
         public StructList<CoverageInfo> Infos;
 
-        public CoverageFile(string fileName, InstrumentedFile file)
+        public CoverageFile(string fileName, string? realName, InstrumentedFile file)
         {
             FileName = fileName;
+            RealName = realName;
             Name = PathUtils.Name(fileName);
             Important = file.Important;
             Infos = new StructList<CoverageInfo>();

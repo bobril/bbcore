@@ -1099,7 +1099,7 @@ namespace Lib.Composition
 
             if (instr.InstrumentedFiles.TryGetValue(fn, out var instrumentedFile))
             {
-                var cf = new CoverageFile(fn, instrumentedFile);
+                var cf = new CoverageFile(fn, instrumentedFile.RealName, instrumentedFile);
                 cf.AddHits(coverageData);
                 foreach (var coverageInfo in cf.Infos)
                 {

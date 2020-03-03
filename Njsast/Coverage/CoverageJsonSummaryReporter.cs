@@ -67,7 +67,7 @@ namespace Njsast.Coverage
 
         public override void OnStartFile(CoverageFile file)
         {
-            _jsonWriter!.WritePropertyName(file.FileName);
+            _jsonWriter!.WritePropertyName(file.RealName ?? file.FileName);
             WriteStats(file.Stats!);
         }
     }

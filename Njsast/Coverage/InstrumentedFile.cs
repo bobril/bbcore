@@ -9,12 +9,14 @@ namespace Njsast.Coverage
     public class InstrumentedFile
     {
         public string FileName;
+        public string? RealName;
         public bool Important;
         public StructList<InstrumentedInfo> Infos;
 
-        public InstrumentedFile(string name)
+        public InstrumentedFile(string name, string? real)
         {
             FileName = name;
+            RealName = real;
         }
 
         public void AddInfo(InstrumentedInfo info)
