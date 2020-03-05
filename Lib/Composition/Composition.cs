@@ -383,10 +383,10 @@ namespace Lib.Composition
         void RunBuild(BuildCommand bCommand)
         {
             InitDiskCache();
+            _forbiddenDependencyUpdate = bCommand.NoUpdate.Value;
             _mainBuildResult = new MainBuildResult(!bCommand.Fast.Value, bCommand.VersionDir.Value);
             var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
             proj.SpriteGeneration = bCommand.Sprite.Value;
-            _forbiddenDependencyUpdate = bCommand.NoUpdate.Value;
             var start = DateTime.UtcNow;
             var errors = 0;
             var warnings = 0;
