@@ -544,7 +544,7 @@ namespace Njsast.Output
                 else if (ch == '\"') dq++;
             }
 
-            if (sq > dq)
+            if (sq < dq)
             {
                 Print("\'");
                 PrintStringChars(str, QuoteType.Single);
