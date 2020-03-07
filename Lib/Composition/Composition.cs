@@ -31,6 +31,7 @@ using Lib.Utils.Logger;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Njsast.Coverage;
+using Njsast.Reader;
 using ProxyKit;
 
 namespace Lib.Composition
@@ -80,7 +81,8 @@ namespace Lib.Composition
                     new BuildInteractiveCommand(),
                     new BuildInteractiveNoUpdateCommand(),
                     new PackageManagerCommand(),
-                    new FindUnusedCommand()
+                    new FindUnusedCommand(),
+                    new JsCommand()
                 }
             );
         }
@@ -141,6 +143,98 @@ namespace Lib.Composition
             {
                 RunPackageAdd(addCommand);
             }
+            else if (_command is JsGlobalsCommand jsGlobalsCommand)
+            {
+                RunJSGlobals(jsGlobalsCommand);
+            }
+        }
+
+        int RunJSGlobals(JsGlobalsCommand jsGlobalsCommand)
+        {
+            if (jsGlobalsCommand.FileName.Value == null)
+            {
+                _logger.Error("Didn't specified name of js source file to get global variables");
+                return 1;
+            }
+
+            string inputSource;
+            try
+            {
+                inputSource = File.ReadAllText(jsGlobalsCommand.FileName.Value!);
+            }
+            catch (Exception e)
+            {
+                _logger.Error("Cannot read " + jsGlobalsCommand.FileName.Value!);
+                return 2;
+            }
+
+            try
+            {
+                var ast = Parser.Parse(inputSource);
+                ast.FigureOutScope();
+                foreach (var keyValuePair in ast.Globals!)
+                {
+                    if (!jsGlobalsCommand.IncludeWellKnown.Value && IsWellKnownGlobal(keyValuePair.Key))
+                        continue;
+                    _logger.Info(keyValuePair.Key + " - reference count: " + keyValuePair.Value.References.Count +
+                                 " one at " + keyValuePair.Value.References[0].Start.ToShortString());
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e.ToString());
+                return 3;
+            }
+
+            return 0;
+        }
+
+        static bool IsWellKnownGlobal(string name)
+        {
+            return name switch
+            {
+                "window" => true,
+                "document" => true,
+                "self" => true,
+                "navigator" => true,
+                "console" => true,
+                "screen" => true,
+                "history" => true,
+                "localStorage" => true,
+                "sessionStorage" => true,
+                "eval" => true,
+                "Math" => true,
+                "Array" => true,
+                "Object" => true,
+                "Date" => true,
+                "Function" => true,
+                "Error" => true,
+                "String" => true,
+                "isNaN" => true,
+                "isFinite" => true,
+                "parseInt" => true,
+                "parseFloat" => true,
+                "alert" => true,
+                "confirm" => true,
+                "prompt" => true,
+                "XMLHttpRequest" => true,
+                "setTimeout" => true,
+                "clearTimeout" => true,
+                "setInterval" => true,
+                "clearInterval" => true,
+                "open" => true,
+                "postMessage" => true,
+                "atob" => true,
+                "btoa" => true,
+                "blur" => true,
+                "focus" => true,
+                "requestAnimationFrame" => true,
+                "createImageBitmap" => true,
+                "getComputedStyle" => true,
+                "getSelection" => true,
+                "matchMedia" => true,
+                _ => false
+            };
         }
 
         void RunPackageAdd(PackageManagerAddCommand addCommand)

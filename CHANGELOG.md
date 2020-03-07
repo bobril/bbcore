@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+New js command with globals subcommand to print all global variables from provided js file.
+
+```sh
+bb js globals file.js
+```
+
 ## 1.15.1
 
 ### Fixed
