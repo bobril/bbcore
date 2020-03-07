@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Mangling of bundled code with eval.
+
 ## 1.15.0
 
 ### Added

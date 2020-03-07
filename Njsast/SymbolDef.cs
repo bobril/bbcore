@@ -71,7 +71,24 @@ namespace Njsast
 
         public void Mangle(ScopeOptions options)
         {
-            if (MangledName != null || Unmangleable(options)) return;
+            if (MangledName != null) return;
+            if (Unmangleable(options))
+            {
+                if (!options.IgnoreEval && Scope.Pinned())
+                {
+                    var mangledIdx = AstScope.Debase54(options.Chars, Name);
+                    var enc = Scope.Enclosed.AsReadOnlySpan();
+                    foreach (var encSym in enc)
+                    {
+                        if (encSym.MangledIdx == mangledIdx && encSym.MangledName != null)
+                        {
+                            encSym.MangledName = null;
+                            encSym.Mangle(options);
+                        }
+                    }
+                }
+                return;
+            }
             var def = Redefined();
             if (def != null)
             {

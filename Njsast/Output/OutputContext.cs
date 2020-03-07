@@ -560,10 +560,36 @@ namespace Njsast.Output
 
         public void PrintNumber(double value)
         {
-            var str = value.ToString("R", CultureInfo.InvariantCulture);
+            Span<char> buf = stackalloc char[31];
+            if (!value.TryFormat(buf.Slice(0,30), out var charLen, "R", CultureInfo.InvariantCulture))
+                throw new ArgumentOutOfRangeException(nameof(value));
+            buf[charLen] = (char)0;
+            if (buf[0] == '0' && buf[1] == '.')
+            {
+                Print(buf.Slice(1, charLen - 1));
+                _needDotAfterNumber = false;
+                return;
+            }
+
+            if (charLen > 3 && buf[charLen - 1] == '0' && buf[charLen - 2] == '0' && buf[charLen - 3] == '0')
+            {
+                var z = charLen - 3;
+                while (buf[z] == '0') z--;
+                z++;
+                buf[z] = 'e';
+                var exp = charLen - z;
+                z++;
+                exp.TryFormat(buf.Slice(z, 3), out charLen, default, CultureInfo.InvariantCulture);
+                charLen += z;
+                Print(buf.Slice(0, charLen));
+                _needDotAfterNumber = false;
+                return;
+            }
+
+            var str = buf.Slice(0, charLen);
             Print(str);
-            _needDotAfterNumber = !(str.Contains('.', StringComparison.Ordinal) ||
-                                    str.Contains('e', StringComparison.OrdinalIgnoreCase));
+            _needDotAfterNumber = !(str.Contains('.') ||
+                                    str.Contains('e'));
         }
 
         public void PrintPropertyName(string name)
