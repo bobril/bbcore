@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.15.1
+
 ### Fixed
 
 Mangling of bundled code with eval.
