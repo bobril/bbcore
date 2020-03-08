@@ -4,6 +4,8 @@
 
 ### Added
 
+New coverage reporter json-details.
+
 New js command with globals subcommand to print all global variables from provided js file.
 
 ```sh

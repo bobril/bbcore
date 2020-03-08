@@ -2,7 +2,7 @@ namespace Njsast.Coverage
 {
     public class CoverageReporterBase
     {
-        readonly CoverageInstrumentation _covInstr;
+        protected readonly CoverageInstrumentation _covInstr;
 
         public CoverageReporterBase(CoverageInstrumentation covInstr)
         {

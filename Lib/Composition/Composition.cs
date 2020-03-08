@@ -727,6 +727,9 @@ namespace Lib.Composition
                              stats.LinesPercentageText);
                 switch (testCommand.Coverage.Value)
                 {
+                    case "json-details":
+                        new CoverageJsonDetailsReporter(covInstr).Run();
+                        break;
                     case "json-summary":
                         new CoverageJsonSummaryReporter(covInstr).Run();
                         break;

@@ -16,6 +16,7 @@ namespace Njsast.Coverage
         public readonly string FncNameCond;
         public readonly string FncNameStatement;
         public Func<string, string?>? RealPath;
+        public ITextFileReader? SourceReader;
 
         public CoverageInstrumentation(string storageName = "__c0v")
         {
@@ -68,6 +69,7 @@ namespace Njsast.Coverage
 
         public void CleanUp(ITextFileReader? reader)
         {
+            SourceReader = reader;
             foreach (var (name, fileInfo) in InstrumentedFiles)
             {
                 fileInfo.Sort();
@@ -162,10 +164,5 @@ namespace Njsast.Coverage
                 } while (d != "");
             }
         }
-    }
-
-    public interface ITextFileReader
-    {
-        ReadOnlySpan<byte> ReadUtf8(string fileName);
     }
 }
