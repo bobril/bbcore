@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Fixed
+
+- A lot of bugs around resource assets
+- A lot of failure states around project assets
+- JS Parser chokes on surrogates in strings
+
 ## 1.16.0
 
 ### Changed

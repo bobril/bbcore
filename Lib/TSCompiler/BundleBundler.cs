@@ -123,8 +123,9 @@ namespace Lib.TSCompiler
             if (_project.SubProjects != null)
             {
                 var newSubBundlers = new RefDictionary<string, BundleBundler>();
-                foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a=>a.Value!.Variant=="serviceworker"))
+                foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a=>a.Value?.Variant=="serviceworker"))
                 {
+                    if (subProject == null) continue;
                     if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                     {
                         subBundler = new BundleBundler(_tools, _mainBuildResult, subProject, _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));

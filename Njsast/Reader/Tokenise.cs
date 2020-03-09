@@ -608,6 +608,8 @@ namespace Njsast.Reader
 
         static string CodePointToString(int code)
         {
+            if (code <= 65535)
+                return ((char) code).ToString();
             return char.ConvertFromUtf32(code);
         }
 

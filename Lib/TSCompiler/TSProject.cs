@@ -226,7 +226,7 @@ namespace Lib.TSCompiler
             return res;
         }
 
-        public static TSProject Create(IDirectoryCache dir, IDiskCache diskCache, ILogger logger, string diskName)
+        public static TSProject? Create(IDirectoryCache dir, IDiskCache diskCache, ILogger logger, string diskName)
         {
             if (dir == null)
                 return null;

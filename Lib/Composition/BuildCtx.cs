@@ -400,10 +400,12 @@ namespace Lib.Composition
                 var projectPath = newSubProjects.KeyRef(u);
                 if (newSubProjects.ValueRef(u) == null)
                 {
-                    if (project.SubProjects == null || !project.SubProjects.TryGetValue(projectPath, out var subProj))
+                    if (project.SubProjects == null || !project.SubProjects.TryGetValue(projectPath, out var subProj) || subProj == null)
                     {
                         var dirCache = _diskCache.TryGetItem(PathUtils.Join(project.Owner.Owner.FullPath, projectPath)) as IDirectoryCache;
                         var tsproj = TSProject.Create(dirCache, _diskCache, _logger, null);
+                        if (tsproj == null)
+                            continue;
                         tsproj.IsRootProject = true;
                         if (tsproj.ProjectOptions.BuildCache == null)
                             tsproj.ProjectOptions = new ProjectOptions

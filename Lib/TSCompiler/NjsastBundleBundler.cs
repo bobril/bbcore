@@ -138,8 +138,9 @@ namespace Lib.TSCompiler
             {
                 var newSubBundlers = new RefDictionary<string, NjsastBundleBundler>();
                 foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a =>
-                    a.Value!.Variant == "serviceworker"))
+                    a.Value?.Variant == "serviceworker"))
                 {
+                    if (subProject == null) continue;
                     if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                     {
                         subBundler = new NjsastBundleBundler(_tools, _logger, _mainBuildResult, subProject,

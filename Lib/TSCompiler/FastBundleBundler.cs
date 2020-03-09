@@ -167,8 +167,11 @@ namespace Lib.TSCompiler
             if (!testProj && _project.NoHtml)
             {
                 sourceMapBuilder.AddText(RequireBobril());
-                sourceMapBuilder.AddText(
-                    $"R.r('./{PathUtils.WithoutExtension(PathUtils.Subtract(_project.MainFile, root))}');");
+                if (_project.MainFile != null)
+                {
+                    sourceMapBuilder.AddText(
+                        $"R.r('./{PathUtils.WithoutExtension(PathUtils.Subtract(_project.MainFile, root))}');");
+                }
             }
 
             if (_project.Localize)
@@ -251,8 +254,9 @@ namespace Lib.TSCompiler
             {
                 var newSubBundlers = new RefDictionary<string, FastBundleBundler>();
                 foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a =>
-                    a.Value!.Variant == "serviceworker"))
+                    a.Value?.Variant == "serviceworker"))
                 {
+                    if (subProject == null) continue;
                     if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                     {
                         subBundler = new FastBundleBundler(_tools, _mainBuildResult, subProject,

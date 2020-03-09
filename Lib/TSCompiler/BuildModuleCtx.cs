@@ -45,7 +45,7 @@ namespace Lib.TSCompiler
             return name.EndsWith(".ts") || name.EndsWith(".tsx") || name.EndsWith(".js") || name.EndsWith(".jsx");
         }
 
-        public TSProject ResolveModule(string name)
+        public TSProject? ResolveModule(string name)
         {
             if (Result.Modules.TryGetValue(name, out var module))
             {
@@ -126,7 +126,7 @@ namespace Lib.TSCompiler
         }
 
         // returns "?" if error in resolving
-        public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false)
+        public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false, bool forceResource = false)
         {
             if (Result.ResolveCache.TryGetValue((from, name), out var res))
             {
@@ -178,7 +178,7 @@ namespace Lib.TSCompiler
                     if (fc != null && !fc.IsInvalid)
                     {
                         res.FileName = fn;
-                        CheckAdd(fn,
+                        CheckAdd(fn, forceResource? FileCompilationType.Resource :
                             fn.EndsWith(".json")
                                 ? FileCompilationType.Json
                                 : (isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss));
@@ -226,7 +226,11 @@ namespace Lib.TSCompiler
                         "Local import has wrong casing '" + fn + "' on disk '" + item.FullPath + "'", 0, 0, 0, 0);
                 }
 
-                if (IsDts(item.Name))
+                if (forceResource)
+                {
+                    CheckAdd(item.FullPath, FileCompilationType.Resource);
+                }
+                else if (IsDts(item.Name))
                 {
                     CheckAdd(item.FullPath, FileCompilationType.TypeScriptDefinition);
                     if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
@@ -917,14 +921,14 @@ namespace Lib.TSCompiler
             return ok;
         }
 
-        string ToAbsoluteName(string relativeName, string from, ref bool ok)
+        string ToAbsoluteName(string relativeName, string from, ref bool ok, bool forceResource = false)
         {
             if (relativeName.StartsWith("resource:"))
             {
-                return "resource:" + ToAbsoluteName(relativeName.Substring(9), from, ref ok);
+                return "resource:" + ToAbsoluteName(relativeName.Substring(9), from, ref ok, true);
             }
 
-            var res = ResolveImport(from, relativeName, false, true);
+            var res = ResolveImport(from, relativeName, false, true, forceResource);
             if (res == null || res == "?")
             {
                 ok = false;

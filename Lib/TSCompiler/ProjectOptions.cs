@@ -359,6 +359,7 @@ namespace Lib.TSCompiler
             {
                 foreach (var (name, subProject) in SubProjects)
                 {
+                    if (subProject == null) continue;
                     subProject.TsconfigUpdate = true;
                     subProject.UpdateTSConfigJson();
                 }
@@ -446,7 +447,8 @@ namespace Lib.TSCompiler
             BrowserResolve = null;
             if (browserValue != null && browserValue.Type == JTokenType.Object)
             {
-                BrowserResolve = browserValue.ToObject<Dictionary<string, object>>(). ToDictionary(p=>p.Key,p=>p.Value as string);
+                BrowserResolve = browserValue.ToObject<Dictionary<string, object>>()
+                    .ToDictionary(p => p.Key, p => p.Value as string);
             }
 
             Localize = Owner.Dependencies?.Contains("bobril-g11n") ?? false;
@@ -509,6 +511,7 @@ namespace Lib.TSCompiler
             {
                 ProcessEnvs!["NODE_ENV"] = Parser.Parse("DEBUG?\"development\":\"production\"");
             }
+
             PreserveProjectRoot = bobrilSection?["preserveProjectRoot"]?.Value<bool>() ?? false;
             ProxyUrl = GetStringProperty(bobrilSection, "proxyUrl", null);
         }
@@ -570,6 +573,7 @@ namespace Lib.TSCompiler
                     {
                         value = "undefined";
                     }
+
                     sourceReplacer.Replace(processEnv.StartLine, processEnv.StartCol, processEnv.EndLine,
                         processEnv.EndCol, value);
                 }
@@ -585,8 +589,11 @@ namespace Lib.TSCompiler
                     if (assetName.StartsWith("project:"))
                     {
                         assetName = assetName.Substring(8);
-                        sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol,
-                            "\"" + buildResult.SubBuildResults.GetOrFakeValueRef(assetName).BundleJsUrl + "\"");
+                        var subBuildResult = buildResult.SubBuildResults.GetOrFakeValueRef(assetName);
+                        // ReSharper disable once ConditionIsAlwaysTrueOrFalse
+                        if (subBuildResult != null)
+                            sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol,
+                                "\"" + subBuildResult.BundleJsUrl + "\"");
                         continue;
                     }
 
