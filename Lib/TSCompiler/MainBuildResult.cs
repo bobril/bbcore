@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using BTDB.Collections;
 using Lib.Utils;
 
@@ -9,6 +11,7 @@ namespace Lib.TSCompiler
     {
         public readonly bool CompressFileNames;
         public readonly string OutputSubDir;
+        public readonly string? SpriteOutputPathOverride;
         public bool PreserveProjectRoot;
 
         public readonly string OutputSubDirPrefix;
@@ -21,11 +24,12 @@ namespace Lib.TSCompiler
         public string? CommonSourceDirectory;
         public string? ProxyUrl;
 
-        public MainBuildResult(bool compressFileNames, string? outputSubDir)
+        public MainBuildResult(bool compressFileNames, string? outputSubDir, string? spriteOutputPathOverride)
         {
             CompressFileNames = compressFileNames;
             OutputSubDir = outputSubDir;
             OutputSubDirPrefix = outputSubDir == null ? "" : outputSubDir + "/";
+            SpriteOutputPathOverride = spriteOutputPathOverride;
         }
 
         public string AllocateName(string niceName, bool allowCompressAndPlacingInSubDir = true)
@@ -93,6 +97,42 @@ namespace Lib.TSCompiler
                 CommonSourceDirectory =
                     CommonSourceDirectory == null ? path : PathUtils.CommonDir(CommonSourceDirectory, path);
             }
+        }
+
+        string ApplySpritePathOverride(string bundlePng)
+        {
+            if (SpriteOutputPathOverride == null)
+                return bundlePng;
+            if (OutputSubDir != null)
+            {
+                bundlePng = PathUtils.Subtract(bundlePng, OutputSubDir);
+            }
+
+            return PathUtils.Join(SpriteOutputPathOverride, bundlePng);
+        }
+
+        public string GenerateCodeForBobrilBPath(string? bundlePng, List<float>? bundlePngInfo)
+        {
+            if (bundlePng == null) return "";
+            var res = new StringBuilder();
+            var spritePath = ApplySpritePathOverride(bundlePng);
+            res.AppendFormat("var bobrilBPath=\"{0}\"", spritePath);
+            if (bundlePngInfo!.Count > 1)
+            {
+                res.Append(",bobrilBPath2=[");
+                for (var i = 1; i < bundlePngInfo!.Count; i++)
+                {
+                    var q = bundlePngInfo![i];
+                    if (i > 1) res.Append(",");
+                    res.AppendFormat("[\"{0}\",{1}]", PathUtils.InjectQuality(spritePath, q), q.ToString(CultureInfo.InvariantCulture));
+                }
+
+                res.Append("]");
+            }
+
+            res.Append(";");
+
+            return res.ToString();
         }
     }
 }

@@ -182,25 +182,7 @@ namespace Lib.TSCompiler
                 }
             }
 
-            if (_bundlePng != null)
-            {
-                res += $"var bobrilBPath=\"{_bundlePng}\"";
-                if (_bundlePngInfo.Count > 1)
-                {
-                    res += $",bobrilBPath2=[";
-                    for (int i = 1; i < _bundlePngInfo.Count; i++)
-                    {
-                        var q = _bundlePngInfo[i];
-                        if (i > 1) res += ",";
-                        res +=
-                            $"[\"{PathUtils.InjectQuality(_bundlePng, q)}\",{q.ToString(CultureInfo.InvariantCulture)}]";
-                    }
-
-                    res += "]";
-                }
-
-                res += ";";
-            }
+            res += _mainBuildResult.GenerateCodeForBobrilBPath(_bundlePng, _bundlePngInfo);
 
             return res;
         }

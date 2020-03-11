@@ -14,5 +14,9 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentString VersionDir { get; } =
             new CommandLineArgumentString("store all resources except index.html in this directory",
                 new[] {"-v", "--versiondir"});
+
+        public CommandLineArgumentString SpriteVersionDir { get; } =
+            new CommandLineArgumentString("override path to sprite bundle in resulting code",
+                new[] {"--spriteversiondir"});
     }
 }

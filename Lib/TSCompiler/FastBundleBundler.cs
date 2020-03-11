@@ -95,7 +95,7 @@ namespace Lib.TSCompiler
 
             if (_bundlePng != null && !incremental)
             {
-                sourceMapBuilder.AddText(GetInitSpriteCode());
+                sourceMapBuilder.AddText(_mainBuildResult.GenerateCodeForBobrilBPath(_bundlePng, _bundlePngInfo));
             }
 
             if (!incremental)
@@ -410,27 +410,6 @@ namespace Lib.TSCompiler
             }
 
             return importBundle2;
-        }
-
-        string GetInitSpriteCode()
-        {
-            var res = new StringBuilder();
-            res.Append($"var bobrilBPath=\"{_bundlePng}\"");
-            if (_bundlePngInfo.Count > 1)
-            {
-                res.Append($",bobrilBPath2=[");
-                for (var i = 1; i < _bundlePngInfo.Count; i++)
-                {
-                    var q = _bundlePngInfo[i];
-                    if (i > 1) res.Append(",");
-                    res.Append(
-                        $"[\"{PathUtils.InjectQuality(_bundlePng, q)}\",{q.ToString(CultureInfo.InvariantCulture)}]");
-                }
-
-                res.Append("]");
-            }
-
-            return res.ToString();
         }
 
         void BuildExampleListHtml(List<string> namesWOExt, string cssLink)
