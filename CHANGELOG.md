@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.17.0
+
 ### Added
 
 - New parameter --spriteversiondir for override written path to bundle.png inside bundle.js
