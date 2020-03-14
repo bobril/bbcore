@@ -126,7 +126,8 @@ namespace Lib.TSCompiler
         }
 
         // returns "?" if error in resolving
-        public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false, bool forceResource = false)
+        public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false,
+            bool forceResource = false)
         {
             if (Result.ResolveCache.TryGetValue((from, name), out var res))
             {
@@ -178,8 +179,9 @@ namespace Lib.TSCompiler
                     if (fc != null && !fc.IsInvalid)
                     {
                         res.FileName = fn;
-                        CheckAdd(fn, forceResource? FileCompilationType.Resource :
-                            fn.EndsWith(".json")
+                        CheckAdd(fn, forceResource
+                            ? FileCompilationType.Resource
+                            : fn.EndsWith(".json")
                                 ? FileCompilationType.Json
                                 : (isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss));
                         return res.FileName;
@@ -801,28 +803,35 @@ namespace Lib.TSCompiler
                 toplevel.FigureOutScope();
                 var ctx = new ResolvingConstEvalCtx(info.Owner.FullPath, this);
 
-                string resolver(IConstEvalCtx myctx, string text)
+                string Resolver(IConstEvalCtx myctx, string text)
+                {
+                    return ResolverWithPossibleForcingResource(myctx, text, false);
+                }
+
+                string ResolverWithPossibleForcingResource(IConstEvalCtx myctx, string text, bool forceResource)
                 {
                     if (text.StartsWith("project:", StringComparison.Ordinal))
                     {
-                        return "project:" + resolver(myctx, text.Substring("project:".Length));
+                        var (pref, name) = SplitProjectAssetName(text);
+                        return pref + ResolverWithPossibleForcingResource(myctx, name, true);
                     }
 
                     if (text.StartsWith("resource:", StringComparison.Ordinal))
                     {
-                        return "resource:" + resolver(myctx, text.Substring("resource:".Length));
+                        return "resource:" + ResolverWithPossibleForcingResource(myctx, text.Substring("resource:".Length), true);
                     }
 
                     if (text.StartsWith("node_modules/", StringComparison.Ordinal))
                     {
-                        return ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false, true);
+                        var res2 = ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false, true, forceResource);
+                        return res2 == "?" ? text : res2;
                     }
 
                     var res = PathUtils.Join(PathUtils.Parent(myctx.SourceName), text);
                     return res;
                 }
 
-                var sourceInfo = GatherBobrilSourceInfo.Gather(toplevel, ctx, resolver);
+                var sourceInfo = GatherBobrilSourceInfo.Gather(toplevel, ctx, Resolver);
                 info.SourceInfo = sourceInfo;
                 AddDependenciesFromSourceInfo(info);
             }
@@ -864,8 +873,14 @@ namespace Lib.TSCompiler
             });
         }
 
-        string ToRelativeName(string name, string dir)
+        static string ToRelativeName(string name, string dir)
         {
+            if (name.StartsWith("project:"))
+            {
+                var (pref, n) = SplitProjectAssetName(name);
+                return pref + ToRelativeName(n, dir);
+            }
+
             if (name.StartsWith("resource:"))
             {
                 return "resource:" + ToRelativeName(name.Substring(9), dir);
@@ -923,6 +938,12 @@ namespace Lib.TSCompiler
 
         string ToAbsoluteName(string relativeName, string from, ref bool ok, bool forceResource = false)
         {
+            if (relativeName.StartsWith("project:"))
+            {
+                var (pref, name) = SplitProjectAssetName(relativeName);
+                return pref + ToAbsoluteName(name, from, ref ok, true);
+            }
+
             if (relativeName.StartsWith("resource:"))
             {
                 return "resource:" + ToAbsoluteName(relativeName.Substring(9), from, ref ok, true);
@@ -936,6 +957,22 @@ namespace Lib.TSCompiler
             }
 
             return res;
+        }
+
+        public static (string Prefix, string Path) SplitProjectAssetName(string assetName)
+        {
+            if (!assetName.StartsWith("project:", StringComparison.Ordinal))
+            {
+                return ("", assetName);
+            }
+
+            var colonIdx = assetName.IndexOf(':', 8);
+            if (colonIdx < 11)
+            {
+                return ("project:", assetName.Substring(8));
+            }
+
+            return (assetName.Substring(0, colonIdx + 1), assetName.Substring(colonIdx + 1));
         }
 
         public void AddDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo)
@@ -969,8 +1006,13 @@ namespace Lib.TSCompiler
                 var assetName = a.Name;
                 if (assetName.StartsWith("project:"))
                 {
-                    assetName = assetName.Substring(8) + "/package.json";
-                    if (!(Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, assetName)) is
+                    var (pref, name) = SplitProjectAssetName(assetName);
+                    if (pref.Length == 8)
+                    {
+                        name += "/package.json";
+                    }
+
+                    if (!(Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is
                         IFileCache))
                     {
                         fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
@@ -1101,9 +1143,9 @@ namespace Lib.TSCompiler
             return res;
         }
 
-        Dictionary<string, AstToplevel> _parsedCache = new Dictionary<string, AstToplevel>();
+        readonly Dictionary<string, AstToplevel?> _parsedCache = new Dictionary<string, AstToplevel?>();
 
-        public (string fileName, AstToplevel content) ResolveAndLoad(JsModule module)
+        public (string? fileName, AstToplevel? content) ResolveAndLoad(JsModule module)
         {
             var fileName = ResolveImport(module.ImportedFrom, module.Name);
             if (fileName == null || fileName == "?") return (null, null);

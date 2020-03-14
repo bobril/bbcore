@@ -15,7 +15,7 @@ namespace Njsast.Compress
             public bool IsLoopReturn { get; set; }
             public bool IsInIf => IfStatement != null;
             public int NestedLevel { get; set; }
-            
+
             public ReturnInfo(AstReturn returnStatement, AstBlock parentBlock, AstIf? ifStatement)
             {
                 ReturnStatement = returnStatement;
@@ -30,7 +30,7 @@ namespace Njsast.Compress
         int _nestedLevel;
         List<ReturnInfo> _returnInfos = new List<ReturnInfo>(0);
         ReturnInfo? LastReturnInfo => _returnInfos.Count > 0 ? _returnInfos[^1] : null;
-        
+
         public FunctionReturnTreeTransformer(ICompressOptions options) : base(options)
         {
         }
@@ -41,9 +41,9 @@ namespace Njsast.Compress
             {
                 if (IsNonEfficientCode(node))
                     return node;
-                if (node is AstStatement && 
-                    !(node is AstReturn) && 
-                    typeof(AstBlock) != node.GetType() && 
+                if (node is AstStatement &&
+                    !(node is AstReturn) &&
+                    typeof(AstBlock) != node.GetType() &&
                     LastReturnInfo != null)
                 {
                     LastReturnInfo.IsFollowedByEfficientCode = true;
@@ -63,7 +63,7 @@ namespace Njsast.Compress
             if (node is AstReturn astReturn)
             {
                 return ProcessAstReturn(astReturn);
-                
+
             }
 
             return null;
@@ -88,7 +88,7 @@ namespace Njsast.Compress
         {
             return options.EnableFunctionReturnCompress && node is AstLambda;
         }
-        
+
         AstReturn ProcessAstReturn(AstReturn astReturn)
         {
             if (astReturn.Value?.ConstValue() is AstUndefined)
@@ -103,7 +103,7 @@ namespace Njsast.Compress
             _isAfterReturn = true;
             return astReturn;
         }
-        
+
         AstStatementWithBody ProcessStatementWithBody(AstStatementWithBody astStatementWithBody)
         {
             var safeIsAfterReturn = _isAfterReturn;
@@ -119,7 +119,7 @@ namespace Njsast.Compress
             {
                 _isInIf = true;
             }
-            
+
             Descend();
             _isAfterReturn = safeIsAfterReturn;
             _isInLoop = safeIsInLoop;
@@ -127,7 +127,7 @@ namespace Njsast.Compress
             _nestedLevel--;
             return astStatementWithBody;
         }
-        
+
         AstLambda ProcessAstLambda(AstLambda astLambda)
         {
             _isInFunction = true;
@@ -144,7 +144,7 @@ namespace Njsast.Compress
                 for (var j = i + 1; j < _returnInfos.Count; j++)
                 {
                     var current = _returnInfos[j];
-                    if (current.NestedLevel >= first.NestedLevel) 
+                    if (current.NestedLevel >= first.NestedLevel)
                         continue;
                     second = current;
                     break;
@@ -155,18 +155,18 @@ namespace Njsast.Compress
                     {
                         if (first.IfStatement!.Body == first.ReturnStatement)
                         {
-                            first.IfStatement.Body = new AstEmptyStatement();
+                            first.IfStatement!.Body = new AstEmptyStatement();
                             ShouldIterateAgain = true;
                             continue;
                         }
 
-                        if (first.IfStatement.Alternative == first.ReturnStatement)
+                        if (first.IfStatement!.Alternative == first.ReturnStatement)
                         {
-                            first.IfStatement.Alternative = null;
+                            first.IfStatement!.Alternative = null;
                             ShouldIterateAgain = true;
                             continue;
                         }
-                        
+
                         throw new NotSupportedException();
                     }
                     first.ParentBlock.Body.RemoveItem(first.ReturnStatement);
@@ -193,19 +193,19 @@ namespace Njsast.Compress
         bool ShouldRemoveFirstReturn(ReturnInfo returnToRemove, ReturnInfo? followedReturn)
         {
             // After return is code with possible side effect
-            if (returnToRemove.IsFollowedByEfficientCode) 
+            if (returnToRemove.IsFollowedByEfficientCode)
                 return false;
             // Return is in two different if statements
-            if (returnToRemove.IsInIf && 
-                followedReturn != null && 
+            if (returnToRemove.IsInIf &&
+                followedReturn != null &&
                 followedReturn.IsInIf &&
                 returnToRemove.IfStatement != followedReturn.IfStatement)
-                return false; 
-            // Return is placed inside loop 
+                return false;
+            // Return is placed inside loop
             if (returnToRemove.IsLoopReturn)
                 return false;
             // Second does not exist so at end both returns undefined
-            if (followedReturn == null && returnToRemove.ReturnStatement.Value == null) 
+            if (followedReturn == null && returnToRemove.ReturnStatement.Value == null)
                 return true;
             // Both returns same value
             if (followedReturn != null &&

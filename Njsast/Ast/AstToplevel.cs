@@ -37,13 +37,13 @@ namespace Njsast.Ast
             var name = symbol.Name;
             if (Globals!.ContainsKey(name))
             {
-                return Globals[name];
+                return Globals![name];
             }
 
             var global = new SymbolDef(this, symbol, null);
             global.Undeclared = true;
             global.Global = true;
-            Globals.Add(name, global);
+            Globals!.Add(name, global);
             return global;
         }
 

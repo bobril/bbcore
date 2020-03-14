@@ -88,7 +88,7 @@ namespace Njsast
             }
 
             _a![index] = default!;
-            return ref _a[index];
+            return ref _a![index];
         }
 
         public void RemoveAt(Index index)

@@ -673,7 +673,7 @@ namespace Njsast.Bobril
                                 EndLine = child.End.Line,
                                 EndCol = child.End.Column
                             });
-                            tr.Replacements.Add(new SourceInfo.Replacement
+                            tr.Replacements!.Add(new SourceInfo.Replacement
                             {
                                 Type = SourceInfo.ReplacementType.Normal,
                                 StartLine = ctx.InsertPropLine,
@@ -684,7 +684,7 @@ namespace Njsast.Bobril
                             });
                             if (i + 1 < children.Length)
                             {
-                                tr.Replacements.Add(new SourceInfo.Replacement
+                                tr.Replacements!.Add(new SourceInfo.Replacement
                                 {
                                     Type = SourceInfo.ReplacementType.Normal,
                                     StartLine = child.End.Line,
@@ -731,7 +731,7 @@ namespace Njsast.Bobril
                         EndLine = child.End.Line,
                         EndCol = child.End.Column,
                     });
-                    tr.Replacements.Add(new SourceInfo.Replacement
+                    tr.Replacements!.Add(new SourceInfo.Replacement
                     {
                         Type = SourceInfo.ReplacementType.Normal,
                         StartLine = ctx.InsertPropLine,
@@ -742,7 +742,7 @@ namespace Njsast.Bobril
                     });
                     if (i + 1 < children.Length)
                     {
-                        tr.Replacements.Add(new SourceInfo.Replacement
+                        tr.Replacements!.Add(new SourceInfo.Replacement
                         {
                             Type = SourceInfo.ReplacementType.Normal,
                             StartLine = child.End.Line,

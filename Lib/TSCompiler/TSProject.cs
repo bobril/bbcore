@@ -24,13 +24,22 @@ namespace Lib.TSCompiler
         public HashSet<string> DevDependencies;
         public HashSet<string> UsedDependencies;
         public Dictionary<string, string> Assets;
-        public string Name;
+        public string? Name;
         internal int IterationId;
         internal BTDB.Collections.StructList<string> NegativeChecks;
         internal bool Valid;
+        internal bool Virtual;
 
         public void LoadProjectJson(bool forbiddenDependencyUpdate, ProjectOptions? parentProjectOptions)
         {
+            if (Virtual)
+            {
+                PackageJsonChangeId = -1;
+                Dependencies = new HashSet<string>();
+                DevDependencies = new HashSet<string>();
+                Assets = null;
+                return;
+            }
             DiskCache.UpdateIfNeeded(Owner);
             var packageJsonFile = Owner.TryGetChild("package.json");
             if (packageJsonFile is IFileCache cache)
@@ -226,7 +235,7 @@ namespace Lib.TSCompiler
             return res;
         }
 
-        public static TSProject? Create(IDirectoryCache dir, IDiskCache diskCache, ILogger logger, string diskName)
+        public static TSProject? Create(IDirectoryCache? dir, IDiskCache diskCache, ILogger logger, string? diskName, bool virtualProject = false)
         {
             if (dir == null)
                 return null;
@@ -239,8 +248,13 @@ namespace Lib.TSCompiler
                 Valid = true,
                 ProjectOptions = new ProjectOptions()
             };
-            dir.Project = proj;
+            proj.Virtual = virtualProject;
             proj.ProjectOptions.Owner = proj;
+            if (virtualProject)
+                proj.ProjectOptions.FillProjectOptionsFromPackageJson(null);
+            else
+                dir.Project = proj;
+
             return proj;
         }
 

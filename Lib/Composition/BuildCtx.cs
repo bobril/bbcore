@@ -14,7 +14,8 @@ namespace Lib.Composition
 {
     public class BuildCtx
     {
-        public BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger, string currentDirectory)
+        public BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger,
+            string currentDirectory)
         {
             Verbose = verbose;
             CompilerPool = compilerPool;
@@ -46,7 +47,8 @@ namespace Lib.Composition
             {
                 if (!ReferenceEquals(value, _mainFile))
                 {
-                    _mainFile = value; _projectStructureChanged = true;
+                    _mainFile = value;
+                    _projectStructureChanged = true;
                 }
             }
         }
@@ -58,7 +60,8 @@ namespace Lib.Composition
             {
                 if (!ReferenceEquals(value, _jasmineDts))
                 {
-                    _jasmineDts = value; _projectStructureChanged = true;
+                    _jasmineDts = value;
+                    _projectStructureChanged = true;
                 }
             }
         }
@@ -70,7 +73,8 @@ namespace Lib.Composition
             {
                 if (!ReferenceEquals(value, _exampleSources))
                 {
-                    _exampleSources = value; _projectStructureChanged = true;
+                    _exampleSources = value;
+                    _projectStructureChanged = true;
                 }
             }
         }
@@ -82,7 +86,8 @@ namespace Lib.Composition
             {
                 if (!ReferenceEquals(value, _testSources))
                 {
-                    _testSources = value; _projectStructureChanged = true;
+                    _testSources = value;
+                    _projectStructureChanged = true;
                 }
             }
         }
@@ -94,7 +99,8 @@ namespace Lib.Composition
             {
                 if (!ReferenceEquals(value, _additionalSources))
                 {
-                    _additionalSources = value; _projectStructureChanged = true;
+                    _additionalSources = value;
+                    _projectStructureChanged = true;
                 }
             }
         }
@@ -106,7 +112,9 @@ namespace Lib.Composition
             {
                 if (!ReferenceEquals(value, _compilerOptions))
                 {
-                    _compilerOptions = value; _projectStructureChanged = true; _compilerOptionsChanged = true;
+                    _compilerOptions = value;
+                    _projectStructureChanged = true;
+                    _compilerOptionsChanged = true;
                 }
             }
         }
@@ -145,10 +153,12 @@ namespace Lib.Composition
             {
                 type = TypeCheckChange.Options;
             }
+
             if (_buildOnceOnly)
             {
                 type = TypeCheckChange.Once;
             }
+
             switch (type)
             {
                 case TypeCheckChange.None:
@@ -168,6 +178,7 @@ namespace Lib.Composition
                         CompilerPool.ReleaseTs(_typeChecker);
                         _typeChecker = null;
                     }
+
                     _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
                     _typeChecker.ClearDiagnostics();
                     _typeChecker.CreateProgram(_currentDirectory, MakeSourceListArray());
@@ -178,6 +189,7 @@ namespace Lib.Composition
                         CompilerPool.ReleaseTs(_typeChecker);
                         _typeChecker = null;
                     }
+
                     _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
                     _typeChecker.ClearDiagnostics();
                     _typeChecker.CheckProgram(_currentDirectory, MakeSourceListArray());
@@ -186,6 +198,7 @@ namespace Lib.Composition
                     _typeChecker = null;
                     return;
             }
+
             _lastSemantics = _typeChecker.GetDiagnostics().ToList();
         }
 
@@ -195,10 +208,12 @@ namespace Lib.Composition
             {
                 return TypeCheckChange.Options;
             }
+
             if (_projectStructureChanged)
             {
                 return TypeCheckChange.Input;
             }
+
             return TypeCheckChange.Small;
         }
 
@@ -211,19 +226,22 @@ namespace Lib.Composition
             var cancellationTokenSource = new CancellationTokenSource();
             _cancellation = cancellationTokenSource;
             var current = DetectTypeCheckChange();
-            var res = _typeCheckTask.ContinueWith((_task, _state) => {
-                current = (TypeCheckChange)Math.Max((int)_cancelledTypeCheckType, (int)current);
+            var res = _typeCheckTask.ContinueWith((_task, _state) =>
+            {
+                current = (TypeCheckChange) Math.Max((int) _cancelledTypeCheckType, (int) current);
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
                     _cancelledTypeCheckType = current;
                     return null;
                 }
+
                 _cancelledTypeCheckType = TypeCheckChange.None;
                 DoTypeCheck(current);
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
                     return null;
                 }
+
                 return _lastSemantics;
             }, TaskContinuationOptions.RunContinuationsAsynchronously | TaskContinuationOptions.LongRunning);
             _typeCheckTask = res;
@@ -373,8 +391,9 @@ namespace Lib.Composition
             }
         }
 
-        public void BuildSubProjects(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult, MainBuildResult mainBuildResult, int iterationId)
-            {
+        public void BuildSubProjects(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult,
+            MainBuildResult mainBuildResult, int iterationId)
+        {
             if (buildResult.HasError)
                 return;
             var newSubProjects = new RefDictionary<string, ProjectOptions?>();
@@ -389,8 +408,7 @@ namespace Lib.Composition
                     if (asset.Name == null) continue;
                     if (asset.Name.StartsWith("project:"))
                     {
-                        var projPath = asset.Name.Substring(8);
-                        newSubProjects.GetOrAddValueRef(projPath);
+                        newSubProjects.GetOrAddValueRef(asset.Name);
                     }
                 }
             }
@@ -400,35 +418,68 @@ namespace Lib.Composition
                 var projectPath = newSubProjects.KeyRef(u);
                 if (newSubProjects.ValueRef(u) == null)
                 {
-                    if (project.SubProjects == null || !project.SubProjects.TryGetValue(projectPath, out var subProj) || subProj == null)
+                    if (project.SubProjects == null || !project.SubProjects.TryGetValue(projectPath, out var subProj) ||
+                        subProj == null)
                     {
-                        var dirCache = _diskCache.TryGetItem(PathUtils.Join(project.Owner.Owner.FullPath, projectPath)) as IDirectoryCache;
-                        var tsproj = TSProject.Create(dirCache, _diskCache, _logger, null);
-                        if (tsproj == null)
+                        TSProject? tsProject;
+                        var (pref, name) = BuildModuleCtx.SplitProjectAssetName(projectPath);
+                        if (pref.Length > 8)
+                        {
+                            var mainFile = _diskCache.TryGetItem(name);
+                            if (mainFile == null || mainFile.IsInvalid)
+                                continue;
+                            tsProject = TSProject.Create(mainFile.Parent, _diskCache, _logger, null, true)!;
+                            tsProject.MainFile = mainFile.FullPath;
+                            tsProject.ProjectOptions.Variant = pref.Substring(8, pref.Length - 9);
+                            tsProject.ProjectOptions.NoHtml = true;
+                            tsProject.ProjectOptions.TypeScriptVersion = project.TypeScriptVersion;
+                        }
+                        else
+                        {
+                            var dirCache =
+                                _diskCache.TryGetItem(PathUtils.Join(project.Owner.Owner.FullPath, name)) as
+                                    IDirectoryCache;
+                            tsProject = TSProject.Create(dirCache, _diskCache, _logger, null);
+                        }
+
+                        if (tsProject == null)
                             continue;
-                        tsproj.IsRootProject = true;
-                        if (tsproj.ProjectOptions.BuildCache == null)
-                            tsproj.ProjectOptions = new ProjectOptions
+                        tsProject.IsRootProject = true;
+                        if (tsProject.ProjectOptions.BuildCache == null)
+                            if (tsProject.Virtual)
+                            {
+                                tsProject.ProjectOptions.BuildCache = project.BuildCache;
+                                tsProject.ProjectOptions.Tools = project.Tools;
+                                tsProject.ProjectOptions.ForbiddenDependencyUpdate = true;
+                            }
+                            else
+                            {
+                                tsProject.ProjectOptions = new ProjectOptions
                                 {
                                     Tools = project.Tools,
                                     BuildCache = project.BuildCache,
-                                    Owner = tsproj,
+                                    Owner = tsProject,
                                     ForbiddenDependencyUpdate = project.ForbiddenDependencyUpdate
                                 };
-                        subProj = tsproj.ProjectOptions;
+                            }
+
+                        subProj = tsProject.ProjectOptions;
                     }
+
                     newSubProjects.ValueRef(u) = subProj;
                     subProj.UpdateFromProjectJson(false);
                     subProj.RefreshCompilerOptions();
                     subProj.RefreshMainFile();
                     if (_subBuildCtxs == null || !_subBuildCtxs.TryGetValue(projectPath, out var subBuildCtx))
                     {
-                        subBuildCtx = new BuildCtx(CompilerPool, _diskCache, Verbose, _logger, subProj.Owner.Owner.FullPath);
+                        subBuildCtx = new BuildCtx(CompilerPool, _diskCache, Verbose, _logger,
+                            subProj.Owner.Owner.FullPath);
                     }
 
                     newSubBuildCtxs.GetOrAddValueRef(projectPath) = subBuildCtx;
 
-                    if (buildResult.SubBuildResults == null || !buildResult.SubBuildResults.TryGetValue(projectPath, out var subBuildResult))
+                    if (buildResult.SubBuildResults == null ||
+                        !buildResult.SubBuildResults.TryGetValue(projectPath, out var subBuildResult))
                     {
                         subBuildResult = new BuildResult(mainBuildResult, subProj);
                     }
@@ -438,10 +489,7 @@ namespace Lib.Composition
                     buildResult.HasError |= subBuildResult.HasError;
                     buildResult.TaskForSemanticCheck = Task.WhenAll(buildResult.TaskForSemanticCheck,
                         subBuildResult.TaskForSemanticCheck).ContinueWith(
-                        subresults =>
-                        {
-                            return subresults.Result.SelectMany(d=>d).ToList();
-                        });
+                        subresults => { return subresults.Result.Where(d => d != null).SelectMany(d => d).ToList(); });
                 }
             }
 

@@ -45,9 +45,9 @@ namespace Njsast.Scope
                             {
                                 usage |= SymbolUsage.Write;
                                 var def = astSymbol.Thedef;
-                                if (def!.Orig[0] == astSymbol && def.References.Count == 0 && Parent(2) == def.Scope)
+                                if (def!.Orig[0] == astSymbol && def!.References.Count == 0 && Parent(2) == def!.Scope)
                                 {
-                                    def.VarInit = astVarDef.Value;
+                                    def!.VarInit = astVarDef.Value;
                                 }
                                 else
                                 {

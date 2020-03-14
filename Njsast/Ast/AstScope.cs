@@ -78,7 +78,7 @@ namespace Njsast.Ast
             SymbolDef def;
             if (Variables!.ContainsKey(symbol.Name))
             {
-                def = Variables[symbol.Name];
+                def = Variables![symbol.Name];
                 def.Orig.Add(symbol);
                 if (def.Init != null && (!ReferenceEquals(def.Scope, symbol.Scope) || def.Init is AstFunction))
                 {
@@ -88,7 +88,7 @@ namespace Njsast.Ast
             else
             {
                 def = new SymbolDef(this, symbol, init);
-                Variables.Add(symbol.Name, def);
+                Variables!.Add(symbol.Name, def);
                 def.Global = ParentScope == null;
             }
 
@@ -100,7 +100,7 @@ namespace Njsast.Ast
             var def = DefVariable(symbol, init);
             if (def.Init == null || def.Init is AstDefun) def.Init = init;
             if (!Functions!.ContainsKey(symbol.Name))
-                Functions.Add(symbol.Name, def);
+                Functions!.Add(symbol.Name, def);
             return def;
         }
 
@@ -111,7 +111,7 @@ namespace Njsast.Ast
 
         public SymbolDef? FindVariable(string name)
         {
-            return Variables!.ContainsKey(name) ? Variables[name] : ParentScope?.FindVariable(name);
+            return Variables!.ContainsKey(name) ? Variables![name] : ParentScope?.FindVariable(name);
         }
 
         public virtual AstScope? Resolve()

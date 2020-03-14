@@ -360,6 +360,7 @@ namespace Lib.TSCompiler
                 foreach (var (name, subProject) in SubProjects)
                 {
                     if (subProject == null) continue;
+                    if (subProject.Owner.Virtual) continue;
                     subProject.TsconfigUpdate = true;
                     subProject.UpdateTSConfigJson();
                 }
@@ -441,7 +442,7 @@ namespace Lib.TSCompiler
             else TranslationDb.LoadLangDb(specificPath);
         }
 
-        public void FillProjectOptionsFromPackageJson(JObject parsed)
+        public void FillProjectOptionsFromPackageJson(JObject? parsed)
         {
             var browserValue = parsed?.GetValue("browser");
             BrowserResolve = null;
@@ -588,7 +589,6 @@ namespace Lib.TSCompiler
                     var assetName = a.Name;
                     if (assetName.StartsWith("project:"))
                     {
-                        assetName = assetName.Substring(8);
                         var subBuildResult = buildResult.SubBuildResults.GetOrFakeValueRef(assetName);
                         // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                         if (subBuildResult != null)
@@ -792,6 +792,8 @@ namespace Lib.TSCompiler
                 InitializeTranslationDb();
             }
 
+            if (Owner.Virtual)
+                return;
             var bbTslint = Owner.DevDependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
             if (bbTslint != null)
             {
