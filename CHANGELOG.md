@@ -6,6 +6,14 @@
 
 - Inline worker reference support: `b.asset("project:worker:node_modules/monaco-editor/esm/vs/editor/editor.worker.js")`
 
+- Fast bundler in Interactive mode does not use inline scripts, which allow to always enable (preventing all XSS in modern browsers):
+
+```json
+  "bobril": {
+    "head": "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"/><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self';style-src 'self' 'unsafe-inline';\"/>"
+  },
+```
+
 ## 1.17.0
 
 ### Added

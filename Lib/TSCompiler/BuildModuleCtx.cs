@@ -182,7 +182,7 @@ namespace Lib.TSCompiler
                         CheckAdd(fn, forceResource
                             ? FileCompilationType.Resource
                             : fn.EndsWith(".json")
-                                ? FileCompilationType.Json
+                                ? (isAsset ? FileCompilationType.Resource : FileCompilationType.Json)
                                 : (isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss));
                         return res.FileName;
                     }

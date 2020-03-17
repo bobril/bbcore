@@ -58,14 +58,14 @@ namespace Lib.DiskCache
 
         public byte[] ReadAllBytes(string path)
         {
-            int retry = 0;
+            var retry = 0;
             while (true)
             {
                 try
                 {
                     return File.ReadAllBytes(path);
                 }
-                catch (System.Exception)
+                catch (Exception)
                 {
                     retry++;
                     if (retry > 5)

@@ -297,22 +297,23 @@ namespace Lib.TSCompiler
 
         public void BuildHtml(bool testProj = false)
         {
-            var root = _mainBuildResult.CommonSourceDirectory;
+            string root = _mainBuildResult.CommonSourceDirectory!;
             if (!testProj && !_project.NoHtml && _project.ExampleSources.Count > 0)
             {
                 if (_project.ExampleSources.Count == 1)
                 {
                     BuildFastBundlerIndexHtml(
-                        PathUtils.WithoutExtension(PathUtils.Subtract(_project.ExampleSources[0], root)), _cssLink);
+                        PathUtils.WithoutExtension(PathUtils.Subtract(_project.ExampleSources[0], root)), _cssLink,
+                        "bundleExample");
                 }
                 else
                 {
                     var htmlList = new List<string>();
                     foreach (var exampleSrc in _project.ExampleSources)
                     {
-                        var moduleNameWOExt = PathUtils.WithoutExtension(PathUtils.Subtract(exampleSrc, root));
-                        BuildFastBundlerIndexHtml(moduleNameWOExt, _cssLink);
-                        var justName = PathUtils.GetFile(moduleNameWOExt);
+                        var moduleNameWoExt = PathUtils.WithoutExtension(PathUtils.Subtract(exampleSrc, root));
+                        var justName = PathUtils.GetFile(moduleNameWoExt);
+                        BuildFastBundlerIndexHtml(moduleNameWoExt, _cssLink, justName);
                         _mainBuildResult.FilesContent.GetOrAddValueRef(justName + ".html") = _indexHtml;
                         htmlList.Add(justName);
                     }
@@ -327,7 +328,7 @@ namespace Lib.TSCompiler
             else if (!_project.NoHtml && _project.MainFile != null)
             {
                 BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(_project.MainFile, root)),
-                    _cssLink);
+                    _cssLink, "bundleMain");
             }
 
             if (testProj)
@@ -351,12 +352,13 @@ namespace Lib.TSCompiler
 
         void BuildFastBundlerTestHtml(IEnumerable<string> testSources, string root, string cssLink)
         {
-            var reqSpec = string.Join(' ',
+            var reqSpec = RequireBobril() + string.Join(' ',
                 testSources.Where(src => !src.EndsWith(".d.ts")).Select(src =>
                 {
                     var name = PathUtils.WithoutExtension(PathUtils.Subtract(src, root));
                     return $"R.r('./{name}');\n";
                 }));
+            _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "bundleTest.js") = reqSpec;
             _indexHtml = $@"<!DOCTYPE html>
 <html>
     <head>
@@ -367,22 +369,22 @@ namespace Lib.TSCompiler
         <script src=""{_versionDirPrefix}jasmine-core.js"" charset=""utf-8""></script>
         <script src=""{_versionDirPrefix}jasmine-boot.js"" charset=""utf-8""></script>
         <script src=""{_buildResult.BundleJsUrl}"" charset=""utf-8""></script>{ImportBundle2()}
-        <script>
-            {RequireBobril()}
-            {reqSpec}
-        </script>
+        <script src=""{_versionDirPrefix}bundleTest.js"" charset=""utf-8""></script>        
     </body>
 </html>
 ";
         }
 
-        void BuildFastBundlerIndexHtml(string mainModule, string cssLink)
+        void BuildFastBundlerIndexHtml(string mainModule, string cssLink, string mainRequireJs)
         {
             var liveReloadInclude = "";
             if (_project.LiveReloadEnabled)
             {
                 liveReloadInclude = $@"<script src=""{_versionDirPrefix}liveReload.js"" charset=""utf-8""></script>";
             }
+
+            _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + mainRequireJs + ".js") =
+                RequireBobril() + $"R.r('./{mainModule}');";
 
             _indexHtml = $@"<!DOCTYPE html>
 <html>
@@ -392,10 +394,7 @@ namespace Lib.TSCompiler
     </head>
     <body>{liveReloadInclude}
         <script src=""{_buildResult.BundleJsUrl}"" charset=""utf-8""></script>{ImportBundle2()}
-        <script>
-            {RequireBobril()}
-            R.r('./{mainModule}');
-        </script>
+        <script src=""{_versionDirPrefix}{mainRequireJs}.js"" charset=""utf-8""></script>        
     </body>
 </html>
 ";
