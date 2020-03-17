@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.18.0
+
 ### Added
 
 - Inline worker reference support: `b.asset("project:worker:node_modules/monaco-editor/esm/vs/editor/editor.worker.js")`
