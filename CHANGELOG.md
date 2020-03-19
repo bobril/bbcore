@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.18.1
+
 ### Fixed
 
 - Compress/const eval bug
