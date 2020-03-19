@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Compress/const eval bug
+
 ## 1.18.0
 
 ### Added

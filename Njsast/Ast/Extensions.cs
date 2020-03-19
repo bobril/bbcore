@@ -135,6 +135,7 @@ namespace Njsast.Ast
             {
                 if (!propAccess.Expression.IsSymbolDef().IsExportsSymbol()) return null;
             }
+
             var name = propAccess.PropertyAsString;
             if (name != null) return (name, assign.Right);
             return null;
@@ -145,10 +146,12 @@ namespace Njsast.Ast
         {
             if (node is AstCall call)
             {
-                if (call.Args.Count != 3 || !call.Args[0].IsSymbolDef().IsExportsSymbol()) return false;
+                if (call.Args.Count != 3) return false;
+                if (!(call.Args[0] is AstSymbolRef symb) || symb.Name != "exports" ||
+                    !(call.Args[1] is AstString str) || str.Value != "__esModule") return false;
                 if (!(call.Expression is AstPropAccess propAccess)) return false;
                 if (propAccess.PropertyAsString != "defineProperty") return false;
-                return propAccess.Expression.IsSymbolDef().IsGlobalSymbol() == "Object";
+                return propAccess.Expression is AstSymbolRef symb2 && symb2.Name == "Object";
             }
 
             if (node is AstSimpleStatement simpleStatement)

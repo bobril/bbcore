@@ -26,6 +26,37 @@ namespace Njsast.Scope
                 return;
             }
 
+            if (node is AstSymbolRef astSymbolRef)
+            {
+                var name = astSymbolRef.Name;
+                if (name == "eval" && Parent() is AstCall)
+                {
+                    for (var s = astSymbolRef.Scope; s != null && !s.UsesEval; s = s.ParentScope)
+                    {
+                        s.UsesEval = true;
+                    }
+                }
+
+
+                var sym = astSymbolRef.Scope?.FindVariable(name);
+                if (sym == null || Parent() is AstNameMapping && (Parent(1) as AstImport)?.ModuleName != null)
+                {
+                    sym = _astToplevel.DefGlobal(astSymbolRef);
+                }
+                else if (sym.Scope is AstLambda astLambda && name == "arguments")
+                {
+                    astLambda.UsesArguments = true;
+                }
+
+                astSymbolRef.Thedef = sym;
+                astSymbolRef.Reference(_options);
+                if (astSymbolRef.Scope != null && astSymbolRef.Scope.IsBlockScope &&
+                    !(sym.Orig[0] is AstSymbolBlockDeclaration))
+                {
+                    astSymbolRef.Scope = astSymbolRef.Scope.DefunScope();
+                }
+            }
+
             if (node is AstSymbol astSymbol)
             {
                 var usage = SymbolUsage.Unknown;
@@ -64,6 +95,7 @@ namespace Njsast.Scope
                                 astSymbol.Thedef!.References.Add(astSymbol);
                                 usage |= SymbolUsage.Write;
                             }
+
                             break;
                         case AstAssign astAssign:
                             if (astAssign.Left == node)
@@ -120,7 +152,15 @@ namespace Njsast.Scope
                             }
 
                             break;
-                        case AstPropAccess _:
+                        case AstPropAccess propAccess:
+                            usage |= SymbolUsage.Read;
+                            if (propAccess.Expression == astSymbol)
+                            {
+                                if (!IsPropAccessReadOnly(astSymbol)) usage |= SymbolUsage.PropWrite;
+                            }
+
+                            break;
+
                         case AstCall _:
                         case AstSimpleStatement _:
                         case AstReturn _:
@@ -151,39 +191,6 @@ namespace Njsast.Scope
                 astSymbol.Usage = usage;
             }
 
-            if (node is AstSymbolRef astSymbolRef)
-            {
-                var name = astSymbolRef.Name;
-                if (name == "eval" && Parent() is AstCall)
-                {
-                    for (var s = astSymbolRef.Scope; s != null && !s.UsesEval; s = s.ParentScope)
-                    {
-                        s.UsesEval = true;
-                    }
-                }
-
-
-                var sym = astSymbolRef.Scope?.FindVariable(name);
-                if (sym == null || Parent() is AstNameMapping && (Parent(1) as AstImport)?.ModuleName != null)
-                {
-                    sym = _astToplevel.DefGlobal(astSymbolRef);
-                }
-                else if (sym.Scope is AstLambda astLambda && name == "arguments")
-                {
-                    astLambda.UsesArguments = true;
-                }
-
-                astSymbolRef.Thedef = sym;
-                astSymbolRef.Reference(_options);
-                if (astSymbolRef.Scope != null && astSymbolRef.Scope.IsBlockScope && !(sym.Orig[0] is AstSymbolBlockDeclaration))
-                {
-                    astSymbolRef.Scope = astSymbolRef.Scope.DefunScope();
-                }
-
-                StopDescending();
-                return;
-            }
-
             // ensure mangling works if catch reuses a scope variable
             if (node is AstSymbolCatch astSymbolCatch)
             {
@@ -197,6 +204,61 @@ namespace Njsast.Scope
                     }
                 }
             }
+        }
+
+        bool IsPropAccessReadOnly(AstNode? cur)
+        {
+            AstNode? par;
+            var idx = -1;
+            do
+            {
+                par = Parent(++idx);
+                if (!(par is AstPropAccess propAccess)) break;
+                if (propAccess.Property == cur)
+                    return true;
+                if (propAccess.Expression == cur && cur.IsSymbolDef()?.VarInit?.IsRequireCall() != null)
+                {
+                    return true;
+                }
+
+                cur = par;
+            } while (true);
+
+            switch (par)
+            {
+                case AstAssign _:
+                    return false;
+                case AstSimpleStatement _:
+                case AstBinary _:
+                case AstIf _:
+                case AstFor _:
+                case AstForIn _:
+                case AstDwLoop _:
+                    return true;
+                case AstUnary astUnary:
+                    switch (astUnary.Operator)
+                    {
+                        case Operator.IncrementPostfix:
+                        case Operator.DecrementPostfix:
+                        case Operator.Increment:
+                        case Operator.Decrement:
+                            return false;
+                    }
+
+                    return true;
+                case AstCall astCall:
+                {
+                    if (Parent(idx - 1) == astCall.Expression)
+                        return true;
+                    if (astCall.IsDefinePropertyExportsEsModule())
+                        return true;
+                    if (astCall.Expression.IsSymbolDef()?.Init is AstLambda lambda && lambda.Pure == true)
+                        return true;
+                    return false;
+                }
+            }
+
+            return false;
         }
     }
 }

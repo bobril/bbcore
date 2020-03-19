@@ -43,7 +43,7 @@ namespace Njsast
             get
             {
                 if (Orig.Count != 1) return false;
-                return References.All(sym => !sym.Usage.HasFlag(SymbolUsage.Write));
+                return References.All(sym => !sym.Usage.HasFlag(SymbolUsage.Write) && !sym.Usage.HasFlag(SymbolUsage.PropWrite));
             }
         }
 
