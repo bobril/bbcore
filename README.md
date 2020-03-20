@@ -182,6 +182,14 @@ Useful if your API server does not uses CORS, so proxy requests through bobril-b
         "proxyUrl": "http://localhost:3001"
     }
 
+## Define headless browser strategy
+
+By default it will use only Chrome or Chromium to test your code. But because headless Chrome on Windows does hang with some projects you can use use Firefox on Windows by defining this:
+
+    "bobril": {
+        "headlessBrowserStrategy": "PreferFirefoxOnWindows"
+    }
+
 # Environmental variables
 
 ## Forcing Polling watcher

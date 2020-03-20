@@ -11,9 +11,9 @@ bobril-g11n@*:
     moment "^2.10.6"
 
 bobril@*:
-  version "14.1.1"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-14.1.1.tgz#51fc3a0f0927b5ccb7b89377d776ac6c7f5e8cdf"
-  integrity sha512-4c3lcdfqKOvKamnBEI4eITvMq2AzbAdZFlIRZti2asKa4Mr/RoX10QB7Yh9bDMsDYsDQAfdDAznLjcB4JeOKWQ==
+  version "14.3.0"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-14.3.0.tgz#43502a8e26939cfbf3e6135db2954f19c911ea13"
+  integrity sha512-DyxCzCa2DTcUG48r081wCun4h3v7CYs1NnmjC7iLcIOQmAtZVQXqAWihRybNmpYFfWCF1zU/0GecdUz7h8OnSQ==
 
 moment@^2.10.6:
   version "2.24.0"

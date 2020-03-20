@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using Lib.DiskCache;
 using Lib.Utils;
+using Njsast;
 
 namespace Lib.HeadlessBrowser
 {
@@ -14,6 +16,49 @@ namespace Lib.HeadlessBrowser
     public interface IBrowserProcessFactory
     {
         IBrowserProcess Create(string urlToOpen);
+    }
+
+    public class StrategyEnhancedBrowserProcessFactory : IBrowserProcessFactory
+    {
+        readonly bool _inDocker;
+        readonly string _strategy;
+        readonly IFsAbstraction _fsAbstraction;
+
+        public StrategyEnhancedBrowserProcessFactory(bool inDocker, string? strategy, IFsAbstraction fsAbstraction)
+        {
+            _inDocker = inDocker;
+            _strategy = strategy ?? "default";
+            _fsAbstraction = fsAbstraction;
+        }
+
+        public IBrowserProcess Create(string urlToOpen)
+        {
+            var browserPathsToRun = new StructList<string>();
+            var headlessOverride = Environment.GetEnvironmentVariable("BBBROWSER");
+            if (headlessOverride != null)
+            {
+                browserPathsToRun.AddUnique(headlessOverride);
+            }
+
+            if (!_fsAbstraction.IsUnixFs && _strategy == "PreferFirefoxOnWindows")
+            {
+                var browserPath = BrowserPathFinder.GetBrowserPath(_fsAbstraction, true);
+                if (browserPath!=null) browserPathsToRun.AddUnique(browserPath);
+            }
+
+            if (browserPathsToRun.Count == 0)
+            {
+                var browserPath = BrowserPathFinder.GetBrowserPath(_fsAbstraction, false);
+                if (browserPath!=null) browserPathsToRun.AddUnique(browserPath);
+            }
+
+            if (browserPathsToRun.Count == 0)
+            {
+                throw new Exception("Cannot find browser on common known paths, use BBBROWSER environmental variable to define path to browser.");
+            }
+
+            return new BrowserProcessFactory(_inDocker, browserPathsToRun[0]).Create(urlToOpen);
+        }
     }
 
     public class BrowserProcessFactory : IBrowserProcessFactory

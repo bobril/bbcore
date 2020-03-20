@@ -24,7 +24,8 @@
         ],
         "envs": {
             "Path": "env[\"Path\"]"
-        }
+        },
+        "headlessBrowserStrategy": "PreferFirefoxOnWindows"
     },
     "author": "Bobris",
     "license": "MIT",

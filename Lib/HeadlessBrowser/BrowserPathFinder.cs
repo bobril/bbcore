@@ -24,28 +24,26 @@ namespace Lib.HeadlessBrowser
             "/Applications/Chromium.app/Contents/MacOS/Chromium"
         };
 
-        public static string GetBrowserPath(IFsAbstraction fsAbstraction)
+        public static string? GetBrowserPath(IFsAbstraction fsAbstraction, bool allowFirefox)
         {
-            var headlessOverride = Environment.GetEnvironmentVariable("BBBROWSER");
-            if (headlessOverride != null)
-                return headlessOverride;
             return GetBrowserPath(
                 fsAbstraction.IsMac ? MacChromePaths : fsAbstraction.IsUnixFs ? LinuxChromePaths : WindowsBrowserPaths,
-                fsAbstraction);
+                fsAbstraction, allowFirefox);
         }
 
-        static string GetBrowserPath(string[] tryPaths, IFsAbstraction fsAbstraction)
+        static string? GetBrowserPath(string[] tryPaths, IFsAbstraction fsAbstraction, bool allowFirefox)
         {
             foreach (var browserPath in tryPaths)
             {
+                if (!allowFirefox && browserPath.Contains("firefox", StringComparison.OrdinalIgnoreCase))
+                    continue;
                 if (fsAbstraction.FileExists(browserPath))
                 {
                     return browserPath;
                 }
             }
 
-            throw new Exception("Browser not found. Searched " + string.Join(';', tryPaths) +
-                                ". Use BBBROWSER to specify path to your browser");
+            return null;
         }
     }
 }

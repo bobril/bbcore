@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -83,6 +84,7 @@ namespace Lib.TSCompiler
         public IBuildCache BuildCache;
         internal uint ConfigurationBuildCacheId;
         public bool Debug = true;
+        public string? HeadlessBrowserStrategy { get; set; }
 
         public void RefreshCompilerOptions()
         {
@@ -515,16 +517,17 @@ namespace Lib.TSCompiler
 
             PreserveProjectRoot = bobrilSection?["preserveProjectRoot"]?.Value<bool>() ?? false;
             ProxyUrl = GetStringProperty(bobrilSection, "proxyUrl", null);
+            HeadlessBrowserStrategy = GetStringProperty(bobrilSection, "headlessBrowserStrategy", null);
         }
 
-        Dictionary<string, AstToplevel> ParseDefines(JObject? jObject)
+        static Dictionary<string, AstToplevel> ParseDefines(JObject? jObject)
         {
             var res = new Dictionary<string, AstToplevel>();
             if (jObject != null)
                 foreach (var (key, value) in jObject)
                 {
                     if (value.Type != JTokenType.String) continue;
-                    res[key] = Parser.Parse((string) ((JValue) value).Value);
+                    res[key] = Parser.Parse((string) ((JValue) value).Value!);
                 }
 
             return res;
@@ -545,7 +548,8 @@ namespace Lib.TSCompiler
             }
         }
 
-        static string GetStringProperty(JObject obj, string name, string @default)
+        [return: NotNullIfNotNull("@default")]
+        static string? GetStringProperty(JObject? obj, string name, string? @default)
         {
             if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
                 return (string) value;

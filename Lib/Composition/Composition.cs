@@ -1551,8 +1551,7 @@ namespace Lib.Composition
         {
             if (_browserProcessFactory == null)
             {
-                var browserPath = BrowserPathFinder.GetBrowserPath(new NativeFsAbstraction());
-                _browserProcessFactory = new BrowserProcessFactory(_inDocker, browserPath);
+                _browserProcessFactory = new StrategyEnhancedBrowserProcessFactory(_inDocker, _currentProject.HeadlessBrowserStrategy, new NativeFsAbstraction());
             }
 
             if (_browserProcess == null)

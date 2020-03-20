@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Made Chrome default everywhere. And allowed define headless browser strategy in `project.json` see `README.md` for details.
+
 ## 1.18.1
 
 ### Fixed
