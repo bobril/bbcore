@@ -298,7 +298,7 @@ namespace Njsast.Bundler
             foreach (var (astNode, importFromOtherBundle) in split.ImportsFromOtherBundles)
             {
                 var name = "__" + importFromOtherBundle.Name + "_" + BundlerHelpers.FileNameToIdent(importFromOtherBundle.FromFile.Name);
-                name = BundlerHelpers.MakeUniqueName(name, toplevel.Variables!, toplevel.Globals!, null);
+                name = BundlerHelpers.MakeUniqueName(name, toplevel.Variables!, toplevel.CalcNonRootSymbolNames(), null);
                 var shortenedPropertyName = importFromOtherBundle.FromSplit.ExportsUsedFromLazyBundles[astNode];
                 var newVar = new AstVar(toplevel);
                 var astSymbolVar = new AstSymbolVar(toplevel, name);
@@ -343,7 +343,7 @@ namespace Njsast.Bundler
         void BeforeAdd(AstToplevel top)
         {
             var transformer =
-                new BundlerTreeTransformer(_cache, _ctx, _currentSourceFile!, top.Variables!, top.Globals!, _currentFileIdent!,
+                new BundlerTreeTransformer(_cache, _ctx, _currentSourceFile!, top.Variables!, top.CalcNonRootSymbolNames(), _currentFileIdent!,
                     _splitMap, _splitMap[_currentSourceFile!.PartOfBundle!]);
             transformer.Transform(top);
         }

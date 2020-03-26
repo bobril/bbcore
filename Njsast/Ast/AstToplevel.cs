@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
-using System.Net;
 using Njsast.Compress;
 using Njsast.Output;
 using Njsast.Reader;
@@ -13,6 +11,8 @@ namespace Njsast.Ast
     {
         /// [Object/S] a map of name -> SymbolDef for all undeclared names
         public Dictionary<string, SymbolDef>? Globals;
+
+        public HashSet<string>? NonRootSymbolNames;
 
         bool _isScopeFigured;
 
@@ -137,6 +137,44 @@ namespace Njsast.Ast
             }
 
             return transformed;
+        }
+
+
+        class GatherSymbolNames : TreeWalker
+        {
+            readonly HashSet<string> _nonRootSymbolNames;
+
+            public GatherSymbolNames(HashSet<string> nonRootSymbolNames)
+            {
+                _nonRootSymbolNames = nonRootSymbolNames;
+            }
+
+            protected override void Visit(AstNode node)
+            {
+                if (node is AstScope scope)
+                {
+                    if (scope.ParentScope != null)
+                    {
+                        foreach (var name in scope.Variables!.Keys)
+                        {
+                            _nonRootSymbolNames.Add(name);
+                        }
+                        foreach (var name in scope.Functions!.Keys)
+                        {
+                            _nonRootSymbolNames.Add(name);
+                        }
+                    }
+                }
+            }
+        }
+
+        public HashSet<string> CalcNonRootSymbolNames()
+        {
+            if (NonRootSymbolNames != null) return NonRootSymbolNames;
+            if (Globals == null) FigureOutScope();
+            NonRootSymbolNames = new HashSet<string>(Globals!.Keys);
+            new GatherSymbolNames(NonRootSymbolNames).Walk(this);
+            return NonRootSymbolNames;
         }
     }
 }

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- renaming in new bundler - eval should work now.
+
 ## 1.19.0
 
 ### Added

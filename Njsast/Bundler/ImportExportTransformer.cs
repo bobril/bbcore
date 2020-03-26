@@ -114,7 +114,7 @@ namespace Njsast.Bundler
 
                     var newName =
                         BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast.Variables!,
-                            _sourceFile.Ast.Globals!, "");
+                            _sourceFile.Ast.CalcNonRootSymbolNames(), "");
                     if (Parent(1) != null)
                     {
                         var newVar = new AstVar(stmBody);
@@ -160,7 +160,7 @@ namespace Njsast.Bundler
                 }
 
                 var newName = BundlerHelpers.MakeUniqueName("__export_" + name, _sourceFile.Ast.Variables!,
-                    _sourceFile.Ast.Globals!, "");
+                    _sourceFile.Ast.CalcNonRootSymbolNames(), "");
                 var newVar = new AstVar(node);
                 var astSymbolVar = new AstSymbolVar(node, newName);
                 astSymbolVar.Thedef = new SymbolDef(_sourceFile.Ast, astSymbolVar, null);

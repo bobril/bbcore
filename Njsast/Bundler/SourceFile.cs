@@ -30,7 +30,7 @@ namespace Njsast.Bundler
         public void CreateWholeExport()
         {
             if (WholeExport != null) return;
-            var wholeExportName = BundlerHelpers.MakeUniqueName("__export_$", Ast.Variables!, Ast.Globals!,
+            var wholeExportName = BundlerHelpers.MakeUniqueName("__export_$", Ast.Variables!, Ast.CalcNonRootSymbolNames(),
                 "_" + BundlerHelpers.FileNameToIdent(Name));
             var init = new AstObject(Ast);
             foreach (var (propName, value) in Exports!)

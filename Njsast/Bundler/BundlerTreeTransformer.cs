@@ -11,21 +11,21 @@ namespace Njsast.Bundler
         readonly IBundlerCtx _ctx;
         readonly SourceFile _currentSourceFile;
         readonly Dictionary<string, SymbolDef> _rootVariables;
-        readonly Dictionary<string, SymbolDef> _globals;
+        readonly HashSet<string> _nonRootSymbolNames;
         readonly Dictionary<string, SplitInfo> _splitMap;
         readonly string _suffix;
         readonly Dictionary<SymbolDef, SourceFile> _reqSymbolDefMap = new Dictionary<SymbolDef, SourceFile>();
         readonly SplitInfo _splitInfo;
 
         public BundlerTreeTransformer(Dictionary<string, SourceFile> cache, IBundlerCtx ctx,
-            SourceFile currentSourceFile, Dictionary<string, SymbolDef> rootVariables, Dictionary<string, SymbolDef> globals, string suffix,
+            SourceFile currentSourceFile, Dictionary<string, SymbolDef> rootVariables, HashSet<string> nonRootSymbolNames, string suffix,
             Dictionary<string, SplitInfo> splitMap, SplitInfo splitInfo)
         {
             _cache = cache;
             _ctx = ctx;
             _currentSourceFile = currentSourceFile;
             _rootVariables = rootVariables;
-            _globals = globals;
+            _nonRootSymbolNames = nonRootSymbolNames;
             _splitMap = splitMap;
             _suffix = "_" + suffix;
             _splitInfo = splitInfo;
@@ -165,7 +165,7 @@ namespace Njsast.Bundler
             var oldName = astSymbolDef.Name;
             if (!_rootVariables.TryGetValue(oldName, out var rootSymbol))
                 return astSymbolDef;
-            var newName = BundlerHelpers.MakeUniqueName(oldName, _rootVariables, _globals, _suffix);
+            var newName = BundlerHelpers.MakeUniqueName(oldName, _rootVariables, _nonRootSymbolNames, _suffix);
             _rootVariables[oldName] = astSymbolDef;
             _rootVariables[newName] = rootSymbol;
             Helpers.RenameSymbol(rootSymbol, newName);

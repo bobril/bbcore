@@ -77,10 +77,13 @@ namespace Njsast.Bundler
                 main.Body.AddRange(add.Body.AsReadOnlySpan());
                 main.Variables = add.Variables;
                 main.Globals = add.Globals;
+                main.NonRootSymbolNames = add.NonRootSymbolNames;
                 return;
             }
 
-            var renameWalker = new ToplevelRenameWalker(main.Variables!, main.Globals!, suffix);
+            var nonRootSymbolNames = main.CalcNonRootSymbolNames();
+            nonRootSymbolNames.UnionWith(add.CalcNonRootSymbolNames());
+            var renameWalker = new ToplevelRenameWalker(main.Variables!, nonRootSymbolNames, suffix);
             renameWalker.Walk(add);
 
             beforeAdd?.Invoke(add);
@@ -89,17 +92,16 @@ namespace Njsast.Bundler
             {
                 main.Variables!.TryAdd(symbolDef.Name, symbolDef);
             }
-
             foreach (var (_, symbolDef) in add.Globals!)
             {
                 main.Globals!.TryAdd(symbolDef.Name, symbolDef);
             }
         }
 
-        public static string MakeUniqueName(string name, IReadOnlyDictionary<string, SymbolDef> existing, IReadOnlyDictionary<string, SymbolDef> globals,
+        public static string MakeUniqueName(string name, IReadOnlyDictionary<string, SymbolDef> existing, HashSet<string> nonRootSymbolNames,
             string? suffix)
         {
-            if (!existing.ContainsKey(name) && !globals.ContainsKey(name)) return name;
+            if (!existing.ContainsKey(name) && !nonRootSymbolNames.Contains(name)) return name;
             var prefix = suffix != null ? name + suffix : name;
             string newName;
             var index = suffix == null ? 1 : 0;
@@ -108,7 +110,7 @@ namespace Njsast.Bundler
                 index++;
                 newName = prefix;
                 if (index > 1) newName += index.ToString();
-            } while (existing.ContainsKey(newName) || globals.ContainsKey(newName));
+            } while (existing.ContainsKey(newName) || nonRootSymbolNames.Contains(newName));
 
             return newName;
         }
