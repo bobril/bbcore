@@ -163,12 +163,11 @@ namespace Njsast.Bundler
 
             var astSymbolDef = astSymbol.Thedef!;
             var oldName = astSymbolDef.Name;
-            if (!_rootVariables.TryGetValue(oldName, out var rootSymbol))
-                return astSymbolDef;
             var newName = BundlerHelpers.MakeUniqueName(oldName, _rootVariables, _nonRootSymbolNames, _suffix);
-            _rootVariables[oldName] = astSymbolDef;
-            _rootVariables[newName] = rootSymbol;
-            Helpers.RenameSymbol(rootSymbol, newName);
+            if (newName == oldName)
+                return astSymbolDef;
+            _rootVariables[newName] = astSymbolDef;
+            Helpers.RenameSymbol(astSymbolDef, newName);
             return astSymbolDef;
         }
 
