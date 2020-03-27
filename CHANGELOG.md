@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.19.2
+
 ### Fixed
 
 - really fixed last fix
