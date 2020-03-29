@@ -29,7 +29,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentEnumValues Coverage { get; } = new CommandLineArgumentEnumValues(
             "calculate code coverage",
             new[] {"-c", "--coverage"},
-            new[] { "json-details", "json-summary", "none" }
+            new[] { "json-details", "json-summary", "spa", "none" }
         );
     }
 }

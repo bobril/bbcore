@@ -1,4 +1,5 @@
-﻿using JavaScriptEngineSwitcher.Core;
+﻿using System.Collections.Generic;
+using JavaScriptEngineSwitcher.Core;
 using Microsoft.AspNetCore.Http;
 
 namespace Lib.ToolsDir
@@ -24,5 +25,6 @@ namespace Lib.ToolsDir
         byte[] WebtGet(string path);
         void ProxyWeb(string url);
         void ProxyWebt(string url);
+        IDictionary<string, byte[]> CoverageDetailsVisualizerZip { get; }
     }
 }

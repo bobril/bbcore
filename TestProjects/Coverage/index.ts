@@ -1,3 +1,6 @@
+import "./src/index";
+import "./src/switch";
+
 export function plus(a: number, b: number) {
   return a + b;
 }

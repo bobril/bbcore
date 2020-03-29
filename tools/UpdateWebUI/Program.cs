@@ -22,6 +22,7 @@ namespace UpdateWebUI
             Console.WriteLine("Project root directory: " + projDir);
             Build(projDir + "/tools/web", projDir + "/Lib/ToolsDir/web.zip");
             Build(projDir + "/tools/webt", projDir + "/Lib/ToolsDir/webt.zip");
+            Build(projDir + "/tools/CoverageDetailsVisualizer", projDir + "/Lib/ToolsDir/CoverageDetailsVisualizer.zip");
             return 0;
         }
 

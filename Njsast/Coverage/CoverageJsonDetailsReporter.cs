@@ -6,15 +6,17 @@ namespace Njsast.Coverage
 {
     public class CoverageJsonDetailsReporter: CoverageReporterBase
     {
+        readonly string _jsonName;
         Utf8JsonWriter? _jsonWriter;
 
-        public CoverageJsonDetailsReporter(CoverageInstrumentation covInstr): base(covInstr)
+        public CoverageJsonDetailsReporter(CoverageInstrumentation covInstr, string? jsonName = null): base(covInstr)
         {
+            _jsonName = jsonName ?? "coverage-details.json";
         }
 
         public override void Run()
         {
-            using var stream = System.IO.File.Create("coverage-details.json");
+            using var stream = System.IO.File.Create(_jsonName);
             using var jsonWriter = new Utf8JsonWriter(stream);
             _jsonWriter = jsonWriter;
             base.Run();

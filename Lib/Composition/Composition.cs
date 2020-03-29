@@ -478,7 +478,8 @@ namespace Lib.Composition
         {
             InitDiskCache();
             _forbiddenDependencyUpdate = bCommand.NoUpdate.Value;
-            _mainBuildResult = new MainBuildResult(!bCommand.Fast.Value, bCommand.VersionDir.Value, bCommand.SpriteVersionDir.Value);
+            _mainBuildResult = new MainBuildResult(!bCommand.Fast.Value, bCommand.VersionDir.Value,
+                bCommand.SpriteVersionDir.Value);
             var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
             proj.SpriteGeneration = bCommand.Sprite.Value;
             var start = DateTime.UtcNow;
@@ -606,7 +607,8 @@ namespace Lib.Composition
         void RunTest(TestCommand testCommand)
         {
             InitDiskCache();
-            _mainBuildResult = new MainBuildResult(false, testCommand.VersionDir.Value, testCommand.SpriteVersionDir.Value);
+            _mainBuildResult =
+                new MainBuildResult(false, testCommand.VersionDir.Value, testCommand.SpriteVersionDir.Value);
             InitTestServer();
             InitMainServer();
             var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
@@ -695,6 +697,7 @@ namespace Lib.Composition
                             {
                                 waitForCoverage.WaitOne();
                             }
+
                             StopBrowserTest();
                         }
                     }
@@ -732,6 +735,15 @@ namespace Lib.Composition
                         break;
                     case "json-summary":
                         new CoverageJsonSummaryReporter(covInstr).Run();
+                        break;
+                    case "spa":
+                        Directory.CreateDirectory(".coverage");
+                        foreach (var (name, content) in _tools.CoverageDetailsVisualizerZip)
+                        {
+                            File.WriteAllBytes(".coverage/" + name, content);
+                        }
+
+                        new CoverageJsonDetailsReporter(covInstr, ".coverage/a.json").Run();
                         break;
                     case "none":
                         break;
@@ -791,7 +803,8 @@ namespace Lib.Composition
         {
             IfEnabledStartVerbosive();
             InitDiskCache();
-            _mainBuildResult = new MainBuildResult(false, findUnusedCommand.VersionDir.Value, findUnusedCommand.SpriteVersionDir.Value);
+            _mainBuildResult = new MainBuildResult(false, findUnusedCommand.VersionDir.Value,
+                findUnusedCommand.SpriteVersionDir.Value);
             var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
             _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Cyan);
             try
@@ -1551,7 +1564,8 @@ namespace Lib.Composition
         {
             if (_browserProcessFactory == null)
             {
-                _browserProcessFactory = new StrategyEnhancedBrowserProcessFactory(_inDocker, _currentProject.HeadlessBrowserStrategy, new NativeFsAbstraction());
+                _browserProcessFactory = new StrategyEnhancedBrowserProcessFactory(_inDocker,
+                    _currentProject.HeadlessBrowserStrategy, new NativeFsAbstraction());
             }
 
             if (_browserProcess == null)

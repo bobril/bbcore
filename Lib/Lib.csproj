@@ -44,6 +44,7 @@
     <EmbeddedResource Include="ToolsDir\localeDefs.json" />
     <EmbeddedResource Include="ToolsDir\web.zip" />
     <EmbeddedResource Include="ToolsDir\webt.zip" />
+    <EmbeddedResource Include="ToolsDir\CoverageDetailsVisualizer.zip" />
     <EmbeddedResource Include="TSCompiler\bbtsc.js" />
   </ItemGroup>
   <ItemGroup>

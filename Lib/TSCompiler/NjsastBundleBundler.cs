@@ -321,7 +321,7 @@ namespace Lib.TSCompiler
             var sourceInfo = fileInfo.SourceInfo;
             if (sourceInfo?.Assets == null)
                 return Array.Empty<string>();
-            return sourceInfo.Assets.Select(i => i.Name).Where(i => !i.StartsWith("resource:") && i.EndsWith(".js"))
+            return sourceInfo.Assets.Select(i => i.Name).Where(i => !i.StartsWith("resource:") && !i.StartsWith("project:") && i.EndsWith(".js"))
                 .ToList();
         }
     }

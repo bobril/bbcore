@@ -32,3 +32,5 @@ TestResults
 /tools/web/dist
 /tools/webt/dist
 !/TestProjects/Assets/node_modules
+.coverage
+dist

@@ -57,6 +57,8 @@ namespace Lib.ToolsDir
 
                 WebtZip = ResourceUtils.GetZip("Lib.ToolsDir.webt.zip");
                 WebZip = ResourceUtils.GetZip("Lib.ToolsDir.web.zip");
+                CoverageDetailsVisualizerZip = ResourceUtils.GetZip("Lib.ToolsDir.CoverageDetailsVisualizer.zip");
+
                 _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
                 LiveReloadJs = ResourceUtils.GetText("Lib.ToolsDir.liveReload.js");
             }
@@ -65,6 +67,8 @@ namespace Lib.ToolsDir
         public IDictionary<string, byte[]> WebZip { get; }
 
         public IDictionary<string, byte[]> WebtZip { get; }
+
+        public IDictionary<string, byte[]> CoverageDetailsVisualizerZip { get; }
 
         public string Path { get; }
         public string TypeScriptLibDir { get; private set; }
@@ -167,7 +171,7 @@ namespace Lib.ToolsDir
         readonly JObject _localeDefs;
         string _proxyWeb;
         string _proxyWebt;
-        
+
         public string LiveReloadJs { get; }
 
         public async Task DownloadAndExtractTS(string dir, string versionString)

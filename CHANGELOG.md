@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- New coverage reporter `spa`. For now result needs to be hosted in web server `npx http-server`.
+
 ## 1.19.2
 
 ### Fixed
