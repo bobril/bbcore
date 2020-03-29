@@ -1,0 +1,26 @@
+{
+  "name": "coverage-detail-visualizer",
+  "version": "1.0.0",
+  "description": "SPA for vizualization of code coverage results from Bobril-build or Njsast",
+  "main": "src/index.tsx",
+  "dependencies": {
+    "bobril": "*",
+    "bobx": "*",
+    "monaco-editor": "*"
+  },
+  "bobril": {
+    "head": "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"/><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self';style-src 'self' 'unsafe-inline';img-src 'self' data:\"/>"
+  },
+  "prettier": {
+    "tabWidth": 4,
+    "printWidth": 120
+  },
+  "devDependencies": {},
+  "author": {
+    "name": "Boris Letocha",
+    "email": "boris.letocha@gmail.com",
+    "url": "https://github.com/Bobris"
+  },
+  "license": "MIT",
+  "private": true
+}
