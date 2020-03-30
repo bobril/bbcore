@@ -6,7 +6,7 @@ import { CovBar } from "../../components/covBar";
 
 export function DirectoryPage(data: { name: string }): b.IBobrilNode {
     var store = b.useContext(model.CoverageContext);
-    var details = store.json.result[data.name] as model.CoverageDetail;
+    var details = store.json[data.name];
     if (details == undefined) {
         b.runTransition(b.createRedirectReplace("rootdir"));
         return undefined;
@@ -44,7 +44,7 @@ export function DirectoryPage(data: { name: string }): b.IBobrilNode {
                     </td>
                 </tr>
                 {details.subDirectories?.map(n => {
-                    var subDetails = store.json.result[n] as model.CoverageDetail;
+                    var subDetails = store.json[n];
                     return (
                         <tr>
                             <td style={clickable} onClick={goToDir(n)}>
@@ -69,7 +69,7 @@ export function DirectoryPage(data: { name: string }): b.IBobrilNode {
                     );
                 })}
                 {details.subFiles?.map(n => {
-                    var subDetails = store.json.result[n] as model.CoverageDetail;
+                    var subDetails = store.json[n];
                     return (
                         <tr>
                             <td style={clickable} onClick={goToFile(n)}>

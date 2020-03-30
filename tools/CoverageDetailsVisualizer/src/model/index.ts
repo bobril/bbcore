@@ -1,6 +1,4 @@
 import * as b from "bobril";
-import * as bobx from "bobx";
-import { fetchJson } from "../fetch/index";
 
 export interface CoverageDetail {
     statements: string;
@@ -35,23 +33,13 @@ export interface CoverageDetailsJson {
     [name: string]: CoverageDetail;
 }
 
-var downloadCoverage = bobx.asyncComputed(function*() {
-    try {
-        let result = (yield fetchJson<CoverageDetailsJson>(
-            b.asset("../../sampleData/coverage-details.json")
-        )) as CoverageDetailsJson;
-        return result;
-    } catch (error) {
-        return error as Error;
-    }
-});
+declare var bbcoverage: CoverageDetailsJson;
 
 export class CoverageAppModel {
-    constructor() {}
-    update() {
-        this.json = downloadCoverage();
+    constructor() {
+        this.json = bbcoverage;
     }
-    json: bobx.IAsyncComputed<CoverageDetailsJson | Error>;
+    json: CoverageDetailsJson;
 }
 
 export const CoverageContext = b.createContext<CoverageAppModel>(undefined);

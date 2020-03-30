@@ -740,10 +740,16 @@ namespace Lib.Composition
                         Directory.CreateDirectory(".coverage");
                         foreach (var (name, content) in _tools.CoverageDetailsVisualizerZip)
                         {
-                            File.WriteAllBytes(".coverage/" + name, content);
+                            if (content.Length > 14 && Encoding.UTF8.GetString(content, 0, 14) == "var bbcoverage")
+                            {
+                                new CoverageJsonDetailsReporter(covInstr, ".coverage/" + name, true).Run();
+                            }
+                            else
+                            {
+                                File.WriteAllBytes(".coverage/" + name, content);
+                            }
                         }
 
-                        new CoverageJsonDetailsReporter(covInstr, ".coverage/a.json").Run();
                         break;
                     case "none":
                         break;

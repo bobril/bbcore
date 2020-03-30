@@ -5,11 +5,10 @@
   "main": "src/index.tsx",
   "dependencies": {
     "bobril": "*",
-    "bobx": "*",
     "monaco-editor": "*"
   },
   "bobril": {
-    "head": "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"/><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self';style-src 'self' 'unsafe-inline';img-src 'self' data:\"/>"
+    "head": "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"/><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self';style-src 'self' 'unsafe-inline';img-src 'self' data:\"/><script src=\"<<sampleData/coverage-details.js>>\" charset=\"utf-8\"></script>"
   },
   "prettier": {
     "tabWidth": 4,

@@ -9,7 +9,7 @@ monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({ noSemanti
 
 export function FilePage(data: { name: string }): b.IBobrilNode {
     var store = b.useContext(model.CoverageContext);
-    var details = store.json.result[data.name] as model.CoverageDetail;
+    var details = store.json[data.name];
     if (details == undefined) {
         b.runTransition(b.createRedirectReplace("rootdir"));
         return undefined;
@@ -20,6 +20,7 @@ export function FilePage(data: { name: string }): b.IBobrilNode {
     else lang = "javascript";
 
     function init(editor: monaco.editor.IStandaloneCodeEditor) {
+        editor.updateOptions({ readOnly: true });
         editor.setValue(details.source);
         let r = details.encodedRanges;
         let decorations: monaco.editor.IModelDeltaDecoration[] = [];
