@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.20.1
+
 ### Improved
 
 - Coverage reporter `spa` does not need to be hosted in web server anymore. Just open `.coverage/index.html` from disk.
