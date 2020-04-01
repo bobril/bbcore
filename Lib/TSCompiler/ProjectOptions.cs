@@ -798,6 +798,18 @@ namespace Lib.TSCompiler
 
             if (Owner.Virtual)
                 return;
+            var bbEsLint = Owner.DevDependencies?.FirstOrDefault(s => s.StartsWith("eslint-config-"));
+            if (bbEsLint != null)
+            {
+                var eslintrc = PathUtils.Join(Owner.Owner.FullPath, $".eslintrc");
+                var srcFile = Owner.DiskCache.TryGetItem(eslintrc) as IFileCache;
+                if (srcFile == null || srcFile.IsInvalid)
+                {
+                    File.WriteAllText(eslintrc,"{\"extends\": \""+bbEsLint+"\"}");
+                    Console.WriteLine($"Created .eslintrc using {bbEsLint}");
+                }
+            }
+
             var bbTslint = Owner.DevDependencies?.FirstOrDefault(s => s.StartsWith("bb-tslint"));
             if (bbTslint != null)
             {

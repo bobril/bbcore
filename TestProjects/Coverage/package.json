@@ -2,5 +2,11 @@
   "name": "Coverage",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "eslint-config-bobril": "^1.0.0",
+    "@typescript-eslint/parser": "*",
+    "@typescript-eslint/eslint-plugin": "*",
+    "@typescript-eslint/eslint-plugin-tslint": "*"
+  }
 }

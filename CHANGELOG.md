@@ -5,6 +5,7 @@
 ### Added
 
 - Allow to override sourceMap root in interactive mode.
+- Autocreate .eslintrc if there is eslint-config-\* module in dev dependencies.
 
 ## 1.20.1
 
