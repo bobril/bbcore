@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Allow to override sourceMap root in interactive mode.
+
 ## 1.20.1
 
 ### Improved

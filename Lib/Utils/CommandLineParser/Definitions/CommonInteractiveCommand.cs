@@ -18,6 +18,9 @@ namespace Lib.Utils.CommandLineParser.Definitions
             new CommandLineArgumentBoolNullable("create localized resources (default: autodetect)",
                 new[] {"-l", "--localize"});
 
+        public CommandLineArgumentString SourceMapRoot { get; } =
+            new CommandLineArgumentString("sets sourceRoot for sourcemap", new[] {"--sourceRoot"});
+
         public CommandLineArgumentString ProxyBB { get; } =
             new CommandLineArgumentString("bobril-build dev only feature proxy bb to", new[] {"--proxybb"});
 

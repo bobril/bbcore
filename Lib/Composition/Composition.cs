@@ -899,7 +899,7 @@ namespace Lib.Composition
             InitMainServer();
             SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory)).SpriteGeneration = command.Sprite.Value;
             StartWebServer(port, command.BindToAny.Value);
-            InitInteractiveMode(command.Localize.Value);
+            InitInteractiveMode(command.Localize.Value, command.SourceMapRoot.Value);
             WaitForStop();
         }
 
@@ -1345,7 +1345,7 @@ namespace Lib.Composition
             _testServer.OnCoverageResults.Subscribe(_ => { _mainServer.NotifyCoverageChange(); });
         }
 
-        public void InitInteractiveMode(bool? localizeValue)
+        public void InitInteractiveMode(bool? localizeValue, string? sourceMapRoot)
         {
             _hasBuildWork.Set();
             var throttled = _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200));
@@ -1396,7 +1396,7 @@ namespace Lib.Composition
                         if (!buildResult.HasError)
                         {
                             proj.FillOutputByAdditionalResourcesDirectory(buildResult.Modules, _mainBuildResult);
-                            fastBundle.Build("bb/base");
+                            fastBundle.Build(sourceMapRoot ?? "bb/base");
                             fastBundle.BuildHtml();
                         }
 
