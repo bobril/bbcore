@@ -2,7 +2,7 @@ import * as b from "bobril";
 import * as model from "../../model/index";
 import { goToUp, goToDir, goToFile } from "../../model/routeTransitions";
 import { clickable } from "../../styles";
-import { CovBar } from "../../components/covBar";
+import { CovBarStmn, CovBarCond, CovBarFunc, CovBarCase, CovBarLine } from "../../components/covBar";
 
 export function DirectoryPage(data: { name: string }): b.IBobrilNode {
     var store = b.useContext(model.CoverageContext);
@@ -14,6 +14,29 @@ export function DirectoryPage(data: { name: string }): b.IBobrilNode {
     const isRoot = data.name == "*";
     return (
         <>
+            <div>
+                <div>
+                    Statements: {details.statements} {details.statementsCovered}/{details.statementsTotal} Max hits{" "}
+                    {details.statementsMaxHits}
+                </div>
+                <div>
+                    Conditions: {details.conditions} {details.conditionsCoveredPartially}/
+                    {details.conditionsCoveredFully}/{details.conditionsTotal} Max hits {details.conditionsMaxHits}
+                </div>
+                <div>
+                    Switch branches: {details.switchBranches} {details.switchBranchesCovered}/
+                    {details.switchBranchesTotal} Max hits {details.switchBranchesMaxHits}
+                </div>
+                <div>
+                    Functions: {details.functions} {details.functionsCovered}/{details.functionsTotal} Max hits{" "}
+                    {details.functionsMaxHits}
+                </div>
+                <div>
+                    Lines: {details.lines} {details.linesCoveredPartially}/{details.linesCoveredFully}/
+                    {details.linesTotal} Max hits {details.linesMaxHits}
+                </div>
+            </div>
+
             <table>
                 <tr>
                     <th>Name</th>
@@ -28,22 +51,22 @@ export function DirectoryPage(data: { name: string }): b.IBobrilNode {
                         {data.name} {!isRoot && <span style={{ fontStyle: "italic" }}>(up)</span>}
                     </td>
                     <td>
-                        <CovBar value={details.statements} />
+                        <CovBarStmn value={details} />
                     </td>
                     <td>
-                        <CovBar value={details.conditions} />
+                        <CovBarCond value={details} />
                     </td>
                     <td>
-                        <CovBar value={details.switchBranches} />
+                        <CovBarCase value={details} />
                     </td>
                     <td>
-                        <CovBar value={details.functions} />
+                        <CovBarFunc value={details} />
                     </td>
                     <td>
-                        <CovBar value={details.lines} />
+                        <CovBarLine value={details} />
                     </td>
                 </tr>
-                {details.subDirectories?.map(n => {
+                {details.subDirectories?.map((n) => {
                     var subDetails = store.json[n];
                     return (
                         <tr>
@@ -51,24 +74,24 @@ export function DirectoryPage(data: { name: string }): b.IBobrilNode {
                                 {n}
                             </td>
                             <td>
-                                <CovBar value={subDetails.statements} />
+                                <CovBarStmn value={subDetails} />
                             </td>
                             <td>
-                                <CovBar value={subDetails.conditions} />
+                                <CovBarCond value={subDetails} />
                             </td>
                             <td>
-                                <CovBar value={subDetails.switchBranches} />
+                                <CovBarCase value={subDetails} />
                             </td>
                             <td>
-                                <CovBar value={subDetails.functions} />
+                                <CovBarFunc value={subDetails} />
                             </td>
                             <td>
-                                <CovBar value={subDetails.lines} />
+                                <CovBarLine value={subDetails} />
                             </td>
                         </tr>
                     );
                 })}
-                {details.subFiles?.map(n => {
+                {details.subFiles?.map((n) => {
                     var subDetails = store.json[n];
                     return (
                         <tr>
@@ -76,19 +99,19 @@ export function DirectoryPage(data: { name: string }): b.IBobrilNode {
                                 {n}
                             </td>
                             <td>
-                                <CovBar value={subDetails.statements} />
+                                <CovBarStmn value={subDetails} />
                             </td>
                             <td>
-                                <CovBar value={subDetails.conditions} />
+                                <CovBarCond value={subDetails} />
                             </td>
                             <td>
-                                <CovBar value={subDetails.switchBranches} />
+                                <CovBarCase value={subDetails} />
                             </td>
                             <td>
-                                <CovBar value={subDetails.functions} />
+                                <CovBarFunc value={subDetails} />
                             </td>
                             <td>
-                                <CovBar value={subDetails.lines} />
+                                <CovBarLine value={subDetails} />
                             </td>
                         </tr>
                     );

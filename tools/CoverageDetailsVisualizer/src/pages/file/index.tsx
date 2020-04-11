@@ -4,6 +4,7 @@ import { MonacoComponent } from "../../monaco/index";
 import { cover100, fullyCoveredStyle, partiallyCoveredStyle, notCoveredStyle, clickable } from "../../styles";
 import * as model from "../../model/index";
 import { goToUp } from "../../model/routeTransitions";
+import { CovBarStmn, CovBarCond, CovBarFunc, CovBarCase, CovBarLine } from "../../components/covBar";
 
 monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({ noSemanticValidation: true });
 
@@ -53,8 +54,8 @@ export function FilePage(data: { name: string }): b.IBobrilNode {
                 options: {
                     inlineClassName:
                         covType === 2 ? fullyCoveredStyle : covType === 1 ? partiallyCoveredStyle : notCoveredStyle,
-                    hoverMessage: { value: hover }
-                }
+                    hoverMessage: { value: hover },
+                },
             });
             i += r[i] != 1 ? 6 : 7;
         }
@@ -63,14 +64,48 @@ export function FilePage(data: { name: string }): b.IBobrilNode {
     }
 
     return (
-        <>
-            <div style={{ width: "100%" }}>
-                <span onClick={goToUp(data.name)} style={[clickable, { fontStyle: "italic", padding: 1 }]}>
-                    (up)
-                </span>{" "}
-                <span>{data.name}</span>
+        <div
+            style={[
+                cover100,
+                {
+                    display: "flex",
+                    flexWrap: "wrap",
+                    flexDirection: "column",
+                    justifyContent: "start",
+                    alignItems: "auto",
+                    alignContent: "stretch",
+                },
+            ]}
+        >
+            <div style={{ flex: "0 0", display: "flex", width: "100%" }}>
+                <div>
+                    <span onClick={goToUp(data.name)} style={[clickable, { fontStyle: "italic", padding: 1 }]}>
+                        (up)
+                    </span>{" "}
+                    <span>{data.name}</span>{" "}
+                </div>
+                <div style={{ width: 4 }}></div>
+                <div>
+                    <CovBarStmn value={details} />
+                </div>
+                <div style={{ width: 4 }}></div>
+                <div>
+                    <CovBarCond value={details} />
+                </div>
+                <div style={{ width: 4 }}></div>
+                <div>
+                    <CovBarCase value={details} />
+                </div>
+                <div style={{ width: 4 }}></div>
+                <div>
+                    <CovBarFunc value={details} />
+                </div>
+                <div style={{ width: 4 }}></div>
+                <div>
+                    <CovBarLine value={details} />
+                </div>
             </div>
-            <MonacoComponent language={lang} style={cover100} onInit={init} />
-        </>
+            <MonacoComponent language={lang} style={{ flex: "1 1", width: "100%", overflow: "hidden" }} onInit={init} />
+        </div>
     );
 }

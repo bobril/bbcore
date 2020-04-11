@@ -35,11 +35,29 @@ export interface CoverageDetailsJson {
 
 declare var bbcoverage: CoverageDetailsJson;
 
+export enum CovBarDisplayType {
+    Percentages = 0,
+    RealNumbers = 1,
+    MaxHits = 2,
+    TotalTypes = 3,
+}
+
+@b.bind
 export class CoverageAppModel {
     constructor() {
         this.json = bbcoverage;
+        this.covBarDisplayType = CovBarDisplayType.Percentages;
     }
     json: CoverageDetailsJson;
+    covBarDisplayType: CovBarDisplayType;
+
+    rotateCovBarDisplayType(): void {
+        this.covBarDisplayType++;
+        if (this.covBarDisplayType == CovBarDisplayType.TotalTypes) {
+            this.covBarDisplayType = CovBarDisplayType.Percentages;
+        }
+        b.invalidate();
+    }
 }
 
 export const CoverageContext = b.createContext<CoverageAppModel>(undefined);

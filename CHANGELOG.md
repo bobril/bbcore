@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Improved
+
+- Coverage reporter `spa` is more polished.
+
 ## 1.21.0
 
 ### Added
@@ -338,7 +342,7 @@ g.t("Normal text {1}bold text {2}with{/2} {param}{/1}", {
       <u>{p}</u>
     </i>
   ),
-  param: "parameter"
+  param: "parameter",
 });
 ```
 
