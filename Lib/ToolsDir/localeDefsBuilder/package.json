@@ -4,13 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^8.0.53",
-    "make-plural": "^4.1.1",
-    "moment": "^2.19.3",
-    "numeral": "^2.0.6",
-    "uglify-js": "^3.2.0"
+    "@types/node": "*",
+    "make-plural": "*",
+    "moment": "*",
+    "numeral": "*",
+    "uglify-js": "*"
   },
   "devDependencies": {
-    "@types/uglify-js": "^2.6.29"
+    "@types/uglify-js": "*"
   }
 }
