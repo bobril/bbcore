@@ -467,15 +467,22 @@ namespace Njsast.Compress
                     }
                     case AstVarDef varDef:
                     {
-                        if (varDef.Name.IsSymbolDef()?.OnlyDeclared ?? false)
+                        var def = varDef.Name.IsSymbolDef();
+                        if (def != null)
                         {
-                            var value = varDef.Value;
-                            if (value == null)
+                            if (def.OnlyDeclared)
+                            {
+                                var value = varDef.Value;
+                                if (value == null)
+                                    return Remove;
+                                node = value;
+                                continue;
+                            }
+                            if (varDef.Value is AstLambda && def.References.Count==CountReferences(varDef.Value, def))
+                            {
                                 return Remove;
-                            node = value;
-                            continue;
+                            }
                         }
-
                         return node;
                     }
                     default:
@@ -485,6 +492,30 @@ namespace Njsast.Compress
                         return node;
                 }
             }
+        }
+
+        class CountReferencesWalker : TreeWalker
+        {
+            readonly SymbolDef _def;
+            internal uint Refs;
+
+            public CountReferencesWalker(SymbolDef def)
+            {
+                _def = def;
+            }
+
+            protected override void Visit(AstNode node)
+            {
+                if (node is AstSymbolRef symbolRef && symbolRef.Thedef == _def)
+                    Refs++;
+            }
+        }
+
+        uint CountReferences(AstNode node, SymbolDef def)
+        {
+            var walker = new CountReferencesWalker(def);
+            walker.Walk(node);
+            return walker.Refs;
         }
 
         AstNode MakeBlockFrom(AstNode from, params AstNode[] statements)

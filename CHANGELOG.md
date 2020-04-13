@@ -5,6 +5,7 @@
 ### Improved
 
 - Coverage reporter `spa` is more polished.
+- Compressor knows how to remove unused `__async`.
 
 ## 1.21.0
 
