@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.22.0
+
 ### Improved
 
 - Coverage reporter `spa` is more polished.
