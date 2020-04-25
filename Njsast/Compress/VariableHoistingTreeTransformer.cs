@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Njsast.Ast;
 using Njsast.Reader;
@@ -402,11 +403,11 @@ namespace Njsast.Compress
 
                 if (!IsValueHoistable(assign.Right))
                 {
-                    scopeVariableInfo.FirstHoistableInitialization = NonHoistableVariableInitialization.Instance;
+                    scopeVariableInfo!.FirstHoistableInitialization = NonHoistableVariableInitialization.Instance;
                     return;
                 }
 
-                scopeVariableInfo.FirstHoistableInitialization = new VariableInitialization(parent, initialization);
+                scopeVariableInfo!.FirstHoistableInitialization = new VariableInitialization(parent, initialization);
                 _canPerformMergeDefAndInit = true;
             }
         }
@@ -417,11 +418,12 @@ namespace Njsast.Compress
             {
                 if (_scopeVariableUsages.ContainsKey(astSymbolRef.Name))
                 {
-                    if (_scopeVariableUsages[astSymbolRef.Name].Definitions.Count == 0 ||
-                        !_scopeVariableUsages[astSymbolRef.Name].Definitions[0].CanMoveInitialization ||
-                        _scopeVariableUsages[astSymbolRef.Name].ReadReferencesCount > 0 ||
-                        _scopeVariableUsages[astSymbolRef.Name].WriteReferencesCount > 0 ||
-                        _scopeVariableUsages[astSymbolRef.Name].UnknownReferencesCount > 0)
+                    var scopeVariableUsage = _scopeVariableUsages[astSymbolRef.Name];
+                    if (scopeVariableUsage.Definitions.Count == 0 ||
+                        !scopeVariableUsage.Definitions[0].CanMoveInitialization ||
+                        scopeVariableUsage.ReadReferencesCount > 0 ||
+                        scopeVariableUsage.WriteReferencesCount > 0 ||
+                        scopeVariableUsage.UnknownReferencesCount > 0)
                     {
                         return false;
                     }
@@ -455,7 +457,7 @@ namespace Njsast.Compress
                 break;
             }
 
-            return (parentNode, initNode);
+            return (parentNode!, initNode!);
         }
 
         AstNode ProcessConditional(AstNode node)

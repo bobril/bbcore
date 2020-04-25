@@ -69,6 +69,7 @@ namespace Lib.Utils.Notification
         static readonly Version WindowsMinimumVersionForToastNotificationManager = new Version(10, 0, 10240, 0);
         static readonly Version OSVersion;
 
+        public static bool Enabled = true;
         static NotificationManager()
         {
             Version.TryParse(RuntimeEnvironment.OperatingSystemVersion, out OSVersion);
@@ -76,12 +77,14 @@ namespace Lib.Utils.Notification
 
         public void SendNotification(NotificationParameters parameters)
         {
-            string GetCurrentDirectory() => Path.GetDirectoryName(Assembly.GetAssembly(typeof(NotificationManager)).Location);
+            if (!Enabled) return;
+
+            string GetCurrentDirectory() => Path.GetDirectoryName(Assembly.GetAssembly(typeof(NotificationManager))!.Location)!;
 
             void SendWindowsToastNotification()
             {
-                const string SendNotificationRelativePath = @"Resources\SendNotification.ps1";
-                string sendNotificationFullPath = Path.Combine(GetCurrentDirectory(), SendNotificationRelativePath);
+                const string sendNotificationRelativePath = @"Resources\SendNotification.ps1";
+                string sendNotificationFullPath = Path.Combine(GetCurrentDirectory(), sendNotificationRelativePath);
                 string args = parameters.ToPowershellArguments();
                 var p = Process.Start("Powershell.exe", $"-ExecutionPolicy ByPass -File {sendNotificationFullPath} {args}");
                 p.WaitForExit();

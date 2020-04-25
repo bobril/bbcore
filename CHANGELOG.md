@@ -2,6 +2,17 @@
 
 ## [unreleased]
 
+### Added
+
+- New settings file in `home/.bbcore/.bbcfg`
+- First setting to disable post compilation OS notifications
+
+```json
+{
+  "notificationsEnabled": false
+}
+```
+
 ## 1.22.0
 
 ### Improved

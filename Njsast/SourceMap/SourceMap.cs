@@ -276,7 +276,7 @@ namespace Njsast.SourceMap
                 {
                     if (lastSourceIndex < 0)
                         return false;
-                    res.SourceName = sources[lastSourceIndex];
+                    res!.SourceName = sources[lastSourceIndex];
                     res.Line = lastSourceLine + 1;
                     res.Col = lastSourceCol + col - lastOutputCol;
                     return true;
@@ -293,7 +293,7 @@ namespace Njsast.SourceMap
                     lastSourceCol = inSourceCol;
                     if (outputLine == line && col == 0)
                     {
-                        res.SourceName = sources[inSourceIndex];
+                        res!.SourceName = sources[inSourceIndex];
                         res.Line = inSourceLine + 1;
                         res.Col = inSourceCol;
                         return true;

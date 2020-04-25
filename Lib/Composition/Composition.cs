@@ -23,6 +23,7 @@ using System.Reactive;
 using System.Text.Json;
 using BTDB.Collections;
 using Lib.BuildCache;
+using Lib.Configuration;
 using Lib.HeadlessBrowser;
 using Lib.Registry;
 using Lib.Utils.Notification;
@@ -59,13 +60,52 @@ namespace Lib.Composition
         bool _forbiddenDependencyUpdate;
         NotificationManager _notificationManager;
         readonly IConsoleLogger _logger = new ConsoleLogger();
+        CfgManager<MainCfg> _cfgManager;
 
         public Composition(bool inDocker)
         {
             _inDocker = inDocker;
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-            InitTools();
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+            _bbdir = Environment.GetEnvironmentVariable("BBCACHEDIR")!;
+            var settingsDir = _bbdir;
+            if (_bbdir == null)
+            {
+                if (_inDocker)
+                {
+                    _bbdir = "/bbcache";
+                    settingsDir = _bbdir;
+                }
+                else
+                {
+                    var location = new Uri(Assembly.GetEntryAssembly()!.GetName().CodeBase!);
+                    var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory.FullName);
+                    _bbdir = PathUtils.Join(
+                        PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)),
+                        ".bbcore");
+                    settingsDir = _bbdir;
+                    if (runningFrom.StartsWith(_bbdir))
+                    {
+                        _bbdir = PathUtils.Join(_bbdir, "tools");
+                    }
+                    else
+                    {
+                        _bbdir = PathUtils.Join(_bbdir, "dev");
+                    }
+                }
+            }
+
+            _cfgManager = new CfgManager<MainCfg>(settingsDir + "/.bbcfg", !inDocker);
+            _cfgManager.Load();
+
+            _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
+            _compilerPool = new CompilerPool(_tools, _logger);
+            _notificationManager = new NotificationManager();
+            NotificationManager.Enabled = _cfgManager.Cfg.NotificationsEnabled;
         }
 
         public void ParseCommandLine(string[] args)
@@ -901,42 +941,6 @@ namespace Lib.Composition
             StartWebServer(port, command.BindToAny.Value);
             InitInteractiveMode(command.Localize.Value, command.SourceMapRoot.Value);
             WaitForStop();
-        }
-
-        public void InitTools()
-        {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-            {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
-            _bbdir = Environment.GetEnvironmentVariable("BBCACHEDIR");
-            if (_bbdir == null)
-            {
-                if (_inDocker)
-                {
-                    _bbdir = "/bbcache";
-                }
-                else
-                {
-                    var location = new Uri(Assembly.GetEntryAssembly().GetName().CodeBase);
-                    var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory.FullName);
-                    _bbdir = PathUtils.Join(
-                        PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)),
-                        ".bbcore");
-                    if (runningFrom.StartsWith(_bbdir))
-                    {
-                        _bbdir = PathUtils.Join(_bbdir, "tools");
-                    }
-                    else
-                    {
-                        _bbdir = PathUtils.Join(_bbdir, "dev");
-                    }
-                }
-            }
-
-            _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
-            _compilerPool = new CompilerPool(_tools, _logger);
-            _notificationManager = new NotificationManager();
         }
 
         public void InitDiskCache(bool withWatcher = false)
