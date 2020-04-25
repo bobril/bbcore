@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.23.0
+
 ### Added
 
 - New settings file in `home/.bbcore/.bbcfg`
