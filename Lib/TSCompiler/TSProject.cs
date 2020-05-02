@@ -82,12 +82,17 @@ namespace Lib.TSCompiler
                     }
                 }
 
+                var name = parsed.GetValue("name") is JValue vname ? vname.ToString() : "";
+
                 if (!hasMain && parsed.GetValue("module") is JValue moduleV)
                 {
-                    MainFile = PathUtils.Normalize(moduleV.ToString());
-                    if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
+                    if (name != "moment")
                     {
-                        hasMain = true;
+                        MainFile = PathUtils.Normalize(moduleV.ToString());
+                        if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
+                        {
+                            hasMain = true;
+                        }
                     }
                 }
 
@@ -110,8 +115,6 @@ namespace Lib.TSCompiler
                     {
                         MainFile = "index.js";
                     }
-
-                    var name = parsed.GetValue("name") is JValue vname ? vname.ToString() : "";
 
                     if (name == "@stomp/stompjs")
                     {
