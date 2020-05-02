@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.23.1
+
 ### Fixed
 
 - Global variable could still be wrongly shadowed
