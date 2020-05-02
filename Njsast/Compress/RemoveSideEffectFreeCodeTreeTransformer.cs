@@ -511,14 +511,14 @@ namespace Njsast.Compress
             }
         }
 
-        uint CountReferences(AstNode node, SymbolDef def)
+        static uint CountReferences(AstNode node, SymbolDef def)
         {
             var walker = new CountReferencesWalker(def);
             walker.Walk(node);
             return walker.Refs;
         }
 
-        AstNode MakeBlockFrom(AstNode from, params AstNode[] statements)
+        static AstNode MakeBlockFrom(AstNode from, params AstNode[] statements)
         {
             var s = new StructList<AstNode>();
             foreach (var node in statements)

@@ -127,6 +127,7 @@ namespace Njsast.Bundler
                     foreach (var keyValuePair in sourceFile.Ast.Globals!)
                     {
                         topLevelAst.Globals!.TryAdd(keyValuePair.Key, keyValuePair.Value);
+                        topLevelAst.NonRootSymbolNames?.Add(keyValuePair.Key);
                     }
                 }
 

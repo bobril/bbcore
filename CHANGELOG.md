@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Global variable could still be wrongly shadowed
 - Added workaround for incompatible change in Moment library, by ignoring JS module in src, because default exports and typings are mess.
 
 ## 1.23.0
