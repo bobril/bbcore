@@ -77,7 +77,7 @@ namespace Njsast.Bundler
                     }
 
                     var callSymbol = call.Expression.IsSymbolDef();
-                    if ((callSymbol == _reexportSymbol || callSymbol.IsTsReexportSymbol()) && call.Args.Count == 1)
+                    if ((callSymbol == _reexportSymbol || callSymbol.IsTsReexportSymbol()) && call.Args.Count >= 1)
                     {
                         req = call.Args[0].IsRequireCall();
                         if (req != null)
