@@ -42,7 +42,7 @@ namespace Lib.BuildCache
             _odb.Open(_kvdb, false);
             using var tr = _odb.StartWritingTransaction().Result;
             tr.GetRelation<ITSConfigurationTable>();
-            tr.InitRelation<ITSFileBuildCacheTable>("ts2");
+            tr.GetRelation<ITSFileBuildCacheTable>();
             tr.Commit();
         }
 
