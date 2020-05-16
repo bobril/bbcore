@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Njsast.Ast;
+using Njsast.Reader;
 
 namespace Njsast.Bundler
 {
@@ -97,6 +98,11 @@ namespace Njsast.Bundler
                         return Remove;
                     }
 
+                    if (IsExportsAssignVoid0(pea.Value.value))
+                    {
+                        return Remove;
+                    }
+
                     var trueValue = pea.Value.value != null ? Transform(pea.Value.value) : null;
                     if (_exportName2VarNameMap.TryGetValue(pea.Value.name, out var varName))
                     {
@@ -173,6 +179,17 @@ namespace Njsast.Bundler
             }
 
             return null;
+        }
+
+        static bool IsExportsAssignVoid0(AstNode? node)
+        {
+            while (true)
+            {
+                if (node == null) return false;
+                var pea = node.IsExportsAssign();
+                if (!pea.HasValue) return node is AstUnary unary && unary.Operator == Operator.Void;
+                node = pea!.Value.value;
+            }
         }
 
         protected override AstNode? After(AstNode node, bool inList)

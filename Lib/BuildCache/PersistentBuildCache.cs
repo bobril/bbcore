@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Threading;
 using BTDB.KVDBLayer;
 using BTDB.ODBLayer;
@@ -10,14 +7,11 @@ namespace Lib.BuildCache
 {
     public class PersistentBuildCache : IBuildCache
     {
-        string _dir;
-        IFileCollection _diskFileCollection;
-        IKeyValueDB _kvdb;
-        IObjectDB _odb;
-        Func<IObjectDBTransaction, ITSConfigurationTable> _tsConfiguration;
-        Func<IObjectDBTransaction, ITSFileBuildCacheTable> _tsRelation;
-        IObjectDBTransaction _tr;
-        Mutex _mutex;
+        readonly IFileCollection _diskFileCollection = null!;
+        readonly IKeyValueDB _kvdb = null!;
+        readonly IObjectDB _odb = null!;
+        IObjectDBTransaction? _tr;
+        readonly Mutex? _mutex;
 
         public PersistentBuildCache(string dir)
         {
@@ -33,11 +27,11 @@ namespace Lib.BuildCache
             }
             if (_mutex == null)
                 return;
-            _dir = dir + "/cache" + (cacheIndex == 0 ? "" : cacheIndex.ToString());
-            if (!new DirectoryInfo(_dir).Exists)
-                Directory.CreateDirectory(_dir);
+            dir = dir + "/cache" + (cacheIndex == 0 ? "" : cacheIndex.ToString());
+            if (!new DirectoryInfo(dir).Exists)
+                Directory.CreateDirectory(dir);
 
-            _diskFileCollection = new OnDiskFileCollection(_dir);
+            _diskFileCollection = new OnDiskFileCollection(dir);
             _kvdb = new KeyValueDB(new KeyValueDBOptions
             {
                 FileCollection = _diskFileCollection,
@@ -46,12 +40,10 @@ namespace Lib.BuildCache
             });
             _odb = new ObjectDB();
             _odb.Open(_kvdb, false);
-            using (var tr = _odb.StartWritingTransaction().Result)
-            {
-                _tsConfiguration = tr.InitRelation<ITSConfigurationTable>("tsconf");
-                _tsRelation = tr.InitRelation<ITSFileBuildCacheTable>("ts2");
-                tr.Commit();
-            }
+            using var tr = _odb.StartWritingTransaction().Result;
+            tr.GetRelation<ITSConfigurationTable>();
+            tr.InitRelation<ITSFileBuildCacheTable>("ts2");
+            tr.Commit();
         }
 
         public bool IsEnabled => _mutex != null;
@@ -71,21 +63,21 @@ namespace Lib.BuildCache
         public void EndTransaction()
         {
             if (!IsEnabled) return;
-            _tr.Commit();
+            _tr!.Commit();
             _tr.Dispose();
             _tr = null;
         }
 
-        public TSFileBuildCache FindTSFileBuildCache(byte[] contentHash, uint configurationId)
+        public TSFileBuildCache? FindTSFileBuildCache(byte[] contentHash, uint configurationId)
         {
             if (!IsEnabled) return null;
-            return _tsRelation(_tr).FindByIdOrDefault(contentHash, configurationId);
+            return _tr!.GetRelation<ITSFileBuildCacheTable>().FindByIdOrDefault(contentHash, configurationId);
         }
 
         public uint MapConfiguration(string tsversion, string compilerOptionsJson)
         {
             if (!IsEnabled) return 0;
-            var configRelation = _tsConfiguration(_tr);
+            var configRelation = _tr!.GetRelation<ITSConfigurationTable>();
             var cfg = configRelation.FindByIdOrDefault(tsversion, compilerOptionsJson);
             if (cfg != null)
             {
@@ -110,38 +102,8 @@ namespace Lib.BuildCache
         public void Store(TSFileBuildCache value)
         {
             if (!IsEnabled) return;
-            var relation = _tsRelation(_tr);
+            var relation = _tr!.GetRelation<ITSFileBuildCacheTable>();
             relation.Upsert(value);
-        }
-
-        static bool CompareArrays(List<byte[]> a, List<byte[]> b)
-        {
-            if (a != null && a.Count == 0) a = null;
-            if (b != null && b.Count == 0) b = null;
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            if (a.Count != b.Count) return false;
-            for (int i = 0; i < a.Count; i++)
-            {
-                if (!a[i].AsSpan().SequenceEqual(b[i].AsSpan()))
-                    return false;
-            }
-            return true;
-        }
-
-        static bool CompareArrays(List<string> a, List<string> b)
-        {
-            if (a != null && a.Count == 0) a = null;
-            if (b != null && b.Count == 0) b = null;
-            if (a == null && b == null) return true;
-            if (a == null || b == null) return false;
-            if (a.Count != b.Count) return false;
-            for (int i = 0; i < a.Count; i++)
-            {
-                if (a[i] != b[i])
-                    return false;
-            }
-            return true;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using BTDB.FieldHandler;
 using BTDB.ODBLayer;
 using Lib.TSCompiler;
 using Njsast.Bobril;
@@ -16,7 +17,8 @@ namespace Lib.BuildCache
         public uint Id { get; set; }
     }
 
-    public interface ITSConfigurationTable: IReadOnlyCollection<TSConfiguration>
+    [PersistedName("tsconf")]
+    public interface ITSConfigurationTable: IRelation<TSConfiguration>
     {
         void Insert(TSConfiguration value);
         TSConfiguration FindByIdOrDefault(string version, string compilerOptionsJson);
@@ -32,12 +34,12 @@ namespace Lib.BuildCache
         public string Output { get; set; }
         public SourceMap MapLink { get; set; }
         public SourceInfo SourceInfo { get; set; }
-        public List<DependencyTriplet> TranspilationDependencies { get; set; } 
+        public List<DependencyTriplet> TranspilationDependencies { get; set; }
     }
 
-    public interface ITSFileBuildCacheTable
+    [PersistedName("ts2")]
+    public interface ITSFileBuildCacheTable: IRelation<TSFileBuildCache>
     {
-        bool Upsert(TSFileBuildCache value);
         TSFileBuildCache FindByIdOrDefault(byte[] contentHash, uint configurationId);
     }
 }

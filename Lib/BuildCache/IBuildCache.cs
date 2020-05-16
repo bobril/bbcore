@@ -10,6 +10,6 @@ namespace Lib.BuildCache
 
         uint MapConfiguration(string tsversion, string compilerOptionsJson);
         void Store(TSFileBuildCache value);
-        TSFileBuildCache FindTSFileBuildCache(byte[] contentHash, uint configurationId);
+        TSFileBuildCache? FindTSFileBuildCache(byte[] contentHash, uint configurationId);
     }
 }
