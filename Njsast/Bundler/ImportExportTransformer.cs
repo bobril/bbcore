@@ -104,8 +104,25 @@ namespace Njsast.Bundler
                     }
 
                     var trueValue = pea.Value.value != null ? Transform(pea.Value.value) : null;
+                    string newName;
                     if (_exportName2VarNameMap.TryGetValue(pea.Value.name, out var varName))
                     {
+                        // We overwrite function, true export needs to be morphed to var
+                        if (varName.Init is AstLambda)
+                        {
+                            newName = BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast.Variables!,
+                                _sourceFile.Ast.CalcNonRootSymbolNames(), "");
+                            var newVar = new AstVar(stmBody);
+                            var astSymbolVar = new AstSymbolVar(stmBody, newName);
+                            astSymbolVar.Thedef = new SymbolDef(_sourceFile.Ast, astSymbolVar, null);
+                            _sourceFile.Ast.Variables!.Add(newName, astSymbolVar.Thedef);
+                            newVar.Definitions.Add(new AstVarDef(astSymbolVar, new AstSymbolRef(astSymbolVar, varName, SymbolUsage.Read)));
+                            _exportName2VarNameMap[pea.Value.name] = astSymbolVar.Thedef;
+                            _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name,
+                                new AstSymbolRef(_sourceFile.Ast, astSymbolVar.Thedef, SymbolUsage.Unknown)));
+                            _bodyPrepend.Add(newVar);
+                            varName = astSymbolVar.Thedef;
+                        }
                         ((AstAssign) stmBody).Left =
                             new AstSymbolRef(((AstAssign) stmBody).Left, varName, SymbolUsage.Write);
                         return node;
@@ -118,9 +135,8 @@ namespace Njsast.Bundler
                         return Remove;
                     }
 
-                    var newName =
-                        BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast.Variables!,
-                            _sourceFile.Ast.CalcNonRootSymbolNames(), "");
+                    newName = BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast.Variables!,
+                        _sourceFile.Ast.CalcNonRootSymbolNames(), "");
                     if (Parent(1) != null)
                     {
                         var newVar = new AstVar(stmBody);

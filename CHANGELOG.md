@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Bundling of `export var x = func; x = func2;` pattern.
+
 ## 1.24.0
 
 ### Added
