@@ -2,13 +2,13 @@
 {
     public class AssetsContentBuilder : ContentBuilder
     {
-        public override string GetHeader() => Notice;
+        protected override string GetHeader() => Notice;
 
-        public override void AddPropertyValue(string value)
+        protected override void AddPropertyValue(string value)
         {
-            _content.Append('"');
-            _content.Append(value);
-            _content.Append('"');
+            ContentStringBuilder!.Append('"');
+            ContentStringBuilder.Append(value);
+            ContentStringBuilder.Append('"');
         }
     }
 }

@@ -5,20 +5,20 @@ namespace Lib.AssetsPlugin
 {
     public class SpritesContentBuilder : ContentBuilder
     {
-        const string _importBobril = "import * as b from 'bobril';\n";
+        const string ImportBobril = "import * as b from 'bobril';\n";
 
-        public override string GetHeader() => Notice + _importBobril;
+        protected override string GetHeader() => Notice + ImportBobril;
 
-        public override bool ShouldSkip(string value)
+        protected override bool ShouldSkip(string value)
         {
             return !PathUtils.GetExtension(value).SequenceEqual("png");
         }
 
-        public override void AddPropertyValue(string value)
+        protected override void AddPropertyValue(string value)
         {
-            _content.Append("b.sprite(\"");
-            _content.Append(value);
-            _content.Append("\")");
+            ContentStringBuilder!.Append("b.sprite(\"");
+            ContentStringBuilder.Append(value);
+            ContentStringBuilder.Append("\")");
         }
     }
 }

@@ -10,10 +10,10 @@ namespace Lib.AssetsPlugin
 {
     public class AssetsGenerator
     {
-        const string _assetsFileName = "assets.ts";
-        const string _spritesFileName = "sprites.ts";
-        const string _assetsDirName = "assets";
-        const string _srcDirName = "src";
+        const string AssetsFileName = "assets.ts";
+        const string SpritesFileName = "sprites.ts";
+        const string AssetsDirName = "assets";
+        const string SrcDirName = "src";
         readonly IDiskCache _cache;
 
         public AssetsGenerator(IDiskCache cache)
@@ -26,20 +26,19 @@ namespace Lib.AssetsPlugin
             var projDir = _cache.TryGetItem(projectDir) as IDirectoryCache;
             if (projDir == null) return false;
             _cache.UpdateIfNeeded(projDir);
-            var assetsDir = projDir.TryGetChild(_assetsDirName) as IDirectoryCache;
-            if (assetsDir == null) return false;
-            var srcPath = PathUtils.Join(projectDir, _srcDirName);
+            if (!(projDir.TryGetChild(AssetsDirName) is IDirectoryCache assetsDir)) return false;
+            var srcPath = PathUtils.Join(projectDir, SrcDirName);
 
             var assets = InspectAssets(assetsDir, srcPath);
             var assetsContentBuilder = new AssetsContentBuilder();
             assetsContentBuilder.Build(assets);
-            var changed = WriteContent(srcPath, _assetsFileName, assetsContentBuilder.Content, projectDir);
+            var changed = WriteContent(srcPath, AssetsFileName, assetsContentBuilder.Content, projectDir);
 
             if (generateSpritesFile)
             {
                 var spritesContentBuilder = new SpritesContentBuilder();
                 spritesContentBuilder.Build(assets);
-                changed |= WriteContent(srcPath, _spritesFileName, spritesContentBuilder.Content, projectDir);
+                changed |= WriteContent(srcPath, SpritesFileName, spritesContentBuilder.Content, projectDir);
             }
             return changed;
         }
@@ -49,22 +48,21 @@ namespace Lib.AssetsPlugin
             _cache.UpdateIfNeeded(rootDir);
             var assetsMap = new Dictionary<string, object>();
             var assetsFiles = rootDir.ToList();
-            for (var j = 0; j < assetsFiles.Count; j++)
+            foreach (var assetFile in assetsFiles)
             {
-                var assetFile = assetsFiles[j];
-                if (assetFile is IDirectoryCache)
+                if (assetFile is IDirectoryCache dir)
                 {
-                    assetsMap[SanitizeKey(assetFile.Name)] = InspectAssets(assetFile as IDirectoryCache, srcPath);
+                    assetsMap[SanitizeKey(dir.Name)] = InspectAssets(dir, srcPath);
                 }
                 else
                 {
                     assetsMap[SanitizeKey(PathUtils.ExtractQuality(assetFile.Name).Name)] = PathUtils.Subtract(PathUtils.ExtractQuality(assetFile.FullPath).Name, srcPath);
                 }
-            };
+            }
             return assetsMap;
         }
 
-        string SanitizeKey(string key)
+        static string SanitizeKey(string key)
         {
             return key.Replace('.', '_').Replace('-', '_').Replace(' ', '_');
         }
@@ -72,8 +70,7 @@ namespace Lib.AssetsPlugin
         bool WriteContent(string srcPath, string fileName, string content, string projectDir)
         {
             var filePath = PathUtils.Join(srcPath, fileName);
-            var file = _cache.TryGetItem(filePath) as IFileCache;
-            if (file != null && file.Utf8Content == content)
+            if (_cache.TryGetItem(filePath) is IFileCache file && file.Utf8Content == content)
                 return false;
             Console.WriteLine("AssetGenerator updating " + PathUtils.Subtract(filePath, projectDir));
             Directory.CreateDirectory(srcPath);
