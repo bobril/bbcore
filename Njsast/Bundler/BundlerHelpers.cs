@@ -134,6 +134,17 @@ namespace Njsast.Bundler
 
         public static void SimplifyJavaScriptDependency(AstToplevel jsAst)
         {
+            // if (typeof module !== "undefined" && ...)
+            if (jsAst.Body.Count > 0 && jsAst.Body[0] is AstIf astIf && astIf.Alternative == null &&
+                astIf.Condition is AstBinary astBinary2 && astBinary2.Operator == Operator.LogicalAnd &&
+                astBinary2.Left is AstBinary astBinary3 && astBinary3.Operator == Operator.StrictNotEquals
+                && astBinary3.Right is AstString astString && astString.Value == "undefined" &&
+                astBinary3.Left is AstUnary astUnary
+                && astUnary.Operator == Operator.TypeOf &&
+                astUnary.Expression.IsSymbolDef().IsGlobalSymbol() == "module")
+            {
+                jsAst.Body.RemoveAt(0);
+            }
             // is just var x = ...;
             if (jsAst.Body.Count == 1 && jsAst.Body[0] is AstVar astVar && astVar.Definitions.Count == 1 && astVar.Definitions[0] is { } astVarDef && astVarDef.Name is AstSymbolVar globalSymbol)
             {
