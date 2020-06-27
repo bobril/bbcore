@@ -66,7 +66,7 @@ namespace Njsast.Bundler
                 }
 
                 _splitMap[splitName] = new SplitInfo(splitName)
-                    {ShortName = _ctx.GenerateBundleName(splitName), PropName = "ERROR", IsMainSplit = true};
+                { ShortName = _ctx.GenerateBundleName(splitName), PropName = "ERROR", IsMainSplit = true };
             }
 
             stopwatch.Stop();
@@ -117,6 +117,7 @@ namespace Njsast.Bundler
                     var jsAst = Parser.Parse(content.Item1!);
                     content.Item2?.ResolveInAst(jsAst);
                     jsAst.FigureOutScope();
+                    BundlerHelpers.SimplifyJavaScriptDependency(jsAst);
                     _currentFileIdent = BundlerHelpers.FileNameToIdent(jsDependency);
                     BundlerHelpers.AppendToplevelWithRename(topLevelAst, jsAst, _currentFileIdent);
                 }
@@ -169,7 +170,8 @@ namespace Njsast.Bundler
                     stopwatch = Stopwatch.StartNew();
                     topLevelAst.Mangle(new ScopeOptions
                     {
-                        FrequencyCounting = MangleWithFrequencyCounting, TopLevel = false,
+                        FrequencyCounting = MangleWithFrequencyCounting,
+                        TopLevel = false,
                         BeforeMangling = IgnoreEvalInTwoScopes
                     }, OutputOptions);
                     stopwatch.Stop();
@@ -263,7 +265,7 @@ namespace Njsast.Bundler
             foreach (var (_, split) in _splitMap)
             {
                 if (PartToMainFilesMap.ContainsKey(split.FullName)) continue;
-                ExpandDirectSplitsForcedLazy(split, split, new HashSet<SplitInfo> {split});
+                ExpandDirectSplitsForcedLazy(split, split, new HashSet<SplitInfo> { split });
             }
         }
 

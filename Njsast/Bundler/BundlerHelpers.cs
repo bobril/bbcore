@@ -38,12 +38,12 @@ namespace Njsast.Bundler
             {
                 (toplevel, symbol) = Helpers.EmitVarDefineJson(content, name);
                 toplevel.FigureOutScope();
-                return new SourceFile(name, toplevel) {WholeExport = symbol};
+                return new SourceFile(name, toplevel) { WholeExport = symbol };
             }
 
             var commentListener = new CommentListener();
             toplevel =
-                new Parser(new Options {SourceFile = name, OnComment = commentListener.OnComment}, content).Parse();
+                new Parser(new Options { SourceFile = name, OnComment = commentListener.OnComment }, content).Parse();
             commentListener.Walk(toplevel);
             sourceMap?.ResolveInAst(toplevel);
             UnwrapIIFE(toplevel);
@@ -56,7 +56,7 @@ namespace Njsast.Bundler
                     (toplevel, symbol) = Helpers.EmitCommonJsWrapper(toplevel);
                 }
                 toplevel.FigureOutScope();
-                var sourceFile = new SourceFile(name, toplevel) {WholeExport = symbol, OnlyWholeExport = true };
+                var sourceFile = new SourceFile(name, toplevel) { WholeExport = symbol, OnlyWholeExport = true };
                 new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
                 return sourceFile;
             }
@@ -132,6 +132,42 @@ namespace Njsast.Bundler
             return new string(ret.Slice(0, pos));
         }
 
+        public static void SimplifyJavaScriptDependency(AstToplevel jsAst)
+        {
+            // is just var x = ...;
+            if (jsAst.Body.Count == 1 && jsAst.Body[0] is AstVar astVar && astVar.Definitions.Count == 1 && astVar.Definitions[0] is { } astVarDef && astVarDef.Name is AstSymbolVar globalSymbol)
+            {
+                var globalName = globalSymbol.Name;
+                // (function() { ... })()
+                if (astVarDef.Value is AstCall astCall && astCall.Args.Count==0 && astCall.Expression is AstFunction astFunction && astFunction.ArgNames.Count==0 && astFunction.Body.Count>2)
+                {
+                    var body = astFunction.Body;
+                    // ends with return x;
+                    if (body.Last is AstReturn astReturn && astReturn.Value is AstSymbolRef astSymbolRef &&
+                        astSymbolRef.Name == globalName)
+                    {
+                        // starts with window.x = window.x || ...;
+                        if (body[0] is AstSimpleStatement astSimpleStatement && astSimpleStatement.Body is AstAssign astAssign && astAssign.Operator == Operator.Assignment &&
+                            IsWindowX(astAssign.Left, globalName) && astAssign.Right is AstBinary astBinary && astBinary.Operator == Operator.LogicalOr && IsWindowX(astBinary.Left, globalName))
+                        {
+                            astVarDef.Value = astAssign;
+                            body[0] = astVar;
+                            body.Last = new AstSimpleStatement(new AstAssign(astAssign.Left.DeepClone(),
+                                astReturn.Value));
+                            jsAst.Body.TransferFrom(ref body);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check for pattern window.x
+        static bool IsWindowX(AstNode node, string xName)
+        {
+            return node is AstDot astDot && astDot.Expression.IsSymbolDef().IsGlobalSymbol() == "window" &&
+                   (string) astDot.Property == xName;
+        }
+
         public static void WrapByIIFE(AstToplevel topLevelAst)
         {
             var func = new AstFunction();
@@ -139,7 +175,7 @@ namespace Njsast.Bundler
             func.HasUseStrictDirective = true;
             func.Body.TransferFrom(ref topLevelAst.Body);
             var call = new AstCall(new AstDot(func, "call"));
-            call.Args.AddRef()=new AstThis(null, new Position(), new Position() );
+            call.Args.AddRef() = new AstThis(null, new Position(), new Position());
             topLevelAst.Body.Add(new AstSimpleStatement(new AstUnaryPrefix(Operator.LogicalNot, call)));
         }
 
@@ -151,7 +187,7 @@ namespace Njsast.Bundler
             if (node is AstSimpleStatement simple && simple.Body is AstCall call && call.Args.Count == 0 && call.Expression is AstFunction fnc &&
                 fnc.ArgNames.Count == 0)
             {
-                topLevelAst.Body.ReplaceItemAt(0,fnc.Body.AsReadOnlySpan());
+                topLevelAst.Body.ReplaceItemAt(0, fnc.Body.AsReadOnlySpan());
             }
         }
 
