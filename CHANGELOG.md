@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.24.2
+
 ### Fixed
 
 - Bundling of JS dependency with `var x = (function(){ window.x = window.x || {}; ...; return x; })();` pattern.
