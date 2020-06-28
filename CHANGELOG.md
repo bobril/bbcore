@@ -5,6 +5,7 @@
 ### Fixed
 
 - Forgotten recalculation of variables and scopes after fixing these 2 patterns in previous version.
+- Wrong ordering of JS dependencies when b.asset links mixed relative and node_modules dependencies (happen only first time without cache).
 
 ## 1.24.2
 

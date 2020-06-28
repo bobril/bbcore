@@ -127,7 +127,7 @@ namespace Lib.TSCompiler
 
         // returns "?" if error in resolving
         public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false,
-            bool forceResource = false)
+            bool forceResource = false, bool skipCheckAdd = false)
         {
             if (Result.ResolveCache.TryGetValue((from, name), out var res))
             {
@@ -228,34 +228,37 @@ namespace Lib.TSCompiler
                         "Local import has wrong casing '" + fn + "' on disk '" + item.FullPath + "'", 0, 0, 0, 0);
                 }
 
-                if (forceResource)
+                if (!skipCheckAdd)
                 {
-                    CheckAdd(item.FullPath, FileCompilationType.Resource);
-                }
-                else if (IsDts(item.Name))
-                {
-                    CheckAdd(item.FullPath, FileCompilationType.TypeScriptDefinition);
-                    if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
+                    if (forceResource)
                     {
-                        CheckAdd(jsItem.FullPath, FileCompilationType.EsmJavaScript);
-                        res.FileNameJs = jsItem.FullPath;
-                        parentInfo.ReportDependency(jsItem.FullPath);
+                        CheckAdd(item.FullPath, FileCompilationType.Resource);
+                    }
+                    else if (IsDts(item.Name))
+                    {
+                        CheckAdd(item.FullPath, FileCompilationType.TypeScriptDefinition);
+                        if (dc.TryGetChild(fileOnly + ".js") is IFileCache jsItem)
+                        {
+                            CheckAdd(jsItem.FullPath, FileCompilationType.EsmJavaScript);
+                            res.FileNameJs = jsItem.FullPath;
+                            parentInfo.ReportDependency(jsItem.FullPath);
+                        }
+                        else
+                        {
+                            res.NegativeChecks.Add(dirPath + "/" + fileOnly + ".js");
+                            // implementation for .d.ts file does not have same name, it needs to be added to build by b.asset("lib.js") and cannot have dependencies
+                        }
+                    }
+                    else if (IsTsOrTsxOrJsOrJsx(item.Name))
+                    {
+                        CheckAdd(item.FullPath,
+                            IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript :
+                            isAsset ? FileCompilationType.JavaScriptAsset : FileCompilationType.EsmJavaScript);
                     }
                     else
                     {
-                        res.NegativeChecks.Add(dirPath + "/" + fileOnly + ".js");
-                        // implementation for .d.ts file does not have same name, it needs to be added to build by b.asset("lib.js") and cannot have dependencies
+                        CheckAdd(item.FullPath, FileCompilationType.Unknown);
                     }
-                }
-                else if (IsTsOrTsxOrJsOrJsx(item.Name))
-                {
-                    CheckAdd(item.FullPath,
-                        IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript :
-                        isAsset ? FileCompilationType.JavaScriptAsset : FileCompilationType.EsmJavaScript);
-                }
-                else
-                {
-                    CheckAdd(item.FullPath, FileCompilationType.Unknown);
                 }
 
                 return res.FileNameWithPreference(preferDts);
@@ -329,8 +332,11 @@ namespace Lib.TSCompiler
 
                 var mainFile = PathUtils.Join(moduleInfo.Owner.FullPath, moduleInfo.MainFile);
                 res.FileName = mainFile;
-                CheckAdd(mainFile,
-                    IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript : FileCompilationType.EsmJavaScript);
+                if (!skipCheckAdd)
+                {
+                    CheckAdd(mainFile,
+                        IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript : FileCompilationType.EsmJavaScript);
+                }
 
                 if (moduleInfo.ProjectOptions?.ObsoleteMessage != null)
                 {
@@ -823,7 +829,7 @@ namespace Lib.TSCompiler
 
                     if (text.StartsWith("node_modules/", StringComparison.Ordinal))
                     {
-                        var res2 = ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false, true, forceResource);
+                        var res2 = ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false, true, forceResource, true);
                         return res2 == "?" ? text : res2;
                     }
 
