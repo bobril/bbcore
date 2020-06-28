@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.24.3
+
 ### Fixed
 
 - Forgotten recalculation of variables and scopes after fixing these 2 patterns in previous version.
