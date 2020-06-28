@@ -144,6 +144,7 @@ namespace Njsast.Bundler
                 astUnary.Expression.IsSymbolDef().IsGlobalSymbol() == "module")
             {
                 jsAst.Body.RemoveAt(0);
+                jsAst.FigureOutScope();
             }
             // is just var x = ...;
             if (jsAst.Body.Count == 1 && jsAst.Body[0] is AstVar astVar && astVar.Definitions.Count == 1 && astVar.Definitions[0] is { } astVarDef && astVarDef.Name is AstSymbolVar globalSymbol)
@@ -166,6 +167,7 @@ namespace Njsast.Bundler
                             body.Last = new AstSimpleStatement(new AstAssign(astAssign.Left.DeepClone(),
                                 astReturn.Value));
                             jsAst.Body.TransferFrom(ref body);
+                            jsAst.FigureOutScope();
                         }
                     }
                 }
