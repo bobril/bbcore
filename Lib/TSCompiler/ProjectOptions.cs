@@ -240,6 +240,14 @@ namespace Lib.TSCompiler
             MainBuildResult buildResult)
         {
             var nodeModulesDir = Owner.Owner.FullPath;
+            while (nodeModulesDir.Length > 0)
+            {
+                if (Owner.DiskCache.TryGetItem(nodeModulesDir + "/node_modules") is IDirectoryCache dc && !dc.IsInvalid)
+                {
+                    break;
+                }
+                nodeModulesDir = PathUtils.Parent(nodeModulesDir).ToString();
+            }
             Owner.FillOutputByAssets(buildResult, nodeModulesDir, this);
             FillOutputByAssetsFromModules(buildResult, buildResultModules, nodeModulesDir);
             if (AdditionalResourcesDirectory == null)

@@ -164,7 +164,8 @@ Use this comment in source code with import to ignore this specific import (must
 
     "bobril": {
         "assets": {
-            "original/source/path/name.ext": "distName.ext"
+            "original/source/path/name.ext": "distName.ext",
+            "node_modules/anymodule/path", "path"
         }
     }
 
