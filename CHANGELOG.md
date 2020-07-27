@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.24.4
+
 ### Fixed
 
 - package.json - bobril - assets correctly find directory starting with "node_modules/" even when "node_modules" are not in project root dir.
