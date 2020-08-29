@@ -1,6 +1,6 @@
 declare var jasmineRequire: any;
 
-(function() {
+(function () {
     var jasmine = jasmineRequire.core(jasmineRequire);
     (<any>window)["jasmine"] = jasmine;
 
@@ -217,7 +217,7 @@ declare var jasmineRequire: any;
             failFast: false,
             oneFailurePerSpec: true,
             hideDisabled: false,
-            specFilter: specFilterFnc
+            specFilter: specFilterFnc,
         };
         onerror = ((msg: string, _url: string, _lineNo: number, _columnNo: number, error: Error) => {
             bbTest("onerror" + testId, { message: msg, stack: error.stack });
@@ -245,8 +245,12 @@ declare var jasmineRequire: any;
                 bbTest("wholeStart" + testId, suiteInfo.totalSpecsDefined);
                 totalStart = perfnow();
             },
-            jasmineDone: () => {
-                bbTest("wholeDone" + testId, perfnow() - totalStart);
+            jasmineDone: (suiteInfo: { overallStatus: string; incompleteReason: string }) => {
+                bbTest("wholeDone" + testId, {
+                    overallStatus: suiteInfo.overallStatus,
+                    incompleteReason: suiteInfo.incompleteReason,
+                    time: perfnow() - totalStart,
+                });
                 var cov = (window as any).__c0v as Uint32Array;
                 if (cov != undefined) {
                     let pos = 0;
@@ -259,7 +263,7 @@ declare var jasmineRequire: any;
                             len++;
                             bbTest("coverageReportPart" + testId, {
                                 start: pos,
-                                data: Array.prototype.slice.call(cov.slice(pos, pos + len))
+                                data: Array.prototype.slice.call(cov.slice(pos, pos + len)),
                             });
                             pos += maxlen;
                             if (pos == cov.length) {
@@ -293,7 +297,7 @@ declare var jasmineRequire: any;
                     name: result.description,
                     duration,
                     status: result.status,
-                    failures: result.failedExpectations
+                    failures: result.failedExpectations,
                 });
             },
             suiteDone: (result: {
@@ -306,17 +310,17 @@ declare var jasmineRequire: any;
                     name: result.description,
                     duration,
                     status: result.status,
-                    failures: result.failedExpectations
+                    failures: result.failedExpectations,
                 });
-            }
+            },
         });
 
         // Heavily inspired by https://github.com/NV/console.js
         if (typeof console === "undefined") {
             (<any>window).console = <any>{
-                toString: function() {
+                toString: function () {
                     return "Inspired by Console.js version 0.9";
-                }
+                },
             };
         }
 
@@ -342,7 +346,7 @@ declare var jasmineRequire: any;
                 if (typeof first_arg === "string" && _interpolate.test(first_arg)) {
                     args.shift();
                     result.push(
-                        first_arg.replace(_interpolate, function() {
+                        first_arg.replace(_interpolate, function () {
                             return _inspect(args.shift());
                         })
                     );
@@ -389,7 +393,7 @@ declare var jasmineRequire: any;
         console.time = function time(name: string) {
             var start = new Date().getTime();
             _timers[name] = {
-                start: start
+                start: start,
             };
         };
 
@@ -403,7 +407,7 @@ declare var jasmineRequire: any;
             failFast: true,
             oneFailurePerSpec: true,
             hideDisabled: false,
-            specFilter: (_spec: any) => true
+            specFilter: (_spec: any) => true,
         };
         env.configure(config);
 
@@ -433,7 +437,7 @@ declare var jasmineRequire: any;
                 failedExpectations: { message: string; stack: any }[];
             }) => {
                 console.log("Suite finished " + result.status);
-            }
+            },
         });
     }
 
@@ -445,7 +449,7 @@ declare var jasmineRequire: any;
     window.clearTimeout = window.clearTimeout;
     window.clearInterval = window.clearInterval;
 
-    window.onload = function() {
+    window.onload = function () {
         env.execute();
     };
 })();

@@ -1,6 +1,4 @@
-﻿using Lib.BuildCache;
-using Lib.DiskCache;
-using Lib.Utils;
+﻿using Lib.DiskCache;
 using Njsast;
 using Njsast.Bobril;
 using Njsast.SourceMap;
@@ -8,7 +6,6 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Lib.TSCompiler
 {
@@ -28,29 +25,28 @@ namespace Lib.TSCompiler
 
     public class DependencyTriplet
     {
-        public byte[] SourceHash { get; set; }
-        public string Import { get; set; }
-        public byte[] TargetHash { get; set; }
+        public byte[]? SourceHash { get; set; }
+        public string? Import { get; set; }
+        public byte[]? TargetHash { get; set; }
     }
 
-    public class TSFileAdditionalInfo
+    public class TsFileAdditionalInfo
     {
         public FileCompilationType Type;
-        public IFileCache Owner { get; set; }
-        public IDiskCache DiskCache { get; set; }
-        public string Output { get; set; }
-        public SourceMap MapLink { get; set; }
+        public IFileCache? Owner { get; set; }
+        public string? Output { get; set; }
+        public SourceMap? MapLink { get; set; }
         public SourceInfo? SourceInfo { get; set; }
-        public List<DependencyTriplet> TranspilationDependencies { get; set; }
-        public Image<Rgba32> Image { get; set; }
+        public List<DependencyTriplet>? TranspilationDependencies { get; set; }
+        public Image<Rgba32>? Image { get; set; }
 
         public int ImageCacheId;
-        public string OutputUrl { get; set; }
-        public TSProject FromModule;
+        public string? OutputUrl { get; set; }
+        public TSProject? FromModule;
 
         public bool TakenFromBuildCache;
 
-        TSFileAdditionalInfo()
+        TsFileAdditionalInfo()
         {
         }
 
@@ -80,7 +76,7 @@ namespace Lib.TSCompiler
             {
                 TranspilationDependencies = new List<DependencyTriplet>();
             }
-            foreach(var dep in TranspilationDependencies)
+            foreach (var dep in TranspilationDependencies)
             {
                 if (dep.Import == import && dep.SourceHash.AsSpan().SequenceEqual(sourceHash))
                     return;
@@ -101,7 +97,7 @@ namespace Lib.TSCompiler
                 IsError = isError,
                 Code = code,
                 Text = text,
-                FileName = Owner.FullPath,
+                FileName = Owner!.FullPath,
                 StartLine = startLine,
                 StartCol = startCharacter,
                 EndLine = endLine,
@@ -109,7 +105,7 @@ namespace Lib.TSCompiler
             });
         }
 
-        public static TSFileAdditionalInfo Create(IFileCache file, IDiskCache diskCache)
+        public static TsFileAdditionalInfo? Create(IFileCache? file, IDiskCache diskCache)
         {
             if (file == null) return null;
             var dir = file.Parent;
@@ -117,12 +113,12 @@ namespace Lib.TSCompiler
             {
                 dir = dir.Parent;
             }
-            return new TSFileAdditionalInfo {Owner = file, DiskCache = diskCache, FromModule = dir?.Project as TSProject};
+            return new TsFileAdditionalInfo {Owner = file, FromModule = dir?.Project as TSProject};
         }
 
         internal void ReportDiag(List<Diagnostic> diagnostics)
         {
-            foreach(var diag in diagnostics)
+            foreach (var diag in diagnostics)
             {
                 Diagnostics.Add(diag);
             }

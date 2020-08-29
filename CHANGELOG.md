@@ -4,6 +4,7 @@
 
 ### Added
 
+- bb test command now detects incomplete tests (no tests or some forgotten fit or fdescribe) and exits with error code 1
 - Upgraded all dependencies
 
 ## 1.24.4

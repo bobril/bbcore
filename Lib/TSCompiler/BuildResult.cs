@@ -35,9 +35,9 @@ namespace Lib.TSCompiler
         public readonly Dictionary<(string From, string Name), ResolveResult> ResolveCache =
             new Dictionary<(string From, string Name), ResolveResult>();
 
-        public readonly Dictionary<string, TSFileAdditionalInfo> Path2FileInfo = new Dictionary<string, TSFileAdditionalInfo>();
-        public readonly HashSet<TSFileAdditionalInfo> RecompiledIncrementaly = new HashSet<TSFileAdditionalInfo>();
-        public Njsast.StructList<TSFileAdditionalInfo> JavaScriptAssets;
+        public readonly Dictionary<string, TsFileAdditionalInfo> Path2FileInfo = new Dictionary<string, TsFileAdditionalInfo>();
+        public readonly HashSet<TsFileAdditionalInfo> RecompiledIncrementaly = new HashSet<TsFileAdditionalInfo>();
+        public Njsast.StructList<TsFileAdditionalInfo> JavaScriptAssets;
         public readonly Dictionary<string, TSProject> Modules = new Dictionary<string, TSProject>();
         public bool HasError;
         public bool Incremental;
@@ -61,7 +61,7 @@ namespace Lib.TSCompiler
         }
 
 
-        internal string ToOutputUrl(TSFileAdditionalInfo source)
+        internal string ToOutputUrl(TsFileAdditionalInfo source)
         {
             if (source.OutputUrl == null)
             {

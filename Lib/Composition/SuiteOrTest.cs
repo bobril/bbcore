@@ -11,6 +11,7 @@ namespace Lib.Composition
         public string Name;
         public bool Skipped;
         public bool Failure;
+        public bool Incomplete;
         public double Duration;
         public List<MessageAndStack> Failures;
         public List<SuiteOrTest> Nested;

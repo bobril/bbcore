@@ -26,7 +26,7 @@ namespace Lib.TSCompiler
         readonly List<OutputSprite> _allSprites;
         readonly List<OutputSprite> _newSprites;
         IReadOnlyList<ImageBytesWithQuality>? _result;
-        readonly Dictionary<string, TSFileAdditionalInfo> _imageCache = new Dictionary<string, TSFileAdditionalInfo>();
+        readonly Dictionary<string, TsFileAdditionalInfo> _imageCache = new Dictionary<string, TsFileAdditionalInfo>();
         bool _wasChange;
 
         public SpriteHolder(IDiskCache dc, ILogger logger)
@@ -114,7 +114,7 @@ namespace Lib.TSCompiler
                     {
                         if (!_imageCache.TryGetValue(item.FullPath,out var fi))
                         {
-                            fi = TSFileAdditionalInfo.Create((item as IFileCache)!, _dc);
+                            fi = TsFileAdditionalInfo.Create((item as IFileCache)!, _dc);
                             _imageCache.Add(item.FullPath, fi);
                         }
                         if (fi.ImageCacheId != item.ChangeId)

@@ -666,6 +666,7 @@ namespace Lib.Composition
             int errors = 0;
             int testFailures = 0;
             int warnings = 0;
+            var incompleteTest = false;
             var messages = new List<Diagnostic>();
             var totalFiles = 0;
             try
@@ -710,6 +711,7 @@ namespace Lib.Composition
                             _testServer.OnTestResults.Subscribe(results =>
                             {
                                 testFailures = results.TestsFailed + results.SuitesFailed;
+                                incompleteTest = results.Incomplete;
                                 testResults = results;
                                 waitForTestResults.Release();
                             });
@@ -754,8 +756,8 @@ namespace Lib.Composition
             }
 
             var duration = DateTime.UtcNow - start;
-            var color = (errors + testFailures) != 0 ? ConsoleColor.Red :
-                warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+            var color = errors + testFailures != 0 ? ConsoleColor.Red :
+                (warnings != 0 || incompleteTest) ? ConsoleColor.Yellow : ConsoleColor.Green;
             _logger.WriteLine(
                 "Test done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " +
                 Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " +
@@ -799,7 +801,7 @@ namespace Lib.Composition
                 }
             }
 
-            Environment.ExitCode = (errors + testFailures) != 0 ? 1 : 0;
+            Environment.ExitCode = errors + testFailures != 0 || incompleteTest ? 1 : 0;
         }
 
         StyleDefNamingStyle ParseStyleDefNaming(string value)

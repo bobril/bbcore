@@ -63,216 +63,224 @@ namespace Lib.Composition
                 switch (pureMessage)
                 {
                     case "newClient":
+                    {
+                        if (_verbose)
+                            _logger.Info($"New Test Client: {data.Value<string>("userAgent")}");
+                        var client = UAParser.Parser.GetDefault().Parse(data.Value<string>("userAgent"));
+                        lock (_lock)
                         {
-                            if (_verbose)
-                                _logger.Info($"New Test Client: {data.Value<string>("userAgent")}");
-                            var client = UAParser.Parser.GetDefault().Parse(data.Value<string>("userAgent"));
-                            lock (_lock)
+                            _userAgent = client.ToString();
+                            if (_url != null)
                             {
-                                _userAgent = client.ToString();
-                                if (_url != null)
-                                {
-                                    DoStart();
-                                }
-                                else
-                                {
-                                    _connection.Send("wait", null);
-                                }
+                                DoStart();
                             }
-
-                            _testServer.NotifySomeChange();
-                            break;
+                            else
+                            {
+                                _connection.Send("wait", null);
+                            }
                         }
+
+                        _testServer.NotifySomeChange();
+                        break;
+                    }
 
                     case "wholeStart":
+                    {
+                        if (_verbose) _logger.Info($"wholeStart tests:{(int)data}");
+                        lock (_lock)
                         {
-                            if (_verbose) _logger.Info($"wholeStart tests:{(int)data}");
-                            lock (_lock)
+                            if (_curResults == null)
+                                break;
+                            _curResults.TotalTests = (int)data;
+                            _suiteId = 0;
+                            if (_suiteStack == null)
                             {
-                                if (_curResults == null)
-                                    break;
-                                _curResults.TotalTests = (int)data;
-                                _suiteId = 0;
-                                if (_suiteStack == null)
-                                {
-                                    _suiteStack = new Stack<SuiteOrTest>();
-                                    _suiteStack.Push(_curResults);
-                                }
+                                _suiteStack = new Stack<SuiteOrTest>();
+                                _suiteStack.Push(_curResults);
                             }
-
-                            _testServer.NotifyTestingStarted();
-                            _testServer.NotifySomeChange();
-                            break;
                         }
+
+                        _testServer.NotifyTestingStarted();
+                        _testServer.NotifySomeChange();
+                        break;
+                    }
 
                     case "wholeDone":
+                    {
+                        var time = data.Value<double>("time");
+                        var overallStatus = data.Value<string>("overallStatus");
+                        var incompleteReason = data.Value<string>("incompleteReason");
+                        if (_verbose)
+                            _logger.Info(
+                                $"wholeDone duration:{time:f2} overallStatus:{overallStatus} incompleteReason:{incompleteReason}");
+                        lock (_lock)
                         {
-                            if (_verbose) _logger.Info($"wholeDone duration:{((double)data):f2}");
-                            lock (_lock)
-                            {
-                                if (_curResults == null)
-                                    break;
-                                if (_suiteStack == null)
-                                    break;
-                                _curResults.Duration = (double)data;
-                                _curResults.Running = false;
-                                _oldResults = _curResults;
-                                _curResults = null;
-                                _suiteStack = null;
-                            }
-
-                            _testServer.NotifyFinishedResults(_oldResults);
-                            _testServer.NotifySomeChange();
-                            break;
+                            if (_curResults == null)
+                                break;
+                            if (_suiteStack == null)
+                                break;
+                            _curResults.Duration = time;
+                            _curResults.Incomplete = overallStatus == "incomplete";
+                            if (_curResults.Incomplete) _logger.Warn("Incomplete tests due to " + incompleteReason);
+                            _curResults.Running = false;
+                            _oldResults = _curResults;
+                            _curResults = null;
+                            _suiteStack = null;
                         }
+
+                        _testServer.NotifyFinishedResults(_oldResults);
+                        _testServer.NotifySomeChange();
+                        break;
+                    }
 
                     case "suiteStart":
+                    {
+                        if (_verbose) _logger.Info($"suiteStart {(string)data}");
+                        lock (_lock)
                         {
-                            if (_verbose) _logger.Info($"suiteStart {(string)data}");
-                            lock (_lock)
+                            if (_curResults == null)
+                                break;
+                            if (_suiteStack == null)
+                                break;
+                            var suite = new SuiteOrTest
                             {
-                                if (_curResults == null)
-                                    break;
-                                if (_suiteStack == null)
-                                    break;
-                                var suite = new SuiteOrTest
-                                {
-                                    Id = ++_suiteId,
-                                    ParentId = _suiteStack.Peek().Id,
-                                    Name = (string)data,
-                                    Nested = new List<SuiteOrTest>(),
-                                    Duration = 0,
-                                    Failure = false,
-                                    IsSuite = true,
-                                    Failures = new List<MessageAndStack>(),
-                                    Skipped = false,
-                                    Logs = new List<MessageAndStack>()
-                                };
-                                _suiteStack.Peek().Nested.Add(suite);
-                                _suiteStack.Push(suite);
-                            }
-
-                            _testServer.NotifySomeChange();
-                            break;
+                                Id = ++_suiteId,
+                                ParentId = _suiteStack.Peek().Id,
+                                Name = (string)data,
+                                Nested = new List<SuiteOrTest>(),
+                                Duration = 0,
+                                Failure = false,
+                                IsSuite = true,
+                                Failures = new List<MessageAndStack>(),
+                                Skipped = false,
+                                Logs = new List<MessageAndStack>()
+                            };
+                            _suiteStack.Peek().Nested.Add(suite);
+                            _suiteStack.Push(suite);
                         }
+
+                        _testServer.NotifySomeChange();
+                        break;
+                    }
 
                     case "suiteDone":
+                    {
+                        lock (_lock)
                         {
-                            lock (_lock)
+                            if (_curResults == null)
+                                break;
+                            if (_suiteStack == null)
+                                break;
+                            var suite = _suiteStack.Pop();
+                            suite.Duration = data.Value<double>("duration");
+                            if (_verbose)
+                                _logger.Info($"suiteDone {suite.Name} {suite.Duration:f2}");
+                            suite.Failures.AddRange(ConvertFailures(data.Value<JArray>("failures")));
+                            if (suite.Failures.Count > 0)
                             {
-                                if (_curResults == null)
-                                    break;
-                                if (_suiteStack == null)
-                                    break;
-                                var suite = _suiteStack.Pop();
-                                suite.Duration = data.Value<double>("duration");
-                                if (_verbose)
-                                    _logger.Info($"suiteDone {suite.Name} {suite.Duration:f2}");
-                                suite.Failures.AddRange(ConvertFailures(data.Value<JArray>("failures")));
-                                if (suite.Failures.Count > 0)
+                                _curResults.SuitesFailed += suite.Failures.Count;
+                                suite.Failure = true;
+                                _logger.Error(
+                                    $"suite {suite.Name} in between test failures\n{string.Join('\n', suite.Failures.Select(f => f.Message + "\n  " + string.Join("\n  ", f.Stack)))}");
+                                foreach (var s in _suiteStack)
                                 {
-                                    _curResults.SuitesFailed += suite.Failures.Count;
-                                    suite.Failure = true;
-                                    _logger.Error(
-                                        $"suite {suite.Name} in between test failures\n{string.Join('\n', suite.Failures.Select(f => f.Message + "\n  " + string.Join("\n  ", f.Stack)))}");
-                                    foreach (var s in _suiteStack)
-                                    {
-                                        s.Failure = true;
-                                    }
+                                    s.Failure = true;
                                 }
                             }
-
-                            _testServer.NotifySomeChange();
-                            break;
                         }
+
+                        _testServer.NotifySomeChange();
+                        break;
+                    }
 
                     case "testStart":
+                    {
+                        if (_verbose)
+                            _logger.Info("testStart " + data.Value<string>("name"));
+                        lock (_lock)
                         {
-                            if (_verbose)
-                                _logger.Info("testStart " + data.Value<string>("name"));
-                            lock (_lock)
+                            if (_curResults == null)
+                                break;
+                            if (_suiteStack == null)
+                                break;
+                            var test = new SuiteOrTest
                             {
-                                if (_curResults == null)
-                                    break;
-                                if (_suiteStack == null)
-                                    break;
-                                var test = new SuiteOrTest
-                                {
-                                    Id = ++_suiteId,
-                                    ParentId = _suiteStack.Peek().Id,
-                                    Name = data.Value<string>("name"),
-                                    Stack = ConvertMessageAndStack("", data.Value<string>("stack")).Stack
-                                        .Where(f => f.FileName != "bundle.js").ToList(),
-                                    Nested = null,
-                                    Duration = 0,
-                                    Failure = false,
-                                    IsSuite = false,
-                                    Failures = new List<MessageAndStack>(),
-                                    Skipped = false,
-                                    Logs = new List<MessageAndStack>()
-                                };
-                                _suiteStack.Peek().Nested.Add(test);
-                                _suiteStack.Push(test);
-                            }
-
-                            _testServer.NotifySomeChange();
-                            break;
+                                Id = ++_suiteId,
+                                ParentId = _suiteStack.Peek().Id,
+                                Name = data.Value<string>("name"),
+                                Stack = ConvertMessageAndStack("", data.Value<string>("stack")).Stack
+                                    .Where(f => f.FileName != "bundle.js").ToList(),
+                                Nested = null,
+                                Duration = 0,
+                                Failure = false,
+                                IsSuite = false,
+                                Failures = new List<MessageAndStack>(),
+                                Skipped = false,
+                                Logs = new List<MessageAndStack>()
+                            };
+                            _suiteStack.Peek().Nested.Add(test);
+                            _suiteStack.Push(test);
                         }
+
+                        _testServer.NotifySomeChange();
+                        break;
+                    }
 
                     case "testDone":
+                    {
+                        lock (_lock)
                         {
-                            lock (_lock)
+                            if (_curResults == null)
+                                break;
+                            if (_suiteStack == null)
+                                break;
+                            var test = _suiteStack.Pop();
+                            test.Duration = data.Value<double>("duration");
+                            test.Failures.AddRange(ConvertFailures(data.Value<JArray>("failures")));
+                            _curResults.TestsFinished++;
+                            var status = data.Value<string>("status");
+                            if (_verbose)
+                                _logger.Info("testDone " + test.Name + " " + status);
+                            if (status == "passed")
                             {
-                                if (_curResults == null)
-                                    break;
-                                if (_suiteStack == null)
-                                    break;
-                                var test = _suiteStack.Pop();
-                                test.Duration = data.Value<double>("duration");
-                                test.Failures.AddRange(ConvertFailures(data.Value<JArray>("failures")));
-                                _curResults.TestsFinished++;
-                                var status = data.Value<string>("status");
-                                if (_verbose)
-                                    _logger.Info("testDone " + test.Name + " " + status);
-                                if (status == "passed")
+                            }
+                            else if (status == "skipped" || status == "pending" || status == "disabled" ||
+                                     status == "excluded")
+                            {
+                                _curResults.TestsSkipped++;
+                                test.Skipped = true;
+                            }
+                            else
+                            {
+                                _curResults.TestsFailed++;
+                                test.Failure = true;
+                                foreach (var s in _suiteStack)
                                 {
-                                }
-                                else if (status == "skipped" || status == "pending" || status == "disabled" || status == "excluded")
-                                {
-                                    _curResults.TestsSkipped++;
-                                    test.Skipped = true;
-                                }
-                                else
-                                {
-                                    _curResults.TestsFailed++;
-                                    test.Failure = true;
-                                    foreach (var s in _suiteStack)
-                                    {
-                                        s.Failure = true;
-                                    }
+                                    s.Failure = true;
                                 }
                             }
-
-                            _testServer.NotifySomeChange();
-                            break;
                         }
+
+                        _testServer.NotifySomeChange();
+                        break;
+                    }
 
                     case "consoleLog":
+                    {
+                        lock (_lock)
                         {
-                            lock (_lock)
-                            {
-                                if (_curResults == null)
-                                    break;
-                                if (_suiteStack == null)
-                                    break;
-                                var test = _suiteStack.Peek();
-                                test.Logs.Add(ConvertMessageAndStack(data.Value<string>("message"),
-                                    data.Value<string>("stack")));
-                            }
-
-                            _testServer.NotifySomeChange();
-                            break;
+                            if (_curResults == null)
+                                break;
+                            if (_suiteStack == null)
+                                break;
+                            var test = _suiteStack.Peek();
+                            test.Logs.Add(ConvertMessageAndStack(data.Value<string>("message"),
+                                data.Value<string>("stack")));
                         }
+
+                        _testServer.NotifySomeChange();
+                        break;
+                    }
 
                     case "onerror":
                     {
@@ -281,11 +289,12 @@ namespace Lib.Composition
                         {
                             if (_curResults == null)
                                 break;
-                            _curResults.Failures.Add(ConvertMessageAndStack(data.Value<string>("message"),data.Value<string>("stack")));
-                            _logger.Error("Test onerror "+_curResults.Failures[^1].Message);
+                            _curResults.Failures.Add(ConvertMessageAndStack(data.Value<string>("message"),
+                                data.Value<string>("stack")));
+                            _logger.Error("Test onerror " + _curResults.Failures[^1].Message);
                             _logger.Error(string.Join("\n", _curResults.Failures[^1].Stack));
                             _curResults.Failure = true;
-                            _curResults.SuitesFailed ++;
+                            _curResults.SuitesFailed++;
                         }
 
                         _testServer.NotifyTestingStarted();
@@ -304,7 +313,7 @@ namespace Lib.Composition
                     {
                         var start = data.Value<int>("start");
                         if (_verbose) _logger.Info("coverageReportPart " + start);
-                        var dataPart = data.Value<JArray>("data").Select(t=>t.Value<uint>()).ToList();
+                        var dataPart = data.Value<JArray>("data").Select(t => t.Value<uint>()).ToList();
                         dataPart.CopyTo(_coverageData, start);
                         break;
                     }
@@ -392,7 +401,7 @@ namespace Lib.Composition
         void DoStart()
         {
             InitCurResults();
-            _connection.Send("test", new { specFilter = _specFilter, url = _url+"#"+_runid });
+            _connection.Send("test", new {specFilter = _specFilter, url = _url + "#" + _runid});
         }
 
         void InitCurResults()

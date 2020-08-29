@@ -231,8 +231,12 @@
                 bbTest("wholeStart" + testId, suiteInfo.totalSpecsDefined);
                 totalStart_1 = perfnow();
             },
-            jasmineDone: function () {
-                bbTest("wholeDone" + testId, perfnow() - totalStart_1);
+            jasmineDone: function (suiteInfo) {
+                bbTest("wholeDone" + testId, {
+                    overallStatus: suiteInfo.overallStatus,
+                    incompleteReason: suiteInfo.incompleteReason,
+                    time: perfnow() - totalStart_1,
+                });
                 var cov = window.__c0v;
                 if (cov != undefined) {
                     var pos_1 = 0;
@@ -247,7 +251,7 @@
                             len++;
                             bbTest("coverageReportPart" + testId, {
                                 start: pos_1,
-                                data: Array.prototype.slice.call(cov.slice(pos_1, pos_1 + len))
+                                data: Array.prototype.slice.call(cov.slice(pos_1, pos_1 + len)),
                             });
                             pos_1 += maxlen;
                             if (pos_1 == cov.length) {
@@ -279,7 +283,7 @@
                     name: result.description,
                     duration: duration,
                     status: result.status,
-                    failures: result.failedExpectations
+                    failures: result.failedExpectations,
                 });
             },
             suiteDone: function (result) {
@@ -288,16 +292,16 @@
                     name: result.description,
                     duration: duration,
                     status: result.status,
-                    failures: result.failedExpectations
+                    failures: result.failedExpectations,
                 });
-            }
+            },
         });
         // Heavily inspired by https://github.com/NV/console.js
         if (typeof console === "undefined") {
             window.console = {
                 toString: function () {
                     return "Inspired by Console.js version 0.9";
-                }
+                },
             };
         }
         var dimensions_limit_1 = 3;
@@ -356,7 +360,7 @@
         console.time = function time(name) {
             var start = new Date().getTime();
             _timers_1[name] = {
-                start: start
+                start: start,
             };
         };
         console.timeEnd = function timeEnd(name) {
@@ -386,7 +390,7 @@
             },
             suiteDone: function (result) {
                 console.log("Suite finished " + result.status);
-            }
+            },
         });
     }
     /**

@@ -22,7 +22,7 @@ namespace Lib.TSCompiler
         public BuildResult Result;
         public MainBuildResult MainResult;
         public int IterationId;
-        TSFileAdditionalInfo _currentlyTranspiling;
+        TsFileAdditionalInfo _currentlyTranspiling;
 
         static readonly string[] ExtensionsToImport = {".tsx", ".ts", ".d.ts", ".jsx", ".js", ""};
         static readonly string[] ExtensionsToImportFromJs = {".jsx", ".js", ""};
@@ -351,7 +351,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        bool TryToResolveFromBuildCache(TSFileAdditionalInfo itemInfo)
+        bool TryToResolveFromBuildCache(TsFileAdditionalInfo itemInfo)
         {
             itemInfo.TakenFromBuildCache = false;
             var bc = Owner.ProjectOptions.BuildCache;
@@ -442,7 +442,7 @@ namespace Lib.TSCompiler
             return true;
         }
 
-        bool TryToResolveFromBuildCacheCss(TSFileAdditionalInfo itemInfo)
+        bool TryToResolveFromBuildCacheCss(TsFileAdditionalInfo itemInfo)
         {
             itemInfo.TakenFromBuildCache = false;
             var bc = Owner.ProjectOptions.BuildCache;
@@ -507,13 +507,13 @@ namespace Lib.TSCompiler
             }
         }
 
-        public TSFileAdditionalInfo CheckAdd(string fullNameWithExtension, FileCompilationType compilationType)
+        public TsFileAdditionalInfo? CheckAdd(string fullNameWithExtension, FileCompilationType compilationType)
         {
             if (!Result.Path2FileInfo.TryGetValue(fullNameWithExtension, out var info))
             {
                 var fc = Owner.DiskCache.TryGetItem(fullNameWithExtension) as IFileCache;
                 if (fc == null || fc.IsInvalid) return null;
-                info = TSFileAdditionalInfo.Create(fc, Owner.DiskCache);
+                info = TsFileAdditionalInfo.Create(fc, Owner.DiskCache);
                 info.Type = compilationType;
                 MainResult.MergeCommonSourceDirectory(fc.FullPath);
                 Result.Path2FileInfo.Add(fullNameWithExtension, info);
@@ -589,7 +589,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        public TSFileAdditionalInfo CrawlFile(string fileName)
+        public TsFileAdditionalInfo? CrawlFile(string fileName)
         {
             if (!Result.Path2FileInfo.TryGetValue(fileName, out var info))
             {
@@ -606,7 +606,7 @@ namespace Lib.TSCompiler
                     return null;
                 }
 
-                info = TSFileAdditionalInfo.Create(fileCache, Owner.DiskCache);
+                info = TsFileAdditionalInfo.Create(fileCache, Owner.DiskCache);
                 info.Type = FileCompilationType.Unknown;
                 Result.Path2FileInfo.Add(fileName, info);
             }
@@ -664,7 +664,7 @@ namespace Lib.TSCompiler
             return info;
         }
 
-        void CrawlInfo(TSFileAdditionalInfo info)
+        void CrawlInfo(TsFileAdditionalInfo info)
         {
             if (info.Owner.ChangeId != info.ChangeId)
             {
@@ -709,7 +709,7 @@ namespace Lib.TSCompiler
                             {
                                 info.Output = info.Owner.Utf8Content;
                                 cssProcessor.ProcessCss(info.Owner.Utf8Content,
-                                    ((TSFileAdditionalInfo) info).Owner.FullPath, (string url, string from) =>
+                                    ((TsFileAdditionalInfo) info).Owner.FullPath, (string url, string from) =>
                                     {
                                         var urlJustName = url.Split('?', '#')[0];
                                         info.ReportTranspilationDependency(null, urlJustName, null);
@@ -738,7 +738,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        void ReportDependenciesFromCss(TSFileAdditionalInfo info)
+        void ReportDependenciesFromCss(TsFileAdditionalInfo info)
         {
             if (info.TranspilationDependencies != null)
                 foreach (var dep in info.TranspilationDependencies)
@@ -755,7 +755,7 @@ namespace Lib.TSCompiler
                 }
         }
 
-        void Transpile(TSFileAdditionalInfo info)
+        void Transpile(TsFileAdditionalInfo info)
         {
             ITSCompiler compiler = null;
             try
@@ -981,7 +981,7 @@ namespace Lib.TSCompiler
             return (assetName.Substring(0, colonIdx + 1), assetName.Substring(colonIdx + 1));
         }
 
-        public void AddDependenciesFromSourceInfo(TSFileAdditionalInfo fileInfo)
+        public void AddDependenciesFromSourceInfo(TsFileAdditionalInfo fileInfo)
         {
             var sourceInfo = fileInfo.SourceInfo;
             if (sourceInfo == null)
@@ -1110,7 +1110,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        TSFileAdditionalInfo ReportDependency(TSFileAdditionalInfo owner, TSFileAdditionalInfo dep)
+        TsFileAdditionalInfo ReportDependency(TsFileAdditionalInfo owner, TsFileAdditionalInfo dep)
         {
             if (dep != null)
             {
@@ -1120,7 +1120,7 @@ namespace Lib.TSCompiler
             return dep;
         }
 
-        TSFileAdditionalInfo AutodetectAndAddDependency(string depName, bool forceResource = false)
+        TsFileAdditionalInfo? AutodetectAndAddDependency(string depName, bool forceResource = false)
         {
             if (forceResource)
             {
