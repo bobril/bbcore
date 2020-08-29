@@ -1,7 +1,6 @@
-import * as b from 'bobril';
+import * as b from "bobril";
 
-const iconShine = b.sprite("light.png", "#80ff80");
-const iconOff = b.sprite("light.png", "#e03030");
+const iconLight = b.sprite("light.png");
 
 export interface IData {
     value: boolean;
@@ -14,10 +13,11 @@ interface ICtx extends b.IBobrilCtx {
 
 export default b.createComponent<IData>({
     render(ctx: ICtx, me: b.IBobrilNode) {
-        b.style(me, ctx.data.value ? iconShine : iconOff);
+        const color = ctx.data.value ? "#80ff80" : "#e03030";
+        b.style(me, b.spriteWithColor(iconLight, color));
     },
     onClick(ctx: ICtx): boolean {
         ctx.data.onChange(!ctx.data.value);
         return true;
-    }
+    },
 });

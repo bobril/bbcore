@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Upgraded all dependencies
+
 ## 1.24.4
 
 ### Fixed
