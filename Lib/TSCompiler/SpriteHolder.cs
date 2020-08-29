@@ -11,6 +11,7 @@ using Lib.Utils;
 using Lib.Utils.Logger;
 using Njsast.Bobril;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors;
@@ -19,13 +20,13 @@ namespace Lib.TSCompiler
 {
     public class SpriteHolder : ISpritePlace
     {
-        IDiskCache _dc;
-        ILogger _logger;
-        Sprite2dPlacer _placer;
-        List<OutputSprite> _allSprites;
-        List<OutputSprite> _newSprites;
-        IReadOnlyList<ImageBytesWithQuality> _result;
-        Dictionary<string, TSFileAdditionalInfo> _imageCache = new Dictionary<string, TSFileAdditionalInfo>();
+        readonly IDiskCache _dc;
+        readonly ILogger _logger;
+        readonly Sprite2dPlacer _placer;
+        readonly List<OutputSprite> _allSprites;
+        readonly List<OutputSprite> _newSprites;
+        IReadOnlyList<ImageBytesWithQuality>? _result;
+        readonly Dictionary<string, TSFileAdditionalInfo> _imageCache = new Dictionary<string, TSFileAdditionalInfo>();
         bool _wasChange;
 
         public SpriteHolder(IDiskCache dc, ILogger logger)
@@ -69,7 +70,7 @@ namespace Lib.TSCompiler
 
         public void ProcessNew()
         {
-            for (int i = 0; i < _allSprites.Count; i++)
+            for (var i = 0; i < _allSprites.Count; i++)
             {
                 var sprite = _allSprites[i];
                 _allSprites[i] = ProcessOneSprite(sprite.Me);
@@ -77,13 +78,13 @@ namespace Lib.TSCompiler
             if (_newSprites.Count == 0)
                 return;
             _wasChange = true;
-            for (int i = 0; i < _newSprites.Count; i++)
+            for (var i = 0; i < _newSprites.Count; i++)
             {
                 var sprite = _newSprites[i];
                 _newSprites[i] = ProcessOneSprite(sprite.Me);
             }
             _newSprites.Sort((l, r) => r.oheight.CompareTo(l.oheight));
-            for (int i = 0; i < _newSprites.Count; i++)
+            for (var i = 0; i < _newSprites.Count; i++)
             {
                 var sprite = _newSprites[i];
                 _sW = sprite.owidth;
@@ -102,10 +103,10 @@ namespace Lib.TSCompiler
             var fnD = PathUtils.SplitDirAndFile(fn, out var fnF);
             var dirc = _dc.TryGetItem(fnD);
             var slices = new List<SpriteSlice>();
-            if (dirc is IDirectoryCache)
+            if (dirc is IDirectoryCache directoryCache)
             {
-                _dc.UpdateIfNeeded((IDirectoryCache)dirc);
-                foreach (var item in (IDirectoryCache)dirc)
+                _dc.UpdateIfNeeded(directoryCache);
+                foreach (var item in directoryCache)
                 {
                     if (!item.IsFile || item.IsInvalid) continue;
                     var (Name, Quality) = PathUtils.ExtractQuality(item.Name);
@@ -113,7 +114,7 @@ namespace Lib.TSCompiler
                     {
                         if (!_imageCache.TryGetValue(item.FullPath,out var fi))
                         {
-                            fi = TSFileAdditionalInfo.Create(item as IFileCache, _dc);
+                            fi = TSFileAdditionalInfo.Create((item as IFileCache)!, _dc);
                             _imageCache.Add(item.FullPath, fi);
                         }
                         if (fi.ImageCacheId != item.ChangeId)
@@ -121,7 +122,7 @@ namespace Lib.TSCompiler
                             _wasChange = true;
                             try
                             {
-                                fi.Image = Image.Load((item as IFileCache).ByteContent);
+                                fi.Image = Image.Load((item as IFileCache)!.ByteContent);
                             }
                             catch (Exception ex)
                             {
@@ -190,7 +191,7 @@ namespace Lib.TSCompiler
         {
             if (!_wasChange)
             {
-                return _result;
+                return _result!;
             }
             var qualities = new HashSet<float>();
             var i = 0;
@@ -214,35 +215,33 @@ namespace Lib.TSCompiler
                 var resultImage = new Image<Rgba32>((int)Math.Ceiling(_placer.Dim.Width * q), (int)Math.Ceiling(_placer.Dim.Height * q));
                 resultImage.Mutate(c =>
                 {
-                    for (int j = 0; j < _allSprites.Count; j++)
+                    for (var j = 0; j < _allSprites.Count; j++)
                     {
                         var sprite = _allSprites[j];
                         var fn = sprite.Me.Name;
                         var slice = FindBestSlice(sprite.slices, q);
                         var fi = _imageCache[PathUtils.InjectQuality(fn, slice.quality)];
-                        if (fi != null)
+                        if (fi == null) continue;
+                        var image = fi.Image;
+                        if (sprite.Me.Color != null)
                         {
-                            var image = fi.Image;
-                            if (sprite.Me.Color != null)
-                            {
-                                var rgbColor = ParseColor(sprite.Me.Color);
-                                image = image.Clone(operation =>
-                                {
-                                    operation.ApplyProcessor(new Recolor(rgbColor));
-                                });
-                            }
+                            var rgbColor = ParseColor(sprite.Me.Color);
                             image = image.Clone(operation =>
                             {
-                                if (q != slice.quality)
-                                    operation = operation.Resize((int)Math.Round(image.Width * q / slice.quality), (int)Math.Round(image.Height * q / slice.quality));
-                                operation.Crop(new Rectangle(new Point((int)(q * Math.Max(0,sprite.Me.X)), (int)(q * Math.Max(0,sprite.Me.Y))), new Size((int)(sprite.owidth * q), (int)(sprite.oheight * q))));
+                                operation.ApplyProcessor(new Recolor(rgbColor));
                             });
-                            c.DrawImage(image, new Point((int)(sprite.ox * q), (int)(sprite.oy * q)), new GraphicsOptions());
                         }
+                        image = image.Clone(operation =>
+                        {
+                            if (q != slice.quality)
+                                operation = operation.Resize((int)Math.Round(image.Width * q / slice.quality), (int)Math.Round(image.Height * q / slice.quality));
+                            operation.Crop(new Rectangle(new Point((int)(q * Math.Max(0,sprite.Me.X)), (int)(q * Math.Max(0,sprite.Me.Y))), new Size((int)(sprite.owidth * q), (int)(sprite.oheight * q))));
+                        });
+                        c.DrawImage(image, new Point((int)(sprite.ox * q), (int)(sprite.oy * q)), new GraphicsOptions());
                     }
                 });
                 var ms = new MemoryStream();
-                resultImage.Save(ms, new SixLabors.ImageSharp.Formats.Png.PngEncoder { CompressionLevel = maxCompression ? 9 : 1 });
+                resultImage.Save(ms, new PngEncoder { CompressionLevel = maxCompression ? PngCompressionLevel.BestCompression : PngCompressionLevel.BestSpeed });
                 result[i].Content = ms.ToArray();
             }
             _wasChange = false;
@@ -259,7 +258,7 @@ namespace Lib.TSCompiler
             return slices.Last();
         }
 
-        static Regex _rgbaColorParser = new Regex(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript);
+        static readonly Regex RgbaColorParser = new Regex(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript);
 
         public static Rgba32 ParseColor(string color)
         {
@@ -286,7 +285,7 @@ namespace Lib.TSCompiler
                     (byte)int.Parse(color.Substring(5, 2), NumberStyles.HexNumber),
                     (byte)int.Parse(color.Substring(7, 2), NumberStyles.HexNumber));
             }
-            var mrgba = _rgbaColorParser.Match(color);
+            var mrgba = RgbaColorParser.Match(color);
             if (mrgba.Success)
             {
                 return new Rgba32(
@@ -300,15 +299,13 @@ namespace Lib.TSCompiler
 
         class RealRecolor : IImageProcessor<Rgba32>
         {
-            Rgba32 _rgbColor;
-            Image<Rgba32> _source;
-            Rectangle _sourceRectangle;
+            readonly Rgba32 _rgbColor;
+            readonly Image<Rgba32> _source;
 
-            public RealRecolor(Rgba32 rgbColor, Image<Rgba32> source, Rectangle sourceRectangle)
+            public RealRecolor(Rgba32 rgbColor, Image<Rgba32> source)
             {
                 _rgbColor = rgbColor;
                 _source = source;
-                _sourceRectangle = sourceRectangle;
             }
 
             public void Execute()
@@ -354,7 +351,7 @@ namespace Lib.TSCompiler
 
         class Recolor : IImageProcessor
         {
-            Rgba32 _rgbColor;
+            readonly Rgba32 _rgbColor;
 
             public Recolor(Rgba32 rgbColor)
             {
@@ -362,10 +359,10 @@ namespace Lib.TSCompiler
             }
 
             public IImageProcessor<TPixel> CreatePixelSpecificProcessor<TPixel>(SixLabors.ImageSharp.Configuration configuration, Image<TPixel> source,
-                Rectangle sourceRectangle) where TPixel : struct, IPixel<TPixel>
+                Rectangle sourceRectangle) where TPixel : unmanaged, IPixel<TPixel>
             {
                 if (typeof(TPixel)==typeof(Rgba32))
-                    return Unsafe.As<IImageProcessor<TPixel>>(new RealRecolor(_rgbColor, Unsafe.As<Image<Rgba32>>(source), sourceRectangle));
+                    return Unsafe.As<IImageProcessor<TPixel>>(new RealRecolor(_rgbColor, Unsafe.As<Image<Rgba32>>(source)));
                 throw new NotSupportedException();
             }
         }
