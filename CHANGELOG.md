@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.25.0
+
 ### Added
 
 - bb test command now detects incomplete tests (no tests or some forgotten fit or fdescribe) and exits with error code 1
