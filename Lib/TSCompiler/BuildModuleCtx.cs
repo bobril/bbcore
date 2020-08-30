@@ -154,7 +154,7 @@ namespace Lib.TSCompiler
             res.IterationId = IterationId;
             var relative = name.StartsWith("./") || name.StartsWith("../");
             Result.Path2FileInfo.TryGetValue(from, out var parentInfo);
-            string fn = null;
+            string? fn = null;
             if (relative)
             {
                 fn = PathUtils.Join(parentInfo.Owner.Parent.FullPath, name);
@@ -192,16 +192,15 @@ namespace Lib.TSCompiler
 
                 var dirPath = PathUtils.Parent(fn).ToString();
                 var fileOnly = fn.Substring(dirPath.Length + 1);
-                IFileCache item = null;
                 var dc = Owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
                 if (dc == null || dc.IsInvalid)
                 {
                     res.FileName = "?";
-                    res.NegativeChecks.Add(dirPath.ToString());
+                    res.NegativeChecks.Add(dirPath);
                     return res.FileName;
                 }
 
-                item = (parentInfo.Type == FileCompilationType.EsmJavaScript
+                IFileCache item = (parentInfo.Type == FileCompilationType.EsmJavaScript
                         ? ExtensionsToImportFromJs
                         : ExtensionsToImport).Select(ext =>
                     {
@@ -294,7 +293,7 @@ namespace Lib.TSCompiler
 
                             if (!resolveReplace.StartsWith(name + "/"))
                             {
-                                fn = PathUtils.Join(parentInfo.FromModule.Owner.FullPath, resolveReplace);
+                                fn = PathUtils.Join(parentInfo.FromModule!.Owner.FullPath, resolveReplace);
                                 relative = true;
                                 goto relative;
                             }
@@ -310,6 +309,11 @@ namespace Lib.TSCompiler
                     ReportMissingImport(from, name);
                     res.FileName = "?";
                     return res.FileName;
+                }
+
+                if (parentInfo!.FromModule == Owner)
+                {
+                    Owner.UsedDependencies!.Add(moduleInfo.Name!);
                 }
 
                 if (PathUtils.GetFile(mname) != moduleInfo.Name)

@@ -1,0 +1,12 @@
+{
+  "name": "packagejsondepswarnings",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "index.js",
+  "license": "ISC",
+  "dependencies": {
+    "bobril-g11n": "*",
+    "bobx": "*"
+  }
+}

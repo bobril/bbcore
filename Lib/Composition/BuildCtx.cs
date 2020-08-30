@@ -40,7 +40,7 @@ namespace Lib.Composition
 
         readonly string _currentDirectory;
 
-        string MainFile
+        string? MainFile
         {
             get => _mainFile;
             set
@@ -53,7 +53,7 @@ namespace Lib.Composition
             }
         }
 
-        string JasmineDts
+        string? JasmineDts
         {
             get => _jasmineDts;
             set
@@ -66,7 +66,7 @@ namespace Lib.Composition
             }
         }
 
-        List<string> ExampleSources
+        List<string>? ExampleSources
         {
             get => _exampleSources;
             set
@@ -79,7 +79,7 @@ namespace Lib.Composition
             }
         }
 
-        List<string> TestSources
+        List<string>? TestSources
         {
             get => _testSources;
             set
@@ -92,7 +92,7 @@ namespace Lib.Composition
             }
         }
 
-        string[] AdditionalSources
+        string[]? AdditionalSources
         {
             get => _additionalSources;
             set
@@ -289,12 +289,12 @@ namespace Lib.Composition
                 Result = buildResult,
                 MainResult = mainBuildResult,
                 ToCheck = new OrderedHashSet<string>(),
-                IterationId = iterationId
+                IterationId = iterationId,
             };
             try
             {
                 project.BuildCache.StartTransaction();
-                ITSCompiler compiler = null;
+                ITSCompiler? compiler = null;
                 try
                 {
                     if (!tryDetectChanges)
@@ -308,9 +308,9 @@ namespace Lib.Composition
                     }
 
                     compiler = CompilerPool.GetTs(tsProject.DiskCache, CompilerOptions);
-                    var trueTSVersion = compiler.GetTSVersion();
-                    ShowTsVersion(trueTSVersion);
-                    project.ConfigurationBuildCacheId = project.BuildCache.MapConfiguration(trueTSVersion,
+                    var trueTsVersion = compiler.GetTSVersion();
+                    ShowTsVersion(trueTsVersion);
+                    project.ConfigurationBuildCacheId = project.BuildCache.MapConfiguration(trueTsVersion,
                         JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
                             TSCompilerOptions.GetSerializerSettings()));
                 }
@@ -368,6 +368,7 @@ namespace Lib.Composition
                     }
                 }
 
+                tsProject.UsedDependencies = new HashSet<string>();
                 buildModuleCtx.Crawl();
                 noDependencyChangeDetected: ;
                 if (project.SpriteGeneration) project.SpriteGenerator.ProcessNew();

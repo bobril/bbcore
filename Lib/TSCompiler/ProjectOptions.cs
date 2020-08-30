@@ -63,8 +63,8 @@ namespace Lib.TSCompiler
         public Dictionary<string, AstNode> ExpandedDefines;
         public string MainFile;
         public string JasmineDts;
-        public List<string> TestSources;
-        public List<string> ExampleSources;
+        public List<string>? TestSources;
+        public List<string>? ExampleSources;
         public bool LiveReloadEnabled;
         public bool CoverageEnabled;
         public string TypeScriptVersion;
@@ -350,7 +350,7 @@ namespace Lib.TSCompiler
         }
 
         string _originalContent;
-        internal string[] IncludeSources;
+        internal string[]? IncludeSources;
         internal bool TypeScriptVersionOverride;
         public HashSet<int> IgnoreDiagnostic;
         public string ObsoleteMessage;

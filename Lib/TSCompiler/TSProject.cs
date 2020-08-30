@@ -20,9 +20,9 @@ namespace Lib.TSCompiler
         public int PackageJsonChangeId { get; set; }
         public bool IsRootProject { get; set; }
 
-        public HashSet<string> Dependencies;
-        public HashSet<string> DevDependencies;
-        public HashSet<string> UsedDependencies;
+        public HashSet<string>? Dependencies;
+        public HashSet<string>? DevDependencies;
+        public HashSet<string>? UsedDependencies;
         public Dictionary<string, string> Assets;
         public string? Name;
         internal int IterationId;
@@ -242,6 +242,8 @@ namespace Lib.TSCompiler
         {
             if (dir == null)
                 return null;
+            if (dir.Project != null)
+                return (TSProject)dir.Project;
             var proj = new TSProject
             {
                 Owner = dir,
