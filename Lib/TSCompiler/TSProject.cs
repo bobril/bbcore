@@ -23,7 +23,7 @@ namespace Lib.TSCompiler
         public HashSet<string>? Dependencies;
         public HashSet<string>? DevDependencies;
         public HashSet<string>? UsedDependencies;
-        public Dictionary<string, string> Assets;
+        public Dictionary<string, string>? Assets;
         public string? Name;
         internal int IterationId;
         internal BTDB.Collections.StructList<string> NegativeChecks;

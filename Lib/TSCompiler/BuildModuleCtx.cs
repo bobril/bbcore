@@ -3,7 +3,6 @@ using Lib.Utils;
 using System;
 using System.Linq;
 using Lib.Composition;
-using System.Text.RegularExpressions;
 using Njsast.SourceMap;
 using Njsast;
 using Njsast.Reader;
@@ -313,7 +312,12 @@ namespace Lib.TSCompiler
 
                 if (parentInfo!.FromModule == Owner)
                 {
-                    Owner.UsedDependencies!.Add(moduleInfo.Name!);
+                    Owner.UsedDependencies?.Add(moduleInfo.Name!);
+                    if (!Owner.Dependencies?.Contains(moduleInfo.Name!) ?? false)
+                    {
+                        parentInfo.ReportDiag(false, -12,
+                            $"Importing module {moduleInfo.Name} without being in package.json as dependency", 0, 0, 0, 0);
+                    }
                 }
 
                 if (PathUtils.GetFile(mname) != moduleInfo.Name)
