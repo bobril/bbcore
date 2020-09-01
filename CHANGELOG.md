@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Warnings about dependencies (-12 and -13) should work again. In case you have Warnings as Errors it could be breaking change.
+
 ## 1.25.0
 
 ### Added
