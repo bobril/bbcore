@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.26.1
+
 ### Fixed
 
 - Bundling of `export * as x from "y";`
