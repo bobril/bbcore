@@ -135,6 +135,12 @@ namespace Njsast.Bundler
                         return Remove;
                     }
 
+                    if (trueValue.IsRequireCall() is {} exportAsNamespace)
+                    {
+                        var resolvedName = _resolver.Invoke(_sourceFile.Name, exportAsNamespace);
+                        _sourceFile.NeedsWholeImportsFrom.AddUnique(resolvedName);
+                    }
+
                     newName = BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast.Variables!,
                         _sourceFile.Ast.CalcNonRootSymbolNames(), "");
                     if (Parent(1) != null)
