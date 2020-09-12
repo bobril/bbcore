@@ -312,7 +312,6 @@ namespace Lib.TSCompiler
 
                 if (parentInfo!.FromModule == Owner)
                 {
-                    Owner.UsedDependencies?.Add(moduleInfo.Name!);
                     if (!Owner.Dependencies?.Contains(moduleInfo.Name!) ?? false)
                     {
                         parentInfo.ReportDiag(false, -12,

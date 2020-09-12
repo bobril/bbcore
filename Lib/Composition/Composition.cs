@@ -545,7 +545,8 @@ namespace Lib.Composition
                 _compilerPool.FreeMemory().GetAwaiter();
                 proj.FillOutputByAdditionalResourcesDirectory(buildResult.Modules, _mainBuildResult);
                 IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
-                AddUnusedDependenciesMessages(proj, ref errors, ref warnings, messages);
+                if (!buildResult.HasError)
+                    AddUnusedDependenciesMessages(proj, buildResult, ref errors, ref warnings, messages);
                 if (errors == 0)
                 {
                     if (proj.Localize && bCommand.UpdateTranslations.Value)
@@ -1408,7 +1409,8 @@ namespace Lib.Composition
                         }
 
                         IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
-                        AddUnusedDependenciesMessages(proj, ref errors, ref warnings, messages);
+                        if (!buildResult.HasError)
+                            AddUnusedDependenciesMessages(proj, buildResult, ref errors, ref warnings, messages);
                         buildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
                         {
                             var duration = (DateTime.UtcNow - start).TotalSeconds;
@@ -1459,10 +1461,23 @@ namespace Lib.Composition
             });
         }
 
-        static void AddUnusedDependenciesMessages(ProjectOptions options, ref int errors, ref int warnings, List<Diagnostic> messages)
+        static void AddUnusedDependenciesMessages(ProjectOptions options, BuildResult buildResult, ref int errors,
+            ref int warnings, List<Diagnostic> messages)
         {
-            var unusedDeps = options.Owner.Dependencies.ToHashSet();
-            unusedDeps.ExceptWith(options.Owner.UsedDependencies);
+            var unusedDeps = options.Owner.Dependencies!.ToHashSet();
+            var usedDeps = options.Owner.UsedDependencies;
+            foreach (var fi in buildResult.Path2FileInfo)
+            {
+                if (fi.Value.FromModule != options.Owner) continue;
+                foreach (var dependency in fi.Value.Dependencies)
+                {
+                    if (!buildResult.Path2FileInfo.TryGetValue(dependency, out var depfi))
+                        continue;
+                    if (depfi.FromModule != null)
+                        usedDeps!.Add(depfi.FromModule.Name!);
+                }
+            }
+            unusedDeps.ExceptWith(usedDeps!);
             foreach (var unusedDep in unusedDeps)
             {
                 if (unusedDep.StartsWith("@types/", StringComparison.Ordinal))

@@ -368,8 +368,20 @@ namespace Lib.Composition
                     }
                 }
 
-                tsProject.UsedDependencies = new HashSet<string>();
                 buildModuleCtx.Crawl();
+                if (iterationId > 1)
+                {
+                    var toClear = new StructList<string>();
+                    foreach (var fi in buildResult.Path2FileInfo)
+                    {
+                        if (fi.Value.IterationId!=iterationId)
+                            toClear.Add(fi.Key);
+                    }
+                    foreach (var name in toClear)
+                    {
+                        buildResult.Path2FileInfo.Remove(name);
+                    }
+                }
                 noDependencyChangeDetected: ;
                 if (project.SpriteGeneration) project.SpriteGenerator.ProcessNew();
                 var hasError = false;

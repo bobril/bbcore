@@ -239,6 +239,14 @@ namespace Lib.TSCompiler
         public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, TSProject> buildResultModules,
             MainBuildResult buildResult)
         {
+            if (Owner.UsedDependencies == null)
+            {
+                Owner.UsedDependencies = new HashSet<string>();
+            }
+            else
+            {
+                Owner.UsedDependencies.Clear();
+            }
             var nodeModulesDir = Owner.Owner.FullPath;
             while (nodeModulesDir.Length > 0)
             {
