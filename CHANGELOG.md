@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.26.2
+
 ### Fixed
 
 - Warning -13 should behave correctly in interactive mode
