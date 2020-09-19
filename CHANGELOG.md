@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.26.4
+
 ### Fixed
 
 - Warning -12 is not shown for dev dependencies imported from files in directories named "example", "test", "spec".
