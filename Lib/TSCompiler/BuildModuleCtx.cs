@@ -316,7 +316,8 @@ namespace Lib.TSCompiler
                     {
                         var allowDevDependencies =
                                 (Owner.ProjectOptions.ExampleSources?.Contains(parentInfo.Owner!.FullPath) ?? false) ||
-                                (Owner.ProjectOptions.TestSources?.Contains(parentInfo.Owner!.FullPath) ?? false)
+                                (Owner.ProjectOptions.TestSources?.Contains(parentInfo.Owner!.FullPath) ?? false) ||
+                                (IsExampleOrSpecDir(parentInfo.Owner!.Parent!.Name))
                             ;
                         if (!allowDevDependencies || (!Owner.DevDependencies?.Contains(moduleInfo.Name!) ?? false))
                         {
@@ -364,6 +365,13 @@ namespace Lib.TSCompiler
 
                 return res.FileName;
             }
+        }
+
+        static bool IsExampleOrSpecDir(string name)
+        {
+            return name.Equals("example", StringComparison.OrdinalIgnoreCase) ||
+                   name.Equals("test", StringComparison.OrdinalIgnoreCase) ||
+                   name.Equals("spec", StringComparison.OrdinalIgnoreCase);
         }
 
         bool TryToResolveFromBuildCache(TsFileAdditionalInfo itemInfo)

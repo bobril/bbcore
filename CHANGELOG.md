@@ -2,11 +2,15 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Warning -12 is not shown for dev dependencies imported from files in directories named "example", "test", "spec".
+
 ## 1.26.3
 
 ### Fixed
 
-- Warning -12 is not shown for dev dependencies used imported from examples or tests.
+- Warning -12 is not shown for dev dependencies imported from examples or tests.
 
 ## 1.26.2
 
