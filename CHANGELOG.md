@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.26.3
+
 ### Fixed
 
 - Warning -12 is not shown for dev dependencies used imported from examples or tests.
