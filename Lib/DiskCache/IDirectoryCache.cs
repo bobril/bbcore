@@ -5,7 +5,7 @@ namespace Lib.DiskCache
 {
     public interface IDirectoryCache: IItemCache, IEnumerable<IItemCache>
     {
-        IItemCache TryGetChild(ReadOnlySpan<char> name);
+        IItemCache? TryGetChild(ReadOnlySpan<char> name);
         bool IsFake { get; set; }
         bool IsWatcherRoot { get; set; }
         bool IsLink { get; set; }

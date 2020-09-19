@@ -314,8 +314,16 @@ namespace Lib.TSCompiler
                 {
                     if (!Owner.Dependencies?.Contains(moduleInfo.Name!) ?? false)
                     {
-                        parentInfo.ReportDiag(false, -12,
-                            $"Importing module {moduleInfo.Name} without being in package.json as dependency", 0, 0, 0, 0);
+                        var allowDevDependencies =
+                                (Owner.ProjectOptions.ExampleSources?.Contains(parentInfo.Owner!.FullPath) ?? false) ||
+                                (Owner.ProjectOptions.TestSources?.Contains(parentInfo.Owner!.FullPath) ?? false)
+                            ;
+                        if (!allowDevDependencies || (!Owner.DevDependencies?.Contains(moduleInfo.Name!) ?? false))
+                        {
+                            parentInfo.ReportDiag(false, -12,
+                                $"Importing module {moduleInfo.Name} without being in package.json as dependency", 0, 0,
+                                0, 0);
+                        }
                     }
                 }
 
@@ -410,7 +418,7 @@ namespace Lib.TSCompiler
             var hashToName = new Dictionary<byte[], string>(StructuralEqualityComparer<byte[]>.Default);
             hashToName.Add(owner.HashOfContent, owner.FullPath);
             var processed = new StructList<bool>();
-            processed.RepeatAdd(false, (uint) transpilationDependencies.Count);
+            processed.RepeatAdd(false, (uint)transpilationDependencies.Count);
             bool somethingFailed;
             do
             {
@@ -419,7 +427,7 @@ namespace Lib.TSCompiler
                 for (var i = 0u; i < processed.Count; i++)
                 {
                     if (processed[i]) continue;
-                    var dep = transpilationDependencies[(int) i];
+                    var dep = transpilationDependencies[(int)i];
                     if (!hashToName.TryGetValue(dep.SourceHash, out var sourceName))
                     {
                         somethingFailed = true;
@@ -589,7 +597,7 @@ namespace Lib.TSCompiler
         {
             while (CrawledCount < ToCheck.Count)
             {
-                var fileName = ToCheck[(int) CrawledCount];
+                var fileName = ToCheck[(int)CrawledCount];
                 CrawledCount++;
 
                 CrawlFile(fileName);
@@ -716,7 +724,7 @@ namespace Lib.TSCompiler
                             {
                                 info.Output = info.Owner.Utf8Content;
                                 cssProcessor.ProcessCss(info.Owner.Utf8Content,
-                                    ((TsFileAdditionalInfo) info).Owner.FullPath, (string url, string from) =>
+                                    ((TsFileAdditionalInfo)info).Owner.FullPath, (string url, string from) =>
                                     {
                                         var urlJustName = url.Split('?', '#')[0];
                                         info.ReportTranspilationDependency(null, urlJustName, null);
@@ -831,12 +839,14 @@ namespace Lib.TSCompiler
 
                     if (text.StartsWith("resource:", StringComparison.Ordinal))
                     {
-                        return "resource:" + ResolverWithPossibleForcingResource(myctx, text.Substring("resource:".Length), true);
+                        return "resource:" +
+                               ResolverWithPossibleForcingResource(myctx, text.Substring("resource:".Length), true);
                     }
 
                     if (text.StartsWith("node_modules/", StringComparison.Ordinal))
                     {
-                        var res2 = ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false, true, forceResource, true);
+                        var res2 = ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false,
+                            true, forceResource, true);
                         return res2 == "?" ? text : res2;
                     }
 
