@@ -151,8 +151,11 @@ namespace Njsast.Bundler
                         return exportNode;
                     }
                 }
-                // This is not error because it could be just TypeScript interface
-                // return new AstSymbolRef("undefined");
+                if (!import2.Item1.Exports!.IsJustRoot && import2.Item2.Length == 1)
+                {
+                    // This is not error because it could be just TypeScript interface
+                    return new AstSymbolRef("undefined");
+                }
             }
 
             return null;

@@ -180,13 +180,14 @@ namespace Njsast.Bundler
                     }
                     else
                     {
-                        var trueValue = Transform(pea.Value.value);
                         var newVar = new AstVar(stmBody);
                         var astSymbolVar = new AstSymbolVar(stmBody, newName);
-                        astSymbolVar.Thedef = new SymbolDef(_sourceFile.Ast, astSymbolVar, trueValue);
+                        astSymbolVar.Thedef = new SymbolDef(_sourceFile.Ast, astSymbolVar, null);
                         _sourceFile.Ast.Variables!.Add(newName, astSymbolVar.Thedef);
-                        newVar.Definitions.Add(new AstVarDef(astSymbolVar, trueValue));
                         _exportName2VarNameMap[pea.Value.name] = astSymbolVar.Thedef;
+                        var trueValue = Transform(pea.Value.value);
+                        newVar.Definitions.Add(new AstVarDef(astSymbolVar, trueValue));
+                        astSymbolVar.Thedef.Init = trueValue;
                         _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name,
                             new AstSymbolRef(_sourceFile.Ast, astSymbolVar.Thedef, SymbolUsage.Unknown)));
                         return newVar;

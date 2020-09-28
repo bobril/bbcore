@@ -15,6 +15,8 @@ namespace Njsast.Bundler
 
         Val _root;
 
+        public bool IsJustRoot => _root.Children == null;
+
         public void Add(in ReadOnlySpan<string> key, T value)
         {
             this[key] = value;
