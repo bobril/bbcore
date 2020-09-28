@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.27.1
+
 ### Fixed
 
 - Compress Optimization so it shortens output code even more
