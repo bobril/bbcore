@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Njsast.Ast;
 
 namespace Njsast.Bundler
@@ -9,16 +8,14 @@ namespace Njsast.Bundler
         public AstToplevel Ast;
         public StructList<string> Requires = new StructList<string>();
         public StructList<string> LazyRequires = new StructList<string>();
-        public AstSymbol? WholeExport;
         public StructList<SelfExport> SelfExports = new StructList<SelfExport>();
-        public IDictionary<string, AstNode>? Exports = null;
+        public StringTrie<AstNode>? Exports = null;
         public StructList<string> PlainJsDependencies = new StructList<string>();
         public string? PartOfBundle;
-        public StructList<string> NeedsWholeImportsFrom = new StructList<string>();
-        public bool NeedsWholeExport;
         public bool OnlyWholeExport;
-        /// list of file name and export name
-        public StructList<(string, string)> NeedsImports = new StructList<(string, string)>();
+
+        /// list of file name and export name path (think namespaces). Empty array means need whole module imports as object.
+        public StructList<(string, string[])> NeedsImports = new StructList<(string, string[])>();
 
         internal SourceFile(string name, AstToplevel ast)
         {
@@ -26,27 +23,29 @@ namespace Njsast.Bundler
             Ast = ast;
         }
 
-
-        public void CreateWholeExport()
+        public void CreateWholeExport(string[] needPath)
         {
-            if (WholeExport != null) return;
-            var wholeExportName = BundlerHelpers.MakeUniqueName("__export_$", Ast.Variables!, Ast.CalcNonRootSymbolNames(),
-                "_" + BundlerHelpers.FileNameToIdent(Name));
-            var init = new AstObject(Ast);
-            foreach (var (propName, value) in Exports!)
+            Exports!.EnsureKeyExists(needPath, tuples =>
             {
-                init.Properties.Add(new AstObjectKeyVal(new AstString(propName), value));
-            }
+                var wholeExportName = BundlerHelpers.MakeUniqueName("__export_$", Ast.Variables!,
+                    Ast.CalcNonRootSymbolNames(),
+                    "_" + BundlerHelpers.FileNameToIdent(Name));
+                var init = new AstObject(Ast);
+                foreach (var (propName, value) in tuples)
+                {
+                    init.Properties.Add(new AstObjectKeyVal(new AstString(propName), value));
+                }
 
-            var wholeExport = new AstSymbolVar(Ast, wholeExportName);
-            var symbolDef = new SymbolDef(Ast, wholeExport, init);
-            wholeExport.Thedef = symbolDef;
-            var varDef = new AstVarDef(wholeExport, init);
-            var astVar = new AstVar(Ast);
-            astVar.Definitions.Add(varDef);
-            Ast.Body.Add(astVar);
-            Ast.Variables!.Add(wholeExportName, symbolDef);
-            WholeExport = new AstSymbolRef(Ast, symbolDef, SymbolUsage.Unknown);
+                var wholeExport = new AstSymbolVar(Ast, wholeExportName);
+                var symbolDef = new SymbolDef(Ast, wholeExport, init);
+                wholeExport.Thedef = symbolDef;
+                var varDef = new AstVarDef(wholeExport, init);
+                var astVar = new AstVar(Ast);
+                astVar.Definitions.Add(varDef);
+                Ast.Body.Add(astVar);
+                Ast.Variables!.Add(wholeExportName, symbolDef);
+                return new AstSymbolRef(Ast, symbolDef, SymbolUsage.Unknown);
+            });
         }
     }
 
@@ -82,7 +81,24 @@ namespace Njsast.Bundler
 
         public override string ToString()
         {
-            return $"*: {SourceName}";
+            return $"* from {SourceName}";
+        }
+    }
+
+    class ExportAsNamespaceSelfExport : SelfExport
+    {
+        internal readonly string SourceName;
+        internal readonly string AsName;
+
+        internal ExportAsNamespaceSelfExport(string sourceName, string asName)
+        {
+            SourceName = sourceName;
+            AsName = asName;
+        }
+
+        public override string ToString()
+        {
+            return $"* as {AsName} from {SourceName}";
         }
     }
 }

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Improved bundling and compress optimizations (by updating to latest Njsast)
+
 ## 1.26.4
 
 ### Fixed

@@ -117,7 +117,7 @@ namespace Njsast.Ast
             return null;
         }
 
-        public static (string name, AstNode? value)? IsExportsAssign(this AstNode node, bool allowLocalExports = false)
+        public static (string name, AstNode value)? IsExportsAssign(this AstNode node, bool allowLocalExports = false)
         {
             if (node is AstSimpleStatement simpleStatement)
             {

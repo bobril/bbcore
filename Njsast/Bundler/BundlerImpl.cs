@@ -66,16 +66,17 @@ namespace Njsast.Bundler
                 }
 
                 _splitMap[splitName] = new SplitInfo(splitName)
-                { ShortName = _ctx.GenerateBundleName(splitName), PropName = "ERROR", IsMainSplit = true };
+                    {ShortName = _ctx.GenerateBundleName(splitName), PropName = "ERROR", IsMainSplit = true};
             }
 
             stopwatch.Stop();
             _ctx.ReportTime("Parse", stopwatch.Elapsed);
             foreach (var (_, sourceFile) in _cache)
             {
-                if (sourceFile.NeedsWholeExport && sourceFile.WholeExport == null)
+                foreach (var (file, path) in sourceFile.NeedsImports)
                 {
-                    sourceFile.CreateWholeExport();
+                    _cache.TryGetValue(file, out var targetFile);
+                    targetFile!.CreateWholeExport(path);
                 }
             }
 
@@ -208,11 +209,7 @@ namespace Njsast.Bundler
                 foreach (var lazyRequire in f.LazyRequires)
                 {
                     var targetFile = _cache[lazyRequire];
-                    if (targetFile.WholeExport == null)
-                    {
-                        targetFile.CreateWholeExport();
-                    }
-
+                    targetFile.CreateWholeExport(Array.Empty<string>());
                     var targetSplit = _splitMap[targetFile.PartOfBundle!];
                     if (targetSplit.ExportsAllUsedFromLazyBundles.ContainsKey(lazyRequire)) continue;
                     if (targetSplit.FullName == lazyRequire)
@@ -246,26 +243,12 @@ namespace Njsast.Bundler
                         new ImportFromOtherBundle(fromSplit, fromFile, exportName);
                     fromSplit.ExportsUsedFromLazyBundles[astNode] = BundlerHelpers.NumberToIdent(lazySplitCounter++);
                 }
-
-                foreach (var fromName in f.NeedsWholeImportsFrom)
-                {
-                    var fromFile = _cache[fromName];
-                    var fromSplit = _splitMap[fromFile.PartOfBundle!];
-                    if (sourceSplit == fromSplit)
-                        continue;
-                    fromFile.CreateWholeExport();
-                    var astNode = fromFile.WholeExport!;
-                    sourceSplit.ImportsFromOtherBundles[astNode] =
-                        new ImportFromOtherBundle(fromSplit, fromFile, null);
-                    fromSplit.ExportsUsedFromLazyBundles[astNode] = BundlerHelpers.NumberToIdent(lazySplitCounter++);
-                }
-
             }
 
             foreach (var (_, split) in _splitMap)
             {
                 if (PartToMainFilesMap.ContainsKey(split.FullName)) continue;
-                ExpandDirectSplitsForcedLazy(split, split, new HashSet<SplitInfo> { split });
+                ExpandDirectSplitsForcedLazy(split, split, new HashSet<SplitInfo> {split});
             }
         }
 
@@ -286,7 +269,8 @@ namespace Njsast.Bundler
             {
                 var fromSourceFile = _cache[fromSourceName];
                 topLevelAst.Body.Add(new AstSimpleStatement(
-                    new AstAssign(new AstDot(new AstSymbolRef("__bbb"), propName), fromSourceFile.WholeExport!)));
+                    new AstAssign(new AstDot(new AstSymbolRef("__bbb"), propName),
+                        fromSourceFile.Exports![Array.Empty<string>()])));
             }
 
             foreach (var (node, propName) in splitInfo.ExportsUsedFromLazyBundles)
@@ -300,8 +284,10 @@ namespace Njsast.Bundler
         {
             foreach (var (astNode, importFromOtherBundle) in split.ImportsFromOtherBundles)
             {
-                var name = "__" + importFromOtherBundle.Name + "_" + BundlerHelpers.FileNameToIdent(importFromOtherBundle.FromFile.Name);
-                name = BundlerHelpers.MakeUniqueName(name, toplevel.Variables!, toplevel.CalcNonRootSymbolNames(), null);
+                var name = "__" + string.Join('_', importFromOtherBundle.Name) + "_" +
+                           BundlerHelpers.FileNameToIdent(importFromOtherBundle.FromFile.Name);
+                name = BundlerHelpers.MakeUniqueName(name, toplevel.Variables!, toplevel.CalcNonRootSymbolNames(),
+                    null);
                 var shortenedPropertyName = importFromOtherBundle.FromSplit.ExportsUsedFromLazyBundles[astNode];
                 var newVar = new AstVar(toplevel);
                 var astSymbolVar = new AstSymbolVar(toplevel, name);
@@ -346,7 +332,8 @@ namespace Njsast.Bundler
         void BeforeAdd(AstToplevel top)
         {
             var transformer =
-                new BundlerTreeTransformer(_cache, _ctx, _currentSourceFile!, top.Variables!, top.CalcNonRootSymbolNames(), _currentFileIdent!,
+                new BundlerTreeTransformer(_cache, _ctx, _currentSourceFile!, top.Variables!,
+                    top.CalcNonRootSymbolNames(), _currentFileIdent!,
                     _splitMap, _splitMap[_currentSourceFile!.PartOfBundle!]);
             transformer.Transform(top);
         }
@@ -409,17 +396,34 @@ namespace Njsast.Bundler
                 Check(r, r);
             }
 
-            foreach (var r in cached.NeedsWholeImportsFrom)
-            {
-                _cache[r].NeedsWholeExport = true;
-            }
-
-            cached.Exports = new Dictionary<string, AstNode>();
+            cached.Exports ??= new StringTrie<AstNode>();
             foreach (var exp in cached.SelfExports)
             {
                 if (exp is SimpleSelfExport simpleExp)
                 {
-                    cached.Exports![simpleExp.Name] = simpleExp.Symbol;
+                    cached.Exports![new[] {simpleExp.Name}] = simpleExp.Symbol;
+                }
+                else if (exp is ExportAsNamespaceSelfExport asNamespaceExp)
+                {
+                    var asNamespaceModule = _cache[asNamespaceExp.SourceName];
+                    if (asNamespaceModule.Exports != null)
+                    {
+                        foreach (var asNamespaceModuleExport in asNamespaceModule.Exports)
+                        {
+                            cached.Exports[Concat(asNamespaceExp.AsName, asNamespaceModuleExport.Key)] =
+                                asNamespaceModuleExport.Value;
+                        }
+                    }
+                    else
+                    {
+                        foreach (var reexModuleSelfExport in asNamespaceModule.SelfExports)
+                        {
+                            if (reexModuleSelfExport is SimpleSelfExport simpleExp2)
+                            {
+                                cached.Exports![new[] {simpleExp2.Name}] = simpleExp2.Symbol;
+                            }
+                        }
+                    }
                 }
                 else if (exp is ExportStarSelfExport starExp)
                 {
@@ -437,7 +441,7 @@ namespace Njsast.Bundler
                         {
                             if (reexModuleSelfExport is SimpleSelfExport simpleExp2)
                             {
-                                cached.Exports![simpleExp2.Name] = simpleExp2.Symbol;
+                                cached.Exports![new[] {simpleExp2.Name}] = simpleExp2.Symbol;
                             }
                         }
                     }
@@ -445,6 +449,14 @@ namespace Njsast.Bundler
             }
 
             _order.Add(cached);
+        }
+
+        static string[] Concat(string first, in ReadOnlySpan<string> rest)
+        {
+            var res = new string[rest.Length + 1];
+            res[0] = first;
+            rest.CopyTo(res.AsSpan(1));
+            return res;
         }
     }
 }

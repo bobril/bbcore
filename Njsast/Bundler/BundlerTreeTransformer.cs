@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using Njsast.Ast;
 
 namespace Njsast.Bundler
@@ -14,11 +14,15 @@ namespace Njsast.Bundler
         readonly HashSet<string> _nonRootSymbolNames;
         readonly Dictionary<string, SplitInfo> _splitMap;
         readonly string _suffix;
-        readonly Dictionary<SymbolDef, SourceFile> _reqSymbolDefMap = new Dictionary<SymbolDef, SourceFile>();
+
+        readonly Dictionary<SymbolDef, (SourceFile, string[])> _reqSymbolDefMap =
+            new Dictionary<SymbolDef, (SourceFile, string[])>();
+
         readonly SplitInfo _splitInfo;
 
         public BundlerTreeTransformer(Dictionary<string, SourceFile> cache, IBundlerCtx ctx,
-            SourceFile currentSourceFile, Dictionary<string, SymbolDef> rootVariables, HashSet<string> nonRootSymbolNames, string suffix,
+            SourceFile currentSourceFile, Dictionary<string, SymbolDef> rootVariables,
+            HashSet<string> nonRootSymbolNames, string suffix,
             Dictionary<string, SplitInfo> splitMap, SplitInfo splitInfo)
         {
             _cache = cache;
@@ -31,26 +35,46 @@ namespace Njsast.Bundler
             _splitInfo = splitInfo;
         }
 
-        protected override AstNode? Before(AstNode node, bool inList)
+        public (SourceFile, string[])? DetectImport(AstNode? node)
         {
-            if (node is AstLabel)
-                return node;
-            if (node is AstVarDef varDef)
+            switch (node)
             {
-                if (varDef.Value.IsRequireCall() is { } reqName)
+                case AstCall _ when node.IsRequireCall() is { } reqName:
                 {
-                    var reqSymbolDef = varDef.Name.IsSymbolDef()!;
                     var resolvedName = _ctx.ResolveRequire(reqName, _currentSourceFile!.Name);
                     if (!_cache.TryGetValue(resolvedName, out var reqSource))
                         throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
                                                        _currentSourceFile!.Name);
-                    _reqSymbolDefMap[reqSymbolDef] = reqSource;
-                    if (_currentSourceFile!.NeedsWholeImportsFrom.IndexOf(resolvedName) >= 0)
-                    {
-                        var theDef = CheckIfNewlyUsedSymbolIsUnique(reqSource.WholeExport!);
-                        return new AstVarDef(varDef, varDef.Name, new AstSymbolRef(node, theDef, SymbolUsage.Read));
-                    }
+                    return (reqSource, Array.Empty<string>());
+                }
+                case AstSymbolRef symbolRef when _reqSymbolDefMap.TryGetValue(symbolRef.Thedef!, out var res):
+                    return res;
+                case AstPropAccess propAccess when propAccess.PropertyAsString is {} propName &&
+                                                   DetectImport(propAccess.Expression) is {} leftImport:
+                    return (leftImport.Item1, Concat(leftImport.Item2, propName));
+            }
+            return null;
+        }
 
+        static string[] Concat(string[] left, string right)
+        {
+            var leftLength = left.Length;
+            var res = new string[leftLength + 1];
+            left.AsSpan().CopyTo(res);
+            res[leftLength] = right;
+            return res;
+        }
+
+        protected override AstNode? Before(AstNode node, bool inList)
+        {
+            if (node is AstLabel)
+                return node;
+
+            if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is {} reqSymbolDef && reqSymbolDef.IsSingleInit && _currentSourceFile.Exports!.Values().All(n => n.IsSymbolDef() != reqSymbolDef))
+            {
+                if (DetectImport(varDef.Value) is { } import)
+                {
+                    _reqSymbolDefMap[reqSymbolDef] = import;
                     return Remove;
                 }
             }
@@ -67,8 +91,7 @@ namespace Njsast.Bundler
                 if (!_cache.TryGetValue(resolvedName, out var reqSource))
                     throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
                                                    _currentSourceFile!.Name);
-                Debug.Assert(_currentSourceFile!.NeedsWholeImportsFrom.IndexOf(resolvedName) >= 0);
-                var theDef = CheckIfNewlyUsedSymbolIsUnique(reqSource.WholeExport!);
+                var theDef = CheckIfNewlyUsedSymbolIsUnique((AstSymbol)reqSource.Exports![Array.Empty<string>()]);
                 return new AstSymbolRef(node, theDef, SymbolUsage.Read);
             }
 
@@ -107,48 +130,29 @@ namespace Njsast.Bundler
                 return result;
             }
 
-            if (node is AstSymbolRef symbolRef && symbolRef.IsSymbolDef() is {} wholeImport)
+            if (DetectImport(node) is {} import2)
             {
-                if (!_reqSymbolDefMap.TryGetValue(wholeImport, out var sourceFile))
-                    return null;
-                var theDef = CheckIfNewlyUsedSymbolIsUnique(sourceFile.WholeExport!);
-                return new AstSymbolRef(node, theDef, SymbolUsage.Read);
-            }
-
-            if (node is AstPropAccess propAccess)
-            {
-                if (propAccess.Expression.IsSymbolDef() is {} symbolDef)
+                if (import2.Item1.OnlyWholeExport && import2.Item2.Length == 1 && import2.Item2[0] == "default")
                 {
-                    if (!_reqSymbolDefMap.TryGetValue(symbolDef, out var sourceFile))
-                        return null;
-                    var propName = propAccess.PropertyAsString;
-                    if (propName != null)
+                    var theDef =
+                        CheckIfNewlyUsedSymbolIsUnique((AstSymbol)import2.Item1.Exports![new ReadOnlySpan<string>()]);
+                    return new AstSymbolRef(node, theDef, SymbolUsage.Read);
+                }
+                if (import2.Item1.Exports!.TryFindLongestPrefix(import2.Item2, out var matchLen, out var exportNode))
+                {
+                    if (matchLen == import2.Item2.Length)
                     {
-                        if (sourceFile.OnlyWholeExport && propName == "default")
+                        if (exportNode is AstSymbol trueSymbol)
                         {
-                            var theDef = CheckIfNewlyUsedSymbolIsUnique(sourceFile.WholeExport!);
+                            var theDef = CheckIfNewlyUsedSymbolIsUnique(trueSymbol);
                             return new AstSymbolRef(node, theDef, SymbolUsage.Read);
                         }
-                        if (sourceFile.Exports!.TryGetValue(propName, out var exportedSymbol))
-                        {
-                            if (exportedSymbol is AstSymbol trueSymbol)
-                            {
-                                var theDef = CheckIfNewlyUsedSymbolIsUnique(trueSymbol);
-                                return new AstSymbolRef(node, theDef, SymbolUsage.Read);
-                            }
 
-                            return exportedSymbol;
-                        }
-
-                        if (sourceFile.WholeExport != null)
-                        {
-                            return null;
-                        }
-
-                        // This is not error because it could be just TypeScript interface
-                        return new AstSymbolRef("undefined");
+                        return exportNode;
                     }
                 }
+                // This is not error because it could be just TypeScript interface
+                // return new AstSymbolRef("undefined");
             }
 
             return null;
@@ -175,7 +179,7 @@ namespace Njsast.Bundler
         {
             if (node is AstSimpleStatement simple && simple.Body == Remove)
                 return Remove;
-            if (node is AstVar @var && @var.Definitions.Count == 0)
+            if (node is AstVar var && var.Definitions.Count == 0)
                 return Remove;
             return node;
         }

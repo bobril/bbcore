@@ -51,6 +51,10 @@ namespace Njsast.Compress
     public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
     {
         bool NeedValue = true;
+        // Symbol is considered cloned when there is just single initialization by constant symbol
+        // var a = 42; var b = a;
+        // b could be replaced by a and that what this map contains _clonedSymbolMap[Symbol"b"] = Symbol"a";
+        readonly RefDictionary<SymbolDef, SymbolDef> _clonedSymbolMap = new RefDictionary<SymbolDef, SymbolDef>();
 
         protected override AstNode? Before(AstNode node, bool inList)
         {
@@ -64,6 +68,14 @@ namespace Njsast.Compress
                     }
                     case AstWith _:
                         return node;
+                    case AstSymbolRef symbolRef:
+                    {
+                        if (symbolRef.Usage == SymbolUsage.Read && _clonedSymbolMap.TryGetValue(symbolRef.Thedef!, out var replaceSymbol))
+                        {
+                            return new AstSymbolRef(node, replaceSymbol, SymbolUsage.Read);
+                        }
+                        return node;
+                    }
                     case AstDefun defun:
                     {
                         if (defun.Name!.IsSymbolDef()!.OnlyDeclared)
@@ -481,6 +493,10 @@ namespace Njsast.Compress
                             if (varDef.Value is AstLambda && def.References.Count==CountReferences(varDef.Value, def))
                             {
                                 return Remove;
+                            }
+                            if (varDef.Value.IsSymbolDef() is {} rightSymbolDef && def.IsSingleInit && rightSymbolDef.IsSingleInit)
+                            {
+                                _clonedSymbolMap.GetOrAddValueRef(def) = rightSymbolDef;
                             }
                         }
                         return node;

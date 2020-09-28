@@ -1,9 +1,10 @@
-﻿using Njsast.Ast;
+﻿using System;
+using Njsast.Ast;
 using Njsast.Scope;
 
 namespace Njsast
 {
-    public class SymbolDef
+    public class SymbolDef: IEquatable<SymbolDef>
     {
         public string Name;
         public string? MangledName;
@@ -105,6 +106,11 @@ namespace Njsast
             }
             else
                 (MangledName, MangledIdx) = ((string, int))Scope.NextMangled(options, this);
+        }
+
+        public bool Equals(SymbolDef? other)
+        {
+            return ReferenceEquals(this, other);
         }
     }
 }

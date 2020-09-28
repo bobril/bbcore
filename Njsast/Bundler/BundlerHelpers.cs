@@ -38,12 +38,14 @@ namespace Njsast.Bundler
             {
                 (toplevel, symbol) = Helpers.EmitVarDefineJson(content, name);
                 toplevel.FigureOutScope();
-                return new SourceFile(name, toplevel) { WholeExport = symbol };
+                var exports = new StringTrie<AstNode>();
+                exports.Add(new ReadOnlySpan<string>(), symbol);
+                return new SourceFile(name, toplevel) {Exports = exports};
             }
 
             var commentListener = new CommentListener();
             toplevel =
-                new Parser(new Options { SourceFile = name, OnComment = commentListener.OnComment }, content).Parse();
+                new Parser(new Options {SourceFile = name, OnComment = commentListener.OnComment}, content).Parse();
             commentListener.Walk(toplevel);
             sourceMap?.ResolveInAst(toplevel);
             UnwrapIIFE(toplevel);
@@ -56,7 +58,13 @@ namespace Njsast.Bundler
                     (toplevel, symbol) = Helpers.EmitCommonJsWrapper(toplevel);
                 }
                 toplevel.FigureOutScope();
-                var sourceFile = new SourceFile(name, toplevel) { WholeExport = symbol, OnlyWholeExport = true };
+                var exports = new StringTrie<AstNode>();
+                exports.Add(new ReadOnlySpan<string>(), symbol);
+                var sourceFile = new SourceFile(name, toplevel)
+                {
+                    Exports = exports,
+                    OnlyWholeExport = true
+                };
                 new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
                 return sourceFile;
             }
@@ -98,7 +106,8 @@ namespace Njsast.Bundler
             }
         }
 
-        public static string MakeUniqueName(string name, IReadOnlyDictionary<string, SymbolDef> existing, HashSet<string> nonRootSymbolNames,
+        public static string MakeUniqueName(string name, IReadOnlyDictionary<string, SymbolDef> existing,
+            HashSet<string> nonRootSymbolNames,
             string? suffix)
         {
             if (!existing.ContainsKey(name) && !nonRootSymbolNames.Contains(name)) return name;
@@ -147,11 +156,14 @@ namespace Njsast.Bundler
                 jsAst.FigureOutScope();
             }
             // is just var x = ...;
-            if (jsAst.Body.Count == 1 && jsAst.Body[0] is AstVar astVar && astVar.Definitions.Count == 1 && astVar.Definitions[0] is { } astVarDef && astVarDef.Name is AstSymbolVar globalSymbol)
+            if (jsAst.Body.Count == 1 && jsAst.Body[0] is AstVar astVar && astVar.Definitions.Count == 1 &&
+                astVar.Definitions[0] is { } astVarDef && astVarDef.Name is AstSymbolVar globalSymbol)
             {
                 var globalName = globalSymbol.Name;
                 // (function() { ... })()
-                if (astVarDef.Value is AstCall astCall && astCall.Args.Count==0 && astCall.Expression is AstFunction astFunction && astFunction.ArgNames.Count==0 && astFunction.Body.Count>2)
+                if (astVarDef.Value is AstCall astCall && astCall.Args.Count == 0 &&
+                    astCall.Expression is AstFunction astFunction && astFunction.ArgNames.Count == 0 &&
+                    astFunction.Body.Count > 2)
                 {
                     var body = astFunction.Body;
                     // ends with return x;
@@ -159,8 +171,11 @@ namespace Njsast.Bundler
                         astSymbolRef.Name == globalName)
                     {
                         // starts with window.x = window.x || ...;
-                        if (body[0] is AstSimpleStatement astSimpleStatement && astSimpleStatement.Body is AstAssign astAssign && astAssign.Operator == Operator.Assignment &&
-                            IsWindowX(astAssign.Left, globalName) && astAssign.Right is AstBinary astBinary && astBinary.Operator == Operator.LogicalOr && IsWindowX(astBinary.Left, globalName))
+                        if (body[0] is AstSimpleStatement astSimpleStatement &&
+                            astSimpleStatement.Body is AstAssign astAssign &&
+                            astAssign.Operator == Operator.Assignment &&
+                            IsWindowX(astAssign.Left, globalName) && astAssign.Right is AstBinary astBinary &&
+                            astBinary.Operator == Operator.LogicalOr && IsWindowX(astBinary.Left, globalName))
                         {
                             astVarDef.Value = astAssign;
                             body[0] = astVar;
@@ -178,7 +193,7 @@ namespace Njsast.Bundler
         static bool IsWindowX(AstNode node, string xName)
         {
             return node is AstDot astDot && astDot.Expression.IsSymbolDef().IsGlobalSymbol() == "window" &&
-                   (string) astDot.Property == xName;
+                   (string)astDot.Property == xName;
         }
 
         public static void WrapByIIFE(AstToplevel topLevelAst)
@@ -197,7 +212,8 @@ namespace Njsast.Bundler
             if (topLevelAst.Body.Count != 1)
                 return;
             var node = topLevelAst.Body[0];
-            if (node is AstSimpleStatement simple && simple.Body is AstCall call && call.Args.Count == 0 && call.Expression is AstFunction fnc &&
+            if (node is AstSimpleStatement simple && simple.Body is AstCall call && call.Args.Count == 0 &&
+                call.Expression is AstFunction fnc &&
                 fnc.ArgNames.Count == 0)
             {
                 topLevelAst.Body.ReplaceItemAt(0, fnc.Body.AsReadOnlySpan());
