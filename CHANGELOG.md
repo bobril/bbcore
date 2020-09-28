@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Compress Optimization so it shortens output code even more
+- Regression in 1.27.0 with export of TypeScript Interfaces by name and with using export recursively
+
 ## 1.27.0
 
 ### Added

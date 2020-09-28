@@ -70,9 +70,9 @@ namespace Njsast.Compress
                         return node;
                     case AstSymbolRef symbolRef:
                     {
-                        if (symbolRef.Usage == SymbolUsage.Read && _clonedSymbolMap.TryGetValue(symbolRef.Thedef!, out var replaceSymbol))
+                        if (!symbolRef.Usage.HasFlag(SymbolUsage.Write) && _clonedSymbolMap.TryGetValue(symbolRef.Thedef!, out var replaceSymbol))
                         {
-                            return new AstSymbolRef(node, replaceSymbol, SymbolUsage.Read);
+                            return new AstSymbolRef(node, replaceSymbol, symbolRef.Usage);
                         }
                         return node;
                     }
@@ -499,7 +499,7 @@ namespace Njsast.Compress
                                 _clonedSymbolMap.GetOrAddValueRef(def) = rightSymbolDef;
                             }
                         }
-                        return node;
+                        goto default;
                     }
                     default:
                         NeedValue = true;
