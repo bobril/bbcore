@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.28.0
+
 ### Added
 
 - Support for export { x } from "y"; and export { x as y } from "z"; patterns in bundler.
