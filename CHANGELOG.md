@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Added
+
+- Support for export { x } from "y"; and export { x as y } from "z"; patterns in bundler.
+- Updated build-in tslib.
+
+### Fixed
+
+- Regression in bundler from 1.27 when module exporting just types and then some module reexports some type from it.
+
 ## 1.27.1
 
 ### Fixed

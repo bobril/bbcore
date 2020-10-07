@@ -101,4 +101,23 @@ namespace Njsast.Bundler
             return $"* as {AsName} from {SourceName}";
         }
     }
+
+    class ReexportSelfExport : SelfExport
+    {
+        internal readonly string SourceName;
+        internal readonly string AsName;
+        internal readonly string[] Path;
+
+        internal ReexportSelfExport(string asName, string sourceName, string[] path)
+        {
+            AsName = asName;
+            SourceName = sourceName;
+            Path = path;
+        }
+
+        public override string ToString()
+        {
+            return $"{string.Join('.',Path)} as {AsName} from {SourceName}";
+        }
+    }
 }

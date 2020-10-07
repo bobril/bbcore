@@ -85,6 +85,22 @@ namespace Njsast.Bundler
                         return Remove;
                     }
 
+                    if (call.Expression.IsSymbolDef().IsGlobalSymbol() == "__createBinding" && call.Args.Count >= 3 &&
+                        call.Args[0].IsSymbolDef().IsExportsSymbol() && call.Args[2] is AstString bindingName &&
+                        DetectImport(call.Args[1]) is {} bindModule && bindModule.Item2.Length == 0)
+                    {
+                        if (call.Args.Count == 3)
+                        {
+                            _sourceFile.SelfExports.Add(new ReexportSelfExport(bindingName.Value, bindModule.Item1, Concat(bindModule.Item2, bindingName.Value)));
+                            return Remove;
+                        }
+                        if (call.Args.Count == 4 && call.Args[3] is AstString asName)
+                        {
+                            _sourceFile.SelfExports.Add(new ReexportSelfExport(asName.Value, bindModule.Item1, Concat(bindModule.Item2, bindingName.Value)));
+                            return Remove;
+                        }
+                    }
+
                     var callSymbol = call.Expression.IsSymbolDef();
                     if ((callSymbol == _reexportSymbol || callSymbol.IsTsReexportSymbol()) && call.Args.Count >= 1)
                     {

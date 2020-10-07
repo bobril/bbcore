@@ -403,6 +403,15 @@ namespace Njsast.Bundler
                 {
                     cached.Exports![new[] {simpleExp.Name}] = simpleExp.Symbol;
                 }
+                else if (exp is ReexportSelfExport reexportExp)
+                {
+                    var module = _cache[reexportExp.SourceName];
+                    if (module.Exports != null)
+                    {
+                        if (module.Exports.TryFindLongestPrefix(reexportExp.Path.AsSpan(), out _, out var node))
+                            cached.Exports![new[] {reexportExp.AsName}] = node;
+                    }
+                }
                 else if (exp is ExportAsNamespaceSelfExport asNamespaceExp)
                 {
                     var asNamespaceModule = _cache[asNamespaceExp.SourceName];
