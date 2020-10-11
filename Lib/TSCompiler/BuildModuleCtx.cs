@@ -83,7 +83,7 @@ namespace Lib.TSCompiler
                         return ResolveModule(dc.Name);
                     }
 
-                    module = TSProject.Create(dc, Owner.DiskCache, Owner.Logger, dc.Name);
+                    module = TSProject.Create(dc, Owner.DiskCache, Owner.Logger, name);
                     module.LoadProjectJson(true, Owner.ProjectOptions);
                     if (module.PackageJsonChangeId != -1)
                     {
@@ -317,7 +317,7 @@ namespace Lib.TSCompiler
                         var allowDevDependencies =
                                 (Owner.ProjectOptions.ExampleSources?.Contains(parentInfo.Owner!.FullPath) ?? false) ||
                                 (Owner.ProjectOptions.TestSources?.Contains(parentInfo.Owner!.FullPath) ?? false) ||
-                                (IsExampleOrSpecDir(parentInfo.Owner!.Parent!.Name))
+                                IsExampleOrSpecDir(Owner.Owner, parentInfo.Owner!.Parent!)
                             ;
                         if (!allowDevDependencies || (!Owner.DevDependencies?.Contains(moduleInfo.Name!) ?? false))
                         {
@@ -328,7 +328,7 @@ namespace Lib.TSCompiler
                     }
                 }
 
-                if (PathUtils.GetFile(mname) != moduleInfo.Name)
+                if (mname != moduleInfo.Name)
                 {
                     parentInfo.ReportDiag(false, -2,
                         "Module import has wrong casing '" + mname + "' on disk '" + moduleInfo.Name + "'", 0, 0, 0, 0);
@@ -365,6 +365,17 @@ namespace Lib.TSCompiler
 
                 return res.FileName;
             }
+        }
+
+        static bool IsExampleOrSpecDir(IDirectoryCache rootProjectDir, IDirectoryCache? dir)
+        {
+            while (dir != null)
+            {
+                if (IsExampleOrSpecDir(dir.Name)) return true;
+                dir = dir.Parent;
+                if (dir == rootProjectDir) break;
+            }
+            return false;
         }
 
         static bool IsExampleOrSpecDir(string name)
