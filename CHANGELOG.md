@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- tsconfig.json Newline option is named correctly `lf`.
+
 ## 1.28.1
 
 ### Fixed

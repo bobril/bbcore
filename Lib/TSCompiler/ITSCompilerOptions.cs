@@ -30,7 +30,9 @@ namespace Lib.TSCompiler
 
     public enum NewLineKind
     {
+        [EnumMember(Value = "crlf")]
         CarriageReturnLineFeed = 0,
+        [EnumMember(Value = "lf")]
         LineFeed = 1,
     }
 
