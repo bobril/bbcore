@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.28.1
+
 ### Fixed
 
 - Warning -12 and -13 for @ scoped modules and detecting special named directories ("example", "test", "spec") in any parents directories as well.
