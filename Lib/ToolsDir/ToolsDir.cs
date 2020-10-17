@@ -74,7 +74,7 @@ namespace Lib.ToolsDir
         public string TypeScriptLibDir { get; private set; }
         public string TypeScriptVersion { get; private set; }
 
-        string _typeScriptJsContent;
+        string? _typeScriptJsContent;
 
         public string TypeScriptJsContent
         {
@@ -84,6 +84,11 @@ namespace Lib.ToolsDir
                 {
                     _typeScriptJsContent = File.ReadAllText(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
 
+                    // Patch TS 3.9 and 4.0 to fix https://github.com/microsoft/TypeScript/issues/38691
+                    _typeScriptJsContent = _typeScriptJsContent.Replace(
+                        "ts.append(statements, factory.createExpressionStatement(ts.reduceLeft(currentModuleInfo.exportedNames, function (prev, nextId) { return factory.createAssignment(factory.createPropertyAccessExpression(factory.createIdentifier(\"exports\"), factory.createIdentifier(ts.idText(nextId))), prev); }, factory.createVoidZero())));",
+                        "");
+
                     // Patch TS to generate d.ts also from node_modules directory (it makes much faster typecheck when changing something in node_modules)
                     // function isSourceFileFromExternalLibrary must return always false!
                     _typeScriptJsContent =
@@ -91,23 +96,9 @@ namespace Lib.ToolsDir
                     // Patch TypeScript compiler to never generate useless __esmodule = true
                     _typeScriptJsContent =
                         _typeScriptJsContent.Replace("(shouldEmitUnderscoreUnderscoreESModule())", "(false)");
-                    // Patch https://github.com/Microsoft/TypeScript/commit/c557131cac4379fc3e685514d44b6b82f1f642fb
-                    var bugPos = _typeScriptJsContent.IndexOf(
-                        "// As the type information we would attempt to lookup to perform ellision is potentially unavailable for the synthesized nodes");
-                    if (bugPos > 0)
-                    {
-                        var bugPos3 = _typeScriptJsContent.IndexOf("visitEachChild", bugPos);
-                        var bugPos2 = _typeScriptJsContent.IndexOf("return node;", bugPos);
-                        // but only when it is already not fixed
-                        if (bugPos3 < 0 || bugPos3 > bugPos2)
-                        {
-                            _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos2,
-                                "if (node.transformFlags & 2) { return ts.visitEachChild(node, visitor, context); };");
-                        }
-                    }
 
                     // Patch
-                    bugPos = _typeScriptJsContent.IndexOf("function checkUnusedClassMembers(");
+                    var bugPos = _typeScriptJsContent.IndexOf("function checkUnusedClassMembers(");
                     var bugPos22 = bugPos < 0
                         ? -1
                         : _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos);
@@ -116,25 +107,6 @@ namespace Lib.ToolsDir
                     {
                         _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos22, "case 207:");
                     }
-
-                    // Patch https://github.com/Microsoft/TypeScript/issues/22403 in 2.8.1
-                    bugPos = _typeScriptJsContent.IndexOf(
-                        "if (links.target && links.target !== unknownSymbol && links.target !== resolvingSymbol) {");
-                    if (bugPos > 0)
-                    {
-                        var bugPos2a =
-                            _typeScriptJsContent.IndexOf(
-                                "links.nameType = getLiteralTypeFromPropertyName(links.target);", bugPos);
-                        if (bugPos2a > 0 && bugPos2a - bugPos < 400)
-                        {
-                            _typeScriptJsContent = _typeScriptJsContent.Remove(bugPos, bugPos2a - bugPos);
-                            _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos,
-                                "if (links.target && links.target !== unknownSymbol && links.target !== resolvingSymbol && links.target.escapedName === prop.escapedName) {");
-                        }
-                    }
-
-                    // patch https://github.com/microsoft/TypeScript/issues/33142 in 3.6.2
-                    _typeScriptJsContent = _typeScriptJsContent.Replace("process.argv", "\"\"");
 
                     // Remove too defensive check for TS2742 - it is ok in Bobril-build to have relative paths into node_modules when in sandboxes
                     _typeScriptJsContent = _typeScriptJsContent.Replace(".indexOf(\"/node_modules/\") >= 0", "===null");

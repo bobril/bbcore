@@ -2,6 +2,18 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 4.0.3
+
+### Added
+
+- Workaround for TS 3.9 and TS 4.0 bug https://github.com/microsoft/TypeScript/issues/38691
+
+### Fixed
+
+- exportStar helper now binds exports making them mockable.
+
 ## 1.28.2
 
 ### Fixed

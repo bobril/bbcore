@@ -189,8 +189,10 @@ var __generator = function (thisArg, body) {
   }
 };
 
-var __exportStar = function (m, exports) {
-  for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+var __exportStar = function (m, o) {
+  for (var p in m)
+    if (p !== "default" && !Object.prototype.hasOwnProperty.call(o, p))
+      __createBinding(o, m, p);
 };
 
 var __createBinding = function (o, m, k, k2) {
