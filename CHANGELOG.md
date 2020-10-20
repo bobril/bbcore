@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.30.0
+
 ### Added
 
 - consider also imports from "examples" and "tests" directories as allowed from dev.
