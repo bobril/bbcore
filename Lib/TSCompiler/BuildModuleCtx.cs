@@ -381,7 +381,9 @@ namespace Lib.TSCompiler
         static bool IsExampleOrSpecDir(string name)
         {
             return name.Equals("example", StringComparison.OrdinalIgnoreCase) ||
+                   name.Equals("examples", StringComparison.OrdinalIgnoreCase) ||
                    name.Equals("test", StringComparison.OrdinalIgnoreCase) ||
+                   name.Equals("tests", StringComparison.OrdinalIgnoreCase) ||
                    name.Equals("spec", StringComparison.OrdinalIgnoreCase);
         }
 

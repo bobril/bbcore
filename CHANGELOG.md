@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- consider also imports from "examples" and "tests" directories as allowed from dev.
+
 ## 1.29.0
 
 ### Changed
