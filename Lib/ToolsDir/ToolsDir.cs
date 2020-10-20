@@ -87,7 +87,7 @@ namespace Lib.ToolsDir
                     // Patch TS 3.9 and 4.0 to fix https://github.com/microsoft/TypeScript/issues/38691
                     _typeScriptJsContent = _typeScriptJsContent.Replace(
                         "ts.append(statements, factory.createExpressionStatement(ts.reduceLeft(currentModuleInfo.exportedNames, function (prev, nextId) { return factory.createAssignment(factory.createPropertyAccessExpression(factory.createIdentifier(\"exports\"), factory.createIdentifier(ts.idText(nextId))), prev); }, factory.createVoidZero())));",
-                        "");
+                        " var chunkSize = 50;\n for (var i = 0; i < currentModuleInfo.exportedNames.length; i += chunkSize) {\n ts.append(statements, factory.createExpressionStatement(ts.reduceLeft(currentModuleInfo.exportedNames.slice(i, i + chunkSize), function (prev, nextId) { return factory.createAssignment(factory.createPropertyAccessExpression(factory.createIdentifier(\"exports\"), factory.createIdentifier(ts.idText(nextId))), prev); }, factory.createVoidZero())));\n}");
 
                     // Patch TS to generate d.ts also from node_modules directory (it makes much faster typecheck when changing something in node_modules)
                     // function isSourceFileFromExternalLibrary must return always false!

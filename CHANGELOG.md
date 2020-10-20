@@ -5,6 +5,7 @@
 ### Added
 
 - consider also imports from "examples" and "tests" directories as allowed from dev.
+- proper patch for TS 3.9 and TS 4.0 bug https://github.com/microsoft/TypeScript/issues/38691 - it is really needed for some code.
 
 ## 1.29.0
 
