@@ -17,8 +17,24 @@ namespace Njsast.ConstEval
             _ctx = ctx;
         }
 
+        static bool IsExportsAssignVoid0(AstNode? node)
+        {
+            while (true)
+            {
+                if (node == null) return false;
+                var pea = node.IsExportsAssign();
+                if (!pea.HasValue) return node is AstUnary unary && unary.Operator == Operator.Void;
+                node = pea!.Value.value;
+            }
+        }
+
         protected override void Visit(AstNode node)
         {
+            if (IsExportsAssignVoid0(node))
+            {
+                StopDescending();
+                return;
+            }
             if (node is AstDot dot)
             {
                 StopDescending();
@@ -33,7 +49,7 @@ namespace Njsast.ConstEval
                 }
             }
 
-            if (node is AstCall call && call.Expression is AstSymbol symbol && symbol.Name == "__export" && call.Args.Count == 1 && call.Args[0] is AstCall)
+            if (node is AstCall call && call.Expression is AstSymbol symbol && (symbol.Name == "__exportStar" && call.Args.Count == 2 || symbol.Name == "__export" && call.Args.Count == 1) && call.Args[0] is AstCall)
             {
                 var module = call.Args[0].ConstValue(_ctx);
                 if (module is JsModule)

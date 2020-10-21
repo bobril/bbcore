@@ -202,6 +202,9 @@ var __createBinding = function (o, m, k, k2) {
     get: function () {
       return m[k];
     },
+    set: function (v) {
+      m[k] = v;
+    },
   });
 };
 

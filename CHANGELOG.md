@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- createBinding is not just getter but also setter, allows to mock imports from export star.
+- constant evaluation works with TS 4.0 commonjs patterns.
+
 ## 1.30.0
 
 ### Added
