@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.30.1
+
 ### Fixed
 
 - createBinding is not just getter but also setter, allows to mock imports from export star.
