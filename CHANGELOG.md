@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- auto patching TypeScript to force it to use `__createBinding` helper for `export { x } from "y"` pattern. That's allow mocking of it, also it should improve release bundling.
+
 ## 1.30.1
 
 ### Fixed

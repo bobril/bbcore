@@ -84,6 +84,12 @@ namespace Lib.ToolsDir
                 {
                     _typeScriptJsContent = File.ReadAllText(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
 
+                    // Need always use __createBinding helper (allows mocking of exports) even though using ES5 target replace:
+                    // if (languageVersion === ScriptTarget.ES3) {
+                    // by
+                    // if (true) {
+                    _typeScriptJsContent = _typeScriptJsContent.Replace("if (languageVersion === 0 /* ES3 */) {","if (true) {");
+
                     // Patch TS 3.9 and 4.0 to fix https://github.com/microsoft/TypeScript/issues/38691
                     _typeScriptJsContent = _typeScriptJsContent.Replace(
                         "ts.append(statements, factory.createExpressionStatement(ts.reduceLeft(currentModuleInfo.exportedNames, function (prev, nextId) { return factory.createAssignment(factory.createPropertyAccessExpression(factory.createIdentifier(\"exports\"), factory.createIdentifier(ts.idText(nextId))), prev); }, factory.createVoidZero())));",

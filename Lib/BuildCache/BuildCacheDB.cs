@@ -37,7 +37,7 @@ namespace Lib.BuildCache
         public List<DependencyTriplet> TranspilationDependencies { get; set; }
     }
 
-    [PersistedName("ts2")]
+    [PersistedName("ts3")]
     public interface ITSFileBuildCacheTable: IRelation<TSFileBuildCache>
     {
         TSFileBuildCache FindByIdOrDefault(byte[] contentHash, uint configurationId);
