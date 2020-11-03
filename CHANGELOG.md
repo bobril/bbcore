@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- another pattern for reexport `import { X as Y } from "Z"; export { Y };` works in bundler.
+
 ## 1.30.2
 
 ### Fixed

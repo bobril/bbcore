@@ -85,6 +85,24 @@ namespace Njsast.Bundler
                         return Remove;
                     }
 
+                    // Object.defineProperty(exports, "ExportName", {
+                    //    enumerable: true,
+                    //    get: function() {
+                    //      return SomeImportDotPath;
+                    //    }
+                    // });
+                    if (call.Expression is AstDot astDot &&
+                        astDot.Expression.IsSymbolDef().IsGlobalSymbol() == "Object" &&
+                        astDot.PropertyAsString == "defineProperty"
+                        && call.Args.Count == 3 && call.Args[0].IsSymbolDef().IsExportsSymbol() &&
+                        call.Args[1] is AstString exportName && call.Args[2] is AstObject astObject
+                        && astObject.Properties.Count == 2 && astObject.Properties.Last.Value is AstLambda astFunc && astFunc.Body.Last is AstReturn astRet
+                        && DetectImport(astRet.Value) is {} bindPath)
+                    {
+                        _sourceFile.SelfExports.Add(new ReexportSelfExport(exportName.Value, bindPath.Item1, bindPath.Item2)); 
+                        return Remove;
+                    }
+
                     if (call.Expression.IsSymbolDef().IsGlobalSymbol() == "__createBinding" && call.Args.Count >= 3 &&
                         call.Args[0].IsSymbolDef().IsExportsSymbol() && call.Args[2] is AstString bindingName &&
                         DetectImport(call.Args[1]) is {} bindModule && bindModule.Item2.Length == 0)
