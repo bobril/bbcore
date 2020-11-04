@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.31.0
+
 ### Added
 
 - define `global` as `window` in bundler even for common modules
