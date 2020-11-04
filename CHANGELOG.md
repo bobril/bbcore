@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- crash in special case
+
 ## 1.30.3
 
 ### Fixed
