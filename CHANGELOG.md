@@ -5,6 +5,7 @@
 ### Fixed
 
 - another pattern for reexport `import { X as Y } from "Z"; export { Y };` works in bundler.
+- fixed regression with patterns like `var x = ImportNamespace.Enum.Option`
 
 ## 1.30.2
 

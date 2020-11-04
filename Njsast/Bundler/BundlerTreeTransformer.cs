@@ -75,7 +75,7 @@ namespace Njsast.Bundler
                 if (DetectImport(varDef.Value) is { } import)
                 {
                     _reqSymbolDefMap[reqSymbolDef] = import;
-                    return Remove;
+                    if (import.Item2.Length == 0) return Remove;
                 }
             }
 
