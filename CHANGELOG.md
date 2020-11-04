@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- define `global` as `window` in bundler even for common modules
+
 ### Fixed
 
 - crash in special case

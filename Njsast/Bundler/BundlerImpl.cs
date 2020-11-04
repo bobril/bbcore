@@ -143,6 +143,8 @@ namespace Njsast.Bundler
                         , BeforeAdd);
                 }
 
+                IfNeededPolyfillGlobal(topLevelAst);
+
                 AddExportsFromLazyBundle(splitInfo, topLevelAst);
 
                 BundlerHelpers.WrapByIIFE(topLevelAst);
@@ -198,6 +200,17 @@ namespace Njsast.Bundler
                     _ctx.ReportTime("Print", stopwatch.Elapsed);
                     _ctx.WriteBundle(splitInfo.ShortName!, content);
                 }
+            }
+        }
+
+        /// If there is global variable named `global`, then define it as `window`, because we are bundling for browser
+        static void IfNeededPolyfillGlobal(AstToplevel topLevelAst)
+        {
+            if (topLevelAst.Globals!.ContainsKey("global"))
+            {
+                var astVar = new AstVar(topLevelAst);
+                astVar.Definitions.Add(new AstVarDef(new AstSymbolVar("global"), new AstSymbolRef("window")));
+                topLevelAst.Body.Insert(0) = astVar;
             }
         }
 
