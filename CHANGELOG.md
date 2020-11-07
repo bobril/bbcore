@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.32.0
+
 ### Added
 
 - updated to lastest Njsast - removes unused classes.
