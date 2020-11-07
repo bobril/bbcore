@@ -31,7 +31,7 @@ namespace Njsast.Ast
             var parent = output.Parent();
             var needsParens = parent is AstBinary ||
                                parent is AstUnary ||
-                               (parent is AstCall call && this == call.Expression);
+                               parent is AstCall call && this == call.Expression;
             if (needsParens)
                 output.Print("(");
             if (Async)

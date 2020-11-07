@@ -552,6 +552,11 @@ namespace Njsast.Compress
 
         static bool IsWellKnownPureFunction(AstNode callExpression)
         {
+            if (callExpression is AstFunction classFactory && (classFactory.Pure ?? false))
+            {
+                return true;
+            }
+
             if (callExpression is AstPropAccess propAccess)
             {
                 var globalSymbol = propAccess.Expression.IsSymbolDef().IsGlobalSymbol();
@@ -566,7 +571,7 @@ namespace Njsast.Compress
         {
             return globalSymbol switch
             {
-                "Object" => (propName switch
+                "Object" => propName switch
                 {
                     "constructor" => true,
                     "create" => true,
@@ -591,8 +596,8 @@ namespace Njsast.Compress
                     "valueOf" => true,
                     "values" => true,
                     _ => false
-                }),
-                "Math" => (propName switch
+                },
+                "Math" => propName switch
                 {
                     "abs" => true,
                     "acos" => true,
@@ -629,7 +634,7 @@ namespace Njsast.Compress
                     "tanh" => true,
                     "trunc" => true,
                     _ => false
-                }),
+                },
                 _ => false
             };
         }
@@ -638,7 +643,7 @@ namespace Njsast.Compress
         {
             return globalSymbol switch
             {
-                "Object" => (propName switch
+                "Object" => propName switch
                 {
                     "assign" => true,
                     "constructor" => true,
@@ -670,8 +675,8 @@ namespace Njsast.Compress
                     "valueOf" => true,
                     "values" => true,
                     _ => false
-                }),
-                "Math" => (propName switch
+                },
+                "Math" => propName switch
                 {
                     "E" => true,
                     "LN10" => true,
@@ -717,7 +722,7 @@ namespace Njsast.Compress
                     "tanh" => true,
                     "trunc" => true,
                     _ => false
-                }),
+                },
                 _ => false
             };
         }

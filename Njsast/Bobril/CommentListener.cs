@@ -51,7 +51,7 @@ namespace Njsast.Bobril
                 for (var i = 0u; i < _classStartsAfterPositions.Count; i++)
                 {
                     var pos = _classStartsAfterPositions[i];
-                    if (pos.Line == func.Start.Line && ((uint)(func.Start.Column - pos.Column)) < 10)
+                    if (pos.Line == func.Start.Line && (uint)(func.Start.Column - pos.Column) < 10)
                     {
                         func.Pure = true;
                         return;

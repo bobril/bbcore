@@ -546,7 +546,7 @@ namespace Njsast.SourceMap
 
             if (line == _line)
             {
-                while ((col > _inOutputCol) && !_nextIsNewLine)
+                while (col > _inOutputCol && !_nextIsNewLine)
                 {
                     if (EndOfContent) break;
                     Next();

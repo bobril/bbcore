@@ -577,7 +577,7 @@ namespace Njsast.Bobril
                 if (astNode is AstCall call && call.Args.Count >= 2)
                 {
                     var c = DetectModuleExportOfCall(call.Expression);
-                    return (c != null && c.ModuleName == "bobril" && c.ExportName == "createElement");
+                    return c != null && c.ModuleName == "bobril" && c.ExportName == "createElement";
                 }
 
                 return false;

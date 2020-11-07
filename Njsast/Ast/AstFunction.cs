@@ -64,7 +64,7 @@ namespace Njsast.Ast
             var trickyDef = symbolDef.Orig[0] is AstSymbolFunarg && Name != null ? Name.Thedef : null;
 
             // the function's MangledName is null when KeepFunctionNames is true
-            var trickyName = trickyDef != null ? (trickyDef.MangledName ?? trickyDef.Name) : null;
+            var trickyName = trickyDef != null ? trickyDef.MangledName ?? trickyDef.Name : null;
 
             while (true)
             {

@@ -110,8 +110,8 @@ namespace Njsast.Ast
                 var pp = OutputContext.Precedence(po);
                 var sp = OutputContext.Precedence(Operator);
                 if (pp > sp
-                    || (pp == sp
-                        && (this == binary.Right || po == Operator.Power)))
+                    || pp == sp
+                    && (this == binary.Right || po == Operator.Power))
                 {
                     return true;
                 }
@@ -245,7 +245,7 @@ namespace Njsast.Ast
         {
             if (left is string leftStr && right is string rightStr)
             {
-                return (string.Compare(leftStr, rightStr, StringComparison.Ordinal) < 0)
+                return string.Compare(leftStr, rightStr, StringComparison.Ordinal) < 0
                     ? AstTrue.BoxedTrue
                     : AstFalse.BoxedFalse;
             }
