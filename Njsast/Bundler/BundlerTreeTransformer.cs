@@ -76,6 +76,8 @@ namespace Njsast.Bundler
                 {
                     _reqSymbolDefMap[reqSymbolDef] = import;
                     if (import.Item2.Length == 0) return Remove;
+                    if (!import.Item1.Exports!.TryFindLongestPrefix(import.Item2, out _, out _))
+                        return Remove;
                 }
             }
 

@@ -6,6 +6,8 @@
 
 Bundler crash in variable rename in special case.
 
+Wrongly not removing `var directly_unused = import.namespace`;
+
 ## 1.32.0
 
 ### Added
