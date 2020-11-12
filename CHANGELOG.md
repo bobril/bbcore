@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.32.1
+
 ### Fixed
 
 Bundler crash in variable rename in special case.
