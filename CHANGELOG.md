@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Bundler crash in variable rename in special case.
+
 ## 1.32.0
 
 ### Added

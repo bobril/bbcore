@@ -39,7 +39,7 @@ namespace Njsast.Bundler
                     index++;
                     newName = name + _suffix;
                     if (index > 1) newName += index.ToString();
-                } while (_nonRootSymbolNames.Contains(newName) || _variables.ContainsKey(newName));
+                } while (_nonRootSymbolNames.Contains(newName) || _variables.ContainsKey(newName) || scope.Variables.ContainsKey(newName));
 
                 Helpers.RenameSymbol(symbol, newName);
                 _variables[newName] = symbol;
