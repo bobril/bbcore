@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Correctly handling `\n` in translations imports.
+
 ## 1.32.1
 
 ### Fixed

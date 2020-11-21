@@ -4,6 +4,7 @@ using Lib.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -51,6 +52,7 @@ namespace Lib.Translation
             {
                 // ignore any errors
             }
+
             _changed = true;
         }
 
@@ -91,44 +93,50 @@ namespace Lib.Translation
                                 state = LoaderState.Message;
                                 break;
                             default:
-                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" + reader.LineNumber + " Pos:" + reader.LinePosition);
+                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
+                                                    reader.LineNumber + " Pos:" + reader.LinePosition);
                         }
+
                         break;
                     case JsonToken.String:
                         switch (state)
                         {
                             case LoaderState.LangString:
-                                lang = (string)reader.Value;
+                                lang = (string) reader.Value;
                                 _loadedLanguages.Add(lang);
                                 valueList = AddLanguage(lang);
                                 state = LoaderState.BeforeItem;
                                 break;
                             case LoaderState.Message:
-                                message = (string)reader.Value;
+                                message = (string) reader.Value;
                                 state = LoaderState.Hint;
                                 break;
                             case LoaderState.Hint:
-                                hint = (string)reader.Value;
+                                hint = (string) reader.Value;
                                 state = LoaderState.Flags;
                                 break;
                             case LoaderState.Value:
-                                value = (string)reader.Value;
+                                value = (string) reader.Value;
                                 state = LoaderState.AfterValue;
                                 break;
                             default:
-                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" + reader.LineNumber + " Pos:" + reader.LinePosition);
+                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
+                                                    reader.LineNumber + " Pos:" + reader.LinePosition);
                         }
+
                         break;
                     case JsonToken.Integer:
                         switch (state)
                         {
                             case LoaderState.Flags:
-                                withParams = (((int)((long)reader.Value)) & 1) != 0;
+                                withParams = (((int) ((long) reader.Value)) & 1) != 0;
                                 state = LoaderState.Value;
                                 break;
                             default:
-                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" + reader.LineNumber + " Pos:" + reader.LinePosition);
+                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
+                                                    reader.LineNumber + " Pos:" + reader.LinePosition);
                         }
+
                         break;
                     case JsonToken.Null:
                         switch (state)
@@ -142,8 +150,10 @@ namespace Lib.Translation
                                 state = LoaderState.AfterValue;
                                 break;
                             default:
-                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" + reader.LineNumber + " Pos:" + reader.LinePosition);
+                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
+                                                    reader.LineNumber + " Pos:" + reader.LinePosition);
                         }
+
                         break;
                     case JsonToken.EndArray:
                         switch (state)
@@ -160,17 +170,22 @@ namespace Lib.Translation
                                 while (valueList.Count <= id) valueList.Add(null);
                                 if (value != null)
                                 {
-                                    valueList[(int)id] = value;
+                                    valueList[(int) id] = value;
                                 }
+
                                 break;
                             default:
-                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" + reader.LineNumber + " Pos:" + reader.LinePosition);
+                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
+                                                    reader.LineNumber + " Pos:" + reader.LinePosition);
                         }
+
                         break;
                     default:
-                        throw new Exception("Unexpected token " + reader.TokenType + " Line:" + reader.LineNumber + " Pos:" + reader.LinePosition);
+                        throw new Exception("Unexpected token " + reader.TokenType + " Line:" + reader.LineNumber +
+                                            " Pos:" + reader.LinePosition);
                 }
             }
+
             if (state != LoaderState.End)
             {
                 throw new Exception("Unexpected end of file when in state " + state);
@@ -200,7 +215,7 @@ namespace Lib.Translation
                 for (var i = 0; i < UsedIds.Count; i++)
                 {
                     jw.WriteStartArray();
-                    var idx = (int)UsedIds[i];
+                    var idx = (int) UsedIds[i];
                     jw.WriteValue(Id2Key[idx].Message);
                     jw.WriteValue(Id2Key[idx].Hint);
                     jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
@@ -222,6 +237,7 @@ namespace Lib.Translation
                     jw.WriteEndArray();
                 }
             }
+
             jw.WriteEndArray();
             jw.Flush();
             File.WriteAllText(PathUtils.Join(dir, lang + ".json"), tw.ToString(), new UTF8Encoding(false));
@@ -236,21 +252,23 @@ namespace Lib.Translation
                 valueList = new List<string>();
                 Lang2ValueList.Add(lang, valueList);
             }
+
             return valueList;
         }
 
-        public bool ExportLanguages(string filePath, bool exportOnlyUntranslated = true, string? specificLanguage = null, string? specificPath = null)
+        public bool ExportLanguages(string filePath, bool exportOnlyUntranslated = true,
+            string? specificLanguage = null, string? specificPath = null)
         {
             if (!string.IsNullOrEmpty(specificPath))
                 specificLanguage = GetLanguageFromSpecificPath(specificPath);
 
             var contentBuilder = new StringBuilder();
-            List<string> values = null;
+            List<string>? values = null;
 
             if (!string.IsNullOrEmpty(specificLanguage))
                 values = Lang2ValueList[specificLanguage];
 
-            for(int id = 0; id < Id2Key.Count; id++)
+            for (var id = 0; id < Id2Key.Count; id++)
             {
                 var trs = Id2Key[id];
                 if (string.IsNullOrEmpty(specificLanguage) && string.IsNullOrEmpty(specificPath))
@@ -267,10 +285,9 @@ namespace Lib.Translation
                 }
                 else
                 {
-                    if(exportOnlyUntranslated && values[id] != null)
+                    if (exportOnlyUntranslated && values[id] != null)
                         continue;
                     contentBuilder.Append(ExportLanguageItem(trs.Message, trs.Hint));
-
                 }
             }
 
@@ -289,18 +306,18 @@ namespace Lib.Translation
             return JArray.Parse(content).First.ToString();
         }
 
-        string ExportLanguageItem(string source, string hint)
+        string ExportLanguageItem(string source, string? hint)
         {
             var content = string.Empty;
             var stringifyHint = hint;
             if (stringifyHint != null)
             {
                 stringifyHint = JsonConvert.SerializeObject(hint);
-                stringifyHint = stringifyHint.Substring(1, stringifyHint.Length - 2).Replace(@"\\n",@"\n");
+                stringifyHint = stringifyHint.Substring(1, stringifyHint.Length - 2).Replace(@"\\n", @"\n");
             }
 
             var stringifySource = JsonConvert.SerializeObject(source);
-            stringifySource = stringifySource.Substring(1, stringifySource.Length - 2).Replace(@"\\n",@"\n");
+            stringifySource = stringifySource.Substring(1, stringifySource.Length - 2).Replace(@"\\n", @"\n");
 
             content += $"S:{stringifySource}\n";
             content += $"I:{stringifyHint}\n";
@@ -308,16 +325,17 @@ namespace Lib.Translation
             return content;
         }
 
-        public uint AddToDB(string message, string hint, bool withParams)
+        public uint AddToDB(string message, string? hint, bool withParams)
         {
             if (hint == "") hint = null;
             var key = new TranslationKey(message, hint, withParams);
             if (!Key2Id.TryGetValue(key, out var id))
             {
-                id = (uint)Id2Key.Count;
+                id = (uint) Id2Key.Count;
                 Id2Key.Add(key);
                 Key2Id.Add(key, id);
             }
+
             return id;
         }
 
@@ -327,8 +345,9 @@ namespace Lib.Translation
             {
                 return res;
             }
+
             _changed = true;
-            res = (uint)UsedIds.Count;
+            res = (uint) UsedIds.Count;
             UsedIds.Add(id);
             UsedIdMap.Add(id, res);
             return res;
@@ -344,7 +363,8 @@ namespace Lib.Translation
                     var langInit = tools.GetLocaleDef(p.Key);
                     if (langInit == null) continue;
                     var sw = new StringWriter();
-                    var posLoc1 = langInit.IndexOf("bobrilRegisterTranslations(", StringComparison.Ordinal) + "bobrilRegisterTranslations(".Length;
+                    var posLoc1 = langInit.IndexOf("bobrilRegisterTranslations(", StringComparison.Ordinal) +
+                                  "bobrilRegisterTranslations(".Length;
                     var posLoc2 = langInit.IndexOf(",", posLoc1, StringComparison.Ordinal);
                     langInit = langInit.Substring(0, posLoc1) + "\'" + p.Key + "\'" + langInit.Substring(posLoc2);
                     sw.Write(langInit);
@@ -352,13 +372,15 @@ namespace Lib.Translation
                     jw.WriteStartArray();
                     for (var i = 0; i < UsedIds.Count; i++)
                     {
-                        var idx = (int)UsedIds[i];
+                        var idx = (int) UsedIds[i];
                         jw.WriteValue(((idx < p.Value.Count) ? p.Value[idx] : null) ?? Id2Key[idx].Message);
                     }
+
                     jw.WriteEndArray();
                     sw.Write(")");
                     _outputJsCache[p.Key.ToLowerInvariant() + ".js"] = sw.ToString();
                 }
+
                 // scope
                 {
                     var sw = new StringWriter();
@@ -367,17 +389,19 @@ namespace Lib.Translation
                     jw.WriteStartArray();
                     for (var i = 0; i < UsedIds.Count; i++)
                     {
-                        var idx = (int)UsedIds[i];
+                        var idx = (int) UsedIds[i];
                         var key = Id2Key[idx];
                         var val = key.Message + "\x9" + (key.WithParams ? "1" : "0") + (key.Hint ?? "");
                         jw.WriteValue(val);
                     }
+
                     jw.WriteEndArray();
                     sw.Write(")");
                     _outputJsCache["l10nkeys.js"] = sw.ToString();
                 }
                 _changed = false;
             }
+
             foreach (var i in _outputJsCache)
             {
                 var outfn = i.Key;
@@ -394,17 +418,21 @@ namespace Lib.Translation
             var res = _messageParser.Parse(message);
             if (res is ErrorAst)
             {
-                return (ErrorAst)res;
+                return (ErrorAst) res;
             }
+
             if (knownParams != null && knownParams.Count > 0)
             {
                 var p = new HashSet<string>();
                 res.GatherParams(p);
                 if (!p.SetEquals(knownParams))
                 {
-                    return new ErrorAst("Parameters does not match [" + string.Join(", ", p) + "] != [" + string.Join(", ", knownParams) + "]", 0, 0, 0);
+                    return new ErrorAst(
+                        "Parameters does not match [" + string.Join(", ", p) + "] != [" +
+                        string.Join(", ", knownParams) + "]", 0, 0, 0);
                 }
             }
+
             return null;
         }
 
@@ -422,7 +450,7 @@ namespace Lib.Translation
 
             try
             {
-                if(!HasLanguage(language))
+                if (!HasLanguage(language))
                     throw new Exception($"Language {language} does not exist. Probably file name is not valid.");
 
                 ImportTranslatedLanguageInternal(pathFrom, (source, hint, target) =>
@@ -467,26 +495,25 @@ namespace Lib.Translation
             return true;
         }
 
-        void ImportTranslatedLanguageInternal(string pathFrom, Action<string, string, string> action)
+        void ImportTranslatedLanguageInternal(string pathFrom, Action<string, string?, string> action)
         {
             var content = _fsAbstraction.ReadAllUtf8(pathFrom);
             content = content.Replace("\r\n", "\n").Replace("\r", "\n");
             var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-            for (int i = 0; i < lines.Length; i+=3)
+            for (int i = 0; i < lines.Length; i += 3)
             {
                 if (lines[i][0] != 'S' || lines[i][1] != ':')
-                    throw new Exception("Invalid file format. (" + lines[i] + ")");
-                if (lines[i+1][0] != 'I' || lines[i+1][1] != ':')
-                    throw new Exception("Invalid file format. (" + lines[i+1] + ")");
-                if (lines[i+2][0] != 'T' || lines[i+2][1] != ':')
-                    throw new Exception("Invalid file format. (" + lines[i+2] + ")");
+                    throw new Exception("Invalid file format (Line expected to start with S:). (" + lines[i] + ")");
+                if (lines[i + 1][0] != 'I' || lines[i + 1][1] != ':')
+                    throw new Exception("Invalid file format (Line expected to start with I:). (" + lines[i + 1] + ")");
+                if (lines[i + 2][0] != 'T' || lines[i + 2][1] != ':')
+                    throw new Exception("Invalid file format (Line expected to start with T:). (" + lines[i + 2] + ")");
 
                 var source = lines[i].Substring(2);
                 var hint = lines[i + 1].Substring(2);
                 if (hint == "") hint = null;
                 var target = lines[i + 2].Substring(2);
-                string Sanitize(string input) => input?.Replace("\\\"", "\"")?.Replace("\\\\", "\\");
 
                 source = Sanitize(source);
                 hint = Sanitize(hint);
@@ -496,12 +523,16 @@ namespace Lib.Translation
             }
         }
 
+
+        [return: NotNullIfNotNull("input")]
+        static string? Sanitize(string? input) =>
+            input?.Replace("\\\"", "\"").Replace("\\\\", "\\").Replace("\\n", "\n");
+
         public string GetLanguageFromSpecificFile(string specificPath)
         {
             var content = _fsAbstraction.ReadAllUtf8(specificPath);
             var parsed = JArray.Parse(content);
-            return parsed.First.ToString();
-
+            return parsed.First!.ToString();
         }
 
         public bool UnionExportedLanguage(string file1, string file2, string outputFile)

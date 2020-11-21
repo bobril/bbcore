@@ -2,9 +2,9 @@
 
 namespace Lib.Translation
 {
-    public struct TranslationKey : IEquatable<TranslationKey>
+    public readonly struct TranslationKey : IEquatable<TranslationKey>
     {
-        public TranslationKey(string message, string hint, bool withParams)
+        public TranslationKey(string message, string? hint, bool withParams)
         {
             Message = message;
             Hint = hint;
@@ -12,7 +12,7 @@ namespace Lib.Translation
         }
 
         public readonly string Message;
-        public readonly string Hint;
+        public readonly string? Hint;
         public readonly bool WithParams;
 
         public bool Equals(TranslationKey other)
@@ -22,7 +22,7 @@ namespace Lib.Translation
 
         public override int GetHashCode()
         {
-            return Message.GetHashCode() * 31 + (Hint != null ? Hint.Length : 0) * 2 + (WithParams ? 1 : 0);
+            return Message.GetHashCode() * 31 + (Hint?.Length ?? 0) * 2 + (WithParams ? 1 : 0);
         }
     }
 }
