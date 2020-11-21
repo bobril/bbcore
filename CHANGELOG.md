@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.32.2
+
 ### Fixed
 
 Correctly handling `\n` in translations imports.
