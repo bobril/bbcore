@@ -8,6 +8,8 @@
 
 - Updated dependencies like Chakra.
 
+- Support for `noUncheckedIndexedAccess`
+
 ### Changed
 
 - Default TypeScript version is 4.1.2

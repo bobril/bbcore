@@ -85,6 +85,7 @@ namespace Lib.TSCompiler
         bool? noImplicitAny { get; set; }
         bool? noImplicitReturns { get; set; }
         bool? noImplicitThis { get; set; }
+        bool? noUncheckedIndexedAccess { get; set; }
         bool? noUnusedLocals { get; set; }
         bool? noUnusedParameters { get; set; }
         bool? noImplicitUseStrict { get; set; }

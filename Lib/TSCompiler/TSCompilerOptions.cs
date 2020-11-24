@@ -45,6 +45,7 @@ namespace Lib.TSCompiler
         public bool? noImplicitAny { get; set; }
         public bool? noImplicitReturns { get; set; }
         public bool? noImplicitThis { get; set; }
+        public bool? noUncheckedIndexedAccess { get; set; }
         public bool? noUnusedLocals { get; set; }
         public bool? noUnusedParameters { get; set; }
         public bool? noImplicitUseStrict { get; set; }
@@ -142,6 +143,7 @@ namespace Lib.TSCompiler
                 noImplicitUseStrict = noImplicitUseStrict,
                 noLib = noLib,
                 noResolve = noResolve,
+                noUncheckedIndexedAccess = noUncheckedIndexedAccess,
                 noUnusedLocals = noUnusedLocals,
                 noUnusedParameters = noUnusedParameters,
                 outDir = outDir,
@@ -258,6 +260,8 @@ namespace Lib.TSCompiler
                 noResolve = with.noResolve;
             if (with.noStrictGenericChecks != null)
                 noStrictGenericChecks = with.noStrictGenericChecks;
+            if (with.noUncheckedIndexedAccess != null)
+                noUncheckedIndexedAccess = with.noUncheckedIndexedAccess;
             if (with.noUnusedLocals != null)
                 noUnusedLocals = with.noUnusedLocals;
             if (with.noUnusedParameters != null)
