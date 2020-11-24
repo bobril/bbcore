@@ -23,7 +23,7 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         public CommandLineArgumentString Lang { get; } = new CommandLineArgumentString(description: "specify language for export", words: new[] { "-l", "--lang" });
 
-        public CommandLineArgumentStrings Union { get; } = new CommandLineArgumentStrings(description: "make union from paths <sourcePath1,sourcePath2,destinationPath>", words: new[] { "-u", "--union" }, valuesCount: 3);
+        public CommandLineArgumentsDynamicStrings Union { get; } = new CommandLineArgumentsDynamicStrings(description: "make union from paths <sourcePath1 sourcePath2 ... sourcePathN destinationPath>", words: new[] { "-u", "--union" });
 
         public CommandLineArgumentStrings Subtract { get; } = new CommandLineArgumentStrings(description: "make subtract of paths <sourcePath1,sourcePath2,destinationPath>", words: new[] { "-s", "--subtract" }, valuesCount: 3);
     }

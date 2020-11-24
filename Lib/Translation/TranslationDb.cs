@@ -535,15 +535,21 @@ namespace Lib.Translation
             return parsed.First!.ToString();
         }
 
-        public bool UnionExportedLanguage(string file1, string file2, string outputFile)
+        public bool UnionExportedLanguage(IList<string> files)
         {
             var keys = new HashSet<TranslationKey>();
 
             void AddData(string source, string hint, string target) =>
                 keys.Add(new TranslationKey(source, hint, false));
+            
+            var outputFile = files.Last();
+            var langFiles = files.SkipLast(1);
 
-            ImportTranslatedLanguageInternal(file1, AddData);
-            ImportTranslatedLanguageInternal(file2, AddData);
+            foreach (var file in langFiles)
+            {
+                
+                ImportTranslatedLanguageInternal(file, AddData);
+            }
 
             var strBuilder = new StringBuilder();
             foreach (var key in keys)
