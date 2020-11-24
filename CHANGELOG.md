@@ -4,7 +4,13 @@
 
 ### Added
 
-`bb t -u` command now supports any number of input files to merge. (Contributed by krewi1)
+- `bb t -u` command now supports any number of input files to merge. (Contributed by krewi1)
+
+- Updated dependencies like Chakra.
+
+### Changed
+
+- Default TypeScript version is 4.1.2
 
 ## 1.32.2
 

@@ -29,7 +29,7 @@ namespace Lib.TSCompiler
 {
     public class ProjectOptions
     {
-        public const string DefaultTypeScriptVersion = "4.0.3";
+        public const string DefaultTypeScriptVersion = "4.1.2";
 
         public IToolsDir Tools;
         public TSProject Owner;
