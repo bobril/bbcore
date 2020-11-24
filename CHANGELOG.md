@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.33.0
+
 ### Added
 
 - `bb t -u` command now supports any number of input files to merge. (Contributed by krewi1)
