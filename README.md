@@ -79,10 +79,13 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 ## Define global constants and process.env
 
 global constants are defined using "defines" object. If `DEBUG` is not defined is it automatically defined as `DEBUG` build-in constant which is true in interactive, test modes and fast build mode. First are expanded all `defines`, than result of this expansion is input to `envs` expansion. In `envs` you define replacement for `process.env` object. If `NODE_ENV` is not defined is it automatically defined like in example below.
+Content must be always JavaScript expression with specially handled build-ins `DEBUG`, `env`, `file`. `env` is virtually object with system environment variables. `file` is virtually object with utf-8 content of all files where property name is file name relative to project root directory.
 
 ```JSON
 "defines": {
-    "DEBUG": "DEBUG"
+    "DEBUG": "DEBUG",
+    "SomeConstant": "\"this is JS \"+\"expression\"",
+    "FileContent": "file[\"some_file_relative_to_package.json\"]"
 },
 "envs": {
     "NODE_ENV": "DEBUG?\"development\":\"production\"",

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- new build-in `file` which allows to define global varibles containing content of file.
+
 ## 1.33.0
 
 ### Added

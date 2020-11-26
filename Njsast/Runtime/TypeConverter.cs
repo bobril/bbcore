@@ -8,7 +8,7 @@ namespace Njsast.Runtime
 {
     public class TypeConverter
     {
-        public static AstNode ToAst(object o)
+        public static AstNode ToAst(object? o)
         {
             if (o is AstNode node) return node;
             if (o is string str) return new AstString(str);

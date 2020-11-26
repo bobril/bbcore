@@ -3,24 +3,24 @@
 
 
 bobril-g11n@*:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/bobril-g11n/-/bobril-g11n-5.0.0.tgz#4d4341fda018138caedb4611ecf9f27a7c7b7a40"
-  integrity sha512-zuQOeZLSz0+ZeTw+daj3T41zVnVkXnlDyR6shKiFL/5wZrU+2CE9Du9QoAHHyIniVF4AompfGldbcs0XVneqHQ==
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/bobril-g11n/-/bobril-g11n-5.0.1.tgz#06612b9236eae95811372bc64b2e36b1e845ba42"
+  integrity sha512-XcrJke2C6G0/dfaqu1bjx/3nCuNSvcZQ6wK2gAgSMIYbrHkT1RTdnyRGkdUkrkNwxevIvT2LS4mABWkLDjZxCg==
   dependencies:
     bobril "*"
     moment "^2.10.6"
 
 bobril@*:
-  version "14.14.0"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-14.14.0.tgz#67a1f5555f25a603cb9c9e71692641097f2779e1"
-  integrity sha512-bG5dBTIpeiYeaxia8R1AMtXoyoc3acpslw5TSi3jnhX1YxAEsR8wK1a3G58cJ04SQzsN+5KJN+i5PY4OffyR4g==
+  version "14.17.0"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-14.17.0.tgz#c975a32f8dba5a771607d34a59acd65c50385630"
+  integrity sha512-GN1wY1CpwSSqlWG5jsB73TypwFenECksRsGQGsU/Ir0lhwO6we1QbFlSmovjxODvWi1YRDO0EOPP+9bBWpxuoA==
 
 moment@^2.10.6:
-  version "2.27.0"
-  resolved "https://registry.yarnpkg.com/moment/-/moment-2.27.0.tgz#8bff4e3e26a236220dfe3e36de756b6ebaa0105d"
-  integrity sha512-al0MUK7cpIcglMv3YF13qSgdAIqxHTO7brRtaz3DlSULbqfazqkc5kEjNrLDOM7fsjshoFIihnU8snrP7zUvhQ==
+  version "2.29.1"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.1.tgz#b2be769fa31940be9eeea6469c075e35006fa3d3"
+  integrity sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ==
 
 typescript@*:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.0.2.tgz#7ea7c88777c723c681e33bf7988be5d008d05ac2"
-  integrity sha512-e4ERvRV2wb+rRZ/IQeb3jm2VxBsirQLpQhdxplZ2MEzGvDkkMmPglecnNDfSUBivMjP93vRbngYYDQqQ/78bcQ==
+  version "4.1.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.1.2.tgz#6369ef22516fe5e10304aae5a5c4862db55380e9"
+  integrity sha512-thGloWsGH3SOxv1SoY7QojKi0tc+8FnOmiarEGMbd/lar7QOEd3hvlx3Fp5y6FlDUGl9L+pd4n2e+oToGMmhRQ==

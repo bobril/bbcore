@@ -23,7 +23,8 @@
             "spec"
         ],
         "envs": {
-            "Path": "env[\"Path\"]"
+            "Path": "env[\"Path\"]",
+            "Version": "file[\"./src/my.version\"]"
         },
         "headlessBrowserStrategy": "PreferFirefoxOnWindows"
     },

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -67,21 +66,21 @@ namespace Lib.TSCompiler
         public List<string>? ExampleSources;
         public bool LiveReloadEnabled;
         public bool CoverageEnabled;
-        public string TypeScriptVersion;
-        public string BuildOutputDir;
+        public string? TypeScriptVersion;
+        public string? BuildOutputDir;
 
         public bool Localize;
-        public string DefaultLanguage;
+        public string? DefaultLanguage;
         public DepedencyUpdate DependencyUpdate;
         public int LiveReloadIdx;
-        public RefDictionary<string, ProjectOptions?> SubProjects;
+        public RefDictionary<string, ProjectOptions?>? SubProjects;
 
-        public TranslationDb TranslationDb;
+        public TranslationDb? TranslationDb;
 
-        internal string NpmRegistry;
+        internal string? NpmRegistry;
 
         public TaskCompletionSource<Unit> LiveReloadAwaiter = new TaskCompletionSource<Unit>();
-        public IBuildCache BuildCache;
+        public IBuildCache? BuildCache;
         internal uint ConfigurationBuildCacheId;
         public bool Debug = true;
         public string? HeadlessBrowserStrategy { get; set; }
@@ -357,12 +356,12 @@ namespace Lib.TSCompiler
                 });
         }
 
-        string _originalContent;
+        string? _originalContent;
         internal string[]? IncludeSources;
         internal bool TypeScriptVersionOverride;
-        public HashSet<int> IgnoreDiagnostic;
-        public string ObsoleteMessage;
-        public ITSCompilerOptions FinalCompilerOptions;
+        public HashSet<int>? IgnoreDiagnostic;
+        public string? ObsoleteMessage;
+        public ITSCompilerOptions? FinalCompilerOptions;
         public bool ForbiddenDependencyUpdate;
         public CoverageInstrumentation? CoverageInstrumentation;
 
@@ -770,7 +769,7 @@ namespace Lib.TSCompiler
             {
                 var clone = value.DeepClone();
                 clone.FigureOutScope();
-                clone = (AstToplevel) new EnvExpanderTransformer(constsInput, GetSystemEnvValue)
+                clone = (AstToplevel) new EnvExpanderTransformer(constsInput, GetSystemEnvValue, GetFileContent)
                     .Transform(clone);
                 definesOutput[key] = TypeConverter.ToAst((clone.Body.Last as AstSimpleStatement)?.Body.ConstValue());
             }
@@ -780,7 +779,7 @@ namespace Lib.TSCompiler
             {
                 var clone = value.DeepClone();
                 clone.FigureOutScope();
-                clone = (AstToplevel) new EnvExpanderTransformer(definesOutput, GetSystemEnvValue)
+                clone = (AstToplevel) new EnvExpanderTransformer(definesOutput, GetSystemEnvValue, GetFileContent)
                     .Transform(clone);
                 envReplace[key] = TypeConverter.ToAst((clone.Body.Last as AstSimpleStatement)?.Body.ConstValue())
                     .PrintToString();
@@ -788,6 +787,17 @@ namespace Lib.TSCompiler
 
             ExpandedDefines = definesOutput;
             ExpandedProcessEnvs = envReplace;
+        }
+
+        string? GetFileContent(string arg)
+        {
+            var res = PathUtils.Join(Owner.Owner.FullPath, arg);
+            if (Owner.DiskCache.TryGetItem(res) is IFileCache fc)
+            {
+                return fc.Utf8Content;
+            }
+
+            return null;
         }
 
         static string? GetSystemEnvValue(string arg)

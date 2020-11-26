@@ -46,7 +46,7 @@ let page = b.createVirtualComponent({
             b.style(
                 {
                     tag: "h1",
-                    children: g.t("Hello World! {c, number} {test}", { c: ctx.counter, test: json.test })
+                    children: g.t("Hello World! {c, number} {test}", { c: ctx.counter, test: json.test }),
                 },
                 headerStyle
             ),
@@ -57,9 +57,9 @@ let page = b.createVirtualComponent({
                     {
                         tag: "a",
                         attrs: { href: "https://github.com/Bobris/Bobril" },
-                        children: g.t("Bobril GitHub pages")
-                    }
-                ]
+                        children: g.t("Bobril GitHub pages"),
+                    },
+                ],
             },
             {
                 tag: "p",
@@ -68,17 +68,17 @@ let page = b.createVirtualComponent({
                         ? g.f(
                               g.serializeMessage(
                                   g.dt("Delayed translation message {param}", {
-                                      param: g.dt("with delayed param")
+                                      param: g.dt("with delayed param"),
                                   })
                               )
                           )
-                        : "Loading ..."
-                ]
+                        : "Loading ...",
+                ],
             },
             {
                 tag: "img",
                 style: { display: "inline-block", verticalAlign: "unset" },
-                attrs: { src: b.asset("light.png") }
+                attrs: { src: b.asset("light.png") },
             },
             b.styledDiv(" ", { backgroundColor: "blue", display: "inline-block" }, semitransparentLight),
             b.styledDiv(" ", { backgroundColor: "green", display: "inline-block" }, semitransparentLight),
@@ -87,28 +87,32 @@ let page = b.createVirtualComponent({
                 value: switchValue,
                 onChange: () => {
                     switchValue = !switchValue;
-                }
+                },
             }),
             {
                 tag: "span",
                 className: "glyphicon glyphicon-star",
-                attrs: { ariaHidden: true }
+                attrs: { ariaHidden: true },
             },
             {
                 tag: "p",
-                children: "DEBUG: " + DEBUG
+                children: "DEBUG: " + DEBUG,
             },
             {
                 tag: "p",
-                children: "Current locale: " + g.getLocale()
+                children: "Current locale: " + g.getLocale(),
             },
             {
                 tag: "p",
-                children: "process.env.NODE_ENV: " + process.env.NODE_ENV
+                children: "process.env.NODE_ENV: " + process.env.NODE_ENV,
             },
             {
                 tag: "p",
-                children: "process.env.UnKnOwN: " + process.env.UnKnOwN
+                children: "process.env.UnKnOwN: " + process.env.UnKnOwN,
+            },
+            {
+                tag: "p",
+                children: "process.env.Version: " + process.env.Version,
             },
             {
                 tag: "div",
@@ -119,20 +123,20 @@ let page = b.createVirtualComponent({
                         display: "table-cell",
                         whiteSpace: "nowrap",
                         textOverflow: "ellipsis",
-                        overflow: "hidden"
+                        overflow: "hidden",
                     },
-                    children: "Path: " + process.env.Path
-                }
+                    children: "Path: " + process.env.Path,
+                },
             },
             {
                 tag: "p",
-                children: "Moment long date format L: " + (<any>m.localeData()).longDateFormat("L")
+                children: "Moment long date format L: " + (<any>m.localeData()).longDateFormat("L"),
             },
             {
                 tag: "p",
                 children:
                     "Number 123456.789 in format 0,0.00: " +
-                    g.f("{arg, number, custom, format:{0,0.00}}", { arg: 123456.789 })
+                    g.f("{arg, number, custom, format:{0,0.00}}", { arg: 123456.789 }),
             },
             b.style({ tag: "div", children: "blue on red" }, styles.style1, styles.style2),
             {
@@ -142,11 +146,11 @@ let page = b.createVirtualComponent({
                     onClick: () => {
                         g.setLocale("cs-CZ");
                         return true;
-                    }
-                }
-            }
+                    },
+                },
+            },
         ];
-    }
+    },
 });
 
 b.init(() => page({}));
