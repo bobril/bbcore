@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.35.0
+
 ### Added
 
 - Bundler now optimize TypeScript enums.
