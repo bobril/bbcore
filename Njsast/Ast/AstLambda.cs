@@ -25,6 +25,8 @@ namespace Njsast.Ast
         /// Calling this function does not have visible side effect when its result is not used (null means unknown)
         public bool? Pure;
 
+        public IPurpose? Purpose;
+
         protected AstLambda(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
             ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(source,
             startPos, endPos)

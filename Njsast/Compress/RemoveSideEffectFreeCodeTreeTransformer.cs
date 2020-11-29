@@ -51,6 +51,7 @@ namespace Njsast.Compress
     public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
     {
         bool NeedValue = true;
+
         // Symbol is considered cloned when there is just single initialization by constant symbol
         // var a = 42; var b = a;
         // b could be replaced by a and that what this map contains _clonedSymbolMap[Symbol"b"] = Symbol"a";
@@ -70,10 +71,12 @@ namespace Njsast.Compress
                         return node;
                     case AstSymbolRef symbolRef:
                     {
-                        if (!symbolRef.Usage.HasFlag(SymbolUsage.Write) && _clonedSymbolMap.TryGetValue(symbolRef.Thedef!, out var replaceSymbol))
+                        if (!symbolRef.Usage.HasFlag(SymbolUsage.Write) &&
+                            _clonedSymbolMap.TryGetValue(symbolRef.Thedef!, out var replaceSymbol))
                         {
                             return new AstSymbolRef(node, replaceSymbol, symbolRef.Usage);
                         }
+
                         return node;
                     }
                     case AstDefun defun:
@@ -81,6 +84,14 @@ namespace Njsast.Compress
                         if (defun.Name!.IsSymbolDef()!.OnlyDeclared)
                             return Remove;
                         if (defun.Body.Count == 0) defun.Pure = true;
+                        if (defun.Purpose == null)
+                            defun.Purpose = DetectPurpose(defun);
+                        return null;
+                    }
+                    case AstLambda lambda:
+                    {
+                        if (lambda.Purpose == null)
+                            lambda.Purpose = DetectPurpose(lambda);
                         return null;
                     }
                     case AstBlock block:
@@ -138,9 +149,35 @@ namespace Njsast.Compress
                     {
                         if (assign.Operator == Operator.Assignment)
                         {
-                            if (assign.Left.IsSymbolDef()?.NeverRead ?? false)
+                            var leftSymbol = assign.Left.IsSymbolDef();
+                            if (leftSymbol?.NeverRead ?? false)
                             {
                                 return Transform(assign.Right);
+                            }
+
+                            var rightSymbol = assign.Right.IsSymbolDef();
+                            if (rightSymbol is { } && leftSymbol is
+                                {
+                                    Global: false, Orig: {Count: 1}
+                                } && leftSymbol.Orig[0] is AstSymbolDeclaration
+                                {
+                                    Init: AstVarDef
+                                    {
+                                        Value: null
+                                    }
+                                } && Parent() is AstCall {Expression: AstLambda {Purpose: { } purpose}} &&
+                                purpose is EnumDefinitionPurpose && leftSymbol.References.All(r =>
+                                    r == assign.Left || !r.Usage.HasFlag(SymbolUsage.Write | SymbolUsage.PropWrite)))
+                            {
+                                foreach (var leftSymbolReference in leftSymbol.References)
+                                {
+                                    if (leftSymbolReference == assign.Left) continue;
+                                    leftSymbolReference.Name = rightSymbol.Name;
+                                    leftSymbolReference.Thedef = rightSymbol;
+                                    rightSymbol.References.Add(leftSymbolReference);
+                                }
+
+                                return assign.Right;
                             }
                         }
 
@@ -174,6 +211,23 @@ namespace Njsast.Compress
 
                                 return Transform(binary.Right);
                             }
+
+                            // x || (x = {}) when x is only written in this expression
+                            if (binary.Left.IsSymbolDef() is { } symbolX
+                                && binary.Right is AstAssign {Operator: Operator.Assignment} astAssign
+                                && astAssign.Left.IsSymbolDef() == symbolX
+                                && astAssign.Right is AstObject {Properties: {Count: 0}}
+                                && symbolX.References.All(r =>
+                                    r == astAssign.Left || !r.Usage.HasFlag(SymbolUsage.Write | SymbolUsage.PropWrite)))
+                            {
+                                if (!(symbolX.Orig is {Count: 1}) || !(symbolX.Orig[0] is AstSymbolVar
+                                {
+                                    Init: AstVarDef varDef
+                                } symbolVar)) return Transform(binary.Right);
+                                varDef.Value = astAssign.Right;
+                                symbolVar.Usage = SymbolUsage.Write;
+                                return binary.Left;
+                            }
                         }
 
                         if (binary.Operator == Operator.LogicalAnd)
@@ -200,6 +254,18 @@ namespace Njsast.Compress
                         return simple.Body == Remove
                             ? inList ? Remove : new AstEmptyStatement(node.Source, node.Start, node.End)
                             : simple;
+                    }
+                    case AstPropAccess propAccess:
+                    {
+                        if (propAccess.Expression.IsSymbolDef() is
+                                {Purpose: EnumDefinitionPurpose enumDefinitionPurpose} &&
+                            propAccess.PropertyAsString is { } propName &&
+                            enumDefinitionPurpose.Values.TryGetValue(propName, out var value))
+                        {
+                            return value;
+                        }
+
+                        return null;
                     }
                     case AstDefinitions def:
                         NeedValue = false;
@@ -377,8 +443,8 @@ namespace Njsast.Compress
                     case AstCall call:
                     {
                         var symbol = call.Expression.IsSymbolDef();
-                        if (symbol != null && symbol.IsSingleInit && symbol.Init is AstLambda func &&
-                            func.Pure == true || IsWellKnownPureFunction(call.Expression))
+                        if (symbol != null && symbol.IsSingleInit && symbol.Init is AstLambda {Pure: true} ||
+                            IsWellKnownPureFunction(call.Expression, call is AstNew))
                         {
                             var res = new AstSequence(node.Source, node.Start, node.End);
                             foreach (var arg in call.Args)
@@ -392,6 +458,19 @@ namespace Njsast.Compress
                                 1 => res.Expressions[0],
                                 _ => res
                             };
+                        }
+
+                        if (call.Expression is AstLambda {Purpose: { } purpose} && purpose is EnumDefinitionPurpose &&
+                            call.Args is
+                            {
+                                Count: 1
+                            } && call.Args[0].IsSymbolDef() is { } symbolDef)
+                        {
+                            if (symbolDef.References.Count == 1)
+                            {
+                                return Remove;
+                            }
+                            symbolDef.Purpose ??= purpose;
                         }
 
                         goto default;
@@ -490,15 +569,19 @@ namespace Njsast.Compress
                                 node = value;
                                 continue;
                             }
-                            if (varDef.Value is AstLambda && def.References.Count==CountReferences(varDef.Value, def))
+
+                            if (varDef.Value is AstLambda && def.References.Count == CountReferences(varDef.Value, def))
                             {
                                 return Remove;
                             }
-                            if (varDef.Value.IsSymbolDef() is {} rightSymbolDef && def.IsSingleInit && rightSymbolDef.IsSingleInit)
+
+                            if (varDef.Value.IsSymbolDef() is { } rightSymbolDef && def.IsSingleInit &&
+                                rightSymbolDef.IsSingleInit)
                             {
                                 _clonedSymbolMap.GetOrAddValueRef(def) = rightSymbolDef;
                             }
                         }
+
                         goto default;
                     }
                     default:
@@ -508,6 +591,16 @@ namespace Njsast.Compress
                         return node;
                 }
             }
+        }
+
+        static IPurpose DetectPurpose(AstLambda lambda)
+        {
+            if (Helpers.DetectEnumTypeScriptFunction(lambda) is { } enumValues)
+            {
+                return new EnumDefinitionPurpose(enumValues);
+            }
+
+            return NoPurpose.Instance;
         }
 
         class CountReferencesWalker : TreeWalker
@@ -550,12 +643,17 @@ namespace Njsast.Compress
             return res;
         }
 
-        static bool IsWellKnownPureFunction(AstNode callExpression)
+        static bool IsWellKnownPureFunction(AstNode callExpression, bool isNew)
         {
             if (callExpression is AstFunction classFactory && (classFactory.Pure ?? false))
             {
                 return true;
             }
+
+            if (isNew && callExpression.IsSymbolDef().IsGlobalSymbol() is { } globalConstructor &&
+                (globalConstructor == "Map" || globalConstructor == "HashSet" || globalConstructor == "Set" ||
+                 globalConstructor == "HashSet"))
+                return true;
 
             if (callExpression is AstPropAccess propAccess)
             {

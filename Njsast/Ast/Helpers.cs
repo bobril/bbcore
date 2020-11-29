@@ -81,7 +81,7 @@ namespace Njsast.Ast
 
             protected override AstNode? Before(AstNode node, bool inList)
             {
-                if (node.IsSymbolDef().IsGlobalSymbol() is {} symbolName)
+                if (node.IsSymbolDef().IsGlobalSymbol() is { } symbolName)
                 {
                     if (symbolName == "global")
                     {
@@ -130,6 +130,63 @@ namespace Njsast.Ast
 
                 return node;
             }
+        }
+
+        /// <summary>
+        /// function (Opts) {
+        ///    Opts[Opts["Start"] = 0] = "Start";
+        ///    Opts[Opts["Stop"] = 1] = "Stop";
+        /// }
+        /// </summary>
+        /// <returns>Dictionary with values when detected { { "Start", 0 }, { "Stop", 1 } }</returns>
+        public static Dictionary<string, AstNode>? DetectEnumTypeScriptFunction(AstNode node)
+        {
+            if (!(node is AstLambda
+                {IsGenerator: false, Async: false, UsesArguments: false, ArgNames: {Count: 1}} lambda)) return null;
+            if (!(lambda.ArgNames[0] is AstSymbolFunarg {Thedef: { } symbolDef})) return null;
+            var res = new Dictionary<string, AstNode>();
+            foreach (var statement in lambda.Body)
+            {
+                if (statement is AstSimpleStatement
+                {
+                    Body: AstAssign
+                    {
+                        Operator: Operator.Assignment, Right: AstString {Value: { } rightString},
+                        Left: AstSub
+                        {
+                            Expression: AstSymbolRef {Thedef: { } symbolDef2},
+                            Property: AstAssign
+                            {
+                                Operator: Operator.Assignment,
+                                Left: AstSub
+                                {
+                                    Expression: AstSymbolRef {Thedef: { } symbolDef3},
+                                    Property: AstString {Value: { } leftString}
+                                },
+                                Right: AstNumber value
+                            }
+                        }
+                    }
+                } && symbolDef == symbolDef2 && symbolDef == symbolDef3 && leftString == rightString)
+                    res.Add(leftString, value);
+                else if (statement is AstSimpleStatement
+                {
+                    Body: AstAssign
+                    {
+                        Operator: Operator.Assignment, Right: AstString valueString,
+                        Left: AstSub
+                        {
+                            Expression: AstSymbolRef {Thedef: { } symbolDef4},
+                            Property: AstString {Value: { } propString}
+                        }
+                    }
+                } && symbolDef == symbolDef4)
+                    res.Add(propString, valueString);
+                else
+                    return null;
+            }
+
+            return res;
         }
     }
 }

@@ -72,17 +72,23 @@ namespace Njsast.Scope
                     switch (Parent())
                     {
                         case AstVarDef astVarDef:
-                            if (astVarDef.Name == node && astVarDef.Value != null)
+                            if (astVarDef.Name == node)
                             {
-                                usage |= SymbolUsage.Write;
-                                var def = astSymbol.Thedef;
-                                if (def!.Orig[0] == astSymbol && def!.References.Count == 0 && Parent(2) == def!.Scope)
+                                ((AstSymbolDeclaration) node).Init = astVarDef;
+
+                                if (astVarDef.Value != null)
                                 {
-                                    def!.VarInit = astVarDef.Value;
-                                }
-                                else
-                                {
-                                    def!.References.Add(astSymbol);
+                                    usage |= SymbolUsage.Write;
+                                    var def = astSymbol.Thedef;
+                                    if (def!.Orig[0] == astSymbol && def!.References.Count == 0 &&
+                                        Parent(2) == def!.Scope)
+                                    {
+                                        def!.VarInit = astVarDef.Value;
+                                    }
+                                    else
+                                    {
+                                        def!.References.Add(astSymbol);
+                                    }
                                 }
                             }
 
@@ -226,8 +232,9 @@ namespace Njsast.Scope
 
             switch (par)
             {
-                case AstAssign _:
-                    return false;
+                case AstAssign astAssign:
+                    return astAssign.Right == cur;
+                case AstCase _:
                 case AstSimpleStatement _:
                 case AstBinary _:
                 case AstIf _:

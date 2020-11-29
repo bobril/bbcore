@@ -2,11 +2,15 @@
 
 ## [unreleased]
 
+### Added
+
+- Bundler now optimize TypeScript enums.
+
 ## 1.34.0
 
 ### Added
 
-- new build-in `file` which allows to define global varibles containing content of file.
+- new build-in `file` which allows to define global variables containing content of file.
 
 ## 1.33.0
 

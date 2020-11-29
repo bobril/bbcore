@@ -17,6 +17,7 @@ namespace Njsast
         public bool Undeclared;
         public bool? UnmangleableCached;
         public AstScope? Defun;
+        public IPurpose? Purpose;
 
         public AstDestructuring? Destructuring;
 
