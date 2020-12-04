@@ -6,6 +6,8 @@
 
 - node_module symlinked modules should be resolved to original paths - it dedupes such files
 
+- 64bit version of Chrome is now also found for headless testing.
+
 ## 1.35.0
 
 ### Added
