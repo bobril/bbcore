@@ -106,14 +106,12 @@ namespace Lib.TSCompiler
 
         public bool CheckFileExistence(string name)
         {
-            var f = Owner.DiskCache.TryGetItem(name) as IFileCache;
-            return f != null && !f.IsInvalid;
+            return Owner.DiskCache.TryGetItem(name) is IFileCache {IsInvalid: false};
         }
 
         public bool CheckItemExistence(string name)
         {
-            var f = Owner.DiskCache.TryGetItem(name);
-            return f != null && !f.IsInvalid;
+            return Owner.DiskCache.TryGetItem(name)?.IsInvalid == false;
         }
 
         public void ReportMissingImport(string from, string name)

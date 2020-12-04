@@ -1468,13 +1468,13 @@ namespace Lib.Composition
             var usedDeps = options.Owner.UsedDependencies;
             foreach (var fi in buildResult.Path2FileInfo)
             {
-                if (fi.Value.FromModule != options.Owner) continue;
+                if (fi.Value.FromModuleRefresh != options.Owner) continue;
                 foreach (var dependency in fi.Value.Dependencies)
                 {
                     if (!buildResult.Path2FileInfo.TryGetValue(dependency, out var depfi))
                         continue;
-                    if (depfi.FromModule != null)
-                        usedDeps!.Add(depfi.FromModule.Name!);
+                    if (depfi.FromModuleRefresh != null)
+                        usedDeps!.Add(depfi.FromModule!.Name!);
                 }
             }
             unusedDeps.ExceptWith(usedDeps!);

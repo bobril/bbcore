@@ -133,8 +133,7 @@ namespace Lib.TSCompiler
 
             public string realPath(string path)
             {
-                return path;
-                //return PathUtils.RealPath(path);
+                return PathUtils.RealPath(path);
             }
 
             readonly Stopwatch _stopwatch = new Stopwatch();
@@ -157,7 +156,7 @@ namespace Lib.TSCompiler
                 var tr = _owner._transpileResult;
                 if (tr != null)
                 {
-                    if (tr.Diagnostics == null) tr.Diagnostics = new List<Diagnostic>();
+                    tr.Diagnostics ??= new List<Diagnostic>();
                     tr.Diagnostics.Add(new Diagnostic
                     {
                         IsError = isError,
@@ -192,7 +191,7 @@ namespace Lib.TSCompiler
                 var tr = _owner._transpileResult;
                 if (tr != null)
                 {
-                    if (tr.Diagnostics == null) tr.Diagnostics = new List<Diagnostic>();
+                    tr.Diagnostics ??= new List<Diagnostic>();
                     tr.Diagnostics.Add(new Diagnostic
                     {
                         IsError = isError,
@@ -223,9 +222,9 @@ namespace Lib.TSCompiler
         }
 
         readonly BBCallbacks _callbacks;
-        StructList<Diagnostic> _diagnostics = new StructList<Diagnostic>();
+        StructList<Diagnostic> _diagnostics;
 
-        IJsEngine _engine;
+        IJsEngine? _engine;
 
         IJsEngine getJSEnviroment()
         {

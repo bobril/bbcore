@@ -64,6 +64,23 @@ namespace Lib.TSCompiler
         internal int ChangeId;
         internal bool HasError;
 
+        public TSProject? FromModuleRefresh
+        {
+            get
+            {
+                if (FromModule != null) return FromModule;
+                var dir = Owner?.Parent;
+                while (dir != null && dir.Project == null)
+                {
+                    dir = dir.Parent;
+                }
+
+                FromModule = dir?.Project as TSProject;
+
+                return FromModule;
+            }
+        }
+
         public void ReportDependency(string fullname)
         {
             if (Dependencies.IndexOf(fullname) >= 0) return;

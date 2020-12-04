@@ -6,6 +6,6 @@ namespace Lib.TSCompiler
     {
         public string JavaScript;
         public string SourceMap;
-        public List<Diagnostic> Diagnostics;
+        public List<Diagnostic>? Diagnostics;
     }
 }

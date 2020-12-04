@@ -46,6 +46,20 @@ namespace Lib.TSCompiler
             {
                 var newChangeId = cache.ChangeId;
                 if (newChangeId == PackageJsonChangeId) return;
+                
+                var rp = PathUtils.RealPath(packageJsonFile.FullPath);
+                if (rp != packageJsonFile.FullPath)
+                {
+                    var realPackageJsonFile = DiskCache.TryGetItem(rp) as IFileCache;
+                    if (realPackageJsonFile != null)
+                    {
+                        Owner = realPackageJsonFile.Parent!;
+                        Owner.Project = this;
+                        cache = realPackageJsonFile;
+                        newChangeId = cache.ChangeId;
+                    }
+                }
+                
                 ProjectOptions.FinalCompilerOptions = null;
                 JObject parsed;
                 try
