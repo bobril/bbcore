@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.36.0
+
 ### Added
 
 - node_module symlinked modules should be resolved to original paths - it dedupes such files
