@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.36.1
+
 ### Fixed
 
 - another bug with symlinked modules
