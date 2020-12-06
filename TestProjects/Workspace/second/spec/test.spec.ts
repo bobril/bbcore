@@ -1,6 +1,6 @@
 import { x } from "../../first/src/index";
 import { x as x2 } from "first/src/index";
-describe("first", () => {
+describe("second", () => {
   it("test", () => {
     expect(x).toBe(1);
   });

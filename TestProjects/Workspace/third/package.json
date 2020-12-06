@@ -1,5 +1,5 @@
 {
-  "name": "second",
+  "name": "third",
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
@@ -30,10 +30,11 @@
       ]
     },
     "jasmineVersion": "2.99",
-    "allowModuleDeepImport": true
-  },
-  "dependencies": {
-    "first": "1.0.0"
+    "allowModuleDeepImport": true,
+    "testDirectories": [
+      "../node_modules/first/spec",
+      "../node_modules/second/spec"
+    ]
   },
   "private": true
 }

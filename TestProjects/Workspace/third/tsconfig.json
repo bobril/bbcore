@@ -34,7 +34,7 @@
     "resolveJsonModule": true
   },
   "files": [
-    "C:/Users/s.ledl/.bbcore/tools/jasmine.d.ts"
+    "C:/Users/b.letocha/.bbcore/dev/jasmine.d.ts"
   ],
   "include": [
     "**/*"

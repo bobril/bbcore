@@ -224,12 +224,12 @@ namespace Lib.TSCompiler
                 {
                     if (item.Name == "jasmine.d.ts")
                     {
-                        JasmineDts = item.FullPath;
+                        JasmineDts = PathUtils.RealPath(item.FullPath);
                     }
 
                     if (fileRegex.IsMatch(item.Name))
                     {
-                        res.Add(item.FullPath);
+                        res.Add(PathUtils.RealPath(item.FullPath));
                     }
                 }
             }

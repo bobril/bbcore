@@ -11,7 +11,8 @@
   "private": true,
   "workspaces": [
     "first",
-    "second"
+    "second",
+    "third"
   ],
   "devDependencies": {}
 }

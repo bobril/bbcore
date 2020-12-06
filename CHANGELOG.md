@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- another bug with symlinked modules
+
 ## 1.36.0
 
 ### Added
