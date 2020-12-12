@@ -5,6 +5,8 @@
 ### Added
 
 - Upgrade to .Net 5.0
+- Chakra => V8
+- Enabled assembly trimming
 
 ## 1.36.2
 

@@ -33,10 +33,15 @@ namespace Lib.ToolsDir
                     if (!jsEngineSwitcher.EngineFactories.Any())
                     {
                         jsEngineSwitcher.EngineFactories.Add(
+                            new JavaScriptEngineSwitcher.V8.V8JsEngineFactory(
+                                new JavaScriptEngineSwitcher.V8.V8Settings {DisableGlobalMembers = false}));
+                        jsEngineSwitcher.DefaultEngineName =
+                            JavaScriptEngineSwitcher.V8.V8JsEngine.EngineName;
+                        /*jsEngineSwitcher.EngineFactories.Add(
                             new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngineFactory(
                                 new JavaScriptEngineSwitcher.ChakraCore.ChakraCoreSettings {MaxStackSize = 2000000, DisableFatalOnOOM = true}));
                         jsEngineSwitcher.DefaultEngineName =
-                            JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;
+                            JavaScriptEngineSwitcher.ChakraCore.ChakraCoreJsEngine.EngineName;*/
                     }
                 }
 

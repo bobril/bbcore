@@ -48,7 +48,7 @@ namespace Lib.TSCompiler
 
         [SuppressMessage("ReSharper", "InconsistentNaming")]
         [SuppressMessage("ReSharper", "UnusedMember.Local")]
-        class BBCallbacks
+        public class BBCallbacks
         {
             TsCompiler _owner;
 
