@@ -258,6 +258,17 @@ namespace Lib.TSCompiler
                 return null;
             if (dir.Project != null)
                 return (TSProject)dir.Project;
+            if (diskName == null)
+            {
+                if (dir.Parent?.Name.StartsWith("@") ?? false)
+                {
+                    diskName = dir.Parent.Name + "/" + dir.Name;
+                }
+                else
+                {
+                    diskName = dir.Name;
+                }
+            }
             var proj = new TSProject
             {
                 Owner = dir,

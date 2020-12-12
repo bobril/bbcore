@@ -68,15 +68,30 @@ namespace Lib.TSCompiler
         {
             get
             {
-                if (FromModule != null) return FromModule;
+                if (FromModule != null && !FromModule.IsRootProject) return FromModule;
                 var dir = Owner?.Parent;
+                IDirectoryCache? moduleDir = null;
                 while (dir != null && dir.Project == null)
                 {
+                    if (dir.Parent?.Name == "node_modules")
+                    {
+                        moduleDir = dir;
+                    }
+
+                    if ((dir.Parent?.Name.StartsWith("@") ?? false) && dir.Parent?.Parent?.Name == "node_modules")
+                    {
+                        moduleDir = dir;
+                    }
+
                     dir = dir.Parent;
                 }
 
                 FromModule = dir?.Project as TSProject;
 
+                if (moduleDir != null && (FromModule?.IsRootProject ?? false))
+                {
+                    FromModule = TSProject.Create(moduleDir, FromModule.DiskCache, FromModule.Logger, null);
+                }
                 return FromModule;
             }
         }
@@ -93,11 +108,13 @@ namespace Lib.TSCompiler
             {
                 TranspilationDependencies = new List<DependencyTriplet>();
             }
+
             foreach (var dep in TranspilationDependencies)
             {
                 if (dep.Import == import && dep.SourceHash.AsSpan().SequenceEqual(sourceHash))
                     return;
             }
+
             TranspilationDependencies.Add(new DependencyTriplet
             {
                 SourceHash = sourceHash,
@@ -130,6 +147,7 @@ namespace Lib.TSCompiler
             {
                 dir = dir.Parent;
             }
+
             return new TsFileAdditionalInfo {Owner = file, FromModule = dir?.Project as TSProject};
         }
 

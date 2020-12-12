@@ -472,7 +472,8 @@ namespace Lib.Composition
                 trDb = project.TranslationDb;
 
                 if (trDb.UnionExportedLanguage(union))
-                    _logger.Success($"Union of {String.Join(' ', union.SkipLast(1))} files was successfully saved to {union.Last()}");
+                    _logger.Success(
+                        $"Union of {String.Join(' ', union.SkipLast(1))} files was successfully saved to {union.Last()}");
 
                 return;
             }
@@ -952,7 +953,7 @@ namespace Lib.Composition
             Func<IDirectoryWatcher> watcherFactory = () => (IDirectoryWatcher) new DummyWatcher();
             if (withWatcher)
             {
-                if (Environment.GetEnvironmentVariable("BBWATCHER") is {} delayStr &&
+                if (Environment.GetEnvironmentVariable("BBWATCHER") is { } delayStr &&
                     uint.TryParse(delayStr, out var delay))
                 {
                     _logger.Info("Using watcher with " + delay + "ms polling");
@@ -1466,9 +1467,23 @@ namespace Lib.Composition
         {
             var unusedDeps = options.Owner.Dependencies!.ToHashSet();
             var usedDeps = options.Owner.UsedDependencies;
+            if (options.IncludeSources != null)
+            {
+                foreach (var includeSource in options.IncludeSources)
+                {
+                    if (buildResult.Path2FileInfo.TryGetValue(
+                        PathUtils.Join(options.Owner.Owner.FullPath, includeSource), out var depfi))
+                    {
+                        if (depfi.FromModuleRefresh != null)
+                            usedDeps!.Add(depfi.FromModule!.Name!);
+                    }
+                }
+            }
+
             foreach (var fi in buildResult.Path2FileInfo)
             {
                 if (fi.Value.FromModuleRefresh != options.Owner) continue;
+
                 foreach (var dependency in fi.Value.Dependencies)
                 {
                     if (!buildResult.Path2FileInfo.TryGetValue(dependency, out var depfi))
@@ -1477,6 +1492,7 @@ namespace Lib.Composition
                         usedDeps!.Add(depfi.FromModule!.Name!);
                 }
             }
+
             unusedDeps.ExceptWith(usedDeps!);
             foreach (var unusedDep in unusedDeps)
             {
