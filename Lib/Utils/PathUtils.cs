@@ -23,6 +23,7 @@ namespace Lib.Utils
             {
                 path = char.ToUpperInvariant(path[0]) + path.Substring(1);
             }
+
             path = path.Replace('\\', '/').Replace("/./", "/");
             int idx;
             while ((idx = path.IndexOf("/../")) > 0)
@@ -37,6 +38,7 @@ namespace Lib.Utils
                     path = path.Remove(0, idx + 4);
                 }
             }
+
             return path;
         }
 
@@ -59,6 +61,7 @@ namespace Lib.Utils
                         return null;
                     return path.Slice(0, p);
                 }
+
                 if (path[p] == '/')
                     p--;
                 while (path[p] != '/')
@@ -67,6 +70,7 @@ namespace Lib.Utils
                     return "/";
                 return path.Slice(0, p);
             }
+
             if (p <= 2)
                 return null;
             if (path[p] == '/')
@@ -79,6 +83,7 @@ namespace Lib.Utils
             {
                 return path.Slice(0, 3);
             }
+
             return path.Slice(0, p);
         }
 
@@ -88,22 +93,28 @@ namespace Lib.Utils
             if (res == null) return path;
             return Normalize(res);
         }
-
-        static Regex _multiplierExtract = new Regex(@"@(\d+(?:\.\d+)?)\.(?:[^\.]+)$");
-
+        
         public static (string Name, float Quality) ExtractQuality(string name)
         {
-            var m = _multiplierExtract.Match(name);
-            if (m.Success)
-            {
-                var capture = m.Groups[1];
-                var mult = float.Parse(capture.Value);
-                return (name.Substring(0, capture.Index - 1) + name.Substring(capture.Index + capture.Length), mult);
-            }
-            else
-            {
-                return (name, 1);
-            }
+            var lastDot = name.LastIndexOf('.');
+            if (lastDot < 3)
+                goto notMatch;
+            var lastAt = name.AsSpan(0, lastDot).LastIndexOf('@');
+            if (lastAt < 1)
+                goto notMatch;
+            if (!float.TryParse(name.AsSpan(lastAt + 1, lastDot - lastAt - 1), NumberStyles.AllowDecimalPoint,
+                NumberFormatInfo.InvariantInfo, out var mult))
+                goto notMatch;
+            var pureName = string.Create(name.Length - (lastDot - lastAt), (name, lastAt, lastDot),
+                (span, tuple) =>
+                {
+                    tuple.name.AsSpan(0, tuple.lastAt).CopyTo(span);
+                    tuple.name.AsSpan(tuple.lastDot).CopyTo(span.Slice(tuple.lastAt));
+                });
+            return (pureName, mult);
+
+            notMatch:
+            return (name, 1);
         }
 
         public static string Subtract(string pathA, string pathB)
@@ -113,18 +124,22 @@ namespace Lib.Utils
             {
                 return pathA.Substring(pathB.Length + 1);
             }
+
             int commonStart = 0;
             while (true)
             {
                 var slash = pathA.IndexOf('/', commonStart);
                 if (slash < 0 || pathB.Length <= slash)
                     break;
-                if (pathB.Substring(commonStart, slash - commonStart + 1) != pathA.Substring(commonStart, slash - commonStart + 1))
+                if (pathB.Substring(commonStart, slash - commonStart + 1) !=
+                    pathA.Substring(commonStart, slash - commonStart + 1))
                 {
                     break;
                 }
+
                 commonStart = slash + 1;
             }
+
             var upCount = pathB.Skip(commonStart).Count(ch => ch == '/');
             var sb = new StringBuilder();
             while (upCount >= 0)
@@ -132,6 +147,7 @@ namespace Lib.Utils
                 sb.Append("../");
                 upCount--;
             }
+
             sb.Append(pathA.Substring(commonStart));
             return sb.ToString();
         }
@@ -150,6 +166,7 @@ namespace Lib.Utils
                 file = path;
                 return null;
             }
+
             file = path.Slice(dir.Length + 1);
             return dir;
         }
@@ -195,6 +212,7 @@ namespace Lib.Utils
             {
                 return fileName + '.' + newExtension;
             }
+
             return fileName.Substring(0, dotPos + 1) + newExtension;
         }
 
@@ -206,6 +224,7 @@ namespace Lib.Utils
             {
                 return fileName;
             }
+
             return fileName.Substring(0, dotPos);
         }
 
@@ -217,6 +236,7 @@ namespace Lib.Utils
                 isDir = false;
                 return false;
             }
+
             var len = path.Length;
             if (pos == 0)
             {
@@ -232,12 +252,14 @@ namespace Lib.Utils
                         pos = -1;
                         return true;
                     }
+
                     name = path.Slice(2, pos2);
                     isDir = true;
                     pos = pos2 + 3;
                     return true;
                 }
             }
+
             if (pos < len)
             {
                 int pos2 = path.Slice(pos + 1).IndexOf("/");
@@ -248,11 +270,13 @@ namespace Lib.Utils
                     pos = -1;
                     return true;
                 }
+
                 name = path.Slice(pos, pos2 + 1);
                 isDir = true;
                 pos += pos2 + 2;
                 return true;
             }
+
             name = null;
             isDir = false;
             return false;
@@ -310,16 +334,19 @@ namespace Lib.Utils
                 case "json":
                     return "application/json";
             }
+
             return "application/unknown";
         }
 
         public static string CommonDir(string p1, string p2)
         {
             var len = Math.Min(p1.Length, p2.Length);
-            if (len == p1.Length && (len < p2.Length && p2[len] == '/' || len == p2.Length) && p1.AsSpan().SequenceEqual(p2.AsSpan(0, len)))
+            if (len == p1.Length && (len < p2.Length && p2[len] == '/' || len == p2.Length) &&
+                p1.AsSpan().SequenceEqual(p2.AsSpan(0, len)))
             {
                 return p1;
             }
+
             var pos = 0;
 
             while (pos < len)
@@ -332,6 +359,7 @@ namespace Lib.Utils
                     return p1.Substring(0, pos);
                 pos = pos1;
             }
+
             return p1.Substring(0, pos);
         }
 
@@ -357,6 +385,7 @@ namespace Lib.Utils
                     }
                 }
             }
+
             return name;
         }
     }

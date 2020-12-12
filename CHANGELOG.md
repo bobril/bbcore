@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Optimized extraction of sprite quality from filename
+
 ## 1.37.1
 
 ### Fixed
