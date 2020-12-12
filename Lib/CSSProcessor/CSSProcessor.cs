@@ -12,18 +12,18 @@ namespace Lib.CSSProcessor
         public CssProcessor(IToolsDir toolsDir)
         {
             _toolsDir = toolsDir;
-            _callbacks = new BBCallbacks(this);
+            _callbacks = new BBCSSCallbacks(this);
         }
 
         readonly IToolsDir _toolsDir;
         Func<string, string, string> _urlReplacer;
         TaskCompletionSource<string> _tcs;
 
-        class BBCallbacks
+        public class BBCSSCallbacks
         {
             CssProcessor _owner;
 
-            public BBCallbacks(CssProcessor owner)
+            public BBCSSCallbacks(CssProcessor owner)
             {
                 _owner = owner;
             }
@@ -49,9 +49,9 @@ namespace Lib.CSSProcessor
             }
         }
 
-        BBCallbacks _callbacks;
+        BBCSSCallbacks _callbacks;
 
-        IJsEngine _engine;
+        IJsEngine? _engine;
 
         IJsEngine getJSEnviroment()
         {

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Css Processor for V8
+
 ## 1.37.0
 
 ### Added

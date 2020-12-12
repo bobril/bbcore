@@ -25,9 +25,9 @@ function concatenateCssAndMinify(inputs, callback) {
     });
 }
 function bbProcessCss(source, from) {
-    processCss(source, from, bb.urlReplace.bind(bb)).then(function (v) { return bb.finish(v.css); }, function (e) { return bb.fail(e.message + " " + e.stack); });
+    processCss(source, from, function (url, from) { return bb.urlReplace(url, from); }).then(function (v) { return bb.finish(v.css); }, function (e) { return bb.fail(e.message + " " + e.stack); });
 }
 function bbConcatAndMinify(inputs) {
     var inp = JSON.parse(inputs);
-    concatenateCssAndMinify(inp, bb.urlReplace.bind(bb)).then(function (v) { return bb.finish(v.css); }, function (e) { return bb.fail(e.message + " " + e.stack); });
+    concatenateCssAndMinify(inp, function (url, from) { return bb.urlReplace(url, from); }).then(function (v) { return bb.finish(v.css); }, function (e) { return bb.fail(e.message + " " + e.stack); });
 }

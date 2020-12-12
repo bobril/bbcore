@@ -35,10 +35,10 @@ function concatenateCssAndMinify(inputs: { source: string, from: string }[], cal
 }
 
 function bbProcessCss(source: string, from: string) {
-    processCss(source, from, bb.urlReplace.bind(bb)).then(v => bb.finish(v.css), (e: Error) => bb.fail(e.message + " " + e.stack));
+    processCss(source, from, (url, from) => bb.urlReplace(url, from)).then(v => bb.finish(v.css), (e: Error) => bb.fail(e.message + " " + e.stack));
 }
 
 function bbConcatAndMinify(inputs: string) {
     var inp = JSON.parse(inputs);
-    concatenateCssAndMinify(inp, bb.urlReplace.bind(bb)).then(v => bb.finish(v.css), (e: Error) => bb.fail(e.message + " " + e.stack));
+    concatenateCssAndMinify(inp, (url, from) => bb.urlReplace(url, from)).then(v => bb.finish(v.css), (e: Error) => bb.fail(e.message + " " + e.stack));
 }
