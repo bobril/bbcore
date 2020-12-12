@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <LangVersion>8</LangVersion>
@@ -49,10 +49,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BTDB" Version="24.0.2" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.8.5" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.8.5" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.8.5" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.8.5" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.9.1" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.linux-x64" Version="3.9.1" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.osx-x64" Version="3.9.1" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.9.1" />
     <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" />

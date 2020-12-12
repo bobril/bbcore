@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Upgrade to .Net 5.0
+
 ## 1.36.2
 
 ### Fixed
