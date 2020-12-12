@@ -105,13 +105,7 @@ namespace Lib.Utils
             if (!float.TryParse(name.AsSpan(lastAt + 1, lastDot - lastAt - 1), NumberStyles.AllowDecimalPoint,
                 NumberFormatInfo.InvariantInfo, out var mult))
                 goto notMatch;
-            var pureName = string.Create(name.Length - (lastDot - lastAt), (name, lastAt, lastDot),
-                (span, tuple) =>
-                {
-                    tuple.name.AsSpan(0, tuple.lastAt).CopyTo(span);
-                    tuple.name.AsSpan(tuple.lastDot).CopyTo(span.Slice(tuple.lastAt));
-                });
-            return (pureName, mult);
+            return (name.Remove(lastAt, lastDot - lastAt), mult);
 
             notMatch:
             return (name, 1);
