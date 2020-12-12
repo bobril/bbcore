@@ -7,6 +7,9 @@
     <WarningsAsErrors />
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>CopyUsed</TrimMode>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Lib/Lib.csproj" />
