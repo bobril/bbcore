@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.37.0
+
 ### Added
 
 - Upgrade to .Net 5.0
