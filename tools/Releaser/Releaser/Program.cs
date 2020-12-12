@@ -194,7 +194,7 @@ namespace Releaser
 
         static void BuildWinX64(string projDir, string newVersion)
         {
-            var start = new ProcessStartInfo("dotnet", "publish -c Release -r win10-x64 /p:ShowLinkerSizeComparison=true /p:Version=" + newVersion + ".0")
+            var start = new ProcessStartInfo("dotnet", "publish -c Release -r win10-x64 -p:DebugType=None -p:DebugSymbols=false -p:Version=" + newVersion + ".0")
             {
                 UseShellExecute = true,
                 WorkingDirectory = projDir + "/bb"
@@ -208,7 +208,7 @@ namespace Releaser
 
         static void BuildLinuxX64(string projDir, string newVersion)
         {
-            var start = new ProcessStartInfo("dotnet", "publish -c Release -r linux-x64 /p:ShowLinkerSizeComparison=true /p:Version=" + newVersion + ".0")
+            var start = new ProcessStartInfo("dotnet", "publish -c Release -r linux-x64 -p:DebugType=None -p:DebugSymbols=false -p:Version=" + newVersion + ".0")
             {
                 UseShellExecute = true,
                 WorkingDirectory = projDir + "/bb"
@@ -224,7 +224,7 @@ namespace Releaser
 
         static void BuildOsxX64(string projDir, string newVersion)
         {
-            var start = new ProcessStartInfo("dotnet", "publish -c Release -r osx-x64 /p:ShowLinkerSizeComparison=true /p:Version=" + newVersion + ".0")
+            var start = new ProcessStartInfo("dotnet", "publish -c Release -r osx-x64 -p:DebugType=None -p:DebugSymbols=false -p:Version=" + newVersion + ".0")
             {
                 UseShellExecute = true,
                 WorkingDirectory = projDir + "/bb"

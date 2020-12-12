@@ -18,7 +18,7 @@ COPY bb/. ./bb/
 COPY Lib/. ./Lib/
 COPY Njsast/. ./Njsast/
 WORKDIR /app/bb
-RUN dotnet publish -c Release -r linux-x64 -o out -p:Version=$VERSION.0
+RUN dotnet publish -c Release -p:DebugType=None -p:DebugSymbols=false -r linux-x64 -o out -p:Version=$VERSION.0
 RUN rm -r ./out/ru-ru
 RUN rm -r ./out/Resources
 
