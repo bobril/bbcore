@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.36.2
+
 ### Fixed
 
 - `IncludeSources` from package.json are now considered as used modules.
