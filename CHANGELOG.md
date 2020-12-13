@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.38.0
+
 ### Added
 
 - New build parameter to control if run type checking (default `-t yes`) or not (`-t no`) or only type check (`-t only`).
