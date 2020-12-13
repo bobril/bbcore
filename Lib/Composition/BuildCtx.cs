@@ -12,20 +12,39 @@ using Newtonsoft.Json;
 
 namespace Lib.Composition
 {
+    public enum RunTypeCheck
+    {
+        Yes,
+        No,
+        Only
+    }
+
     public class BuildCtx
     {
-        public BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger,
-            string currentDirectory)
+        BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger,
+            string currentDirectory, RunTypeCheck typeCheck)
         {
             Verbose = verbose;
             CompilerPool = compilerPool;
             _diskCache = diskCache;
             _logger = logger;
             _currentDirectory = currentDirectory;
+            _typeCheck = typeCheck;
+        }
+
+        public BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger,
+            string currentDirectory, string typeCheckValue) : this(compilerPool, diskCache, verbose, logger,
+            currentDirectory, typeCheckValue switch
+            {
+                "yes" => RunTypeCheck.Yes, "no" => RunTypeCheck.No, "only" => RunTypeCheck.Only,
+                _ => throw new ArgumentException("typeCheck parameter is not valid: " + typeCheckValue)
+            })
+        {
         }
 
         RefDictionary<string, BuildCtx?>? _subBuildCtxs;
 
+        RunTypeCheck _typeCheck;
         string _mainFile;
         string _jasmineDts;
         List<string> _exampleSources;
@@ -40,6 +59,8 @@ namespace Lib.Composition
 
         readonly string _currentDirectory;
 
+        public bool OnlyTypeCheck => _typeCheck == RunTypeCheck.Only;
+        
         string? MainFile
         {
             get => _mainFile;
@@ -225,6 +246,8 @@ namespace Lib.Composition
             _cancellation?.Cancel();
             var cancellationTokenSource = new CancellationTokenSource();
             _cancellation = cancellationTokenSource;
+            if (_typeCheck == RunTypeCheck.No)
+                return Task.FromResult(new List<Diagnostic>());
             var current = DetectTypeCheckChange();
             var res = _typeCheckTask.ContinueWith((_task, _state) =>
             {
@@ -322,6 +345,8 @@ namespace Lib.Composition
 
                 mainBuildResult.MergeCommonSourceDirectory(tsProject.Owner.FullPath);
                 buildResult.TaskForSemanticCheck = StartTypeCheck();
+                if (_typeCheck == RunTypeCheck.Only)
+                    return;
                 if (tryDetectChanges)
                 {
                     if (!buildModuleCtx.CrawlChanges())
@@ -374,14 +399,16 @@ namespace Lib.Composition
                     var toClear = new StructList<string>();
                     foreach (var fi in buildResult.Path2FileInfo)
                     {
-                        if (fi.Value.IterationId!=iterationId)
+                        if (fi.Value.IterationId != iterationId)
                             toClear.Add(fi.Key);
                     }
+
                     foreach (var name in toClear)
                     {
                         buildResult.Path2FileInfo.Remove(name);
                     }
                 }
+
                 noDependencyChangeDetected: ;
                 if (project.SpriteGeneration) project.SpriteGenerator.ProcessNew();
                 var hasError = false;
@@ -486,7 +513,7 @@ namespace Lib.Composition
                     if (_subBuildCtxs == null || !_subBuildCtxs.TryGetValue(projectPath, out var subBuildCtx))
                     {
                         subBuildCtx = new BuildCtx(CompilerPool, _diskCache, Verbose, _logger,
-                            subProj.Owner.Owner.FullPath);
+                            subProj.Owner.Owner.FullPath, _typeCheck);
                     }
 
                     newSubBuildCtxs.GetOrAddValueRef(projectPath) = subBuildCtx;

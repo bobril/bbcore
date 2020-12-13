@@ -20,6 +20,9 @@ namespace Lib.Utils.CommandLineParser.Definitions
         public CommandLineArgumentEnumValues SourceMap { get; } =
             new CommandLineArgumentEnumValues("build sourcemaps", new[] {"-g", "--sourcemap"}, new[] {"no", "yes"});
 
+        public CommandLineArgumentEnumValues TypeCheck { get; } =
+            new CommandLineArgumentEnumValues("type check", new[] { "-t", "--typecheck"}, new[] {"no", "yes", "only" }, "yes");
+
         public CommandLineArgumentString SourceMapRoot { get; } =
             new CommandLineArgumentString("sets sourceRoot for sourcemap", new[] {"--sourceRoot"});
 

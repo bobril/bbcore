@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- New build parameter to control if run type checking (default `-t yes`) or not (`-t no`) or only type check (`-t only`).
+
 ### Fixed
 
 - Optimized extraction of sprite quality from filename

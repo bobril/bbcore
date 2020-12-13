@@ -22,6 +22,7 @@ using System.Text;
 using System.Reactive;
 using System.Text.Json;
 using BTDB.Collections;
+using JavaScriptEngineSwitcher.Core.Resources;
 using Lib.BuildCache;
 using Lib.Configuration;
 using Lib.HeadlessBrowser;
@@ -540,13 +541,15 @@ namespace Lib.Composition
                 proj.RefreshCompilerOptions();
                 proj.RefreshMainFile();
                 proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
+                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath,
+                    bCommand.UpdateTranslations.Value ? "no" : bCommand.TypeCheck.Value!);
                 ctx.Build(proj, true, buildResult, _mainBuildResult, 1);
                 ctx.BuildSubProjects(proj, true, buildResult, _mainBuildResult, 1);
                 _compilerPool.FreeMemory().GetAwaiter();
-                proj.FillOutputByAdditionalResourcesDirectory(buildResult.Modules, _mainBuildResult);
+                if (!ctx.OnlyTypeCheck)
+                    proj.FillOutputByAdditionalResourcesDirectory(buildResult.Modules, _mainBuildResult);
                 IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
-                if (!buildResult.HasError)
+                if (!ctx.OnlyTypeCheck && !buildResult.HasError)
                     AddUnusedDependenciesMessages(proj, buildResult, ref errors, ref warnings, messages);
                 if (errors == 0)
                 {
@@ -555,8 +558,7 @@ namespace Lib.Composition
                         // Side effect of fastBundle is registering of all messages
                         var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, proj, buildResult);
                         fastBundle.Build("bb/base");
-                        proj.TranslationDb.SaveLangDbs(PathToTranslations(proj), true);
-                        buildResult.TaskForSemanticCheck.Wait();
+                        proj.TranslationDb!.SaveLangDbs(PathToTranslations(proj), true);
                     }
                     else
                     {
@@ -566,7 +568,7 @@ namespace Lib.Composition
                             fastBundle.Build("bb/base");
                             fastBundle.BuildHtml();
                         }
-                        else
+                        else if (!ctx.OnlyTypeCheck)
                         {
                             var bundle = bCommand.NewBundler.Value
                                 ? (IBundler) new NjsastBundleBundler(_tools, _logger, _mainBuildResult, proj,
@@ -575,7 +577,6 @@ namespace Lib.Composition
                             bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value,
                                 bCommand.SourceMap.Value == "yes", bCommand.SourceMapRoot.Value);
                         }
-
                         buildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
                         {
                             if (semanticDiag.IsCompletedSuccessfully)
@@ -583,7 +584,7 @@ namespace Lib.Composition
                                     messages);
                         }).Wait();
 
-                        if (errors == 0)
+                        if (!ctx.OnlyTypeCheck && errors == 0)
                         {
                             SaveFilesContentToDisk(_mainBuildResult.FilesContent,
                                 PathUtils.Join(proj.Owner.Owner.FullPath,
@@ -686,7 +687,7 @@ namespace Lib.Composition
                 proj.SpriterInitialization(_mainBuildResult);
                 if (proj.TestSources != null && proj.TestSources.Count > 0)
                 {
-                    var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
+                    var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, "yes");
                     ctx.Build(proj, true, testBuildResult, _mainBuildResult, 1);
                     ctx.BuildSubProjects(proj, true, testBuildResult, _mainBuildResult, 1);
                     var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, proj, testBuildResult);
@@ -868,7 +869,7 @@ namespace Lib.Composition
                 proj.RefreshTestSources();
                 proj.SpriterInitialization(_mainBuildResult);
                 proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath);
+                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, "no");
                 ctx.Build(proj, true, buildResult, _mainBuildResult, 1);
                 var buildResultSet = buildResult.Path2FileInfo.Values.ToHashSet();
 
@@ -1360,12 +1361,12 @@ namespace Lib.Composition
             var throttled = _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200));
             throttled.Merge(throttled.Delay(TimeSpan.FromMilliseconds(300))).Subscribe((_) => _hasBuildWork.Set());
             var iterationId = 0;
-            var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath);
+            var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath, "yes");
             var buildResult = new BuildResult(_mainBuildResult, _currentProject);
             var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, _currentProject, buildResult);
             var start = DateTime.UtcNow;
-            int errors = 0;
-            int warnings = 0;
+            var errors = 0;
+            var warnings = 0;
             var messages = new List<Diagnostic>();
 
             _mainServer.OnRequestRebuild.Subscribe(_ =>
