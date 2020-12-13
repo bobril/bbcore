@@ -6,6 +6,7 @@ using System.Reactive;
 using System.Reactive.Subjects;
 using System.Security.Cryptography;
 using System.Text;
+using BTDB.Collections;
 using Lib.Utils;
 using Lib.Watcher;
 
@@ -55,7 +56,7 @@ namespace Lib.DiskCache
 
             public bool IsWatcherRoot
             {
-                get { return _isWatcherRoot; }
+                get => _isWatcherRoot;
                 set
                 {
                     if (_isWatcherRoot == value)
@@ -87,7 +88,7 @@ namespace Lib.DiskCache
 
             public bool IsVirtual => false;
 
-            public List<IItemCache> Items = new List<IItemCache>();
+            public IItemCache[] Items = Array.Empty<IItemCache>();
 
             int _changeId;
             bool _isInvalid;
@@ -116,10 +117,14 @@ namespace Lib.DiskCache
 
             public IEnumerator<IItemCache> GetEnumerator()
             {
-                return Items.GetEnumerator();
+                var items = Items;
+                foreach (var t in items)
+                {
+                    yield return t;
+                }
             }
 
-            public IItemCache TryGetChild(ReadOnlySpan<char> name)
+            public IItemCache? TryGetChild(ReadOnlySpan<char> name)
             {
                 foreach (var item in Items)
                 {
@@ -145,17 +150,20 @@ namespace Lib.DiskCache
 
             public void Add(IItemCache item)
             {
-                var oldItems = Items;
-                var newItems = new List<IItemCache>(oldItems.Count + 1);
-                newItems.AddRange(oldItems);
-                newItems.Add(item);
-                Items = newItems;
+                var items = Items;
+                Array.Resize(ref items,items.Length + 1);
+                items[^1] = item;
+                Items = items;
             }
 
             public void Remove(IItemCache item)
             {
-                var newItems = Items.ToList();
-                newItems.Remove(item);
+                var items = Items;
+                var idx = items.IndexOf(item);
+                if (idx < 0) return;
+                var newItems = new IItemCache[items.Length - 1];
+                items.AsSpan(0,idx).CopyTo(newItems);
+                items.AsSpan(idx+1).CopyTo(newItems.AsSpan(idx));
                 Items = newItems;
             }
         }
@@ -474,18 +482,17 @@ namespace Lib.DiskCache
                 }
 
                 var realChildren = 0;
-                for (var i = items.Count - 1; i >= 0; i--)
+                for (var i = items.Length; i--> 0;)
                 {
                     var item = origItems[i];
                     if (item.IsInvalid) continue;
                     realChildren++;
-                    if (!names.Contains(item.Name))
-                    {
-                        item.IsInvalid = true;
-                        if (items == origItems)
-                            items = origItems.ToList();
-                        items.RemoveAt(i);
-                    }
+                    if (names.Contains(item.Name)) continue;
+                    item.IsInvalid = true;
+                    var newItems = new IItemCache[items.Length-1];
+                    items.AsSpan(0, i).CopyTo(newItems);
+                    items.AsSpan(i+1).CopyTo(newItems.AsSpan(i));
+                    items = newItems;
                 }
 
                 if (items != origItems)
