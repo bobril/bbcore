@@ -27,15 +27,21 @@ namespace Njsast.Bundler
         {
             Exports!.EnsureKeyExists(needPath, tuples =>
             {
-                var init = new AstObject(Ast);
-                foreach (var (propName, value) in tuples)
-                {
-                    init.Properties.Add(new AstObjectKeyVal(new AstString(propName), value));
-                }
-
                 var wholeExportName = BundlerHelpers.MakeUniqueName("__export_$", Ast.Variables!,
                     Ast.CalcNonRootSymbolNames(),
                     "_" + BundlerHelpers.FileNameToIdent(Name));
+                var init = new AstObject(Ast);
+                foreach (var (propName, value) in tuples)
+                {
+                    var valueRef = value;
+                    if (value is AstSymbolDeclaration decl)
+                    {
+                        valueRef = new AstSymbolRef(value, decl.Thedef!, SymbolUsage.Read);
+                    }
+                    
+                    init.Properties.Add(new AstObjectKeyVal(new AstString(propName), valueRef));
+                }
+
                 var wholeExport = new AstSymbolVar(Ast, wholeExportName);
                 var symbolDef = new SymbolDef(Ast, wholeExport, init);
                 wholeExport.Thedef = symbolDef;
