@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.38.1
+
 ### Fixed
 
 - Compression of Enums with Whole Export.
