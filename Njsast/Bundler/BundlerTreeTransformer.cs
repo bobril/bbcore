@@ -49,10 +49,11 @@ namespace Njsast.Bundler
                 }
                 case AstSymbolRef symbolRef when _reqSymbolDefMap.TryGetValue(symbolRef.Thedef!, out var res):
                     return res;
-                case AstPropAccess propAccess when propAccess.PropertyAsString is {} propName &&
-                                                   DetectImport(propAccess.Expression) is {} leftImport:
+                case AstPropAccess propAccess when propAccess.PropertyAsString is { } propName &&
+                                                   DetectImport(propAccess.Expression) is { } leftImport:
                     return (leftImport.Item1, Concat(leftImport.Item2, propName));
             }
+
             return null;
         }
 
@@ -70,7 +71,9 @@ namespace Njsast.Bundler
             if (node is AstLabel)
                 return node;
 
-            if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is {} reqSymbolDef && reqSymbolDef.IsSingleInit && _currentSourceFile.Exports!.Values().All(n => n.IsSymbolDef() != reqSymbolDef))
+            if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { } reqSymbolDef &&
+                reqSymbolDef.IsSingleInit &&
+                _currentSourceFile.Exports!.Values().All(n => n.IsSymbolDef() != reqSymbolDef))
             {
                 if (DetectImport(varDef.Value) is { } import)
                 {
@@ -83,21 +86,21 @@ namespace Njsast.Bundler
 
             if (node is AstSimpleStatement simpleStatement)
             {
-                if (simpleStatement.Body.IsRequireCall() is {})
+                if (simpleStatement.Body.IsRequireCall() is { })
                     return Remove;
             }
 
-            if (node.IsRequireCall() is {} eagerReqName)
+            if (node.IsRequireCall() is { } eagerReqName)
             {
                 var resolvedName = _ctx.ResolveRequire(eagerReqName, _currentSourceFile!.Name);
                 if (!_cache.TryGetValue(resolvedName, out var reqSource))
                     throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
                                                    _currentSourceFile!.Name);
-                var theDef = CheckIfNewlyUsedSymbolIsUnique((AstSymbol)reqSource.Exports![Array.Empty<string>()]);
+                var theDef = CheckIfNewlyUsedSymbolIsUnique((AstSymbol) reqSource.Exports![Array.Empty<string>()]);
                 return new AstSymbolRef(node, theDef, SymbolUsage.Read);
             }
 
-            if (node.IsLazyImportCall() is {} lazyReqName)
+            if (node.IsLazyImportCall() is { } lazyReqName)
             {
                 var resolvedName = _ctx.ResolveRequire(lazyReqName, _currentSourceFile!.Name);
                 if (!_cache.TryGetValue(resolvedName, out var reqSource))
@@ -132,17 +135,26 @@ namespace Njsast.Bundler
                 return result;
             }
 
-            if (DetectImport(node) is {} import2)
+            if (DetectImport(node) is { } import2)
             {
-                if (import2.Item1.OnlyWholeExport && import2.Item2.Length == 1 && import2.Item2[0] == "default")
+                var needPath = import2.Item2.AsSpan();
+                if (needPath.Length >= 1 && needPath[0] == "default" &&
+                    (import2.Item1.Exports!.IsJustRoot ||
+                     !import2.Item1.Exports!.TryFindLongestPrefix(new[] {"default"}, out _, out _)))
+                {
+                    needPath = needPath.Slice(1);
+                }
+
+                if (import2.Item1.OnlyWholeExport && needPath.Length == 0)
                 {
                     var theDef =
-                        CheckIfNewlyUsedSymbolIsUnique((AstSymbol)import2.Item1.Exports![new ReadOnlySpan<string>()]);
+                        CheckIfNewlyUsedSymbolIsUnique((AstSymbol) import2.Item1.Exports![new ReadOnlySpan<string>()]);
                     return new AstSymbolRef(node, theDef, SymbolUsage.Read);
                 }
-                if (import2.Item1.Exports!.TryFindLongestPrefix(import2.Item2, out var matchLen, out var exportNode))
+
+                if (import2.Item1.Exports!.TryFindLongestPrefix(needPath, out var matchLen, out var exportNode))
                 {
-                    if (matchLen == import2.Item2.Length)
+                    if (matchLen == needPath.Length)
                     {
                         if (exportNode is AstSymbol trueSymbol)
                         {
@@ -153,6 +165,7 @@ namespace Njsast.Bundler
                         return exportNode;
                     }
                 }
+
                 if (!import2.Item1.Exports!.IsJustRoot && import2.Item2.Length == 1)
                 {
                     // This is not error because it could be just TypeScript interface

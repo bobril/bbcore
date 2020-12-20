@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using Njsast.Ast;
 
 namespace Njsast.Bundler
@@ -25,6 +27,12 @@ namespace Njsast.Bundler
 
         public void CreateWholeExport(string[] needPath)
         {
+            if (needPath.Length >= 1 && needPath[0] == "default" &&
+                !Exports!.TryFindLongestPrefix(new[] {"default"}, out _, out _))
+            {
+                needPath = needPath.Skip(1).ToArray();
+            }
+
             Exports!.EnsureKeyExists(needPath, tuples =>
             {
                 var wholeExportName = BundlerHelpers.MakeUniqueName("__export_$", Ast.Variables!,
@@ -38,7 +46,7 @@ namespace Njsast.Bundler
                     {
                         valueRef = new AstSymbolRef(value, decl.Thedef!, SymbolUsage.Read);
                     }
-                    
+
                     init.Properties.Add(new AstObjectKeyVal(new AstString(propName), valueRef));
                 }
 
@@ -123,7 +131,7 @@ namespace Njsast.Bundler
 
         public override string ToString()
         {
-            return $"{string.Join('.',Path)} as {AsName} from {SourceName}";
+            return $"{string.Join('.', Path)} as {AsName} from {SourceName}";
         }
     }
 }

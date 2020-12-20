@@ -6,6 +6,7 @@
 
 - Compression of Enums with Whole Export.
 - Made own Linux ClearScript.V8 build which is compatible with Debian 10.
+- Bundler with import default when there is not default export
 
 ## 1.38.0
 
