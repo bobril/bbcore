@@ -53,7 +53,6 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /project
 COPY --from=build /app/bb/out /app
-COPY libstdc++.so.6.0.28 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 EXPOSE 8080 9223
 VOLUME [ "/project", "/bbcache" ]
 ENTRYPOINT ["/app/bb"]

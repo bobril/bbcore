@@ -4,6 +4,8 @@
 *.nupkg binary
 *.dll binary
 *.pdb binary
+*.so binary
+*.6 binary
 
 # Custom for Visual Studio
 *.cs     diff=csharp
