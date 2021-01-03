@@ -30,7 +30,7 @@ namespace Njsast.Bobril
                     c = c.Slice(pos + 1);
                 }
             }
-            else if (block && c.IndexOf("@class") >= 0)
+            else if (block && (c.IndexOf("@class") >= 0 || c.IndexOf("#__PURE__") >= 0))
             {
                 _classStartsAfterPositions.Add(sourceLocation.End);
             }
@@ -48,10 +48,11 @@ namespace Njsast.Bobril
                         return;
                     }
                 }
+
                 for (var i = 0u; i < _classStartsAfterPositions.Count; i++)
                 {
                     var pos = _classStartsAfterPositions[i];
-                    if (pos.Line == func.Start.Line && (uint)(func.Start.Column - pos.Column) < 10)
+                    if (pos.Line == func.Start.Line && (uint) (func.Start.Column - pos.Column) < 10)
                     {
                         func.Pure = true;
                         return;
