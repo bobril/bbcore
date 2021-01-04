@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.39.0
+
 ### Added
 
 - Detection of `/*#__PURE__*/` comment as pure function.
