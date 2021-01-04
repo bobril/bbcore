@@ -35,9 +35,6 @@ namespace Njsast.Bundler
 
             Exports!.EnsureKeyExists(needPath, tuples =>
             {
-                var wholeExportName = BundlerHelpers.MakeUniqueName("__export_$", Ast.Variables!,
-                    Ast.CalcNonRootSymbolNames(),
-                    "_" + BundlerHelpers.FileNameToIdent(Name));
                 var init = new AstObject(Ast);
                 foreach (var (propName, value) in tuples)
                 {
@@ -50,6 +47,9 @@ namespace Njsast.Bundler
                     init.Properties.Add(new AstObjectKeyVal(new AstString(propName), valueRef));
                 }
 
+                var wholeExportName = BundlerHelpers.MakeUniqueName("__export_$", Ast.Variables!,
+                    Ast.CalcNonRootSymbolNames(),
+                    "_" + BundlerHelpers.FileNameToIdent(Name));
                 var wholeExport = new AstSymbolVar(Ast, wholeExportName);
                 var symbolDef = new SymbolDef(Ast, wholeExport, init);
                 wholeExport.Thedef = symbolDef;

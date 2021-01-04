@@ -6,6 +6,10 @@
 
 - Detection of `/*#__PURE__*/` comment as pure function.
 
+### Fixed
+
+- Bundler exception in special case.
+
 ## 1.38.1
 
 ### Fixed
