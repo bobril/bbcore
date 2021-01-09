@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.40.0
+
 ### Added
 
 - Removal of unused self recursive functions
