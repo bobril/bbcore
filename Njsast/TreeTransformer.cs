@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 using Njsast.Ast;
 using Njsast.Output;
 
@@ -88,6 +89,7 @@ namespace Njsast
         /// After descend if returns non null it will be returned from Transform
         protected abstract AstNode? After(AstNode node, bool inList);
 
+        [MustUseReturnValue]
         public AstNode Transform(AstNode start, bool inList = false)
         {
             Stack.Add(start);

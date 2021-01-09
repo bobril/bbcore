@@ -79,71 +79,26 @@ namespace Njsast.Compress
 
                         return node;
                     }
-                    case AstDefun defun:
-                    {
-                        if (defun.Name!.IsSymbolDef()!.OnlyDeclared)
-                            return Remove;
-                        if (defun.Body.Count == 0) defun.Pure = true;
-                        if (defun.Purpose == null)
-                            defun.Purpose = DetectPurpose(defun);
-                        return null;
-                    }
                     case AstLambda lambda:
                     {
+                        if (lambda.Body.Count == 0) lambda.Pure = true;
                         if (lambda.Purpose == null)
                             lambda.Purpose = DetectPurpose(lambda);
-                        return null;
+
+                        NeedValue = false;
+                        TransformList(ref lambda.Body);
+                        NeedValue = true;
+                        return node;
                     }
                     case AstBlock block:
                     {
-                        for (var i = 0; i < block.Body.Count; i++)
-                        {
-                            var si = block.Body[i];
-                            if (si is AstVar astVar && i < block.Body.Count - 1)
-                            {
-                                var si2 = block.Body[i + 1];
-                                if (si2 is AstVar astVar2)
-                                {
-                                    astVar.Definitions.AddRange(astVar2.Definitions);
-                                    block.Body.RemoveAt(i + 1);
-                                    Modified = true;
-                                    i--;
-                                }
-                            }
-                            else if (si is AstLet astLet && i < block.Body.Count - 1)
-                            {
-                                var si2 = block.Body[i + 1];
-                                if (si2 is AstLet astLet2)
-                                {
-                                    astLet.Definitions.AddRange(astLet2.Definitions);
-                                    block.Body.RemoveAt(i + 1);
-                                    Modified = true;
-                                    i--;
-                                }
-                            }
-                            else if (si is AstConst astConst && i < block.Body.Count - 1)
-                            {
-                                var si2 = block.Body[i + 1];
-                                if (si2 is AstConst astConst2)
-                                {
-                                    astConst.Definitions.AddRange(astConst2.Definitions);
-                                    block.Body.RemoveAt(i + 1);
-                                    Modified = true;
-                                    i--;
-                                }
-                            }
-                            else if (si is AstBlockStatement statement)
-                            {
-                                if (statement.BlockScope!.IsSafelyInlinenable())
-                                {
-                                    block.Body.ReplaceItemAt(i, statement.Body.AsReadOnlySpan());
-                                    Modified = true;
-                                    i--;
-                                }
-                            }
-                        }
+                        // Need value for Block is nonsense - optimize like it would not be needed
+                        OptimizeBlock(block);
 
-                        return null;
+                        NeedValue = false;
+                        TransformList(ref block.Body);
+                        NeedValue = true;
+                        return block;
                     }
                     case AstAssign assign:
                     {
@@ -179,20 +134,6 @@ namespace Njsast.Compress
 
                                 return assign.Right;
                             }
-                        }
-
-                        return null;
-                    }
-                    case AstIf astIf:
-                    {
-                        var b = astIf.Condition.ConstValue();
-                        if (b != null)
-                        {
-                            return TypeConverter.ToBoolean(b)
-                                ? MakeBlockFrom(astIf, GatherVarDeclarations.Calc(astIf.Alternative),
-                                    Transform(astIf.Body))
-                                : MakeBlockFrom(astIf, GatherVarDeclarations.Calc(astIf.Body),
-                                    astIf.Alternative != null ? Transform(astIf.Alternative) : Remove);
                         }
 
                         return null;
@@ -246,14 +187,23 @@ namespace Njsast.Compress
 
                         return null;
                     }
-                    case AstSimpleStatement simple:
+                    case AstCall call:
                     {
-                        NeedValue = false;
-                        node.Transform(this);
-                        NeedValue = true;
-                        return simple.Body == Remove
-                            ? inList ? Remove : new AstEmptyStatement(node.Source, node.Start, node.End)
-                            : simple;
+                        if (call.Expression is AstLambda {Purpose: { } purpose} && purpose is EnumDefinitionPurpose &&
+                            call.Args is
+                            {
+                                Count: 1
+                            } && call.Args[0].IsSymbolDef() is { } symbolDef)
+                        {
+                            if (symbolDef.References.Count == 1)
+                            {
+                                return Remove;
+                            }
+
+                            symbolDef.Purpose ??= purpose;
+                        }
+
+                        return null;
                     }
                     case AstPropAccess propAccess:
                     {
@@ -267,83 +217,6 @@ namespace Njsast.Compress
 
                         return null;
                     }
-                    case AstDefinitions def:
-                        NeedValue = false;
-                        try
-                        {
-                            if (inList)
-                            {
-                                var defsResult = new StructList<AstNode>();
-                                defsResult.Reserve(def.Definitions.Count);
-                                var wasChange = 0;
-                                foreach (var defi in def.Definitions)
-                                {
-                                    var defo = Transform(defi);
-                                    if (defo == Remove)
-                                    {
-                                        wasChange |= 1;
-                                        continue;
-                                    }
-
-                                    if (defo != defi) wasChange |= 2;
-                                    defsResult.Add(defo);
-                                }
-
-                                if (wasChange != 0)
-                                {
-                                    Modified = true;
-                                    if (defsResult.Count == 0)
-                                        return Remove;
-                                    if (wasChange == 1)
-                                    {
-                                        def.Definitions.Clear();
-                                        foreach (var defi in defsResult)
-                                        {
-                                            def.Definitions.Add((AstVarDef) defi);
-                                        }
-
-                                        return node;
-                                    }
-
-                                    for (var i = 0; i < defsResult.Count; i++)
-                                    {
-                                        var defi = defsResult[i];
-                                        if (defi is AstVarDef)
-                                        {
-                                            var me = (AstDefinitions) node.ShallowClone();
-                                            me.Definitions.ClearAndTruncate();
-                                            me.Definitions.Add((AstVarDef) defi);
-                                            defsResult[i] = me;
-                                        }
-                                        else
-                                        {
-                                            defsResult[i] = new AstSimpleStatement(defi);
-                                        }
-                                    }
-
-                                    return SpreadStructList(ref defsResult);
-                                }
-
-                                return node;
-                            }
-                            else if (def.Definitions.Count == 1)
-                            {
-                                var defi = def.Definitions[0];
-                                var defo = Transform(defi);
-                                if (defo == Remove) return Remove;
-                                if (defi != defo)
-                                {
-                                    Modified = true;
-                                    return new AstSimpleStatement(defo);
-                                }
-                            }
-
-                            return node;
-                        }
-                        finally
-                        {
-                            NeedValue = true;
-                        }
                 }
 
                 return null;
@@ -353,6 +226,10 @@ namespace Njsast.Compress
             {
                 switch (node)
                 {
+                    case AstEmptyStatement _:
+                    {
+                        return inList ? Remove : node;
+                    }
                     case AstConstant _:
                         return Remove;
                     case AstSymbolRef _:
@@ -431,13 +308,23 @@ namespace Njsast.Compress
 
                         goto default;
                     }
-                    case AstFunction function:
+                    case AstLambda lambda:
                     {
-                        if (function.Name == null || function.Name.Thedef!.OnlyDeclared)
+                        if (lambda.Name == null || lambda.Name.Thedef!.OnlyDeclared)
                         {
                             return Remove;
                         }
 
+                        if (lambda.Name.Thedef.References.Count == CountReferences(lambda, lambda.Name.Thedef))
+                        {
+                            return Remove;
+                        }
+
+                        if (lambda.Body.Count == 0) lambda.Pure = true;
+                        if (lambda.Purpose == null)
+                            lambda.Purpose = DetectPurpose(lambda);
+
+                        TransformList(ref lambda.Body);
                         return node;
                     }
                     case AstCall call:
@@ -470,6 +357,7 @@ namespace Njsast.Compress
                             {
                                 return Remove;
                             }
+
                             symbolDef.Purpose ??= purpose;
                         }
 
@@ -584,11 +472,207 @@ namespace Njsast.Compress
 
                         goto default;
                     }
+                    case AstSimpleStatement simple:
+                    {
+                        node.Transform(this);
+                        return simple.Body == Remove
+                            ? inList ? Remove : new AstEmptyStatement(node.Source, node.Start, node.End)
+                            : simple;
+                    }
+                    case AstIf astIf:
+                    {
+                        var b = astIf.Condition.ConstValue();
+                        if (b != null)
+                        {
+                            return TypeConverter.ToBoolean(b)
+                                ? MakeBlockFrom(astIf, GatherVarDeclarations.Calc(astIf.Alternative),
+                                    Transform(astIf.Body))
+                                : MakeBlockFrom(astIf, GatherVarDeclarations.Calc(astIf.Body),
+                                    astIf.Alternative != null ? Transform(astIf.Alternative) : Remove);
+                        }
+
+                        NeedValue = true;
+                        astIf.Condition = Transform(astIf.Condition);
+                        NeedValue = false;
+                        astIf.Body = (AstStatement) Transform(astIf.Body);
+                        if (astIf.Alternative != null) astIf.Alternative = (AstStatement) Transform(astIf.Alternative);
+
+                        return node;
+                    }
+                    case AstBlock block:
+                    {
+                        OptimizeBlock(block);
+
+                        if (block is AstCase astCase)
+                        {
+                            NeedValue = true;
+                            astCase.Expression = Transform(astCase.Expression);
+                            NeedValue = false;
+                        }
+
+                        TransformList(ref block.Body);
+                        return node;
+                    }
+                    case AstForIn forIn:
+                    {
+                        NeedValue = true;
+                        forIn.Object = Transform(forIn.Object);
+                        NeedValue = false;
+                        forIn.Body = (AstStatement) Transform(forIn.Body);
+                        return node;
+                    }
+                    case AstFor astFor:
+                    {
+                        if (astFor.Init != null)
+                        {
+                            var init = Transform(astFor.Init);
+                            if (init == Remove) init = null;
+                            astFor.Init = init;
+                        }
+
+                        if (astFor.Condition != null)
+                        {
+                            NeedValue = true;
+                            var cond = Transform(astFor.Condition);
+                            if (cond == Remove) cond = null;
+                            astFor.Condition = cond;
+                            NeedValue = false;
+                        }
+
+                        if (astFor.Step != null)
+                        {
+                            var step = Transform(astFor.Step);
+                            if (step == Remove) step = null;
+                            astFor.Step = step;
+                        }
+
+                        astFor.Body = (AstStatement) Transform(astFor.Body);
+                        return node;
+                    }
+                    case AstDefinitions def:
+                        if (inList)
+                        {
+                            var defsResult = new StructList<AstNode>();
+                            defsResult.Reserve(def.Definitions.Count);
+                            var wasChange = 0;
+                            foreach (var defi in def.Definitions)
+                            {
+                                var defo = Transform(defi);
+                                if (defo == Remove)
+                                {
+                                    wasChange |= 1;
+                                    continue;
+                                }
+
+                                if (defo != defi) wasChange |= 2;
+                                defsResult.Add(defo);
+                            }
+
+                            if (wasChange != 0)
+                            {
+                                Modified = true;
+                                if (defsResult.Count == 0)
+                                    return Remove;
+                                if (wasChange == 1)
+                                {
+                                    def.Definitions.Clear();
+                                    foreach (var defi in defsResult)
+                                    {
+                                        def.Definitions.Add((AstVarDef) defi);
+                                    }
+
+                                    return node;
+                                }
+
+                                for (var i = 0; i < defsResult.Count; i++)
+                                {
+                                    var defi = defsResult[i];
+                                    if (defi is AstVarDef)
+                                    {
+                                        var me = (AstDefinitions) node.ShallowClone();
+                                        me.Definitions.ClearAndTruncate();
+                                        me.Definitions.Add((AstVarDef) defi);
+                                        defsResult[i] = me;
+                                    }
+                                    else
+                                    {
+                                        defsResult[i] = new AstSimpleStatement(defi);
+                                    }
+                                }
+
+                                return SpreadStructList(ref defsResult);
+                            }
+
+                            return node;
+                        }
+                        else if (def.Definitions.Count == 1)
+                        {
+                            var defi = def.Definitions[0];
+                            var defo = Transform(defi);
+                            if (defo == Remove) return Remove;
+                            if (defi != defo)
+                            {
+                                Modified = true;
+                                return new AstSimpleStatement(defo);
+                            }
+                        }
+
+                        return node;
                     default:
                         NeedValue = true;
                         node.Transform(this);
                         NeedValue = false;
                         return node;
+                }
+            }
+        }
+
+        void OptimizeBlock(AstBlock block)
+        {
+            for (var i = 0; i < block.Body.Count; i++)
+            {
+                var si = block.Body[i];
+                if (si is AstVar astVar && i < block.Body.Count - 1)
+                {
+                    var si2 = block.Body[i + 1];
+                    if (si2 is AstVar astVar2)
+                    {
+                        astVar.Definitions.AddRange(astVar2.Definitions);
+                        block.Body.RemoveAt(i + 1);
+                        Modified = true;
+                        i--;
+                    }
+                }
+                else if (si is AstLet astLet && i < block.Body.Count - 1)
+                {
+                    var si2 = block.Body[i + 1];
+                    if (si2 is AstLet astLet2)
+                    {
+                        astLet.Definitions.AddRange(astLet2.Definitions);
+                        block.Body.RemoveAt(i + 1);
+                        Modified = true;
+                        i--;
+                    }
+                }
+                else if (si is AstConst astConst && i < block.Body.Count - 1)
+                {
+                    var si2 = block.Body[i + 1];
+                    if (si2 is AstConst astConst2)
+                    {
+                        astConst.Definitions.AddRange(astConst2.Definitions);
+                        block.Body.RemoveAt(i + 1);
+                        Modified = true;
+                        i--;
+                    }
+                }
+                else if (si is AstBlockStatement statement)
+                {
+                    if (statement.BlockScope!.IsSafelyInlinenable())
+                    {
+                        block.Body.ReplaceItemAt(i, statement.Body.AsReadOnlySpan());
+                        Modified = true;
+                        i--;
+                    }
                 }
             }
         }

@@ -342,13 +342,13 @@ namespace Njsast.Bundler
             }
         }
 
-        void BeforeAdd(AstToplevel top)
+        AstToplevel BeforeAdd(AstToplevel top)
         {
             var transformer =
                 new BundlerTreeTransformer(_cache, _ctx, _currentSourceFile!, top.Variables!,
                     top.CalcNonRootSymbolNames(), _currentFileIdent!,
                     _splitMap, _splitMap[_currentSourceFile!.PartOfBundle!]);
-            transformer.Transform(top);
+            return (AstToplevel)transformer.Transform(top);
         }
 
         void MarkRequiredAs(SourceFile sourceFile, string fromSplitName)

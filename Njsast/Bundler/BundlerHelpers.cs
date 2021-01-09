@@ -65,23 +65,23 @@ namespace Njsast.Bundler
                     Exports = exports,
                     OnlyWholeExport = true
                 };
-                new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
+                sourceFile.Ast = (AstToplevel)new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
                 return sourceFile;
             }
             else
             {
                 var sourceFile = new SourceFile(name, toplevel);
-                new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
+                sourceFile.Ast = (AstToplevel)new ImportExportTransformer(sourceFile, resolver).Transform(toplevel);
                 return sourceFile;
             }
         }
 
         public static void AppendToplevelWithRename(AstToplevel main, AstToplevel add, string suffix,
-            Action<AstToplevel>? beforeAdd = null)
+            Func<AstToplevel, AstToplevel>? beforeAdd = null)
         {
             if (main.Body.Count == 0)
             {
-                beforeAdd?.Invoke(add);
+                add = beforeAdd?.Invoke(add) ?? add;
                 main.Body.AddRange(add.Body.AsReadOnlySpan());
                 main.Variables = add.Variables;
                 main.Globals = add.Globals;
@@ -94,7 +94,7 @@ namespace Njsast.Bundler
             var renameWalker = new ToplevelRenameWalker(main.Variables!, nonRootSymbolNames, suffix);
             renameWalker.Walk(add);
 
-            beforeAdd?.Invoke(add);
+            add = beforeAdd?.Invoke(add) ?? add;
             main.Body.AddRange(add.Body.AsReadOnlySpan());
             foreach (var (_, symbolDef) in add.Variables!)
             {
