@@ -1,36 +1,35 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const path = require("path");
 const https = require("https");
-const urlmodule = require("url");
+const url_module = require("url");
 const yauzl = require("yauzl");
 const fs = require("fs");
 const util = require("util");
 const os = require("os");
 const child_process = require("child_process");
+const buffer_1 = require("buffer");
 function get(url, options) {
     return new Promise((resolve, reject) => {
         try {
-            options = Object.assign(urlmodule.parse(url), options);
+            options = Object.assign(url_module.parse(url), options);
             https
-                .get(options, response => {
+                .get(options, (response) => {
                 var str = [];
                 response.on("data", function (chunk) {
                     str.push(chunk);
                 });
                 response.on("end", function () {
-                    var res = Object.assign({}, response, {
-                        body: Buffer.concat(str)
-                    });
-                    resolve(res);
+                    resolve({ response, body: buffer_1.Buffer.concat(str) });
                 });
                 response.on("error", function (err) {
                     reject(err);
@@ -65,11 +64,11 @@ function downloadAsset(asset) {
 function downloadAssetOfUrl(url) {
     return __awaiter(this, void 0, void 0, function* () {
         var binary = yield get(url, getDownloadOptions(url));
-        if (binary.statusCode === 302) {
-            return yield downloadAssetOfUrl(binary.headers.location);
+        if (binary.response.statusCode === 302) {
+            return yield downloadAssetOfUrl(binary.response.headers.location);
         }
-        else if (binary.statusCode !== 200) {
-            throw new Error(`Request failed with code ${binary.statusCode}`);
+        else if (binary.response.statusCode !== 200) {
+            throw new Error(`Request failed with code ${binary.response.statusCode}`);
         }
         return binary.body;
     });
@@ -85,29 +84,29 @@ function callRepoApi(path) {
         var options = {
             headers: {
                 accept: "application/vnd.github.v3.json",
-                "user-agent": "bobril-build-core/1.1.0"
-            }
+                "user-agent": "bobril-build-core/1.1.0",
+            },
         };
         addAuthorization(options.headers);
         var binary = yield get(`https://api.github.com/repos/bobril/bbcore/${path}`, options);
         var data = JSON.parse(binary.body.toString("utf-8"));
-        if (binary.statusCode !== 200)
+        if (binary.response.statusCode !== 200)
             throw new Error(data.message);
         return data;
     });
 }
 function getDownloadOptions(url) {
-    var isGitHubUrl = urlmodule.parse(url).hostname === "api.github.com";
+    var isGitHubUrl = url_module.parse(url).hostname === "api.github.com";
     var headers = isGitHubUrl
         ? {
             accept: "application/octet-stream",
-            "user-agent": "bobril-build-core/1.1.0"
+            "user-agent": "bobril-build-core/1.1.0",
         }
         : {};
     if (isGitHubUrl)
         addAuthorization(headers);
     return {
-        headers: headers
+        headers: headers,
     };
 }
 function mkdirp(dir, cb) {
@@ -183,7 +182,7 @@ const platformToAssetNameMap = {
     "win32-x32": "win-x64.zip",
     "win32-ia32": "win-x64.zip",
     "linux-x64": "linux-x64.zip",
-    "darwin-x64": "osx-x64.zip"
+    "darwin-x64": "osx-x64.zip",
 };
 const platformWithArch = os.platform() + "-" + os.arch();
 let platformAssetName = platformToAssetNameMap[platformWithArch] || platformWithArch + ".zip";
@@ -245,7 +244,7 @@ function checkFreshnessOfCachedLastVersion() {
         }
     });
 }
-(() => __awaiter(this, void 0, void 0, function* () {
+(() => __awaiter(void 0, void 0, void 0, function* () {
     if (!(yield fsExists(homeDir))) {
         try {
             yield fsMkdir(homeDir);
@@ -273,7 +272,7 @@ function checkFreshnessOfCachedLastVersion() {
             requestedVersion = last.tag_name;
         }
         catch (_c) {
-            console.log("Github does not returned latest version information\nplease read https://github.com/bobril/bbcore");
+            console.log("Github did not return latest version information\nplease read https://github.com/bobril/bbcore");
             process.exit(1);
             return;
         }
@@ -291,7 +290,7 @@ function checkFreshnessOfCachedLastVersion() {
             process.exit(1);
         }
         var assets = rel.assets;
-        var asset = assets.find(a => a.name == platformAssetName);
+        var asset = assets.find((a) => a.name == platformAssetName);
         if (asset) {
             console.log("Downloading " + asset.name + " from " + rel.tag_name);
             var zip;
@@ -316,7 +315,7 @@ function checkFreshnessOfCachedLastVersion() {
             console.log("Not found " +
                 platformAssetName +
                 " in " +
-                assets.map(a => a.name).join(", "));
+                assets.map((a) => a.name).join(", "));
             process.exit(1);
         }
     }

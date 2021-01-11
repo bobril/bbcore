@@ -1,42 +1,39 @@
 import * as path from "path";
 import * as http from "http";
 import * as https from "https";
-import * as urlmodule from "url";
+import * as url_module from "url";
 import * as yauzl from "yauzl";
 import * as fs from "fs";
 import * as util from "util";
 import * as os from "os";
-import { homedir } from "os";
 import * as child_process from "child_process";
-import { mkdirSync } from "fs";
+import { Buffer } from "buffer";
 
-interface IResponse extends http.IncomingMessage {
+interface IResponse {
+    response: http.IncomingMessage;
     body: Buffer;
 }
 
 function get(url: string, options: http.RequestOptions): Promise<IResponse> {
     return new Promise<IResponse>((resolve, reject) => {
         try {
-            options = Object.assign(urlmodule.parse(url), options);
+            options = Object.assign(url_module.parse(url), options);
             https
-                .get(options, response => {
+                .get(options, (response) => {
                     var str: Buffer[] = [];
-                    response.on("data", function(chunk: Buffer) {
+                    response.on("data", function (chunk: Buffer) {
                         str.push(chunk);
                     });
 
-                    response.on("end", function() {
-                        var res = Object.assign({}, response, {
-                            body: Buffer.concat(str)
-                        });
-                        resolve(res);
+                    response.on("end", function () {
+                        resolve({ response, body: Buffer.concat(str) });
                     });
 
-                    response.on("error", function(err) {
+                    response.on("error", function (err) {
                         reject(err);
                     });
                 })
-                .on("error", function(err) {
+                .on("error", function (err) {
                     reject(err);
                 })
                 .end();
@@ -62,10 +59,12 @@ async function downloadAsset(asset: any) {
 
 async function downloadAssetOfUrl(url: string): Promise<Buffer> {
     var binary = await get(url, getDownloadOptions(url));
-    if (binary.statusCode === 302) {
-        return await downloadAssetOfUrl(binary.headers.location!);
-    } else if (binary.statusCode !== 200) {
-        throw new Error(`Request failed with code ${binary.statusCode}`);
+    if (binary.response.statusCode === 302) {
+        return await downloadAssetOfUrl(binary.response.headers.location!);
+    } else if (binary.response.statusCode !== 200) {
+        throw new Error(
+            `Request failed with code ${binary.response.statusCode}`
+        );
     }
     return binary.body;
 }
@@ -82,8 +81,8 @@ async function callRepoApi(path: string) {
     var options: http.RequestOptions = {
         headers: {
             accept: "application/vnd.github.v3.json",
-            "user-agent": "bobril-build-core/1.1.0"
-        }
+            "user-agent": "bobril-build-core/1.1.0",
+        },
     };
     addAuthorization(options.headers!);
 
@@ -92,33 +91,33 @@ async function callRepoApi(path: string) {
         options
     );
     var data = JSON.parse(binary.body.toString("utf-8"));
-    if (binary.statusCode !== 200) throw new Error(data.message);
+    if (binary.response.statusCode !== 200) throw new Error(data.message);
     return data;
 }
 
 function getDownloadOptions(url: string): http.RequestOptions {
-    var isGitHubUrl = urlmodule.parse(url).hostname === "api.github.com";
+    var isGitHubUrl = url_module.parse(url).hostname === "api.github.com";
 
     var headers: http.OutgoingHttpHeaders = isGitHubUrl
         ? {
               accept: "application/octet-stream",
-              "user-agent": "bobril-build-core/1.1.0"
+              "user-agent": "bobril-build-core/1.1.0",
           }
         : {};
     if (isGitHubUrl) addAuthorization(headers);
 
     return {
-        headers: headers
+        headers: headers,
     };
 }
 
 function mkdirp(dir: string, cb: () => void) {
     if (dir === ".") return cb();
-    fs.stat(dir, function(err: any) {
+    fs.stat(dir, function (err: any) {
         if (err == null) return cb(); // already exists
 
         var parent = path.dirname(dir);
-        mkdirp(parent, function() {
+        mkdirp(parent, function () {
             fs.mkdir(dir, cb);
         });
     });
@@ -148,16 +147,16 @@ function unzip(buffer: Buffer, targetDir: string): Promise<void> {
                 }
 
                 incrementHandleCount();
-                zipfile.on("end", function() {
+                zipfile.on("end", function () {
                     decrementHandleCount();
                 });
 
-                zipfile.on("entry", function(entry: any) {
+                zipfile.on("entry", function (entry: any) {
                     if (/\/$/.test(entry.fileName)) {
                         // directory file names end with '/'
                         mkdirp(
                             path.join(targetDir, entry.fileName),
-                            function() {
+                            function () {
                                 if (err) throw err;
                                 zipfile.readEntry();
                             }
@@ -166,26 +165,26 @@ function unzip(buffer: Buffer, targetDir: string): Promise<void> {
                         // ensure parent directory exists
                         mkdirp(
                             path.join(targetDir, path.dirname(entry.fileName)),
-                            function() {
-                                zipfile.openReadStream(entry, function(
-                                    err: any,
-                                    readStream: any
-                                ) {
-                                    if (err) {
-                                        reject(err);
-                                        return;
+                            function () {
+                                zipfile.openReadStream(
+                                    entry,
+                                    function (err: any, readStream: any) {
+                                        if (err) {
+                                            reject(err);
+                                            return;
+                                        }
+                                        // pump file contents
+                                        var writeStream = fs.createWriteStream(
+                                            path.join(targetDir, entry.fileName)
+                                        );
+                                        incrementHandleCount();
+                                        writeStream.on("close", () => {
+                                            decrementHandleCount();
+                                            zipfile.readEntry();
+                                        });
+                                        readStream.pipe(writeStream);
                                     }
-                                    // pump file contents
-                                    var writeStream = fs.createWriteStream(
-                                        path.join(targetDir, entry.fileName)
-                                    );
-                                    incrementHandleCount();
-                                    writeStream.on("close", () => {
-                                        decrementHandleCount();
-                                        zipfile.readEntry();
-                                    });
-                                    readStream.pipe(writeStream);
-                                });
+                                );
                             }
                         );
                     }
@@ -202,7 +201,7 @@ const platformToAssetNameMap: { [name: string]: string } = {
     "win32-x32": "win-x64.zip",
     "win32-ia32": "win-x64.zip",
     "linux-x64": "linux-x64.zip",
-    "darwin-x64": "osx-x64.zip"
+    "darwin-x64": "osx-x64.zip",
 };
 
 const platformWithArch = os.platform() + "-" + os.arch();
@@ -302,7 +301,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
             requestedVersion = last.tag_name;
         } catch {
             console.log(
-                "Github does not returned latest version information\nplease read https://github.com/bobril/bbcore"
+                "Github did not return latest version information\nplease read https://github.com/bobril/bbcore"
             );
             process.exit(1);
             return;
@@ -323,7 +322,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
             process.exit(1);
         }
         var assets = rel.assets as { url: string; name: string }[];
-        var asset = assets.find(a => a.name == platformAssetName);
+        var asset = assets.find((a) => a.name == platformAssetName);
         if (asset) {
             console.log("Downloading " + asset.name + " from " + rel.tag_name);
             var zip: Buffer;
@@ -349,7 +348,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
                 "Not found " +
                     platformAssetName +
                     " in " +
-                    assets.map(a => a.name).join(", ")
+                    assets.map((a) => a.name).join(", ")
             );
             process.exit(1);
         }
@@ -373,10 +372,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     proc.on("exit", (code: number) => {
         process.exit(code);
     });
-    process.stdin.pipe(
-        proc.stdin,
-        { end: true }
-    );
+    process.stdin.pipe(proc.stdin, { end: true });
     function endBBCore() {
         proc.stdin.write(
             "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b" +
