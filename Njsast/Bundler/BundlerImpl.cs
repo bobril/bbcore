@@ -421,8 +421,12 @@ namespace Njsast.Bundler
                     var module = _cache[reexportExp.SourceName];
                     if (module.Exports != null)
                     {
-                        if (module.Exports.TryFindLongestPrefix(reexportExp.Path.AsSpan(), out _, out var node))
-                            cached.Exports![new[] {reexportExp.AsName}] = node;
+                        foreach (var keyValuePair in module.Exports.IteratePrefix(reexportExp.Path.AsSpan()))
+                        {
+                            cached.Exports![
+                                    Concat(reexportExp.AsName, keyValuePair.Key.AsSpan(reexportExp.Path.Length))] =
+                                keyValuePair.Value;
+                        }
                     }
                 }
                 else if (exp is ExportAsNamespaceSelfExport asNamespaceExp)

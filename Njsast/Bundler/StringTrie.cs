@@ -149,6 +149,41 @@ namespace Njsast.Bundler
             }
         }
 
+        public IEnumerable<KeyValuePair<StructList<string>, T>> IteratePrefix(ReadOnlySpan<string> prefix)
+        {
+            var key = new StructList<string>();
+            ref var p = ref _root;
+            while (!prefix.IsEmpty)
+            {
+                if (p.Children == null)
+                {
+                    return RecursiveIterate(null,key);
+                }
+                p = ref p.Children.GetOrFakeValueRef(prefix[0]);
+                if (!p.HasValue && p.Children == null) // Got Fake?
+                {
+                    return RecursiveIterate(null,key);
+                }
+                key.Add(prefix[0]);
+                
+                prefix = prefix.Slice(1);
+            }
+
+            return RecursiveIterateWithRootValue(p, key);
+        }
+
+        static IEnumerable<KeyValuePair<StructList<string>, T>> RecursiveIterateWithRootValue(Val root, StructList<string> key)
+        {
+            if (root.HasValue)
+            {
+                yield return new KeyValuePair<StructList<string>, T>(key, root.Value);
+            }
+            foreach (var pair in RecursiveIterate(root.Children, key))
+            {
+                yield return pair;
+            }
+        }
+
         static IEnumerable<KeyValuePair<StructList<string>,T>> RecursiveIterate(RefDictionary<string,Val>? children, StructList<string> key)
         {
             if (children == null) yield break;
