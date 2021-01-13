@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.40.1
+
 ### Fixed
 
 - Bundling of reexport of export star.
