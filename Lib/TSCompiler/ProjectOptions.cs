@@ -66,6 +66,7 @@ namespace Lib.TSCompiler
         public List<string>? ExampleSources;
         public bool LiveReloadEnabled;
         public bool CoverageEnabled;
+        public bool InteractiveDumpsToDist;
         public string? TypeScriptVersion;
         public string? BuildOutputDir;
 
@@ -513,6 +514,7 @@ namespace Lib.TSCompiler
                 pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
             WarningsAsErrors = bobrilSection?["warningsAsErrors"]?.Value<bool>() ?? false;
             ObsoleteMessage = GetStringProperty(bobrilSection, "obsolete", null);
+            InteractiveDumpsToDist = bobrilSection?.ContainsKey("interactiveDumpsToDist") ?? false;
             TestDirectories = bobrilSection?["testDirectories"]?.Values<string>().ToList();
             Localize = bobrilSection?["localize"]?.Value<bool>() ?? Localize;
             PathToTranslations = GetStringProperty(bobrilSection, "pathToTranslations", null);

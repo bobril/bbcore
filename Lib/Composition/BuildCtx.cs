@@ -79,7 +79,7 @@ namespace Lib.Composition
             get => _jasmineDts;
             set
             {
-                if (!ReferenceEquals(value, _jasmineDts))
+                if (value != _jasmineDts)
                 {
                     _jasmineDts = value;
                     _projectStructureChanged = true;

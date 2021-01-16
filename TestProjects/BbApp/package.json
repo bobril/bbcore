@@ -13,6 +13,7 @@
         "prefixStyleDefs": "pref1x",
         "dependencies": "upgrade",
         "allowModuleDeepImport": true,
+        "interactiveDumpsToDist": true,
         "compilerOptions": {
             "strict": true
         },

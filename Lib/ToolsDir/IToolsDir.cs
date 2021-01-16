@@ -21,8 +21,8 @@ namespace Lib.ToolsDir
         string JasmineDtsPath { get; }
         string GetLocaleDef(string locale);
         IJsEngine CreateJsEngine();
-        byte[] WebGet(string path);
-        byte[] WebtGet(string path);
+        byte[]? WebGet(string path);
+        byte[]? WebtGet(string path);
         void ProxyWeb(string url);
         void ProxyWebt(string url);
         IDictionary<string, byte[]> CoverageDetailsVisualizerZip { get; }

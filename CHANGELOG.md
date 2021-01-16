@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Interactive mode can write all build files to distributed directory by defining in `package.json` in `bobril` section `"interactiveDumpsToDist": true`. Useful for using Bobril with Cordova.
+
 ## 1.40.1
 
 ### Fixed

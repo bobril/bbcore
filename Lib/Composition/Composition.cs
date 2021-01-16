@@ -4,6 +4,7 @@ using Lib.Utils;
 using Lib.Watcher;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reactive.Linq;
 using Lib.WebServer;
@@ -52,7 +53,7 @@ namespace Lib.Composition
         CommandLineCommand _command;
         TestServer _testServer;
         ILongPollingServer _testServerLongPollingHandler;
-        MainServer _mainServer;
+        MainServer? _mainServer;
         ILongPollingServer _mainServerLongPollingHandler;
         IBrowserProcessFactory _browserProcessFactory;
         IBrowserProcess _browserProcess;
@@ -577,6 +578,7 @@ namespace Lib.Composition
                             bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value,
                                 bCommand.SourceMap.Value == "yes", bCommand.SourceMapRoot.Value);
                         }
+
                         buildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
                         {
                             if (semanticDiag.IsCompletedSuccessfully)
@@ -823,7 +825,8 @@ namespace Lib.Composition
             }
         }
 
-        void SaveFilesContentToDisk(RefDictionary<string, object> filesContent, string dir)
+        void SaveFilesContentToDisk(RefDictionary<string, object> filesContent, string dir,
+            RefDictionary<string, object>? delta = null)
         {
             dir = PathUtils.Normalize(dir);
             var utf8WithoutBom = new UTF8Encoding(false);
@@ -834,6 +837,28 @@ namespace Lib.Composition
                 if (content is Lazy<object>)
                 {
                     content = ((Lazy<object>) content).Value;
+                }
+
+                if (delta != null)
+                {
+                    if (delta.TryGetValue(filesContent.KeyRef(index), out var previousContent))
+                    {
+                        if (content.GetType() == previousContent.GetType())
+                        {
+                            if (content is string)
+                            {
+                                if ((string) content == (string) previousContent)
+                                    continue;
+                            }
+                            else
+                            {
+                                if (((byte[]) content).AsSpan().SequenceEqual((byte[]) previousContent))
+                                    continue;
+                            }
+                        }
+                    }
+
+                    delta.GetOrAddValueRef(filesContent.KeyRef(index)) = content;
                 }
 
                 Directory.CreateDirectory(PathUtils.DirToCreateDirectory(PathUtils.Parent(fileName)));
@@ -847,7 +872,8 @@ namespace Lib.Composition
                     File.WriteAllBytes(fileName, (byte[]) content);
                 }
 
-                content = null;
+                if (delta == null)
+                    content = null;
             }
         }
 
@@ -1119,10 +1145,9 @@ namespace Lib.Composition
                 }
             }
 
-            var pathWithoutFirstSlash = path.Value.Substring(1);
+            var pathWithoutFirstSlash = path.Value!.Substring(1);
             var filesContentFromCurrentProjectBuildResult = _mainBuildResult.FilesContent;
-            object content;
-            if (FindInFilesContent(pathWithoutFirstSlash, filesContentFromCurrentProjectBuildResult, out content))
+            if (FindInFilesContent(pathWithoutFirstSlash, filesContentFromCurrentProjectBuildResult, out var content))
             {
                 context.Response.ContentType = PathUtils.PathToMimeType(pathWithoutFirstSlash);
                 if (content is Lazy<object>)
@@ -1295,7 +1320,7 @@ namespace Lib.Composition
                 return CurrentValue;
             }
 
-            public IDisposable OnChange(Action<ProxyOptions, string> listener)
+            public IDisposable? OnChange(Action<ProxyOptions, string> listener)
             {
                 return null;
             }
@@ -1304,7 +1329,8 @@ namespace Lib.Composition
         }
 
         static bool FindInFilesContent(string pathWithoutFirstSlash,
-            RefDictionary<string, object> filesContentFromCurrentProjectBuildResult, out object content)
+            RefDictionary<string, object>? filesContentFromCurrentProjectBuildResult,
+            [NotNullWhen(true)] out object? content)
         {
             content = null;
             if (filesContentFromCurrentProjectBuildResult == null)
@@ -1365,6 +1391,7 @@ namespace Lib.Composition
             var buildResult = new BuildResult(_mainBuildResult, _currentProject);
             var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, _currentProject, buildResult);
             var start = DateTime.UtcNow;
+            var delta = new RefDictionary<string, object>();
             var errors = 0;
             var warnings = 0;
             var messages = new List<Diagnostic>();
@@ -1429,15 +1456,23 @@ namespace Lib.Composition
                                 $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}",
                                 color);
                         }, TaskContinuationOptions.OnlyOnRanToCompletion);
-                        if (errors == 0 && proj.LiveReloadEnabled)
+                        if (errors == 0)
                         {
-                            proj.LiveReloadIdx++;
-                            proj.LiveReloadAwaiter.TrySetResult(Unit.Default);
-                        }
+                            if (proj.LiveReloadEnabled)
+                            {
+                                proj.LiveReloadIdx++;
+                                proj.LiveReloadAwaiter.TrySetResult(Unit.Default);
+                            }
 
-                        if (proj.TestSources != null && proj.TestSources.Count > 0)
-                        {
-                            if (errors == 0)
+                            if (proj.InteractiveDumpsToDist)
+                            {
+                                var distPath = PathUtils.Join(proj.Owner.Owner.FullPath,
+                                    proj.BuildOutputDir ?? "./dist");
+                                _dc.IgnoreChangesInPath = distPath;
+                                SaveFilesContentToDisk(_mainBuildResult.FilesContent, distPath, delta);
+                            }
+
+                            if (proj.TestSources != null && proj.TestSources.Count > 0)
                             {
                                 fastBundle.BuildHtml(true);
                                 _testServer.StartTest("/test.html", fastBundle.SourceMaps);

@@ -123,6 +123,14 @@ It is relative to project. Default is "translations".
         "buildOutputDir": "./dist"
     }
 
+## Enable writing of build result in Interactive mode to build path
+
+    "bobril": {
+        "interactiveDumpsToDist": true
+    }
+
+It checks only for existance of this `interactiveDumpsToDist` key, value does not matter for now.
+
 ## Where to find test sources
 
 By default it finds all tests in project directory (it always skips `node_modules`). By defining this, you can limit or add additional directories where to search.
