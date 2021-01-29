@@ -89,6 +89,11 @@ namespace Lib.ToolsDir
                 {
                     _typeScriptJsContent = File.ReadAllText(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
 
+                    // Patch strange crash in TS (4.1.3 probably more) https://github.com/microsoft/TypeScript/issues/40747
+                    _typeScriptJsContent = _typeScriptJsContent.Replace(
+                        "ts.Debug.assert(declarationTransform.transformed.length === 1, \"Should only see one output from the decl transform\");",
+                        "ts.Debug.assert(declarationTransform.transformed.length === 1, \"Should only see one output from the decl transform\");declarationTransform.transformed[0].text = declarationTransform.transformed[0].text || \"\";");
+                    
                     // Need always use __createBinding helper (allows mocking of exports) even though using ES5 target replace:
                     // if (languageVersion === ScriptTarget.ES3) {
                     // by
@@ -109,11 +114,11 @@ namespace Lib.ToolsDir
                         _typeScriptJsContent.Replace("(shouldEmitUnderscoreUnderscoreESModule())", "(false)");
 
                     // Patch
-                    var bugPos = _typeScriptJsContent.IndexOf("function checkUnusedClassMembers(");
+                    var bugPos = _typeScriptJsContent.IndexOf("function checkUnusedClassMembers(", StringComparison.Ordinal);
                     var bugPos22 = bugPos < 0
                         ? -1
-                        : _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos);
-                    var bugPos33 = bugPos22 < 0 ? -1 : _typeScriptJsContent.IndexOf("case 207", bugPos22);
+                        : _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos, StringComparison.Ordinal);
+                    var bugPos33 = bugPos22 < 0 ? -1 : _typeScriptJsContent.IndexOf("case 207", bugPos22, StringComparison.Ordinal);
                     if (bugPos22 > 0 && (bugPos33 < 0 || bugPos33 > bugPos22 + 200))
                     {
                         _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos22, "case 207:");
