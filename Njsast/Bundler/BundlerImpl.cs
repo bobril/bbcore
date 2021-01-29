@@ -387,6 +387,17 @@ namespace Njsast.Bundler
             cached.PartOfBundle = splitName;
             cached.PlainJsDependencies.AddRange(_ctx.GetPlainJsDependencies(fileName).ToArray());
             _cache[fileName] = cached;
+
+            cached.Exports ??= new StringTrie<AstNode>();
+
+            foreach (var exp in cached.SelfExports)
+            {
+                if (exp is SimpleSelfExport simpleExp)
+                {
+                    cached.Exports![new[] {simpleExp.Name}] = simpleExp.Symbol;
+                }
+            }
+            
             foreach (var r in cached.Requires)
             {
                 if (_cache.TryGetValue(r, out var rCached))
@@ -409,7 +420,6 @@ namespace Njsast.Bundler
                 Check(r, r);
             }
 
-            cached.Exports ??= new StringTrie<AstNode>();
             foreach (var exp in cached.SelfExports)
             {
                 if (exp is SimpleSelfExport simpleExp)
@@ -419,57 +429,28 @@ namespace Njsast.Bundler
                 else if (exp is ReexportSelfExport reexportExp)
                 {
                     var module = _cache[reexportExp.SourceName];
-                    if (module.Exports != null)
+                    foreach (var keyValuePair in module.Exports!.IteratePrefix(reexportExp.Path.AsSpan()))
                     {
-                        foreach (var keyValuePair in module.Exports.IteratePrefix(reexportExp.Path.AsSpan()))
-                        {
-                            cached.Exports![
-                                    Concat(reexportExp.AsName, keyValuePair.Key.AsSpan(reexportExp.Path.Length))] =
-                                keyValuePair.Value;
-                        }
+                        cached.Exports![
+                                Concat(reexportExp.AsName, keyValuePair.Key.AsSpan(reexportExp.Path.Length))] =
+                            keyValuePair.Value;
                     }
                 }
                 else if (exp is ExportAsNamespaceSelfExport asNamespaceExp)
                 {
                     var asNamespaceModule = _cache[asNamespaceExp.SourceName];
-                    if (asNamespaceModule.Exports != null)
+                    foreach (var asNamespaceModuleExport in asNamespaceModule.Exports!)
                     {
-                        foreach (var asNamespaceModuleExport in asNamespaceModule.Exports)
-                        {
-                            cached.Exports[Concat(asNamespaceExp.AsName, asNamespaceModuleExport.Key)] =
-                                asNamespaceModuleExport.Value;
-                        }
-                    }
-                    else
-                    {
-                        foreach (var reexModuleSelfExport in asNamespaceModule.SelfExports)
-                        {
-                            if (reexModuleSelfExport is SimpleSelfExport simpleExp2)
-                            {
-                                cached.Exports![new[] {simpleExp2.Name}] = simpleExp2.Symbol;
-                            }
-                        }
+                        cached.Exports[Concat(asNamespaceExp.AsName, asNamespaceModuleExport.Key)] =
+                            asNamespaceModuleExport.Value;
                     }
                 }
                 else if (exp is ExportStarSelfExport starExp)
                 {
                     var reexModule = _cache[starExp.SourceName];
-                    if (reexModule.Exports != null)
+                    foreach (var reexModuleExport in reexModule.Exports!)
                     {
-                        foreach (var reexModuleExport in reexModule.Exports)
-                        {
-                            cached.Exports[reexModuleExport.Key] = reexModuleExport.Value;
-                        }
-                    }
-                    else
-                    {
-                        foreach (var reexModuleSelfExport in reexModule.SelfExports)
-                        {
-                            if (reexModuleSelfExport is SimpleSelfExport simpleExp2)
-                            {
-                                cached.Exports![new[] {simpleExp2.Name}] = simpleExp2.Symbol;
-                            }
-                        }
+                        cached.Exports[reexModuleExport.Key] = reexModuleExport.Value;
                     }
                 }
             }

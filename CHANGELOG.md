@@ -5,6 +5,7 @@
 ### Fixed
 
 - Patch workround for https://github.com/microsoft/TypeScript/issues/40747
+- Bundler with special import cycle
 
 ## 1.41.0
 
