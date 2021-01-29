@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.41.1
+
 ### Fixed
 
 - Patch workround for https://github.com/microsoft/TypeScript/issues/40747
