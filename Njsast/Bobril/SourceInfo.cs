@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Njsast.Bobril
@@ -61,6 +62,7 @@ namespace Njsast.Bobril
             public int EndCol { get; set; }
             public int EndLine { get; set; }
             public string? Name { get; set; }
+            public bool IsSvg() => Name?.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ?? false;
             public string? RelativeName { get; set; }
             public int NameStartCol { get; set; }
             public int NameStartLine { get; set; }

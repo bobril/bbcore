@@ -373,6 +373,7 @@ namespace Lib.TSCompiler
                 dir = dir.Parent;
                 if (dir == rootProjectDir) break;
             }
+
             return false;
         }
 
@@ -437,7 +438,7 @@ namespace Lib.TSCompiler
             var hashToName = new Dictionary<byte[], string>(StructuralEqualityComparer<byte[]>.Default);
             hashToName.Add(owner.HashOfContent, owner.FullPath);
             var processed = new StructList<bool>();
-            processed.RepeatAdd(false, (uint)transpilationDependencies.Count);
+            processed.RepeatAdd(false, (uint) transpilationDependencies.Count);
             bool somethingFailed;
             do
             {
@@ -446,7 +447,7 @@ namespace Lib.TSCompiler
                 for (var i = 0u; i < processed.Count; i++)
                 {
                     if (processed[i]) continue;
-                    var dep = transpilationDependencies[(int)i];
+                    var dep = transpilationDependencies[(int) i];
                     if (!hashToName.TryGetValue(dep.SourceHash, out var sourceName))
                     {
                         somethingFailed = true;
@@ -616,7 +617,7 @@ namespace Lib.TSCompiler
         {
             while (CrawledCount < ToCheck.Count)
             {
-                var fileName = ToCheck[(int)CrawledCount];
+                var fileName = ToCheck[(int) CrawledCount];
                 CrawledCount++;
 
                 CrawlFile(fileName);
@@ -743,7 +744,7 @@ namespace Lib.TSCompiler
                             {
                                 info.Output = info.Owner.Utf8Content;
                                 cssProcessor.ProcessCss(info.Owner.Utf8Content,
-                                    ((TsFileAdditionalInfo)info).Owner.FullPath, (string url, string from) =>
+                                    ((TsFileAdditionalInfo) info).Owner.FullPath, (string url, string from) =>
                                     {
                                         var urlJustName = url.Split('?', '#')[0];
                                         info.ReportTranspilationDependency(null, urlJustName, null);
@@ -1081,6 +1082,34 @@ namespace Lib.TSCompiler
             });
             if (sourceInfo.Sprites != null)
             {
+                foreach (var sourceInfoSprite in sourceInfo.Sprites)
+                {
+                    if (sourceInfoSprite.IsSvg())
+                    {
+                        var name = sourceInfoSprite.Name;
+                        if (!(Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is
+                            IFileCache fc))
+                        {
+                            fileInfo.ReportDiag(true, -3, "Missing dependency " + name, sourceInfoSprite.StartLine,
+                                sourceInfoSprite.StartCol,
+                                sourceInfoSprite.EndLine, sourceInfoSprite.EndCol);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                ProjectOptions.ValidateSvg(fc.Utf8Content, sourceInfoSprite);
+                            }
+                            catch
+                            {
+                                fileInfo.ReportDiag(true, -17, "Invalid or unusable svg " + name,
+                                    sourceInfoSprite.StartLine, sourceInfoSprite.StartCol,
+                                    sourceInfoSprite.EndLine, sourceInfoSprite.EndCol);
+                            }
+                        }
+                    }
+                }
+
                 if (Owner.ProjectOptions.SpriteGeneration)
                 {
                     var spriteHolder = Owner.ProjectOptions.SpriteGenerator;
@@ -1090,7 +1119,7 @@ namespace Lib.TSCompiler
                 {
                     sourceInfo.Sprites.ForEach(s =>
                     {
-                        if (s.Name == null)
+                        if (s.Name == null || s.IsSvg())
                             return;
                         var assetName = s.Name;
                         if (ReportDependency(fileInfo, AutodetectAndAddDependency(assetName)) == null)

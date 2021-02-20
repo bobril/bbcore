@@ -60,7 +60,7 @@ namespace Lib.TSCompiler
         {
             foreach (var sprite in sprites)
             {
-                if (sprite.Name != null && sprite.Height == -1 && sprite.Width == -1)
+                if (sprite.Name != null && !sprite.IsSvg() && sprite.Height == -1 && sprite.Width == -1)
                 {
                     if (FindSprite(_allSprites, sprite) < 0 && FindSprite(_newSprites, sprite) < 0)
                         _newSprites.Add(new OutputSprite { Me = sprite });
@@ -160,6 +160,7 @@ namespace Lib.TSCompiler
             var res = new List<OutputSprite>(sprites.Count);
             for (int i = 0; i < sprites.Count; i++)
             {
+                if (sprites[i].IsSvg()) continue;
                 var sprite = new OutputSprite { Me = sprites[i] };
                 if (sprite.Me.Name != null && sprite.Me.Height == -1 && sprite.Me.Width == -1)
                 {

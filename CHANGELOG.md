@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Support for svg sprites for Bobril 16
+
 ## 1.41.1
 
 ### Fixed

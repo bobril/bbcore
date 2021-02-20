@@ -20,6 +20,7 @@ using Newtonsoft.Json.Linq;
 using Njsast.Ast;
 using Njsast.Bobril;
 using Njsast.Coverage;
+using Njsast.Output;
 using Njsast.Reader;
 using Njsast.Runtime;
 using Njsast.SourceMap;
@@ -247,6 +248,7 @@ namespace Lib.TSCompiler
             {
                 Owner.UsedDependencies.Clear();
             }
+
             var nodeModulesDir = Owner.Owner.FullPath;
             while (nodeModulesDir.Length > 0)
             {
@@ -254,8 +256,10 @@ namespace Lib.TSCompiler
                 {
                     break;
                 }
+
                 nodeModulesDir = PathUtils.Parent(nodeModulesDir).ToString();
             }
+
             Owner.FillOutputByAssets(buildResult, nodeModulesDir, this);
             FillOutputByAssetsFromModules(buildResult, buildResultModules, nodeModulesDir);
             if (AdditionalResourcesDirectory == null)
@@ -582,7 +586,7 @@ namespace Lib.TSCompiler
             }
         }
 
-        public void ApplySourceInfo(ISourceReplacer sourceReplacer, SourceInfo sourceInfo, BuildResult buildResult)
+        public void ApplySourceInfo(ISourceReplacer sourceReplacer, SourceInfo? sourceInfo, BuildResult buildResult)
         {
             if (sourceInfo == null) return;
 
@@ -620,7 +624,7 @@ namespace Lib.TSCompiler
 
                     if (assetName.StartsWith("resource:"))
                     {
-                        assetName = assetName.Substring(9);
+                        assetName = assetName[9..];
                     }
 
                     sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol,
@@ -630,6 +634,31 @@ namespace Lib.TSCompiler
 
             if (sourceInfo.Sprites != null)
             {
+                foreach (var s in sourceInfo.Sprites)
+                {
+                    if (!s.IsSvg()) continue;
+                    if (Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, s.Name!)) is
+                        IFileCache fc)
+                    {
+                        var content = fc.Utf8Content;
+                        var oc = ConvertSvgToJs(content, s);
+                        if (s.HasColor)
+                        {
+                            sourceReplacer.Replace(s.StartLine, s.StartCol, s.ColorStartLine, s.ColorStartCol,
+                                sourceInfo.BobrilImport + ".svgWithColor(" + sourceInfo.BobrilImport + ".svg(" + oc +
+                                "),");
+                            sourceReplacer.Replace(s.ColorEndLine, s.ColorEndCol, s.EndLine, s.EndCol,
+                                ")");
+                        }
+                        else
+                        {
+                            sourceReplacer.Replace(s.StartLine, s.StartCol, s.EndLine, s.EndCol,
+                                sourceInfo.BobrilImport + ".svg(" + oc + ")");
+                        }
+                    }
+                    else throw new Exception(s.Name + " is not existing file");
+                }
+
                 if (SpriteGeneration)
                 {
                     var spriteHolder = SpriteGenerator;
@@ -637,7 +666,7 @@ namespace Lib.TSCompiler
                     foreach (var os in outputSprites)
                     {
                         var s = os.Me;
-                        if (s.Name == null)
+                        if (s.Name == null || s.IsSvg())
                             continue;
                         if (s.HasColor == true && s.Color == null)
                         {
@@ -661,7 +690,7 @@ namespace Lib.TSCompiler
                 {
                     foreach (var s in sourceInfo.Sprites)
                     {
-                        if (s.Name == null)
+                        if (s.Name == null || s.IsSvg())
                             continue;
                         sourceReplacer.Replace(s.NameStartLine, s.NameStartCol, s.NameEndLine, s.NameEndCol,
                             "\"" + buildResult.ToOutputUrl(s.Name) + "\"");
@@ -762,6 +791,26 @@ namespace Lib.TSCompiler
             }
         }
 
+        static OutputContext ConvertSvgToJs(string content, SourceInfo.Sprite s)
+        {
+            var start = ValidateSvg(content, s);
+            content = content[(start + 14)..^6];
+            content = new Regex("<title>[^<]+</title>", RegexOptions.Compiled | RegexOptions.CultureInvariant)
+                .Replace(content, "");
+            var oc = new OutputContext();
+            oc.PrintString(content);
+            return oc;
+        }
+
+        public static int ValidateSvg(string content, SourceInfo.Sprite s)
+        {
+            if (!content.EndsWith("</svg>", StringComparison.OrdinalIgnoreCase))
+                throw new Exception(s.Name + " is not proper svg usable in b.sprite");
+            var start = content.IndexOf(" viewBox=\"0 0 ", StringComparison.Ordinal);
+            if (start < 0) throw new Exception(s.Name + " is not proper svg usable in b.sprite");
+            return start;
+        }
+
         public void ExpandEnv()
         {
             var constsInput = new Dictionary<string, AstNode>();
@@ -833,7 +882,7 @@ namespace Lib.TSCompiler
                 var srcFile = Owner.DiskCache.TryGetItem(eslintrc) as IFileCache;
                 if (srcFile == null || srcFile.IsInvalid)
                 {
-                    File.WriteAllText(eslintrc,"{\"extends\": \""+bbEsLint+"\"}");
+                    File.WriteAllText(eslintrc, "{\"extends\": \"" + bbEsLint + "\"}");
                     Console.WriteLine($"Created .eslintrc using {bbEsLint}");
                 }
             }

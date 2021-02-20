@@ -19,6 +19,8 @@ let headerStyle = b.styleDef({ backgroundColor: "green", padding: 10 }, undefine
 
 let semitransparentLight = b.sprite("light.png", "rgba(200,100,0,0.5)");
 let undefinedLight = b.sprite("light.png", undefined);
+let svgGradientBase = b.sprite("gradient.svg", "blue");
+let svgGradient = svgGradientBase;
 
 function dontDoThis(cn: string) {
     b.styleDef({}, undefined, cn);
@@ -83,6 +85,7 @@ let page = b.createVirtualComponent({
             b.styledDiv(" ", { backgroundColor: "blue", display: "inline-block" }, semitransparentLight),
             b.styledDiv(" ", { backgroundColor: "green", display: "inline-block" }, semitransparentLight),
             b.styledDiv(" ", { display: "inline-block" }, undefinedLight),
+            b.styledDiv(" ", { display: "inline-block" }, svgGradient),
             lightSwitch({
                 value: switchValue,
                 onChange: () => {
