@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Serialization;
 
@@ -13,15 +12,16 @@ namespace Lib.TSCompiler
         public bool? allowUnreachableCode { get; set; }
         public bool? allowUnusedLabels { get; set; }
         public bool? alwaysStrict { get; set; }
-        public string baseUrl { get; set; }
-        public string charset { get; set; }
+        public string? baseUrl { get; set; }
+        public string? charset { get; set; }
         public bool? checkJs { get; set; }
         public bool? declaration { get; set; }
-        public string declarationDir { get; set; }
+        public string? declarationDir { get; set; }
         public bool? disableSizeLimit { get; set; }
         public bool? downlevelIteration { get; set; }
         public bool? emitBOM { get; set; }
         public bool? emitDecoratorMetadata { get; set; }
+        public bool? esModuleInterop { get; set; }
         public bool? experimentalDecorators { get; set; }
         public bool? forceConsistentCasingInFileNames { get; set; }
         public bool? importHelpers { get; set; }
@@ -29,9 +29,9 @@ namespace Lib.TSCompiler
         public bool? inlineSources { get; set; }
         public bool? isolatedModules { get; set; }
         public JsxEmit? jsx { get; set; }
-        public ISet<string> lib { get; set; }
-        public string locale { get; set; }
-        public string mapRoot { get; set; }
+        public ISet<string>? lib { get; set; }
+        public string? locale { get; set; }
+        public string? mapRoot { get; set; }
         public int? maxNodeModuleJsDepth { get; set; }
         public ModuleKind? module { get; set; }
         public ModuleResolutionKind? moduleResolution { get; set; }
@@ -46,56 +46,58 @@ namespace Lib.TSCompiler
         public bool? noImplicitReturns { get; set; }
         public bool? noImplicitThis { get; set; }
         public bool? noUncheckedIndexedAccess { get; set; }
+        public bool? noPropertyAccessFromIndexSignature { get; set; }
         public bool? noUnusedLocals { get; set; }
         public bool? noUnusedParameters { get; set; }
         public bool? noImplicitUseStrict { get; set; }
         public bool? noLib { get; set; }
         public bool? noResolve { get; set; }
-        public string outDir { get; set; }
-        public string outFile { get; set; }
-        public IDictionary<string, IList<string>> paths { get; set; }
+        public string? outDir { get; set; }
+        public string? outFile { get; set; }
+        public IDictionary<string, IList<string>>? paths { get; set; }
         public bool? preserveConstEnums { get; set; }
-        public string project { get; set; }
-        public string reactNamespace { get; set; }
-        public string jsxFactory { get; set; }
+        public string? project { get; set; }
+        public string? reactNamespace { get; set; }
+        public string? jsxFactory { get; set; }
         public bool? removeComments { get; set; }
-        public string rootDir { get; set; }
-        public IList<string> rootDirs { get; set; }
+        public string? rootDir { get; set; }
+        public IList<string>? rootDirs { get; set; }
         public bool? skipLibCheck { get; set; }
         public bool? skipDefaultLibCheck { get; set; }
         public bool? sourceMap { get; set; }
-        public string sourceRoot { get; set; }
+        public string? sourceRoot { get; set; }
         public bool? strict { get; set; }
         public bool? strictFunctionTypes { get; set; }
         public bool? strictNullChecks { get; set; }
         public bool? strictPropertyInitialization { get; set; }
+        public bool? strictBindCallApply { get; set; }
         public bool? suppressExcessPropertyErrors { get; set; }
         public bool? suppressImplicitAnyIndexErrors { get; set; }
         public ScriptTarget? target { get; set; }
         public bool? traceResolution { get; set; }
-        public IList<string> types { get; set; }
-        public IList<string> typeRoots { get; set; }
+        public IList<string>? types { get; set; }
+        public IList<string>? typeRoots { get; set; }
         public bool? resolveJsonModule { get; set; }
 
-        static public TSCompilerOptions Parse(JToken jToken)
+        static public TSCompilerOptions Parse(JToken? jToken)
         {
             if (jToken == null) return new TSCompilerOptions();
-            return jToken.ToObject<TSCompilerOptions>();
+            return jToken.ToObject<TSCompilerOptions>()!;
         }
 
-        static readonly JsonSerializerSettings _cachedSerializerSettings;
+        static readonly JsonSerializerSettings CachedSerializerSettings;
 
         static TSCompilerOptions()
         {
             var res = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             res.Converters.Add(
                 new Newtonsoft.Json.Converters.StringEnumConverter(new CamelCaseNamingStrategy(true, false), false));
-            _cachedSerializerSettings = res;
+            CachedSerializerSettings = res;
         }
 
         static public JsonSerializerSettings GetSerializerSettings()
         {
-            return _cachedSerializerSettings;
+            return CachedSerializerSettings;
         }
 
         public ITSCompilerOptions Clone()
@@ -116,6 +118,7 @@ namespace Lib.TSCompiler
                 downlevelIteration = downlevelIteration,
                 emitBOM = emitBOM,
                 emitDecoratorMetadata = emitDecoratorMetadata,
+                esModuleInterop = esModuleInterop,
                 experimentalDecorators = experimentalDecorators,
                 forceConsistentCasingInFileNames = forceConsistentCasingInFileNames,
                 importHelpers = importHelpers,
@@ -144,6 +147,7 @@ namespace Lib.TSCompiler
                 noLib = noLib,
                 noResolve = noResolve,
                 noUncheckedIndexedAccess = noUncheckedIndexedAccess,
+                noPropertyAccessFromIndexSignature = noPropertyAccessFromIndexSignature,
                 noUnusedLocals = noUnusedLocals,
                 noUnusedParameters = noUnusedParameters,
                 outDir = outDir,
@@ -163,6 +167,7 @@ namespace Lib.TSCompiler
                 strictFunctionTypes = strictFunctionTypes,
                 strictNullChecks = strictNullChecks,
                 strictPropertyInitialization = strictPropertyInitialization,
+                strictBindCallApply = strictBindCallApply,
                 suppressExcessPropertyErrors = suppressExcessPropertyErrors,
                 suppressImplicitAnyIndexErrors = suppressImplicitAnyIndexErrors,
                 target = target,
@@ -206,6 +211,8 @@ namespace Lib.TSCompiler
                 emitBOM = with.emitBOM;
             if (with.emitDecoratorMetadata != null)
                 emitDecoratorMetadata = with.emitDecoratorMetadata;
+            if (with.esModuleInterop != null)
+                esModuleInterop = with.esModuleInterop;
             if (with.experimentalDecorators != null)
                 experimentalDecorators = with.experimentalDecorators;
             if (with.forceConsistentCasingInFileNames != null)
@@ -262,6 +269,8 @@ namespace Lib.TSCompiler
                 noStrictGenericChecks = with.noStrictGenericChecks;
             if (with.noUncheckedIndexedAccess != null)
                 noUncheckedIndexedAccess = with.noUncheckedIndexedAccess;
+            if (with.noPropertyAccessFromIndexSignature != null)
+                noPropertyAccessFromIndexSignature = with.noPropertyAccessFromIndexSignature;
             if (with.noUnusedLocals != null)
                 noUnusedLocals = with.noUnusedLocals;
             if (with.noUnusedParameters != null)
@@ -300,6 +309,8 @@ namespace Lib.TSCompiler
                 strictNullChecks = with.strictNullChecks;
             if (with.strictPropertyInitialization != null)
                 strictPropertyInitialization = with.strictPropertyInitialization;
+            if (with.strictBindCallApply != null)
+                strictBindCallApply = with.strictBindCallApply;
             if (with.suppressExcessPropertyErrors != null)
                 suppressExcessPropertyErrors = with.suppressExcessPropertyErrors;
             if (with.suppressImplicitAnyIndexErrors != null)

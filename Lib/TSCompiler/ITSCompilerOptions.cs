@@ -54,11 +54,11 @@ namespace Lib.TSCompiler
         bool? allowUnreachableCode { get; set; }
         bool? allowUnusedLabels { get; set; }
         bool? alwaysStrict { get; set; }
-        string baseUrl { get; set; }
-        string charset { get; set; }
+        string? baseUrl { get; set; }
+        string? charset { get; set; }
         bool? checkJs { get; set; }
         bool? declaration { get; set; }
-        string declarationDir { get; set; }
+        string? declarationDir { get; set; }
         bool? disableSizeLimit { get; set; }
         bool? downlevelIteration { get; set; }
         bool? emitBOM { get; set; }
@@ -70,9 +70,9 @@ namespace Lib.TSCompiler
         bool? inlineSources { get; set; }
         bool? isolatedModules { get; set; }
         JsxEmit? jsx { get; set; }
-        ISet<string> lib { get; set; }
-        string locale { get; set; }
-        string mapRoot { get; set; }
+        ISet<string>? lib { get; set; }
+        string? locale { get; set; }
+        string? mapRoot { get; set; }
         int? maxNodeModuleJsDepth { get; set; }
         ModuleKind? module { get; set; }
         ModuleResolutionKind? moduleResolution { get; set; }
@@ -86,34 +86,37 @@ namespace Lib.TSCompiler
         bool? noImplicitReturns { get; set; }
         bool? noImplicitThis { get; set; }
         bool? noUncheckedIndexedAccess { get; set; }
+        bool? noPropertyAccessFromIndexSignature { get; set; }
         bool? noUnusedLocals { get; set; }
         bool? noUnusedParameters { get; set; }
         bool? noImplicitUseStrict { get; set; }
         bool? noLib { get; set; }
         bool? noResolve { get; set; }
-        string outDir { get; set; }
-        string outFile { get; set; }
-        IDictionary<string, IList<string>> paths { get; set; }
+        string? outDir { get; set; }
+        string? outFile { get; set; }
+        IDictionary<string, IList<string>>? paths { get; set; }
         bool? preserveConstEnums { get; set; }
-        string project { get; set; }
-        string reactNamespace { get; set; }
-        string jsxFactory { get; set; }
+        string? project { get; set; }
+        string? reactNamespace { get; set; }
+        string? jsxFactory { get; set; }
+        bool? esModuleInterop { get; set; }
         bool? removeComments { get; set; }
-        string rootDir { get; set; }
-        IList<string> rootDirs { get; set; }
+        string? rootDir { get; set; }
+        IList<string>? rootDirs { get; set; }
         bool? skipLibCheck { get; set; }
         bool? skipDefaultLibCheck { get; set; }
         bool? sourceMap { get; set; }
-        string sourceRoot { get; set; }
+        string? sourceRoot { get; set; }
         bool? strict { get; set; }
         bool? strictNullChecks { get; set; }
+        bool? strictBindCallApply { get; set; }
         bool? suppressExcessPropertyErrors { get; set; }
         bool? suppressImplicitAnyIndexErrors { get; set; }
         ScriptTarget? target { get; set; }
         bool? traceResolution { get; set; }
-        IList<string> types { get; set; }
+        IList<string>? types { get; set; }
         /** Paths used to compute primary types search locations */
-        IList<string> typeRoots { get; set; }
+        IList<string>? typeRoots { get; set; }
 
         ITSCompilerOptions Clone();
         ITSCompilerOptions Merge(ITSCompilerOptions withInterface);

@@ -29,7 +29,7 @@ namespace Lib.TSCompiler
 {
     public class ProjectOptions
     {
-        public const string DefaultTypeScriptVersion = "4.1.3";
+        public const string DefaultTypeScriptVersion = "4.2.2";
 
         public IToolsDir Tools;
         public TSProject Owner;
@@ -313,7 +313,6 @@ namespace Lib.TSCompiler
                 downlevelIteration = true,
                 module = ModuleKind.Commonjs,
                 declaration = false,
-                preserveConstEnums = false,
                 jsx = JsxEmit.React,
                 reactNamespace = BobrilJsx ? "b" : "React",
                 experimentalDecorators = true,
@@ -323,7 +322,9 @@ namespace Lib.TSCompiler
                 removeComments = false,
                 types = null,
                 resolveJsonModule = true,
+                strict = true,
                 allowSyntheticDefaultImports = true,
+                forceConsistentCasingInFileNames = true,
                 lib = GetDefaultTSLibs()
             };
         }
