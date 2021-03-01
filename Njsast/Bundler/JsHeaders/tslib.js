@@ -259,6 +259,12 @@ var __spreadArrays = function () {
   return r;
 };
 
+var __spreadArray = function (to, from) {
+  for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+    to[j] = from[i];
+  return to;
+};
+
 var __await = function (v) {
   return this instanceof __await ? ((this.v = v), this) : new __await(v);
 };
