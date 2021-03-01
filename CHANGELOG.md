@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Added missing new helper \_\_spreadArray from TS 4.2.
+- Fixed detection of change of assets to correctly rebuild in interactive mode.
+
 ## 1.43.0
 
 ### Changed

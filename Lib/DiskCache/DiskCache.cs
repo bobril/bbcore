@@ -28,7 +28,7 @@ namespace Lib.DiskCache
         {
             public string Name { get; set; }
             public string FullPath { get; set; }
-            public IDirectoryCache Parent { get; set; }
+            public IDirectoryCache? Parent { get; set; }
             public bool IsFile => false;
             public bool IsDirectory => true;
 
@@ -93,7 +93,7 @@ namespace Lib.DiskCache
 
             int _changeId;
             bool _isInvalid;
-            DiskCache _owner;
+            readonly DiskCache _owner;
             bool _isWatcherRoot;
 
             public DirectoryCache(DiskCache owner, bool isInvalid)
@@ -169,10 +169,7 @@ namespace Lib.DiskCache
             }
         }
 
-        public IObservable<Unit> ChangeObservable
-        {
-            get => _changeSubject;
-        }
+        public IObservable<Unit> ChangeObservable => _changeSubject;
 
         Subject<Unit> _changeSubject = new Subject<Unit>();
 
@@ -266,13 +263,14 @@ namespace Lib.DiskCache
             public string Name { get; set; }
             public string FullPath { get; set; }
 
-            byte[] _contentBytes;
-            byte[] _contentHash;
+            byte[]? _contentBytes;
+            byte[]? _contentHash;
             bool _isStale;
+            bool _wasLoaded;
             bool _isInvalid;
 
             public IDiskCache Owner { get; set; }
-            public IDirectoryCache Parent { get; set; }
+            public IDirectoryCache? Parent { get; set; }
             public bool IsFile => true;
             public bool IsDirectory => false;
 
@@ -291,9 +289,9 @@ namespace Lib.DiskCache
                 get => _isStale;
                 set
                 {
-                    if (_contentBytes != null)
+                    if (_contentBytes != null || _wasLoaded)
                     {
-                        byte[] newBytes = null;
+                        byte[]? newBytes = null;
                         try
                         {
                             newBytes = ((DiskCache)Owner).FsAbstraction.ReadAllBytes(FullPath);
@@ -303,16 +301,17 @@ namespace Lib.DiskCache
                             // ignore
                         }
 
-                        if (newBytes != null && newBytes.SequenceEqual(_contentBytes))
+                        if (newBytes != null && _contentBytes != null && newBytes.SequenceEqual(_contentBytes))
                         {
                             _isStale = false;
+                            _wasLoaded = false;
                             return;
                         }
 
                         _contentBytes = newBytes;
                         _contentHash = null;
                         ChangeId++;
-                        ((DirectoryCache)Parent)?.NoteChange(false);
+                        (Parent as DirectoryCache)?.NoteChange(false);
                     }
 
                     _isStale = value;
@@ -322,26 +321,9 @@ namespace Lib.DiskCache
             public DateTime Modified { get; set; }
             public ulong Length { get; set; }
 
-            public byte[] ByteContent
-            {
-                get
-                {
-                    if (_contentBytes == null)
-                    {
-                        _contentBytes = ((DiskCache)Owner).FsAbstraction.ReadAllBytes(FullPath);
-                    }
+            public byte[] ByteContent => _contentBytes ??= ((DiskCache) Owner).FsAbstraction.ReadAllBytes(FullPath);
 
-                    return _contentBytes;
-                }
-            }
-
-            public string Utf8Content
-            {
-                get
-                {
-                    return Encoding.UTF8.GetString(ByteContent);
-                }
-            }
+            public string Utf8Content => Encoding.UTF8.GetString(ByteContent);
 
             public int ChangeId { get; private set; } = 1;
 
@@ -349,20 +331,10 @@ namespace Lib.DiskCache
             {
                 _contentBytes = null;
                 _contentHash = null;
+                _wasLoaded = true;
             }
 
-            public byte[] HashOfContent
-            {
-                get
-                {
-                    if (_contentHash == null)
-                    {
-                        _contentHash = CalcHash(ByteContent);
-                    }
-
-                    return _contentHash;
-                }
-            }
+            public byte[] HashOfContent => _contentHash ??= CalcHash(ByteContent);
         }
 
         public IItemCache? TryGetItem(ReadOnlySpan<char> path)
@@ -438,15 +410,9 @@ namespace Lib.DiskCache
             return directory;
         }
 
-        public void ResetChange()
-        {
-            _changed = false;
-        }
+        public void ResetChange() => _changed = false;
 
-        public IDirectoryCache Root()
-        {
-            return _root;
-        }
+        public IDirectoryCache Root() => _root;
 
         public Func<(IDirectoryCache parent, string name, bool isDir), bool> DefaultFilter { get; set; }
 
