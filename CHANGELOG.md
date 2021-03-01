@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.43.1
+
 ### Fixed
 
 - Added missing new helper \_\_spreadArray from TS 4.2.
