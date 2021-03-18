@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Number delimiters were wrong in generated localization js files.
+
 ## 1.43.1
 
 ### Fixed

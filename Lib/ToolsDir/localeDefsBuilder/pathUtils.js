@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.normalizePath = exports.recursiveRemoveDirSync = exports.fileModifiedTime = exports.mkpathsync = exports.join = exports.isAbsolutePath = exports.currentDirectory = exports.dirOfNodeModule = void 0;
 var pathPlatformDependent = require("path");
 var path = pathPlatformDependent.posix; // This works everywhere, just use forward slashes
 var fs = require("fs");

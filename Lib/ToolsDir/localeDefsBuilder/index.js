@@ -22,7 +22,7 @@ function findLocaleFile(filePath, locale, ext) {
         locale = locale.substr(0, dashPos);
     }
 }
-var pluralFns = require("make-plural/umd/plurals.min");
+var pluralFns = require("make-plural/plurals");
 function getLanguageFromLocale(locale) {
     var idx = locale.indexOf("-");
     if (idx >= 0)
@@ -50,12 +50,14 @@ function buildStartOfTranslationFile(locale) {
     resbufs.push(new Buffer("bobrilRegisterTranslations('" + locale + "',[", "utf-8"));
     var pluralFn = pluralFns[getLanguageFromLocale(locale)];
     if (pluralFn) {
-        resbufs.push(new Buffer(pluralFn.toString(), "utf-8"));
+        var src = pluralFn.toString();
+        src = uglify.minify(src, { output: { comments: /^!/ } }).code;
+        resbufs.push(new Buffer(src, "utf-8"));
     }
     else {
         resbufs.push(new Buffer("function(){return'other';}", "utf-8"));
     }
-    var fn = findLocaleFile(path.join(numeralJsPath(), "min", "languages"), locale, ".min.js");
+    var fn = findLocaleFile(path.join(numeralJsPath(), "min", "locales"), locale, ".min.js");
     var td = ",";
     var dd = ".";
     if (fn) {

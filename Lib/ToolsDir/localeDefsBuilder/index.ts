@@ -23,7 +23,7 @@ function findLocaleFile(filePath: string, locale: string, ext: string): string |
     }
 }
 
-const pluralFns = require("make-plural/umd/plurals.min");
+const pluralFns = require("make-plural/plurals");
 
 function getLanguageFromLocale(locale: string): string {
     let idx = locale.indexOf("-");
@@ -39,10 +39,7 @@ function buildStartOfTranslationFile(locale: string) {
         let fn = findLocaleFile(path.join(momentJsPath(), "locale"), locale, ".js");
         if (fn) {
             let src = fs.readFileSync(fn).toString("utf-8");
-            src = src.replace(
-                /;\(function \(global, factory\) \{[\s\S]*?'use strict';/,
-                "(function (moment){"
-            );
+            src = src.replace(/;\(function \(global, factory\) \{[\s\S]*?'use strict';/, "(function (moment){");
             src = src.substr(0, src.lastIndexOf("return"));
             src = src.replace(/var \S*? = moment.defineLocale\(/, "moment.defineLocale(");
             src = src + "})(moment);";
@@ -54,11 +51,13 @@ function buildStartOfTranslationFile(locale: string) {
     resbufs.push(new Buffer("bobrilRegisterTranslations('" + locale + "',[", "utf-8"));
     let pluralFn = pluralFns[getLanguageFromLocale(locale)];
     if (pluralFn) {
-        resbufs.push(new Buffer(pluralFn.toString(), "utf-8"));
+        let src = pluralFn.toString();
+        src = uglify.minify(src, { output: { comments: /^!/ } as any }).code;
+        resbufs.push(new Buffer(src, "utf-8"));
     } else {
         resbufs.push(new Buffer("function(){return'other';}", "utf-8"));
     }
-    let fn = findLocaleFile(path.join(numeralJsPath(), "min", "languages"), locale, ".min.js");
+    let fn = findLocaleFile(path.join(numeralJsPath(), "min", "locales"), locale, ".min.js");
     let td = ",";
     let dd = ".";
     if (fn) {
