@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.43.2
+
 ### Fixed
 
 - Number delimiters were wrong in generated localization js files.
