@@ -76,6 +76,7 @@ function buildStartOfTranslationFile(locale: string) {
 let dir = path.join(momentJsPath(), "locale");
 let list = fs.readdirSync(dir);
 let res = Object.create(null);
+list.push("en.js", "en-us.js");
 for (let i = 0; i < list.length; i++) {
     if (/\.js$/.test(list[i])) {
         let locale = list[i].substring(0, list[i].length - 3);

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- "en" and "en-us" localizations missing regression from 1.43.2
+
 ## 1.43.2
 
 ### Fixed
