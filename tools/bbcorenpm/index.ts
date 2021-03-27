@@ -218,22 +218,46 @@ if (envVersion) {
     requestedVersion = envVersion;
 }
 
-if (fs.existsSync("package.json")) {
-    try {
-        var packageJson = JSON.parse(
-            fs.readFileSync("package.json").toString("utf-8")
-        );
-        if (packageJson.bobril && packageJson.bobril.bbVersion) {
-            requestedVersion = packageJson.bobril.bbVersion;
-        }
-    } catch {
-        // ignore
+versionKnown: do {
+    if ((global as any).bb2 && envVersion) {
+        break versionKnown;
     }
-}
 
-if ((global as any).bb2 && envVersion) {
-    requestedVersion = envVersion;
-}
+    if (fs.existsSync("package.json")) {
+        try {
+            var bbrcjson = JSON.parse(
+                fs.readFileSync("package.json").toString("utf-8")
+            );
+            if (bbrcjson.bobril && bbrcjson.bobril.bbVersion) {
+                requestedVersion = bbrcjson.bobril.bbVersion;
+                break versionKnown;
+            }
+        } catch {
+            // ignore
+        }
+    }
+    var dir = process.cwd();
+    while (true) {
+        var fn = path.join(dir, ".bbrc");
+        if (fs.existsSync(fn)) {
+            try {
+                var bbrcjson = JSON.parse(
+                    fs.readFileSync(fn).toString("utf-8")
+                );
+                if (bbrcjson && bbrcjson.bbVersion) {
+                    requestedVersion = bbrcjson.bbVersion;
+                    break versionKnown;
+                }
+            } catch {
+                // ignore
+            }
+        }
+        dir = path.dirname(dir);
+        if (dir.length < 3) {
+            break;
+        }
+    }
+} while (false);
 
 if (process.env.GITHUB_TOKEN) {
     githubToken = "" + process.env.GITHUB_TOKEN;

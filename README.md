@@ -16,15 +16,15 @@ Github by default has limit of 60 anonymous requests per hour from one IP. So if
 
 By default prerelease versions are not used.
 
-In `package.json` create `bobril` section and set `bbVersion` to specific version you need. By setting `tsVersion` you can override used TypeScript for compilation. By setting `jasmineVersion` you can override Jasmine version only allowed values are "2.99" (default) and "3.3".
+In `.bbrc` file set `bbVersion` to specific version you need. By setting `tsVersion` you can override used TypeScript for compilation. By setting `jasmineVersion` you can override Jasmine version only allowed values are "2.99" (default) and "3.3".
 
-    "bobril": {
+    {
         "bbVersion": "0.9.0",
         "tsVersion": "2.7.1",
         "jasmineVersion: "2.99"
     }
 
-By setting `BBVERSION` enviroment variable you can define default version (including prerelease). If you will start `bb2` instead of `bb`, then `BBVERSION` override what is in `package.json`
+By setting `BBVERSION` environment variable you can define default version (including prerelease). If you will start `bb2` instead of `bb`, then `BBVERSION` override what is in `.bbrc` or `package.json`.
 
 # How to override where bb store its caches
 
@@ -75,7 +75,7 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 | -16    | Error    | Syntactic Error                                                                                |
 | -17    | Error    | Invalid or unusable svg                                                                        |
 
-# Package.json - bobril section features
+# `.bbrc` or `Package.json`/`bobril` section features
 
 ## Define global constants and process.env
 
@@ -98,7 +98,7 @@ Content must be always JavaScript expression with specially handled build-ins `D
 
 Build generates tsconfig.json by default. You can disable this feature by:
 
-    "bobril": {
+    {
         "tsconfigUpdate": false
     }
 
@@ -106,13 +106,13 @@ Build generates tsconfig.json by default. You can disable this feature by:
 
 By default localization is detected from existence of dependency bobril-g11n. You can override it:
 
-    "bobril": {
+    {
         "localize": true
     }
 
 ## Override directory with translations
 
-    "bobril": {
+    {
         "pathToTranslations": "translations/path/like/this"
     }
 
@@ -120,41 +120,41 @@ It is relative to project. Default is "translations".
 
 ## Define default build path
 
-    "bobril": {
+    {
         "buildOutputDir": "./dist"
     }
 
 ## Enable writing of build result in Interactive mode to build path
 
-    "bobril": {
+    {
         "interactiveDumpsToDist": true
     }
 
-It checks only for existance of this `interactiveDumpsToDist` key, value does not matter for now.
+It checks only for existence of this `interactiveDumpsToDist` key, value does not matter for now.
 
 ## Where to find test sources
 
 By default it finds all tests in project directory (it always skips `node_modules`). By defining this, you can limit or add additional directories where to search.
 
-    "bobril": {
+    {
         "testDirectories": [ "spec" ]
     }
 
 ## Warnings As Errors
 
-    "bobril": {
+    {
         "warningsAsErrors": true
     }
 
 ## Ignore some Warnings and Errors
 
-    "bobril": {
+    {
         "ignoreDiagnostic": [ -1, -8 ]
     }
 
 ## How to enable generating of **sprites.ts** from all pngs in assets directory
 
-    "bobril": {
+    {
         "plugins": {
             "bb-assets-generator-plugin": {
                 "generateSpritesFile": true
@@ -164,7 +164,7 @@ By default it finds all tests in project directory (it always skips `node_module
 
 ## How to mark module as obsolete
 
-    "bobril": {
+    {
         "obsolete": "Reason why is obsolete and what to use instead"
     }
 
@@ -174,7 +174,7 @@ Use this comment in source code with import to ignore this specific import (must
 
 ## How to add additional assets
 
-    "bobril": {
+    {
         "assets": {
             "original/source/path/name.ext": "distName.ext",
             "node_modules/anymodule/path", "path"
@@ -183,7 +183,7 @@ Use this comment in source code with import to ignore this specific import (must
 
 ## How to disable autodetection of common project root
 
-    "bobril": {
+    {
         "preserveProjectRoot": true
     }
 
@@ -191,7 +191,7 @@ Use this comment in source code with import to ignore this specific import (must
 
 Useful if your API server does not uses CORS, so proxy requests through bobril-build localhost:8080. It includes support for WebSockets connections. Url have to start with `http://` or `https://`.
 
-    "bobril": {
+    {
         "proxyUrl": "http://localhost:3001"
     }
 
@@ -199,7 +199,7 @@ Useful if your API server does not uses CORS, so proxy requests through bobril-b
 
 By default it will use only Chrome or Chromium to test your code. But because headless Chrome on Windows does hang with some projects you can use use Firefox on Windows by defining this:
 
-    "bobril": {
+    {
         "headlessBrowserStrategy": "PreferFirefoxOnWindows"
     }
 

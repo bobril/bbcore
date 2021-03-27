@@ -79,9 +79,9 @@ namespace Lib.TSCompiler
         public IList<string>? typeRoots { get; set; }
         public bool? resolveJsonModule { get; set; }
 
-        static public TSCompilerOptions Parse(JToken? jToken)
+        public static TSCompilerOptions Parse(JToken? jToken)
         {
-            if (jToken == null) return new TSCompilerOptions();
+            if (jToken == null) return new();
             return jToken.ToObject<TSCompilerOptions>()!;
         }
 
@@ -95,7 +95,7 @@ namespace Lib.TSCompiler
             CachedSerializerSettings = res;
         }
 
-        static public JsonSerializerSettings GetSerializerSettings()
+        public static JsonSerializerSettings GetSerializerSettings()
         {
             return CachedSerializerSettings;
         }
@@ -178,10 +178,9 @@ namespace Lib.TSCompiler
             };
         }
 
-        public ITSCompilerOptions Merge(ITSCompilerOptions withInterface)
+        public ITSCompilerOptions Merge(ITSCompilerOptions? withInterface)
         {
-            var with = (TSCompilerOptions)withInterface;
-            if (with == null)
+            if (!(withInterface is TSCompilerOptions with))
                 return this;
             if (with.allowJs != null)
                 allowJs = with.allowJs;

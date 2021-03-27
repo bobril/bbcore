@@ -6,6 +6,7 @@
     "declaration": false,
     "downlevelIteration": true,
     "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "lib": [
       "es5",
@@ -18,7 +19,6 @@
     ],
     "module": "commonjs",
     "noEmitHelpers": true,
-    "preserveConstEnums": false,
     "reactNamespace": "b",
     "removeComments": false,
     "skipLibCheck": false,

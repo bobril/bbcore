@@ -193,20 +193,43 @@ let envVersion = process.env["BBVERSION"];
 if (envVersion) {
     requestedVersion = envVersion;
 }
-if (fs.existsSync("package.json")) {
-    try {
-        var packageJson = JSON.parse(fs.readFileSync("package.json").toString("utf-8"));
-        if (packageJson.bobril && packageJson.bobril.bbVersion) {
-            requestedVersion = packageJson.bobril.bbVersion;
+versionKnown: do {
+    if (global.bb2 && envVersion) {
+        break versionKnown;
+    }
+    if (fs.existsSync("package.json")) {
+        try {
+            var bbrcjson = JSON.parse(fs.readFileSync("package.json").toString("utf-8"));
+            if (bbrcjson.bobril && bbrcjson.bobril.bbVersion) {
+                requestedVersion = bbrcjson.bobril.bbVersion;
+                break versionKnown;
+            }
+        }
+        catch (_a) {
+            // ignore
         }
     }
-    catch (_a) {
-        // ignore
+    var dir = process.cwd();
+    while (true) {
+        var fn = path.join(dir, ".bbrc");
+        if (fs.existsSync(fn)) {
+            try {
+                var bbrcjson = JSON.parse(fs.readFileSync(fn).toString("utf-8"));
+                if (bbrcjson && bbrcjson.bbVersion) {
+                    requestedVersion = bbrcjson.bbVersion;
+                    break versionKnown;
+                }
+            }
+            catch (_b) {
+                // ignore
+            }
+        }
+        dir = path.dirname(dir);
+        if (dir.length < 3) {
+            break;
+        }
     }
-}
-if (global.bb2 && envVersion) {
-    requestedVersion = envVersion;
-}
+} while (false);
 if (process.env.GITHUB_TOKEN) {
     githubToken = "" + process.env.GITHUB_TOKEN;
 }
@@ -219,7 +242,7 @@ else {
                 .toString("utf-8")
                 .split(/\r?\n/)[0];
         }
-        catch (_b) {
+        catch (_c) {
             // ignore
         }
     }
@@ -271,7 +294,7 @@ function checkFreshnessOfCachedLastVersion() {
             var last = JSON.parse(yield fsReadFile(lastVersionFileName, "utf-8"));
             requestedVersion = last.tag_name;
         }
-        catch (_c) {
+        catch (_d) {
             console.log("Github did not return latest version information\nplease read https://github.com/bobril/bbcore");
             process.exit(1);
             return;

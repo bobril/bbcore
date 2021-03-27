@@ -5,7 +5,7 @@
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <PlatformTarget>x64</PlatformTarget>
     <WarningsAsErrors />
-    <LangVersion>8</LangVersion>
+    <LangVersion>default</LangVersion>
     <Nullable>enable</Nullable>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>CopyUsed</TrimMode>

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Configuration is now also loaded from `.bbrc` files. They have exactly same content as `bobril` section in `package.json`. Options defined in parent directories `.bbrc` files are overwritten by current one, allowing sharing common options for multiple projects.
+
 ## 1.43.3
 
 ### Fixed

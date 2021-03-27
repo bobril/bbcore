@@ -42,8 +42,8 @@ namespace Lib.TSCompiler
         public string PrefixStyleNames;
         public string Example;
         public bool BobrilJsx;
-        public TSCompilerOptions CompilerOptions;
-        public string AdditionalResourcesDirectory;
+        public ITSCompilerOptions? CompilerOptions;
+        public string? AdditionalResourcesDirectory;
         public bool SpriteGeneration;
         public SpriteHolder SpriteGenerator;
         public string BundlePngUrl;
@@ -53,8 +53,8 @@ namespace Lib.TSCompiler
         public bool WarningsAsErrors;
         public bool PreserveProjectRoot;
         public string JasmineVersion;
-        public List<string> TestDirectories;
-        public string PathToTranslations;
+        public IList<string>? TestDirectories;
+        public string? PathToTranslations;
         public bool TsconfigUpdate;
         public Dictionary<string, string?>? BrowserResolve;
         public string? ProxyUrl;
@@ -465,13 +465,13 @@ namespace Lib.TSCompiler
             else TranslationDb.LoadLangDb(specificPath);
         }
 
-        public void FillProjectOptionsFromPackageJson(JObject? parsed)
+        public void FillProjectOptionsFromPackageJson(JObject? parsed, IDirectoryCache? dir)
         {
             var browserValue = parsed?.GetValue("browser");
             BrowserResolve = null;
             if (browserValue != null && browserValue.Type == JTokenType.Object)
             {
-                BrowserResolve = browserValue.ToObject<Dictionary<string, object>>()
+                BrowserResolve = browserValue.ToObject<Dictionary<string, object>>()!
                     .ToDictionary(p => p.Key, p => p.Value as string);
             }
 
@@ -481,9 +481,10 @@ namespace Lib.TSCompiler
             {
                 NpmRegistry = publishConfigSection.Value<string>("registry");
             }
-
             var bobrilSection = parsed?.GetValue("bobril") as JObject;
-            TypeScriptVersion = GetStringProperty(bobrilSection, "tsVersion", "");
+            var bbOptions = new BobrilBuildOptions(bobrilSection);
+            bbOptions = LoadBbrc(dir, bbOptions);
+            TypeScriptVersion = bbOptions.tsVersion ?? "";
             if (TypeScriptVersion != "")
             {
                 TypeScriptVersionOverride = true;
@@ -494,65 +495,67 @@ namespace Lib.TSCompiler
                 TypeScriptVersion = DefaultTypeScriptVersion;
             }
 
-            Variant = GetStringProperty(bobrilSection, "variant", "");
-            JasmineVersion = GetStringProperty(bobrilSection, "jasmineVersion", "330");
-            NoHtml = bobrilSection?["nohtml"]?.Value<bool>() ?? Variant != "";
-            Title = GetStringProperty(bobrilSection, "title", "Bobril Application");
-            HtmlHead = GetStringProperty(bobrilSection, "head",
-                "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />");
-            PrefixStyleNames = GetStringProperty(bobrilSection, "prefixStyleDefs", "");
-            Example = GetStringProperty(bobrilSection, "example", "");
-            AdditionalResourcesDirectory =
-                GetStringProperty(bobrilSection, "additionalResourcesDirectory", null);
+            Variant = bbOptions.variant ?? "";
+            JasmineVersion = bbOptions.jasmineVersion ?? "330";
+            NoHtml = bbOptions.nohtml ?? Variant != "";
+            Title = bbOptions.title ?? "Bobril Application";
+            HtmlHead = bbOptions.head ?? "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />";
+            PrefixStyleNames = bbOptions.prefixStyleDefs ?? "";
+            Example = bbOptions.example ?? "";
+            AdditionalResourcesDirectory = bbOptions.additionalResourcesDirectory;
             BobrilJsx = true;
-            CompilerOptions = bobrilSection != null
-                ? TSCompilerOptions.Parse(bobrilSection.GetValue("compilerOptions") as JObject)
-                : null;
-            DependencyUpdate =
-                String2DependencyUpdate(GetStringProperty(bobrilSection, "dependencies", "install"));
-            var includeSources = bobrilSection?.GetValue("includeSources") as JArray;
-            IncludeSources = includeSources?.Select(i => i.ToString()).ToArray();
-            if (bobrilSection?.GetValue("ignoreDiagnostic") is JArray ignoreDiagnostic)
-                IgnoreDiagnostic = new HashSet<int>(ignoreDiagnostic.Select(i => i.Value<int>()).ToArray());
-            var pluginsSection = bobrilSection?.GetValue("plugins") as JObject;
-            GenerateSpritesTs =
-                pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>() ?? false;
-            WarningsAsErrors = bobrilSection?["warningsAsErrors"]?.Value<bool>() ?? false;
-            ObsoleteMessage = GetStringProperty(bobrilSection, "obsolete", null);
-            InteractiveDumpsToDist = bobrilSection?.ContainsKey("interactiveDumpsToDist") ?? false;
-            TestDirectories = bobrilSection?["testDirectories"]?.Values<string>().ToList();
-            Localize = bobrilSection?["localize"]?.Value<bool>() ?? Localize;
-            PathToTranslations = GetStringProperty(bobrilSection, "pathToTranslations", null);
-            TsconfigUpdate = bobrilSection?["tsconfigUpdate"]?.Value<bool>() ?? true;
-            BuildOutputDir = GetStringProperty(bobrilSection, "buildOutputDir", null);
-            Defines = ParseDefines(bobrilSection?.GetValue("defines") as JObject);
+            CompilerOptions = bbOptions.compilerOptions;
+            DependencyUpdate = String2DependencyUpdate(bbOptions.dependencies ?? "install");
+            IncludeSources = bbOptions.includeSources?.ToArray();
+            if (bbOptions.ignoreDiagnostic != null)
+                IgnoreDiagnostic = new(bbOptions.ignoreDiagnostic);
+            GenerateSpritesTs = bbOptions.GenerateSpritesTs ?? false;
+            WarningsAsErrors = bbOptions.warningsAsErrors ?? false;
+            ObsoleteMessage = bbOptions.obsolete;
+            InteractiveDumpsToDist = bbOptions.interactiveDumpsToDist ?? false;
+            TestDirectories = bbOptions.testDirectories;
+            Localize = bbOptions.localize ?? Localize;
+            PathToTranslations = bbOptions.pathToTranslations;
+            TsconfigUpdate = bbOptions.tsconfigUpdate ?? true;
+            BuildOutputDir = bbOptions.buildOutputDir;
+            Defines = (bbOptions.defines ?? new Dictionary<string, string>()).ToDictionary(kv=>kv.Key,kv => Parser.Parse(kv.Value));
             if (!Defines!.ContainsKey("DEBUG"))
             {
-                Defines!["DEBUG"] = Parser.Parse("DEBUG");
+                Defines["DEBUG"] = Parser.Parse("DEBUG");
             }
 
-            ProcessEnvs = ParseDefines(bobrilSection?.GetValue("envs") as JObject);
+            ProcessEnvs = (bbOptions.envs ?? new Dictionary<string, string>()).ToDictionary(kv=>kv.Key,kv => Parser.Parse(kv.Value));
             if (!ProcessEnvs!.ContainsKey("NODE_ENV"))
             {
                 ProcessEnvs!["NODE_ENV"] = Parser.Parse("DEBUG?\"development\":\"production\"");
             }
 
-            PreserveProjectRoot = bobrilSection?["preserveProjectRoot"]?.Value<bool>() ?? false;
-            ProxyUrl = GetStringProperty(bobrilSection, "proxyUrl", null);
-            HeadlessBrowserStrategy = GetStringProperty(bobrilSection, "headlessBrowserStrategy", null);
+            PreserveProjectRoot = bbOptions.preserveProjectRoot ?? false;
+            ProxyUrl = bbOptions.proxyUrl;
+            HeadlessBrowserStrategy = bbOptions.headlessBrowserStrategy;
         }
 
-        static Dictionary<string, AstToplevel> ParseDefines(JObject? jObject)
+        BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions)
         {
-            var res = new Dictionary<string, AstToplevel>();
-            if (jObject != null)
-                foreach (var (key, value) in jObject)
+            while (dir != null)
+            {
+                if (dir.TryGetChild(".bbrc") is IFileCache {IsInvalid: false} f)
                 {
-                    if (value.Type != JTokenType.String) continue;
-                    res[key] = Parser.Parse((string) ((JValue) value).Value!);
+                    try
+                    {
+                        var parsed = JObject.Parse(f.Utf8Content);
+                        var n = new BobrilBuildOptions(parsed);
+                        n.Merge(bbOptions);
+                        bbOptions = n;
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
                 }
-
-            return res;
+                dir = dir.Parent;
+            }
+            return bbOptions;
         }
 
         static DepedencyUpdate String2DependencyUpdate(string value)
@@ -568,14 +571,6 @@ namespace Lib.TSCompiler
                 default:
                     return DepedencyUpdate.Install;
             }
-        }
-
-        [return: NotNullIfNotNull("@default")]
-        static string? GetStringProperty(JObject? obj, string name, string? @default)
-        {
-            if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
-                return (string) value;
-            return @default;
         }
 
         public void FillOutputByAssetsFromModules(MainBuildResult buildResult,

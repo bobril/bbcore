@@ -35,8 +35,8 @@ namespace Lib.TSCompiler
             if (Virtual)
             {
                 PackageJsonChangeId = -1;
-                Dependencies = new HashSet<string>();
-                DevDependencies = new HashSet<string>();
+                Dependencies = new();
+                DevDependencies = new();
                 Assets = null;
                 return;
             }
@@ -46,12 +46,11 @@ namespace Lib.TSCompiler
             {
                 var newChangeId = cache.ChangeId;
                 if (newChangeId == PackageJsonChangeId) return;
-                
+
                 var rp = PathUtils.RealPath(packageJsonFile.FullPath);
                 if (rp != packageJsonFile.FullPath)
                 {
-                    var realPackageJsonFile = DiskCache.TryGetItem(rp) as IFileCache;
-                    if (realPackageJsonFile != null)
+                    if (DiskCache.TryGetItem(rp) is IFileCache realPackageJsonFile)
                     {
                         Owner = realPackageJsonFile.Parent!;
                         Owner.Project = this;
@@ -59,7 +58,7 @@ namespace Lib.TSCompiler
                         newChangeId = cache.ChangeId;
                     }
                 }
-                
+
                 ProjectOptions.FinalCompilerOptions = null;
                 JObject parsed;
                 try
@@ -201,7 +200,7 @@ namespace Lib.TSCompiler
                 Assets = ParseBobrilAssets(parsed);
 
                 if (ProjectOptions == null) return;
-                ProjectOptions.FillProjectOptionsFromPackageJson(parsed);
+                ProjectOptions.FillProjectOptionsFromPackageJson(parsed, Owner);
                 if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
                 var packageManager = new CurrentNodePackageManager(DiskCache, Logger);
                 if (ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade)
@@ -220,10 +219,10 @@ namespace Lib.TSCompiler
             {
                 PackageJsonChangeId = -1;
                 MainFile = "index.js";
-                Dependencies = new HashSet<string>();
-                DevDependencies = new HashSet<string>();
+                Dependencies = new();
+                DevDependencies = new();
                 Assets = null;
-                ProjectOptions?.FillProjectOptionsFromPackageJson(null);
+                ProjectOptions?.FillProjectOptionsFromPackageJson(null, Owner);
             }
         }
 
@@ -269,6 +268,7 @@ namespace Lib.TSCompiler
                     diskName = dir.Name;
                 }
             }
+
             var proj = new TSProject
             {
                 Owner = dir,
@@ -276,12 +276,12 @@ namespace Lib.TSCompiler
                 Logger = logger,
                 Name = diskName,
                 Valid = true,
-                ProjectOptions = new ProjectOptions()
+                ProjectOptions = new(),
+                Virtual = virtualProject
             };
-            proj.Virtual = virtualProject;
             proj.ProjectOptions.Owner = proj;
             if (virtualProject)
-                proj.ProjectOptions.FillProjectOptionsFromPackageJson(null);
+                proj.ProjectOptions.FillProjectOptionsFromPackageJson(null, dir);
             else
                 dir.Project = proj;
 
@@ -308,11 +308,10 @@ namespace Lib.TSCompiler
                 var fullPath = fromModules ? nodeModulesDir : Owner.FullPath;
                 if (fromModules)
                 {
-                    if (projectOptions.Owner.UsedDependencies == null)
-                        projectOptions.Owner.UsedDependencies = new HashSet<string>();
+                    projectOptions.Owner.UsedDependencies ??= new();
                     var pos = 0;
-                    PathUtils.EnumParts(asset.Key, ref pos, out var name, out var isDir);
-                    PathUtils.EnumParts(asset.Key, ref pos, out name, out isDir);
+                    PathUtils.EnumParts(asset.Key, ref pos, out var name, out _);
+                    PathUtils.EnumParts(asset.Key, ref pos, out name, out _);
                     projectOptions.Owner.UsedDependencies.Add(name.ToString());
                 }
 
@@ -331,7 +330,7 @@ namespace Lib.TSCompiler
                 }
                 else
                 {
-                    RecursiveAddFilesContent(item as IDirectoryCache, buildResult, asset.Value);
+                    RecursiveAddFilesContent((IDirectoryCache) item, buildResult, asset.Value);
                 }
             }
         }
@@ -345,21 +344,20 @@ namespace Lib.TSCompiler
                     continue;
                 var outPathFileName = (destDir != "" ? destDir + "/" : "") + child.Name;
                 buildResult.TakenNames.Add(outPathFileName);
-                if (child is IDirectoryCache)
+                switch (child)
                 {
-                    RecursiveAddFilesContent(child as IDirectoryCache, buildResult, outPathFileName);
-                    continue;
-                }
-
-                if (child is IFileCache)
-                {
-                    buildResult.FilesContent.GetOrAddValueRef(outPathFileName) =
-                        new Lazy<object>(() =>
-                        {
-                            var res = ((IFileCache) child).ByteContent;
-                            ((IFileCache) child).FreeCache();
-                            return res;
-                        });
+                    case IDirectoryCache directoryCache:
+                        RecursiveAddFilesContent(directoryCache, buildResult, outPathFileName);
+                        continue;
+                    case IFileCache fileCache:
+                        buildResult.FilesContent.GetOrAddValueRef(outPathFileName) =
+                            new Lazy<object>(() =>
+                            {
+                                var res = fileCache.ByteContent;
+                                fileCache.FreeCache();
+                                return res;
+                            });
+                        break;
                 }
             }
         }

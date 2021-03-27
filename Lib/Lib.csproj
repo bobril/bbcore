@@ -3,7 +3,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <LangVersion>8</LangVersion>
+    <LangVersion>default</LangVersion>
     <WarningsAsErrors />
     <Nullable>enable</Nullable>
   </PropertyGroup>

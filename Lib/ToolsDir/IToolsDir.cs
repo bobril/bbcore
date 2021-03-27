@@ -19,7 +19,7 @@ namespace Lib.ToolsDir
         string JasmineBootJs { get; }
         string JasmineDts { get; }
         string JasmineDtsPath { get; }
-        string GetLocaleDef(string locale);
+        string? GetLocaleDef(string locale);
         IJsEngine CreateJsEngine();
         byte[]? WebGet(string path);
         byte[]? WebtGet(string path);
