@@ -1384,7 +1384,14 @@ namespace Lib.Composition
         public void InitInteractiveMode(bool? localizeValue, string? sourceMapRoot)
         {
             _hasBuildWork.Set();
-            var throttled = _dc.ChangeObservable.Throttle(TimeSpan.FromMilliseconds(200));
+            var throttled = _dc.ChangeObservable.Select(s=>
+            {
+                if (s.EndsWith(".bbrc"))
+                {
+                    _currentProject.BbrcChanged();
+                }
+                return s;
+            }).Throttle(TimeSpan.FromMilliseconds(200));
             throttled.Merge(throttled.Delay(TimeSpan.FromMilliseconds(300))).Subscribe((_) => _hasBuildWork.Set());
             var iterationId = 0;
             var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath, "yes");

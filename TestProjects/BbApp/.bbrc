@@ -1,5 +1,4 @@
 {
-    "title": "Bobril Hello World",
     "head": "<link rel=\"icon\" href=\"<<../ImageQuality/assets/light.png>>\">",
     "jasmineVersion": "330",
     "additionalResourcesDirectory": "assets-app",

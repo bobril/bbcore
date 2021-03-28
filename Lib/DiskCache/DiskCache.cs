@@ -15,9 +15,9 @@ namespace Lib.DiskCache
     public class DiskCache : IDiskCache
     {
         readonly Func<IDirectoryWatcher> _directoryWatcherFactory;
-        readonly Dictionary<string, IDirectoryWatcher> _watchers = new Dictionary<string, IDirectoryWatcher>();
+        readonly Dictionary<string, IDirectoryWatcher> _watchers = new();
         readonly IDirectoryCache _root;
-        readonly object _lock = new object();
+        readonly object _lock = new();
         readonly bool IsUnixFs;
         bool _changed;
 
@@ -169,9 +169,9 @@ namespace Lib.DiskCache
             }
         }
 
-        public IObservable<Unit> ChangeObservable => _changeSubject;
+        public IObservable<string> ChangeObservable => _changeSubject;
 
-        Subject<Unit> _changeSubject = new Subject<Unit>();
+        readonly Subject<string> _changeSubject = new();
 
         public void NotifyChange()
         {
@@ -218,9 +218,9 @@ namespace Lib.DiskCache
             if (IgnoreChangesInPath != null && path.StartsWith(IgnoreChangesInPath, StringComparison.Ordinal))
                 return;
             //Console.WriteLine("Change: " + path);
-            _changeSubject.OnNext(Unit.Default);
+            _changeSubject.OnNext(path);
         }
-        
+
         IDirectoryCache AddDirectoryFromName(string name, IDirectoryCache parent, bool isLink, bool isInvalid)
         {
             var subDir = new DirectoryCache(this, isInvalid)

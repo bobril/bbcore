@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reactive;
@@ -81,7 +80,7 @@ namespace Lib.TSCompiler
 
         internal string? NpmRegistry;
 
-        public TaskCompletionSource<Unit> LiveReloadAwaiter = new TaskCompletionSource<Unit>();
+        public TaskCompletionSource<Unit> LiveReloadAwaiter = new();
         public IBuildCache? BuildCache;
         internal uint ConfigurationBuildCacheId;
         public bool Debug = true;
@@ -124,9 +123,8 @@ namespace Lib.TSCompiler
             var res = new List<string>(ExampleSources?.Count ?? 1);
             if (Example == "")
             {
-                var item =
-                    (Owner.Owner.TryGetChild("example.tsx") ?? Owner.Owner.TryGetChild("example.ts")) as IFileCache;
-                if (item != null)
+                if ((Owner.Owner.TryGetChild("example.tsx") ??
+                     Owner.Owner.TryGetChild("example.ts")) is IFileCache item)
                 {
                     res.Add(item.FullPath);
                 }
@@ -135,9 +133,9 @@ namespace Lib.TSCompiler
             {
                 var examplePath = PathUtils.Join(Owner.Owner.FullPath, Example);
                 var item = Owner.DiskCache.TryGetItem(examplePath);
-                if (item is IDirectoryCache)
+                if (item is IDirectoryCache directoryCache)
                 {
-                    foreach (var child in (IDirectoryCache) item)
+                    foreach (var child in directoryCache)
                     {
                         if (!(child is IFileCache))
                             continue;
@@ -481,6 +479,7 @@ namespace Lib.TSCompiler
             {
                 NpmRegistry = publishConfigSection.Value<string>("registry");
             }
+
             var bobrilSection = parsed?.GetValue("bobril") as JObject;
             var bbOptions = new BobrilBuildOptions(bobrilSection);
             bbOptions = LoadBbrc(dir, bbOptions);
@@ -518,13 +517,16 @@ namespace Lib.TSCompiler
             PathToTranslations = bbOptions.pathToTranslations;
             TsconfigUpdate = bbOptions.tsconfigUpdate ?? true;
             BuildOutputDir = bbOptions.buildOutputDir;
-            Defines = (bbOptions.defines ?? new Dictionary<string, string>()).ToDictionary(kv=>kv.Key,kv => Parser.Parse(kv.Value));
+            Defines = (bbOptions.defines ?? new Dictionary<string, string>()).ToDictionary(kv => kv.Key,
+                kv => Parser.Parse(kv.Value));
             if (!Defines!.ContainsKey("DEBUG"))
             {
                 Defines["DEBUG"] = Parser.Parse("DEBUG");
             }
 
-            ProcessEnvs = (bbOptions.envs ?? new Dictionary<string, string>()).ToDictionary(kv=>kv.Key,kv => Parser.Parse(kv.Value));
+            ProcessEnvs =
+                (bbOptions.envs ?? new Dictionary<string, string>()).ToDictionary(kv => kv.Key,
+                    kv => Parser.Parse(kv.Value));
             if (!ProcessEnvs!.ContainsKey("NODE_ENV"))
             {
                 ProcessEnvs!["NODE_ENV"] = Parser.Parse("DEBUG?\"development\":\"production\"");
@@ -535,10 +537,28 @@ namespace Lib.TSCompiler
             HeadlessBrowserStrategy = bbOptions.headlessBrowserStrategy;
         }
 
-        BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions)
+        static BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions)
         {
             while (dir != null)
             {
+                if (dir.IsFake)
+                {
+                    try
+                    {
+                        if (File.Exists(dir.FullPath + "/.bbrc"))
+                        {
+                            var parsed = JObject.Parse(File.ReadAllText(dir.FullPath + "/.bbrc", Encoding.UTF8));
+                            var n = new BobrilBuildOptions(parsed);
+                            n.Merge(bbOptions);
+                            bbOptions = n;
+                        }
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+
                 if (dir.TryGetChild(".bbrc") is IFileCache {IsInvalid: false} f)
                 {
                     try
@@ -553,8 +573,10 @@ namespace Lib.TSCompiler
                         // ignored
                     }
                 }
+
                 dir = dir.Parent;
             }
+
             return bbOptions;
         }
 
@@ -924,6 +946,16 @@ namespace Lib.TSCompiler
             }
 
             return res;
+        }
+
+        public void BbrcChanged()
+        {
+            Owner.PackageJsonChangeId = -1;
+            if (SubProjects == null) return;
+            foreach (var (key, value) in SubProjects)
+            {
+                value?.BbrcChanged();
+            }
         }
     }
 }

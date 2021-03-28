@@ -9,7 +9,7 @@ namespace Lib.DiskCache
         IDirectoryCache Root();
         Func<(IDirectoryCache parent, string name, bool isDir), bool> DefaultFilter { get; set; }
         IFsAbstraction FsAbstraction { get; }
-        IObservable<Unit> ChangeObservable { get; }
+        IObservable<string> ChangeObservable { get; }
         bool CheckForTrueChange();
         void ResetChange();
         void UpdateIfNeeded(IDirectoryCache dir);
