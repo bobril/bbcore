@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.44.1
+
 ### Fixed
 
 - parent `.bbrc` where not loaded correctly
