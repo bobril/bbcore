@@ -225,7 +225,7 @@ versionKnown: do {
             }
         }
         dir = path.dirname(dir);
-        if (dir.length < 3) {
+        if (dir.length < 4) {
             break;
         }
     }
