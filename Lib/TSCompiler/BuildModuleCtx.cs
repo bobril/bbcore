@@ -10,6 +10,7 @@ using Njsast.ConstEval;
 using Njsast.Bobril;
 using Njsast.Ast;
 using System.Collections.Generic;
+using BobrilMdx;
 using Lib.BuildCache;
 
 namespace Lib.TSCompiler
@@ -42,6 +43,11 @@ namespace Lib.TSCompiler
         static bool IsTsOrTsxOrJsOrJsx(ReadOnlySpan<char> name)
         {
             return name.EndsWith(".ts") || name.EndsWith(".tsx") || name.EndsWith(".js") || name.EndsWith(".jsx");
+        }
+
+        static bool IsMdx(ReadOnlySpan<char> name)
+        {
+            return name.EndsWith(".mdx");
         }
 
         public TSProject? ResolveModule(string name)
@@ -250,6 +256,10 @@ namespace Lib.TSCompiler
                         CheckAdd(item.FullPath,
                             IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript :
                             isAsset ? FileCompilationType.JavaScriptAsset : FileCompilationType.EsmJavaScript);
+                    }
+                    else if (IsMdx(item.Name))
+                    {
+                        CheckAdd(item.FullPath, FileCompilationType.Mdx);
                     }
                     else
                     {
@@ -509,6 +519,7 @@ namespace Lib.TSCompiler
                     continue;
                 switch (f.Type)
                 {
+                    case FileCompilationType.Mdx:
                     case FileCompilationType.TypeScript:
                     case FileCompilationType.EsmJavaScript:
                     {
@@ -675,6 +686,10 @@ namespace Lib.TSCompiler
                     {
                         info.Type = FileCompilationType.TypeScript;
                     }
+                    else if (IsMdx(fileName))
+                    {
+                        info.Type = FileCompilationType.Mdx;
+                    }
                     else
                     {
                         var ext = PathUtils.GetExtension(fileName);
@@ -716,6 +731,7 @@ namespace Lib.TSCompiler
                         info.MapLink = null;
                         info.SourceInfo = null;
                         break;
+                    case FileCompilationType.Mdx:
                     case FileCompilationType.EsmJavaScript:
                     case FileCompilationType.TypeScript:
                         info.HasError = false;
@@ -795,9 +811,18 @@ namespace Lib.TSCompiler
             ITSCompiler compiler = null;
             try
             {
+                var fileName = info.Owner.FullPath;
+                var source = info.Owner.Utf8Content;
+                if (info.Type == FileCompilationType.Mdx)
+                {
+                    var mdxToTsx = new MdxToTsx();
+                    mdxToTsx.Parse(source);
+                    source = mdxToTsx.Render();
+                    fileName = PathUtils.ChangeExtension(fileName, "tsx");
+                }
                 compiler = BuildCtx.CompilerPool.GetTs(Owner.DiskCache, BuildCtx.CompilerOptions);
                 //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);
-                var result = compiler.Transpile(info.Owner.FullPath, info.Owner.Utf8Content);
+                var result = compiler.Transpile(fileName, source);
                 if (result.Diagnostics != null)
                 {
                     info.ReportDiag(result.Diagnostics);

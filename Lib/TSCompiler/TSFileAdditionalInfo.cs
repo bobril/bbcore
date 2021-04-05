@@ -20,7 +20,8 @@ namespace Lib.TSCompiler
         Resource,
         JavaScriptAsset,
         Json,
-        TypeScriptDefinition
+        TypeScriptDefinition,
+        Mdx
     }
 
     public class DependencyTriplet

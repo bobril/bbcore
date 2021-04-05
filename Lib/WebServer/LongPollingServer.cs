@@ -23,8 +23,8 @@ namespace Lib.WebServer
             LongPollingServer _owner;
             readonly string _id;
             int _closed; // 0/1 = false/true - Interlocked.Exchange is not for bools :-(
-            TaskCompletionSource<Unit> _responseEnder;
-            HttpContext _response;
+            TaskCompletionSource<Unit>? _responseEnder;
+            HttpContext? _response;
             Timer _timeOut;
             readonly List<(string, object)> _toSend;
 
@@ -102,7 +102,7 @@ namespace Lib.WebServer
                     await response.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", _id }, { "close", true } }));
                     return;
                 }
-                object toSend = null;
+                string? toSend = null;
                 var ender = _responseEnder;
                 if (_response == response || firstResponse) lock (_toSend)
                     {
@@ -110,7 +110,7 @@ namespace Lib.WebServer
                             return;
                         if (_toSend.Count > 0)
                         {
-                            toSend = new Dictionary<string, object> { { "id", _id }, { "m", _toSend.Select(p => new { m = p.Item1, d = p.Item2 }).ToList() } };
+                            toSend = Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", _id }, { "m", _toSend.Select(p => new { m = p.Item1, d = p.Item2 }).ToList() } });
                             _responseEnder = null;
                             _response = null;
                         }
@@ -118,10 +118,10 @@ namespace Lib.WebServer
                     }
                 if (toSend != null)
                 {
-                    await response.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(toSend)).ContinueWith((t) =>
+                    await response.Response.WriteAsync(toSend).ContinueWith(t =>
                     {
                         Retimeout();
-                        if (ender != null) ender.TrySetResult(Unit.Default);
+                        ender?.TrySetResult(Unit.Default);
                     });
                     return;
                 }
@@ -135,7 +135,7 @@ namespace Lib.WebServer
                             .ContinueWith((t) => ender.TrySetResult(Unit.Default));
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                     }
-                    _responseEnder = new TaskCompletionSource<Unit>();
+                    _responseEnder = new();
                     _response = response;
                     await _responseEnder.Task;
                 }
@@ -143,7 +143,7 @@ namespace Lib.WebServer
                 {
                     if (_response == response)
                     {
-                        _responseEnder.TrySetResult(Unit.Default);
+                        _responseEnder!.TrySetResult(Unit.Default);
                         _response = null;
                         Retimeout();
                     }

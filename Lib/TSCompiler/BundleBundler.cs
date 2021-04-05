@@ -198,7 +198,7 @@ namespace Lib.TSCompiler
                 return "";
             }
 
-            if (fileInfo.Type == FileCompilationType.TypeScript)
+            if (fileInfo.Type is FileCompilationType.TypeScript or FileCompilationType.Mdx)
             {
                 var sourceMapBuilder = new SourceMapBuilder();
                 var adder = sourceMapBuilder.CreateSourceAdder(fileInfo.Output, fileInfo.MapLink);

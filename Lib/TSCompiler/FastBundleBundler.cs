@@ -121,14 +121,18 @@ namespace Lib.TSCompiler
 
             foreach (var source in sortedResultSet)
             {
-                if (source.Type == FileCompilationType.TypeScript ||
-                    source.Type == FileCompilationType.EsmJavaScript ||
-                    source.Type == FileCompilationType.JavaScript)
+                if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript or FileCompilationType.Mdx or FileCompilationType.JavaScript)
                 {
                     if (source.Output == null)
                         continue; // Skip d.ts
+                    var moduleName = source.Owner!.FullPath;
+                    if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript or
+                        FileCompilationType.JavaScript)
+                    {
+                        moduleName = PathUtils.WithoutExtension(moduleName);
+                    }
                     sourceMapBuilder.AddText(
-                        $"R('{PathUtils.Subtract(PathUtils.WithoutExtension(source.Owner.FullPath), root)}',function(require, module, exports, global){{");
+                        $"R('{PathUtils.Subtract(moduleName, root!)}',function(require, module, exports, global){{");
                     var adder = sourceMapBuilder.CreateSourceAdder(source.Output, source.MapLink);
                     var sourceReplacer = new SourceReplacer();
                     _project.ApplySourceInfo(sourceReplacer, source.SourceInfo, _buildResult);

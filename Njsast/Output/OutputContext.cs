@@ -12,16 +12,16 @@ namespace Njsast.Output
     public class OutputContext
     {
         public readonly OutputOptions Options;
-        SourceMapBuilder? _sourceMapBuilder;
-        StructList<char> _storage = new StructList<char>();
-        StructList<AstNode> _stack = new StructList<AstNode>();
+        readonly SourceMapBuilder? _sourceMapBuilder;
+        StructList<char> _storage;
+        StructList<AstNode> _stack;
         bool _mightNeedSpace;
         bool _mightNeedSemicolon;
         bool _frequencyCounting;
         uint[] _frequency = new uint[128];
         int _currentCol;
         public int Indentation;
-        const string _spaces = "                ";
+        const string Spaces = "                ";
         char _lastChar = char.MinValue;
 
         public OutputContext(OutputOptions? options = null, SourceMapBuilder? sourceMapBuilder = null)
@@ -70,7 +70,7 @@ namespace Njsast.Output
 
         public override string ToString()
         {
-            return new string(_storage.AsSpan());
+            return new(_storage.AsSpan());
         }
 
         public void TruePrint(ReadOnlySpan<char> text)
@@ -101,7 +101,7 @@ namespace Njsast.Output
             var pos = text.IndexOf('\n');
             while (pos >= 0)
             {
-                text = text.Slice(pos + 1);
+                text = text[(pos + 1)..];
                 _currentCol = text.Length;
                 pos = text.IndexOf('\n');
             }
@@ -216,15 +216,15 @@ namespace Njsast.Output
             {
                 var c = Options.IndentStart + Indentation;
                 if (half) c -= Options.IndentLevel / 2;
-                while (c >= _spaces.Length)
+                while (c >= Spaces.Length)
                 {
-                    Print(_spaces);
-                    c -= _spaces.Length;
+                    Print(Spaces);
+                    c -= Spaces.Length;
                 }
 
                 if (c > 0)
                 {
-                    Print(_spaces.AsSpan(0, c));
+                    Print(Spaces.AsSpan(0, c));
                 }
             }
         }
@@ -244,7 +244,7 @@ namespace Njsast.Output
                 Indentation += Options.IndentLevel;
                 if (hasUseStrictDirective)
                 {
-                    AddMapping(null, new Position(), true);
+                    AddMapping(null, new(), true);
                     Indent();
                     Print("\"use strict\"");
                     ForceSemicolon();
@@ -332,7 +332,7 @@ namespace Njsast.Output
                     return;
                 }
 
-                if (node is AstBinary binary && binary.Operator == Operator.In)
+                if (node is AstBinary {Operator: Operator.In})
                 {
                     Parens = true;
                     StopDescending();
@@ -378,6 +378,11 @@ namespace Njsast.Output
         public bool ShouldBreak()
         {
             return _currentCol > Options.MaxLineLen;
+        }
+
+        public bool WasNewLine()
+        {
+            return _currentCol == 0;
         }
 
         public bool NeedDotAfterNumber()
@@ -533,7 +538,7 @@ namespace Njsast.Output
             Print(OperatorToString(op));
         }
 
-        public void PrintString(string str)
+        public void PrintString(ReadOnlySpan<char> str)
         {
             var sq = 0;
             var dq = 0;
@@ -561,7 +566,7 @@ namespace Njsast.Output
         public void PrintNumber(double value)
         {
             Span<char> buf = stackalloc char[31];
-            if (!value.TryFormat(buf.Slice(0,30), out var charLen, "R", CultureInfo.InvariantCulture))
+            if (!value.TryFormat(buf[..30], out var charLen, "R", CultureInfo.InvariantCulture))
                 throw new ArgumentOutOfRangeException(nameof(value));
             buf[charLen] = (char)0;
             if (buf[0] == '0' && buf[1] == '.')
@@ -581,12 +586,12 @@ namespace Njsast.Output
                 z++;
                 exp.TryFormat(buf.Slice(z, 3), out charLen, default, CultureInfo.InvariantCulture);
                 charLen += z;
-                Print(buf.Slice(0, charLen));
+                Print(buf[..charLen]);
                 _needDotAfterNumber = false;
                 return;
             }
 
-            var str = buf.Slice(0, charLen);
+            var str = buf[..charLen];
             Print(str);
             _needDotAfterNumber = !(str.Contains('.') ||
                                     str.Contains('e'));
@@ -649,19 +654,10 @@ namespace Njsast.Output
             "\\x18", "\\x19", "\\x1a", "\\x1b", "\\x1c", "\\x1d", "\\x1e", "\\x1f",
         };
 
-        static readonly Regex EndOfScriptRegex = new Regex("^</script[>\\/\t\n\f\r ]",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
-        static readonly Regex HtmlStartCommentRegex =
-            new Regex("^<!--", RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
-        static readonly Regex HtmlEndCommentRegex =
-            new Regex("^-->", RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
         bool _hasParens;
         bool _needDotAfterNumber;
 
-        public void PrintStringChars(string s, QuoteType quoteType)
+        public void PrintStringChars(ReadOnlySpan<char> s, QuoteType quoteType)
         {
             var lastOk = 0;
             var quoteChar = quoteType == QuoteType.Single ? '\'' : quoteType == QuoteType.Double ? '"' : '`';
@@ -670,7 +666,7 @@ namespace Njsast.Output
                 var ch = s[i];
                 if (ch == quoteChar)
                 {
-                    TruePrint(s.AsSpan(lastOk, i - lastOk));
+                    TruePrint(s.Slice(lastOk, i - lastOk));
                     lastOk = i;
                     TruePrint("\\");
                 }
@@ -680,71 +676,70 @@ namespace Njsast.Output
                     if (i + 1 < s.Length)
                     {
                         var next = s[i + 1];
-                        if (next >= '0' && next <= '9')
+                        if (next is >= '0' and <= '9')
                         {
                             followedByNumber = true;
                         }
                     }
 
-                    TruePrint(s.AsSpan(lastOk, i - lastOk));
+                    TruePrint(s.Slice(lastOk, i - lastOk));
                     lastOk = i + 1;
                     TruePrint(followedByNumber ? "\\x00" : "\\0");
                 }
                 else if (ch < 32)
                 {
-                    TruePrint(s.AsSpan(lastOk, i - lastOk));
+                    TruePrint(s.Slice(lastOk, i - lastOk));
                     lastOk = i + 1;
                     TruePrint(SpecialChars[ch]);
                 }
                 else if (ch == '\\')
                 {
-                    TruePrint(s.AsSpan(lastOk, i + 1 - lastOk));
+                    TruePrint(s.Slice(lastOk, i + 1 - lastOk));
                     lastOk = i;
                 }
                 else if (ch == 0x2028)
                 {
-                    TruePrint(s.AsSpan(lastOk, i - lastOk));
+                    TruePrint(s.Slice(lastOk, i - lastOk));
                     lastOk = i + 1;
                     TruePrint("\\u2028");
                 }
                 else if (ch == 0x2029)
                 {
-                    TruePrint(s.AsSpan(lastOk, i - lastOk));
+                    TruePrint(s.Slice(lastOk, i - lastOk));
                     lastOk = i + 1;
                     TruePrint("\\u2029");
                 }
                 else if (ch == 0xfeff)
                 {
-                    TruePrint(s.AsSpan(lastOk, i - lastOk));
+                    TruePrint(s.Slice(lastOk, i - lastOk));
                     lastOk = i + 1;
                     TruePrint("\\ufeff");
                 }
                 else if (Options.InlineScript)
                 {
-                    if (EndOfScriptRegex.IsMatch(s, i))
+                    if (s.Length-i >= 9 && s[i..].StartsWith("</script",StringComparison.OrdinalIgnoreCase) && s[i+8] is '>' or '\\' or '/' or '\t' or '\n' or '\f' or '\r' or ' ')
                     {
                         i++;
-                        TruePrint(s.AsSpan(lastOk, i - lastOk));
+                        TruePrint(s.Slice(lastOk, i - lastOk));
                         lastOk = i + 1;
                         TruePrint("\\/");
                     }
-                    else if (HtmlStartCommentRegex.IsMatch(s, i))
-                    {
-                        TruePrint(s.AsSpan(lastOk, i - lastOk));
+                    else if (s[i..].StartsWith("<!--",StringComparison.Ordinal)) {
+                        TruePrint(s.Slice(lastOk, i - lastOk));
                         lastOk = i + 1;
                         TruePrint("\\x3c");
                     }
-                    else if (HtmlEndCommentRegex.IsMatch(s, i))
+                    else if (s[i..].StartsWith("-->", StringComparison.Ordinal))
                     {
                         i += 2;
-                        TruePrint(s.AsSpan(lastOk, i - lastOk));
+                        TruePrint(s.Slice(lastOk, i - lastOk));
                         lastOk = i + 1;
                         TruePrint("\\x3e");
                     }
                 }
             }
 
-            TruePrint(s.AsSpan(lastOk));
+            TruePrint(s.Slice(lastOk));
         }
 
         public bool HasParens()

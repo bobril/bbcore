@@ -405,8 +405,8 @@ namespace Lib.TSCompiler
                 compilerOptions = GetDefaultTSCompilerOptions()
                     .Merge(new TSCompilerOptions {allowJs = false})
                     .Merge(CompilerOptions),
-                files = new List<string>(2 + IncludeSources?.Length ?? 0),
-                include = new List<string> {"**/*"}
+                files = new(2 + IncludeSources?.Length ?? 0),
+                include = new() {"**/*"}
             };
 
             if ((TestSources?.Count ?? 0) > 0)

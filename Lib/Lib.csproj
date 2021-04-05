@@ -3,7 +3,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <LangVersion>default</LangVersion>
+    <LangVersion>latest</LangVersion>
     <WarningsAsErrors />
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -74,6 +74,7 @@
     <PackageReference Include="UAParser" Version="3.1.44" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BobrilMdx\BobrilMdx.csproj" />
     <ProjectReference Include="..\Njsast\Njsast.csproj" />
   </ItemGroup>
   <ItemGroup>

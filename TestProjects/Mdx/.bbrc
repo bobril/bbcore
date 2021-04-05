@@ -1,0 +1,6 @@
+{
+    "dependencies": "disabled",
+    "includeSources": [
+        "node_modules/@bobril/mdx/mdx.d.ts"
+    ]
+}

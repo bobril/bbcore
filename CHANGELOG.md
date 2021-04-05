@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Mdx support WIP
+
 ## 1.44.1
 
 ### Fixed
