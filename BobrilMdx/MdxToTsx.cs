@@ -1,8 +1,12 @@
+using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
 using Markdig;
+using Markdig.Extensions.Yaml;
 using Markdig.Syntax;
 using Njsast.Output;
+using Njsast.Runtime;
+using YamlDotNet.Serialization;
 
 namespace BobrilMdx
 {
@@ -13,26 +17,30 @@ namespace BobrilMdx
 
         public MdxToTsx()
         {
-            _pipeline = new MarkdownPipelineBuilder()
-                    .UseAbbreviations()
-                    .UseAutoIdentifiers()
-                    //.UseCitations()
-                    //.UseCustomContainers() <div> <span> low priority
-                    //.UseDefinitionLists()
-                    .UseEmphasisExtras()
-                    //.UseFigures()
-                    //.UseFooters()
-                    //.UseFootnotes()
-                    .UseGridTables()
-                    //.UseMathematics()
-                    //.UseMediaLinks() could be probably solved in component
-                    .UsePipeTables()
-                    .UseListExtras()
-                    //.UseTaskLists()
-                    .UseDiagrams()
-                    .UseAutoLinks()
-                    .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
-                    .Build();
+            var builder = new MarkdownPipelineBuilder()
+                .UseYamlFrontMatter()
+                .UseAbbreviations()
+                .UseAutoIdentifiers()
+                //.UseCitations()
+                //.UseCustomContainers() <div> <span> low priority
+                //.UseDefinitionLists()
+                .UseEmphasisExtras()
+                //.UseFigures()
+                //.UseFooters()
+                //.UseFootnotes()
+                .UseGridTables()
+                //.UseMathematics()
+                //.UseMediaLinks() could be probably solved in component
+                .UsePipeTables()
+                .UseListExtras()
+                //.UseTaskLists()
+                .UseDiagrams()
+                .DisableHtml()
+                .UseAutoLinks();
+            builder.Extensions.AddIfNotAlready<ImportExtension>();
+            _pipeline = builder
+                .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
+                .Build();
         }
 
         public void Parse(string text)
@@ -40,16 +48,36 @@ namespace BobrilMdx
             _document = Markdown.Parse(text, _pipeline);
         }
 
-        public string Render()
+        public (string content, Dictionary<object, object> metadata) Render()
         {
             var renderer = new TsxRenderer();
             renderer.Write("import * as b from \"bobril\";").WriteLine();
             renderer.Write("import * as mdx from \"@bobril/mdx\";").WriteLine();
-            renderer.Write("export const metadata = {};").WriteLine();
-            renderer.Write("export default b.component((_data: Record<string, any>) => { return (<>").WriteLine().Indent();
+
+            foreach (var importBlock in _document!.Descendants<ImportBlock>())
+            {
+                renderer.Write(importBlock.Lines.ToSlice()).WriteLine();
+            }
+
+            var frontMatterBlock = _document!
+                .Descendants<YamlFrontMatterBlock>()
+                .FirstOrDefault();
+            Dictionary<object, object>? metadata = null;
+            if (frontMatterBlock != null)
+            {
+                var yaml = frontMatterBlock.Lines.ToString();
+                var deserializer = new DeserializerBuilder().Build();
+                var yamlObject = deserializer.Deserialize(new StringReader(yaml));
+                metadata = yamlObject as Dictionary<object, object>;
+            }
+
+            metadata ??= new();
+            renderer.Write("export const metadata = ").Write(TypeConverter.ToAst(metadata)).Write(";").WriteLine();
+            renderer.Write("export default b.component((_data: Record<string, any>) => { return (<>").WriteLine()
+                .Indent();
             var output = (OutputContext) renderer.Render(_document!);
             renderer.Dedent().EnsureLine().Write("</>);});").WriteLine();
-            return output.ToString();
+            return (output.ToString(), metadata);
         }
     }
 }

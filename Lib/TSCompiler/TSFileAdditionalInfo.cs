@@ -60,6 +60,7 @@ namespace Lib.TSCompiler
 
         public StructList<string> Dependencies;
         public StructList<Diagnostic> Diagnostics;
+        public Dictionary<object, object>? Metadata;
 
         public int IterationId;
         internal int ChangeId;

@@ -1,21 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using BTDB.Collections;
 using Lib.Utils;
-using Njsast.SourceMap;
 
 namespace Lib.TSCompiler
 {
     public class ResolveResult
     {
-        public string FileName;
+        public string? FileName;
         public Njsast.StructList<string> NegativeChecks;
         public int IterationId;
-        public string FileNameJs;
+        public string? FileNameJs;
 
-        internal string FileNameWithPreference(bool preferDts)
+        internal string? FileNameWithPreference(bool preferDts)
         {
             if (preferDts) return FileName;
             return FileNameJs ?? FileName;
@@ -32,18 +30,17 @@ namespace Lib.TSCompiler
             BundleJsUrl = _mainBuildResult.AllocateName(options.GetDefaultBundleJsName(), options.Variant != "serviceworker");
         }
 
-        public readonly Dictionary<(string From, string Name), ResolveResult> ResolveCache =
-            new Dictionary<(string From, string Name), ResolveResult>();
+        public readonly Dictionary<(string From, string Name), ResolveResult> ResolveCache = new();
 
-        public readonly Dictionary<string, TsFileAdditionalInfo> Path2FileInfo = new Dictionary<string, TsFileAdditionalInfo>();
-        public readonly HashSet<TsFileAdditionalInfo> RecompiledIncrementaly = new HashSet<TsFileAdditionalInfo>();
+        public readonly Dictionary<string, TsFileAdditionalInfo> Path2FileInfo = new();
+        public readonly HashSet<TsFileAdditionalInfo> RecompiledIncrementally = new();
         public Njsast.StructList<TsFileAdditionalInfo> JavaScriptAssets;
-        public readonly Dictionary<string, TSProject> Modules = new Dictionary<string, TSProject>();
+        public readonly Dictionary<string, TSProject> Modules = new();
         public bool HasError;
         public bool Incremental;
-        public Task<List<Diagnostic>> TaskForSemanticCheck;
+        public Task<List<Diagnostic>>? TaskForSemanticCheck;
         public readonly string BundleJsUrl;
-        public RefDictionary<string, BuildResult> SubBuildResults;
+        public RefDictionary<string, BuildResult>? SubBuildResults;
 
         public string ToOutputUrl(string fileName)
         {
@@ -56,7 +53,7 @@ namespace Lib.TSCompiler
 
             if (info.OutputUrl == null)
                 info.OutputUrl =
-                    _mainBuildResult.AllocateName(PathUtils.Subtract(fileName, _mainBuildResult.CommonSourceDirectory));
+                    _mainBuildResult.AllocateName(PathUtils.Subtract(fileName, _mainBuildResult.CommonSourceDirectory!));
             return info.OutputUrl;
         }
 
@@ -65,7 +62,7 @@ namespace Lib.TSCompiler
         {
             if (source.OutputUrl == null)
             {
-                return ToOutputUrl(source.Owner.FullPath);
+                return ToOutputUrl(source.Owner!.FullPath);
             }
 
             return source.OutputUrl;

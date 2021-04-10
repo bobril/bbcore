@@ -17,17 +17,17 @@ namespace Lib.TSCompiler
 {
     public class BuildModuleCtx : IImportResolver
     {
-        public BuildCtx BuildCtx;
-        public TSProject Owner;
-        public BuildResult Result;
-        public MainBuildResult MainResult;
+        public BuildCtx? BuildCtx;
+        public TSProject? Owner;
+        public BuildResult? Result;
+        public MainBuildResult? MainResult;
         public int IterationId;
-        TsFileAdditionalInfo _currentlyTranspiling;
+        TsFileAdditionalInfo? _currentlyTranspiling;
 
         static readonly string[] ExtensionsToImport = {".tsx", ".ts", ".d.ts", ".jsx", ".js", ""};
         static readonly string[] ExtensionsToImportFromJs = {".jsx", ".js", ""};
 
-        internal OrderedHashSet<string> ToCheck;
+        internal OrderedHashSet<string>? ToCheck;
         internal uint CrawledCount;
 
         static bool IsDts(ReadOnlySpan<char> name)
@@ -52,7 +52,7 @@ namespace Lib.TSCompiler
 
         public TSProject? ResolveModule(string name)
         {
-            if (Result.Modules.TryGetValue(name, out var module))
+            if (Result!.Modules.TryGetValue(name, out var module))
             {
                 if (module.IterationId == IterationId)
                     return module.Valid ? module : null;
@@ -73,7 +73,7 @@ namespace Lib.TSCompiler
 
             again: ;
             var negativeChecks = new BTDB.Collections.StructList<string>();
-            var dir = Owner.Owner.FullPath;
+            var dir = Owner!.Owner.FullPath;
             while (dir.Length > 0)
             {
                 var dc = Owner.DiskCache.TryGetItem(dir + "/node_modules/" + name) as IDirectoryCache;
@@ -90,7 +90,7 @@ namespace Lib.TSCompiler
                     }
 
                     module = TSProject.Create(dc, Owner.DiskCache, Owner.Logger, name);
-                    module.LoadProjectJson(true, Owner.ProjectOptions);
+                    module!.LoadProjectJson(true, Owner.ProjectOptions);
                     if (module.PackageJsonChangeId != -1)
                     {
                         module.NegativeChecks.AddRange(negativeChecks.AsSpan());
@@ -112,17 +112,17 @@ namespace Lib.TSCompiler
 
         public bool CheckFileExistence(string name)
         {
-            return Owner.DiskCache.TryGetItem(name) is IFileCache {IsInvalid: false};
+            return Owner!.DiskCache.TryGetItem(name) is IFileCache {IsInvalid: false};
         }
 
         public bool CheckItemExistence(string name)
         {
-            return Owner.DiskCache.TryGetItem(name)?.IsInvalid == false;
+            return Owner!.DiskCache.TryGetItem(name)?.IsInvalid == false;
         }
 
         public void ReportMissingImport(string from, string name)
         {
-            if (Result.Path2FileInfo.TryGetValue(from, out var parentInfo))
+            if (Result!.Path2FileInfo.TryGetValue(from, out var parentInfo))
             {
                 parentInfo.ReportDiag(true, -15, "Cannot resolve import '" + name + "'", 0, 0, 0, 0);
             }
@@ -132,7 +132,7 @@ namespace Lib.TSCompiler
         public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false,
             bool forceResource = false, bool skipCheckAdd = false)
         {
-            if (Result.ResolveCache.TryGetValue((from, name), out var res))
+            if (Result!.ResolveCache.TryGetValue((from, name), out var res))
             {
                 if (res.IterationId == IterationId) return res.FileName;
                 if (res.FileName != null && !CheckFileExistence(res.FileName)) goto again;
@@ -145,7 +145,7 @@ namespace Lib.TSCompiler
             again: ;
             if (res == null)
             {
-                res = new ResolveResult();
+                res = new();
                 Result.ResolveCache.Add((from, name), res);
             }
             else
@@ -511,7 +511,7 @@ namespace Lib.TSCompiler
         public void StoreResultToBuildCache(BuildResult result)
         {
             var bc = Owner.ProjectOptions.BuildCache;
-            foreach (var f in result.RecompiledIncrementaly)
+            foreach (var f in result.RecompiledIncrementally)
             {
                 if (f.TakenFromBuildCache)
                     continue;
@@ -719,7 +719,7 @@ namespace Lib.TSCompiler
             if (info.Owner.ChangeId != info.ChangeId)
             {
                 info.ChangeId = info.Owner.ChangeId;
-                Result.RecompiledIncrementaly.Add(info);
+                Result.RecompiledIncrementally.Add(info);
                 var oldDependencies = new StructList<string>();
                 if (_noDependencyCheck)
                     oldDependencies.TransferFrom(ref info.Dependencies);
@@ -813,13 +813,16 @@ namespace Lib.TSCompiler
             {
                 var fileName = info.Owner.FullPath;
                 var source = info.Owner.Utf8Content;
+                Dictionary<object, object>? metadata = null;
                 if (info.Type == FileCompilationType.Mdx)
                 {
                     var mdxToTsx = new MdxToTsx();
                     mdxToTsx.Parse(source);
-                    source = mdxToTsx.Render();
+                    (source, metadata) = mdxToTsx.Render();
                     fileName = PathUtils.ChangeExtension(fileName, "tsx");
                 }
+
+                info.Metadata = metadata;
                 compiler = BuildCtx.CompilerPool.GetTs(Owner.DiskCache, BuildCtx.CompilerOptions);
                 //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);
                 var result = compiler.Transpile(fileName, source);
@@ -864,7 +867,7 @@ namespace Lib.TSCompiler
                     _currentlyTranspiling = info;
                 }
 
-                var parser = new Parser(new Options(), info.Output);
+                var parser = new Parser(new(), info.Output);
                 var toplevel = parser.Parse();
                 toplevel.FigureOutScope();
                 var ctx = new ResolvingConstEvalCtx(info.Owner.FullPath, this);
@@ -1239,7 +1242,7 @@ namespace Lib.TSCompiler
             return res;
         }
 
-        readonly Dictionary<string, AstToplevel?> _parsedCache = new Dictionary<string, AstToplevel?>();
+        readonly Dictionary<string, AstToplevel?> _parsedCache = new();
 
         public (string? fileName, AstToplevel? content) ResolveAndLoad(JsModule module)
         {
@@ -1267,7 +1270,7 @@ namespace Lib.TSCompiler
 
             try
             {
-                var parser = new Parser(new Options(), info.Output);
+                var parser = new Parser(new(), info.Output);
                 toplevel = parser.Parse();
                 toplevel.FigureOutScope();
                 _parsedCache.Add(fileName, toplevel);

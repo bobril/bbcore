@@ -7,8 +7,8 @@ namespace BobrilMdx.Test
         static void Main(string[] args)
         {
             var main = new MdxToTsx();
-            main.Parse("Hello *cool* **hot**");
-            Console.WriteLine(main.Render());
+            main.Parse("import * as bobx from \"bobx\";\n\n<button onClick={()=>alert()}>Click me</button>\n");
+            Console.WriteLine(main.Render().content);
         }
     }
 }

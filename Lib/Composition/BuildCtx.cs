@@ -302,7 +302,7 @@ namespace Lib.Composition
             buildResult.HasError = false;
             if (!buildResult.Incremental || !tryDetectChanges)
             {
-                buildResult.RecompiledIncrementaly.Clear();
+                buildResult.RecompiledIncrementally.Clear();
             }
 
             var buildModuleCtx = new BuildModuleCtx()
