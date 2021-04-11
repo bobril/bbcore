@@ -23,7 +23,7 @@ namespace BobrilMdx
                 .UseAutoIdentifiers()
                 //.UseCitations()
                 //.UseCustomContainers() <div> <span> low priority
-                //.UseDefinitionLists()
+                .UseDefinitionLists()
                 .UseEmphasisExtras()
                 //.UseFigures()
                 //.UseFooters()
@@ -38,6 +38,7 @@ namespace BobrilMdx
                 .DisableHtml()
                 .UseAutoLinks();
             builder.Extensions.AddIfNotAlready<ImportExtension>();
+            builder.BlockParsers.AddIfNotAlready<MdxBlockParser>();
             _pipeline = builder
                 .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
                 .Build();

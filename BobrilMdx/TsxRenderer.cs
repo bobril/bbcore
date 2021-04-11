@@ -28,6 +28,7 @@ namespace BobrilMdx
             ObjectRenderers.Add(new ThematicBreakRenderer());
             ObjectRenderers.Add(new HtmlTableRenderer());
             ObjectRenderers.Add(new ImportRenderer());
+            ObjectRenderers.Add(new TsxDefinitionListRenderer());
 
             // Default inline renderers
             ObjectRenderers.Add(new AutolinkInlineRenderer());
@@ -76,15 +77,15 @@ namespace BobrilMdx
                 return this;
 
             // ab://c.d = 8 chars
-            int schemeOffset = content.Length < 8 ? -1 : content.IndexOf("://", 2, StringComparison.Ordinal);
+            var schemeOffset = content.Length < 8 ? -1 : content.IndexOf("://", 2, StringComparison.Ordinal);
             if (schemeOffset != -1) // This is an absolute URL
             {
                 Write("\"");
                 schemeOffset += 3; // skip ://
                 WriteEscapeUrl(content, 0, schemeOffset);
 
-                bool idnaEncodeDomain = false;
-                int endOfDomain = schemeOffset;
+                var idnaEncodeDomain = false;
+                var endOfDomain = schemeOffset;
                 for (; endOfDomain < content.Length; endOfDomain++)
                 {
                     var c = content[endOfDomain];
@@ -114,8 +115,8 @@ namespace BobrilMdx
                     }
 
                     // Escape the characters (see Commonmark example 327 and think of it with a non-ascii symbol)
-                    int previousPosition = 0;
-                    for (int i = 0; i < domainName.Length; i++)
+                    var previousPosition = 0;
+                    for (var i = 0; i < domainName.Length; i++)
                     {
                         var escape = HtmlHelper.EscapeUrlCharacter(domainName[i]);
                         if (escape != null)
@@ -155,7 +156,7 @@ namespace BobrilMdx
 
         void WriteEscapeUrl(string content, int start, int length)
         {
-            int previousPosition = start;
+            var previousPosition = start;
             for (var i = previousPosition; i < length; i++)
             {
                 var c = content[i];
@@ -302,7 +303,7 @@ namespace BobrilMdx
             if (attributes.Classes is { Count: > 0 })
             {
                 Write(" classes={[");
-                for (int i = 0; i < attributes.Classes.Count; i++)
+                for (var i = 0; i < attributes.Classes.Count; i++)
                 {
                     var cssClass = attributes.Classes[i];
                     if (i > 0)
