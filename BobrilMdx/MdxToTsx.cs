@@ -39,9 +39,8 @@ namespace BobrilMdx
                 .UseAutoLinks();
             builder.Extensions.AddIfNotAlready<ImportExtension>();
             builder.BlockParsers.AddIfNotAlready<MdxBlockParser>();
-            _pipeline = builder
-                .UseGenericAttributes() // Must be last as it is one parser that is modifying other parsers
-                .Build();
+            builder.InlineParsers.AddIfNotAlready<MdxCodeInlineParser>();
+            _pipeline = builder.Build();
         }
 
         public void Parse(string text)

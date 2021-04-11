@@ -40,6 +40,7 @@ namespace BobrilMdx
             ObjectRenderers.Add(new HtmlEntityInlineRenderer());
             ObjectRenderers.Add(new LinkInlineRenderer());
             ObjectRenderers.Add(new LiteralInlineRenderer());
+            ObjectRenderers.Add(new MdxCodeInlineRenderer());
 
             EnableHtmlForBlock = true;
             EnableHtmlForInline = true;
