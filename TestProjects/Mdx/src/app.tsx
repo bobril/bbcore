@@ -1,5 +1,5 @@
 import * as b from "bobril";
 
-import Sample from "./sample.mdx";
+import Sample, { metadata } from "./sample.mdx";
 
-b.init(() => <Sample />);
+b.init(() => <Sample name="boris" />);

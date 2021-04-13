@@ -69,11 +69,14 @@ namespace BobrilMdx
                 var deserializer = new DeserializerBuilder().Build();
                 var yamlObject = deserializer.Deserialize(new StringReader(yaml));
                 metadata = yamlObject as Dictionary<object, object>;
+                frontMatterBlock.Parent!.Remove(frontMatterBlock);
             }
 
             metadata ??= new();
             renderer.Write("export const metadata = ").Write(TypeConverter.ToAst(metadata)).Write(";").WriteLine();
-            renderer.Write("export default b.component((_data: Record<string, any>) => { return (<>").WriteLine()
+            metadata.TryGetValue("DataType", out var dataType);
+            var dataTypeStr = dataType as string;
+            renderer.Write("export default b.component(("+(dataTypeStr!=null?"data: "+dataTypeStr:"")+") => { return (<>").WriteLine()
                 .Indent();
             var output = (OutputContext) renderer.Render(_document!);
             renderer.Dedent().EnsureLine().Write("</>);});").WriteLine();
