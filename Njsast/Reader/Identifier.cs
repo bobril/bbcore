@@ -106,7 +106,7 @@ namespace Njsast.Reader
         }
 
         // Test whether a given character code starts an identifier.
-        static bool IsIdentifierStart(int code, bool astral = false)
+        public static bool IsIdentifierStart(int code, bool astral = false)
         {
             if (code < CharCode.LatinCapitalLetterA) return code == CharCode.DollarSign;
             if (code < CharCode.LeftSquareBracket) return true;

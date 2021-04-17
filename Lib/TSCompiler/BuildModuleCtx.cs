@@ -45,9 +45,9 @@ namespace Lib.TSCompiler
             return name.EndsWith(".ts") || name.EndsWith(".tsx") || name.EndsWith(".js") || name.EndsWith(".jsx");
         }
 
-        static bool IsMdx(ReadOnlySpan<char> name)
+        static bool IsMdxb(ReadOnlySpan<char> name)
         {
-            return name.EndsWith(".mdx");
+            return name.EndsWith(".mdxb");
         }
 
         public TSProject? ResolveModule(string name)
@@ -257,7 +257,7 @@ namespace Lib.TSCompiler
                             IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript :
                             isAsset ? FileCompilationType.JavaScriptAsset : FileCompilationType.EsmJavaScript);
                     }
-                    else if (IsMdx(item.Name))
+                    else if (IsMdxb(item.Name))
                     {
                         CheckAdd(item.FullPath, FileCompilationType.Mdx);
                     }
@@ -686,7 +686,7 @@ namespace Lib.TSCompiler
                     {
                         info.Type = FileCompilationType.TypeScript;
                     }
-                    else if (IsMdx(fileName))
+                    else if (IsMdxb(fileName))
                     {
                         info.Type = FileCompilationType.Mdx;
                     }

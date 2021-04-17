@@ -8,7 +8,7 @@ import { Counter } from "./counter";
 
 ## Header 1
 
-Hello <boris.letocha@gmail.com> look at { <Counter /> }.
+Hello <boris.letocha@gmail.com> look at <Counter />.
 
 { data.name }
 

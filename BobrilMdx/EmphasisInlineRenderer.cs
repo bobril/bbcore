@@ -17,6 +17,7 @@ namespace BobrilMdx
                     '^' => "Sup",
                     '+' => "Ins",
                     '=' => "Mark",
+                    '"' => "Cite",
                     '*' or '_' => obj.DelimiterCount == 2 ? "Strong" : "Em",
                     _ => throw new NotSupportedException($"Delimiter: {c}")
                 };

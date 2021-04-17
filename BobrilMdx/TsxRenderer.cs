@@ -17,7 +17,7 @@ namespace BobrilMdx
         public TsxRenderer()
         {
             _outputContext = new(new() {Beautify = true});
-            // Default block renderers
+
             ObjectRenderers.Add(new AbbreviationRenderer());
             ObjectRenderers.Add(new CodeBlockRenderer());
             ObjectRenderers.Add(new ListRenderer());
@@ -29,8 +29,8 @@ namespace BobrilMdx
             ObjectRenderers.Add(new HtmlTableRenderer());
             ObjectRenderers.Add(new ImportRenderer());
             ObjectRenderers.Add(new TsxDefinitionListRenderer());
+            ObjectRenderers.Add(new TsxFooterBlockRenderer());
 
-            // Default inline renderers
             ObjectRenderers.Add(new AutolinkInlineRenderer());
             ObjectRenderers.Add(new CodeInlineRenderer());
             ObjectRenderers.Add(new DelimiterInlineRenderer());
@@ -41,6 +41,8 @@ namespace BobrilMdx
             ObjectRenderers.Add(new LinkInlineRenderer());
             ObjectRenderers.Add(new LiteralInlineRenderer());
             ObjectRenderers.Add(new MdxCodeInlineRenderer());
+            ObjectRenderers.Add(new TsxFigureCaptionRenderer());
+            ObjectRenderers.Add(new TsxTaskListRenderer());
 
             EnableHtmlForBlock = true;
             EnableHtmlForInline = true;

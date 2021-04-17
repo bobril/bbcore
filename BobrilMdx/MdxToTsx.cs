@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Markdig;
 using Markdig.Extensions.Yaml;
+using Markdig.Parsers.Inlines;
 using Markdig.Syntax;
 using Njsast.Output;
 using Njsast.Runtime;
@@ -21,25 +22,26 @@ namespace BobrilMdx
                 .UseYamlFrontMatter()
                 .UseAbbreviations()
                 .UseAutoIdentifiers()
-                //.UseCitations()
-                //.UseCustomContainers() <div> <span> low priority
+                .UseCitations()
                 .UseDefinitionLists()
                 .UseEmphasisExtras()
-                //.UseFigures()
-                //.UseFooters()
-                //.UseFootnotes()
+                .UseFigures()
+                .UseFooters()
+                //.UseFootnotes() too complex for small usefulness
                 .UseGridTables()
                 //.UseMathematics()
                 //.UseMediaLinks() could be probably solved in component
                 .UsePipeTables()
                 .UseListExtras()
-                //.UseTaskLists()
+                .UseTaskLists()
                 .UseDiagrams()
                 .DisableHtml()
                 .UseAutoLinks();
             builder.Extensions.AddIfNotAlready<ImportExtension>();
             builder.BlockParsers.AddIfNotAlready<MdxBlockParser>();
             builder.InlineParsers.AddIfNotAlready<MdxCodeInlineParser>();
+            builder.InlineParsers.TryRemove<AutolinkInlineParser>();
+            builder.InlineParsers.AddIfNotAlready<AutolinkAndJsxInlineParser>();
             _pipeline = builder.Build();
         }
 
