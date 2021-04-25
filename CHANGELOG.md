@@ -4,7 +4,7 @@
 
 ### Added
 
-- Mdx support WIP
+- Mdxb support
 
 ## 1.44.1
 

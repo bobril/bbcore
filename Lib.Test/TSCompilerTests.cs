@@ -98,7 +98,7 @@ namespace Lib.Test
         {
             var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
             var f = ff.ToString();
-            if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
+            if (_content.TryGetValue(new(d, f), out var file))
             {
                 if (file == null)
                     throw new Exception("Cannot add file because it is already dir " + path);
@@ -153,6 +153,11 @@ namespace Lib.Test
         public bool FileExists(string path)
         {
             return true;
+        }
+
+        public void WriteAllUtf8(string path, string content)
+        {
+            AddTextFile(path,content);
         }
     }
 

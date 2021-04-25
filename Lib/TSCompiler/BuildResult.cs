@@ -9,7 +9,6 @@ namespace Lib.TSCompiler
     public class ResolveResult
     {
         public string? FileName;
-        public Njsast.StructList<string> NegativeChecks;
         public int IterationId;
         public string? FileNameJs;
 

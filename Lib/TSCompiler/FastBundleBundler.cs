@@ -121,7 +121,7 @@ namespace Lib.TSCompiler
 
             foreach (var source in sortedResultSet)
             {
-                if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript or FileCompilationType.Mdx or FileCompilationType.JavaScript)
+                if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript or FileCompilationType.JavaScript)
                 {
                     if (source.Output == null)
                         continue; // Skip d.ts

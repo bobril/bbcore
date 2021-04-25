@@ -20,6 +20,11 @@ namespace Lib.DiskCache
             return File.Exists(path);
         }
 
+        public void WriteAllUtf8(string path, string content)
+        {
+            File.WriteAllText(path, content, new UTF8Encoding(false));
+        }
+
         public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
         {
             var res = new List<FsItemInfo>();

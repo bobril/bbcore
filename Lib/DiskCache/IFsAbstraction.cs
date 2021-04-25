@@ -12,5 +12,6 @@ namespace Lib.DiskCache
         byte[] ReadAllBytes(string path);
         string ReadAllUtf8(string path);
         bool FileExists(string path);
+        void WriteAllUtf8(string path, string content);
     }
 }

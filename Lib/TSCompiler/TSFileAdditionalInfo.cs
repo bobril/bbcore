@@ -21,7 +21,7 @@ namespace Lib.TSCompiler
         JavaScriptAsset,
         Json,
         TypeScriptDefinition,
-        Mdx
+        Mdxb
     }
 
     public class DependencyTriplet
@@ -33,6 +33,8 @@ namespace Lib.TSCompiler
 
     public class TsFileAdditionalInfo
     {
+        public TsFileAdditionalInfo? Origin;
+
         public FileCompilationType Type;
         public IFileCache? Owner { get; set; }
         public string? Output { get; set; }
@@ -60,7 +62,6 @@ namespace Lib.TSCompiler
 
         public StructList<string> Dependencies;
         public StructList<Diagnostic> Diagnostics;
-        public Dictionary<object, object>? Metadata;
 
         public int IterationId;
         internal int ChangeId;

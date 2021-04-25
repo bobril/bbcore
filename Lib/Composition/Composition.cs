@@ -998,7 +998,7 @@ namespace Lib.Composition
                 }
             }
 
-            _dc = new DiskCache.DiskCache(new NativeFsAbstraction(), watcherFactory);
+            _dc = new(new NativeFsAbstraction(), watcherFactory);
         }
 
         public ProjectOptions SetMainProject(string path)
@@ -1009,7 +1009,7 @@ namespace Lib.Composition
             proj.IsRootProject = true;
             if (proj.ProjectOptions.BuildCache != null)
                 return proj.ProjectOptions;
-            proj.ProjectOptions = new ProjectOptions
+            proj.ProjectOptions = new()
             {
                 Tools = _tools,
                 BuildCache = _buildCache,
@@ -1024,12 +1024,14 @@ namespace Lib.Composition
 
         public void StartWebServer(int port, bool bindToAny)
         {
-            _webServer = new WebServerHost();
-            _webServer.InDocker = _inDocker;
-            _webServer.FallbackToRandomPort = true;
-            _webServer.Port = port;
-            _webServer.Handler = Handler;
-            _webServer.BindToAny = bindToAny;
+            _webServer = new()
+            {
+                InDocker = _inDocker,
+                FallbackToRandomPort = true,
+                Port = port,
+                Handler = Handler,
+                BindToAny = bindToAny
+            };
             _webServer.Start();
             if (port != _webServer.Port)
             {
@@ -1113,9 +1115,8 @@ namespace Lib.Composition
 
             if (path.StartsWithSegments("/bb/base", out var src))
             {
-                var srcPath = PathUtils.Join(_mainBuildResult.CommonSourceDirectory, src.Value.Substring(1));
-                var srcFileCache = _dc.TryGetItem(srcPath) as IFileCache;
-                if (srcFileCache != null)
+                var srcPath = PathUtils.Join(_mainBuildResult.CommonSourceDirectory, src.Value![1..]);
+                if (_dc.TryGetItem(srcPath) is IFileCache srcFileCache)
                 {
                     context.Response.ContentType = "text/plain";
                     await context.Response.WriteAsync(srcFileCache.Utf8Content);
@@ -1180,7 +1181,7 @@ namespace Lib.Composition
                 else
                 {
                     var httpproxy = new ProxyMiddleware<HandleProxyRequestWrapper>(null,
-                        new HandleProxyRequestWrapper(context =>
+                        new(context =>
                             context
                                 .ForwardTo(proxy)
                                 .AddXForwardedHeaders()
@@ -1245,7 +1246,7 @@ namespace Lib.Composition
                 return resp;
             }
 
-            resp.Ranges = new List<int>();
+            resp.Ranges = new();
             var r = resp.Ranges;
 
             if (instr.InstrumentedFiles.TryGetValue(fn, out var instrumentedFile))
@@ -1384,14 +1385,15 @@ namespace Lib.Composition
         public void InitInteractiveMode(bool? localizeValue, string? sourceMapRoot)
         {
             _hasBuildWork.Set();
-            var throttled = _dc.ChangeObservable.Select(s=>
+            var throttled = _dc.ChangeObservable.Select(s =>
             {
                 if (s.EndsWith(".bbrc"))
                 {
                     _currentProject.BbrcChanged();
                 }
+
                 return s;
-            }).Throttle(TimeSpan.FromMilliseconds(200));
+            }).Where(s => !s.EndsWith(".mdxb.tsx", StringComparison.Ordinal)).Throttle(TimeSpan.FromMilliseconds(200));
             throttled.Merge(throttled.Delay(TimeSpan.FromMilliseconds(300))).Subscribe((_) => _hasBuildWork.Set());
             var iterationId = 0;
             var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath, "yes");
@@ -1405,7 +1407,7 @@ namespace Lib.Composition
 
             _mainServer.OnRequestRebuild.Subscribe(_ =>
             {
-                _dc.NotifyChange();
+                _dc.NotifyChange("Request from API");
                 _hasBuildWork.Set();
             });
             Task.Run(() =>
@@ -1413,7 +1415,11 @@ namespace Lib.Composition
                 while (_hasBuildWork.WaitOne())
                 {
                     if (iterationId != 0 && !_dc.CheckForTrueChange())
+                    {
                         continue;
+                    }
+
+                    if (_logger.Verbose) _logger.Info("Change detected in " + _dc.LastTrueChange);
                     _dc.ResetChange();
                     _hasBuildWork.Set();
                     start = DateTime.UtcNow;

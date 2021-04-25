@@ -221,7 +221,7 @@ namespace Lib.TSCompiler
                 return ("", null);
             }
 
-            if (fileInfo.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript or FileCompilationType.Mdx)
+            if (fileInfo.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript)
             {
                 if (BuildSourceMap)
                 {

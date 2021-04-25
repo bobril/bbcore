@@ -28,9 +28,6 @@
     "target": "es5",
     "resolveJsonModule": true
   },
-  "files": [
-    "node_modules/@bobril/mdx/mdx.d.ts"
-  ],
   "include": [
     "**/*"
   ]

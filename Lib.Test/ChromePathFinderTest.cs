@@ -11,7 +11,7 @@ namespace Lib.Test
     {
         bool _isUnix;
         bool _isMac;
-        string _chromPath;
+        string? _chromPath;
         public FakeFs(bool isUnix, string chromePath = null, bool isMac = false)
         {
             _isUnix = isUnix;
@@ -29,6 +29,11 @@ namespace Lib.Test
                 return false;
             }
             return path == _chromPath;
+        }
+
+        public void WriteAllUtf8(string path, string content)
+        {
+            throw new NotImplementedException();
         }
 
         public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
