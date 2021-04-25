@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.45.0
+
 ### Added
 
 - Mdxb support
