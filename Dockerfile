@@ -8,6 +8,7 @@ WORKDIR /app
 COPY nuget.config ./
 COPY bb/*.csproj ./bb/
 COPY Lib/*.csproj ./Lib/
+COPY BobrilMdx/*.csproj ./BobrilMdx/
 COPY Njsast/*.csproj ./Njsast/
 WORKDIR /app/bb
 RUN dotnet restore
@@ -16,6 +17,7 @@ RUN dotnet restore
 WORKDIR /app/
 COPY bb/. ./bb/
 COPY Lib/. ./Lib/
+COPY BobrilMdx/. ./BobrilMdx/
 COPY Njsast/. ./Njsast/
 WORKDIR /app/bb
 RUN dotnet publish -c Release -p:DebugType=None -p:DebugSymbols=false -r linux-x64 -o out -p:Version=$VERSION.0
