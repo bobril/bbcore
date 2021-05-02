@@ -458,7 +458,7 @@ namespace Lib.TSCompiler
                         PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(source.Value.MainFile)),
                         root));
                 res.TryAdd(source.Key.ToLowerInvariant() + "/",
-                    PathUtils.Subtract(PathUtils.WithoutExtension(source.Value.Owner.FullPath), root));
+                    PathUtils.Subtract(source.Value.Owner.FullPath, root));
                 var browserResolve = source.Value.ProjectOptions?.BrowserResolve;
                 if (browserResolve != null)
                 {

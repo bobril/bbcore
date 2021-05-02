@@ -605,13 +605,20 @@ namespace Lib.TSCompiler
         public bool CrawlChanges()
         {
             _noDependencyCheck = true;
-            foreach (var info in Result.Path2FileInfo)
+            try
             {
-                CrawlInfo(info.Value);
-                if (!_noDependencyCheck)
+                foreach (var info in Result.Path2FileInfo)
                 {
-                    return true;
+                    CrawlInfo(info.Value);
+                    if (!_noDependencyCheck)
+                    {
+                        return true;
+                    }
                 }
+            }
+            catch (InvalidOperationException)
+            {
+                return true;
             }
 
             return false;

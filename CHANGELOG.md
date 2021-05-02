@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fast build failing on module with extension in name.
+
 ## 1.45.0
 
 ### Added
