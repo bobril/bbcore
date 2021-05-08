@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- `bb test` with both options `--dir` and `--out` now run also tests. Only `--dir` command without `--out` will just write build output and not run tests.
+
 ## 1.45.1
 
 ### Fixed

@@ -654,7 +654,7 @@ namespace Lib.Composition
         {
             InitDiskCache();
             _mainBuildResult =
-                new MainBuildResult(false, testCommand.VersionDir.Value, testCommand.SpriteVersionDir.Value);
+                new(false, testCommand.VersionDir.Value, testCommand.SpriteVersionDir.Value);
             InitTestServer();
             InitMainServer();
             var proj = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
@@ -698,7 +698,14 @@ namespace Lib.Composition
                     fastBundle.BuildHtml(true);
                     _compilerPool.FreeMemory().GetAwaiter();
                     if (testCommand.Dir.Value != null)
-                        SaveFilesContentToDisk(_mainBuildResult.FilesContent, testCommand.Dir.Value);
+                    {
+                        var startWrite = DateTime.UtcNow;
+                        SaveFilesContentToDisk(_mainBuildResult.FilesContent, testCommand.Dir.Value, null,
+                            testCommand.Out.Value == null);
+                        _logger.Warn("Written build output in " + (DateTime.UtcNow - startWrite).TotalMilliseconds +
+                                     "ms to " + testCommand.Dir.Value);
+                    }
+
                     IncludeMessages(proj, testBuildResult, ref errors, ref warnings, messages);
                     testBuildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
                     {
@@ -707,7 +714,7 @@ namespace Lib.Composition
                                 messages);
                     }).Wait();
                     PrintMessages(messages);
-                    if (testCommand.Dir.Value == null)
+                    if (testCommand.Dir.Value == null || testCommand.Out.Value != null)
                     {
                         messages = null;
                         if (errors == 0)
@@ -826,7 +833,7 @@ namespace Lib.Composition
         }
 
         void SaveFilesContentToDisk(RefDictionary<string, object> filesContent, string dir,
-            RefDictionary<string, object>? delta = null)
+            RefDictionary<string, object>? delta = null, bool freeMem = true)
         {
             dir = PathUtils.Normalize(dir);
             var utf8WithoutBom = new UTF8Encoding(false);
@@ -872,7 +879,7 @@ namespace Lib.Composition
                     File.WriteAllBytes(fileName, (byte[]) content);
                 }
 
-                if (delta == null)
+                if (delta == null && freeMem)
                     content = null;
             }
         }
