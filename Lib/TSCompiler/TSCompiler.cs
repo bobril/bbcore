@@ -19,7 +19,7 @@ namespace Lib.TSCompiler
         {
             Logger = logger;
             _toolsDir = toolsDir;
-            _callbacks = new BBCallbacks(this);
+            _callbacks = new(this);
         }
 
         readonly IToolsDir _toolsDir;

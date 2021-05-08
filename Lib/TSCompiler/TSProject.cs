@@ -67,7 +67,7 @@ namespace Lib.TSCompiler
                 }
                 catch (Exception)
                 {
-                    parsed = new JObject();
+                    parsed = new();
                 }
 
                 var deps = new HashSet<string>();

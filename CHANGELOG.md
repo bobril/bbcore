@@ -2,8 +2,13 @@
 
 ## [unreleased]
 
-### Fixed
+### Changed
 
+- Default TypeScript version is 4.2.4
+
+### Added
+
+- Updated dependencies
 - `bb test` with both options `--dir` and `--out` now run also tests. Only `--dir` command without `--out` will just write build output and not run tests.
 
 ## 1.45.1

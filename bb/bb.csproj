@@ -14,9 +14,4 @@
   <ItemGroup>
     <ProjectReference Include="../Lib/Lib.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="ClearScriptV8.linux-x64.so" Condition="'$(RuntimeIdentifier)'=='linux-x64'">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 </Project>
