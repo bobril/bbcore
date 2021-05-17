@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.46.1
+
 ### Fixed
 
 - `sprites.ts` missed svg files.
