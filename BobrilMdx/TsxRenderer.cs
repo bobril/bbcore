@@ -347,9 +347,8 @@ namespace BobrilMdx
         /// <param name="leafBlock">The leaf block.</param>
         /// <param name="writeEndOfLines">if set to <c>true</c> write end of lines.</param>
         /// <param name="escape">if set to <c>true</c> escape the content for HTML</param>
-        /// <param name="softEscape">Only escape &lt; and &amp;</param>
         /// <returns>This instance</returns>
-        public TsxRenderer WriteLeafRawLines(LeafBlock leafBlock, bool writeEndOfLines, bool escape, bool softEscape = false)
+        public TsxRenderer WriteLeafRawLines(LeafBlock leafBlock, bool writeEndOfLines, bool escape)
         {
             if (leafBlock.Lines.Lines != null)
             {

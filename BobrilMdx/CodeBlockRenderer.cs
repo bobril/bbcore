@@ -21,7 +21,7 @@ namespace BobrilMdx
                 renderer.WriteProps(obj).Write('>');
             }
 
-            renderer.WriteLeafRawLines(obj, true, true, true);
+            renderer.WriteLeafRawLines(obj, false, true);
 
             if (renderer.EnableHtmlForBlock)
             {

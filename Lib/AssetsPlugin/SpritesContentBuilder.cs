@@ -11,7 +11,7 @@ namespace Lib.AssetsPlugin
 
         protected override bool ShouldSkip(string value)
         {
-            return !PathUtils.GetExtension(value).SequenceEqual("png");
+            return !PathUtils.GetExtension(value).SequenceEqual("png") && !PathUtils.GetExtension(value).SequenceEqual("svg");
         }
 
         protected override void AddPropertyValue(string value)

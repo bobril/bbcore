@@ -20,7 +20,11 @@ Hello <boris.letocha@gmail.com> look at <Counter />.
 
 sin^2^x + cos^2^x = 1
 
-++asfagfsagg++
+``` ts linenum:99
+let nice = "code";
+console.log(nice);
+```
+
 
 ---
 

@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- `sprites.ts` missed svg files.
+- Mdx codeblock does not have last empty line.
+
 ## 1.46.0
 
 ### Changed
