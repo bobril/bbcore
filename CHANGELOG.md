@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.47.0
+
 ### Fixed
 
 - Patched TypeScript for another strange crash
