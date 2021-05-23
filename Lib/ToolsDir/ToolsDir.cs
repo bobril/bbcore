@@ -15,9 +15,9 @@ namespace Lib.ToolsDir
     public class ToolsDir : IToolsDir
     {
         readonly ILogger _logger;
-        static object lockInitialization = new object();
+        static readonly object lockInitialization = new();
 
-        static object _lock = new object();
+        static readonly object _lock = new();
 
         public ToolsDir(string dir, ILogger logger)
         {
@@ -34,7 +34,7 @@ namespace Lib.ToolsDir
                     {
                         jsEngineSwitcher.EngineFactories.Add(
                             new JavaScriptEngineSwitcher.V8.V8JsEngineFactory(
-                                new JavaScriptEngineSwitcher.V8.V8Settings {DisableGlobalMembers = false}));
+                                new() {DisableGlobalMembers = false}));
                         jsEngineSwitcher.DefaultEngineName =
                             JavaScriptEngineSwitcher.V8.V8JsEngine.EngineName;
                         /*jsEngineSwitcher.EngineFactories.Add(
@@ -89,11 +89,16 @@ namespace Lib.ToolsDir
                 {
                     _typeScriptJsContent = File.ReadAllText(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
 
+                    // Patch strange crash in TS (4.2.4 probably more) in isFileLevelUniqueName function
+                    _typeScriptJsContent = _typeScriptJsContent.Replace(
+                        "return !(hasGlobalName && hasGlobalName(name)) && !sourceFile.identifiers.has(name);",
+                        "return !(hasGlobalName && hasGlobalName(name)) && (!sourceFile?.identifiers?.has(name) ?? true);");
+
                     // Patch strange crash in TS (4.1.3 probably more) https://github.com/microsoft/TypeScript/issues/40747
                     _typeScriptJsContent = _typeScriptJsContent.Replace(
                         "ts.Debug.assert(declarationTransform.transformed.length === 1, \"Should only see one output from the decl transform\");",
                         "ts.Debug.assert(declarationTransform.transformed.length === 1, \"Should only see one output from the decl transform\");declarationTransform.transformed[0].text = declarationTransform.transformed[0].text || \"\";");
-                    
+
                     // Need always use __createBinding helper (allows mocking of exports) even though using ES5 target replace:
                     // if (languageVersion === ScriptTarget.ES3) {
                     // by
@@ -215,7 +220,7 @@ namespace Lib.ToolsDir
             }
             else
             {
-                throw new Exception($"TypeScript version {version} does not exists");
+                throw new($"TypeScript version {version} does not exists");
             }
         }
 
@@ -295,7 +300,7 @@ namespace Lib.ToolsDir
             return result;
         }
 
-        HttpClient _httpClient = new HttpClient();
+        HttpClient _httpClient = new();
         string _jasmineVersion;
 
         byte[] ProxyGet(string baseUrl, string path)

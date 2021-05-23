@@ -729,7 +729,14 @@ namespace Lib.TSCompiler
                 {
                     case FileCompilationType.Mdxb:
                         var mdxToTsx = new MdxToTsx();
-                        mdxToTsx.Parse(info.Owner.Utf8Content);
+                        var content = info.Owner.Utf8Content;
+                        var newContent = UpdateMdxDependentFileContent(content, info.Owner, Owner.DiskCache);
+                        if (newContent != content)
+                        {
+                            Owner.DiskCache.UpdateFile(info.Owner.FullPath, newContent);
+                        }
+
+                        mdxToTsx.Parse(newContent);
                         Owner.DiskCache.UpdateFile(info.Owner.FullPath + ".tsx", mdxToTsx.Render().content);
                         break;
                     case FileCompilationType.Json:
@@ -792,6 +799,60 @@ namespace Lib.TSCompiler
                     }
                 }
             }
+        }
+
+        static string UpdateMdxDependentFileContent(string content, IFileCache owner, IDiskCache diskCache)
+        {
+            content = content.Replace("\r\n", "\n");
+            var change = false;
+            var lines = content.Split('\n').ToList();
+            for (var i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                if (line.StartsWith("```") && line.Contains("from:"))
+                {
+                    var endLine = i + 1;
+                    while (endLine < lines.Count && lines[endLine] != "```") endLine++;
+                    if (endLine == lines.Count) break;
+                    var pos = line.Split("from:")[1].Split(':');
+                    var fn = PathUtils.Join(owner.Parent.FullPath, pos[0]);
+                    if (diskCache.TryGetItem(fn) is IFileCache {IsInvalid: false} file)
+                    {
+                        var nc = file.Utf8Content;
+                        nc = nc.Replace("\r\n", "\n");
+                        if (nc.EndsWith('\n')) nc = nc[..^1];
+                        if (pos.Length > 1)
+                        {
+                            if (!int.TryParse(pos[1], out var startLine)) continue;
+                            if (startLine < 1) continue;
+                            nc = nc.Split('\n').Skip(startLine - 1).FirstOrDefault() ?? "";
+                            if (pos.Length > 2)
+                            {
+                                if (!int.TryParse(pos[2], out var startCol)) continue;
+                                if (startCol < 1 || startCol >= nc.Length) continue;
+                                nc = nc.Substring(startCol - 1);
+                            }
+                        }
+
+                        var newLines = nc.Split('\n');
+                        if (!lines.Skip(i + 1).Take(endLine - i - 1).SequenceEqual(newLines))
+                        {
+                            lines.RemoveRange(i + 1, endLine - i - 1);
+                            lines.InsertRange(i + 1, newLines);
+                            change = true;
+                        }
+
+                        i += newLines.Length;
+                    }
+                }
+            }
+
+            if (change)
+            {
+                content = string.Join('\n', lines);
+            }
+
+            return content;
         }
 
         void ReportDependenciesFromCss(TsFileAdditionalInfo info)

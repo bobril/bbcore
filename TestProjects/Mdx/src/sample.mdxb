@@ -25,6 +25,9 @@ let nice = "code";
 console.log(nice);
 ```
 
+``` tsx linenum from:app.tsx:9:14
+setDefaultCodeBlock(styles.docco);
+```
 
 ---
 

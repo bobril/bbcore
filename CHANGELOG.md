@@ -2,6 +2,24 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Patched TypeScript for another strange crash
+
+### Added
+
+- Mdxb support for autoupdating code blocks from another source code. Optionally add just line and column using colon. This `from:` directive must be last on line.
+
+````md
+```tsx from:app.tsx
+// this will be updated from app.tsx file during compilation
+```
+
+```tsx from:app.tsx:1:5
+// only first line from app.tsx and only from 5th column will be automaticaly updated here
+```
+````
+
 ## 1.46.1
 
 ### Fixed
