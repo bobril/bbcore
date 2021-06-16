@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Added
+
+- support to resolve modules on relative paths. Making resolver much more conformant to nodejs resolver.
+
+- import all mdxb in directory by `import mdxbs from "./blog/.mdxb"`
+
 ## 1.47.0
 
 ### Fixed

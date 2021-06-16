@@ -28,8 +28,8 @@ namespace Lib.TSCompiler
         public int IterationId;
         TsFileAdditionalInfo? _currentlyTranspiling;
 
-        static readonly string[] ExtensionsToImport = {".tsx", ".ts", ".d.ts", ".jsx", ".js", ""};
-        static readonly string[] ExtensionsToImportFromJs = {".jsx", ".js", ""};
+        static readonly string[] ExtensionsToImport = { ".tsx", ".ts", ".d.ts", ".jsx", ".js", "" };
+        static readonly string[] ExtensionsToImportFromJs = { ".jsx", ".js", "" };
 
         internal OrderedHashSet<string>? ToCheck;
         internal uint CrawledCount;
@@ -116,7 +116,7 @@ namespace Lib.TSCompiler
 
         public bool CheckFileExistence(string name)
         {
-            return Owner!.DiskCache.TryGetItem(name) is IFileCache {IsInvalid: false};
+            return Owner!.DiskCache.TryGetItem(name) is IFileCache { IsInvalid: false };
         }
 
         public bool CheckItemExistence(string name)
@@ -176,7 +176,7 @@ namespace Lib.TSCompiler
             {
                 if (fn.EndsWith(".json") || fn.EndsWith(".css"))
                 {
-                    if (Owner!.DiskCache.TryGetItem(fn) is IFileCache {IsInvalid: false} fc)
+                    if (Owner!.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false } fc)
                     {
                         res.FileName = fn;
                         CheckAdd(fn, forceResource
@@ -204,10 +204,12 @@ namespace Lib.TSCompiler
                         fai = TsFileAdditionalInfo.CreateVirtual(dc);
                         Result.Path2FileInfo.Add(fn, fai);
                     }
+
                     fai.Type = FileCompilationType.MdxbList;
                     fai.DirOwner = dc;
                     CrawlInfo(fai);
-                } else if (IsMdxb(fn))
+                }
+                else if (IsMdxb(fn))
                 {
                     if (dc.TryGetChild(fileOnly) is not IFileCache fc || fc.IsInvalid)
                     {
@@ -233,8 +235,31 @@ namespace Lib.TSCompiler
                     .FirstOrDefault(i => i != null);
                 if (item == null)
                 {
-                    res.FileName = "?";
-                    return res.FileName;
+                    if (dc.TryGetChild(fileOnly) is not IDirectoryCache dc2 || dc2.IsInvalid)
+                    {
+                        res.FileName = "?";
+                        return res.FileName;
+                    }
+
+                    if (dc2.TryGetChild("package.json") is IFileCache { IsInvalid: false })
+                    {
+                        var module = TSProject.Create(dc2, Owner.DiskCache, Owner.Logger, fn);
+                        module!.LoadProjectJson(true, Owner.ProjectOptions);
+                        var mainFile = PathUtils.Join(module.Owner.FullPath, module.MainFile);
+                        res.FileName = mainFile;
+                        if (!skipCheckAdd)
+                        {
+                            CheckAdd(mainFile,
+                                IsTsOrTsx(mainFile)
+                                    ? FileCompilationType.TypeScript
+                                    : FileCompilationType.EsmJavaScript);
+                        }
+
+                        return res.FileName;
+                    }
+
+                    fn += "/index";
+                    goto relative;
                 }
 
                 res.FileName = item.FullPath;
@@ -454,7 +479,7 @@ namespace Lib.TSCompiler
             var hashToName = new Dictionary<byte[], string>(StructuralEqualityComparer<byte[]>.Default);
             hashToName.Add(owner.HashOfContent, owner.FullPath);
             var processed = new StructList<bool>();
-            processed.RepeatAdd(false, (uint) transpilationDependencies.Count);
+            processed.RepeatAdd(false, (uint)transpilationDependencies.Count);
             bool somethingFailed;
             do
             {
@@ -463,7 +488,7 @@ namespace Lib.TSCompiler
                 for (var i = 0u; i < processed.Count; i++)
                 {
                     if (processed[i]) continue;
-                    var dep = transpilationDependencies[(int) i];
+                    var dep = transpilationDependencies[(int)i];
                     if (!hashToName.TryGetValue(dep.SourceHash, out var sourceName))
                     {
                         somethingFailed = true;
@@ -639,7 +664,7 @@ namespace Lib.TSCompiler
         {
             while (CrawledCount < ToCheck.Count)
             {
-                var fileName = ToCheck[(int) CrawledCount];
+                var fileName = ToCheck[(int)CrawledCount];
                 CrawledCount++;
 
                 CrawlFile(fileName);
@@ -826,6 +851,7 @@ namespace Lib.TSCompiler
                 sb.Append(TypeConverter.ToAst(mdxToTsx.Render().metadata).PrintToString());
                 sb.Append("],\n");
             }
+
             sb.Append("] as const;\n");
             sb.Append("export default r;\n");
             return sb.ToString();
@@ -865,7 +891,7 @@ namespace Lib.TSCompiler
                     if (endLine == lines.Count) break;
                     var pos = line.Split("from:")[1].Split(':');
                     var fn = PathUtils.Join(owner.Parent.FullPath, pos[0]);
-                    if (diskCache.TryGetItem(fn) is IFileCache {IsInvalid: false} file)
+                    if (diskCache.TryGetItem(fn) is IFileCache { IsInvalid: false } file)
                     {
                         var nc = file.Utf8Content;
                         nc = nc.Replace("\r\n", "\n");
@@ -1014,7 +1040,7 @@ namespace Lib.TSCompiler
             catch (SyntaxError error)
             {
                 var pos = info.MapLink?.FindPosition(error.Position.Line, error.Position.Column) ??
-                          new SourceCodePosition {Line = error.Position.Line, Col = error.Position.Column};
+                          new SourceCodePosition { Line = error.Position.Line, Col = error.Position.Column };
                 info.ReportDiag(true, -16, error.Message, pos.Line, pos.Col, pos.Line, pos.Col);
                 info.SourceInfo = null;
             }
