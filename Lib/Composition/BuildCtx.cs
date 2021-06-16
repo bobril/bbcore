@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BTDB.Collections;
+using Lib.BuildCache;
 using Lib.DiskCache;
 using Lib.Utils;
 using Newtonsoft.Json;
@@ -22,7 +23,7 @@ namespace Lib.Composition
     public class BuildCtx
     {
         BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger,
-            string currentDirectory, RunTypeCheck typeCheck)
+            string currentDirectory, IBuildCache buildCache, RunTypeCheck typeCheck)
         {
             Verbose = verbose;
             CompilerPool = compilerPool;
@@ -30,11 +31,12 @@ namespace Lib.Composition
             _logger = logger;
             _currentDirectory = currentDirectory;
             _typeCheck = typeCheck;
+            BuildCache = buildCache;
         }
 
         public BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger,
-            string currentDirectory, string typeCheckValue) : this(compilerPool, diskCache, verbose, logger,
-            currentDirectory, typeCheckValue switch
+            string currentDirectory, IBuildCache buildCache, string typeCheckValue) : this(compilerPool, diskCache, verbose, logger,
+            currentDirectory, buildCache, typeCheckValue switch
             {
                 "yes" => RunTypeCheck.Yes, "no" => RunTypeCheck.No, "only" => RunTypeCheck.Only,
                 _ => throw new ArgumentException("typeCheck parameter is not valid: " + typeCheckValue)
@@ -44,7 +46,7 @@ namespace Lib.Composition
 
         RefDictionary<string, BuildCtx?>? _subBuildCtxs;
 
-        RunTypeCheck _typeCheck;
+        readonly RunTypeCheck _typeCheck;
         string _mainFile;
         string _jasmineDts;
         List<string> _exampleSources;
@@ -52,6 +54,7 @@ namespace Lib.Composition
         string[] _additionalSources;
         ITSCompilerOptions _compilerOptions;
         ITSCompiler _typeChecker;
+        public readonly IBuildCache BuildCache;
 
         bool _buildOnceOnly;
         bool _projectStructureChanged;
@@ -60,7 +63,7 @@ namespace Lib.Composition
         readonly string _currentDirectory;
 
         public bool OnlyTypeCheck => _typeCheck == RunTypeCheck.Only;
-        
+
         string? MainFile
         {
             get => _mainFile;
@@ -316,7 +319,7 @@ namespace Lib.Composition
             };
             try
             {
-                project.BuildCache.StartTransaction();
+                BuildCache.StartTransaction();
                 ITSCompiler? compiler = null;
                 try
                 {
@@ -333,7 +336,7 @@ namespace Lib.Composition
                     compiler = CompilerPool.GetTs(tsProject.DiskCache, CompilerOptions);
                     var trueTsVersion = compiler.GetTSVersion();
                     ShowTsVersion(trueTsVersion);
-                    project.ConfigurationBuildCacheId = project.BuildCache.MapConfiguration(trueTsVersion,
+                    project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(trueTsVersion,
                         JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
                             TSCompilerOptions.GetSerializerSettings()));
                 }
@@ -422,12 +425,12 @@ namespace Lib.Composition
                 }
 
                 buildResult.HasError = hasError;
-                if (project.BuildCache.IsEnabled)
+                if (BuildCache.IsEnabled)
                     buildModuleCtx.StoreResultToBuildCache(buildResult);
             }
             finally
             {
-                project.BuildCache.EndTransaction();
+                BuildCache.EndTransaction();
             }
         }
 
@@ -466,7 +469,7 @@ namespace Lib.Composition
                         if (pref.Length > 8)
                         {
                             var mainFile = _diskCache.TryGetItem(name);
-                            if (mainFile == null || mainFile.IsInvalid)
+                            if (mainFile == null)
                                 continue;
                             tsProject = TSProject.Create(mainFile.Parent, _diskCache, _logger, null, true)!;
                             tsProject.MainFile = mainFile.FullPath;
@@ -485,10 +488,9 @@ namespace Lib.Composition
                         if (tsProject == null)
                             continue;
                         tsProject.IsRootProject = true;
-                        if (tsProject.ProjectOptions.BuildCache == null)
+                        if (BuildCache == null)
                             if (tsProject.Virtual)
                             {
-                                tsProject.ProjectOptions.BuildCache = project.BuildCache;
                                 tsProject.ProjectOptions.Tools = project.Tools;
                                 tsProject.ProjectOptions.ForbiddenDependencyUpdate = true;
                             }
@@ -497,7 +499,6 @@ namespace Lib.Composition
                                 tsProject.ProjectOptions = new ProjectOptions
                                 {
                                     Tools = project.Tools,
-                                    BuildCache = project.BuildCache,
                                     Owner = tsProject,
                                     ForbiddenDependencyUpdate = project.ForbiddenDependencyUpdate
                                 };
@@ -513,7 +514,7 @@ namespace Lib.Composition
                     if (_subBuildCtxs == null || !_subBuildCtxs.TryGetValue(projectPath, out var subBuildCtx))
                     {
                         subBuildCtx = new BuildCtx(CompilerPool, _diskCache, Verbose, _logger,
-                            subProj.Owner.Owner.FullPath, _typeCheck);
+                            subProj.Owner.Owner.FullPath, BuildCache, _typeCheck);
                     }
 
                     newSubBuildCtxs.GetOrAddValueRef(projectPath) = subBuildCtx;

@@ -10,8 +10,12 @@ using Njsast.ConstEval;
 using Njsast.Bobril;
 using Njsast.Ast;
 using System.Collections.Generic;
+using System.Text;
 using BobrilMdx;
 using Lib.BuildCache;
+using Markdig.Helpers;
+using Microsoft.Extensions.Primitives;
+using Njsast.Runtime;
 
 namespace Lib.TSCompiler
 {
@@ -193,10 +197,19 @@ namespace Lib.TSCompiler
                     return res.FileName;
                 }
 
-                if (IsMdxb(fn))
+                if (fileOnly == ".mdxb")
                 {
-                    var fc = dc.TryGetChild(fileOnly) as IFileCache;
-                    if (fc == null || fc.IsInvalid)
+                    if (!Result.Path2FileInfo.TryGetValue(fn, out var fai))
+                    {
+                        fai = TsFileAdditionalInfo.CreateVirtual(dc);
+                        Result.Path2FileInfo.Add(fn, fai);
+                    }
+                    fai.Type = FileCompilationType.MdxbList;
+                    fai.DirOwner = dc;
+                    CrawlInfo(fai);
+                } else if (IsMdxb(fn))
+                {
+                    if (dc.TryGetChild(fileOnly) is not IFileCache fc || fc.IsInvalid)
                     {
                         res.FileName = "?";
                         return res.FileName;
@@ -210,8 +223,7 @@ namespace Lib.TSCompiler
                         ? ExtensionsToImportFromJs
                         : ExtensionsToImport).Select(ext =>
                     {
-                        var ff = dc.TryGetChild(fileOnly + ext) as IFileCache;
-                        if (ff == null || ff.IsInvalid)
+                        if (dc.TryGetChild(fileOnly + ext) is not IFileCache ff || ff.IsInvalid)
                         {
                             return null;
                         }
@@ -393,7 +405,7 @@ namespace Lib.TSCompiler
         bool TryToResolveFromBuildCache(TsFileAdditionalInfo itemInfo)
         {
             itemInfo.TakenFromBuildCache = false;
-            var bc = Owner.ProjectOptions.BuildCache;
+            var bc = BuildCtx!.BuildCache;
             if (bc.IsEnabled)
             {
                 byte[] hashOfContent;
@@ -484,7 +496,7 @@ namespace Lib.TSCompiler
         bool TryToResolveFromBuildCacheCss(TsFileAdditionalInfo itemInfo)
         {
             itemInfo.TakenFromBuildCache = false;
-            var bc = Owner.ProjectOptions.BuildCache;
+            var bc = BuildCtx!.BuildCache;
             if (bc.IsEnabled)
             {
                 var hashOfContent = itemInfo.Owner.HashOfContent;
@@ -504,7 +516,7 @@ namespace Lib.TSCompiler
 
         public void StoreResultToBuildCache(BuildResult result)
         {
-            var bc = Owner.ProjectOptions.BuildCache;
+            var bc = BuildCtx!.BuildCache;
             foreach (var f in result.RecompiledIncrementally)
             {
                 if (f.TakenFromBuildCache)
@@ -550,9 +562,8 @@ namespace Lib.TSCompiler
         {
             if (!Result.Path2FileInfo.TryGetValue(fullNameWithExtension, out var info))
             {
-                var fc = Owner.DiskCache.TryGetItem(fullNameWithExtension) as IFileCache;
-                if (fc == null || fc.IsInvalid) return null;
-                info = TsFileAdditionalInfo.Create(fc, Owner.DiskCache);
+                if (Owner.DiskCache.TryGetItem(fullNameWithExtension) is not IFileCache fc || fc.IsInvalid) return null;
+                info = TsFileAdditionalInfo.Create(fc);
                 info.Type = compilationType;
                 MainResult.MergeCommonSourceDirectory(fc.FullPath);
                 Result.Path2FileInfo.Add(fullNameWithExtension, info);
@@ -652,13 +663,13 @@ namespace Lib.TSCompiler
                     return null;
                 }
 
-                info = TsFileAdditionalInfo.Create(fileCache, Owner.DiskCache);
+                info = TsFileAdditionalInfo.Create(fileCache);
                 info.Type = FileCompilationType.Unknown;
                 Result.Path2FileInfo.Add(fileName, info);
             }
             else
             {
-                if (info.Owner.IsInvalid)
+                if (info.Owner is { IsInvalid: true })
                 {
                     if (BuildCtx.Verbose)
                         Owner.Logger.Warn("Crawl skipping missing file " + fileName);
@@ -712,14 +723,8 @@ namespace Lib.TSCompiler
 
         void CrawlInfo(TsFileAdditionalInfo info)
         {
-            if (info.Origin != null)
+            if (info.DetectChange())
             {
-                CrawlInfo(info.Origin);
-            }
-
-            if (info.Owner.ChangeId != info.ChangeId)
-            {
-                info.ChangeId = info.Owner.ChangeId;
                 Result.RecompiledIncrementally.Add(info);
                 var oldDependencies = new StructList<string>();
                 if (_noDependencyCheck)
@@ -727,6 +732,10 @@ namespace Lib.TSCompiler
                 info.StartCompiling();
                 switch (info.Type)
                 {
+                    case FileCompilationType.MdxbList:
+                        var newContentList = BuildMdxbList(info.DirOwner, Owner.DiskCache);
+                        Owner.DiskCache.UpdateFile(info.DirOwner.FullPath + "/.mdxb.tsx", newContentList);
+                        break;
                     case FileCompilationType.Mdxb:
                         var mdxToTsx = new MdxToTsx();
                         var content = info.Owner.Utf8Content;
@@ -796,6 +805,46 @@ namespace Lib.TSCompiler
                         if (BuildCtx.Verbose)
                             Owner.Logger.Info("Dependency change detected " + info.Owner.FullPath);
                         _noDependencyCheck = false;
+                    }
+                }
+            }
+        }
+
+        string BuildMdxbList(IDirectoryCache dir, IDiskCache diskCache)
+        {
+            var files = FindAllMdxbs(dir).OrderBy(i => i.FullPath).ToArray();
+            var sb = new StringBuilder();
+            sb.Append("const r = [\n");
+            foreach (var fc in files)
+            {
+                var mdxToTsx = new MdxToTsx();
+                var content = fc.Utf8Content;
+                mdxToTsx.Parse(content);
+                sb.Append("  [()=>import(\"./");
+                sb.Append(PathUtils.Subtract(fc.FullPath, dir.FullPath));
+                sb.Append("\"),");
+                sb.Append(TypeConverter.ToAst(mdxToTsx.Render().metadata).PrintToString());
+                sb.Append("],\n");
+            }
+            sb.Append("] as const;\n");
+            sb.Append("export default r;\n");
+            return sb.ToString();
+        }
+
+        static IEnumerable<IFileCache> FindAllMdxbs(IDirectoryCache dir)
+        {
+            foreach (var itemCache in dir)
+            {
+                if (itemCache is IFileCache { IsInvalid: false } fc && fc.Name.EndsWith(".mdxb"))
+                {
+                    yield return fc;
+                }
+
+                if (itemCache is IDirectoryCache { IsInvalid: false } dc)
+                {
+                    foreach (var i in FindAllMdxbs(dc))
+                    {
+                        yield return i;
                     }
                 }
             }

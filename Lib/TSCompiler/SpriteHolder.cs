@@ -114,7 +114,7 @@ namespace Lib.TSCompiler
                     {
                         if (!_imageCache.TryGetValue(item.FullPath,out var fi))
                         {
-                            fi = TsFileAdditionalInfo.Create((item as IFileCache)!, _dc);
+                            fi = TsFileAdditionalInfo.Create((item as IFileCache)!);
                             _imageCache.Add(item.FullPath, fi);
                         }
                         if (fi.ImageCacheId != item.ChangeId)

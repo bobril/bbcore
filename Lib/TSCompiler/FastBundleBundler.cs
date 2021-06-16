@@ -108,8 +108,8 @@ namespace Lib.TSCompiler
             var cssLink = "";
 
             var sortedResultSet = incremental
-                ? _buildResult.RecompiledIncrementally.OrderBy(f => f.Owner.FullPath).ToArray()
-                : _buildResult.Path2FileInfo.Values.OrderBy(f => f.Owner.FullPath).ToArray();
+                ? _buildResult.RecompiledIncrementally.Where(f=>f.Owner != null).OrderBy(f => f.Owner.FullPath).ToArray()
+                : _buildResult.Path2FileInfo.Values.Where(f=>f.Owner != null).OrderBy(f => f.Owner.FullPath).ToArray();
 
             if (!incremental)
             {

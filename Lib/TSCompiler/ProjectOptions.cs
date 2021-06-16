@@ -81,7 +81,6 @@ namespace Lib.TSCompiler
         internal string? NpmRegistry;
 
         public TaskCompletionSource<Unit> LiveReloadAwaiter = new();
-        public IBuildCache? BuildCache;
         internal uint ConfigurationBuildCacheId;
         public bool Debug = true;
         public string? HeadlessBrowserStrategy { get; set; }

@@ -21,7 +21,8 @@ namespace Lib.TSCompiler
         JavaScriptAsset,
         Json,
         TypeScriptDefinition,
-        Mdxb
+        Mdxb,
+        MdxbList
     }
 
     public class DependencyTriplet
@@ -33,10 +34,10 @@ namespace Lib.TSCompiler
 
     public class TsFileAdditionalInfo
     {
-        public TsFileAdditionalInfo? Origin;
-
         public FileCompilationType Type;
         public IFileCache? Owner { get; set; }
+        public IDirectoryCache? DirOwner { get; set; }
+
         public string? Output { get; set; }
         public SourceMap? MapLink { get; set; }
         public SourceInfo? SourceInfo { get; set; }
@@ -107,10 +108,7 @@ namespace Lib.TSCompiler
 
         public void ReportTranspilationDependency(byte[] sourceHash, string import, byte[] targetHash)
         {
-            if (TranspilationDependencies == null)
-            {
-                TranspilationDependencies = new List<DependencyTriplet>();
-            }
+            TranspilationDependencies ??= new();
 
             foreach (var dep in TranspilationDependencies)
             {
@@ -118,7 +116,7 @@ namespace Lib.TSCompiler
                     return;
             }
 
-            TranspilationDependencies.Add(new DependencyTriplet
+            TranspilationDependencies.Add(new()
             {
                 SourceHash = sourceHash,
                 Import = import,
@@ -142,16 +140,27 @@ namespace Lib.TSCompiler
             });
         }
 
-        public static TsFileAdditionalInfo? Create(IFileCache? file, IDiskCache diskCache)
+        public static TsFileAdditionalInfo? Create(IFileCache? file)
         {
             if (file == null) return null;
             var dir = file.Parent;
-            while (dir != null && dir.Project == null)
+            while (dir is { Project: null })
             {
                 dir = dir.Parent;
             }
 
-            return new TsFileAdditionalInfo {Owner = file, FromModule = dir?.Project as TSProject};
+            return new() {Owner = file, FromModule = dir?.Project as TSProject};
+        }
+
+        public static TsFileAdditionalInfo CreateVirtual(IDirectoryCache? inDir)
+        {
+            var dir = inDir;
+            while (dir is { Project: null })
+            {
+                dir = dir.Parent;
+            }
+
+            return new() {Owner = null, FromModule = dir?.Project as TSProject};
         }
 
         internal void ReportDiag(List<Diagnostic> diagnostics)
@@ -160,6 +169,14 @@ namespace Lib.TSCompiler
             {
                 Diagnostics.Add(diag);
             }
+        }
+
+        internal bool DetectChange()
+        {
+            if (Type == FileCompilationType.MdxbList) return true;
+            var res = Owner.ChangeId != ChangeId;
+            ChangeId = Owner.ChangeId;
+            return res;
         }
     }
 }

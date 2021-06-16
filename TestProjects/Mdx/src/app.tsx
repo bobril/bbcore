@@ -4,7 +4,11 @@ import * as styles from "@bobril/highlighter/styles";
 
 import Sample, { metadata } from "./sample.mdxb";
 
-console.log(metadata);
+import Mdxbs from "./.mdxb";
+
+console.log(Mdxbs[0][1]);
+
+//console.log(metadata);
 
 mdxCodeBlock.setDefaultCodeBlock(styles.docco);
 

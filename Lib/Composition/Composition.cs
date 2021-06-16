@@ -542,7 +542,7 @@ namespace Lib.Composition
                 proj.RefreshCompilerOptions();
                 proj.RefreshMainFile();
                 proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath,
+                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, _buildCache,
                     bCommand.UpdateTranslations.Value ? "no" : bCommand.TypeCheck.Value!);
                 ctx.Build(proj, true, buildResult, _mainBuildResult, 1);
                 ctx.BuildSubProjects(proj, true, buildResult, _mainBuildResult, 1);
@@ -689,7 +689,7 @@ namespace Lib.Composition
                 proj.SpriterInitialization(_mainBuildResult);
                 if (proj.TestSources != null && proj.TestSources.Count > 0)
                 {
-                    var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, "yes");
+                    var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, _buildCache, "yes");
                     ctx.Build(proj, true, testBuildResult, _mainBuildResult, 1);
                     ctx.BuildSubProjects(proj, true, testBuildResult, _mainBuildResult, 1);
                     var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, proj, testBuildResult);
@@ -902,7 +902,7 @@ namespace Lib.Composition
                 proj.RefreshTestSources();
                 proj.SpriterInitialization(_mainBuildResult);
                 proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, "no");
+                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, _buildCache, "no");
                 ctx.Build(proj, true, buildResult, _mainBuildResult, 1);
                 var buildResultSet = buildResult.Path2FileInfo.Values.ToHashSet();
 
@@ -1014,15 +1014,8 @@ namespace Lib.Composition
             var dirCache = _dc.TryGetItem(projectDir) as IDirectoryCache;
             var proj = TSProject.Create(dirCache, _dc, _logger, null);
             proj.IsRootProject = true;
-            if (proj.ProjectOptions.BuildCache != null)
-                return proj.ProjectOptions;
-            proj.ProjectOptions = new()
-            {
-                Tools = _tools,
-                BuildCache = _buildCache,
-                Owner = proj,
-                ForbiddenDependencyUpdate = _forbiddenDependencyUpdate
-            };
+            proj.ProjectOptions.Tools = _tools;
+            proj.ProjectOptions.ForbiddenDependencyUpdate = _forbiddenDependencyUpdate;
             _currentProject = proj.ProjectOptions;
             if (_mainServer != null)
                 _mainServer.Project = _currentProject;
@@ -1403,7 +1396,7 @@ namespace Lib.Composition
             }).Where(s => !s.EndsWith(".mdxb.tsx", StringComparison.Ordinal)).Throttle(TimeSpan.FromMilliseconds(200));
             throttled.Merge(throttled.Delay(TimeSpan.FromMilliseconds(300))).Subscribe((_) => _hasBuildWork.Set());
             var iterationId = 0;
-            var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath, "yes");
+            var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath, _buildCache, "yes");
             var buildResult = new BuildResult(_mainBuildResult, _currentProject);
             var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, _currentProject, buildResult);
             var start = DateTime.UtcNow;

@@ -372,11 +372,11 @@ namespace Lib.DiskCache
                     if (subItem is IDirectoryCache)
                     {
                         UpdateIfNeededNoLock((IDirectoryCache) subItem);
-                        return subItem;
+                        return (subItem?.IsInvalid ?? true) ? null : subItem;
                     }
 
                     if (subItem != null || !directory.IsFake)
-                        return subItem;
+                        return (subItem?.IsInvalid ?? true) ? null : subItem;
                     var info = FsAbstraction.GetItemInfo(path);
                     if (info.Exists && !info.IsDirectory)
                     {
@@ -398,11 +398,11 @@ namespace Lib.DiskCache
                         }
                     }
 
-                    return subItem;
+                    return (subItem?.IsInvalid ?? true) ? null : subItem;
                 }
             }
 
-            return directory;
+            return (directory?.IsInvalid ?? true) ? null : directory;
         }
 
         bool _ignoringChanges;
