@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.48.0
+
 ### Added
 
 - support to resolve modules on relative paths. Making resolver much more conformant to nodejs resolver.
