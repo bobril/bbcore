@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.48.1
+
 ### Fixed
 
 - feature from 1.48.0 now should work in interactive mode in browser.
