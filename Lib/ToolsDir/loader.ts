@@ -12,7 +12,7 @@ interface IR {
     r(name: string, parent: string): any;
     map?: { [name: string]: string };
 }
-const R: IR = function(name: string, fnOrJson: ModuleFun | any) {
+const R: IR = function (name: string, fnOrJson: ModuleFun | any) {
     R.m.set(
         name.toLowerCase(),
         typeof fnOrJson == "function" ? { fn: fnOrJson, exports: undefined } : { exports: fnOrJson }
@@ -20,7 +20,7 @@ const R: IR = function(name: string, fnOrJson: ModuleFun | any) {
 };
 R.t = this;
 R.m = new Map();
-R.r = function(name: string, parent: string) {
+R.r = function (name: string, parent: string) {
     let p = name;
     if (p[0] === ".") {
         let parts = parent ? parent.split("/") : [];
@@ -57,6 +57,9 @@ R.r = function(name: string, parent: string) {
     var m = R.m.get(lp);
     if (m == null && /\.js$/.test(lp)) {
         m = R.m.get(lp.substr(0, lp.length - 3));
+    }
+    if (m == null) {
+        m = R.m.get(lp + "/index");
     }
     if (m == null) throw new Error("Module " + name + " in " + (parent || "/") + " not registered");
     if (m.exports !== undefined) return m.exports;

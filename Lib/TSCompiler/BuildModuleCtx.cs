@@ -241,10 +241,16 @@ namespace Lib.TSCompiler
                         return res.FileName;
                     }
 
+                    Owner.DiskCache.UpdateIfNeeded(dc2);
                     if (dc2.TryGetChild("package.json") is IFileCache { IsInvalid: false })
                     {
-                        var module = TSProject.Create(dc2, Owner.DiskCache, Owner.Logger, fn);
-                        module!.LoadProjectJson(true, Owner.ProjectOptions);
+                        var mn = PathUtils.Subtract(fn, Owner.Owner.FullPath);
+                        if (!Result!.Modules.TryGetValue(mn, out var module))
+                        {
+                            module = TSProject.Create(dc2, Owner.DiskCache, Owner.Logger, mn);
+                            module!.LoadProjectJson(true, Owner.ProjectOptions);
+                            Result!.Modules[mn] = module;
+                        }
                         var mainFile = PathUtils.Join(module.Owner.FullPath, module.MainFile);
                         res.FileName = mainFile;
                         if (!skipCheckAdd)

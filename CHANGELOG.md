@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- feature from 1.48.0 now should work in interactive mode in browser.
+
 ## 1.48.0
 
 ### Added

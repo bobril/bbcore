@@ -48,6 +48,9 @@ R.r = function (name, parent) {
     if (m == null && /\.js$/.test(lp)) {
         m = R.m.get(lp.substr(0, lp.length - 3));
     }
+    if (m == null) {
+        m = R.m.get(lp + "/index");
+    }
     if (m == null)
         throw new Error("Module " + name + " in " + (parent || "/") + " not registered");
     if (m.exports !== undefined)
