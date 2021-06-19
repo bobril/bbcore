@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.49.0
+
 ### Added
 
 - Improved mdbx support. Demo with import all mdbx in directory.
