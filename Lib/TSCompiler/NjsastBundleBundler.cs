@@ -49,7 +49,7 @@ namespace Lib.TSCompiler
             SourceMapSourceRoot = sourceMapSourceRoot;
             var cssLink = "";
             var cssToBundle = new List<SourceFromPair>();
-            foreach (var source in _buildResult.Path2FileInfo.Values.OrderBy(f => f.Owner.FullPath).ToArray())
+            foreach (var source in _buildResult.Path2FileInfo.Select(a=>a.Value).OrderBy(f => f.Owner.FullPath).ToArray())
             {
                 if (source.Type == FileCompilationType.Css || source.Type == FileCompilationType.ImportedCss)
                 {

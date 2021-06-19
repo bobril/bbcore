@@ -202,7 +202,7 @@ namespace Lib.TSCompiler
                     if (!Result.Path2FileInfo.TryGetValue(fn, out var fai))
                     {
                         fai = TsFileAdditionalInfo.CreateVirtual(dc);
-                        Result.Path2FileInfo.Add(fn, fai);
+                        Result.Path2FileInfo.GetOrAddValueRef(fn) = fai;
                     }
 
                     fai.Type = FileCompilationType.MdxbList;
@@ -597,7 +597,7 @@ namespace Lib.TSCompiler
                 info = TsFileAdditionalInfo.Create(fc);
                 info.Type = compilationType;
                 MainResult.MergeCommonSourceDirectory(fc.FullPath);
-                Result.Path2FileInfo.Add(fullNameWithExtension, info);
+                Result.Path2FileInfo.GetOrAddValueRef(fullNameWithExtension) = info;
             }
             else
             {
@@ -696,7 +696,7 @@ namespace Lib.TSCompiler
 
                 info = TsFileAdditionalInfo.Create(fileCache);
                 info.Type = FileCompilationType.Unknown;
-                Result.Path2FileInfo.Add(fileName, info);
+                Result.Path2FileInfo.GetOrAddValueRef(fileName) = info;
             }
             else
             {
@@ -853,7 +853,7 @@ namespace Lib.TSCompiler
                 mdxToTsx.Parse(content);
                 sb.Append("  [()=>import(\"./");
                 sb.Append(PathUtils.Subtract(fc.FullPath, dir.FullPath));
-                sb.Append("\"),");
+                sb.Append("\").then(m=>m.default),");
                 sb.Append(TypeConverter.ToAst(mdxToTsx.Render().metadata).PrintToString());
                 sb.Append("],\n");
             }

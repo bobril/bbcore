@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+- Improved mdbx support. Demo with import all mdbx in directory.
+
+- mdxb special code language `tsxinline` which will additionally inline code after imports.
+
+- mdxb special code language `inline` which will just inline code after imports and not show it.
+
 ## 1.48.1
 
 ### Fixed

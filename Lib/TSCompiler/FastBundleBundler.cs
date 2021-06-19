@@ -109,7 +109,7 @@ namespace Lib.TSCompiler
 
             var sortedResultSet = incremental
                 ? _buildResult.RecompiledIncrementally.Where(f=>f.Owner != null).OrderBy(f => f.Owner.FullPath).ToArray()
-                : _buildResult.Path2FileInfo.Values.Where(f=>f.Owner != null).OrderBy(f => f.Owner.FullPath).ToArray();
+                : _buildResult.Path2FileInfo.Select(a=>a.Value).Where(f=>f.Owner != null).OrderBy(f => f.Owner.FullPath).ToArray();
 
             if (!incremental)
             {

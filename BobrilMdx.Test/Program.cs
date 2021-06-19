@@ -7,7 +7,7 @@ namespace BobrilMdx.Test
         static void Main(string[] args)
         {
             var main = new MdxToTsx();
-            main.Parse("import * as bobx from \"bobx\";\nButton: <button id=\"test\" onClick={()=>alert(\")})}\")}>Click \"\"me\"\"</button>\n\nHello _{metadata.name}_\n");
+            main.Parse("``` inline lineno\nfunction A() { return <div>hello</div>; }\n```\n");
             Console.WriteLine(main.Render().content);
         }
     }

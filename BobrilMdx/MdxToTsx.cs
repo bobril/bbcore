@@ -60,6 +60,20 @@ namespace BobrilMdx
             {
                 renderer.Write(importBlock.Lines.ToSlice()).WriteLine();
             }
+            foreach (var codeBlock in _document!.Descendants<FencedCodeBlock>().ToList())
+            {
+                switch (codeBlock.Info)
+                {
+                    case "tsxinline":
+                        codeBlock.Info = "tsx";
+                        renderer.Write(codeBlock.Lines.ToSlice()).WriteLine();
+                        break;
+                    case "inline":
+                        renderer.Write(codeBlock.Lines.ToSlice()).WriteLine();
+                        codeBlock.Parent!.Remove(codeBlock);
+                        break;
+                }
+            }
 
             var frontMatterBlock = _document!
                 .Descendants<YamlFrontMatterBlock>()

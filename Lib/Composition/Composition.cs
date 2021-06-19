@@ -904,7 +904,7 @@ namespace Lib.Composition
                 proj.RefreshExampleSources();
                 var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, _buildCache, "no");
                 ctx.Build(proj, true, buildResult, _mainBuildResult, 1);
-                var buildResultSet = buildResult.Path2FileInfo.Values.ToHashSet();
+                var buildResultSet = buildResult.Path2FileInfo.Select(a=>a.Value).ToHashSet();
 
                 if (buildResultSet.Any(a => a.Diagnostics.Any(d => d.IsError)))
                 {

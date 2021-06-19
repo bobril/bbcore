@@ -31,7 +31,7 @@ namespace Lib.TSCompiler
 
         public readonly Dictionary<(string From, string Name), ResolveResult> ResolveCache = new();
 
-        public readonly Dictionary<string, TsFileAdditionalInfo> Path2FileInfo = new();
+        public readonly RefDictionary<string, TsFileAdditionalInfo> Path2FileInfo = new();
         public readonly HashSet<TsFileAdditionalInfo> RecompiledIncrementally = new();
         public Njsast.StructList<TsFileAdditionalInfo> JavaScriptAssets;
         public readonly Dictionary<string, TSProject> Modules = new();

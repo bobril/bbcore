@@ -5,6 +5,7 @@ DataType: "{ name?: string }"
 ---
 
 import { Counter } from "./counter";
+import Mdxbs from "./blog/.mdxb";
 
 ## Header 1
 
@@ -26,8 +27,29 @@ console.log(nice);
 ```
 
 ``` tsx linenum from:app.tsx:9:14
-dxbs[0][0]);
+<Sample name="boris" />);
 ```
+
+``` tsxinline linenum
+function Lazy({ import: from }: { import: () => Promise<b.IComponentFactory<any>> }) {
+    var factory = b.useState<b.IComponentFactory<any> | undefined>(undefined);
+    b.useEffect(() => {
+        from().then((f) => factory(f));
+    });
+    return factory() != undefined ? factory()!() : <div>Loading ...</div>;
+}
+
+function Blog({ blog }: { blog: readonly [() => Promise<b.IComponentFactory<any>>, { name: string }] }) {
+    return (
+        <div>
+            <h2>{blog[1].name}</h2>
+            <Lazy import={blog[0]} />
+        </div>
+    );
+}
+```
+
+{{ Mdxbs.map(a=><Blog blog={a}/>) }}
 
 ---
 
