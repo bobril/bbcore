@@ -49,16 +49,16 @@ namespace Lib.TSCompiler
             SourceMapSourceRoot = sourceMapSourceRoot;
             var cssLink = "";
             var cssToBundle = new List<SourceFromPair>();
-            foreach (var source in _buildResult.Path2FileInfo.Select(a=>a.Value).OrderBy(f => f.Owner.FullPath).ToArray())
+            foreach (var source in _buildResult.Path2FileInfo.Select(a=>a.Value).Where(f=>f.Owner!=null).OrderBy(f => f.Owner!.FullPath).ToArray())
             {
-                if (source.Type == FileCompilationType.Css || source.Type == FileCompilationType.ImportedCss)
+                if (source.Type is FileCompilationType.Css or FileCompilationType.ImportedCss)
                 {
-                    cssToBundle.Add(new SourceFromPair(source.Owner.Utf8Content, source.Owner.FullPath));
+                    cssToBundle.Add(new SourceFromPair(source.Owner!.Utf8Content, source.Owner.FullPath));
                 }
                 else if (source.Type == FileCompilationType.Resource)
                 {
                     _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) =
-                        source.Owner.ByteContent;
+                        source.Owner!.ByteContent;
                 }
             }
 

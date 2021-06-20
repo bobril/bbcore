@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Crash in Build mode for all mdbx in directory.
+
 ## 1.49.0
 
 ### Added

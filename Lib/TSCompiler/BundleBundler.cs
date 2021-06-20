@@ -23,7 +23,8 @@ namespace Lib.TSCompiler
         string _indexHtml;
         readonly IToolsDir _tools;
 
-        public BundleBundler(IToolsDir tools, MainBuildResult mainBuildResult, ProjectOptions project, BuildResult buildResult)
+        public BundleBundler(IToolsDir tools, MainBuildResult mainBuildResult, ProjectOptions project,
+            BuildResult buildResult)
         {
             _tools = tools;
             _mainBuildResult = mainBuildResult;
@@ -40,15 +41,17 @@ namespace Lib.TSCompiler
         {
             var cssLink = "";
             var cssToBundle = new List<SourceFromPair>();
-            foreach (var source in _buildResult.Path2FileInfo.Select(a=>a.Value).OrderBy(f => f.Owner.FullPath).ToArray())
+            foreach (var source in _buildResult.Path2FileInfo.Select(a => a.Value).Where(f => f.Owner != null)
+                .OrderBy(f => f.Owner!.FullPath).ToArray())
             {
-                if (source.Type == FileCompilationType.Css || source.Type == FileCompilationType.ImportedCss)
+                if (source.Type is FileCompilationType.Css or FileCompilationType.ImportedCss)
                 {
-                    cssToBundle.Add(new SourceFromPair(source.Owner.Utf8Content, source.Owner.FullPath));
+                    cssToBundle.Add(new SourceFromPair(source.Owner!.Utf8Content, source.Owner.FullPath));
                 }
                 else if (source.Type == FileCompilationType.Resource)
                 {
-                    _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) = source.Owner.ByteContent;
+                    _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) =
+                        source.Owner!.ByteContent;
                 }
             }
 
@@ -86,7 +89,8 @@ namespace Lib.TSCompiler
                     _bundlePngInfo = new List<float>();
                     foreach (var slice in bundlePngContent)
                     {
-                        _mainBuildResult.FilesContent.GetOrAddValueRef(PathUtils.InjectQuality(_bundlePng, slice.Quality)) =
+                        _mainBuildResult.FilesContent.GetOrAddValueRef(
+                                PathUtils.InjectQuality(_bundlePng, slice.Quality)) =
                             slice.Content;
                         _bundlePngInfo.Add(slice.Quality);
                     }
@@ -101,11 +105,11 @@ namespace Lib.TSCompiler
             bundler.Callbacks = this;
             if ((_project.ExampleSources?.Count ?? 0) > 0)
             {
-                bundler.MainFiles = new[] {_project.ExampleSources[0]};
+                bundler.MainFiles = new[] { _project.ExampleSources[0] };
             }
             else
             {
-                bundler.MainFiles = new[] {_project.MainFile};
+                bundler.MainFiles = new[] { _project.MainFile };
             }
 
             _mainJsBundleUrl = _buildResult.BundleJsUrl;
@@ -123,12 +127,14 @@ namespace Lib.TSCompiler
             if (_project.SubProjects != null)
             {
                 var newSubBundlers = new RefDictionary<string, BundleBundler>();
-                foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a=>a.Value?.Variant=="serviceworker"))
+                foreach (var (projPath, subProject) in _project.SubProjects.OrderBy(a =>
+                    a.Value?.Variant == "serviceworker"))
                 {
                     if (subProject == null) continue;
                     if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                     {
-                        subBundler = new BundleBundler(_tools, _mainBuildResult, subProject, _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
+                        subBundler = new BundleBundler(_tools, _mainBuildResult, subProject,
+                            _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
                     }
 
                     newSubBundlers.GetOrAddValueRef(projPath) = subBundler;
@@ -156,7 +162,8 @@ namespace Lib.TSCompiler
             var res = "";
             if (_project.Localize)
             {
-                _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent, _mainBuildResult.OutputSubDir);
+                _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent,
+                    _mainBuildResult.OutputSubDir);
                 res +=
                     $"function g11nPath(s){{return\"./{(_mainBuildResult.OutputSubDir != null ? (_mainBuildResult.OutputSubDir + "/") : "")}\"+s.toLowerCase()+\".js\"}};";
                 if (_project.DefaultLanguage != null)
@@ -257,7 +264,8 @@ namespace Lib.TSCompiler
             var sourceInfo = fileInfo.SourceInfo;
             if (sourceInfo == null || sourceInfo.Assets == null)
                 return new List<string>();
-            return sourceInfo.Assets.Select(i => i.Name).Where(i => i != null && !i.StartsWith("resource:") && i.EndsWith(".js"))
+            return sourceInfo.Assets.Select(i => i.Name)
+                .Where(i => i != null && !i.StartsWith("resource:") && i.EndsWith(".js"))
                 .ToList()!;
         }
     }

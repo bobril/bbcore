@@ -158,7 +158,7 @@ namespace Lib.TSCompiler
             string? fn = null;
             if (relative)
             {
-                fn = PathUtils.Join(parentInfo.Owner.Parent.FullPath, name);
+                fn = PathUtils.Join(parentInfo.Owner!.Parent.FullPath, name);
                 var browserResolve = parentInfo.FromModule?.ProjectOptions?.BrowserResolve;
                 if (browserResolve != null)
                 {
