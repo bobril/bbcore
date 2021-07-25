@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.49.1
+
 ### Fixed
 
 - Crash in Build mode for all mdbx in directory.
