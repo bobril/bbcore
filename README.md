@@ -74,6 +74,7 @@ bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcac
 | -15    | Warn     | Cannot resolve import                                                                          |
 | -16    | Error    | Syntactic Error                                                                                |
 | -17    | Error    | Invalid or unusable svg                                                                        |
+| -18    | Error    | File does not exists                                                                           |
 
 # `.bbrc` or `Package.json`/`bobril` section features
 

@@ -1,0 +1,16 @@
+---
+name: Thematic breaks
+---
+
+
+``` md
+a
+
+---
+b
+```
+
+a
+
+---
+b

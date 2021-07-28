@@ -426,6 +426,7 @@ namespace BobrilMdx
 
         public void WriteEscape(ref StringSlice content)
         {
+            if (content.Length == 0) return;
             Write("{");
             _outputContext.PrintString(content.Text.AsSpan(content.Start,content.Length));
             Write("}");
@@ -433,6 +434,7 @@ namespace BobrilMdx
 
         public void WriteEscape(string content)
         {
+            if (content.Length == 0) return;
             Write("{");
             _outputContext.PrintString(content);
             Write("}");

@@ -1,0 +1,12 @@
+---
+name: Footer
+---
+
+
+``` md
+^^ This is a footer
+^^ multi-line
+```
+
+^^ This is a footer
+^^ multi-line

@@ -1,0 +1,25 @@
+---
+name: Code block
+---
+
+
+```` md
+``` ts linenum:99
+let nice = "code";
+console.log(nice);
+```
+````
+
+``` ts linenum:99
+let nice = "code";
+console.log(nice);
+```
+
+````` md
+```` md
+``` ts linenum:99
+let nice = "code";
+console.log(nice);
+```
+````
+`````

@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using Markdig.Syntax.Inlines;
 
 namespace BobrilMdx
@@ -6,7 +7,7 @@ namespace BobrilMdx
     {
         protected override void Write(TsxRenderer renderer, LiteralInline obj)
         {
-            if (renderer.EnableHtmlEscape)
+            if (renderer.EnableHtmlEscape && renderer.EnableHtmlForInline)
             {
                 renderer.WriteEscape(ref obj.Content);
             }

@@ -12,6 +12,10 @@ namespace BobrilMdx
                 {
                     renderer.Write("{mdx.Br()}");
                 }
+                else
+                {
+                    renderer.Write("{\" \"}");
+                }
             }
 
             renderer.EnsureLine();

@@ -958,6 +958,15 @@ namespace Lib.TSCompiler
             ITSCompiler compiler = null;
             try
             {
+                if (info.Owner.IsInvalid)
+                {
+                    info.HasError = true;
+                    info.Output = null;
+                    info.MapLink = null;
+                    info.SourceInfo = null;
+                    info.ReportDiag(true, -18, "File does not exists", 0,0,0,0);
+                    return;
+                }
                 var fileName = info.Owner.FullPath;
                 var source = info.Owner.Utf8Content;
                 compiler = BuildCtx.CompilerPool.GetTs(Owner.DiskCache, BuildCtx.CompilerOptions);

@@ -1,0 +1,20 @@
+---
+name: Executed code block
+---
+
+
+```` md
+``` tsxinline
+var left=b.propi(1);
+var right=b.propi(2);
+```
+
+{{<input value={left}/>}} + {{<input value={right}/>}} = {+left()+ +right()}
+````
+
+``` tsxinline
+var left=b.propi(1);
+var right=b.propi(2);
+```
+
+{{<input value={left}/>}} + {{<input value={right}/>}} = {+left()+ +right()}

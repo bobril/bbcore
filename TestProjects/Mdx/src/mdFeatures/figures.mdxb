@@ -1,0 +1,14 @@
+---
+name: Figures
+---
+
+
+``` md
+^^^
+This is a figure
+^^^ This is a *caption*
+```
+
+^^^
+This is a figure
+^^^ This is a *caption*
