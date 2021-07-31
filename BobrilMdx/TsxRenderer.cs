@@ -41,6 +41,7 @@ namespace BobrilMdx
             ObjectRenderers.Add(new LinkInlineRenderer());
             ObjectRenderers.Add(new LiteralInlineRenderer());
             ObjectRenderers.Add(new MdxCodeInlineRenderer());
+            ObjectRenderers.Add(new TsxFigureRenderer());
             ObjectRenderers.Add(new TsxFigureCaptionRenderer());
             ObjectRenderers.Add(new TsxTaskListRenderer());
 
