@@ -407,7 +407,7 @@ namespace Lib.DiskCache
 
         bool _ignoringChanges;
 
-        public void UpdateFile(string path, string content)
+        public bool UpdateFile(string path, string content)
         {
             lock (_lock)
             {
@@ -433,6 +433,7 @@ namespace Lib.DiskCache
                     {
                         FsAbstraction.WriteAllUtf8(path, content);
                         ((FileCache) fi).IsStale = false;
+                        return true;
                     }
                 }
                 finally
@@ -440,6 +441,8 @@ namespace Lib.DiskCache
                     _ignoringChanges = false;
                 }
             }
+
+            return false;
         }
 
         public void ResetChange()

@@ -10,11 +10,10 @@ using Njsast.ConstEval;
 using Njsast.Bobril;
 using Njsast.Ast;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using BobrilMdx;
 using Lib.BuildCache;
-using Markdig.Helpers;
-using Microsoft.Extensions.Primitives;
 using Njsast.Runtime;
 
 namespace Lib.TSCompiler
@@ -158,11 +157,11 @@ namespace Lib.TSCompiler
             string? fn = null;
             if (relative)
             {
-                fn = PathUtils.Join(parentInfo.Owner!.Parent.FullPath, name);
-                var browserResolve = parentInfo.FromModule?.ProjectOptions?.BrowserResolve;
+                fn = PathUtils.Join(parentInfo.Owner!.Parent!.FullPath, name);
+                var browserResolve = parentInfo.FromModule?.ProjectOptions.BrowserResolve;
                 if (browserResolve != null)
                 {
-                    var relativeToModule = PathUtils.Subtract(fn + ".js", parentInfo.FromModule.Owner.FullPath);
+                    var relativeToModule = PathUtils.Subtract(fn + ".js", parentInfo.FromModule!.Owner.FullPath);
                     if (!relativeToModule.StartsWith("../")) relativeToModule = "./" + relativeToModule;
                     if (browserResolve.TryGetValue(relativeToModule, out var resolveReplace))
                     {
@@ -221,7 +220,7 @@ namespace Lib.TSCompiler
                     if (info != null) CrawlInfo(info);
                 }
 
-                IFileCache item = (parentInfo.Type == FileCompilationType.EsmJavaScript
+                var item = (parentInfo.Type == FileCompilationType.EsmJavaScript
                         ? ExtensionsToImportFromJs
                         : ExtensionsToImport).Select(ext =>
                     {
@@ -251,6 +250,7 @@ namespace Lib.TSCompiler
                             module!.LoadProjectJson(true, Owner.ProjectOptions);
                             Result!.Modules[mn] = module;
                         }
+
                         var mainFile = PathUtils.Join(module.Owner.FullPath, module.MainFile);
                         res.FileName = mainFile;
                         if (!skipCheckAdd)
@@ -304,25 +304,25 @@ namespace Lib.TSCompiler
                     }
                 }
 
-                return res.FileNameWithPreference(preferDts);
+                return res.FileNameWithPreference(preferDts) ?? "?";
             }
             else
             {
                 var pos = 0;
                 PathUtils.EnumParts(name, ref pos, out var mn, out _);
-                string mname;
+                string moduleName;
                 if (name[0] == '@')
                 {
                     PathUtils.EnumParts(name, ref pos, out var mn2, out _);
-                    mname = mn.ToString() + "/" + mn2.ToString();
+                    moduleName = mn.ToString() + "/" + mn2.ToString();
                 }
                 else
                 {
-                    mname = mn.ToString();
+                    moduleName = mn.ToString();
                 }
 
                 string? mainFileReplace = null;
-                if (mname.Length == name.Length && parentInfo != null)
+                if (moduleName.Length == name.Length && parentInfo != null)
                 {
                     var browserResolve = parentInfo.FromModule?.ProjectOptions?.BrowserResolve;
                     if (browserResolve != null)
@@ -347,7 +347,7 @@ namespace Lib.TSCompiler
                     }
                 }
 
-                var moduleInfo = ResolveModule(mname);
+                var moduleInfo = ResolveModule(moduleName);
                 if (moduleInfo == null)
                 {
                     ReportMissingImport(from, name);
@@ -373,15 +373,16 @@ namespace Lib.TSCompiler
                     }
                 }
 
-                if (mname != moduleInfo.Name)
+                if (moduleName != moduleInfo.Name)
                 {
                     parentInfo.ReportDiag(false, -2,
-                        "Module import has wrong casing '" + mname + "' on disk '" + moduleInfo.Name + "'", 0, 0, 0, 0);
+                        "Module import has wrong casing '" + moduleName + "' on disk '" + moduleInfo.Name + "'", 0, 0,
+                        0, 0);
                 }
 
-                if (mname.Length != name.Length)
+                if (moduleName.Length != name.Length)
                 {
-                    fn = PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(mname.Length + 1));
+                    fn = PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(moduleName.Length + 1));
                     relative = true;
                     goto relative;
                 }
@@ -761,24 +762,36 @@ namespace Lib.TSCompiler
                 if (_noDependencyCheck)
                     oldDependencies.TransferFrom(ref info.Dependencies);
                 info.StartCompiling();
+                var sw = Stopwatch.StartNew();
                 switch (info.Type)
                 {
                     case FileCompilationType.MdxbList:
+                    {
                         var newContentList = BuildMdxbList(info.DirOwner, Owner.DiskCache);
-                        Owner.DiskCache.UpdateFile(info.DirOwner.FullPath + "/.mdxb.tsx", newContentList);
+                        var trueChangeDetected =
+                            Owner.DiskCache.UpdateFile(info.DirOwner.FullPath + "/.mdxb.tsx", newContentList);
+                        Owner.Logger.Info((trueChangeDetected ? "Updated" : "Checked") + " " + info.DirOwner.FullPath +
+                                          "/.mdxb.tsx in " + sw.ElapsedMilliseconds + "ms");
                         break;
+                    }
                     case FileCompilationType.Mdxb:
+                    {
                         var mdxToTsx = new MdxToTsx();
                         var content = info.Owner.Utf8Content;
                         var newContent = UpdateMdxDependentFileContent(content, info.Owner, Owner.DiskCache);
                         if (newContent != content)
                         {
                             Owner.DiskCache.UpdateFile(info.Owner.FullPath, newContent);
+                            Owner.Logger.Info("Updated Source in " + info.Owner.FullPath);
                         }
 
                         mdxToTsx.Parse(newContent);
-                        Owner.DiskCache.UpdateFile(info.Owner.FullPath + ".tsx", mdxToTsx.Render().content);
+                        var trueChangeDetected =
+                            Owner.DiskCache.UpdateFile(info.Owner.FullPath + ".tsx", mdxToTsx.Render().content);
+                        Owner.Logger.Info((trueChangeDetected ? "Updated" : "Checked") + " " + info.Owner.FullPath +
+                                          " in " + sw.ElapsedMilliseconds + "ms");
                         break;
+                    }
                     case FileCompilationType.Json:
                         info.Output = null;
                         info.MapLink = null;
@@ -964,9 +977,10 @@ namespace Lib.TSCompiler
                     info.Output = null;
                     info.MapLink = null;
                     info.SourceInfo = null;
-                    info.ReportDiag(true, -18, "File does not exists", 0,0,0,0);
+                    info.ReportDiag(true, -18, "File does not exists", 0, 0, 0, 0);
                     return;
                 }
+
                 var fileName = info.Owner.FullPath;
                 var source = info.Owner.Utf8Content;
                 compiler = BuildCtx.CompilerPool.GetTs(Owner.DiskCache, BuildCtx.CompilerOptions);

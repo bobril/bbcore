@@ -1,0 +1,16 @@
+---
+name: Front matter
+a: [1,42,3]
+---
+
+
+``` md
+---
+name: Front matter
+a: [1,42,3]
+---
+
+Second item from a: {metadata.a[1]}
+```
+
+Second item from a: {metadata.a[1]}

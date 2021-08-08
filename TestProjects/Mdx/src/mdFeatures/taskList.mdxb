@@ -6,11 +6,11 @@ name: Task list
 ``` md
 - [ ] Item1
 - [x] Item2
-- [ ] Item3
+- [x] Item3
 - Item4
 ```
 
 - [ ] Item1
 - [x] Item2
-- [ ] Item3
+- [x] Item3
 - Item4

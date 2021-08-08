@@ -14,6 +14,6 @@ namespace Lib.DiskCache
         void ResetChange();
         void UpdateIfNeeded(IDirectoryCache dir);
         public string? IgnoreChangesInPath { get; set; }
-        void UpdateFile(string path, string content);
+        bool UpdateFile(string path, string content);
     }
 }

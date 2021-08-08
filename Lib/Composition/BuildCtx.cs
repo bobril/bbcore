@@ -402,6 +402,13 @@ namespace Lib.Composition
                     var toClear = new StructList<string>();
                     foreach (var fi in buildResult.Path2FileInfo)
                     {
+                        switch (fi.Value.Type)
+                        {
+                            case FileCompilationType.MdxbList:
+                            case FileCompilationType.Mdxb when !(fi.Value.Owner?.IsInvalid ?? true):
+                                continue;
+                        }
+
                         if (fi.Value.IterationId != iterationId)
                             toClear.Add(fi.Key);
                     }

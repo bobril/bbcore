@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Various fixes around mdxb support.
+
 ## 1.49.2
 
 ## 1.49.1
