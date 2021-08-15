@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+New `test` command option `-w` or `--printfailed` to see all failed tests with stacks also in stdout.
+
 ## 1.50.0
 
 ### Changed

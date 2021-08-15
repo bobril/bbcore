@@ -8,25 +8,30 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         protected override string Description => "runs tests once in Chrome";
 
-        public CommandLineArgumentString Out { get; } = new CommandLineArgumentString("filename for test result as JUnit XML", new[] { "-o", "--out" });
+        public CommandLineArgumentString Out { get; } = new("filename for test result as JUnit XML", new[] { "-o", "--out" });
 
-        public CommandLineArgumentBool FlatTestSuites { get; } = new CommandLineArgumentBool(
+        public CommandLineArgumentBool FlatTestSuites { get; } = new(
             "use flat structure of test suites (to increase viewer compatibility)",
             new[] {"--flat"},
             true
         );
 
-        public CommandLineArgumentBool Sprite { get; } = new CommandLineArgumentBool("enable/disable creation of sprites", new[] { "--sprite" });
+        public CommandLineArgumentSwitch PrintFailed { get; } = new(
+            "print names of all failed tests",
+            new[] {"-w", "--printfailed"}
+        );
 
-        public CommandLineArgumentString Port { get; } = new CommandLineArgumentString("set port for test server to listen to (default: first free)", new[] { "-p", "--port" });
+        public CommandLineArgumentBool Sprite { get; } = new("enable/disable creation of sprites", new[] { "--sprite" });
 
-        public CommandLineArgumentBoolNullable Localize { get; } = new CommandLineArgumentBoolNullable("create localized resources (default: autodetect)", new[] { "-l", "--localize" });
+        public CommandLineArgumentString Port { get; } = new("set port for test server to listen to (default: first free)", new[] { "-p", "--port" });
 
-        public CommandLineArgumentString Dir { get; } = new CommandLineArgumentString("where to just write test bundle", words: new[] { "-d", "--dir" });
+        public CommandLineArgumentBoolNullable Localize { get; } = new("create localized resources (default: autodetect)", new[] { "-l", "--localize" });
 
-        public CommandLineArgumentString SpecFilter { get; } = new CommandLineArgumentString("enable/disable tests matching a pattern", words: new[] { "-f", "--filter" });
+        public CommandLineArgumentString Dir { get; } = new("where to just write test bundle", words: new[] { "-d", "--dir" });
 
-        public CommandLineArgumentEnumValues Coverage { get; } = new CommandLineArgumentEnumValues(
+        public CommandLineArgumentString SpecFilter { get; } = new("enable/disable tests matching a pattern", words: new[] { "-f", "--filter" });
+
+        public CommandLineArgumentEnumValues Coverage { get; } = new(
             "calculate code coverage",
             new[] {"-c", "--coverage"},
             new[] { "json-details", "json-summary", "spa", "none" }

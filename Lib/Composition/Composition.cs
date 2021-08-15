@@ -572,7 +572,7 @@ namespace Lib.Composition
                         else if (!ctx.OnlyTypeCheck)
                         {
                             var bundle = bCommand.NewBundler.Value
-                                ? (IBundler) new NjsastBundleBundler(_tools, _logger, _mainBuildResult, proj,
+                                ? (IBundler)new NjsastBundleBundler(_tools, _logger, _mainBuildResult, proj,
                                     buildResult)
                                 : new BundleBundler(_tools, _mainBuildResult, proj, buildResult);
                             bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value,
@@ -689,7 +689,8 @@ namespace Lib.Composition
                 proj.SpriterInitialization(_mainBuildResult);
                 if (proj.TestSources != null && proj.TestSources.Count > 0)
                 {
-                    var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, _buildCache, "yes");
+                    var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath,
+                        _buildCache, "yes");
                     ctx.Build(proj, true, testBuildResult, _mainBuildResult, 1);
                     ctx.BuildSubProjects(proj, true, testBuildResult, _mainBuildResult, 1);
                     var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, proj, testBuildResult);
@@ -758,6 +759,12 @@ namespace Lib.Composition
                     }
                 }
 
+                if (testCommand.PrintFailed.Value)
+                {
+                    if (errors + testFailures != 0)
+                        PrintFailed(testResults, _logger);
+                }
+
                 if (testCommand.Out.Value != null)
                     File.WriteAllText(testCommand.Out.Value,
                         testResults.ToJUnitXml(testCommand.FlatTestSuites.Value), new UTF8Encoding(false));
@@ -817,6 +824,46 @@ namespace Lib.Composition
             Environment.ExitCode = errors + testFailures != 0 || incompleteTest ? 1 : 0;
         }
 
+        void PrintFailed(SuiteOrTest testResults, IConsoleLogger logger, int indent = 0)
+        {
+            if (testResults.IsSuite)
+            {
+                if (!testResults.Failure)
+                {
+                    return;
+                }
+
+                if (testResults.Name != "")
+                {
+                    logger.Info(new string(' ', indent) + "Suite: " + testResults.Name);
+                    indent++;
+                }
+
+                foreach (var suiteOrTest in testResults.Nested)
+                {
+                    PrintFailed(suiteOrTest, logger, indent);
+                }
+            }
+            else
+            {
+                if (!testResults.Failure)
+                {
+                    return;
+                }
+
+                logger.Error(new string(' ', indent) + "Test: " + testResults.Name);
+                indent++;
+                foreach (var messageAndStack in testResults.Failures)
+                {
+                    logger.Error(new string(' ', indent) + messageAndStack.Message);
+                    foreach (var frame in messageAndStack.Stack)
+                    {
+                        logger.Info(new string(' ', indent + 1) + frame);
+                    }
+                }
+            }
+        }
+
         StyleDefNamingStyle ParseStyleDefNaming(string value)
         {
             switch (value)
@@ -843,7 +890,7 @@ namespace Lib.Composition
                 var fileName = PathUtils.Join(dir, filesContent.KeyRef(index));
                 if (content is Lazy<object>)
                 {
-                    content = ((Lazy<object>) content).Value;
+                    content = ((Lazy<object>)content).Value;
                 }
 
                 if (delta != null)
@@ -854,12 +901,12 @@ namespace Lib.Composition
                         {
                             if (content is string)
                             {
-                                if ((string) content == (string) previousContent)
+                                if ((string)content == (string)previousContent)
                                     continue;
                             }
                             else
                             {
-                                if (((byte[]) content).AsSpan().SequenceEqual((byte[]) previousContent))
+                                if (((byte[])content).AsSpan().SequenceEqual((byte[])previousContent))
                                     continue;
                             }
                         }
@@ -872,11 +919,11 @@ namespace Lib.Composition
 
                 if (content is string)
                 {
-                    File.WriteAllText(fileName, (string) content, utf8WithoutBom);
+                    File.WriteAllText(fileName, (string)content, utf8WithoutBom);
                 }
                 else
                 {
-                    File.WriteAllBytes(fileName, (byte[]) content);
+                    File.WriteAllBytes(fileName, (byte[])content);
                 }
 
                 if (delta == null && freeMem)
@@ -902,9 +949,10 @@ namespace Lib.Composition
                 proj.RefreshTestSources();
                 proj.SpriterInitialization(_mainBuildResult);
                 proj.RefreshExampleSources();
-                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, _buildCache, "no");
+                var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, _buildCache,
+                    "no");
                 ctx.Build(proj, true, buildResult, _mainBuildResult, 1);
-                var buildResultSet = buildResult.Path2FileInfo.Select(a=>a.Value).ToHashSet();
+                var buildResultSet = buildResult.Path2FileInfo.Select(a => a.Value).ToHashSet();
 
                 if (buildResultSet.Any(a => a.Diagnostics.Any(d => d.IsError)))
                 {
@@ -984,7 +1032,7 @@ namespace Lib.Composition
 
         public void InitDiskCache(bool withWatcher = false)
         {
-            Func<IDirectoryWatcher> watcherFactory = () => (IDirectoryWatcher) new DummyWatcher();
+            Func<IDirectoryWatcher> watcherFactory = () => (IDirectoryWatcher)new DummyWatcher();
             if (withWatcher)
             {
                 if (Environment.GetEnvironmentVariable("BBWATCHER") is { } delayStr &&
@@ -1153,16 +1201,16 @@ namespace Lib.Composition
                 context.Response.ContentType = PathUtils.PathToMimeType(pathWithoutFirstSlash);
                 if (content is Lazy<object>)
                 {
-                    content = ((Lazy<object>) content).Value;
+                    content = ((Lazy<object>)content).Value;
                 }
 
                 if (content is string)
                 {
-                    await context.Response.WriteAsync((string) content);
+                    await context.Response.WriteAsync((string)content);
                 }
                 else
                 {
-                    await context.Response.Body.WriteAsync((byte[]) content, 0, ((byte[]) content).Length);
+                    await context.Response.Body.WriteAsync((byte[])content, 0, ((byte[])content).Length);
                 }
 
                 return;
@@ -1200,11 +1248,11 @@ namespace Lib.Composition
         {
             var reqBody = await new StreamReader(context.Request.Body, Encoding.UTF8).ReadToEndAsync();
             var req = System.Text.Json.JsonSerializer.Deserialize<TReq>(reqBody,
-                new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase});
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             var resp = func(req);
             context.Response.ContentType = "application/json";
             await System.Text.Json.JsonSerializer.SerializeAsync(context.Response.Body, resp,
-                new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase});
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         }
 
         GetFileCoverageResponse GetFileCoverage(GetFileCoverageRequest req)
@@ -1264,7 +1312,7 @@ namespace Lib.Composition
                             r.Add(info.Start.Col);
                             r.Add(info.End.Line);
                             r.Add(info.End.Col);
-                            r.Add((int) coverageInfo.Hits);
+                            r.Add((int)coverageInfo.Hits);
                             break;
                         case InstrumentedInfoType.Condition:
                             r.Add(1);
@@ -1272,8 +1320,8 @@ namespace Lib.Composition
                             r.Add(info.Start.Col);
                             r.Add(info.End.Line);
                             r.Add(info.End.Col);
-                            r.Add((int) coverageInfo.Hits);
-                            r.Add((int) coverageInfo.SecondaryHits);
+                            r.Add((int)coverageInfo.Hits);
+                            r.Add((int)coverageInfo.SecondaryHits);
                             break;
                         case InstrumentedInfoType.Function:
                             r.Add(2);
@@ -1281,7 +1329,7 @@ namespace Lib.Composition
                             r.Add(info.Start.Col);
                             r.Add(info.End.Line);
                             r.Add(info.End.Col);
-                            r.Add((int) coverageInfo.Hits);
+                            r.Add((int)coverageInfo.Hits);
                             break;
                         case InstrumentedInfoType.SwitchBranch:
                             r.Add(3);
@@ -1289,7 +1337,7 @@ namespace Lib.Composition
                             r.Add(info.Start.Col);
                             r.Add(info.End.Line);
                             r.Add(info.End.Col);
-                            r.Add((int) coverageInfo.Hits);
+                            r.Add((int)coverageInfo.Hits);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
@@ -1396,7 +1444,8 @@ namespace Lib.Composition
             }).Where(s => !s.EndsWith(".mdxb.tsx", StringComparison.Ordinal)).Throttle(TimeSpan.FromMilliseconds(200));
             throttled.Merge(throttled.Delay(TimeSpan.FromMilliseconds(300))).Subscribe((_) => _hasBuildWork.Set());
             var iterationId = 0;
-            var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath, _buildCache, "yes");
+            var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath,
+                _buildCache, "yes");
             var buildResult = new BuildResult(_mainBuildResult, _currentProject);
             var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, _currentProject, buildResult);
             var start = DateTime.UtcNow;
