@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Nodejs in docker file updated from v10 to v14.
+
 ## 1.51.0
 
 ### Added
