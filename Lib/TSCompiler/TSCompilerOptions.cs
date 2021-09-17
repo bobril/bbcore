@@ -78,6 +78,7 @@ namespace Lib.TSCompiler
         public IList<string>? types { get; set; }
         public IList<string>? typeRoots { get; set; }
         public bool? resolveJsonModule { get; set; }
+        public bool? useUnknownInCatchVariables { get; set; }
 
         public static TSCompilerOptions Parse(JToken? jToken)
         {
@@ -174,7 +175,8 @@ namespace Lib.TSCompiler
                 traceResolution = traceResolution,
                 typeRoots = typeRoots,
                 types = types,
-                resolveJsonModule = resolveJsonModule
+                resolveJsonModule = resolveJsonModule,
+                useUnknownInCatchVariables = useUnknownInCatchVariables
             };
         }
 
@@ -324,6 +326,8 @@ namespace Lib.TSCompiler
                 types = with.types;
             if (with.resolveJsonModule != null)
                 resolveJsonModule = with.resolveJsonModule;
+            if (with.useUnknownInCatchVariables != null)
+                useUnknownInCatchVariables = with.useUnknownInCatchVariables;
             return this;
         }
     }

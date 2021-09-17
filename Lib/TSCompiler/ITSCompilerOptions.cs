@@ -117,6 +117,7 @@ namespace Lib.TSCompiler
         IList<string>? types { get; set; }
         /** Paths used to compute primary types search locations */
         IList<string>? typeRoots { get; set; }
+        bool? useUnknownInCatchVariables { get; set; }
 
         ITSCompilerOptions Clone();
         ITSCompilerOptions Merge(ITSCompilerOptions withInterface);

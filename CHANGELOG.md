@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- support for `useUnknownInCatchVariables` tsconfig.json property.
+
 ## 1.53.0
 
 ### Changed
