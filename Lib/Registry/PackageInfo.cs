@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
-using Version = SemVer.Version;
+using Version = SemanticVersioning.Version;
 
 namespace Lib.Registry
 {

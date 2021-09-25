@@ -170,7 +170,7 @@ namespace Lib.ToolsDir
         public async Task DownloadAndExtractTS(string dir, string versionString)
         {
             _logger.Info($"Downloading and extracting TypeScript {versionString}");
-            var version = new SemVer.Version(versionString);
+            var version = new SemanticVersioning.Version(versionString);
             var npmr = new NpmRepositoryAccessor();
             var packageEtagAndContent = await npmr.GetPackageInfo("typescript", null);
             var task = null as Task<byte[]>;

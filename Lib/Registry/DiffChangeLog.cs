@@ -16,11 +16,11 @@ namespace Lib.Registry
             _diskCache = diskCache;
         }
 
-        static SemVer.Version TryParseVersion(string str)
+        static SemanticVersioning.Version? TryParseVersion(string str)
         {
             try
             {
-                return new SemVer.Version(str);
+                return new(str);
             }
             catch
             {
