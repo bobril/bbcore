@@ -9,7 +9,7 @@ export function DirectoryPage(data: { name: string }): b.IBobrilNode {
     var details = store.json[data.name];
     if (details == undefined) {
         b.runTransition(b.createRedirectReplace("rootdir"));
-        return undefined;
+        return <></>;
     }
     const isRoot = data.name == "*";
     return (

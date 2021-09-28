@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+Updated all 3 webs embeded in bb itself.
+
+### Fixed
+
+Bundling of latest Monaco works again.
+
 ## 1.54.0
 
 ### Added

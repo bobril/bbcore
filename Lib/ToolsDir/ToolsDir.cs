@@ -224,7 +224,7 @@ namespace Lib.ToolsDir
             }
         }
 
-        public void SetJasmineVersion(string version)
+        public void SetJasmineVersion(string? version)
         {
             _jasmineVersion = version ?? "330";
         }

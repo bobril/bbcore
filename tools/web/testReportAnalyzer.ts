@@ -1,4 +1,4 @@
-import { SuiteOrTest } from './state';
+import { SuiteOrTest } from "./state";
 
 export interface SeparatedTests {
     failed: SuiteOrTest[];
@@ -15,7 +15,7 @@ export function analyze(results: SuiteOrTest[]): SeparatedTests {
         skipped: buildSuiteTrees(separatedTests.skipped, allSuitesAndTests),
         logged: buildSuiteTrees(separatedTests.logged, allSuitesAndTests),
         passed: buildSuiteTrees(separatedTests.passed, allSuitesAndTests),
-    }
+    };
 }
 
 function getAllSuitesAndTests(roots: SuiteOrTest[]): { [key: number]: SuiteOrTest } {
@@ -82,7 +82,9 @@ function buildSuiteTrees(tests: SuiteOrTest[], all: { [key: number]: SuiteOrTest
             current = nodes[parent.id];
         }
     }
-    return Object.keys(nodes).map(key => nodes[key]).filter(node => node.parentId == 0);
+    return Object.keys(nodes)
+        .map((key) => nodes[key as unknown as number])
+        .filter((node) => node.parentId == 0);
 }
 
 function cloneSuiteOrTest(suiteOrTest: SuiteOrTest): SuiteOrTest {
@@ -97,6 +99,6 @@ function cloneSuiteOrTest(suiteOrTest: SuiteOrTest): SuiteOrTest {
         duration: suiteOrTest.duration,
         failures: suiteOrTest.failures,
         nested: [],
-        logs: suiteOrTest.logs
+        logs: suiteOrTest.logs,
     };
 }

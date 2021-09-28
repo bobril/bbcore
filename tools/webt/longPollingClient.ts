@@ -4,12 +4,12 @@ export class Connection {
     private toSend: any[];
     private sendTimer: number;
     private closed: boolean;
-    private longPolling: XMLHttpRequest;
+    private longPolling: XMLHttpRequest | null;
     private heartBeatTimer: number;
     private processingBatch = false;
 
-    onMessage: (connection: Connection, message: string, data: any) => void;
-    onClose: (connection: Connection) => void;
+    onMessage: null | ((connection: Connection, message: string, data: any) => void);
+    onClose: null | ((connection: Connection) => void);
 
     constructor(url: string) {
         this.onMessage = null;
@@ -76,11 +76,14 @@ export class Connection {
         let m = data.m;
         if (Array.isArray(m)) {
             for (let i = 0; i < m.length; i++) {
-                try {
-                    this.onMessage(this, m[i].m, m[i].d);
-                } catch (err) {
-                    console.error("onMessage exception ", m[i], err);
-                }
+                let mi = m[i];
+                Promise.resolve().then(() => {
+                    try {
+                        this.onMessage!(this, mi.m, mi.d);
+                    } catch (err) {
+                        console.error("onMessage exception ", mi, err);
+                    }
+                });
             }
         }
         return true;

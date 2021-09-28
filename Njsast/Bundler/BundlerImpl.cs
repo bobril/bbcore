@@ -251,10 +251,22 @@ namespace Njsast.Bundler
                     var fromSplit = _splitMap[fromFile.PartOfBundle!];
                     if (sourceSplit == fromSplit)
                         continue;
-                    var astNode = fromFile.Exports![exportName];
-                    sourceSplit.ImportsFromOtherBundles[astNode] =
-                        new ImportFromOtherBundle(fromSplit, fromFile, exportName);
-                    fromSplit.ExportsUsedFromLazyBundles[astNode] = BundlerHelpers.NumberToIdent(lazySplitCounter++);
+                    if (!fromFile.Exports!.TryFindLongestPrefix(exportName, out var prefixLen, out var astNode))
+                    {
+                        throw new NotSupportedException("Cannot find " + string.Join('.', exportName) + " in " +
+                                                        fromFile.Name + " used in " + f.Name);
+                    }
+
+                    if (!sourceSplit.ImportsFromOtherBundles.ContainsKey(astNode))
+                    {
+                        sourceSplit.ImportsFromOtherBundles[astNode] =
+                            new(fromSplit, fromFile, exportName.AsSpan().Slice(0,prefixLen).ToArray());
+                    }
+
+                    if (!fromSplit.ExportsUsedFromLazyBundles.ContainsKey(astNode))
+                    {
+                        fromSplit.ExportsUsedFromLazyBundles[astNode] = BundlerHelpers.NumberToIdent(lazySplitCounter++);
+                    }
                 }
             }
 
@@ -397,7 +409,7 @@ namespace Njsast.Bundler
                     cached.Exports![new[] {simpleExp.Name}] = simpleExp.Symbol;
                 }
             }
-            
+
             foreach (var r in cached.Requires)
             {
                 if (_cache.TryGetValue(r, out var rCached))

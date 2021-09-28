@@ -2,7 +2,7 @@ import * as b from "bobril";
 import * as monaco from "monaco-editor";
 
 (window as any).MonacoEnvironment = {
-    getWorkerUrl: function(moduleId: string, label: string) {
+    getWorkerUrl: function (moduleId: string, label: string) {
         console.log("GetWorkerUrl", moduleId, label);
         if (label === "json") {
             return b.asset("project:worker:node_modules/monaco-editor/esm/vs/language/json/json.worker.js");
@@ -17,7 +17,7 @@ import * as monaco from "monaco-editor";
             return b.asset("project:worker:node_modules/monaco-editor/esm/vs/language/typescript/ts.worker.js");
         }
         return b.asset("project:worker:node_modules/monaco-editor/esm/vs/editor/editor.worker.js");
-    }
+    },
 };
 
 interface IMonacoEditorData {
@@ -39,7 +39,7 @@ class MonacoComponentClass extends b.Component<IMonacoEditorData> {
         this.editor = monaco.editor.create(b.getDomNode(this.me) as HTMLElement, {
             language: this.data.language,
             theme: this.data.theme,
-            scrollbar: {}
+            scrollbar: {},
         });
         this.data.onInit?.(this.editor);
         this.editor.layout();
@@ -49,7 +49,7 @@ class MonacoComponentClass extends b.Component<IMonacoEditorData> {
             this.currentTheme = this.data.theme;
             monaco.editor.setTheme(this.data.theme);
         }
-        this.editor.layout();
+        this.editor!.layout();
     }
 }
 

@@ -14,7 +14,10 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "bobril": "^8.17.0",
+    "bobril": "*",
     "bobrilstrap": "^3.0.2"
+  },
+  "resolutions": {
+    "bobril": "17.11.0"
   }
 }

@@ -13,8 +13,8 @@ export function clickable(content: b.IBobrilChildren, action: () => void): b.IBo
             onClick() {
                 action();
                 return true;
-            }
-        }
+            },
+        },
     };
 }
 
@@ -26,17 +26,17 @@ function createOverview(): b.IBobrilChildren {
     return b.styledDiv(
         [
             createBuildStatus(),
-            createAgentOverview(selectedAgentIndex, i => {
+            createAgentOverview(selectedAgentIndex, (i) => {
                 selectedAgentIndex = i;
                 ResultTree.id++;
                 reloadResultTree();
-            })
+            }),
         ],
         styles.overview
     );
 }
 
-function createNavbar(): b.IBobrilChildren {
+function createNavbar(): b.IBobrilNode {
     return bs.Navbar({ static: bs.NavbarStatic.Top, style: styles.navbar }, [
         bs.NavbarHeader({}, [bs.NavbarBrand({ href: " ", style: styles.navbarHeader }, "Bobril-Build")]),
         bs.NavbarNav({}, [
@@ -47,7 +47,7 @@ function createNavbar(): b.IBobrilChildren {
                         onClick: () => {
                             com.setLiveReload(!s.liveReload);
                         },
-                        style: styles.navbarItem
+                        style: styles.navbarItem,
                     },
                     "Live reload"
                 )
@@ -59,12 +59,12 @@ function createNavbar(): b.IBobrilChildren {
                         onClick: () => {
                             com.setCoverage(!s.coverage);
                         },
-                        style: styles.navbarItem
+                        style: styles.navbarItem,
                     },
                     "Coverage"
                 )
-            )
-        ])
+            ),
+        ]),
     ]);
 }
 
@@ -83,9 +83,9 @@ function createBuildStatus() {
                 "Duration: " + lastResult.time + "ms",
                 styles.lastBuildResultPart,
                 styles.lastBuildResultDuration
-            )
+            ),
         ]),
-        lastResult.messages.map(m =>
+        lastResult.messages.map((m) =>
             clickable(
                 b.styledDiv(
                     [
@@ -93,7 +93,7 @@ function createBuildStatus() {
                             (m.isError ? "Error: " : "Warning: ") + m.text,
                             m.isError ? styles.buildStatusErrormessage : styles.buildStatusWarningMessage
                         ),
-                        b.styledDiv(`${m.fileName} (${m.pos[0]}:${m.pos[1]}-${m.pos[2]}:${m.pos[3]})`, styles.filePos)
+                        b.styledDiv(`${m.fileName} (${m.pos[0]}:${m.pos[1]}-${m.pos[2]}:${m.pos[3]})`, styles.filePos),
                     ],
                     styles.buildStatusMessage
                 ),
@@ -101,7 +101,7 @@ function createBuildStatus() {
                     com.focusPlace(m.fileName, m.pos);
                 }
             )
-        )
+        ),
     ]);
 }
 
@@ -134,13 +134,13 @@ function createAgentOverview(selectedAgent: number, setSelectedAgent: (index: nu
                                     ? styles.agentOverviewSuccessfulAndLogsCount
                                     : styles.agentOverviewSuccessfulAndLogsCountInactive
                             ),
-                            "  "
+                            "  ",
                         ],
                         styles.spanInfo
                     ),
                     createProgressBar(index === selectedAgent, results),
                     results.running &&
-                        b.styledDiv("Running " + results.testsFinished + "/" + results.totalTests, styles.spanInfo)
+                        b.styledDiv("Running " + results.testsFinished + "/" + results.totalTests, styles.spanInfo),
                 ],
                 index === selectedAgent ? styles.activeAgentOverview : styles.agentOverview
             ),
@@ -160,13 +160,13 @@ function createProgressBar(active: boolean, results: s.TestResultsHolder): b.IBo
                     value: results.testsFailed / (results.totalTests / 100),
                     striped: results.running,
                     active: results.running,
-                    style: active ? styles.progressBarFailed : styles.progressBarFailedInactive
+                    style: active ? styles.progressBarFailed : styles.progressBarFailedInactive,
                 },
                 {
                     value: results.testsSkipped / (results.totalTests / 100),
                     striped: results.running,
                     active: results.running,
-                    style: active ? styles.progressBarSkipped : styles.progressBarSkippedInactive
+                    style: active ? styles.progressBarSkipped : styles.progressBarSkippedInactive,
                 },
                 {
                     value:
@@ -174,9 +174,9 @@ function createProgressBar(active: boolean, results: s.TestResultsHolder): b.IBo
                         (results.totalTests / 100),
                     striped: results.running,
                     active: results.running,
-                    style: active ? styles.progressBarSuccessful : styles.progressBarSuccessfulInactive
-                }
-            ]
+                    style: active ? styles.progressBarSuccessful : styles.progressBarSuccessfulInactive,
+                },
+            ],
         }),
         styles.spanInfo
     );
@@ -188,7 +188,7 @@ function createToolbar(): b.IBobrilChildren {
             createCollapseAndExpandButtons(),
             createResultTypeFilterButtons(),
             createFilter(),
-            createNestingMethodSelectionButtons()
+            createNestingMethodSelectionButtons(),
         ],
         styles.toolbar
     );
@@ -206,7 +206,7 @@ function createCollapseAndExpandButtons(): b.IBobrilChildren {
                 ResultTree.nodesOpenByDefault = true;
                 ResultTree.id++;
                 reloadResultTree();
-            })
+            }),
         ],
         styles.buttonGroup
     );
@@ -250,7 +250,7 @@ function createResultTypeFilterButtons(): b.IBobrilChildren {
                     b.invalidateStyles();
                 },
                 ResultTree.showStatus.logs ? styles.buttonLogsSelected : styles.buttonLogs
-            )
+            ),
         ],
         styles.buttonGroup
     );
@@ -274,7 +274,7 @@ function createFilter(): b.IBobrilChildren {
                         styles.filter,
                         ResultTree.textFilter === ctx.getFilterInputValue()
                             ? styles.filterActiveContent
-                            : styles.filterInactiveContent
+                            : styles.filterInactiveContent,
                     ];
                 }
                 b.invalidateStyles();
@@ -297,7 +297,7 @@ function createFilter(): b.IBobrilChildren {
                 style: ctx.filterStyle,
                 attrs: { autocomplete: "off" },
                 onChange: () => ctx.setFilterStyle(),
-                onKeyPress: event => {
+                onKeyPress: (event) => {
                     if (event.charCode === 13) {
                         ResultTree.textFilter = ctx.getFilterInputValue();
                         ResultTree.id++;
@@ -305,7 +305,7 @@ function createFilter(): b.IBobrilChildren {
                     }
                     ctx.setFilterStyle();
                     return false;
-                }
+                },
             });
 
             b.style(me, styles.buttonGroup);
@@ -313,7 +313,7 @@ function createFilter(): b.IBobrilChildren {
         onFocusOut(ctx: FilterCtx) {
             ctx.setFilterInputValue(ResultTree.textFilter);
             ctx.setFilterStyle();
-        }
+        },
     })();
 }
 
@@ -332,7 +332,7 @@ function createNestingMethodSelectionButtons(): b.IBobrilChildren {
                 },
                 [
                     styles.switchButton,
-                    ResultTree.nestingMethod === NestingMethod.ByPath ? styles.disabledButton : styles.activeButton
+                    ResultTree.nestingMethod === NestingMethod.ByPath ? styles.disabledButton : styles.activeButton,
                 ]
             ),
             button(
@@ -347,9 +347,9 @@ function createNestingMethodSelectionButtons(): b.IBobrilChildren {
                 },
                 [
                     styles.switchButton,
-                    ResultTree.nestingMethod === NestingMethod.ByDescribe ? styles.disabledButton : styles.activeButton
+                    ResultTree.nestingMethod === NestingMethod.ByDescribe ? styles.disabledButton : styles.activeButton,
                 ]
-            )
+            ),
         ],
         styles.buttonGroup
     );
@@ -398,7 +398,7 @@ b.init(() => {
                 createNavbar(),
                 createOverview(),
                 selectedAgentIndex >= 0 && createToolbar(),
-                selectedAgentIndex >= 0 && createResultTree()
+                selectedAgentIndex >= 0 && createResultTree(),
             ];
             b.style(me, styles.page);
         },
@@ -406,6 +406,6 @@ b.init(() => {
             document.getElementsByTagName("html")[0].style.setProperty("height", "100%");
             document.getElementsByTagName("html")[0].style.setProperty("overflow-y", "scroll");
             document.getElementsByTagName("html")[0].style.setProperty("background-color", "#5d6273");
-        }
+        },
     })();
 });

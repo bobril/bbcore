@@ -483,6 +483,7 @@ namespace Lib.Composition
                             tsProject.ProjectOptions.Variant = pref.Substring(8, pref.Length - 9);
                             tsProject.ProjectOptions.NoHtml = true;
                             tsProject.ProjectOptions.TypeScriptVersion = project.TypeScriptVersion;
+                            tsProject.ProjectOptions.Tools = project.Tools;
                         }
                         else
                         {

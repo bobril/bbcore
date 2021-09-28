@@ -3,11 +3,11 @@
 
 
 bobril@*:
-  version "14.4.0"
-  resolved "https://registry.yarnpkg.com/bobril/-/bobril-14.4.0.tgz#45dba563b1f8f8473a0c971208e0b20b766fd63b"
-  integrity sha512-VAuqY5RnLl5FdiFjbQOIN5LLLeFyAHDcfVPdY9XCIRQuc/iuy1vCCPFXExzEQjFuT2uBov+InEbFpXxhF8KkRw==
+  version "17.11.0"
+  resolved "https://registry.yarnpkg.com/bobril/-/bobril-17.11.0.tgz#91b981313d081f99b113c63ca2e5a33ec2180407"
+  integrity sha512-C8LpsbRB1tMpaZIw9txAdtEU53VEO/IMyZvrfiaIDJI9hE6cyk5ntCSIVPOA8L9vROraXCEBzL2oc37WIlUHkA==
 
 monaco-editor@*:
-  version "0.20.0"
-  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.20.0.tgz#5d5009343a550124426cb4d965a4d27a348b4dea"
-  integrity sha512-hkvf4EtPJRMQlPC3UbMoRs0vTAFAYdzFQ+gpMb8A+9znae1c43q8Mab9iVsgTcg/4PNiLGGn3SlDIa8uvK1FIQ==
+  version "0.28.1"
+  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.28.1.tgz#732788ff2172d59e6d436b206da8cac715413940"
+  integrity sha512-P1vPqxB4B1ZFzTeR1ScggSp9/5NoQrLCq88fnlNUsuRAP1usEBN4TIpI2lw0AYIZNVIanHk0qwjze2uJwGOHUw==

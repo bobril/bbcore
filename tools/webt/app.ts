@@ -7,14 +7,14 @@ let c = new longPollingClient.Connection("/bb/api/test");
 
 let connected = false;
 let testUrl = "";
-let iframe: HTMLIFrameElement = null;
+let iframe: HTMLIFrameElement | null = null;
 let reconnectDelay = 0;
 
 function reconnect() {
     console.log("Connecting");
     c.connect();
     c.send("newClient", {
-        userAgent: navigator.userAgent
+        userAgent: navigator.userAgent,
     });
     b.invalidate();
 }
@@ -42,9 +42,9 @@ c.onMessage = (c: longPollingClient.Connection, message: string, data: any) => {
             break;
         }
         case "test": {
-            window["specFilter"] = data.specFilter;
+            (window as any)["specFilter"] = data.specFilter;
             testUrl = data.url;
-            console.log("Testing:", data.url, data.specFilter);
+            //console.log("Testing:", data.url, data.specFilter);
             b.invalidate();
             if (iframe != null) document.body.removeChild(iframe);
             iframe = document.createElement("iframe");
@@ -66,12 +66,9 @@ reconnect();
 
 b.init(() => undefined);
 
-window["bbTest"] = (message: string, data: any) => {
+(window as any)["bbTest"] = (message: string, data: any) => {
     if (message.substr(0, 5) == "whole") {
         console.log(message);
-    }
-    if (message.substr(0, 9) == "wholeDone") {
-        console.log("Testing finished in " + ((data as number) / 1000).toFixed(1) + "s");
     }
     c.send(message, data);
 };

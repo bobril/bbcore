@@ -25,7 +25,7 @@ namespace Lib.WebServer
             int _closed; // 0/1 = false/true - Interlocked.Exchange is not for bools :-(
             TaskCompletionSource<Unit>? _responseEnder;
             HttpContext? _response;
-            Timer _timeOut;
+            Timer? _timeOut;
             readonly List<(string, object)> _toSend;
 
             internal Connection(LongPollingServer owner, ILongPollingConnectionHandler handler)
@@ -34,9 +34,9 @@ namespace Lib.WebServer
                 _handler = handler;
                 _id = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Substring(0, 22);
                 _closed = 0;
-                _toSend = new List<(string, object)>();
+                _toSend = new();
                 UserAgent = "";
-                _timeOut = new Timer(HandleTimeOut, null, 15000, Timeout.Infinite);
+                _timeOut = new(HandleTimeOut, null, 15000, Timeout.Infinite);
             }
 
             void HandleTimeOut(object state)
@@ -58,6 +58,7 @@ namespace Lib.WebServer
                     _toSend.Add((message, data));
                     response = _response;
                 }
+
                 if (response != null)
                 {
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
@@ -73,12 +74,14 @@ namespace Lib.WebServer
                     _timeOut.Dispose();
                     _timeOut = null;
                 }
+
                 if (Interlocked.Exchange(ref _closed, 1) == 0)
                 {
                     _handler.OnClose(this);
                 }
-                HttpContext response;
-                TaskCompletionSource<Unit> ender;
+
+                HttpContext? response;
+                TaskCompletionSource<Unit>? ender;
                 lock (_toSend)
                 {
                     response = _response;
@@ -86,12 +89,22 @@ namespace Lib.WebServer
                     _response = null;
                     _responseEnder = null;
                 }
+
                 if (response != null)
                 {
-                    response.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", _id }, { "close", true } })).ContinueWith((t) =>
+                    if (response.RequestAborted.IsCancellationRequested)
                     {
-                        ender.TrySetResult(Unit.Default);
-                    });
+                        ender!.TrySetResult(Unit.Default);
+                    }
+                    else
+                    {
+                        response.Response
+                            .WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object>
+                                { { "id", _id }, { "close", true } })).ContinueWith(_ =>
+                            {
+                                ender!.TrySetResult(Unit.Default);
+                            });
+                    }
                 }
             }
 
@@ -99,23 +112,32 @@ namespace Lib.WebServer
             {
                 if (_closed == 1)
                 {
-                    await response.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", _id }, { "close", true } }));
+                    await response.Response.WriteAsync(
+                        Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object>
+                            { { "id", _id }, { "close", true } }));
                     return;
                 }
+
                 string? toSend = null;
                 var ender = _responseEnder;
-                if (_response == response || firstResponse) lock (_toSend)
+                if (_response == response || firstResponse)
+                    lock (_toSend)
                     {
                         if (_response != response && !firstResponse)
                             return;
                         if (_toSend.Count > 0)
                         {
-                            toSend = Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", _id }, { "m", _toSend.Select(p => new { m = p.Item1, d = p.Item2 }).ToList() } });
+                            toSend = Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object>
+                            {
+                                { "id", _id }, { "m", _toSend.Select(p => new { m = p.Item1, d = p.Item2 }).ToList() }
+                            });
                             _responseEnder = null;
                             _response = null;
                         }
+
                         _toSend.Clear();
                     }
+
                 if (toSend != null)
                 {
                     await response.Response.WriteAsync(toSend).ContinueWith(t =>
@@ -125,16 +147,19 @@ namespace Lib.WebServer
                     });
                     return;
                 }
+
                 if (waitAllowed)
                 {
                     if (_response != null && _response != response)
                     {
                         var resp = _response.Response;
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                        resp.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", _id }, { "old", true } }))
+                        resp.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object>
+                                { { "id", _id }, { "old", true } }))
                             .ContinueWith((t) => ender.TrySetResult(Unit.Default));
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                     }
+
                     _responseEnder = new();
                     _response = response;
                     await _responseEnder.Task;
@@ -147,7 +172,9 @@ namespace Lib.WebServer
                         _response = null;
                         Retimeout();
                     }
-                    await response.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", _id } }));
+
+                    await response.Response.WriteAsync(
+                        Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", _id } }));
                 }
             }
 
@@ -164,6 +191,7 @@ namespace Lib.WebServer
                         _response = null;
                         _responseEnder = null;
                     }
+
                     ender.TrySetResult(Unit.Default);
                     Retimeout();
                 }
@@ -181,7 +209,7 @@ namespace Lib.WebServer
         }
 
         readonly Func<ILongPollingConnectionHandler> _connectionHandlerFactory;
-        readonly ConcurrentDictionary<string, Connection> _connections = new ConcurrentDictionary<string, Connection>();
+        readonly ConcurrentDictionary<string, Connection> _connections = new();
 
         public LongPollingServer(Func<ILongPollingConnectionHandler> connectionHandlerFactory)
         {
@@ -198,7 +226,16 @@ namespace Lib.WebServer
             }
 
             context.Response.ContentType = "application/json";
-            var jsonString = await new StreamReader(context.Request.Body, Encoding.UTF8).ReadToEndAsync();
+            string jsonString;
+            try
+            {
+                jsonString = await new StreamReader(context.Request.Body, Encoding.UTF8).ReadToEndAsync();
+            }
+            catch (Exception)
+            {
+                context.Response.StatusCode = 400;
+                return;
+            }
             JObject data;
             try
             {
@@ -210,46 +247,49 @@ namespace Lib.WebServer
                 await context.Response.WriteAsync("JSON parse error " + ex.Message);
                 return;
             }
-            Connection c = null;
-            if (!string.IsNullOrEmpty((string)data["id"]))
+
+            Connection? c = null;
+            if (!string.IsNullOrEmpty((string)data["id"]!))
             {
-                _connections.TryGetValue(data["id"].ToString(), out c);
+                _connections.TryGetValue(data["id"]!.ToString(), out c);
                 if (c == null)
                 {
-                    await context.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", data["id"].ToString() }, { "close", true } }));
+                    await context.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(
+                        new Dictionary<string, object> { { "id", data["id"]!.ToString() }, { "close", true } }));
                     return;
                 }
             }
+
             var waitAllowed = true;
             var firstResponse = false;
             if (c == null)
             {
-                c = new Connection(this, _connectionHandlerFactory());
+                c = new(this, _connectionHandlerFactory());
                 _connections.TryAdd(c.Id, c);
                 c.ConnectionCreated();
                 waitAllowed = false;
                 firstResponse = true;
             }
+
             if (context.Request.Headers.TryGetValue("user-agent", out var ua)) c.UserAgent = ua;
             if (data["close"] != null && (bool)data["close"])
             {
                 c.Close();
                 waitAllowed = false;
             }
-            context.RequestAborted.Register(() =>
-            {
-                c.CloseResponse(context);
-            });
+
+            context.RequestAborted.Register(() => { c.CloseResponse(context); });
             if (data["m"] is JArray)
             {
                 waitAllowed = false;
-                var ms = (JArray)data["m"];
+                var ms = (JArray)data["m"]!;
                 for (var i = 0; i < ms.Count; i++)
                 {
                     var msi = ms[i] as JObject;
-                    c.ReceivedMessage(msi["m"].ToString(), msi.Value<JToken>("d"));
+                    c.ReceivedMessage(msi!["m"]!.ToString(), msi!.Value<JToken>("d")!);
                 }
             }
+
             await c.PollResponse(context, waitAllowed, firstResponse);
         }
     }

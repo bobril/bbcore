@@ -8,7 +8,7 @@ import { clickable } from "../clickable";
 export abstract class NestingNode extends treeNode.TreeNode {
     readonly OPEN_SYMBOL: string = "▼ ";
     readonly CLOSED_SYMBOL: string = "■ ";
-    parent: NestingNode;
+    parent!: NestingNode;
     nestingNodes: NestingNode[] = [];
     resultNodes: ResultNode[] = [];
     name: string;
@@ -31,7 +31,7 @@ export abstract class NestingNode extends treeNode.TreeNode {
     }
 
     insertResultNodes(...resultNodes: ResultNode[]) {
-        resultNodes.forEach(node => {
+        resultNodes.forEach((node) => {
             if (!node.isFiltered && !this.hasFilteredAncestor && !this.isFiltered) {
                 return;
             }
@@ -48,7 +48,7 @@ export abstract class NestingNode extends treeNode.TreeNode {
     }
 
     insertNestingNodes(...nestingNodes: NestingNode[]) {
-        nestingNodes.forEach(node => {
+        nestingNodes.forEach((node) => {
             node.parent = this;
 
             node.hasFilteredAncestor = node.hasFilteredAncestor || this.hasFilteredAncestor || this.isFiltered;
@@ -64,7 +64,7 @@ export abstract class NestingNode extends treeNode.TreeNode {
         if (!nestingNodes || nestingNodes.length === 0) {
             this.insertResultNodes(resultNode);
         } else {
-            let targetNode = this.nestingNodes.find(node => node.nestingID === nestingNodes[0].nestingID);
+            let targetNode = this.nestingNodes.find((node) => node.nestingID === nestingNodes[0].nestingID);
 
             if (targetNode) {
                 targetNode.traversingInsert(resultNode, nestingNodes.slice(1));
@@ -82,8 +82,8 @@ export abstract class NestingNode extends treeNode.TreeNode {
     recalculateContainedResults(): void {
         this.containedResults = {};
 
-        this.nestingNodes.forEach(node => this.updateContainedResults(node.containedResults));
-        this.resultNodes.forEach(node => this.updateContainedResults(node.containedResults));
+        this.nestingNodes.forEach((node) => this.updateContainedResults(node.containedResults));
+        this.resultNodes.forEach((node) => this.updateContainedResults(node.containedResults));
 
         this.parent && this.parent.recalculateContainedResults();
     }
@@ -108,7 +108,7 @@ export class DescribeNode extends NestingNode {
             : styles.describeNodeHeader;
 }
 
-interface NestingDataCtx extends b.IBobrilCtx {
+interface NestingDataCtx extends b.IBobrilCtx<INestingNodeComponentData> {
     isOpen: boolean;
 
     getHeaderName(): string;
@@ -124,8 +124,9 @@ const createNestingNodeComponent = b.createComponent<INestingNodeComponentData>(
         ctx.isOpen = ctx.data.node.name === ResultTree.ROOT_NODE_NESTING_ID || ResultTree.nodesOpenByDefault;
 
         ctx.getHeaderName = (): string =>
-            ctx.data.node.name !== ResultTree.ROOT_NODE_NESTING_ID &&
-            (ctx.isOpen ? ctx.data.node.OPEN_SYMBOL : ctx.data.node.CLOSED_SYMBOL) + ctx.data.node.name;
+            ctx.data.node.name !== ResultTree.ROOT_NODE_NESTING_ID
+                ? (ctx.isOpen ? ctx.data.node.OPEN_SYMBOL : ctx.data.node.CLOSED_SYMBOL) + ctx.data.node.name
+                : "";
     },
     render(ctx: NestingDataCtx, me) {
         me.children = [
@@ -136,10 +137,10 @@ const createNestingNodeComponent = b.createComponent<INestingNodeComponentData>(
                     b.invalidate();
                 }),
             ctx.isOpen && [
-                ctx.data.node.nestingNodes.map(node => node.isShown() && node.toComponent()),
-                ctx.data.node.resultNodes.map(node => node.isShown() && node.toComponent())
-            ]
+                ctx.data.node.nestingNodes.map((node) => node.isShown() && node.toComponent()),
+                ctx.data.node.resultNodes.map((node) => node.isShown() && node.toComponent()),
+            ],
         ];
         b.style(me, [styles.nestingNode]);
-    }
+    },
 });

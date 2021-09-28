@@ -60,4 +60,4 @@ export class CoverageAppModel {
     }
 }
 
-export const CoverageContext = b.createContext<CoverageAppModel>(undefined);
+export const CoverageContext = b.createContext<CoverageAppModel>(undefined!);

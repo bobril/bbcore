@@ -13,7 +13,7 @@ export function FilePage(data: { name: string }): b.IBobrilNode {
     var details = store.json[data.name];
     if (details == undefined) {
         b.runTransition(b.createRedirectReplace("rootdir"));
-        return undefined;
+        return <></>;
     }
     let lang: string;
     if (/\.tsx?$/i.test(data.name)) lang = "typescript";
@@ -22,8 +22,8 @@ export function FilePage(data: { name: string }): b.IBobrilNode {
 
     function init(editor: monaco.editor.IStandaloneCodeEditor) {
         editor.updateOptions({ readOnly: true });
-        editor.setValue(details.source);
-        let r = details.encodedRanges;
+        editor.setValue(details.source!);
+        let r = details.encodedRanges!;
         let decorations: monaco.editor.IModelDeltaDecoration[] = [];
         for (let i = 0; i < r.length; ) {
             var range = new monaco.Range(r[i + 1] + 1, r[i + 2] + 1, r[i + 3] + 1, r[i + 4] + 1);

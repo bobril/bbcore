@@ -40,10 +40,10 @@ export function CovBar({
     let color = p >= 80 ? "rgba(0,255,0,20%)" : p >= 50 ? "rgba(240,240,0,40%)" : "rgba(255,0,0,20%)";
     return (
         <div
-            onClick={store.rotateCovBarDisplayType}
+            onClick={store!.rotateCovBarDisplayType}
             style={{ width: value, overflow: "visible", backgroundColor: color }}
         >
-            {(store.covBarDisplayType == model.CovBarDisplayType.Percentages && (
+            {(store!.covBarDisplayType == model.CovBarDisplayType.Percentages && (
                 <div
                     style={{
                         width: "4rem",
@@ -60,7 +60,7 @@ export function CovBar({
                     {value}
                 </div>
             )) ||
-                (store.covBarDisplayType == model.CovBarDisplayType.RealNumbers && (
+                (store!.covBarDisplayType == model.CovBarDisplayType.RealNumbers && (
                     <div
                         style={{
                             width: "4rem",

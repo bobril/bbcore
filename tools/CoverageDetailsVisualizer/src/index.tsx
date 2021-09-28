@@ -7,7 +7,7 @@ b.selectorStyleDef("html, body", {
     width: "100%",
     height: "100%",
     padding: 0,
-    margin: 0
+    margin: 0,
 });
 
 b.routes({
@@ -16,19 +16,19 @@ b.routes({
         {
             name: "dir",
             url: "/dir/*",
-            handler: (data: b.IRouteHandlerData) => <DirectoryPage name={data.routeParams.splat} />
+            handler: (data: b.IRouteHandlerData) => <DirectoryPage name={data.routeParams.splat!} />,
         },
         {
             name: "file",
             url: "/file/*",
-            handler: (data: b.IRouteHandlerData) => <FilePage name={data.routeParams.splat} />
+            handler: (data: b.IRouteHandlerData) => <FilePage name={data.routeParams.splat!} />,
         },
         {
             name: "rootdir",
             url: "/root",
             handler: (_data: b.IRouteHandlerData) => <DirectoryPage name="*" />,
             isDefault: true,
-            isNotFound: true
-        }
-    ]
+            isNotFound: true,
+        },
+    ],
 });

@@ -30,9 +30,9 @@ export class ResultNode extends TreeNode {
     setIsFiltered() {
         this.isFiltered =
             this.SOT.name.includes(ResultTree.textFilter) ||
-            (this.SOT.logs && this.SOT.logs.filter(log => log.message.includes(ResultTree.textFilter)).length > 0) ||
+            (this.SOT.logs && this.SOT.logs.filter((log) => log.message.includes(ResultTree.textFilter)).length > 0) ||
             (this.SOT.failures &&
-                this.SOT.failures.filter(failure => failure.message.includes(ResultTree.textFilter)).length > 0);
+                this.SOT.failures.filter((failure) => failure.message.includes(ResultTree.textFilter)).length > 0);
     }
 
     stackFrameToString(stackFrame: s.StackFrame): string {
@@ -46,9 +46,9 @@ export class ResultNode extends TreeNode {
 
     stackFramesToClickableComponent(stackFrames: s.StackFrame[]): b.IBobrilChildren {
         return b.styledDiv(
-            stackFrames.map(stackFrame => {
+            stackFrames.map((stackFrame) => {
                 return clickable(b.styledDiv(this.stackFrameToString(stackFrame), styles.stack), () => {
-                    com.focusPlace(stackFrame.fileName, [stackFrame.lineNumber, stackFrame.columnNumber]);
+                    com.focusPlace(stackFrame.fileName!, [stackFrame.lineNumber!, stackFrame.columnNumber!]);
                 });
             })
         );
@@ -57,12 +57,17 @@ export class ResultNode extends TreeNode {
     toComponent(): b.IBobrilNode {
         return b.withKey(
             createResultNodeComponent({ node: this }),
-            "Result node: " + this.SOT.name + ", at: " + this.SOT.stack[0].fileName + ":" + this.SOT.stack[0].lineNumber
+            "Result node: " +
+                this.SOT.name +
+                ", at: " +
+                this.SOT.stack![0].fileName +
+                ":" +
+                this.SOT.stack![0].lineNumber
         );
     }
 }
 
-interface MessageContext extends b.IBobrilCtx {
+interface MessageContext extends b.IBobrilCtx<IResultNodeComponentData> {
     isOpen: boolean;
 
     stack: b.IBobrilChildren;
@@ -92,16 +97,16 @@ const createResultNodeComponent = b.createComponent<IResultNodeComponentData>({
         };
 
         ctx.setContent = (): void => {
-            ctx.stack = ctx.isOpen && ctx.data.node.stackFramesToClickableComponent(ctx.data.node.SOT.stack);
+            ctx.stack = ctx.isOpen && ctx.data.node.stackFramesToClickableComponent(ctx.data.node.SOT.stack!);
 
-            ctx.failures = ctx.data.node.SOT.failures.map(failure => {
+            ctx.failures = ctx.data.node.SOT.failures.map((failure) => {
                 return b.styledDiv(
                     [failure.message, ctx.isOpen && ctx.data.node.stackFramesToClickableComponent(failure.stack)],
                     styles.resultMessageFailed
                 );
             });
 
-            ctx.logs = ctx.data.node.SOT.logs.map(log => {
+            ctx.logs = ctx.data.node.SOT.logs.map((log) => {
                 return b.styledDiv(
                     [log.message, ctx.isOpen && ctx.data.node.stackFramesToClickableComponent(log.stack)],
                     styles.resultMessageLog
@@ -124,8 +129,8 @@ const createResultNodeComponent = b.createComponent<IResultNodeComponentData>({
             ),
             ctx.stack,
             ctx.failures,
-            ctx.logs
+            ctx.logs,
         ];
         b.style(me, [styles.resultNode]);
-    }
+    },
 });

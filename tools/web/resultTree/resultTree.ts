@@ -8,7 +8,7 @@ import { ResultNode } from "./nodes/resultNode";
 
 export enum NestingMethod {
     ByDescribe,
-    ByPath
+    ByPath,
 }
 
 export class ResultTree {
@@ -20,11 +20,11 @@ export class ResultTree {
         failed: true,
         skipped: false,
         successful: false,
-        logs: false
+        logs: false,
     };
     // for forcing DOM reload
     public static id: number = 1;
-    rootNode: PathNode;
+    rootNode!: PathNode;
 
     constructor() {
         this.setNewRootNode();
@@ -45,9 +45,7 @@ export class ResultTree {
     public reloadSOTs(separatedSOTs: testReportAnalyzer.SeparatedTests) {
         this.setNewRootNode();
 
-        this.insertSOTs(
-            [].concat(separatedSOTs.failed, separatedSOTs.skipped, separatedSOTs.passed, separatedSOTs.logged)
-        );
+        this.insertSOTs(separatedSOTs.failed.concat(separatedSOTs.skipped, separatedSOTs.passed, separatedSOTs.logged));
     }
 
     setNewRootNode() {
@@ -55,7 +53,7 @@ export class ResultTree {
     }
 
     insertSOTs(SOTs: s.SuiteOrTest[]) {
-        SOTs.forEach(SOT => {
+        SOTs.forEach((SOT) => {
             SOT &&
                 (ResultTree.nestingMethod === NestingMethod.ByDescribe
                     ? this.insertByDescribe(SOT)
@@ -65,14 +63,14 @@ export class ResultTree {
 
     insertByDescribe(SOT: s.SuiteOrTest, nestingNodes?: NestingNode[]) {
         if (SOT.isSuite) {
-            SOT.nested.forEach(nestedSOT => {
+            SOT.nested.forEach((nestedSOT) => {
                 let updatedNestingNodes: NestingNode[] = nestingNodes ? nestingNodes.slice(0) : [];
                 updatedNestingNodes.push(new DescribeNode(SOT.name));
 
                 this.insertByDescribe(nestedSOT, updatedNestingNodes);
             });
         } else {
-            this.rootNode.traversingInsert(new ResultNode(SOT), nestingNodes.slice(0));
+            this.rootNode.traversingInsert(new ResultNode(SOT), nestingNodes!.slice(0));
         }
     }
 
@@ -87,9 +85,9 @@ export class ResultTree {
             return;
         }
 
-        let pathParts: string[] = current.stack[0].fileName.split("/");
+        let pathParts: string[] = current.stack![0].fileName!.split("/");
 
-        let nodes: PathNode[] = pathParts.map(part => new PathNode(part));
+        let nodes: PathNode[] = pathParts.map((part) => new PathNode(part));
 
         this.insertByDescribe(SOT, nodes);
     }

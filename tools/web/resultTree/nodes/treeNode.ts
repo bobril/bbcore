@@ -14,6 +14,9 @@ export abstract class TreeNode {
 
     constructor(nestingID: any) {
         this.nestingID = nestingID;
+        this.isFiltered = false;
+        this.hasFilteredAncestor = false;
+        this.hasFilteredDescendant = false;
     }
 
     updateContainedResults(comparedContainedResults: ResultTypes) {
@@ -39,7 +42,8 @@ export abstract class TreeNode {
             (this.containedResults.successful && ResultTree.showStatus.successful) ||
             (this.containedResults.logs && ResultTree.showStatus.logs) ||
             (this.containedResults.failed && ResultTree.showStatus.failed) ||
-            (this.containedResults.skipped && ResultTree.showStatus.skipped)
+            (this.containedResults.skipped && ResultTree.showStatus.skipped) ||
+            false
         );
     }
 }
