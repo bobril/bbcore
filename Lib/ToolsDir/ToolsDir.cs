@@ -34,7 +34,7 @@ namespace Lib.ToolsDir
                     {
                         jsEngineSwitcher.EngineFactories.Add(
                             new JavaScriptEngineSwitcher.V8.V8JsEngineFactory(
-                                new() {DisableGlobalMembers = false}));
+                                new() { DisableGlobalMembers = false }));
                         jsEngineSwitcher.DefaultEngineName =
                             JavaScriptEngineSwitcher.V8.V8JsEngine.EngineName;
                         /*jsEngineSwitcher.EngineFactories.Add(
@@ -46,7 +46,7 @@ namespace Lib.ToolsDir
                 }
 
                 SetJasmineVersion("330");
-                LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js").Replace("\"use strict\";","");
+                LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js").Replace("\"use strict\";", "");
                 JasmineCoreJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.js");
                 JasmineDts299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.d.ts");
                 JasmineDtsPath299 = PathUtils.Join(Path, "jasmine.d.ts");
@@ -89,6 +89,12 @@ namespace Lib.ToolsDir
                 {
                     _typeScriptJsContent = File.ReadAllText(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
 
+                    // Revert https://github.com/microsoft/TypeScript/pull/44624 - it makes output longer without real need
+                    // Also it prevents detection of bobril-g11n t calls.
+                    _typeScriptJsContent = _typeScriptJsContent.Replace(
+                        "if (indirectCall) {", "if (false) {"
+                    );
+
                     // Patch strange crash in TS (4.2.4 probably more) in isFileLevelUniqueName function
                     _typeScriptJsContent = _typeScriptJsContent.Replace(
                         "return !(hasGlobalName && hasGlobalName(name)) && !sourceFile.identifiers.has(name);",
@@ -103,7 +109,8 @@ namespace Lib.ToolsDir
                     // if (languageVersion === ScriptTarget.ES3) {
                     // by
                     // if (true) {
-                    _typeScriptJsContent = _typeScriptJsContent.Replace("if (languageVersion === 0 /* ES3 */) {","if (true) {");
+                    _typeScriptJsContent =
+                        _typeScriptJsContent.Replace("if (languageVersion === 0 /* ES3 */) {", "if (true) {");
 
                     // Patch TS 3.9 and 4.0 to fix https://github.com/microsoft/TypeScript/issues/38691
                     _typeScriptJsContent = _typeScriptJsContent.Replace(
@@ -113,17 +120,22 @@ namespace Lib.ToolsDir
                     // Patch TS to generate d.ts also from node_modules directory (it makes much faster typecheck when changing something in node_modules)
                     // function isSourceFileFromExternalLibrary must return always false!
                     _typeScriptJsContent =
-                        _typeScriptJsContent.Replace("return !!sourceFilesFoundSearchingNodeModules.get(file.path);", "return false;");
+                        _typeScriptJsContent.Replace("return !!sourceFilesFoundSearchingNodeModules.get(file.path);",
+                            "return false;");
                     // Patch TypeScript compiler to never generate useless __esmodule = true
                     _typeScriptJsContent =
                         _typeScriptJsContent.Replace("(shouldEmitUnderscoreUnderscoreESModule())", "(false)");
 
                     // Patch
-                    var bugPos = _typeScriptJsContent.IndexOf("function checkUnusedClassMembers(", StringComparison.Ordinal);
+                    var bugPos =
+                        _typeScriptJsContent.IndexOf("function checkUnusedClassMembers(", StringComparison.Ordinal);
                     var bugPos22 = bugPos < 0
                         ? -1
-                        : _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos, StringComparison.Ordinal);
-                    var bugPos33 = bugPos22 < 0 ? -1 : _typeScriptJsContent.IndexOf("case 207", bugPos22, StringComparison.Ordinal);
+                        : _typeScriptJsContent.IndexOf("case 158 /* IndexSignature */:", bugPos,
+                            StringComparison.Ordinal);
+                    var bugPos33 = bugPos22 < 0
+                        ? -1
+                        : _typeScriptJsContent.IndexOf("case 207", bugPos22, StringComparison.Ordinal);
                     if (bugPos22 > 0 && (bugPos33 < 0 || bugPos33 > bugPos22 + 200))
                     {
                         _typeScriptJsContent = _typeScriptJsContent.Insert(bugPos22, "case 207:");
@@ -208,10 +220,10 @@ namespace Lib.ToolsDir
                         var buf = new byte[4096];
                         while (size > 0)
                         {
-                            var read = await stream.ReadAsync(buf, 0, (int) Math.Min((ulong) buf.Length, size));
+                            var read = await stream.ReadAsync(buf, 0, (int)Math.Min((ulong)buf.Length, size));
                             if (read == 0) throw new IOException($"Reading {name} failed");
                             await targetStream.WriteAsync(buf, 0, read);
-                            size -= (ulong) read;
+                            size -= (ulong)read;
                         }
                     }
 
