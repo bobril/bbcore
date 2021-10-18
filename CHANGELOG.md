@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.55.1
+
 ### Fixed
 
 Incompatibility with TS 4.4.3 also made output smaller again like it was in TS 4.3 or previous.
