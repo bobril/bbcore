@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
     "allowJs": false,
+    "allowSyntheticDefaultImports": true,
     "checkJs": false,
     "declaration": false,
     "downlevelIteration": true,
     "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "lib": [
       "es5",
@@ -17,12 +19,12 @@
     ],
     "module": "commonjs",
     "noEmitHelpers": true,
-    "preserveConstEnums": false,
     "reactNamespace": "b",
     "removeComments": false,
     "skipLibCheck": false,
     "skipDefaultLibCheck": true,
     "sourceMap": true,
+    "strict": true,
     "target": "es5",
     "resolveJsonModule": true
   },
