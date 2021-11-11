@@ -15,7 +15,7 @@ namespace Lib.Registry
     {
         readonly IDiskCache _diskCache;
         readonly ILogger _logger;
-        string _yarnPath;
+        string? _yarnPath;
 
         public YarnNodePackageManager(IDiskCache diskCache, ILogger logger)
         {
@@ -24,7 +24,7 @@ namespace Lib.Registry
             _yarnPath = GetYarnPath();
         }
 
-        static string GetYarnPath()
+        static string? GetYarnPath()
         {
             var yarnExecName = "yarn";
             if (!PathUtils.IsUnixFs)
@@ -59,7 +59,7 @@ namespace Lib.Registry
 
         public static string ExtractPackageName(string nameWithVersion)
         {
-            return nameWithVersion.Substring(0, nameWithVersion.LastIndexOf('@'));
+            return nameWithVersion[..nameWithVersion.LastIndexOf('@')];
         }
 
         public static IEnumerable<PackagePathVersion> ParseYarnLock(IDirectoryCache projectDirectory, string content)
@@ -70,10 +70,10 @@ namespace Lib.Registry
             {
                 var name = ExtractPackageName(pair.Key);
                 if (!known.Add(name)) continue;
-                yield return new PackagePathVersion
+                yield return new()
                 {
                     Name = name,
-                    Version = ((Dictionary<string, object>) pair.Value)["version"] as string,
+                    Version = (((Dictionary<string, object>) pair.Value)["version"] as string)!,
                     Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + name)
                 };
             }
@@ -81,7 +81,7 @@ namespace Lib.Registry
 
         public void RunYarn(string dir, string aParams)
         {
-            var start = new ProcessStartInfo(_yarnPath, aParams)
+            var start = new ProcessStartInfo(_yarnPath!, aParams)
             {
                 UseShellExecute = false,
                 WorkingDirectory = dir,
@@ -92,7 +92,7 @@ namespace Lib.Registry
                 RedirectStandardOutput = true
             };
 
-            var process = Process.Start(start);
+            var process = Process.Start(start)!;
             process.OutputDataReceived += Process_OutputDataReceived;
             process.ErrorDataReceived += Process_OutputDataReceived;
             process.BeginErrorReadLine();
@@ -102,22 +102,22 @@ namespace Lib.Registry
 
         void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            _logger.WriteLine(e.Data);
+            _logger.WriteLine(e.Data!);
         }
 
         public void Install(IDirectoryCache projectDirectory)
         {
-            RunYarnWithParam(projectDirectory, "install");
+            RunYarnWithParam(projectDirectory, "install --ignore-optional");
         }
 
         void RunYarnWithParam(IDirectoryCache projectDirectory, string param)
         {
             var fullPath = projectDirectory.FullPath;
-            var project = TSProject.Create(projectDirectory, _diskCache, _logger, null);
+            var project = TSProject.Create(projectDirectory, _diskCache, _logger, null)!;
             project.LoadProjectJson(true, null);
             if (project.ProjectOptions.NpmRegistry != null)
             {
-                if (!(projectDirectory.TryGetChild(".npmrc") is IFileCache))
+                if (projectDirectory.TryGetChild(".npmrc") is not IFileCache)
                 {
                     File.WriteAllText(PathUtils.Join(fullPath, ".npmrc"),
                         "registry =" + project.ProjectOptions.NpmRegistry);

@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Added
+
+`yarn install` now always adds `--ignore-optional` parameter.
+
+Upgraded to .Net 6.0. Updated all dependencies.
+
 ## 1.55.1
 
 ### Fixed
