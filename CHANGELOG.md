@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.56.0
+
 ### Added
 
 `yarn install` now always adds `--ignore-optional` parameter.
