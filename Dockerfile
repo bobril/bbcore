@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 
 ARG VERSION=0.0.0
 
@@ -24,7 +24,7 @@ RUN dotnet publish -c Release -p:DebugType=None -p:DebugSymbols=false -r linux-x
 RUN rm -r ./out/ru-ru
 RUN rm -r ./out/Resources
 
-FROM mcr.microsoft.com/dotnet/runtime:5.0 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:6.0 AS runtime
 
 # Install deps + add Chrome, Nodejs, Yarn + clean up
 RUN apt-get update && apt-get install -y \

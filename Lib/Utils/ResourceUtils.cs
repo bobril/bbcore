@@ -24,17 +24,15 @@ namespace Lib.Utils
             var result = new Dictionary<string, byte[]>();
             using (var stream = typeof(ResourceUtils).Assembly.GetManifestResourceStream(name))
             {
-                using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
+                using (var zip = new ZipArchive(stream!, ZipArchiveMode.Read))
                 {
                     foreach (var entry in zip.Entries)
                     {
-                        using (var onestream = entry.Open())
-                        {
-                            var buf = new byte[entry.Length];
-                            if (onestream.Read(buf) != buf.Length)
-                                throw new InvalidDataException();
-                            result["/" + entry.FullName] = buf;
-                        }
+                        using var onestream = entry.Open();
+                        var buf = new byte[entry.Length];
+                        var ms = new MemoryStream(buf);
+                        onestream.CopyTo(ms);
+                        result["/" + entry.FullName] = buf;
                     }
                 }
             }

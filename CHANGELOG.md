@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 4.4.4
+
+### Fixed
+
+Fixed .Net 6.0 regression in Deflate stream behavior.
+
 ## 1.56.0
 
 ### Added
@@ -20,7 +28,7 @@ Incompatibility with TS 4.4.3 also made output smaller again like it was in TS 4
 
 ### Added
 
-Updated all 3 webs embeded in bb itself.
+Updated all 3 webs embedded in bb itself.
 
 ### Fixed
 
