@@ -10,6 +10,10 @@ New `js sourcemap` command. That will create html visualization of source map. R
 bb js sourcemap dist/a.js
 ```
 
+### Fixed
+
+Build sourcemaps now has much less "[no source]" parts.
+
 ## 1.57.0
 
 ### Changed

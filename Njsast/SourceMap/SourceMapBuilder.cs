@@ -466,7 +466,7 @@ namespace Njsast.SourceMap
                     return;
                 }
 
-                if (_lastSourceIndex == sourceIndex && sourceIndex == -1)
+                if ((_lastSourceIndex == -1 || allowMerge) && sourceIndex == -1)
                 {
                     _lastOutputColEnd += toCol - fromCol;
                     return;
@@ -505,10 +505,10 @@ namespace Njsast.SourceMap
                         return;
                     }
 
-                    _owner._content.AddRange(text.Slice(0, nl + 1));
+                    _owner._content.AddRange(text[..(nl + 1)]);
                     Commit(0, nl, -1, -1, -1, true);
                     CommitNewLine();
-                    text = text.Slice(nl + 1);
+                    text = text[(nl + 1)..];
                 }
             }
 
