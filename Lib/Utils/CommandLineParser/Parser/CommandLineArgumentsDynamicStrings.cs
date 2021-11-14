@@ -7,7 +7,7 @@ namespace Lib.Utils.CommandLineParser.Parser
     {
         public List<string> Value { get; private set; }
 
-        public CommandLineArgumentsDynamicStrings(string description, string[] words) : base(description, words, "")
+        public CommandLineArgumentsDynamicStrings(string description, string[]? words) : base(description, words, "")
         {
             Value = new List<string>();
         }

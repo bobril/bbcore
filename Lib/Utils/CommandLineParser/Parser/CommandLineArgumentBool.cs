@@ -16,7 +16,7 @@
         /// <param name="description">Description</param>
         /// <param name="words">Argument aliases</param>
         /// <param name="defaultValue">Default value</param>
-        public CommandLineArgumentBool(string description, string[] words, bool defaultValue = false) : base(description: description, words: words, defaultValue: defaultValue)
+        public CommandLineArgumentBool(string description, string[]? words, bool defaultValue = false) : base(description: description, words: words, defaultValue: defaultValue)
         {
             Value = defaultValue;
         }

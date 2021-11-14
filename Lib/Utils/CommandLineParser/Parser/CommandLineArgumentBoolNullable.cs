@@ -7,7 +7,7 @@ namespace Lib.Utils.CommandLineParser.Parser
     {
         public bool? Value { get; private set; }
 
-        public CommandLineArgumentBoolNullable(string description, string[] words, bool? defaultValue = null) : base(description, words, defaultValue?.ToString())
+        public CommandLineArgumentBoolNullable(string description, string[]? words, bool? defaultValue = null) : base(description, words, defaultValue?.ToString())
         {
             Value = defaultValue;
         }

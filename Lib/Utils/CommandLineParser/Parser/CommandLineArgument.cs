@@ -10,7 +10,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <summary>
         /// Argument aliases
         /// </summary>
-        public string[] Words { get; private set; }
+        public string[]? Words { get; private set; }
 
         /// <summary>
         /// Argument description
@@ -28,7 +28,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <param name="description">Description</param>
         /// <param name="words">Argument aliases</param>
         /// <param name="defaultValue">Default value</param>
-        protected CommandLineArgument(string description, string[] words, string defaultValue)
+        protected CommandLineArgument(string description, string[]? words, string defaultValue)
         {
             Words = words;
             Description = description;

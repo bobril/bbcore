@@ -19,7 +19,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// <param name="words">Argument aliases</param>
         /// <param name="enumValues">Enum values</param>
         /// <param name="defaultValue">Default value</param>
-        public CommandLineArgumentEnumValues(string description, string[] words, string[] enumValues, string? defaultValue = null) : base(
+        public CommandLineArgumentEnumValues(string description, string[]? words, string[] enumValues, string? defaultValue = null) : base(
             description, words, defaultValue)
         {
             _enumValues = enumValues;

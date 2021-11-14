@@ -21,6 +21,7 @@ using Newtonsoft.Json.Serialization;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using BTDB.Collections;
 using JavaScriptEngineSwitcher.Core.Resources;
@@ -35,6 +36,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Njsast.Coverage;
 using Njsast.Reader;
+using Njsast.SourceMap;
 using ProxyKit;
 
 namespace Lib.Composition
@@ -50,7 +52,7 @@ namespace Lib.Composition
         AutoResetEvent _hasBuildWork = new AutoResetEvent(true);
         ProjectOptions _currentProject;
         MainBuildResult _mainBuildResult;
-        CommandLineCommand _command;
+        CommandLineCommand? _command;
         TestServer _testServer;
         ILongPollingServer _testServerLongPollingHandler;
         MainServer? _mainServer;
@@ -73,9 +75,9 @@ namespace Lib.Composition
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
-            _bbdir = Environment.GetEnvironmentVariable("BBCACHEDIR")!;
+            _bbdir = Environment.GetEnvironmentVariable("BBCACHEDIR") ?? "";
             var settingsDir = _bbdir;
-            if (_bbdir == null)
+            if (_bbdir == "")
             {
                 if (_inDocker)
                 {
@@ -85,7 +87,7 @@ namespace Lib.Composition
                 else
                 {
                     var location = new Uri(Assembly.GetEntryAssembly()!.GetName().CodeBase!);
-                    var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory.FullName);
+                    var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory!.FullName);
                     _bbdir = PathUtils.Join(
                         PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)),
                         ".bbcore");
@@ -101,12 +103,12 @@ namespace Lib.Composition
                 }
             }
 
-            _cfgManager = new CfgManager<MainCfg>(settingsDir + "/.bbcfg", !inDocker);
+            _cfgManager = new(settingsDir + "/.bbcfg", !inDocker);
             _cfgManager.Load();
 
             _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
-            _compilerPool = new CompilerPool(_tools, _logger);
-            _notificationManager = new NotificationManager();
+            _compilerPool = new(_tools, _logger);
+            _notificationManager = new();
             NotificationManager.Enabled = _cfgManager.Cfg.NotificationsEnabled;
         }
 
@@ -115,7 +117,7 @@ namespace Lib.Composition
             _command = CommandLineParser.Parse
             (
                 args,
-                new List<CommandLineCommand>()
+                new()
                 {
                     new BuildCommand(),
                     new TranslationCommand(),
@@ -149,17 +151,17 @@ namespace Lib.Composition
 
             if (_command is BuildInteractiveCommand)
             {
-                RunInteractive(_command as CommonInteractiveCommand);
+                RunInteractive((CommonInteractiveCommand)_command);
             }
             else if (_command is BuildInteractiveNoUpdateCommand)
             {
                 _forbiddenDependencyUpdate = true;
-                RunInteractive(_command as CommonInteractiveCommand);
+                RunInteractive((CommonInteractiveCommand)_command);
             }
             else if (_command is FindUnusedCommand)
             {
                 _forbiddenDependencyUpdate = true;
-                RunFindUnused(_command as FindUnusedCommand);
+                RunFindUnused((FindUnusedCommand)_command);
             }
             else if (_command is BuildCommand bCommand)
             {
@@ -187,8 +189,75 @@ namespace Lib.Composition
             }
             else if (_command is JsGlobalsCommand jsGlobalsCommand)
             {
-                RunJSGlobals(jsGlobalsCommand);
+                Environment.ExitCode = RunJSGlobals(jsGlobalsCommand);
             }
+            else if (_command is VisualizeSourceMapCommand visualizeSourceMapCommand)
+            {
+                Environment.ExitCode = RunVisualizeSourceMap(visualizeSourceMapCommand);
+            }
+        }
+
+        int RunVisualizeSourceMap(VisualizeSourceMapCommand visualizeSourceMapCommand)
+        {
+            var fn = visualizeSourceMapCommand.FileName.Value ?? "";
+            if (fn == "")
+            {
+                _logger.Error("Js file must be specified on command line");
+                return 1;
+            }
+
+            if (!File.Exists(fn))
+            {
+                _logger.Error($"File {fn} does not exists");
+                return 1;
+            }
+
+            var fnmap = fn + ".map";
+            if (!File.Exists(fnmap))
+            {
+                _logger.Error($"File {fn} does not exists");
+                return 1;
+            }
+
+            var sm = SourceMap.Parse(File.ReadAllText(fnmap), null);
+            var sb = new StringBuilder();
+            sb.AppendLine("<!DOCTYPE html>");
+            sb.AppendLine("<html><head><style>abbr {text-decoration:none;} .un { background-color: #f99; } .odd { background-color: #eee; }</style></head><body>");
+            var iter = new SourceMapIterator(SourceMap.RemoveLinkToSourceMap(File.ReadAllText(fn)), sm);
+            var approxLineLen = 0;
+            var oddEven = false;
+            while (!iter.EndOfContent)
+            {
+                sb.Append("<abbr ");
+                if (iter.SourceIndex < 0)
+                    sb.Append("class=\"un\" ");
+                else
+                {
+                    if (oddEven)
+                    {
+                        sb.Append("class=\"odd\" ");
+                    }
+
+                    oddEven = !oddEven;
+                    sb.Append("title=\"");
+                    sb.Append(sm.sources[iter.SourceIndex]);
+                    sb.Append("\"");
+                }
+                sb.Append('>');
+                sb.Append(HtmlEncoder.Default.Encode(new(iter.ContentSpan)).Replace(" ","&nbsp;"));
+                sb.Append("</abbr>");
+                approxLineLen += iter.ContentSpan.Length;
+                if (iter.TillEndOfLine || approxLineLen>200)
+                {
+                    sb.Append("<br>");
+                    approxLineLen = 0;
+                }
+                iter.Next();
+            }
+            sb.Append("</body></html>");
+            File.WriteAllText(fn+".sourcemap.html", sb.ToString());
+            _logger.Success("Created "+fn+".sourcemap.html");
+            return 0;
         }
 
         int RunJSGlobals(JsGlobalsCommand jsGlobalsCommand)

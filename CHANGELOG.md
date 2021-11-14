@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+New `js sourcemap` command. That will create html visualization of source map. Red background means "no source".
+
+```
+bb js sourcemap dist/a.js
+```
+
 ## 1.57.0
 
 ### Changed

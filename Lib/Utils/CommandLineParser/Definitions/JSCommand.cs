@@ -9,9 +9,10 @@ namespace Lib.Utils.CommandLineParser.Definitions
 
         protected override string Description => "various commands to work with JavaScript";
 
-        public override List<CommandLineCommand> SubCommands { get; } = new List<CommandLineCommand>
+        public override List<CommandLineCommand> SubCommands { get; } = new()
         {
-            new JsGlobalsCommand()
+            new JsGlobalsCommand(),
+            new VisualizeSourceMapCommand()
         };
     }
 }

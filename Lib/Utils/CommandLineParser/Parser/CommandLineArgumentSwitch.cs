@@ -17,7 +17,7 @@ namespace Lib.Utils.CommandLineParser.Parser
         /// </summary>
         /// <param name="description">Description</param>
         /// <param name="words">Argument aliases</param>
-        public CommandLineArgumentSwitch(string description, string[] words) : base(description: description, words: words, defaultValue: null)
+        public CommandLineArgumentSwitch(string description, string[]? words) : base(description: description, words: words, defaultValue: null)
         {
             Value = false;
         }
