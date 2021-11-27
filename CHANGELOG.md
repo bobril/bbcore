@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Typescript extractor does not fail with exception.
+
 ## 1.58.0
 
 ### Added

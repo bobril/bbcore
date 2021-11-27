@@ -215,16 +215,14 @@ namespace Lib.ToolsDir
                         name = name.Substring("package/".Length);
                     var fn = PathUtils.Join(dir, name);
                     Directory.CreateDirectory(PathUtils.DirToCreateDirectory(PathUtils.Parent(fn)));
-                    using (var targetStream = File.Create(fn))
+                    await using var targetStream = File.Create(fn);
+                    var buf = new byte[4096];
+                    while (size > 0)
                     {
-                        var buf = new byte[4096];
-                        while (size > 0)
-                        {
-                            var read = await stream.ReadAsync(buf, 0, (int)Math.Min((ulong)buf.Length, size));
-                            if (read == 0) throw new IOException($"Reading {name} failed");
-                            await targetStream.WriteAsync(buf, 0, read);
-                            size -= (ulong)read;
-                        }
+                        var read = await stream.ReadAsync(buf.AsMemory(0, (int)Math.Min((ulong)buf.Length, size)));
+                        if (read == 0) throw new IOException($"Reading {name} failed");
+                        await targetStream.WriteAsync(buf.AsMemory(0, read));
+                        size -= (ulong)read;
                     }
 
                     return true;

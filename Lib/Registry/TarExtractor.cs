@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Lib.Registry
 {
-    public class TarExtractor
+    public static class TarExtractor
     {
         public static async Task ExtractTgzAsync(byte[] source, Func<String, Stream, ulong, Task<bool>> fileCallback)
         {
@@ -17,18 +17,32 @@ namespace Lib.Registry
             }
         }
 
+        public static int ReadFull(this Stream stream, Span<byte> buffer)
+        {
+            var res = 0;
+            while (!buffer.IsEmpty)
+            {
+                var r = stream.Read(buffer);
+                if (r == 0) return res;
+                buffer = buffer[r..];
+                res += r;
+            }
+
+            return res;
+        }
+
         public static async Task ExtractTarAsync(Stream source, Func<String, Stream, ulong, Task<bool>> fileCallback)
         {
             var pos = 0ul;
             var buffer = new byte[512];
             while (true)
             {
-                var read = source.Read(buffer, 0, 512);
+                var read = source.ReadFull(buffer.AsSpan(0, 512));
                 if (read == 0)
                     return;
                 if (read != 512)
                     throw new InvalidDataException("Incomplete header in tar");
-                pos += 512;
+                pos += (ulong)read;
                 var nameEndIndex = buffer.AsSpan().IndexOf((byte) 0);
                 if (nameEndIndex < 0 || nameEndIndex > 100) nameEndIndex = 100;
                 if (nameEndIndex == 0)
@@ -44,13 +58,11 @@ namespace Lib.Registry
                 var offset = (512 - (pos & 511)) & 511;
                 if (!await fileCallback(name, source, size))
                     return;
-                if (offset != 0)
-                {
-                    read = source.Read(buffer, 0, (int) offset);
-                    if (read == 0)
-                        return;
-                    pos += offset;
-                }
+                if (offset == 0) continue;
+                read = source.ReadFull(buffer.AsSpan(0, (int) offset));
+                if (read == 0)
+                    return;
+                pos += offset;
             }
         }
     }
