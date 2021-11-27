@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 4.5.2
+
 ### Fixed
 
 Typescript extractor does not fail with exception.
