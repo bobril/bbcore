@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.59.0
+
 ### Changed
 
 - Default TypeScript version is 4.5.2
