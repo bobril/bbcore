@@ -25,7 +25,7 @@ namespace Njsast.Compress
                 return astBinary;
             }
 
-            if (node is AstVar astVar)
+            if (node is AstDefinitions astVar)
             {
                 DescendBinaryOrVar();
 

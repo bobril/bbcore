@@ -8,7 +8,7 @@ namespace Njsast
 {
     public abstract class TreeWalkerBase
     {
-        protected StructList<AstNode> Stack = new StructList<AstNode>();
+        protected StructList<AstNode> Stack;
 
         protected AstNode? Parent()
         {

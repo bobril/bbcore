@@ -12,6 +12,10 @@ namespace Njsast.Ast
         {
         }
 
+        public AstArrow()
+        {
+        }
+
         AstArrow(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, bool isGenerator, bool async) : base(source, startPos, endPos, name, isGenerator, async)
         {
         }
@@ -29,9 +33,7 @@ namespace Njsast.Ast
         public override void DoPrint(OutputContext output, bool noKeyword = false)
         {
             var parent = output.Parent();
-            var needsParens = parent is AstBinary ||
-                               parent is AstUnary ||
-                               parent is AstCall call && this == call.Expression;
+            var needsParens = parent is AstBinary or AstUnary || parent is AstCall call && this == call.Expression;
             if (needsParens)
                 output.Print("(");
             if (Async)
@@ -97,6 +99,12 @@ namespace Njsast.Ast
                 if (Body.Last is AstArray array)
                 {
                     array.CodeGen(output);
+                    return;
+                }
+
+                if (Body.Last is AstObject obj)
+                {
+                    obj.CodeGen(output);
                     return;
                 }
             }

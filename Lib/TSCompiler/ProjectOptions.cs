@@ -84,6 +84,7 @@ namespace Lib.TSCompiler
         internal uint ConfigurationBuildCacheId;
         public bool Debug = true;
         public string? HeadlessBrowserStrategy { get; set; }
+        public ScriptTarget Target { get; set; }
 
         public void RefreshCompilerOptions()
         {
@@ -306,7 +307,7 @@ namespace Lib.TSCompiler
                 sourceMap = true,
                 skipLibCheck = false,
                 skipDefaultLibCheck = true,
-                target = ScriptTarget.Es5,
+                target = ScriptTarget.Es2015,
                 downlevelIteration = true,
                 module = ModuleKind.Commonjs,
                 declaration = false,

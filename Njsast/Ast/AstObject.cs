@@ -23,7 +23,7 @@ namespace Njsast.Ast
 
         public AstObject()
         {
-            Properties = new StructList<AstObjectProperty>();
+            Properties = new();
         }
 
         public AstObject(AstNode from): base(from)

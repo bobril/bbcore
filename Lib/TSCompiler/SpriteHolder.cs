@@ -188,11 +188,11 @@ namespace Lib.TSCompiler
             public byte[] Content;
         }
 
-        public IReadOnlyList<ImageBytesWithQuality> BuildImage(bool maxCompression)
+        public IReadOnlyList<ImageBytesWithQuality>? BuildImage(bool maxCompression)
         {
             if (!_wasChange)
             {
-                return _result!;
+                return _result;
             }
             var qualities = new HashSet<float>();
             var i = 0;

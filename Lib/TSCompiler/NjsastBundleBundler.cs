@@ -124,7 +124,7 @@ namespace Lib.TSCompiler
 
             bundler.CompressOptions = compress ? CompressOptions.FastDefault : null;
             bundler.Mangle = mangle;
-            bundler.OutputOptions = new OutputOptions {Beautify = beautify, ShortenBooleans = !beautify};
+            bundler.OutputOptions = new() {Beautify = beautify, ShortenBooleans = !beautify, Ecma = _project.Target > ScriptTarget.Es5 ? 6 : 5};
             bundler.GenerateSourceMap = BuildSourceMap;
             bundler.GlobalDefines = _project.BuildDefines(_mainBuildResult);
             bundler.Run();

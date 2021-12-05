@@ -4,7 +4,7 @@ namespace Njsast.Compress
 {
     public class DeclarationCollectorTreeWalker : TreeWalker
     {
-        StructList<AstStatement> _declarations = new StructList<AstStatement>();
+        StructList<AstStatement> _declarations;
         protected override void Visit(AstNode node)
         {
             if (node is AstVar astVar)
@@ -25,7 +25,7 @@ namespace Njsast.Compress
 
         public AstVar? GetAllDeclarationsAsVar()
         {
-            if (_declarations.Count == 0) 
+            if (_declarations.Count == 0)
                 return null;
             var varDefs = new StructList<AstVarDef>();
             foreach (var astStatement in _declarations)
@@ -37,17 +37,17 @@ namespace Njsast.Compress
                         if (astVarDef.Name is AstSymbolVar astSymbolVar)
                         {
                             astSymbolVar.Usage = SymbolUsage.Unknown;
-                            varDefs.Add(new AstVarDef(astSymbolVar));
+                            varDefs.Add(new(astSymbolVar));
                         }
                     }
                 }
 
                 if (astStatement is AstLambda astLambda)
                 {
-                    varDefs.Add(new AstVarDef(new AstSymbolVar(astLambda.Name!)));
+                    varDefs.Add(new(new AstSymbolVar(astLambda.Name!)));
                 }
             }
-            return new AstVar(ref varDefs);
+            return new(ref varDefs);
         }
     }
 }

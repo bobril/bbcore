@@ -15,8 +15,7 @@ namespace Njsast.Bundler
         readonly Dictionary<string, SplitInfo> _splitMap;
         readonly string _suffix;
 
-        readonly Dictionary<SymbolDef, (SourceFile, string[])> _reqSymbolDefMap =
-            new Dictionary<SymbolDef, (SourceFile, string[])>();
+        readonly Dictionary<SymbolDef, (SourceFile, string[])> _reqSymbolDefMap = new();
 
         readonly SplitInfo _splitInfo;
 
@@ -71,8 +70,7 @@ namespace Njsast.Bundler
             if (node is AstLabel)
                 return node;
 
-            if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { } reqSymbolDef &&
-                reqSymbolDef.IsSingleInit &&
+            if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { IsSingleInit: true } reqSymbolDef &&
                 _currentSourceFile.Exports!.Values().All(n => n.IsSymbolDef() != reqSymbolDef))
             {
                 if (DetectImport(varDef.Value) is { } import)
@@ -96,7 +94,7 @@ namespace Njsast.Bundler
                 if (!_cache.TryGetValue(resolvedName, out var reqSource))
                     throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
                                                    _currentSourceFile!.Name);
-                var theDef = CheckIfNewlyUsedSymbolIsUnique((AstSymbol) reqSource.Exports![Array.Empty<string>()]);
+                var theDef = CheckIfNewlyUsedSymbolIsUnique((AstSymbol)reqSource.Exports![Array.Empty<string>()]);
                 return new AstSymbolRef(node, theDef, SymbolUsage.Read);
             }
 
@@ -125,7 +123,7 @@ namespace Njsast.Bundler
                     var call = new AstCall(new AstSymbolRef("__import"));
                     call.Args.Add(new AstString(usedSplit.ShortName!));
                     call.Args.Add(new AstString(usedSplit.PropName!));
-                    call = new AstCall(new AstDot(call, "then"));
+                    call = new(new AstDot(call, "then"));
                     var func = new AstFunction();
                     func.Body.Add(new AstReturn(result));
                     call.Args.Add(func);
@@ -140,7 +138,7 @@ namespace Njsast.Bundler
                 var needPath = import2.Item2.AsSpan();
                 if (needPath.Length >= 1 && needPath[0] == "default" &&
                     (import2.Item1.Exports!.IsJustRoot ||
-                     !import2.Item1.Exports!.TryFindLongestPrefix(new[] {"default"}, out _, out _)))
+                     !import2.Item1.Exports!.TryFindLongestPrefix(new[] { "default" }, out _, out _)))
                 {
                     needPath = needPath.Slice(1);
                 }
@@ -148,7 +146,7 @@ namespace Njsast.Bundler
                 if (import2.Item1.OnlyWholeExport && needPath.Length == 0)
                 {
                     var theDef =
-                        CheckIfNewlyUsedSymbolIsUnique((AstSymbol) import2.Item1.Exports![new ReadOnlySpan<string>()]);
+                        CheckIfNewlyUsedSymbolIsUnique((AstSymbol)import2.Item1.Exports![new ReadOnlySpan<string>()]);
                     return new AstSymbolRef(node, theDef, SymbolUsage.Read);
                 }
 
@@ -197,7 +195,7 @@ namespace Njsast.Bundler
         {
             if (node is AstSimpleStatement simple && simple.Body == Remove)
                 return Remove;
-            if (node is AstVar var && var.Definitions.Count == 0)
+            if (node is AstDefinitions { Definitions.Count: 0 })
                 return Remove;
             return node;
         }

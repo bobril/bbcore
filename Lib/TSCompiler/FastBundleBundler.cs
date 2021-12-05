@@ -21,8 +21,8 @@ namespace Lib.TSCompiler
         SourceMap _sourceMap;
         string _sourceMapString;
         string _bundle2Js;
-        SourceMap _sourceMap2;
-        string _sourceMap2String;
+        SourceMap? _sourceMap2;
+        string? _sourceMap2String;
         string _cssLink;
         string _indexHtml;
         string _versionDirPrefix;
@@ -42,7 +42,7 @@ namespace Lib.TSCompiler
         readonly BuildResult _buildResult;
         readonly MainBuildResult _mainBuildResult;
 
-        string _bundlePng;
+        string? _bundlePng;
         List<float> _bundlePngInfo;
         RefDictionary<string, FastBundleBundler>? _subBundlers;
 
@@ -78,7 +78,7 @@ namespace Lib.TSCompiler
                 var bundlePngContent = _project.SpriteGenerator.BuildImage(false);
                 if (bundlePngContent != null)
                 {
-                    _bundlePngInfo = new List<float>();
+                    _bundlePngInfo = new();
                     foreach (var slice in bundlePngContent)
                     {
                         _mainBuildResult.FilesContent.GetOrAddValueRef(
@@ -212,9 +212,9 @@ namespace Lib.TSCompiler
                     coverageInst.CleanUp(new SourceReader(_project.Owner.DiskCache,
                         _mainBuildResult.CommonSourceDirectory));
                     if (_project.MainFile != null)
-                        MarkImportant(_project.MainFile, _buildResult, new HashSet<string>(), coverageInst);
+                        MarkImportant(_project.MainFile, _buildResult, new(), coverageInst);
                     sourceMapBuilder = new SourceMapBuilder();
-                    toplevel.PrintToBuilder(sourceMapBuilder, new OutputOptions {Beautify = true});
+                    toplevel.PrintToBuilder(sourceMapBuilder, new() {Beautify = true, Ecma = _project.Target > ScriptTarget.Es5 ? 6 : 5 });
                     sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
                                              ".map");
                 }

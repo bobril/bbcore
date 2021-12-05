@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Support for ES2015+ (WIP)
+
 ## 1.59.0
 
 ### Changed

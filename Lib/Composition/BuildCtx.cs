@@ -298,7 +298,7 @@ namespace Lib.Composition
             ExampleSources = project.ExampleSources;
             TestSources = project.TestSources;
             JasmineDts = project.TestSources != null ? project.JasmineDts : null;
-            CompilerOptions = project.FinalCompilerOptions;
+            CompilerOptions = project.FinalCompilerOptions!;
 
             var tsProject = project.Owner;
             var tryDetectChanges = !_projectStructureChanged;
@@ -308,13 +308,13 @@ namespace Lib.Composition
                 buildResult.RecompiledIncrementally.Clear();
             }
 
-            var buildModuleCtx = new BuildModuleCtx()
+            var buildModuleCtx = new BuildModuleCtx
             {
                 BuildCtx = this,
                 Owner = tsProject,
                 Result = buildResult,
                 MainResult = mainBuildResult,
-                ToCheck = new OrderedHashSet<string>(),
+                ToCheck = new(),
                 IterationId = iterationId,
             };
             try
@@ -329,11 +329,11 @@ namespace Lib.Composition
                             tsProject.DevDependencies.Contains("typescript"))
                             project.Tools.SetTypeScriptPath(tsProject.Owner.FullPath);
                         else
-                            project.Tools.SetTypeScriptVersion(project.TypeScriptVersion);
+                            project.Tools.SetTypeScriptVersion(project.TypeScriptVersion!);
                         project.ExpandEnv();
                     }
 
-                    compiler = CompilerPool.GetTs(tsProject.DiskCache, CompilerOptions);
+                    compiler = CompilerPool.GetTs(tsProject.DiskCache, CompilerOptions!);
                     var trueTsVersion = compiler.GetTSVersion();
                     ShowTsVersion(trueTsVersion);
                     project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(trueTsVersion,

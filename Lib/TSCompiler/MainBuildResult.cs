@@ -10,16 +10,16 @@ namespace Lib.TSCompiler
     public class MainBuildResult
     {
         public readonly bool CompressFileNames;
-        public readonly string OutputSubDir;
+        public readonly string? OutputSubDir;
         public readonly string? SpriteOutputPathOverride;
         public bool PreserveProjectRoot;
 
         public readonly string OutputSubDirPrefix;
 
         // value could be string or byte[] or Lazy<string|byte[]>
-        public readonly RefDictionary<string, object> FilesContent = new RefDictionary<string, object>();
-        public readonly HashSet<string> TakenNames = new HashSet<string>();
-        readonly Dictionary<string, int> Extension2LastNameIdx = new Dictionary<string, int>();
+        public readonly RefDictionary<string, object> FilesContent = new();
+        public readonly HashSet<string> TakenNames = new();
+        readonly Dictionary<string, int> Extension2LastNameIdx = new();
 
         public string? CommonSourceDirectory;
         public string? ProxyUrl;

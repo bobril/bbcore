@@ -36,6 +36,8 @@ namespace Njsast.Compress
                     StopDescending();
                     break;
                 }
+                case AstLet _:
+                case AstConst _:
                 case AstSimpleStatement _:
                 case AstDefinitions _:
                 case AstLambda _:
@@ -113,15 +115,14 @@ namespace Njsast.Compress
                             var rightSymbol = assign.Right.IsSymbolDef();
                             if (rightSymbol is { } && leftSymbol is
                                 {
-                                    Global: false, Orig: {Count: 1}
+                                    Global: false, Orig.Count: 1
                                 } && leftSymbol.Orig[0] is AstSymbolDeclaration
                                 {
                                     Init: AstVarDef
                                     {
                                         Value: null
                                     }
-                                } && Parent() is AstCall {Expression: AstLambda {Purpose: { } purpose}} &&
-                                purpose is EnumDefinitionPurpose && leftSymbol.References.All(r =>
+                                } && Parent() is AstCall {Expression: AstLambda {Purpose: EnumDefinitionPurpose }} && leftSymbol.References.All(r =>
                                     r == assign.Left || !r.Usage.HasFlag(SymbolUsage.Write | SymbolUsage.PropWrite)))
                             {
                                 foreach (var leftSymbolReference in leftSymbol.References)
@@ -495,7 +496,12 @@ namespace Njsast.Compress
                         astIf.Condition = Transform(astIf.Condition);
                         NeedValue = false;
                         astIf.Body = (AstStatement) Transform(astIf.Body);
-                        if (astIf.Alternative != null) astIf.Alternative = (AstStatement) Transform(astIf.Alternative);
+
+                        if (astIf.Alternative != null)
+                        {
+                            var alternative = Transform(astIf.Alternative);
+                            astIf.Alternative = alternative == Remove ? null : (AstStatement)alternative;
+                        }
 
                         return node;
                     }
@@ -632,6 +638,11 @@ namespace Njsast.Compress
             for (var i = 0; i < block.Body.Count; i++)
             {
                 var si = block.Body[i];
+                if (si is AstConst siConst)
+                {
+                    si = new AstLet(siConst.Source, siConst.Start, siConst.End, ref siConst.Definitions);
+                    block.Body[i] = si;
+                }
                 if (si is AstVar astVar && i < block.Body.Count - 1)
                 {
                     var si2 = block.Body[i + 1];
@@ -649,17 +660,6 @@ namespace Njsast.Compress
                     if (si2 is AstLet astLet2)
                     {
                         astLet.Definitions.AddRange(astLet2.Definitions);
-                        block.Body.RemoveAt(i + 1);
-                        Modified = true;
-                        i--;
-                    }
-                }
-                else if (si is AstConst astConst && i < block.Body.Count - 1)
-                {
-                    var si2 = block.Body[i + 1];
-                    if (si2 is AstConst astConst2)
-                    {
-                        astConst.Definitions.AddRange(astConst2.Definitions);
                         block.Body.RemoveAt(i + 1);
                         Modified = true;
                         i--;

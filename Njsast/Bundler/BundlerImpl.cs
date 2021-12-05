@@ -43,9 +43,9 @@ namespace Njsast.Bundler
         public IReadOnlyDictionary<string, object> GlobalDefines;
         readonly IBundlerCtx _ctx;
 
-        StructList<SourceFile> _order = new StructList<SourceFile>();
-        readonly Dictionary<string, SourceFile> _cache = new Dictionary<string, SourceFile>();
-        readonly Dictionary<string, SplitInfo> _splitMap = new Dictionary<string, SplitInfo>();
+        StructList<SourceFile> _order;
+        readonly Dictionary<string, SourceFile> _cache = new();
+        readonly Dictionary<string, SplitInfo> _splitMap = new();
         SourceFile? _currentSourceFile;
         string? _currentFileIdent;
 
@@ -147,11 +147,11 @@ namespace Njsast.Bundler
 
                 AddExportsFromLazyBundle(splitInfo, topLevelAst);
 
-                BundlerHelpers.WrapByIIFE(topLevelAst);
+                BundlerHelpers.WrapByIIFE(topLevelAst, (OutputOptions?.Ecma ?? 5) >= 6);
                 if (lazySplitCounter > 0 && PartToMainFilesMap.ContainsKey(splitName))
                 {
                     var astVar = new AstVar(topLevelAst);
-                    astVar.Definitions.Add(new AstVarDef(new AstSymbolVar("__bbb"), new AstObject()));
+                    astVar.Definitions.Add(new(new AstSymbolVar("__bbb"), new AstObject()));
                     topLevelAst.Body.Insert(0) = astVar;
                 }
 
@@ -317,11 +317,11 @@ namespace Njsast.Bundler
                 var newVar = new AstVar(toplevel);
                 var astSymbolVar = new AstSymbolVar(toplevel, name);
                 var trueValue = new AstDot(new AstSymbolRef("__bbb"), shortenedPropertyName);
-                astSymbolVar.Thedef = new SymbolDef(toplevel, astSymbolVar, trueValue);
+                astSymbolVar.Thedef = new(toplevel, astSymbolVar, trueValue);
                 toplevel.Variables!.Add(name, astSymbolVar.Thedef);
-                newVar.Definitions.Add(new AstVarDef(astSymbolVar, trueValue));
+                newVar.Definitions.Add(new(astSymbolVar, trueValue));
                 toplevel.Body.Add(newVar);
-                importFromOtherBundle.Ref = new AstSymbolRef(toplevel, astSymbolVar.Thedef, SymbolUsage.Read);
+                importFromOtherBundle.Ref = new(toplevel, astSymbolVar.Thedef, SymbolUsage.Read);
             }
         }
 
@@ -400,7 +400,7 @@ namespace Njsast.Bundler
             cached.PlainJsDependencies.AddRange(_ctx.GetPlainJsDependencies(fileName).ToArray());
             _cache[fileName] = cached;
 
-            cached.Exports ??= new StringTrie<AstNode>();
+            cached.Exports ??= new();
 
             foreach (var exp in cached.SelfExports)
             {

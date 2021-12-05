@@ -737,20 +737,18 @@ namespace Njsast.Reader
             var startLoc = Start;
             Next();
             var expressions = new StructList<AstNode>();
-            var isTail = Type == TokenType.BackQuote;
             var curElt = ParseTemplateElement(ref isTagged);
             expressions.Add(curElt);
-            while (!isTail)
+            while (Type != TokenType.BackQuote)
             {
                 Expect(TokenType.DollarBraceL);
                 expressions.Add(ParseExpression(Start));
                 Expect(TokenType.BraceR);
-                isTail = Type == TokenType.BackQuote;
                 expressions.Add(ParseTemplateElement(ref isTagged));
             }
 
             Next();
-            return new AstTemplateString(SourceFile, startLoc, _lastTokEnd, ref expressions);
+            return new(SourceFile, startLoc, _lastTokEnd, ref expressions);
         }
 
         bool IsAsyncProp(bool computed, AstNode key)
@@ -1064,6 +1062,7 @@ namespace Njsast.Reader
             try
             {
                 ToAssignableList(ref parameters, true);
+                MakeSymbolFunArg(ref parameters);
                 var body = new StructList<AstNode>();
                 var useStrict = false;
                 var unused = ParseFunctionBody(parameters, startLoc, null, true, ref body, ref useStrict);
