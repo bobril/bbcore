@@ -1,8 +1,7 @@
-namespace Njsast.Reader
+namespace Njsast.Reader;
+
+public enum SourceType
 {
-    public enum SourceType
-    {
-        Script,
-        Module
-    }
+    Script,
+    Module
 }

@@ -1,53 +1,52 @@
 using Njsast.Ast;
 
-namespace Njsast.Compress
-{
-    public class DeclarationCollectorTreeWalker : TreeWalker
-    {
-        StructList<AstStatement> _declarations;
-        protected override void Visit(AstNode node)
-        {
-            if (node is AstVar astVar)
-            {
-                _declarations.Add(astVar);
-                return;
-            }
+namespace Njsast.Compress;
 
-            if (node is AstLambda astLambda)
-            {
-                // any nested functions should not be visited
-                StopDescending();
-                if (astLambda.Name == null)
-                    return;
-                _declarations.Add(astLambda);
-            }
+public class DeclarationCollectorTreeWalker : TreeWalker
+{
+    StructList<AstStatement> _declarations;
+    protected override void Visit(AstNode node)
+    {
+        if (node is AstVar astVar)
+        {
+            _declarations.Add(astVar);
+            return;
         }
 
-        public AstVar? GetAllDeclarationsAsVar()
+        if (node is AstLambda astLambda)
         {
-            if (_declarations.Count == 0)
-                return null;
-            var varDefs = new StructList<AstVarDef>();
-            foreach (var astStatement in _declarations)
+            // any nested functions should not be visited
+            StopDescending();
+            if (astLambda.Name == null)
+                return;
+            _declarations.Add(astLambda);
+        }
+    }
+
+    public AstVar? GetAllDeclarationsAsVar()
+    {
+        if (_declarations.Count == 0)
+            return null;
+        var varDefs = new StructList<AstVarDef>();
+        foreach (var astStatement in _declarations)
+        {
+            if (astStatement is AstVar astVar)
             {
-                if (astStatement is AstVar astVar)
+                foreach (var astVarDef in astVar.Definitions)
                 {
-                    foreach (var astVarDef in astVar.Definitions)
+                    if (astVarDef.Name is AstSymbolVar astSymbolVar)
                     {
-                        if (astVarDef.Name is AstSymbolVar astSymbolVar)
-                        {
-                            astSymbolVar.Usage = SymbolUsage.Unknown;
-                            varDefs.Add(new(astSymbolVar));
-                        }
+                        astSymbolVar.Usage = SymbolUsage.Unknown;
+                        varDefs.Add(new(astSymbolVar));
                     }
                 }
-
-                if (astStatement is AstLambda astLambda)
-                {
-                    varDefs.Add(new(new AstSymbolVar(astLambda.Name!)));
-                }
             }
-            return new(ref varDefs);
+
+            if (astStatement is AstLambda astLambda)
+            {
+                varDefs.Add(new(new AstSymbolVar(astLambda.Name!)));
+            }
         }
+        return new(ref varDefs);
     }
 }

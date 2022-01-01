@@ -1,7 +1,6 @@
-namespace Njsast.AstDump
+namespace Njsast.AstDump;
+
+public interface ILineSink
 {
-    public interface ILineSink
-    {
-        void Print(string line);
-    }
+    void Print(string line);
 }

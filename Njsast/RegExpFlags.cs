@@ -1,19 +1,20 @@
 ﻿using System;
 
-namespace Njsast
+namespace Njsast;
+
+[Flags]
+public enum RegExpFlags
 {
-    [Flags]
-    public enum RegExpFlags
-    {
-        /// g
-        GlobalMatch = 1,
-        /// i
-        IgnoreCase = 2,
-        /// m
-        Multiline = 4,
-        /// u
-        Unicode = 8,
-        /// y
-        Sticky = 16,
-    }
+    /// g
+    GlobalMatch = 1,
+    /// i
+    IgnoreCase = 2,
+    /// m
+    Multiline = 4,
+    /// u
+    Unicode = 8,
+    /// y
+    Sticky = 16,
+    /// s
+    DotAll = 32,
 }

@@ -1,9 +1,8 @@
-﻿namespace Njsast.Reader
+﻿namespace Njsast.Reader;
+
+public enum VariableKind
 {
-    public enum VariableKind
-    {
-        Var,
-        Let,
-        Const
-    }
+    Var,
+    Let,
+    Const
 }

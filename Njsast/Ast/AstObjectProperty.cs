@@ -2,78 +2,88 @@
 using Njsast.Output;
 using Njsast.Reader;
 
-namespace Njsast.Ast
+namespace Njsast.Ast;
+
+public abstract class AstObjectItem : AstNode
 {
-    /// Base class for literal object properties
-    public abstract class AstObjectProperty : AstNode
+    protected AstObjectItem(string? source, Position startPos, Position endPos) : base(source, startPos, endPos)
     {
-        /// [AstNode] property name.
-        public AstNode Key;
+    }
 
-        /// [AstNode] property value. For getters and setters this is an AstAccessor.
-        public AstNode Value;
+    protected AstObjectItem()
+    {
+    }
+}
 
-        protected AstObjectProperty(string? source, Position startLoc, Position endLoc, AstNode key, AstNode value) : base(
-            source, startLoc, endLoc)
+/// Base class for literal object properties
+public abstract class AstObjectProperty : AstObjectItem
+{
+    /// [AstNode] property name.
+    public AstNode Key;
+
+    /// [AstNode] property value. For getters and setters this is an AstAccessor.
+    public AstNode Value;
+
+    protected AstObjectProperty(string? source, Position startLoc, Position endLoc, AstNode key, AstNode value) : base(
+        source, startLoc, endLoc)
+    {
+        Key = key;
+        Value = value;
+    }
+
+    protected AstObjectProperty(AstNode key, AstNode value)
+    {
+        Key = key;
+        Value = value;
+    }
+
+    public override void Visit(TreeWalker w)
+    {
+        base.Visit(w);
+        w.Walk(Key);
+        w.Walk(Value);
+    }
+
+    public override void Transform(TreeTransformer tt)
+    {
+        base.Transform(tt);
+        Key = tt.Transform(Key);
+        Value = tt.Transform(Value);
+    }
+
+    protected void PrintGetterSetter(OutputContext output, string? type, bool @static)
+    {
+        if (@static)
         {
-            Key = key;
-            Value = value;
+            output.Print("static");
+            output.Space();
         }
 
-        protected AstObjectProperty(AstNode key, AstNode value)
+        if (type != null)
         {
-            Key = key;
-            Value = value;
+            output.Print(type);
+            output.Space();
         }
 
-        public override void Visit(TreeWalker w)
+        var keyString = Key switch
         {
-            base.Visit(w);
-            w.Walk(Key);
-            w.Walk(Value);
+            AstString str => str.Value,
+            AstNumber num => num.Value.ToString("R", CultureInfo.InvariantCulture),
+            AstSymbol key => key.Name,
+            _ => null
+        };
+
+        if (keyString != null)
+        {
+            output.PrintPropertyName(keyString);
+        }
+        else
+        {
+            output.Print("[");
+            Key.Print(output);
+            output.Print("]");
         }
 
-        public override void Transform(TreeTransformer tt)
-        {
-            base.Transform(tt);
-            Key = tt.Transform(Key);
-            Value = tt.Transform(Value);
-        }
-
-        protected void PrintGetterSetter(OutputContext output, string? type, bool @static)
-        {
-            if (@static)
-            {
-                output.Print("static");
-                output.Space();
-            }
-
-            if (type != null)
-            {
-                output.Print(type);
-                output.Space();
-            }
-
-            var keyString = Key switch
-            {
-                AstString str => str.Value,
-                AstNumber num => num.Value.ToString("R", CultureInfo.InvariantCulture),
-                AstSymbol key => key.Name,
-                _ => null
-            };
-
-            if (keyString != null)
-            {
-                output.PrintPropertyName(keyString);
-            }
-            else
-            {
-                output.Print("[");
-                Key.Print(output);
-                output.Print("]");
-            }
-
-            ((AstLambda) Value).DoPrint(output, true);
-        }
+        ((AstLambda) Value).DoPrint(output, true);
     }
 }

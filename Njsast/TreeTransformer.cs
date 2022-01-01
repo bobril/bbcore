@@ -3,139 +3,138 @@ using JetBrains.Annotations;
 using Njsast.Ast;
 using Njsast.Output;
 
-namespace Njsast
+namespace Njsast;
+
+public abstract class TreeTransformer : TreeWalkerBase
 {
-    public abstract class TreeTransformer : TreeWalkerBase
+    class AstSpreadStructList<T> : AstNode where T : AstNode
     {
-        class AstSpreadStructList<T> : AstNode where T : AstNode
+        public readonly StructList<T> NodeList = new StructList<T>();
+
+        public AstSpreadStructList(ref StructList<T> nodeList)
         {
-            public readonly StructList<T> NodeList = new StructList<T>();
-
-            public AstSpreadStructList(ref StructList<T> nodeList)
-            {
-                NodeList.TransferFrom(ref nodeList);
-            }
-
-            public override void Visit(TreeWalker w)
-            {
-                throw new InvalidOperationException();
-            }
-
-            public override void Transform(TreeTransformer tt)
-            {
-                throw new InvalidOperationException();
-            }
-
-            public override AstNode ShallowClone()
-            {
-                throw new InvalidOperationException();
-            }
-
-            public override void CodeGen(OutputContext output)
-            {
-                throw new InvalidOperationException();
-            }
+            NodeList.TransferFrom(ref nodeList);
         }
 
-        class AstRemoveMe : AstNode
+        public override void Visit(TreeWalker w)
         {
-            public AstRemoveMe()
-            {
-            }
-
-            public override void Visit(TreeWalker w)
-            {
-                throw new InvalidOperationException();
-            }
-
-            public override void Transform(TreeTransformer tt)
-            {
-                throw new InvalidOperationException();
-            }
-
-            public override AstNode ShallowClone()
-            {
-                return Remove;
-            }
-
-            public override void CodeGen(OutputContext output)
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
 
-        public static readonly AstNode Remove = new AstRemoveMe();
-
-        protected static AstNode SpreadStructList(AstBlock block)
+        public override void Transform(TreeTransformer tt)
         {
-            return new AstSpreadStructList<AstNode>(ref block.Body);
+            throw new InvalidOperationException();
         }
 
-        protected static AstNode SpreadStructList(ref StructList<AstNode> statements)
+        public override AstNode ShallowClone()
         {
-            return new AstSpreadStructList<AstNode>(ref statements);
+            throw new InvalidOperationException();
         }
 
-        protected void Descend()
+        public override void CodeGen(OutputContext output)
         {
-            var top = Stack.Last;
-            top.Transform(this);
+            throw new InvalidOperationException();
+        }
+    }
+
+    class AstRemoveMe : AstNode
+    {
+        public AstRemoveMe()
+        {
         }
 
-        public bool Modified { get; set; }
-        /// Before descend if returns non null, descending will be skipped and result directly returned from Transform
-        protected abstract AstNode? Before(AstNode node, bool inList);
-
-        /// After descend if returns non null it will be returned from Transform
-        protected abstract AstNode? After(AstNode node, bool inList);
-
-        [MustUseReturnValue]
-        public AstNode Transform(AstNode start, bool inList = false)
+        public override void Visit(TreeWalker w)
         {
-            Stack.Add(start);
-            try
+            throw new InvalidOperationException();
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override AstNode ShallowClone()
+        {
+            return Remove;
+        }
+
+        public override void CodeGen(OutputContext output)
+        {
+            throw new InvalidOperationException();
+        }
+    }
+
+    public static readonly AstNode Remove = new AstRemoveMe();
+
+    protected static AstNode SpreadStructList(AstBlock block)
+    {
+        return new AstSpreadStructList<AstNode>(ref block.Body);
+    }
+
+    protected static AstNode SpreadStructList(ref StructList<AstNode> statements)
+    {
+        return new AstSpreadStructList<AstNode>(ref statements);
+    }
+
+    protected void Descend()
+    {
+        var top = Stack.Last;
+        top.Transform(this);
+    }
+
+    public bool Modified { get; set; }
+    /// Before descend if returns non null, descending will be skipped and result directly returned from Transform
+    protected abstract AstNode? Before(AstNode node, bool inList);
+
+    /// After descend if returns non null it will be returned from Transform
+    protected abstract AstNode? After(AstNode node, bool inList);
+
+    [MustUseReturnValue]
+    public AstNode Transform(AstNode start, bool inList = false)
+    {
+        Stack.Add(start);
+        try
+        {
+            var x = Before(start, inList);
+            if (x != null)
             {
-                var x = Before(start, inList);
-                if (x != null)
-                {
-                    if (x != start) Modified = true;
-                    return x;
-                }
-                start.Transform(this);
-                x = After(start, inList);
-                if (x == null) return start;
                 if (x != start) Modified = true;
                 return x;
             }
-            finally
-            {
-                Stack.Pop();
-            }
+            start.Transform(this);
+            x = After(start, inList);
+            if (x == null) return start;
+            if (x != start) Modified = true;
+            return x;
         }
-
-        internal void TransformList<T>(ref StructList<T> list) where T : AstNode
+        finally
         {
-            for (var i = 0; i < list.Count; i++)
+            Stack.Pop();
+        }
+    }
+
+    internal void TransformList<T>(ref StructList<T> list) where T : AstNode
+    {
+        for (var i = 0; i < list.Count; i++)
+        {
+            var originalNode = list[i];
+            var item = Transform(originalNode, true);
+            if (item == Remove)
             {
-                var originalNode = list[i];
-                var item = Transform(originalNode, true);
-                if (item == Remove)
-                {
-                    list.RemoveAt(i);
+                list.RemoveAt(i);
+                Modified = true;
+                i--;
+            }
+            else if (item is AstSpreadStructList<T> spreadList)
+            {
+                list.ReplaceItemAt(i, spreadList.NodeList);
+                Modified = true;
+            }
+            else
+            {
+                if (originalNode != item)
                     Modified = true;
-                    i--;
-                }
-                else if (item is AstSpreadStructList<T> spreadList)
-                {
-                    list.ReplaceItemAt(i, spreadList.NodeList);
-                    Modified = true;
-                }
-                else
-                {
-                    if (originalNode != item)
-                        Modified = true;
-                    list[i] = (T)item;
-                }
+                list[i] = (T)item;
             }
         }
     }

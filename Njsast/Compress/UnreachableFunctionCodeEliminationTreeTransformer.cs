@@ -1,11 +1,10 @@
 using Njsast.Ast;
 
-namespace Njsast.Compress
+namespace Njsast.Compress;
+
+public class UnreachableFunctionCodeEliminationTreeTransformer : UnreachableAfterJumpCodeEliminationTreeTransformerBase<AstLambda, AstExit>
 {
-    public class UnreachableFunctionCodeEliminationTreeTransformer : UnreachableAfterJumpCodeEliminationTreeTransformerBase<AstLambda, AstExit>
+    public UnreachableFunctionCodeEliminationTreeTransformer(ICompressOptions options) : base(options)
     {
-        public UnreachableFunctionCodeEliminationTreeTransformer(ICompressOptions options) : base(options)
-        {
-        }
     }
 }

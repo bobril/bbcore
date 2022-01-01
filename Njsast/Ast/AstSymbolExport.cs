@@ -1,16 +1,20 @@
 ﻿using Njsast.Reader;
 
-namespace Njsast.Ast
-{
-    /// Symbol referring to a name to export
-    public class AstSymbolExport : AstSymbolRef
-    {
-        public AstSymbolExport(AstSymbol symbol) : base(symbol)
-        {
-        }
+namespace Njsast.Ast;
 
-        public AstSymbolExport(string? source, Position startPos, Position endPos, string name) : base(source, startPos, endPos, name)
-        {
-        }
+/// Symbol referring to a name to export
+public class AstSymbolExport : AstSymbolRef
+{
+    public AstSymbolExport(AstSymbol symbol) : base(symbol)
+    {
+    }
+
+    public AstSymbolExport(string? source, Position startPos, Position endPos, string name) : base(source, startPos, endPos, name)
+    {
+    }
+
+    public override AstNode ShallowClone()
+    {
+        return new AstSymbolExport(Source, Start, End, Name);
     }
 }

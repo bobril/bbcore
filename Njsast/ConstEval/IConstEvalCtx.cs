@@ -1,22 +1,21 @@
 using Njsast.Ast;
 
-namespace Njsast.ConstEval
+namespace Njsast.ConstEval;
+
+public interface IConstEvalCtx
 {
-    public interface IConstEvalCtx
-    {
-        string SourceName { get; }
-        JsModule ResolveRequire(string name);
+    string SourceName { get; }
+    JsModule ResolveRequire(string name);
 
-        /// export will be usually string, could be JsSymbol in ES6
-        object? ConstValue(IConstEvalCtx ctx, JsModule module, object export);
+    /// export will be usually string, could be JsSymbol in ES6
+    object? ConstValue(IConstEvalCtx ctx, JsModule module, object export);
 
-        bool AllowEvalObjectWithJustConstKeys { get; }
-        bool JustModuleExports { get; set; }
+    bool AllowEvalObjectWithJustConstKeys { get; }
+    bool JustModuleExports { get; set; }
 
-        string ConstStringResolver(string str);
+    string ConstStringResolver(string str);
 
-        IConstEvalCtx StripPathResolver();
+    IConstEvalCtx StripPathResolver();
 
-        IConstEvalCtx CreateForSourceName(string sourceName);
-    }
+    IConstEvalCtx CreateForSourceName(string sourceName);
 }

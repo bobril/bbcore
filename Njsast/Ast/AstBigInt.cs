@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+using System.Globalization;
+using System.Numerics;
 using Njsast.AstDump;
 using Njsast.ConstEval;
 using Njsast.Output;
@@ -6,43 +7,36 @@ using Njsast.Reader;
 
 namespace Njsast.Ast;
 
-/// A number literal
-public class AstNumber : AstConstant
+/// A bigint literal
+public class AstBigInt : AstConstant
 {
-    /// [number] the numeric value
-    public readonly double Value;
+    /// the numeric value
+    public readonly BigInteger Value;
 
-    /// [string] numeric value as string (optional)
-    public readonly string? Literal;
-
-    public AstNumber(string? source, Position startLoc, Position endLoc, double value, string? literal) : base(source,
-        startLoc, endLoc)
+    public AstBigInt(string? source, Position startLoc, Position endLoc, BigInteger value) : base(source, startLoc, endLoc)
     {
         Value = value;
-        Literal = literal;
     }
 
-    public AstNumber(double value)
+    public AstBigInt(BigInteger value)
     {
         Value = value;
-        Literal = null;
     }
 
     public override void DumpScalars(IAstDumpWriter writer)
     {
         base.DumpScalars(writer);
         writer.PrintProp("Value", Value.ToString(CultureInfo.InvariantCulture));
-        writer.PrintProp("Literal", Literal);
     }
 
     public override AstNode ShallowClone()
     {
-        return new AstNumber(Source, Start, End, Value, Literal);
+        return new AstBigInt(Source, Start, End, Value);
     }
 
     public override void CodeGen(OutputContext output)
     {
-        output.PrintNumber(Value);
+        output.PrintBigInt(Value);
     }
 
     public override bool NeedParens(OutputContext output)
@@ -59,7 +53,7 @@ public class AstNumber : AstConstant
         return false;
     }
 
-    public override object? ConstValue(IConstEvalCtx? ctx = null)
+    public override object ConstValue(IConstEvalCtx? ctx = null)
     {
         return Value;
     }

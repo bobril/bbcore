@@ -1,8 +1,7 @@
-namespace Njsast.Ast
+namespace Njsast.Ast;
+
+public interface IMayBeBlockScope
 {
-    public interface IMayBeBlockScope
-    {
-        bool IsBlockScope { get; }
-        AstScope? BlockScope { get; set; }
-    }
+    bool IsBlockScope { get; }
+    AstScope? BlockScope { get; set; }
 }

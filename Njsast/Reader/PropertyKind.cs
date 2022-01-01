@@ -1,11 +1,10 @@
-﻿namespace Njsast.Reader
+﻿namespace Njsast.Reader;
+
+public enum PropertyKind
 {
-    public enum PropertyKind
-    {
-        Initialise,
-        Get,
-        Set,
-        Method,
-        Constructor
-    }
+    Initialise,
+    Get,
+    Set,
+    Method,
+    Constructor
 }

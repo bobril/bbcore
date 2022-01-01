@@ -1,9 +1,8 @@
-namespace Njsast.Output
+namespace Njsast.Output;
+
+public enum QuoteType
 {
-    public enum QuoteType
-    {
-        Single,
-        Double,
-        Template
-    }
+    Single,
+    Double,
+    Template
 }

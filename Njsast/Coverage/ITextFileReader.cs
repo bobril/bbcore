@@ -1,9 +1,8 @@
 using System;
 
-namespace Njsast.Coverage
+namespace Njsast.Coverage;
+
+public interface ITextFileReader
 {
-    public interface ITextFileReader
-    {
-        ReadOnlySpan<byte> ReadUtf8(string fileName);
-    }
+    ReadOnlySpan<byte> ReadUtf8(string fileName);
 }

@@ -1,95 +1,94 @@
 ﻿using Njsast.Output;
 using Njsast.Reader;
 
-namespace Njsast.Ast
+namespace Njsast.Ast;
+
+/// A `for` statement
+public class AstFor : AstIterationStatement
 {
-    /// A `for` statement
-    public class AstFor : AstIterationStatement
+    /// [AstNode?] the `for` initialization code, or null if empty
+    public AstNode? Init;
+
+    /// [AstNode?] the `for` termination clause, or null if empty
+    public AstNode? Condition;
+
+    /// [AstNode?] the `for` update clause, or null if empty
+    public AstNode? Step;
+
+    public AstFor(string? source, Position startPos, Position endPos, AstStatement body, AstNode? init,
+        AstNode? condition, AstNode? step) : base(source, startPos, endPos, body)
     {
-        /// [AstNode?] the `for` initialization code, or null if empty
-        public AstNode? Init;
+        Init = init;
+        Condition = condition;
+        Step = step;
+    }
 
-        /// [AstNode?] the `for` termination clause, or null if empty
-        public AstNode? Condition;
+    public override void Visit(TreeWalker w)
+    {
+        w.Walk(Init);
+        w.Walk(Condition);
+        w.Walk(Step);
+        base.Visit(w);
+    }
 
-        /// [AstNode?] the `for` update clause, or null if empty
-        public AstNode? Step;
+    public override void Transform(TreeTransformer tt)
+    {
+        if (Init != null)
+            Init = tt.Transform(Init);
+        if (Condition != null)
+            Condition = tt.Transform(Condition);
+        if (Step != null)
+            Step = tt.Transform(Step);
+        base.Transform(tt);
+    }
 
-        public AstFor(string? source, Position startPos, Position endPos, AstStatement body, AstNode? init,
-            AstNode? condition, AstNode? step) : base(source, startPos, endPos, body)
+    public override AstNode ShallowClone()
+    {
+        return new AstFor(Source, Start, End, Body, Init, Condition, Step);
+    }
+
+    public override void CodeGen(OutputContext output)
+    {
+        output.Print("for");
+        output.Space();
+        output.Print("(");
+        if (Init != null)
         {
-            Init = init;
-            Condition = condition;
-            Step = step;
-        }
-
-        public override void Visit(TreeWalker w)
-        {
-            w.Walk(Init);
-            w.Walk(Condition);
-            w.Walk(Step);
-            base.Visit(w);
-        }
-
-        public override void Transform(TreeTransformer tt)
-        {
-            if (Init != null)
-                Init = tt.Transform(Init);
-            if (Condition != null)
-                Condition = tt.Transform(Condition);
-            if (Step != null)
-                Step = tt.Transform(Step);
-            base.Transform(tt);
-        }
-
-        public override AstNode ShallowClone()
-        {
-            return new AstFor(Source, Start, End, Body, Init, Condition, Step);
-        }
-
-        public override void CodeGen(OutputContext output)
-        {
-            output.Print("for");
-            output.Space();
-            output.Print("(");
-            if (Init != null)
+            if (Init is AstDefinitions)
             {
-                if (Init is AstDefinitions)
-                {
-                    Init.Print(output);
-                }
-                else
-                {
-                    output.ParenthesizeForNoIn(Init, true);
-                }
-
-                output.Print(";");
-                output.Space();
+                Init.Print(output);
             }
             else
             {
-                output.Print(";");
+                output.ParenthesizeForNoIn(Init, true);
             }
 
-            if (Condition != null)
-            {
-                Condition.Print(output);
-                output.Print(";");
-                output.Space();
-            }
-            else
-            {
-                output.Print(";");
-            }
-
-            if (Step != null)
-            {
-                Step.Print(output);
-            }
-
-            output.Print(")");
+            output.Print(";");
             output.Space();
-            output.PrintBody(Body);
         }
+        else
+        {
+            output.Print(";");
+        }
+
+        if (Condition != null)
+        {
+            Condition.Print(output);
+            output.Print(";");
+            output.Space();
+        }
+        else
+        {
+            output.Print(";");
+        }
+
+        if (Step != null)
+        {
+            Step.Print(output);
+        }
+
+        output.Print(")");
+        output.Space();
+        output.PrintBody(Body);
     }
 }

@@ -1,22 +1,21 @@
 ﻿using Njsast.Reader;
 
-namespace Njsast.Ast
+namespace Njsast.Ast;
+
+/// A constant declaration
+public class AstSymbolConst : AstSymbolBlockDeclaration
 {
-    /// A constant declaration
-    public class AstSymbolConst : AstSymbolBlockDeclaration
+    AstSymbolConst(string? source, Position startLoc, Position endLoc, string name, AstNode? init) :
+        base(source, startLoc, endLoc, name, init)
     {
-        AstSymbolConst(string? source, Position startLoc, Position endLoc, string name, AstNode? init) :
-            base(source, startLoc, endLoc, name, init)
-        {
-        }
+    }
 
-        public AstSymbolConst(AstSymbol name) : base(name)
-        {
-        }
+    public AstSymbolConst(AstSymbol name) : base(name)
+    {
+    }
 
-        public override AstNode ShallowClone()
-        {
-            return new AstSymbolConst(Source, Start, End, Name, Init);
-        }
+    public override AstNode ShallowClone()
+    {
+        return new AstSymbolConst(Source, Start, End, Name, Init);
     }
 }

@@ -7,7 +7,7 @@
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <PackageId>Njsast</PackageId>
-        <Version>0.1.0</Version> 
+        <Version>0.5.0</Version> 
         <Authors>Boris Letocha, Miroslav Pokorný</Authors>
         <PackageProjectUrl>http://github.com/Bobris/Njsast</PackageProjectUrl>
         <PackageLicenseUrl>http://www.opensource.org/licenses/mit-license.php</PackageLicenseUrl>

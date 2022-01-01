@@ -1,7 +1,6 @@
-namespace Njsast.Ast
+namespace Njsast.Ast;
+
+public interface IAstStatementWithBody
 {
-    public interface IAstStatementWithBody
-    {
-        AstNode GetBody();
-    }
+    AstNode GetBody();
 }

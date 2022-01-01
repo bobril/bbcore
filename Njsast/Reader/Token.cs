@@ -1,16 +1,15 @@
-﻿namespace Njsast.Reader
-{
-    public struct Token
-    {
-        public TokenType Type { get; }
-        public object? Value { get; }
-        public SourceLocation Location { get; }
+﻿namespace Njsast.Reader;
 
-        public Token(TokenType type, object? value, SourceLocation location)
-        {
-            Type = type;
-            Value = value;
-            Location = location;
-        }
+public struct Token
+{
+    public TokenType Type { get; }
+    public object? Value { get; }
+    public SourceLocation Location { get; }
+
+    public Token(TokenType type, object? value, SourceLocation location)
+    {
+        Type = type;
+        Value = value;
+        Location = location;
     }
 }

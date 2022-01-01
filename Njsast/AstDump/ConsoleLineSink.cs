@@ -1,12 +1,11 @@
 using System;
 
-namespace Njsast.AstDump
+namespace Njsast.AstDump;
+
+public class ConsoleLineSink : ILineSink
 {
-    public class ConsoleLineSink : ILineSink
+    public void Print(string line)
     {
-        public void Print(string line)
-        {
-            Console.WriteLine(line);
-        }
+        Console.WriteLine(line);
     }
 }

@@ -1,60 +1,59 @@
-namespace Njsast.Coverage
+namespace Njsast.Coverage;
+
+public class CoverageReporterBase
 {
-    public class CoverageReporterBase
+    protected readonly CoverageInstrumentation _covInstr;
+
+    public CoverageReporterBase(CoverageInstrumentation covInstr)
     {
-        protected readonly CoverageInstrumentation _covInstr;
+        _covInstr = covInstr;
+    }
 
-        public CoverageReporterBase(CoverageInstrumentation covInstr)
+    public virtual void Run()
+    {
+        var root = _covInstr.DirectoryStats[""];
+        OnStartRoot(root);
+        RecursiveVisit(root);
+        OnFinishRoot(root);
+    }
+
+    public void RecursiveVisit(CoverageStats stats)
+    {
+        foreach (var subDirectory in stats.SubDirectories)
         {
-            _covInstr = covInstr;
+            OnStartDirectory(subDirectory);
+            RecursiveVisit(subDirectory);
+            OnFinishDirectory(subDirectory);
         }
 
-        public virtual void Run()
+        foreach (var subFile in stats.SubFiles)
         {
-            var root = _covInstr.DirectoryStats[""];
-            OnStartRoot(root);
-            RecursiveVisit(root);
-            OnFinishRoot(root);
+            OnStartFile(subFile);
+            OnFinishFile(subFile);
         }
+    }
 
-        public void RecursiveVisit(CoverageStats stats)
-        {
-            foreach (var subDirectory in stats.SubDirectories)
-            {
-                OnStartDirectory(subDirectory);
-                RecursiveVisit(subDirectory);
-                OnFinishDirectory(subDirectory);
-            }
+    public virtual void OnStartRoot(CoverageStats stats)
+    {
+    }
 
-            foreach (var subFile in stats.SubFiles)
-            {
-                OnStartFile(subFile);
-                OnFinishFile(subFile);
-            }
-        }
+    public virtual void OnFinishRoot(CoverageStats stats)
+    {
+    }
 
-        public virtual void OnStartRoot(CoverageStats stats)
-        {
-        }
+    public virtual void OnStartDirectory(CoverageStats stats)
+    {
+    }
 
-        public virtual void OnFinishRoot(CoverageStats stats)
-        {
-        }
+    public virtual void OnFinishDirectory(CoverageStats stats)
+    {
+    }
 
-        public virtual void OnStartDirectory(CoverageStats stats)
-        {
-        }
+    public virtual void OnStartFile(CoverageFile file)
+    {
+    }
 
-        public virtual void OnFinishDirectory(CoverageStats stats)
-        {
-        }
-
-        public virtual void OnStartFile(CoverageFile file)
-        {
-        }
-
-        public virtual void OnFinishFile(CoverageFile file)
-        {
-        }
+    public virtual void OnFinishFile(CoverageFile file)
+    {
     }
 }

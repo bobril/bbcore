@@ -3,151 +3,149 @@ using System.Linq;
 using Njsast.Reader;
 using Njsast.Runtime;
 
-namespace Njsast.Ast
+namespace Njsast.Ast;
+
+public static class Helpers
 {
-    public static class Helpers
+    public static AstVar EmitVarDefines(IReadOnlyDictionary<string, object> defines)
     {
-        public static AstVar EmitVarDefines(IReadOnlyDictionary<string, object> defines)
+        var defs = new StructList<AstVarDef>();
+        defs.Reserve((uint) defines.Count);
+        foreach (var (name, value) in defines)
         {
-            var defs = new StructList<AstVarDef>();
-            defs.Reserve((uint) defines.Count);
-            foreach (var (name, value) in defines)
-            {
-                defs.Add(new AstVarDef(new AstSymbolVar(name), TypeConverter.ToAst(value)));
-            }
-
-            return new AstVar(ref defs);
+            defs.Add(new AstVarDef(new AstSymbolVar(name), TypeConverter.ToAst(value)));
         }
 
-        public static (AstToplevel toplevel, AstSymbolVar varContent) EmitVarDefineJson(string json, string? fileName,
-            string? varName = null)
+        return new AstVar(ref defs);
+    }
+
+    public static (AstToplevel toplevel, AstSymbolVar varContent) EmitVarDefineJson(string json, string? fileName,
+        string? varName = null)
+    {
+        varName ??= "content";
+        var parser = new Parser(new Options {SourceFile = fileName}, $"var {varName}={json}");
+        var toplevel = parser.Parse();
+        return (toplevel, (AstSymbolVar) ((AstVar) toplevel.Body[0]).Definitions[0].Name);
+    }
+
+    public static (AstToplevel toplevel, AstSymbolVar varExports) EmitCommonJsWrapper(AstBlock code,
+        string? varName = null)
+    {
+        varName ??= "exports";
+        var toplevel = new Parser(new Options(),
+                $"var {varName}=(function(){{ var exports = {{}}; var module = {{ exports: exports }}; var global = this; return module.exports; }}).call(window);")
+            .Parse();
+        var mainFunc =
+            (AstFunction) ((AstDot) ((AstCall) ((AstVar) toplevel.Body[0]).Definitions[0].Value!).Expression)
+            .Expression;
+        mainFunc.Body.InsertRange(^1, code.Body.AsReadOnlySpan());
+        return (toplevel, (AstSymbolVar) ((AstVar) toplevel.Body[0]).Definitions[0].Name);
+    }
+
+    public static void RenameSymbol(SymbolDef symbol, string newName)
+    {
+        symbol.Name = newName;
+        foreach (var orig in symbol.Orig)
         {
-            varName ??= "content";
-            var parser = new Parser(new Options {SourceFile = fileName}, $"var {varName}={json}");
-            var toplevel = parser.Parse();
-            return (toplevel, (AstSymbolVar) ((AstVar) toplevel.Body[0]).Definitions[0].Name);
+            orig.Name = newName;
         }
 
-        public static (AstToplevel toplevel, AstSymbolVar varExports) EmitCommonJsWrapper(AstBlock code,
-            string? varName = null)
+        foreach (var reference in symbol.References)
         {
-            varName ??= "exports";
-            var toplevel = new Parser(new Options(),
-                    $"var {varName}=(function(){{ var exports = {{}}; var module = {{ exports: exports }}; var global = this; return module.exports; }}).call(window);")
-                .Parse();
-            var mainFunc =
-                (AstFunction) ((AstDot) ((AstCall) ((AstVar) toplevel.Body[0]).Definitions[0].Value!).Expression)
-                .Expression;
-            mainFunc.Body.InsertRange(^1, code.Body.AsReadOnlySpan());
-            return (toplevel, (AstSymbolVar) ((AstVar) toplevel.Body[0]).Definitions[0].Name);
+            reference.Name = newName;
+        }
+    }
+
+    public static (AstToplevel toplevel, AstSymbolVar? symbol) IfPossibleEmitModuleExportsJsWrapper(
+        AstToplevel toplevel,
+        string? varName = null)
+    {
+        varName ??= "exports";
+        if (toplevel.Globals!["module"].References.Count != 1)
+            return (toplevel, null);
+        var tt = new ModuleExportsTreeTransformer(varName);
+        toplevel = (AstToplevel) tt.Transform(toplevel);
+        return (toplevel, tt.ResultingSymbol);
+    }
+
+    public class ModuleExportsTreeTransformer : TreeTransformer
+    {
+        readonly string _varName;
+        public AstSymbolVar? ResultingSymbol;
+        bool _shadowedWindow;
+
+        public ModuleExportsTreeTransformer(string varName)
+        {
+            _varName = varName;
         }
 
-        public static void RenameSymbol(SymbolDef symbol, string newName)
+        protected override AstNode? Before(AstNode node, bool inList)
         {
-            symbol.Name = newName;
-            foreach (var orig in symbol.Orig)
+            if (node.IsSymbolDef().IsGlobalSymbol() is { } symbolName)
             {
-                orig.Name = newName;
-            }
-
-            foreach (var reference in symbol.References)
-            {
-                reference.Name = newName;
-            }
-        }
-
-        public static (AstToplevel toplevel, AstSymbolVar? symbol) IfPossibleEmitModuleExportsJsWrapper(
-            AstToplevel toplevel,
-            string? varName = null)
-        {
-            varName ??= "exports";
-            if (toplevel.Globals!["module"].References.Count != 1)
-                return (toplevel, null);
-            var tt = new ModuleExportsTreeTransformer(varName);
-            toplevel = (AstToplevel) tt.Transform(toplevel);
-            return (toplevel, tt.ResultingSymbol);
-        }
-
-        public class ModuleExportsTreeTransformer : TreeTransformer
-        {
-            readonly string _varName;
-            public AstSymbolVar? ResultingSymbol;
-            bool _shadowedWindow;
-
-            public ModuleExportsTreeTransformer(string varName)
-            {
-                _varName = varName;
-            }
-
-            protected override AstNode? Before(AstNode node, bool inList)
-            {
-                if (node.IsSymbolDef().IsGlobalSymbol() is { } symbolName)
+                if (symbolName == "global")
                 {
-                    if (symbolName == "global")
+                    foreach (var parent in Parents())
                     {
-                        foreach (var parent in Parents())
+                        if (parent is AstScope scope)
                         {
-                            if (parent is AstScope scope)
+                            if (scope.Variables!.ContainsKey("window") || scope.Functions!.ContainsKey("window"))
                             {
-                                if (scope.Variables!.ContainsKey("window") || scope.Functions!.ContainsKey("window"))
-                                {
-                                    _shadowedWindow = true;
-                                    return null;
-                                }
+                                _shadowedWindow = true;
+                                return null;
                             }
                         }
-
-                        return new AstSymbolRef(node, "window");
                     }
-                }
 
-                if (node is AstSimpleStatement simpleStatement && simpleStatement.Body is AstAssign assigment &&
-                    assigment.Operator == Operator.Assignment)
-                {
-                    if (assigment.Left is AstDot dot && dot.PropertyAsString == "exports" &&
-                        dot.Expression.IsSymbolDef().IsGlobalSymbol() == "module")
-                    {
-                        var res = new AstVar(node);
-                        var newVar = new AstSymbolVar(assigment.Left, _varName);
-                        ResultingSymbol = newVar;
-                        res.Definitions.Add(new AstVarDef(assigment.Left, newVar, assigment.Right));
-                        return Transform(res);
-                    }
+                    return new AstSymbolRef(node, "window");
                 }
-
-                return null;
             }
 
-            protected override AstNode? After(AstNode node, bool inList)
+            if (node is AstSimpleStatement { Body: AstAssign { Operator: Operator.Assignment } assigment })
             {
-                if (node is AstToplevel toplevel && _shadowedWindow)
+                if (assigment.Left is AstDot { PropertyAsString: "exports" } dot && dot.Expression.IsSymbolDef().IsGlobalSymbol() == "module")
                 {
-                    var newVar = new AstVar(toplevel);
-                    var name = new AstSymbolVar("global");
-                    newVar.Definitions.Add(new AstVarDef(toplevel, name, new AstSymbolRef("window")));
-                    toplevel.Body.Insert(0) = newVar;
+                    var res = new AstVar(node);
+                    var newVar = new AstSymbolVar(assigment.Left, _varName);
+                    ResultingSymbol = newVar;
+                    res.Definitions.Add(new AstVarDef(assigment.Left, newVar, assigment.Right));
+                    return Transform(res);
                 }
-
-                return node;
             }
+
+            return null;
         }
 
-        /// <summary>
-        /// function (Opts) {
-        ///    Opts[Opts["Start"] = 0] = "Start";
-        ///    Opts[Opts["Stop"] = 1] = "Stop";
-        /// }
-        /// </summary>
-        /// <returns>Dictionary with values when detected { { "Start", 0 }, { "Stop", 1 } }</returns>
-        public static Dictionary<string, AstNode>? DetectEnumTypeScriptFunction(AstNode node)
+        protected override AstNode After(AstNode node, bool inList)
         {
-            if (!(node is AstLambda
-                {IsGenerator: false, Async: false, UsesArguments: false, ArgNames: {Count: 1}} lambda)) return null;
-            if (!(lambda.ArgNames[0] is AstSymbolFunarg {Thedef: { } symbolDef})) return null;
-            var res = new Dictionary<string, AstNode>();
-            foreach (var statement in lambda.Body)
+            if (node is AstToplevel toplevel && _shadowedWindow)
             {
-                if (statement is AstSimpleStatement
+                var newVar = new AstVar(toplevel);
+                var name = new AstSymbolVar("global");
+                newVar.Definitions.Add(new(toplevel, name, new AstSymbolRef("window")));
+                toplevel.Body.Insert(0) = newVar;
+            }
+
+            return node;
+        }
+    }
+
+    /// <summary>
+    /// function (Opts) {
+    ///    Opts[Opts["Start"] = 0] = "Start";
+    ///    Opts[Opts["Stop"] = 1] = "Stop";
+    /// }
+    /// </summary>
+    /// <returns>Dictionary with values when detected { { "Start", 0 }, { "Stop", 1 } }</returns>
+    public static Dictionary<string, AstNode>? DetectEnumTypeScriptFunction(AstNode node)
+    {
+        if (!(node is AstLambda
+                {IsGenerator: false, Async: false, UsesArguments: false, ArgNames: {Count: 1}} lambda)) return null;
+        if (!(lambda.ArgNames[0] is AstSymbolFunarg {Thedef: { } symbolDef})) return null;
+        var res = new Dictionary<string, AstNode>();
+        foreach (var statement in lambda.Body)
+        {
+            if (statement is AstSimpleStatement
                 {
                     Body: AstAssign
                     {
@@ -168,25 +166,24 @@ namespace Njsast.Ast
                         }
                     }
                 } && symbolDef == symbolDef2 && symbolDef == symbolDef3 && leftString == rightString)
-                    res.Add(leftString, value);
-                else if (statement is AstSimpleStatement
-                {
-                    Body: AstAssign
-                    {
-                        Operator: Operator.Assignment, Right: AstString valueString,
-                        Left: AstSub
-                        {
-                            Expression: AstSymbolRef {Thedef: { } symbolDef4},
-                            Property: AstString {Value: { } propString}
-                        }
-                    }
-                } && symbolDef == symbolDef4)
-                    res.Add(propString, valueString);
-                else
-                    return null;
-            }
-
-            return res;
+                res.Add(leftString, value);
+            else if (statement is AstSimpleStatement
+                     {
+                         Body: AstAssign
+                         {
+                             Operator: Operator.Assignment, Right: AstString valueString,
+                             Left: AstSub
+                             {
+                                 Expression: AstSymbolRef {Thedef: { } symbolDef4},
+                                 Property: AstString {Value: { } propString}
+                             }
+                         }
+                     } && symbolDef == symbolDef4)
+                res.Add(propString, valueString);
+            else
+                return null;
         }
+
+        return res;
     }
 }

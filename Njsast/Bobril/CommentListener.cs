@@ -3,60 +3,59 @@ using Njsast.Reader;
 using System;
 using System.Collections.Generic;
 
-namespace Njsast.Bobril
+namespace Njsast.Bobril;
+
+public class CommentListener : TreeWalker
 {
-    public class CommentListener : TreeWalker
+    readonly HashSet<string> _pureFunctionNames = new HashSet<string>();
+    StructList<Position> _classStartsAfterPositions = new StructList<Position>();
+
+    public void OnComment(bool block, string content, SourceLocation sourceLocation)
     {
-        readonly HashSet<string> _pureFunctionNames = new HashSet<string>();
-        StructList<Position> _classStartsAfterPositions = new StructList<Position>();
-
-        public void OnComment(bool block, string content, SourceLocation sourceLocation)
+        var c = content.AsSpan().Trim();
+        if (!block && c.StartsWith("PureFuncs:", StringComparison.Ordinal))
         {
-            var c = content.AsSpan().Trim();
-            if (!block && c.StartsWith("PureFuncs:", StringComparison.Ordinal))
+            c = c.Slice(10);
+            while (c.Length > 0)
             {
-                c = c.Slice(10);
-                while (c.Length > 0)
+                var pos = c.IndexOf(',');
+                if (pos < 0) pos = c.Length;
+                var functionName = c.Slice(0, pos).Trim();
+                if (functionName.Length > 0)
                 {
-                    var pos = c.IndexOf(',');
-                    if (pos < 0) pos = c.Length;
-                    var functionName = c.Slice(0, pos).Trim();
-                    if (functionName.Length > 0)
-                    {
-                        _pureFunctionNames.Add(functionName.ToString());
-                    }
-
-                    if (c.Length == pos) break;
-                    c = c.Slice(pos + 1);
+                    _pureFunctionNames.Add(functionName.ToString());
                 }
-            }
-            else if (block && (c.IndexOf("@class") >= 0 || c.IndexOf("#__PURE__") >= 0))
-            {
-                _classStartsAfterPositions.Add(sourceLocation.End);
+
+                if (c.Length == pos) break;
+                c = c.Slice(pos + 1);
             }
         }
-
-        protected override void Visit(AstNode node)
+        else if (block && (c.IndexOf("@class") >= 0 || c.IndexOf("#__PURE__") >= 0))
         {
-            if (node is AstLambda func)
-            {
-                if (func.Name != null)
-                {
-                    if (_pureFunctionNames.Contains(func.Name.Name))
-                    {
-                        func.Pure = true;
-                        return;
-                    }
-                }
+            _classStartsAfterPositions.Add(sourceLocation.End);
+        }
+    }
 
-                for (var i = 0u; i < _classStartsAfterPositions.Count; i++)
+    protected override void Visit(AstNode node)
+    {
+        if (node is AstLambda func)
+        {
+            if (func.Name != null)
+            {
+                if (_pureFunctionNames.Contains(func.Name.Name))
                 {
-                    var pos = _classStartsAfterPositions[i];
-                    if (pos.Line == func.Start.Line && (uint) (func.Start.Column - pos.Column) < 10)
-                    {
-                        func.Pure = true;
-                        return;
-                    }
+                    func.Pure = true;
+                    return;
+                }
+            }
+
+            for (var i = 0u; i < _classStartsAfterPositions.Count; i++)
+            {
+                var pos = _classStartsAfterPositions[i];
+                if (pos.Line == func.Start.Line && (uint) (func.Start.Column - pos.Column) < 10)
+                {
+                    func.Pure = true;
+                    return;
                 }
             }
         }

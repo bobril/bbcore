@@ -1,12 +1,11 @@
-namespace Njsast.Runtime
+namespace Njsast.Runtime;
+
+public enum JsType
 {
-    public enum JsType
-    {
-        Undefined,
-        Null,
-        Boolean,
-        Number,
-        String,
-        Object,
-    }
+    Undefined,
+    Null,
+    Boolean,
+    Number,
+    String,
+    Object,
 }

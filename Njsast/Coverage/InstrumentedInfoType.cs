@@ -1,10 +1,9 @@
-namespace Njsast.Coverage
+namespace Njsast.Coverage;
+
+public enum InstrumentedInfoType
 {
-    public enum InstrumentedInfoType
-    {
-        Statement,
-        Condition, // Uses 2 Indexes: [+0] False [+1] True
-        Function,
-        SwitchBranch
-    }
+    Statement,
+    Condition, // Uses 2 Indexes: [+0] False [+1] True
+    Function,
+    SwitchBranch
 }

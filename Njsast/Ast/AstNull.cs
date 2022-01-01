@@ -2,34 +2,33 @@
 using Njsast.Output;
 using Njsast.Reader;
 
-namespace Njsast.Ast
+namespace Njsast.Ast;
+
+/// The `null` atom
+public class AstNull : AstAtom
 {
-    /// The `null` atom
-    public class AstNull : AstAtom
+    public AstNull(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
     {
-        public AstNull(string? source, Position startLoc, Position endLoc) : base(source, startLoc, endLoc)
-        {
-        }
+    }
 
-        AstNull()
-        {
-        }
+    AstNull()
+    {
+    }
 
-        public override AstNode ShallowClone()
-        {
-            return new AstNull(Source, Start, End);
-        }
+    public override AstNode ShallowClone()
+    {
+        return new AstNull(Source, Start, End);
+    }
 
-        public override void CodeGen(OutputContext output)
-        {
-            output.Print("null");
-        }
+    public override void CodeGen(OutputContext output)
+    {
+        output.Print("null");
+    }
 
-        static readonly AstNull Instance = new AstNull();
+    static readonly AstNull Instance = new AstNull();
 
-        public override object? ConstValue(IConstEvalCtx? ctx = null)
-        {
-            return Instance;
-        }
+    public override object? ConstValue(IConstEvalCtx? ctx = null)
+    {
+        return Instance;
     }
 }
