@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.60.1
+
 ### Fixed
 
 - Default target must be still ES5
