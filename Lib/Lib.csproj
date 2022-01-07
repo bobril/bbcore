@@ -59,6 +59,7 @@
     <PackageReference Include="Microsoft.ClearScript.V8" Version="7.1.7" />
     <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.1.7" />
     <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.1.7" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-arm64" Version="7.1.7" />
     <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.1.7" />
     <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />

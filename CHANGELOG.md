@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Support for osx.arm64
+
 ## 1.60.1
 
 ### Fixed
