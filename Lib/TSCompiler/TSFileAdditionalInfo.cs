@@ -22,7 +22,8 @@ namespace Lib.TSCompiler
         Json,
         TypeScriptDefinition,
         Mdxb,
-        MdxbList
+        MdxbList,
+        Scss
     }
 
     public class DependencyTriplet

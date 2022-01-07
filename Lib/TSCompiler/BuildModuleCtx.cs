@@ -575,6 +575,7 @@ namespace Lib.TSCompiler
                     }
                     case FileCompilationType.Css:
                     case FileCompilationType.ImportedCss:
+                    case FileCompilationType.Scss:
                     {
                         var fbc = new TSFileBuildCache();
                         fbc.ConfigurationId = 0;
@@ -733,6 +734,7 @@ namespace Lib.TSCompiler
                     {
                         var ext = PathUtils.GetExtension(fileName);
                         if (ext.SequenceEqual("css")) info.Type = FileCompilationType.Css;
+                        else if (ext.SequenceEqual("scss")) info.Type = FileCompilationType.Scss;
                         else if (ext.SequenceEqual("js") || ext.SequenceEqual("jsx"))
                             info.Type = FileCompilationType.EsmJavaScript;
                     }
@@ -815,6 +817,31 @@ namespace Lib.TSCompiler
                         info.MapLink = SourceMap.Identity(info.Output, info.Owner.FullPath);
                         break;
                     case FileCompilationType.Resource:
+                        break;
+                    case FileCompilationType.Scss:
+                        if (!TryToResolveFromBuildCacheCss(info))
+                        {
+                            /* TODO
+                            var scssProcessor = BuildCtx.CompilerPool.GetScss();
+                            try
+                            {
+                                info.Output = info.Owner.Utf8Content;
+                                scssProcessor.CompileScss(info.Owner.Utf8Content,
+                                    info.Owner.FullPath, (url, @from) =>
+                                    {
+                                        var urlJustName = url.Split('?', '#')[0];
+                                        info.ReportTranspilationDependency(null, urlJustName, null);
+                                        return url;
+                                    }).Wait();
+                            }
+                            finally
+                            {
+                                BuildCtx.CompilerPool.ReleaseScss(scssProcessor);
+                            }
+                            */
+                        }
+
+                        ReportDependenciesFromCss(info);
                         break;
                     case FileCompilationType.Css:
                     case FileCompilationType.ImportedCss:
