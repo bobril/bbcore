@@ -786,7 +786,6 @@ namespace Lib.Composition
                     PrintMessages(messages);
                     if (testCommand.Dir.Value == null || testCommand.Out.Value != null)
                     {
-                        messages = null;
                         if (errors == 0)
                         {
                             var waitForTestResults = new Semaphore(0, 1);
@@ -825,6 +824,20 @@ namespace Lib.Composition
 
                             StopBrowserTest();
                         }
+                        else if (messages != null)
+                        {
+                            testResults.Failure = true;
+                            testResults.SuitesFailed = errors;
+                            testResults.Failures = messages.Where(m => m.IsError).Select(m => new MessageAndStack
+                            {
+                                Message = m.Text,
+                                Stack = new List<StackFrame>
+                                {
+                                    new() { FileName = m.FileName, LineNumber = m.StartLine, ColumnNumber = m.StartCol }
+                                }
+                            }).ToList();
+                        }
+                        messages = null;
                     }
                 }
 
