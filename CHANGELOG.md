@@ -5,6 +5,7 @@
 ### Added
 
 - Support for ES2015+ (WIP)
+- Add build errors to JUnit xml
 
 ## 1.59.0
 
