@@ -3,7 +3,6 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-    <PlatformTarget>x64</PlatformTarget>
     <WarningsAsErrors />
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
