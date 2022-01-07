@@ -307,7 +307,7 @@ namespace Lib.TSCompiler
                 sourceMap = true,
                 skipLibCheck = false,
                 skipDefaultLibCheck = true,
-                target = ScriptTarget.Es2015,
+                target = ScriptTarget.Es5,
                 downlevelIteration = true,
                 module = ModuleKind.Commonjs,
                 declaration = false,
