@@ -1,9 +1,8 @@
-﻿namespace Lib.WebServer
+﻿namespace Lib.WebServer;
+
+public interface ILongPollingConnection
 {
-    public interface ILongPollingConnection
-    {
-        string UserAgent { get; }
-        void Send(string message, object data);
-        void Close();
-    }
+    string UserAgent { get; }
+    void Send(string message, object data);
+    void Close();
 }

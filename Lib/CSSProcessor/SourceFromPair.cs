@@ -1,13 +1,12 @@
-﻿namespace Lib.CSSProcessor
+﻿namespace Lib.CSSProcessor;
+
+public struct SourceFromPair
 {
-    public struct SourceFromPair
+    public SourceFromPair(string source, string from)
     {
-        public SourceFromPair(string source, string from)
-        {
-            Source = source;
-            From = from;
-        }
-        public string Source;
-        public string From;
+        Source = source;
+        From = from;
     }
+    public string Source;
+    public string From;
 }

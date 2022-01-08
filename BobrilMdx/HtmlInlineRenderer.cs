@@ -1,15 +1,14 @@
 using Markdig.Syntax.Inlines;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public class HtmlInlineRenderer : TsxObjectRenderer<HtmlInline>
 {
-    public class HtmlInlineRenderer : TsxObjectRenderer<HtmlInline>
+    protected override void Write(TsxRenderer renderer, HtmlInline obj)
     {
-        protected override void Write(TsxRenderer renderer, HtmlInline obj)
+        if (renderer.EnableHtmlForInline)
         {
-            if (renderer.EnableHtmlForInline)
-            {
-                renderer.Write(obj.Tag);
-            }
+            renderer.Write(obj.Tag);
         }
     }
 }

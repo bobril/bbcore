@@ -1,15 +1,14 @@
 using Markdig.Syntax;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public class ThematicBreakRenderer : TsxObjectRenderer<ThematicBreakBlock>
 {
-    public class ThematicBreakRenderer : TsxObjectRenderer<ThematicBreakBlock>
+    protected override void Write(TsxRenderer renderer, ThematicBreakBlock obj)
     {
-        protected override void Write(TsxRenderer renderer, ThematicBreakBlock obj)
+        if (renderer.EnableHtmlForBlock)
         {
-            if (renderer.EnableHtmlForBlock)
-            {
-                renderer.Write("<mdx.Hr").WriteProps(obj).Write(" />").WriteLine();
-            }
+            renderer.Write("<mdx.Hr").WriteProps(obj).Write(" />").WriteLine();
         }
     }
 }

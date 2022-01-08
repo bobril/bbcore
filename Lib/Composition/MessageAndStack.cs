@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 
-namespace Lib.Composition
+namespace Lib.Composition;
+
+public class MessageAndStack
 {
-    public class MessageAndStack
-    {
-        public string Message;
-        public List<StackFrame> Stack;
-    }
+    public string Message;
+    public List<StackFrame> Stack;
 }

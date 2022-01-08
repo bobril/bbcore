@@ -1,9 +1,8 @@
-﻿namespace Lib.TSCompiler
+﻿namespace Lib.TSCompiler;
+
+public enum DepedencyUpdate
 {
-    public enum DepedencyUpdate
-    {
-        Disabled,
-        Install,
-        Upgrade
-    }
+    Disabled,
+    Install,
+    Upgrade
 }

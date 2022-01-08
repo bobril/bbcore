@@ -1,11 +1,10 @@
 ﻿using Newtonsoft.Json.Linq;
 
-namespace Lib.WebServer
+namespace Lib.WebServer;
+
+public interface ILongPollingConnectionHandler
 {
-    public interface ILongPollingConnectionHandler
-    {
-        void OnConnect(ILongPollingConnection connection);
-        void OnMessage(ILongPollingConnection connection, string message, JToken data);
-        void OnClose(ILongPollingConnection connection);
-    }
+    void OnConnect(ILongPollingConnection connection);
+    void OnMessage(ILongPollingConnection connection, string message, JToken data);
+    void OnClose(ILongPollingConnection connection);
 }

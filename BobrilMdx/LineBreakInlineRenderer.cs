@@ -1,24 +1,23 @@
 using Markdig.Syntax.Inlines;
 
-namespace BobrilMdx
-{
-    public class LineBreakInlineRenderer : TsxObjectRenderer<LineBreakInline>
-    {
-        protected override void Write(TsxRenderer renderer, LineBreakInline obj)
-        {
-            if (renderer.EnableHtmlForInline)
-            {
-                if (obj.IsHard)
-                {
-                    renderer.Write("{mdx.Br()}");
-                }
-                else
-                {
-                    renderer.Write("{\" \"}");
-                }
-            }
+namespace BobrilMdx;
 
-            renderer.EnsureLine();
+public class LineBreakInlineRenderer : TsxObjectRenderer<LineBreakInline>
+{
+    protected override void Write(TsxRenderer renderer, LineBreakInline obj)
+    {
+        if (renderer.EnableHtmlForInline)
+        {
+            if (obj.IsHard)
+            {
+                renderer.Write("{mdx.Br()}");
+            }
+            else
+            {
+                renderer.Write("{\" \"}");
+            }
         }
+
+        renderer.EnsureLine();
     }
 }

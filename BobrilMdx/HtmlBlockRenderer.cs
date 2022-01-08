@@ -1,12 +1,11 @@
 using Markdig.Syntax;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public class HtmlBlockRenderer : TsxObjectRenderer<HtmlBlock>
 {
-    public class HtmlBlockRenderer : TsxObjectRenderer<HtmlBlock>
+    protected override void Write(TsxRenderer renderer, HtmlBlock obj)
     {
-        protected override void Write(TsxRenderer renderer, HtmlBlock obj)
-        {
-            renderer.WriteLeafRawLines(obj, true, false);
-        }
+        renderer.WriteLeafRawLines(obj, true, false);
     }
 }

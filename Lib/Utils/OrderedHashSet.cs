@@ -1,12 +1,11 @@
 ﻿using System.Collections.ObjectModel;
 
-namespace Lib.Utils
+namespace Lib.Utils;
+
+public class OrderedHashSet<T> : KeyedCollection<T, T>
 {
-    public class OrderedHashSet<T> : KeyedCollection<T, T>
+    protected override T GetKeyForItem(T item)
     {
-        protected override T GetKeyForItem(T item)
-        {
-            return item;
-        }
+        return item;
     }
 }

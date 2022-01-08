@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 
-namespace Lib.Composition
+namespace Lib.Composition;
+
+public class TestServerState
 {
-    public class TestServerState
-    {
-        public List<TestResultsHolder> Agents = new List<TestResultsHolder>();
-    }
+    public List<TestResultsHolder> Agents = new List<TestResultsHolder>();
 }

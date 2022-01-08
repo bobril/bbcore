@@ -1,19 +1,18 @@
 ﻿using System;
 
-namespace Lib.Utils
+namespace Lib.Utils;
+
+public class Disposer: IDisposable
 {
-    public class Disposer: IDisposable
+    readonly Action _onDispose;
+
+    public Disposer(Action onDispose)
     {
-        readonly Action _onDispose;
+        _onDispose = onDispose;
+    }
 
-        public Disposer(Action onDispose)
-        {
-            _onDispose = onDispose;
-        }
-
-        public void Dispose()
-        {
-            _onDispose();
-        }
+    public void Dispose()
+    {
+        _onDispose();
     }
 }

@@ -1,27 +1,26 @@
 using Markdig.Syntax.Inlines;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public class CodeInlineRenderer : TsxObjectRenderer<CodeInline>
 {
-    public class CodeInlineRenderer : TsxObjectRenderer<CodeInline>
+    protected override void Write(TsxRenderer renderer, CodeInline obj)
     {
-        protected override void Write(TsxRenderer renderer, CodeInline obj)
+        if (renderer.EnableHtmlForInline)
         {
-            if (renderer.EnableHtmlForInline)
-            {
-                renderer.Write("<mdx.Code").WriteProps(obj).Write('>');
-            }
-            if (renderer.EnableHtmlEscape)
-            {
-                renderer.WriteEscape(obj.Content);
-            }
-            else
-            {
-                renderer.Write(obj.Content);
-            }
-            if (renderer.EnableHtmlForInline)
-            {
-                renderer.Write("</mdx.Code>");
-            }
+            renderer.Write("<mdx.Code").WriteProps(obj).Write('>');
+        }
+        if (renderer.EnableHtmlEscape)
+        {
+            renderer.WriteEscape(obj.Content);
+        }
+        else
+        {
+            renderer.Write(obj.Content);
+        }
+        if (renderer.EnableHtmlForInline)
+        {
+            renderer.Write("</mdx.Code>");
         }
     }
 }

@@ -1,9 +1,8 @@
 using BTDB.Collections;
 
-namespace Lib.TSCompiler
+namespace Lib.TSCompiler;
+
+public interface IBundler
 {
-    public interface IBundler
-    {
-        void Build(bool compress, bool mangle, bool beautify, bool buildSourceMap, string? sourceMapSourceRoot);
-    }
+    void Build(bool compress, bool mangle, bool beautify, bool buildSourceMap, string? sourceMapSourceRoot);
 }

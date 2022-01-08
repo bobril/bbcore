@@ -6,76 +6,75 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Lib.AssetsPlugin
+namespace Lib.AssetsPlugin;
+
+public class AssetsGenerator
 {
-    public class AssetsGenerator
+    const string AssetsFileName = "assets.ts";
+    const string SpritesFileName = "sprites.ts";
+    const string AssetsDirName = "assets";
+    const string SrcDirName = "src";
+    readonly IDiskCache _cache;
+
+    public AssetsGenerator(IDiskCache cache)
     {
-        const string AssetsFileName = "assets.ts";
-        const string SpritesFileName = "sprites.ts";
-        const string AssetsDirName = "assets";
-        const string SrcDirName = "src";
-        readonly IDiskCache _cache;
+        _cache = cache;
+    }
 
-        public AssetsGenerator(IDiskCache cache)
+    public bool Run(string projectDir, bool generateSpritesFile)
+    {
+        var projDir = _cache.TryGetItem(projectDir) as IDirectoryCache;
+        if (projDir == null) return false;
+        _cache.UpdateIfNeeded(projDir);
+        if (!(projDir.TryGetChild(AssetsDirName) is IDirectoryCache assetsDir)) return false;
+        var srcPath = PathUtils.Join(projectDir, SrcDirName);
+
+        var assets = InspectAssets(assetsDir, srcPath);
+        var assetsContentBuilder = new AssetsContentBuilder();
+        assetsContentBuilder.Build(assets);
+        var changed = WriteContent(srcPath, AssetsFileName, assetsContentBuilder.Content, projectDir);
+
+        if (generateSpritesFile)
         {
-            _cache = cache;
+            var spritesContentBuilder = new SpritesContentBuilder();
+            spritesContentBuilder.Build(assets);
+            changed |= WriteContent(srcPath, SpritesFileName, spritesContentBuilder.Content, projectDir);
         }
+        return changed;
+    }
 
-        public bool Run(string projectDir, bool generateSpritesFile)
+    IDictionary<string, object> InspectAssets(IDirectoryCache rootDir, string srcPath)
+    {
+        _cache.UpdateIfNeeded(rootDir);
+        var assetsMap = new Dictionary<string, object>();
+        var assetsFiles = rootDir.ToList();
+        foreach (var assetFile in assetsFiles)
         {
-            var projDir = _cache.TryGetItem(projectDir) as IDirectoryCache;
-            if (projDir == null) return false;
-            _cache.UpdateIfNeeded(projDir);
-            if (!(projDir.TryGetChild(AssetsDirName) is IDirectoryCache assetsDir)) return false;
-            var srcPath = PathUtils.Join(projectDir, SrcDirName);
-
-            var assets = InspectAssets(assetsDir, srcPath);
-            var assetsContentBuilder = new AssetsContentBuilder();
-            assetsContentBuilder.Build(assets);
-            var changed = WriteContent(srcPath, AssetsFileName, assetsContentBuilder.Content, projectDir);
-
-            if (generateSpritesFile)
+            if (assetFile is IDirectoryCache dir)
             {
-                var spritesContentBuilder = new SpritesContentBuilder();
-                spritesContentBuilder.Build(assets);
-                changed |= WriteContent(srcPath, SpritesFileName, spritesContentBuilder.Content, projectDir);
+                assetsMap[SanitizeKey(dir.Name)] = InspectAssets(dir, srcPath);
             }
-            return changed;
-        }
-
-        IDictionary<string, object> InspectAssets(IDirectoryCache rootDir, string srcPath)
-        {
-            _cache.UpdateIfNeeded(rootDir);
-            var assetsMap = new Dictionary<string, object>();
-            var assetsFiles = rootDir.ToList();
-            foreach (var assetFile in assetsFiles)
+            else
             {
-                if (assetFile is IDirectoryCache dir)
-                {
-                    assetsMap[SanitizeKey(dir.Name)] = InspectAssets(dir, srcPath);
-                }
-                else
-                {
-                    assetsMap[SanitizeKey(PathUtils.ExtractQuality(assetFile.Name).Name)] = PathUtils.Subtract(PathUtils.ExtractQuality(assetFile.FullPath).Name, srcPath);
-                }
+                assetsMap[SanitizeKey(PathUtils.ExtractQuality(assetFile.Name).Name)] = PathUtils.Subtract(PathUtils.ExtractQuality(assetFile.FullPath).Name, srcPath);
             }
-            return assetsMap;
         }
+        return assetsMap;
+    }
 
-        static string SanitizeKey(string key)
-        {
-            return key.Replace('.', '_').Replace('-', '_').Replace(' ', '_');
-        }
+    static string SanitizeKey(string key)
+    {
+        return key.Replace('.', '_').Replace('-', '_').Replace(' ', '_');
+    }
 
-        bool WriteContent(string srcPath, string fileName, string content, string projectDir)
-        {
-            var filePath = PathUtils.Join(srcPath, fileName);
-            if (_cache.TryGetItem(filePath) is IFileCache file && file.Utf8Content == content)
-                return false;
-            Console.WriteLine("AssetGenerator updating " + PathUtils.Subtract(filePath, projectDir));
-            Directory.CreateDirectory(srcPath);
-            File.WriteAllText(filePath, content, new UTF8Encoding(false));
-            return true;
-        }
+    bool WriteContent(string srcPath, string fileName, string content, string projectDir)
+    {
+        var filePath = PathUtils.Join(srcPath, fileName);
+        if (_cache.TryGetItem(filePath) is IFileCache file && file.Utf8Content == content)
+            return false;
+        Console.WriteLine("AssetGenerator updating " + PathUtils.Subtract(filePath, projectDir));
+        Directory.CreateDirectory(srcPath);
+        File.WriteAllText(filePath, content, new UTF8Encoding(false));
+        return true;
     }
 }

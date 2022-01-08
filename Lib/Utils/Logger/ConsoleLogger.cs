@@ -1,81 +1,80 @@
 using System;
 
-namespace Lib.Utils.Logger
+namespace Lib.Utils.Logger;
+
+public interface IConsoleLogger : ILogger
 {
-    public interface IConsoleLogger : ILogger
+    void WriteLine(string message, ConsoleColor color);
+}
+
+public class ConsoleLogger : IConsoleLogger
+{
+    readonly object _lock = new();
+    public bool Verbose { get; set; }
+
+    public void WriteLine(string message)
     {
-        void WriteLine(string message, ConsoleColor color);
+        lock (_lock)
+        {
+            Console.WriteLine(message);
+        }
     }
 
-    public class ConsoleLogger : IConsoleLogger
+    public void WriteLine(string message, ConsoleColor color)
     {
-        readonly object _lock = new();
-        public bool Verbose { get; set; }
-
-        public void WriteLine(string message)
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                Console.WriteLine(message);
-            }
+            SetColor(color);
+            Console.WriteLine(message);
+            ClearColor();
         }
+    }
 
-        public void WriteLine(string message, ConsoleColor color)
+    public void Success(string message)
+    {
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                SetColor(color);
-                Console.WriteLine(message);
-                ClearColor();
-            }
+            SetColor(ConsoleColor.Green);
+            Console.WriteLine(message);
+            ClearColor();
         }
+    }
 
-        public void Success(string message)
+    public void Info(string message)
+    {
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                SetColor(ConsoleColor.Green);
-                Console.WriteLine(message);
-                ClearColor();
-            }
+            Console.WriteLine(message);
         }
+    }
 
-        public void Info(string message)
+    public void Warn(string message)
+    {
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                Console.WriteLine(message);
-            }
+            SetColor(ConsoleColor.Yellow);
+            Console.WriteLine(message);
+            ClearColor();
         }
+    }
 
-        public void Warn(string message)
+    public void Error(string message)
+    {
+        lock (_lock)
         {
-            lock (_lock)
-            {
-                SetColor(ConsoleColor.Yellow);
-                Console.WriteLine(message);
-                ClearColor();
-            }
+            SetColor(ConsoleColor.Red);
+            Console.WriteLine(message);
+            ClearColor();
         }
+    }
 
-        public void Error(string message)
-        {
-            lock (_lock)
-            {
-                SetColor(ConsoleColor.Red);
-                Console.WriteLine(message);
-                ClearColor();
-            }
-        }
+    static void SetColor(ConsoleColor color)
+    {
+        Console.ForegroundColor = color;
+    }
 
-        static void SetColor(ConsoleColor color)
-        {
-            Console.ForegroundColor = color;
-        }
-
-        static void ClearColor()
-        {
-            Console.ResetColor();
-        }
+    static void ClearColor()
+    {
+        Console.ResetColor();
     }
 }

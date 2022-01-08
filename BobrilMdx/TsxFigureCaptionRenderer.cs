@@ -1,15 +1,14 @@
 using Markdig.Extensions.Figures;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public class TsxFigureCaptionRenderer : TsxObjectRenderer<FigureCaption>
 {
-    public class TsxFigureCaptionRenderer : TsxObjectRenderer<FigureCaption>
+    protected override void Write(TsxRenderer renderer, FigureCaption obj)
     {
-        protected override void Write(TsxRenderer renderer, FigureCaption obj)
-        {
-            renderer.EnsureLine();
-            renderer.Write("<mdx.Figcaption").WriteProps(obj).Write('>');
-            renderer.WriteLeafInline(obj);
-            renderer.Write("</mdx.Figcaption>").WriteLine();
-        }
+        renderer.EnsureLine();
+        renderer.Write("<mdx.Figcaption").WriteProps(obj).Write('>');
+        renderer.WriteLeafInline(obj);
+        renderer.Write("</mdx.Figcaption>").WriteLine();
     }
 }

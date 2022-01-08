@@ -5,14 +5,14 @@ using System.Linq;
 using System.Text;
 using Xunit;
 
-namespace Lib.Test
+namespace Lib.Test;
+
+public class MessageParserTests
 {
-    public class MessageParserTests
+    [Fact]
+    public void ParamExtractionWorks()
     {
-        [Fact]
-        public void ParamExtractionWorks()
-        {
-            var ast = new MessageParser().Parse(@"{gender_of_host, select,
+        var ast = new MessageParser().Parse(@"{gender_of_host, select,
                 female {{
             	    num_guests, plural, offset:1
                     =0 {{host} does not give a party.}
@@ -35,9 +35,8 @@ namespace Lib.Test
                     other {{host} invites {guest} and # other people to their party.}
             	}}
             }");
-            var pars = new HashSet<string>();
-            ast.GatherParams(pars);
-            Assert.Equal(new List<string> { "gender_of_host", "guest", "host", "num_guests" }, pars.OrderBy(s => s));
-        }
+        var pars = new HashSet<string>();
+        ast.GatherParams(pars);
+        Assert.Equal(new List<string> { "gender_of_host", "guest", "host", "num_guests" }, pars.OrderBy(s => s));
     }
 }

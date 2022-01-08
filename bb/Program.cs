@@ -1,14 +1,13 @@
 ﻿using System;
 
-namespace bb
+namespace bb;
+
+class Program
 {
-    class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            var composition = new Lib.Composition.Composition(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER")!=null);
-            composition.ParseCommandLine(args);
-            composition.RunCommand();
-        }
+        var composition = new Lib.Composition.Composition(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER")!=null);
+        composition.ParseCommandLine(args);
+        composition.RunCommand();
     }
 }

@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 
-namespace Lib.TSCompiler
+namespace Lib.TSCompiler;
+
+public class TranspileResult
 {
-    public class TranspileResult
-    {
-        public string JavaScript;
-        public string SourceMap;
-        public List<Diagnostic>? Diagnostics;
-    }
+    public string JavaScript;
+    public string SourceMap;
+    public List<Diagnostic>? Diagnostics;
 }

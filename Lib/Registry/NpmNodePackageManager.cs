@@ -10,182 +10,181 @@ using Lib.Utils;
 using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
 
-namespace Lib.Registry
+namespace Lib.Registry;
+
+public class NpmNodePackageManager : INodePackageManager
 {
-    public class NpmNodePackageManager : INodePackageManager
+    readonly IDiskCache _diskCache;
+    readonly ILogger _logger;
+    string _npmPath;
+
+    public NpmNodePackageManager(IDiskCache diskCache, ILogger logger)
     {
-        readonly IDiskCache _diskCache;
-        readonly ILogger _logger;
-        string _npmPath;
+        _diskCache = diskCache;
+        _logger = logger;
+        _npmPath = GetNpmPath();
+    }
 
-        public NpmNodePackageManager(IDiskCache diskCache, ILogger logger)
+    static string GetNpmPath()
+    {
+        var npmExecName = "npm";
+        if (!PathUtils.IsUnixFs)
         {
-            _diskCache = diskCache;
-            _logger = logger;
-            _npmPath = GetNpmPath();
+            npmExecName += ".cmd";
         }
 
-        static string GetNpmPath()
-        {
-            var npmExecName = "npm";
-            if (!PathUtils.IsUnixFs)
-            {
-                npmExecName += ".cmd";
-            }
+        return Environment.GetEnvironmentVariable("PATH")?
+            .Split(Path.PathSeparator)
+            .Where(t => !string.IsNullOrEmpty(t))
+            .Select(p => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), npmExecName))
+            .FirstOrDefault(File.Exists);
+    }
 
-            return Environment.GetEnvironmentVariable("PATH")?
-                .Split(Path.PathSeparator)
-                .Where(t => !string.IsNullOrEmpty(t))
-                .Select(p => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), npmExecName))
-                .FirstOrDefault(File.Exists);
+    public bool IsAvailable => _npmPath != null;
+
+    public bool IsUsedInProject(IDirectoryCache projectDirectory)
+    {
+        return projectDirectory.TryGetChild("package-lock.json") is IFileCache;
+    }
+
+    public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
+    {
+        var lockFile = projectDirectory.TryGetChild("package-lock.json") as IFileCache;
+        if (lockFile == null)
+        {
+            yield break;
         }
 
-        public bool IsAvailable => _npmPath != null;
-
-        public bool IsUsedInProject(IDirectoryCache projectDirectory)
+        var parsed = JObject.Parse(lockFile.Utf8Content);
+        foreach (var prop in parsed["dependencies"].Children<JProperty>())
         {
-            return projectDirectory.TryGetChild("package-lock.json") is IFileCache;
-        }
-
-        public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
-        {
-            var lockFile = projectDirectory.TryGetChild("package-lock.json") as IFileCache;
-            if (lockFile == null)
+            yield return new PackagePathVersion
             {
-                yield break;
-            }
-
-            var parsed = JObject.Parse(lockFile.Utf8Content);
-            foreach (var prop in parsed["dependencies"].Children<JProperty>())
-            {
-                yield return new PackagePathVersion
-                {
-                    Name = prop.Name,
-                    Version = ((JObject) prop.Value)["version"].Value<string>(),
-                    Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + prop.Name)
-                };
-            }
-        }
-
-        public void RunNpm(string dir, string aParams)
-        {
-            _logger.Info("Npm " + aParams);
-            var start = new ProcessStartInfo(_npmPath, aParams)
-            {
-                UseShellExecute = false,
-                WorkingDirectory = dir,
-                StandardErrorEncoding = Encoding.UTF8,
-                StandardOutputEncoding = Encoding.UTF8,
-                RedirectStandardError = true,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true
+                Name = prop.Name,
+                Version = ((JObject) prop.Value)["version"].Value<string>(),
+                Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + prop.Name)
             };
-
-            var process = Process.Start(start);
-            process.OutputDataReceived += Process_OutputDataReceived;
-            process.ErrorDataReceived += Process_OutputDataReceived;
-            process.BeginErrorReadLine();
-            process.BeginOutputReadLine();
-            process.WaitForExit();
         }
+    }
 
-        void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
+    public void RunNpm(string dir, string aParams)
+    {
+        _logger.Info("Npm " + aParams);
+        var start = new ProcessStartInfo(_npmPath, aParams)
         {
-            _logger.WriteLine(e.Data);
-        }
+            UseShellExecute = false,
+            WorkingDirectory = dir,
+            StandardErrorEncoding = Encoding.UTF8,
+            StandardOutputEncoding = Encoding.UTF8,
+            RedirectStandardError = true,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true
+        };
 
-        public void Install(IDirectoryCache projectDirectory)
-        {
-            RunNpmWithParam(projectDirectory, "install");
-        }
+        var process = Process.Start(start);
+        process.OutputDataReceived += Process_OutputDataReceived;
+        process.ErrorDataReceived += Process_OutputDataReceived;
+        process.BeginErrorReadLine();
+        process.BeginOutputReadLine();
+        process.WaitForExit();
+    }
 
-        void RunNpmWithParam(IDirectoryCache projectDirectory, string param)
+    void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
+    {
+        _logger.WriteLine(e.Data);
+    }
+
+    public void Install(IDirectoryCache projectDirectory)
+    {
+        RunNpmWithParam(projectDirectory, "install");
+    }
+
+    void RunNpmWithParam(IDirectoryCache projectDirectory, string param)
+    {
+        var fullPath = projectDirectory.FullPath;
+        var project = TSProject.Create(projectDirectory, _diskCache, _logger, null);
+        project.LoadProjectJson(true, null);
+        if (project.ProjectOptions.NpmRegistry != null)
         {
-            var fullPath = projectDirectory.FullPath;
-            var project = TSProject.Create(projectDirectory, _diskCache, _logger, null);
-            project.LoadProjectJson(true, null);
-            if (project.ProjectOptions.NpmRegistry != null)
+            if (!(projectDirectory.TryGetChild(".npmrc") is IFileCache))
             {
-                if (!(projectDirectory.TryGetChild(".npmrc") is IFileCache))
+                File.WriteAllText(PathUtils.Join(fullPath, ".npmrc"),
+                    "registry =" + project.ProjectOptions.NpmRegistry);
+            }
+        }
+
+        var par = param;
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BBCoreNoLinks")))
+        {
+            par += " --no-bin-links";
+        }
+
+        RunNpm(fullPath, par);
+    }
+
+    public void UpgradeAll(IDirectoryCache projectDirectory)
+    {
+        _diskCache.UpdateIfNeeded(projectDirectory);
+        File.Delete(PathUtils.Join(projectDirectory.FullPath, "package-lock.json"));
+        var dirToDelete = projectDirectory.TryGetChild("node_modules") as IDirectoryCache;
+        RecursiveDelete(dirToDelete);
+        Install(projectDirectory);
+    }
+
+    void RecursiveDelete(IDirectoryCache dirToDelete)
+    {
+        if (dirToDelete == null)
+            return;
+        _diskCache.UpdateIfNeeded(dirToDelete);
+        foreach (var item in dirToDelete)
+        {
+            if (item is IFileCache)
+            {
+                try
                 {
-                    File.WriteAllText(PathUtils.Join(fullPath, ".npmrc"),
-                        "registry =" + project.ProjectOptions.NpmRegistry);
+                    File.Delete(item.FullPath);
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
+
+                continue;
+            }
+
+            var dir = item as IDirectoryCache;
+            if (dir != null && dir.IsLink)
+            {
+                try
+                {
+                    Directory.Delete(dir.FullPath, false);
+                }
+                catch (Exception)
+                {
+                    // ignored
                 }
             }
 
-            var par = param;
-            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BBCoreNoLinks")))
-            {
-                par += " --no-bin-links";
-            }
-
-            RunNpm(fullPath, par);
+            RecursiveDelete(dir);
         }
 
-        public void UpgradeAll(IDirectoryCache projectDirectory)
+        try
         {
-            _diskCache.UpdateIfNeeded(projectDirectory);
-            File.Delete(PathUtils.Join(projectDirectory.FullPath, "package-lock.json"));
-            var dirToDelete = projectDirectory.TryGetChild("node_modules") as IDirectoryCache;
-            RecursiveDelete(dirToDelete);
-            Install(projectDirectory);
+            Directory.Delete(dirToDelete.FullPath, true);
         }
-
-        void RecursiveDelete(IDirectoryCache dirToDelete)
+        catch (Exception)
         {
-            if (dirToDelete == null)
-                return;
-            _diskCache.UpdateIfNeeded(dirToDelete);
-            foreach (var item in dirToDelete)
-            {
-                if (item is IFileCache)
-                {
-                    try
-                    {
-                        File.Delete(item.FullPath);
-                    }
-                    catch (Exception)
-                    {
-                        // ignored
-                    }
-
-                    continue;
-                }
-
-                var dir = item as IDirectoryCache;
-                if (dir != null && dir.IsLink)
-                {
-                    try
-                    {
-                        Directory.Delete(dir.FullPath, false);
-                    }
-                    catch (Exception)
-                    {
-                        // ignored
-                    }
-                }
-
-                RecursiveDelete(dir);
-            }
-
-            try
-            {
-                Directory.Delete(dirToDelete.FullPath, true);
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
+            // ignored
         }
+    }
 
-        public void Upgrade(IDirectoryCache projectDirectory, string packageName)
-        {
-            RunNpmWithParam(projectDirectory, "update " + packageName);
-        }
+    public void Upgrade(IDirectoryCache projectDirectory, string packageName)
+    {
+        RunNpmWithParam(projectDirectory, "update " + packageName);
+    }
 
-        public void Add(IDirectoryCache projectDirectory, string packageName, bool devDependency = false)
-        {
-            RunNpmWithParam(projectDirectory, "install " + packageName + (devDependency ? " --save-dev" : " --save"));
-        }
+    public void Add(IDirectoryCache projectDirectory, string packageName, bool devDependency = false)
+    {
+        RunNpmWithParam(projectDirectory, "install " + packageName + (devDependency ? " --save-dev" : " --save"));
     }
 }

@@ -1,33 +1,32 @@
 ﻿using System.Collections.Generic;
 using System.Collections;
 
-namespace Lib.TSCompiler
+namespace Lib.TSCompiler;
+
+public class StructuralEqualityComparer<T> : IEqualityComparer<T>
 {
-    public class StructuralEqualityComparer<T> : IEqualityComparer<T>
+    public bool Equals(T x, T y)
     {
-        public bool Equals(T x, T y)
-        {
-            return StructuralComparisons.StructuralEqualityComparer.Equals(x, y);
-        }
+        return StructuralComparisons.StructuralEqualityComparer.Equals(x, y);
+    }
 
-        public int GetHashCode(T obj)
-        {
-            return StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
-        }
+    public int GetHashCode(T obj)
+    {
+        return StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
+    }
 
-        static StructuralEqualityComparer<T> defaultComparer;
-        public static StructuralEqualityComparer<T> Default
+    static StructuralEqualityComparer<T> defaultComparer;
+    public static StructuralEqualityComparer<T> Default
+    {
+        get
         {
-            get
+            StructuralEqualityComparer<T> comparer = defaultComparer;
+            if (comparer == null)
             {
-                StructuralEqualityComparer<T> comparer = defaultComparer;
-                if (comparer == null)
-                {
-                    comparer = new StructuralEqualityComparer<T>();
-                    defaultComparer = comparer;
-                }
-                return comparer;
+                comparer = new StructuralEqualityComparer<T>();
+                defaultComparer = comparer;
             }
+            return comparer;
         }
     }
 }

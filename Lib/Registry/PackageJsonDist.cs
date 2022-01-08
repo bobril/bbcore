@@ -1,8 +1,7 @@
-namespace Lib.Registry
+namespace Lib.Registry;
+
+public class PackageJsonDist
 {
-    public class PackageJsonDist
-    {
-        public string Shasum { get; set; }
-        public string Tarball { get; set; }
-    }
+    public string Shasum { get; set; }
+    public string Tarball { get; set; }
 }

@@ -1,25 +1,24 @@
 using Markdig.Syntax;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public class QuoteBlockRenderer : TsxObjectRenderer<QuoteBlock>
 {
-    public class QuoteBlockRenderer : TsxObjectRenderer<QuoteBlock>
+    protected override void Write(TsxRenderer renderer, QuoteBlock obj)
     {
-        protected override void Write(TsxRenderer renderer, QuoteBlock obj)
+        renderer.EnsureLine();
+        if (renderer.EnableHtmlForBlock)
         {
-            renderer.EnsureLine();
-            if (renderer.EnableHtmlForBlock)
-            {
-                renderer.Write("<mdx.BlockQuote").WriteProps(obj).Write(">").WriteLine();
-            }
-            var savedImplicitParagraph = renderer.ImplicitParagraph;
-            renderer.ImplicitParagraph = false;
-            renderer.WriteChildren(obj);
-            renderer.ImplicitParagraph = savedImplicitParagraph;
-            if (renderer.EnableHtmlForBlock)
-            {
-                renderer.Write("</mdx.BlockQuote>").WriteLine();
-            }
-            renderer.EnsureLine();
+            renderer.Write("<mdx.BlockQuote").WriteProps(obj).Write(">").WriteLine();
         }
+        var savedImplicitParagraph = renderer.ImplicitParagraph;
+        renderer.ImplicitParagraph = false;
+        renderer.WriteChildren(obj);
+        renderer.ImplicitParagraph = savedImplicitParagraph;
+        if (renderer.EnableHtmlForBlock)
+        {
+            renderer.Write("</mdx.BlockQuote>").WriteLine();
+        }
+        renderer.EnsureLine();
     }
 }

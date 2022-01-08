@@ -1,11 +1,10 @@
 using System;
 
-namespace Lib.Watcher
+namespace Lib.Watcher;
+
+public interface IDirectoryWatcher : IDisposable
 {
-    public interface IDirectoryWatcher : IDisposable
-    {
-        string WatchedDirectory { get; set; }
-        Action<string> OnFileChange { get; set; }
-        Action OnError { get; set; }
-    }
+    string WatchedDirectory { get; set; }
+    Action<string> OnFileChange { get; set; }
+    Action OnError { get; set; }
 }

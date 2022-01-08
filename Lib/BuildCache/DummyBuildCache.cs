@@ -6,45 +6,44 @@ using BTDB.KVDBLayer;
 using BTDB.ODBLayer;
 using Lib.Utils;
 
-namespace Lib.BuildCache
+namespace Lib.BuildCache;
+
+public class DummyBuildCache : IBuildCache
 {
-    public class DummyBuildCache : IBuildCache
+    public bool IsEnabled => false;
+
+    public void Dispose()
     {
-        public bool IsEnabled => false;
+    }
 
-        public void Dispose()
-        {
-        }
+    public void EndTransaction()
+    {
+    }
 
-        public void EndTransaction()
-        {
-        }
+    public TSFileBuildCache FindTSFileBuildCache(byte[] contentHash, uint configurationId)
+    {
+        return null;
+    }
 
-        public TSFileBuildCache FindTSFileBuildCache(byte[] contentHash, uint configurationId)
-        {
-            return null;
-        }
+    public string GetContentByHash(byte[] contentHash)
+    {
+        return null;
+    }
 
-        public string GetContentByHash(byte[] contentHash)
-        {
-            return null;
-        }
+    public uint MapConfiguration(string tsversion, string compilerOptionsJson)
+    {
+        return 0;
+    }
 
-        public uint MapConfiguration(string tsversion, string compilerOptionsJson)
-        {
-            return 0;
-        }
+    public void StartTransaction()
+    {
+    }
 
-        public void StartTransaction()
-        {
-        }
+    public void Store(TSFileBuildCache value)
+    {
+    }
 
-        public void Store(TSFileBuildCache value)
-        {
-        }
-
-        public void Store(byte[] contentHash, string content)
-        {
-        }
+    public void Store(byte[] contentHash, string content)
+    {
     }
 }

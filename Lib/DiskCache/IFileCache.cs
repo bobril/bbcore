@@ -1,14 +1,13 @@
 ﻿using System;
 
-namespace Lib.DiskCache
+namespace Lib.DiskCache;
+
+public interface IFileCache: IItemCache
 {
-    public interface IFileCache: IItemCache
-    {
-        DateTime Modified { get; }
-        ulong Length { get; }
-        byte[] ByteContent { get; }
-        byte[] HashOfContent { get; }
-        string Utf8Content { get; }
-        void FreeCache();
-    }
+    DateTime Modified { get; }
+    ulong Length { get; }
+    byte[] ByteContent { get; }
+    byte[] HashOfContent { get; }
+    string Utf8Content { get; }
+    void FreeCache();
 }

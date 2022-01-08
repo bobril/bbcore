@@ -1,7 +1,6 @@
-namespace Lib.Registry
+namespace Lib.Registry;
+
+public class RegistryCache
 {
-    public class RegistryCache
-    {
-        // TODO
-    }
+    // TODO
 }

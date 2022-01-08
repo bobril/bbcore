@@ -1,9 +1,8 @@
-namespace Lib.Registry
+namespace Lib.Registry;
+
+public class PackagePathVersion
 {
-    public class PackagePathVersion
-    {
-        public string Name;
-        public string Path;
-        public string Version;
-    }
+    public string Name;
+    public string Path;
+    public string Version;
 }

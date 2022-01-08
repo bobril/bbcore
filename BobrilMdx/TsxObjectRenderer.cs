@@ -1,9 +1,8 @@
 using Markdig.Renderers;
 using Markdig.Syntax;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public abstract class TsxObjectRenderer<TObject> : MarkdownObjectRenderer<TsxRenderer, TObject> where TObject : MarkdownObject
 {
-    public abstract class TsxObjectRenderer<TObject> : MarkdownObjectRenderer<TsxRenderer, TObject> where TObject : MarkdownObject
-    {
-    }
 }

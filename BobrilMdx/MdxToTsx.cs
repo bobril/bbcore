@@ -9,94 +9,93 @@ using Njsast.Output;
 using Njsast.Runtime;
 using YamlDotNet.Serialization;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public class MdxToTsx
 {
-    public class MdxToTsx
+    readonly MarkdownPipeline _pipeline;
+    MarkdownDocument? _document;
+
+    public MdxToTsx()
     {
-        readonly MarkdownPipeline _pipeline;
-        MarkdownDocument? _document;
+        var builder = new MarkdownPipelineBuilder()
+            .UseYamlFrontMatter()
+            .UseAbbreviations()
+            .UseAutoIdentifiers()
+            .UseCitations()
+            .UseDefinitionLists()
+            .UseEmphasisExtras()
+            .UseFigures()
+            .UseFooters()
+            //.UseFootnotes() too complex for small usefulness
+            .UseGridTables()
+            //.UseMathematics()
+            //.UseMediaLinks() could be probably solved in component
+            .UsePipeTables()
+            .UseListExtras()
+            .UseTaskLists()
+            .UseDiagrams()
+            .DisableHtml()
+            .UseAutoLinks();
+        builder.Extensions.AddIfNotAlready<ImportExtension>();
+        builder.BlockParsers.AddIfNotAlready<MdxBlockParser>();
+        builder.InlineParsers.AddIfNotAlready<MdxCodeInlineParser>();
+        builder.InlineParsers.TryRemove<AutolinkInlineParser>();
+        builder.InlineParsers.AddIfNotAlready<AutolinkAndJsxInlineParser>();
+        _pipeline = builder.Build();
+    }
 
-        public MdxToTsx()
+    public void Parse(string text)
+    {
+        _document = Markdown.Parse(text, _pipeline);
+    }
+
+    public (string content, Dictionary<object, object> metadata) Render()
+    {
+        var renderer = new TsxRenderer();
+        renderer.Write("import * as b from \"bobril\";").WriteLine();
+        renderer.Write("import * as mdx from \"@bobril/mdx\";").WriteLine();
+
+        foreach (var importBlock in _document!.Descendants<ImportBlock>())
         {
-            var builder = new MarkdownPipelineBuilder()
-                .UseYamlFrontMatter()
-                .UseAbbreviations()
-                .UseAutoIdentifiers()
-                .UseCitations()
-                .UseDefinitionLists()
-                .UseEmphasisExtras()
-                .UseFigures()
-                .UseFooters()
-                //.UseFootnotes() too complex for small usefulness
-                .UseGridTables()
-                //.UseMathematics()
-                //.UseMediaLinks() could be probably solved in component
-                .UsePipeTables()
-                .UseListExtras()
-                .UseTaskLists()
-                .UseDiagrams()
-                .DisableHtml()
-                .UseAutoLinks();
-            builder.Extensions.AddIfNotAlready<ImportExtension>();
-            builder.BlockParsers.AddIfNotAlready<MdxBlockParser>();
-            builder.InlineParsers.AddIfNotAlready<MdxCodeInlineParser>();
-            builder.InlineParsers.TryRemove<AutolinkInlineParser>();
-            builder.InlineParsers.AddIfNotAlready<AutolinkAndJsxInlineParser>();
-            _pipeline = builder.Build();
+            renderer.Write(importBlock.Lines.ToSlice()).WriteLine();
+        }
+        foreach (var codeBlock in _document!.Descendants<FencedCodeBlock>().ToList())
+        {
+            switch (codeBlock.Info)
+            {
+                case "tsxinline":
+                    codeBlock.Info = "tsx";
+                    renderer.Write(codeBlock.Lines.ToSlice()).WriteLine();
+                    break;
+                case "inline":
+                    renderer.Write(codeBlock.Lines.ToSlice()).WriteLine();
+                    codeBlock.Parent!.Remove(codeBlock);
+                    break;
+            }
         }
 
-        public void Parse(string text)
+        var frontMatterBlock = _document!
+            .Descendants<YamlFrontMatterBlock>()
+            .FirstOrDefault();
+        Dictionary<object, object>? metadata = null;
+        if (frontMatterBlock != null)
         {
-            _document = Markdown.Parse(text, _pipeline);
+            var yaml = frontMatterBlock.Lines.ToString();
+            var deserializer = new DeserializerBuilder().Build();
+            var yamlObject = deserializer.Deserialize(new StringReader(yaml));
+            metadata = yamlObject as Dictionary<object, object>;
+            frontMatterBlock.Parent!.Remove(frontMatterBlock);
         }
 
-        public (string content, Dictionary<object, object> metadata) Render()
-        {
-            var renderer = new TsxRenderer();
-            renderer.Write("import * as b from \"bobril\";").WriteLine();
-            renderer.Write("import * as mdx from \"@bobril/mdx\";").WriteLine();
-
-            foreach (var importBlock in _document!.Descendants<ImportBlock>())
-            {
-                renderer.Write(importBlock.Lines.ToSlice()).WriteLine();
-            }
-            foreach (var codeBlock in _document!.Descendants<FencedCodeBlock>().ToList())
-            {
-                switch (codeBlock.Info)
-                {
-                    case "tsxinline":
-                        codeBlock.Info = "tsx";
-                        renderer.Write(codeBlock.Lines.ToSlice()).WriteLine();
-                        break;
-                    case "inline":
-                        renderer.Write(codeBlock.Lines.ToSlice()).WriteLine();
-                        codeBlock.Parent!.Remove(codeBlock);
-                        break;
-                }
-            }
-
-            var frontMatterBlock = _document!
-                .Descendants<YamlFrontMatterBlock>()
-                .FirstOrDefault();
-            Dictionary<object, object>? metadata = null;
-            if (frontMatterBlock != null)
-            {
-                var yaml = frontMatterBlock.Lines.ToString();
-                var deserializer = new DeserializerBuilder().Build();
-                var yamlObject = deserializer.Deserialize(new StringReader(yaml));
-                metadata = yamlObject as Dictionary<object, object>;
-                frontMatterBlock.Parent!.Remove(frontMatterBlock);
-            }
-
-            metadata ??= new();
-            renderer.Write("export const metadata = ").Write(TypeConverter.ToAst(metadata)).Write(";").WriteLine();
-            metadata.TryGetValue("DataType", out var dataType);
-            var dataTypeStr = dataType as string;
-            renderer.Write("export default b.component(("+(dataTypeStr!=null?"data: "+dataTypeStr:"")+") => { return (<>").WriteLine()
-                .Indent();
-            var output = (OutputContext) renderer.Render(_document!);
-            renderer.Dedent().EnsureLine().Write("</>);});").WriteLine();
-            return (output.ToString(), metadata);
-        }
+        metadata ??= new();
+        renderer.Write("export const metadata = ").Write(TypeConverter.ToAst(metadata)).Write(";").WriteLine();
+        metadata.TryGetValue("DataType", out var dataType);
+        var dataTypeStr = dataType as string;
+        renderer.Write("export default b.component(("+(dataTypeStr!=null?"data: "+dataTypeStr:"")+") => { return (<>").WriteLine()
+            .Indent();
+        var output = (OutputContext) renderer.Render(_document!);
+        renderer.Dedent().EnsureLine().Write("</>);});").WriteLine();
+        return (output.ToString(), metadata);
     }
 }

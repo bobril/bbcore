@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 
-namespace Lib.WebServer
+namespace Lib.WebServer;
+
+public interface ILongPollingServer
 {
-    public interface ILongPollingServer
-    {
-        Task Handle(HttpContext context);
-    }
+    Task Handle(HttpContext context);
 }

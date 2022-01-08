@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Lib.CSSProcessor
+namespace Lib.CSSProcessor;
+
+public interface ICssProcessor: IDisposable
 {
-    public interface ICssProcessor: IDisposable
-    {
-        Task<string> ProcessCss(string source, string from, Func<string, string, string> urlReplacer);
-        Task<string> ConcatenateAndMinifyCss(IEnumerable<SourceFromPair> inputs, Func<string, string, string> urlReplacer);
-    }
+    Task<string> ProcessCss(string source, string from, Func<string, string, string> urlReplacer);
+    Task<string> ConcatenateAndMinifyCss(IEnumerable<SourceFromPair> inputs, Func<string, string, string> urlReplacer);
 }

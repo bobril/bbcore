@@ -1,87 +1,86 @@
 using Markdig.Helpers;
 using Markdig.Parsers;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public class MdxCodeInlineParser : InlineParser
 {
-    public class MdxCodeInlineParser : InlineParser
+    public MdxCodeInlineParser()
     {
-        public MdxCodeInlineParser()
+        OpeningCharacters = new[] { '{' };
+    }
+
+    static int CountAndSkipChar(ref StringSlice slice, char matchChar)
+    {
+        var text = slice.Text;
+        var end = slice.End;
+        var current = slice.Start;
+
+        while (current <= end && (uint)current < (uint)text.Length && text[current] == matchChar)
         {
-            OpeningCharacters = new[] { '{' };
+            current++;
         }
 
-        static int CountAndSkipChar(ref StringSlice slice, char matchChar)
+        var count = current - slice.Start;
+        slice.Start = current;
+        return count;
+    }
+
+    public override bool Match(InlineProcessor processor, ref StringSlice slice)
+    {
+        var match = slice.CurrentChar;
+        if (slice.PeekCharExtra(-1) == match)
         {
-            var text = slice.Text;
-            var end = slice.End;
-            var current = slice.Start;
-
-            while (current <= end && (uint)current < (uint)text.Length && text[current] == matchChar)
-            {
-                current++;
-            }
-
-            var count = current - slice.Start;
-            slice.Start = current;
-            return count;
+            return false;
         }
 
-        public override bool Match(InlineProcessor processor, ref StringSlice slice)
+        var startPosition = slice.Start;
+
+        var openSticks = CountAndSkipChar(ref slice, match);
+        var closeSticks = 0;
+
+        var c = slice.CurrentChar;
+
+        var builder = StringBuilderCache.Local();
+
+        // A { } string is a string of one or more `{` characters that is neither preceded nor followed by `{`.
+        // A code span begins with a `{` string and ends with a `}` string of equal length.
+
+        var contentEnd = -1;
+
+        while (c != '\0')
         {
-            var match = slice.CurrentChar;
-            if (slice.PeekCharExtra(-1) == match)
+            if (c == '}')
             {
-                return false;
-            }
+                contentEnd = slice.Start;
+                closeSticks = CountAndSkipChar(ref slice, '}');
 
-            var startPosition = slice.Start;
-
-            var openSticks = CountAndSkipChar(ref slice, match);
-            var closeSticks = 0;
-
-            var c = slice.CurrentChar;
-
-            var builder = StringBuilderCache.Local();
-
-            // A { } string is a string of one or more `{` characters that is neither preceded nor followed by `{`.
-            // A code span begins with a `{` string and ends with a `}` string of equal length.
-
-            var contentEnd = -1;
-
-            while (c != '\0')
-            {
-                if (c == '}')
+                if (openSticks == closeSticks)
                 {
-                    contentEnd = slice.Start;
-                    closeSticks = CountAndSkipChar(ref slice, '}');
-
-                    if (openSticks == closeSticks)
-                    {
-                        break;
-                    }
-
-                    builder.Append('}', closeSticks);
-                    c = slice.CurrentChar;
+                    break;
                 }
-                else
-                {
-                    builder.Append(c);
-                    c = slice.NextChar();
-                }
+
+                builder.Append('}', closeSticks);
+                c = slice.CurrentChar;
             }
-
-            if (closeSticks != openSticks) return false;
-            var content = builder.ToString();
-            var spanStart = processor.GetSourcePosition(startPosition, out var line, out var column);
-            var spanEnd = processor.GetSourcePosition(slice.Start - 1);
-            processor.Inline = new MdxCodeInline(content)
+            else
             {
-                Span = new(spanStart, spanEnd),
-                Line = line,
-                Column = column,
-                DelimiterCount = openSticks,
-            };
-            return true;
+                builder.Append(c);
+                c = slice.NextChar();
+            }
         }
+
+        if (closeSticks != openSticks) return false;
+        var content = builder.ToString();
+        var spanStart = processor.GetSourcePosition(startPosition, out var line, out var column);
+        var spanEnd = processor.GetSourcePosition(slice.Start - 1);
+        processor.Inline = new MdxCodeInline(content)
+        {
+            Span = new(spanStart, spanEnd),
+            Line = line,
+            Column = column,
+            DelimiterCount = openSticks,
+        };
+        return true;
     }
 }

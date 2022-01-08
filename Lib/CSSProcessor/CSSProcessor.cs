@@ -5,89 +5,88 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Lib.CSSProcessor
+namespace Lib.CSSProcessor;
+
+public class CssProcessor : ICssProcessor
 {
-    public class CssProcessor : ICssProcessor
+    public CssProcessor(IToolsDir toolsDir)
     {
-        public CssProcessor(IToolsDir toolsDir)
+        _toolsDir = toolsDir;
+        _callbacks = new BBCSSCallbacks(this);
+    }
+
+    readonly IToolsDir _toolsDir;
+    Func<string, string, string> _urlReplacer;
+    TaskCompletionSource<string> _tcs;
+
+    public class BBCSSCallbacks
+    {
+        CssProcessor _owner;
+
+        public BBCSSCallbacks(CssProcessor owner)
         {
-            _toolsDir = toolsDir;
-            _callbacks = new BBCSSCallbacks(this);
+            _owner = owner;
         }
 
-        readonly IToolsDir _toolsDir;
-        Func<string, string, string> _urlReplacer;
-        TaskCompletionSource<string> _tcs;
-
-        public class BBCSSCallbacks
+        public string urlReplace(string url, string from)
         {
-            CssProcessor _owner;
-
-            public BBCSSCallbacks(CssProcessor owner)
-            {
-                _owner = owner;
-            }
-
-            public string urlReplace(string url, string from)
-            {
-                return _owner._urlReplacer(url, from);
-            }
-
-            public void finish(string result)
-            {
-                _owner._tcs.SetResult(result);
-            }
-
-            public void fail(string result)
-            {
-                _owner._tcs.SetException(new Exception(result));
-            }
-
-            public string readFileSync(string fileName)
-            {
-                return "";
-            }
+            return _owner._urlReplacer(url, from);
         }
 
-        BBCSSCallbacks _callbacks;
-
-        IJsEngine? _engine;
-
-        IJsEngine getJSEnviroment()
+        public void finish(string result)
         {
-            if (_engine != null) return _engine;
-            var engine = _toolsDir.CreateJsEngine();
-            engine.EmbedHostObject("bb", _callbacks);
-            var assembly = typeof(CssProcessor).Assembly;
-            engine.ExecuteResource("Lib.CSSProcessor.bundle.min.js", assembly);
-            engine.ExecuteResource("Lib.CSSProcessor.bbcss.js", assembly);
-            _engine = engine;
-            return engine;
+            _owner._tcs.SetResult(result);
         }
 
-        public Task<string> ProcessCss(string source, string from, Func<string, string, string> urlReplacer)
+        public void fail(string result)
         {
-            _urlReplacer = urlReplacer;
-            _tcs = new TaskCompletionSource<string>();
-            var engine = getJSEnviroment();
-            engine.CallFunction("bbProcessCss", source, from);
-            return _tcs.Task;
+            _owner._tcs.SetException(new Exception(result));
         }
 
-        public Task<string> ConcatenateAndMinifyCss(System.Collections.Generic.IEnumerable<SourceFromPair> inputs, Func<string, string, string> urlReplacer)
+        public string readFileSync(string fileName)
         {
-            _urlReplacer = urlReplacer;
-            _tcs = new TaskCompletionSource<string>();
-            var engine = getJSEnviroment();
-            var serializerSettings = new JsonSerializerSettings();
-            serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-            engine.CallFunction("bbConcatAndMinify", JsonConvert.SerializeObject(inputs, serializerSettings));
-            return _tcs.Task;
+            return "";
         }
+    }
 
-        public void Dispose()
-        {
-            _engine?.Dispose();
-        }
+    BBCSSCallbacks _callbacks;
+
+    IJsEngine? _engine;
+
+    IJsEngine getJSEnviroment()
+    {
+        if (_engine != null) return _engine;
+        var engine = _toolsDir.CreateJsEngine();
+        engine.EmbedHostObject("bb", _callbacks);
+        var assembly = typeof(CssProcessor).Assembly;
+        engine.ExecuteResource("Lib.CSSProcessor.bundle.min.js", assembly);
+        engine.ExecuteResource("Lib.CSSProcessor.bbcss.js", assembly);
+        _engine = engine;
+        return engine;
+    }
+
+    public Task<string> ProcessCss(string source, string from, Func<string, string, string> urlReplacer)
+    {
+        _urlReplacer = urlReplacer;
+        _tcs = new TaskCompletionSource<string>();
+        var engine = getJSEnviroment();
+        engine.CallFunction("bbProcessCss", source, from);
+        return _tcs.Task;
+    }
+
+    public Task<string> ConcatenateAndMinifyCss(System.Collections.Generic.IEnumerable<SourceFromPair> inputs, Func<string, string, string> urlReplacer)
+    {
+        _urlReplacer = urlReplacer;
+        _tcs = new TaskCompletionSource<string>();
+        var engine = getJSEnviroment();
+        var serializerSettings = new JsonSerializerSettings();
+        serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+        engine.CallFunction("bbConcatAndMinify", JsonConvert.SerializeObject(inputs, serializerSettings));
+        return _tcs.Task;
+    }
+
+    public void Dispose()
+    {
+        _engine?.Dispose();
     }
 }

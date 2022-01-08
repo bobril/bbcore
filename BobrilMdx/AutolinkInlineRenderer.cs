@@ -1,25 +1,24 @@
 using Markdig.Syntax.Inlines;
 
-namespace BobrilMdx
+namespace BobrilMdx;
+
+public class AutolinkInlineRenderer : TsxObjectRenderer<AutolinkInline>
 {
-    public class AutolinkInlineRenderer : TsxObjectRenderer<AutolinkInline>
+    protected override void Write(TsxRenderer renderer, AutolinkInline obj)
     {
-        protected override void Write(TsxRenderer renderer, AutolinkInline obj)
+        if (renderer.EnableHtmlForInline)
         {
-            if (renderer.EnableHtmlForInline)
-            {
-                renderer.Write("<mdx.A href=");
-                renderer.WriteEscapeUrl(obj.IsEmail?  "mailto:"+ obj.Url :obj.Url , false);
-                renderer.WriteProps(obj);
-                renderer.Write('>');
-            }
+            renderer.Write("<mdx.A href=");
+            renderer.WriteEscapeUrl(obj.IsEmail?  "mailto:"+ obj.Url :obj.Url , false);
+            renderer.WriteProps(obj);
+            renderer.Write('>');
+        }
 
-            renderer.WriteEscape(obj.Url);
+        renderer.WriteEscape(obj.Url);
 
-            if (renderer.EnableHtmlForInline)
-            {
-                renderer.Write("</mdx.A>");
-            }
+        if (renderer.EnableHtmlForInline)
+        {
+            renderer.Write("</mdx.A>");
         }
     }
 }
