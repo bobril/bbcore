@@ -12,6 +12,8 @@
     <None Remove="Bundler\Js\uglify.js" />
     <None Remove="CSSProcessor\bbcss.js" />
     <None Remove="CSSProcessor\bundle.min.js" />
+    <None Remove="SCSSProcessor\bbscss.js" />
+    <None Remove="SCSSProcessor\sass.dart.js" />
     <None Remove="ToolsDir\jasmine-boot299.js" />
     <None Remove="ToolsDir\jasmine-boot330.js" />
     <None Remove="ToolsDir\jasmine299.js" />
@@ -33,6 +35,8 @@
     <EmbeddedResource Include="Bundler\Js\uglify.js" />
     <EmbeddedResource Include="CSSProcessor\bbcss.js" />
     <EmbeddedResource Include="CSSProcessor\bundle.min.js" />
+    <EmbeddedResource Include="SCSSProcessor\bbscss.js" />
+    <EmbeddedResource Include="SCSSProcessor\sass.dart.js" />
     <EmbeddedResource Include="ToolsDir\jasmine-boot299.js" />
     <EmbeddedResource Include="ToolsDir\jasmine-boot330.js" />
     <EmbeddedResource Include="ToolsDir\jasmine299.js" />
