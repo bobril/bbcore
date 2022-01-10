@@ -821,12 +821,53 @@ public class BuildModuleCtx : IImportResolver
                 case FileCompilationType.Scss:
                     if (!TryToResolveFromBuildCacheCss(info))
                     {
-                        /* TODO
                         var scssProcessor = BuildCtx.CompilerPool.GetScss();
+                        string cssContent;
                         try
                         {
-                            info.Output = info.Owner.Utf8Content;
-                            scssProcessor.CompileScss(info.Owner.Utf8Content,
+                            info.Output = info.Owner!.Utf8Content;
+                            cssContent = scssProcessor.ProcessScss(info.Owner.Utf8Content,
+                                "file://"+info.Owner.FullPath, url =>
+                                {
+                                    if (url.StartsWith("file://")) url = url[7..];
+                                    if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false })
+                                    {
+                                        return "file://"+url;
+                                    }
+                                    if (Owner.DiskCache.TryGetItem(url+".scss") is IFileCache { IsInvalid: false })
+                                    {
+                                        return "file://"+url+".scss";
+                                    }
+                                    if (Owner.DiskCache.TryGetItem(url+".css") is IFileCache { IsInvalid: false })
+                                    {
+                                        return "file://"+url+".css";
+                                    }
+                                    return "file://"+url;
+                                }, url =>
+                                {
+                                    if (url.StartsWith("file://")) url = url[7..];
+                                    if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false } fc)
+                                    {
+                                        info.ReportTranspilationDependency(info.Owner.HashOfContent, url, null);
+                                        return fc.Utf8Content;
+                                    }
+
+                                    info.ReportDiag(true, -3, "Missing dependency "+url, 1,1,1,1);
+                                    return "";
+                                }, text =>
+                                {
+                                    Owner!.Logger.Info(text);
+                                }).Result;
+                        }
+                        finally
+                        {
+                            BuildCtx.CompilerPool.ReleaseScss(scssProcessor);
+                        }
+                        var cssProcessor = BuildCtx.CompilerPool.GetCss();
+                        try
+                        {
+                            info.Output = cssContent;
+                            cssProcessor.ProcessCss(cssContent,
                                 info.Owner.FullPath, (url, @from) =>
                                 {
                                     var urlJustName = url.Split('?', '#')[0];
@@ -836,11 +877,9 @@ public class BuildModuleCtx : IImportResolver
                         }
                         finally
                         {
-                            BuildCtx.CompilerPool.ReleaseScss(scssProcessor);
+                            BuildCtx.CompilerPool.ReleaseCss(cssProcessor);
                         }
-                        */
                     }
-
                     ReportDependenciesFromCss(info);
                     break;
                 case FileCompilationType.Css:
@@ -981,7 +1020,7 @@ public class BuildModuleCtx : IImportResolver
         if (info.TranspilationDependencies != null)
             foreach (var dep in info.TranspilationDependencies)
             {
-                var fullJustName = PathUtils.Join(info.Owner.Parent.FullPath, dep.Import);
+                var fullJustName = PathUtils.Join(info.Owner!.Parent!.FullPath, dep.Import!);
                 var fileAdditionalInfo =
                     AutodetectAndAddDependency(fullJustName);
                 if (fileAdditionalInfo == null)
