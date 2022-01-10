@@ -8,13 +8,13 @@ namespace Lib.Test;
 [CollectionDefinition("Serial", DisableParallelization = true)]
 public class ScssProcessorTests
 {
-    string _bbdir;
-    ToolsDir.ToolsDir _tools;
+    readonly string _bbdir;
+    readonly ToolsDir.ToolsDir _tools;
 
     public ScssProcessorTests()
     {
         _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore");
-        _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"), new DummyLogger());
+        _tools = new(PathUtils.Join(_bbdir, "tools"), new DummyLogger());
     }
 
     [Fact]
@@ -22,6 +22,16 @@ public class ScssProcessorTests
     {
         var scssProcessor = new ScssProcessor(_tools);
         Assert.Equal(".c{width:100%}",
-            scssProcessor.ProcessScss(".c { width: 100% }", "file:///dir/file.scss", url => url, Console.WriteLine).Result);
+            scssProcessor.ProcessScss(".c { width: 100% }", "file:///dir/file.scss", url => url, url => url,
+                Console.WriteLine).Result);
+    }
+
+    [Fact]
+    void ProcessScssWithImport()
+    {
+        var scssProcessor = new ScssProcessor(_tools);
+        Assert.Equal(".c{content:\"file:///global.scss\"}",
+            scssProcessor.ProcessScss("@import '../global'; .c { content: '#{$prefix}' }", "file:///dir/file.scss",
+                url => url + ".scss", url => "$prefix: '" + url + "';", Console.WriteLine).Result);
     }
 }

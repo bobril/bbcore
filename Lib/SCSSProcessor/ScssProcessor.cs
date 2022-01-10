@@ -17,6 +17,7 @@ public class ScssProcessor : IScssProcessor
 
     readonly IToolsDir _toolsDir;
     Func<string, string> _loader;
+    Func<string, string> _canonicalize;
     Action<string> _log;
     TaskCompletionSource<string> _tcs;
 
@@ -62,6 +63,11 @@ public class ScssProcessor : IScssProcessor
 
             return "file://" + PathUtils.Join(p1, p2);
         }
+
+        public string canonicalize(string url)
+        {
+            return _owner._canonicalize(url);
+        }
     }
 
     BBSCSSCallbacks _callbacks;
@@ -86,10 +92,11 @@ public class ScssProcessor : IScssProcessor
         _engine?.Dispose();
     }
 
-    public Task<string> ProcessScss(string source, string @from, Func<string, string> loader, Action<string> log)
+    public Task<string> ProcessScss(string source, string @from, Func<string, string> canonicalize, Func<string, string> loader, Action<string> log)
     {
         _loader = loader;
         _log = log;
+        _canonicalize = canonicalize;
         _tcs = new();
         var engine = getJSEnviroment();
         engine.CallFunction("bbCompileScss", source, from);

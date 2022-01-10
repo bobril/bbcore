@@ -7,6 +7,10 @@ class URL {
         this._url = bb.join(base, url);
     }
 
+    toString() {
+        return this._url;
+    }
+
     get href() {
         return this._url;
     }
@@ -191,11 +195,13 @@ interface IBB {
     finish(result: string): void;
     fail(result: string): void;
     log(text: string): void;
+    /// remove file://, join and add prefix file://
     join(base: string, url: string): string;
+    /// Add extension. Real path it.
+    canonicalize(url: string): string;
 }
 
 function bbCompileScss(source: string, from: string) {
-    bb.log(JSON.stringify(Object.keys(exports)));
     try {
         bb.finish(
             exports.compileString(source, {
@@ -204,10 +210,29 @@ function bbCompileScss(source: string, from: string) {
                 alertColor: false,
                 quietDeps: false,
                 style: "compressed",
-                logger: {},
+                logger: {
+                    warn(message, options) {
+                        if (options.span) {
+                            bb.log(
+                                `${options.span.url}:${options.span.start.line}:${options.span.start.column}: ${message}`
+                            );
+                        } else {
+                            bb.log(message);
+                        }
+                    },
+                    debug(message, options) {
+                        if (options.span) {
+                            bb.log(
+                                `${options.span.url}:${options.span.start.line}:${options.span.start.column}: ${message}`
+                            );
+                        } else {
+                            bb.log(message);
+                        }
+                    },
+                },
                 importer: {
                     canonicalize(url: string, _options) {
-                        return new URL(url);
+                        return new URL(bb.canonicalize(url));
                     },
                     load(canonicalUrl: URL) {
                         return { contents: bb.load(canonicalUrl.toString()), syntax: "scss" };
@@ -227,11 +252,10 @@ function require(s: string): any {
     if (s == "util") {
         return { inspect: { custom: Symbol() } };
     }
-    bb.log(s);
     return {};
 }
 var global = globalThis;
 
 (global as any).URL = URL;
 
-var process = { env: {} };
+var process = { env: {}, cwd: () => "/" };

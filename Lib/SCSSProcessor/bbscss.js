@@ -7,6 +7,9 @@ class URL {
             base = base.href;
         this._url = bb.join(base, url);
     }
+    toString() {
+        return this._url;
+    }
     get href() {
         return this._url;
     }
@@ -71,7 +74,6 @@ class URL {
 }
 var exports = {};
 function bbCompileScss(source, from) {
-    bb.log(JSON.stringify(Object.keys(exports)));
     try {
         bb.finish(exports.compileString(source, {
             url: new URL(from),
@@ -79,10 +81,27 @@ function bbCompileScss(source, from) {
             alertColor: false,
             quietDeps: false,
             style: "compressed",
-            logger: {},
+            logger: {
+                warn(message, options) {
+                    if (options.span) {
+                        bb.log(`${options.span.url}:${options.span.start.line}:${options.span.start.column}: ${message}`);
+                    }
+                    else {
+                        bb.log(message);
+                    }
+                },
+                debug(message, options) {
+                    if (options.span) {
+                        bb.log(`${options.span.url}:${options.span.start.line}:${options.span.start.column}: ${message}`);
+                    }
+                    else {
+                        bb.log(message);
+                    }
+                },
+            },
             importer: {
                 canonicalize(url, _options) {
-                    return new URL(url);
+                    return new URL(bb.canonicalize(url));
                 },
                 load(canonicalUrl) {
                     return { contents: bb.load(canonicalUrl.toString()), syntax: "scss" };
@@ -101,9 +120,8 @@ function require(s) {
     if (s == "util") {
         return { inspect: { custom: Symbol() } };
     }
-    bb.log(s);
     return {};
 }
 var global = globalThis;
 global.URL = URL;
-var process = { env: {} };
+var process = { env: {}, cwd: () => "/" };
