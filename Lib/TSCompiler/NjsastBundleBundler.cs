@@ -198,7 +198,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
             throw new InvalidOperationException("Bundler ReadContent does not exists:" + name);
         }
 
-        if (fileInfo.Type == FileCompilationType.ImportedCss || fileInfo.Type == FileCompilationType.Css)
+        if (fileInfo.Type is FileCompilationType.ImportedCss or FileCompilationType.Css)
             return ("", null);
         if (fileInfo.Type == FileCompilationType.Json)
         {
@@ -208,8 +208,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
             return (fileInfo.Owner.Utf8Content, null);
         }
 
-        if (fileInfo.Type == FileCompilationType.JavaScriptAsset ||
-            fileInfo.Type == FileCompilationType.JavaScript)
+        if (fileInfo.Type is FileCompilationType.JavaScriptAsset or FileCompilationType.JavaScript or FileCompilationType.Scss)
         {
             if (BuildSourceMap)
                 return (fileInfo.Output, SourceMap.Identity(fileInfo.Output, fileInfo.Owner.FullPath));

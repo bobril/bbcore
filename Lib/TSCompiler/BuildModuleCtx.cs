@@ -827,22 +827,25 @@ public class BuildModuleCtx : IImportResolver
                         {
                             info.Output = info.Owner!.Utf8Content;
                             cssContent = scssProcessor.ProcessScss(info.Owner.Utf8Content,
-                                "file://"+info.Owner.FullPath, url =>
+                                "file://" + info.Owner.FullPath, url =>
                                 {
                                     if (url.StartsWith("file://")) url = url[7..];
                                     if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false })
                                     {
-                                        return "file://"+url;
+                                        return "file://" + url;
                                     }
-                                    if (Owner.DiskCache.TryGetItem(url+".scss") is IFileCache { IsInvalid: false })
+
+                                    if (Owner.DiskCache.TryGetItem(url + ".scss") is IFileCache { IsInvalid: false })
                                     {
-                                        return "file://"+url+".scss";
+                                        return "file://" + url + ".scss";
                                     }
-                                    if (Owner.DiskCache.TryGetItem(url+".css") is IFileCache { IsInvalid: false })
+
+                                    if (Owner.DiskCache.TryGetItem(url + ".css") is IFileCache { IsInvalid: false })
                                     {
-                                        return "file://"+url+".css";
+                                        return "file://" + url + ".css";
                                     }
-                                    return "file://"+url;
+
+                                    return "file://" + url;
                                 }, url =>
                                 {
                                     if (url.StartsWith("file://")) url = url[7..];
@@ -852,17 +855,15 @@ public class BuildModuleCtx : IImportResolver
                                         return fc.Utf8Content;
                                     }
 
-                                    info.ReportDiag(true, -3, "Missing dependency "+url, 1,1,1,1);
+                                    info.ReportDiag(true, -3, "Missing dependency " + url, 1, 1, 1, 1);
                                     return "";
-                                }, text =>
-                                {
-                                    Owner!.Logger.Info(text);
-                                }).Result;
+                                }, text => { Owner!.Logger.Info(text); }).Result;
                         }
                         finally
                         {
                             BuildCtx.CompilerPool.ReleaseScss(scssProcessor);
                         }
+
                         var cssProcessor = BuildCtx.CompilerPool.GetCss();
                         try
                         {
@@ -879,7 +880,20 @@ public class BuildModuleCtx : IImportResolver
                         {
                             BuildCtx.CompilerPool.ReleaseCss(cssProcessor);
                         }
+
+                        info.Output = "\"use strict\"; const lit = require(\"lit\"); exports.default = lit.css`" +
+                                      info.Output.Replace("\\", "\\\\").Replace("$", "\\$").Replace("`", "\\`") + "`;";
+                        var resolved = ResolveImport(info.Owner.FullPath, "lit");
+                        if (resolved != null && resolved != "?")
+                        {
+                            info.ReportDependency(resolved);
+                        }
+                        else
+                        {
+                            info.ReportDiag(true, -3, "Missing import lit", 1, 1, 1, 1);
+                        }
                     }
+
                     ReportDependenciesFromCss(info);
                     break;
                 case FileCompilationType.Css:
@@ -1020,6 +1034,7 @@ public class BuildModuleCtx : IImportResolver
         if (info.TranspilationDependencies != null)
             foreach (var dep in info.TranspilationDependencies)
             {
+                if (dep.TargetHash != null) continue;
                 var fullJustName = PathUtils.Join(info.Owner!.Parent!.FullPath, dep.Import!);
                 var fileAdditionalInfo =
                     AutodetectAndAddDependency(fullJustName);
@@ -1247,7 +1262,7 @@ public class BuildModuleCtx : IImportResolver
         }
 
         var res = ResolveImport(from, relativeName, false, true, forceResource);
-        if (res == null || res == "?")
+        if (res is null or "?")
         {
             ok = false;
             return relativeName;
@@ -1266,10 +1281,10 @@ public class BuildModuleCtx : IImportResolver
         var colonIdx = assetName.IndexOf(':', 8);
         if (colonIdx < 11)
         {
-            return ("project:", assetName.Substring(8));
+            return ("project:", assetName[8..]);
         }
 
-        return (assetName.Substring(0, colonIdx + 1), assetName.Substring(colonIdx + 1));
+        return (assetName[..(colonIdx + 1)], assetName[(colonIdx + 1)..]);
     }
 
     public void AddDependenciesFromSourceInfo(TsFileAdditionalInfo fileInfo)

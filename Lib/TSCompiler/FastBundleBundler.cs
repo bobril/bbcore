@@ -121,7 +121,7 @@ public class FastBundleBundler
 
         foreach (var source in sortedResultSet)
         {
-            if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript or FileCompilationType.JavaScript)
+            if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript or FileCompilationType.JavaScript or FileCompilationType.Scss)
             {
                 if (source.Output == null)
                     continue; // Skip d.ts

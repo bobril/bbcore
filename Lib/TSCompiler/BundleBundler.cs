@@ -187,7 +187,7 @@ public class BundleBundler : IBundlerCallback, IBundler
             throw new InvalidOperationException("Bundler ReadContent does not exists:" + name);
         }
 
-        if (fileInfo.Type == FileCompilationType.ImportedCss || fileInfo.Type == FileCompilationType.Css)
+        if (fileInfo.Type is FileCompilationType.ImportedCss or FileCompilationType.Css)
             return "";
         if (fileInfo.Type == FileCompilationType.Json)
         {
