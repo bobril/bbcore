@@ -9,6 +9,7 @@ import * as os from "os";
 import * as child_process from "child_process";
 import { Buffer } from "buffer";
 
+const ver = "bobril-build-core/1.2.0";
 interface IResponse {
     response: http.IncomingMessage;
     body: Buffer;
@@ -81,7 +82,7 @@ async function callRepoApi(path: string) {
     var options: http.RequestOptions = {
         headers: {
             accept: "application/vnd.github.v3.json",
-            "user-agent": "bobril-build-core/1.1.0",
+            "user-agent": ver,
         },
     };
     addAuthorization(options.headers!);
@@ -101,7 +102,7 @@ function getDownloadOptions(url: string): http.RequestOptions {
     var headers: http.OutgoingHttpHeaders = isGitHubUrl
         ? {
               accept: "application/octet-stream",
-              "user-agent": "bobril-build-core/1.1.0",
+              "user-agent": ver,
           }
         : {};
     if (isGitHubUrl) addAuthorization(headers);
@@ -202,6 +203,7 @@ const platformToAssetNameMap: { [name: string]: string } = {
     "win32-ia32": "win-x64.zip",
     "linux-x64": "linux-x64.zip",
     "darwin-x64": "osx-x64.zip",
+    "darwin-arm64": "osx-arm64.zip",
 };
 
 const platformWithArch = os.platform() + "-" + os.arch();
@@ -226,7 +228,10 @@ versionKnown: do {
     if (fs.existsSync("package.json")) {
         try {
             var bbrcjson = JSON.parse(
-                fs.readFileSync("package.json").toString("utf-8")
+                fs
+                    .readFileSync("package.json")
+                    .toString("utf-8")
+                    .replace("\uFEFF", "")
             );
             if (bbrcjson.bobril && bbrcjson.bobril.bbVersion) {
                 requestedVersion = bbrcjson.bobril.bbVersion;
@@ -242,7 +247,7 @@ versionKnown: do {
         if (fs.existsSync(fn)) {
             try {
                 var bbrcjson = JSON.parse(
-                    fs.readFileSync(fn).toString("utf-8")
+                    fs.readFileSync(fn).toString("utf-8").replace("\uFEFF", "")
                 );
                 if (bbrcjson && bbrcjson.bbVersion) {
                     requestedVersion = bbrcjson.bbVersion;
@@ -298,7 +303,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
     if (!(await fsExists(homeDir))) {
         try {
             await fsMkdir(homeDir);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Cannot create dir " + homeDir);
             console.error(err.stack);
             process.exit(1);
@@ -311,7 +316,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
                 var rel = await getRelease();
 
                 await fsWriteFile(lastVersionFileName, JSON.stringify(rel));
-            } catch (ex) {
+            } catch (ex: any) {
                 console.log(
                     "Update latest version information failed ignoring"
                 );
@@ -337,7 +342,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
         var rel: any;
         try {
             rel = await getRelease(requestedVersion);
-        } catch (ex) {
+        } catch (ex: any) {
             console.log(
                 "Failed to retrieve information about version " +
                     requestedVersion
@@ -352,7 +357,7 @@ async function checkFreshnessOfCachedLastVersion(): Promise<boolean> {
             var zip: Buffer;
             try {
                 zip = await downloadAsset(asset);
-            } catch (ex) {
+            } catch (ex: any) {
                 console.log("Failed to download version " + requestedVersion);
                 console.log(ex.stack);
                 process.exit(1);

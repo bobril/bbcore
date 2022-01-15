@@ -18,6 +18,7 @@ const util = require("util");
 const os = require("os");
 const child_process = require("child_process");
 const buffer_1 = require("buffer");
+const ver = "bobril-build-core/1.2.0";
 function get(url, options) {
     return new Promise((resolve, reject) => {
         try {
@@ -84,7 +85,7 @@ function callRepoApi(path) {
         var options = {
             headers: {
                 accept: "application/vnd.github.v3.json",
-                "user-agent": "bobril-build-core/1.1.0",
+                "user-agent": ver,
             },
         };
         addAuthorization(options.headers);
@@ -100,7 +101,7 @@ function getDownloadOptions(url) {
     var headers = isGitHubUrl
         ? {
             accept: "application/octet-stream",
-            "user-agent": "bobril-build-core/1.1.0",
+            "user-agent": ver,
         }
         : {};
     if (isGitHubUrl)
@@ -183,6 +184,7 @@ const platformToAssetNameMap = {
     "win32-ia32": "win-x64.zip",
     "linux-x64": "linux-x64.zip",
     "darwin-x64": "osx-x64.zip",
+    "darwin-arm64": "osx-arm64.zip",
 };
 const platformWithArch = os.platform() + "-" + os.arch();
 let platformAssetName = platformToAssetNameMap[platformWithArch] || platformWithArch + ".zip";
@@ -199,7 +201,10 @@ versionKnown: do {
     }
     if (fs.existsSync("package.json")) {
         try {
-            var bbrcjson = JSON.parse(fs.readFileSync("package.json").toString("utf-8"));
+            var bbrcjson = JSON.parse(fs
+                .readFileSync("package.json")
+                .toString("utf-8")
+                .replace("\uFEFF", ""));
             if (bbrcjson.bobril && bbrcjson.bobril.bbVersion) {
                 requestedVersion = bbrcjson.bobril.bbVersion;
                 break versionKnown;
@@ -214,7 +219,7 @@ versionKnown: do {
         var fn = path.join(dir, ".bbrc");
         if (fs.existsSync(fn)) {
             try {
-                var bbrcjson = JSON.parse(fs.readFileSync(fn).toString("utf-8"));
+                var bbrcjson = JSON.parse(fs.readFileSync(fn).toString("utf-8").replace("\uFEFF", ""));
                 if (bbrcjson && bbrcjson.bbVersion) {
                     requestedVersion = bbrcjson.bbVersion;
                     break versionKnown;
