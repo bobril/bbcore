@@ -5,6 +5,7 @@
 ### Added
 
 - Support for osx.arm64
+- New command gen-tsconfig
 
 ## 1.60.1
 

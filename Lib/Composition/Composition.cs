@@ -124,6 +124,7 @@ public class Composition
                 new TestCommand(),
                 new BuildInteractiveCommand(),
                 new BuildInteractiveNoUpdateCommand(),
+                new GenerateTsConfigCommand(),
                 new PackageManagerCommand(),
                 new FindUnusedCommand(),
                 new JsCommand()
@@ -157,6 +158,11 @@ public class Composition
         {
             _forbiddenDependencyUpdate = true;
             RunInteractive((CommonInteractiveCommand)_command);
+        }
+        else if (_command is GenerateTsConfigCommand)
+        {
+            _forbiddenDependencyUpdate = true;
+            GenerateTsConfig((CommonInteractiveCommand)_command);
         }
         else if (_command is FindUnusedCommand)
         {
@@ -1110,6 +1116,33 @@ public class Composition
         StartWebServer(port, command.BindToAny.Value);
         InitInteractiveMode(command.Localize.Value, command.SourceMapRoot.Value);
         WaitForStop();
+    }
+
+    void GenerateTsConfig(CommonInteractiveCommand command)
+    {
+        IfEnabledStartVerbosive();
+        InitDiskCache(true);
+        _mainBuildResult = new(false, command.VersionDir.Value, command.SpriteVersionDir.Value);
+        SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory)).SpriteGeneration = command.Sprite.Value;
+        var localizeValue = command.Localize.Value;
+        _dc.ResetChange();
+        var proj = _currentProject;
+        _logger.WriteLine("Generating TSConfig " + proj.Owner.Owner.FullPath, ConsoleColor.Cyan);
+        try
+        {
+            proj.UpdateFromProjectJson(localizeValue);
+            proj.GenerateCode();
+            proj.RefreshCompilerOptions();
+            proj.RefreshMainFile();
+            proj.RefreshTestSources();
+            proj.RefreshExampleSources();
+            proj.SpriterInitialization(_mainBuildResult);
+            proj.UpdateTSConfigJson();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex.ToString());
+        }
     }
 
     public void InitDiskCache(bool withWatcher = false)
