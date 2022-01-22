@@ -87,7 +87,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     if (lambda.Purpose == null)
                         lambda.Purpose = DetectPurpose(lambda);
 
-                    NeedValue = lambda.Body is { Count:1 } body && body[0].IsExpression();
+                    NeedValue = lambda.Body is { Count: 1 } body && body[0].IsExpression();
                     TransformList(ref lambda.Body);
                     NeedValue = true;
                     return node;
@@ -222,6 +222,18 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
 
                     return null;
                 }
+                case AstPrefixedTemplateString prefixedTemplateString:
+                {
+                    if (prefixedTemplateString.TemplateString.Segments.Count == 1 &&
+                        prefixedTemplateString.TemplateString.Segments[0] is AstTemplateSegment s &&
+                        prefixedTemplateString.Prefix is AstDot { PropertyAsString: "raw" } dot &&
+                        dot.Expression.IsSymbolDef().IsGlobalSymbol() == "String")
+                    {
+                        return new AstString(s.Source, s.Start, s.End, s.Raw);
+                    }
+
+                    break;
+                }
             }
 
             return null;
@@ -243,6 +255,25 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     return Remove;
                 case AstWith _:
                     return node;
+                case AstPrefixedTemplateString prefixedTemplate:
+                    if (IsWellKnownPureFunction(prefixedTemplate.Prefix, false))
+                    {
+                        node = prefixedTemplate.TemplateString;
+                        continue;
+                    }
+
+                    return node;
+                case AstTemplateString templateString:
+                {
+                    var res = new AstSequence(node.Source, node.Start, node.End);
+                    foreach (var element in templateString.Segments)
+                    {
+                        if (element is AstTemplateSegment) continue;
+                        res.AddIntelligently(Transform(element));
+                    }
+
+                    return res.Expressions.Count == 0 ? Remove : res;
+                }
                 case AstArray arr:
                 {
                     var res = new AstSequence(node.Source, node.Start, node.End);
@@ -318,6 +349,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     {
                         return Remove;
                     }
+
                     goto default;
                 }
                 case AstLambda lambda:
@@ -793,6 +825,13 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
     {
         return globalSymbol switch
         {
+            "String" => propName switch
+            {
+                "raw" => true,
+                "fromCharCode" => true,
+                "fromCodePoint" => true,
+                _ => false
+            },
             "Object" => propName switch
             {
                 "constructor" => true,

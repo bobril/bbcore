@@ -718,6 +718,9 @@ public sealed partial class Parser
             case AstExpansion expansion:
                 expansion.Expression = ToRightDeclarationSymbolKind(expansion.Expression, kind);
                 return id;
+            case AstDefaultAssign defaultAssign:
+                defaultAssign.Left = ToRightDeclarationSymbolKind(defaultAssign.Left, kind);
+                return id;
             default:
                 throw new ArgumentException("Unexpected node type " + id.GetType().Name);
         }

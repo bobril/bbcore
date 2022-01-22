@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Updated
+
+Njsast with fixes and optimizations.
+
 ## 1.61.0
 
 ### Added

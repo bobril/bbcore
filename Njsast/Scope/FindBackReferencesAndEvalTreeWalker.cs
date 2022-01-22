@@ -142,6 +142,18 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
                 }
 
                 break;
+            case AstDefaultAssign astDefaultAssign:
+                if (astDefaultAssign.Left == node)
+                {
+                    usage |= SymbolUsage.Write;
+                }
+
+                if (astDefaultAssign.Right == node)
+                {
+                    usage |= SymbolUsage.Read;
+                }
+
+                break;
             case AstBinary _:
                 usage |= SymbolUsage.Read;
                 break;
