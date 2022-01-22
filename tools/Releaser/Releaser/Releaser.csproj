@@ -7,9 +7,6 @@
     <PackageReference Include="LibGit2Sharp.Portable" Version="0.24.10" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="OsxArm64/bb" />
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="Octokit">
       <HintPath>Octokit.dll</HintPath>
     </Reference>

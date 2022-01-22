@@ -232,8 +232,7 @@ static class Program
 
         if (rid == "osx-arm64")
         {
-            using (var stream = typeof(Program).Assembly.GetManifestResourceStream("OsxArm64.bb"))
-                stream!.CopyTo(File.OpenWrite($"/bb/bin/Release/net6.0/{rid}/publish/bb"));
+            File.Copy(projDir +"/tools/Releaser/Releaser/OsxArm64/bb", projDir + $"/bb/bin/Release/net6.0/{rid}/publish/bb", true);
             Console.WriteLine("Overwritten Osx Arm64 bb to be signed");
         }
 
