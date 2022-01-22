@@ -230,6 +230,12 @@ static class Program
             }
         }
 
+        if (rid == "osx-arm64")
+        {
+            File.Copy("OsxArm64/bb", $"/bb/bin/Release/net6.0/{rid}/publish/bb", true);
+            Console.WriteLine("Overwritten Osx Arm64 bb to be signed");
+        }
+
         System.IO.Compression.ZipFile.CreateFromDirectory(projDir + $"/bb/bin/Release/net6.0/{rid}/publish",
             projDir + $"/bb/bin/Release/net6.0/{ToZipName(rid)}.zip", System.IO.Compression.CompressionLevel.Optimal,
             false);
