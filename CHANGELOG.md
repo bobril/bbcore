@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.62.1
+
 ### Fixed
 
 Fixed problem with styleDef containing sequence (due to downleveling to ES5).
