@@ -65,9 +65,9 @@ public class SymbolDef: IEquatable<SymbolDef>
                              || Export
                              || Undeclared
                              || !options.IgnoreEval && Scope.Pinned()
-                             || options.KeepFunctionNames && (orig is AstSymbolLambda || orig is AstSymbolDefun)
+                             || options.KeepFunctionNames && orig is AstSymbolLambda or AstSymbolDefun
                              || orig is AstSymbolMethod
-                             || options.KeepClassNames && (orig is AstSymbolClass || orig is AstSymbolDefClass);
+                             || options.KeepClassNames && orig is AstSymbolClass or AstSymbolDefClass;
         return UnmangleableCached.Value;
     }
 

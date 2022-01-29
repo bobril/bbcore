@@ -233,9 +233,20 @@ public class ImportExportTransformer : TreeTransformer
             }
         }
 
-        if (node is AstDefun func && func.ArgNames.Count == 1 && func.Name.IsSymbolDef()?.Name == "__export")
+        if (node is AstDefun { ArgNames.Count: 1 } func && func.Name.IsSymbolDef()?.Name == "__export")
         {
             _reexportSymbol = func.Name.IsSymbolDef();
+            return Remove;
+        }
+
+        if (node is AstVar { Definitions: { Count: 1, Last.Name: AstSymbol { Name: "__exportStar" } exportStarSymbol } })
+        {
+            _reexportSymbol = exportStarSymbol.IsSymbolDef();
+            return Remove;
+        }
+
+        if (node is AstVar { Definitions: { Count: 1, Last.Name: AstSymbol { Name: "__createBinding" } } })
+        {
             return Remove;
         }
 

@@ -30,6 +30,8 @@ public class SplitInfo
     public ISet<SplitInfo> DirectSplitsForcedLazy;
     public StructList<SplitInfo> ExpandedSplitsForcedLazy;
     public OrderedHashSet<string> PlainJsDependencies;
+    /// Only main split could have more main files all other splits have only one main file
+    public StructList<SourceFile> MainFiles;
     public bool IsMainSplit;
 }
 

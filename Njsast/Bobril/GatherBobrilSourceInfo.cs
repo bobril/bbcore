@@ -86,7 +86,7 @@ public class GatherBobrilSourceInfo
         public BobrilSpecialEvalWithPath(IConstEvalCtx ctx, Func<IConstEvalCtx, string, string> stringResolver) :
             base(ctx)
         {
-            _stripped = new BobrilSpecialEval(ctx);
+            _stripped = new(ctx);
             _stringResolver = stringResolver;
         }
 
@@ -116,7 +116,7 @@ public class GatherBobrilSourceInfo
         {
             _evalCtxWithPath = evalCtx;
             _evalCtx = evalCtx.StripPathResolver();
-            SourceInfo = new SourceInfo();
+            SourceInfo = new();
         }
 
         protected override void Visit(AstNode node)
@@ -133,7 +133,7 @@ public class GatherBobrilSourceInfo
                 };
                 if (SourceInfo.ProcessEnvs == null)
                 {
-                    SourceInfo.ProcessEnvs = new List<SourceInfo.ProcessEnv>();
+                    SourceInfo.ProcessEnvs = new();
                 }
 
                 SourceInfo.ProcessEnvs.Add(processEnv);
@@ -158,7 +158,7 @@ public class GatherBobrilSourceInfo
                             };
                             if (SourceInfo.Imports == null)
                             {
-                                SourceInfo.Imports = new List<SourceInfo.Import>();
+                                SourceInfo.Imports = new();
                             }
 
                             SourceInfo.Imports.Add(imp);
@@ -206,12 +206,12 @@ public class GatherBobrilSourceInfo
                                 };
                                 if (SourceInfo.Assets == null)
                                 {
-                                    SourceInfo.Assets = new List<SourceInfo.Asset>();
+                                    SourceInfo.Assets = new();
                                 }
 
                                 SourceInfo.Assets.Add(asset);
                             }
-                            else if (exp.ExportName == "styleDef" || exp.ExportName == "styleDefEx")
+                            else if (exp.ExportName is "styleDef" or "styleDefEx")
                             {
                                 var styleDef = new SourceInfo.StyleDef
                                 {
@@ -239,7 +239,7 @@ public class GatherBobrilSourceInfo
 
                                 if (SourceInfo.StyleDefs == null)
                                 {
-                                    SourceInfo.StyleDefs = new List<SourceInfo.StyleDef>();
+                                    SourceInfo.StyleDefs = new();
                                 }
 
                                 SourceInfo.StyleDefs.Add(styleDef);
@@ -312,7 +312,7 @@ public class GatherBobrilSourceInfo
 
                                 if (SourceInfo.Sprites == null)
                                 {
-                                    SourceInfo.Sprites = new List<SourceInfo.Sprite>();
+                                    SourceInfo.Sprites = new();
                                 }
 
                                 SourceInfo.Sprites.Add(sprite);
@@ -333,7 +333,7 @@ public class GatherBobrilSourceInfo
                                     Message = messageArg.ConstValue(_evalCtx) as string
                                 };
                                 var paramsArg = call.Args[1].ConstValue(_evalCtx);
-                                if (!(paramsArg is AstNull) && !(paramsArg is AstUndefined))
+                                if (paramsArg is not AstNull && paramsArg is not AstUndefined)
                                 {
                                     tr.WithParams = true;
                                     if (paramsArg is IDictionary<object, object> pars)
@@ -344,11 +344,10 @@ public class GatherBobrilSourceInfo
                                 }
 
                                 if (SourceInfo.Translations == null)
-                                    SourceInfo.Translations = new List<SourceInfo.Translation>();
+                                    SourceInfo.Translations = new();
                                 SourceInfo.Translations.Add(tr);
                             }
-                            else if ((exp.ExportName == "t" || exp.ExportName == "dt") && call.Args.Count >= 1 &&
-                                     call.Args.Count <= 3)
+                            else if (exp.ExportName is "t" or "dt" && call.Args.Count is >= 1 and <= 3)
                             {
                                 var messageArg = call.Args[0];
                                 var tr = new SourceInfo.Translation
@@ -363,7 +362,7 @@ public class GatherBobrilSourceInfo
                                 {
                                     var paramsArg = call.Args[1];
                                     var paramsValue = paramsArg.ConstValue(_evalCtx);
-                                    if (!(paramsValue is AstNull) && !(paramsValue is AstUndefined))
+                                    if (paramsValue is not AstNull && paramsValue is not AstUndefined)
                                     {
                                         tr.WithParams = true;
                                         if (paramsValue is IDictionary<object, object> pars)
@@ -389,7 +388,7 @@ public class GatherBobrilSourceInfo
                                 }
 
                                 if (SourceInfo.Translations == null)
-                                    SourceInfo.Translations = new List<SourceInfo.Translation>();
+                                    SourceInfo.Translations = new();
                                 SourceInfo.Translations.Add(tr);
                             }
                         }
@@ -418,13 +417,13 @@ public class GatherBobrilSourceInfo
             // Into this output:
             // g.t("Before{1/}{p1}", { p1: "param1", 1:function(){return b.createElement("hr", null)}})
             var tr = new SourceInfo.VdomTranslation();
-            tr.Replacements = new List<SourceInfo.Replacement>();
-            tr.KnownParams = new List<string>();
+            tr.Replacements = new();
+            tr.KnownParams = new();
             tr.StartLine = call.Start.Line;
             tr.StartCol = call.Start.Column;
             tr.EndLine = call.End.Line;
             tr.EndCol = call.End.Column;
-            tr.Replacements.Add(new SourceInfo.Replacement
+            tr.Replacements.Add(new()
             {
                 Type = SourceInfo.ReplacementType.Normal,
                 StartLine = call.Expression.Start.Line,
@@ -433,7 +432,7 @@ public class GatherBobrilSourceInfo
                 EndCol = call.Expression.End.Column,
                 Text = $"{SourceInfo.BobrilG11NImport}.t"
             });
-            tr.Replacements.Add(new SourceInfo.Replacement
+            tr.Replacements.Add(new()
             {
                 Type = SourceInfo.ReplacementType.MessageId,
                 StartLine = call.Args[0].Start.Line,
@@ -443,18 +442,18 @@ public class GatherBobrilSourceInfo
             });
             if (SourceInfo.VdomTranslations == null)
             {
-                SourceInfo.VdomTranslations = new List<SourceInfo.VdomTranslation>();
+                SourceInfo.VdomTranslations = new();
             }
 
             VdomContext ctx = new VdomContext();
-            ctx.SB = new StringBuilder();
+            ctx.SB = new();
             ctx.ElementCounter = 0;
             Walk(call.Args[1]);
             if (call.Args[1] is AstNull)
             {
                 ctx.InsertPropLine = call.Args[1].Start.Line;
                 ctx.InsertPropCol = call.Args[1].Start.Column;
-                tr.Replacements.Add(new SourceInfo.Replacement
+                tr.Replacements.Add(new()
                 {
                     Type = SourceInfo.ReplacementType.Normal,
                     StartLine = ctx.InsertPropLine,
@@ -477,7 +476,7 @@ public class GatherBobrilSourceInfo
             }
             else throw new NotImplementedException("g.T has too complex props: " + call.Args[1].PrintToString());
 
-            tr.Replacements.Add(new SourceInfo.Replacement
+            tr.Replacements.Add(new()
             {
                 Type = SourceInfo.ReplacementType.Normal,
                 StartLine = call.Args[1].End.Line,
@@ -489,7 +488,7 @@ public class GatherBobrilSourceInfo
 
             if (call.Args[1] is AstNull)
             {
-                tr.Replacements.Add(new SourceInfo.Replacement
+                tr.Replacements.Add(new()
                 {
                     Type = SourceInfo.ReplacementType.Normal,
                     StartLine = ctx.InsertPropLine,
@@ -523,7 +522,7 @@ public class GatherBobrilSourceInfo
                         if (key as string != "hint") continue;
                         var val = keyVal.Value.ConstValue(_evalCtx) as string;
                         tr.Hint = val;
-                        tr.Replacements!.Add(new SourceInfo.Replacement
+                        tr.Replacements!.Add(new()
                         {
                             Type = SourceInfo.ReplacementType.Normal,
                             StartLine = astObject.Properties[i].Start.Line,
@@ -592,7 +591,7 @@ public class GatherBobrilSourceInfo
                 if (child is AstString str)
                 {
                     ctx.SB.Append(str.Value.Replace("\\", "\\\\"));
-                    tr.Replacements!.Add(new SourceInfo.Replacement
+                    tr.Replacements!.Add(new()
                     {
                         Type = SourceInfo.ReplacementType.Normal,
                         StartLine = child.Start.Line,
@@ -606,7 +605,7 @@ public class GatherBobrilSourceInfo
                 if (IsStringT(child, out var message))
                 {
                     ctx.SB.Append(message);
-                    tr.Replacements!.Add(new SourceInfo.Replacement
+                    tr.Replacements!.Add(new()
                     {
                         Type = SourceInfo.ReplacementType.Normal,
                         StartLine = child.Start.Line,
@@ -632,7 +631,7 @@ public class GatherBobrilSourceInfo
                     {
                         Walk(((AstCall) child).Args[1]);
                         var idx = ++ctx.ElementCounter;
-                        tr.Replacements!.Add(new SourceInfo.Replacement
+                        tr.Replacements!.Add(new()
                         {
                             Type = SourceInfo.ReplacementType.Normal,
                             StartLine = ctx.InsertPropLine,
@@ -644,7 +643,7 @@ public class GatherBobrilSourceInfo
                         ctx.InsertPropComma = true;
                         var (chStartLine, chStartCol, chEndLine, chEndCol) =
                             DetectChildrenStartEndVdom(nestedChildren);
-                        tr.Replacements!.Add(new SourceInfo.Replacement
+                        tr.Replacements!.Add(new()
                         {
                             Type = SourceInfo.ReplacementType.MoveToPlace,
                             PlaceLine = ctx.InsertPropLine,
@@ -654,7 +653,7 @@ public class GatherBobrilSourceInfo
                             EndLine = chStartLine,
                             EndCol = chStartCol
                         });
-                        tr.Replacements!.Add(new SourceInfo.Replacement
+                        tr.Replacements!.Add(new()
                         {
                             Type = SourceInfo.ReplacementType.Normal,
                             StartLine = ctx.InsertPropLine,
@@ -663,7 +662,7 @@ public class GatherBobrilSourceInfo
                             EndCol = ctx.InsertPropCol,
                             Text = "__ch__"
                         });
-                        tr.Replacements!.Add(new SourceInfo.Replacement
+                        tr.Replacements!.Add(new()
                         {
                             Type = SourceInfo.ReplacementType.MoveToPlace,
                             PlaceLine = ctx.InsertPropLine,
@@ -673,7 +672,7 @@ public class GatherBobrilSourceInfo
                             EndLine = child.End.Line,
                             EndCol = child.End.Column
                         });
-                        tr.Replacements!.Add(new SourceInfo.Replacement
+                        tr.Replacements!.Add(new()
                         {
                             Type = SourceInfo.ReplacementType.Normal,
                             StartLine = ctx.InsertPropLine,
@@ -684,7 +683,7 @@ public class GatherBobrilSourceInfo
                         });
                         if (i + 1 < children.Length)
                         {
-                            tr.Replacements!.Add(new SourceInfo.Replacement
+                            tr.Replacements!.Add(new()
                             {
                                 Type = SourceInfo.ReplacementType.Normal,
                                 StartLine = child.End.Line,
@@ -711,7 +710,7 @@ public class GatherBobrilSourceInfo
                 ctx.SB.Append(idx2);
                 ctx.SB.Append("/}");
                 Walk(child);
-                tr.Replacements!.Add(new SourceInfo.Replacement
+                tr.Replacements!.Add(new()
                 {
                     Type = SourceInfo.ReplacementType.Normal,
                     StartLine = ctx.InsertPropLine,
@@ -721,7 +720,7 @@ public class GatherBobrilSourceInfo
                     Text = (ctx.InsertPropComma ? ", " : "") + idx2 + ":function(){return "
                 });
                 ctx.InsertPropComma = true;
-                tr.Replacements!.Add(new SourceInfo.Replacement
+                tr.Replacements!.Add(new()
                 {
                     Type = SourceInfo.ReplacementType.MoveToPlace,
                     PlaceLine = ctx.InsertPropLine,
@@ -731,7 +730,7 @@ public class GatherBobrilSourceInfo
                     EndLine = child.End.Line,
                     EndCol = child.End.Column,
                 });
-                tr.Replacements!.Add(new SourceInfo.Replacement
+                tr.Replacements!.Add(new()
                 {
                     Type = SourceInfo.ReplacementType.Normal,
                     StartLine = ctx.InsertPropLine,
@@ -742,7 +741,7 @@ public class GatherBobrilSourceInfo
                 });
                 if (i + 1 < children.Length)
                 {
-                    tr.Replacements!.Add(new SourceInfo.Replacement
+                    tr.Replacements!.Add(new()
                     {
                         Type = SourceInfo.ReplacementType.Normal,
                         StartLine = child.End.Line,
@@ -849,7 +848,7 @@ public class GatherBobrilSourceInfo
         {
             if (sourceInfo.Diagnostics == null)
             {
-                sourceInfo.Diagnostics = new List<Diagnostic>();
+                sourceInfo.Diagnostics = new();
             }
 
             var d = new Diagnostic

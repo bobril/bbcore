@@ -197,6 +197,10 @@ class BundlerTreeTransformer : TreeTransformer
             return Remove;
         if (node is AstDefinitions { Definitions.Count: 0 })
             return Remove;
+        if (node is AstSequence { Expressions: { Count: 2 } expressions } && expressions[0] is AstNumber { Value:0 } && expressions[1] is AstSymbolRef)
+        {
+            return expressions[1];
+        }
         return node;
     }
 }

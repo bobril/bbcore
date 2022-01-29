@@ -36,6 +36,7 @@ public class BundlerImpl
 
     public IReadOnlyDictionary<string, IReadOnlyList<string>> PartToMainFilesMap;
     public ICompressOptions? CompressOptions;
+    public bool LibraryMode { get; set; }
     public bool Mangle;
     public bool MangleWithFrequencyCounting;
     public bool GenerateSourceMap;
@@ -54,19 +55,26 @@ public class BundlerImpl
         var stopwatch = Stopwatch.StartNew();
         foreach (var (splitName, mainFileList) in PartToMainFilesMap)
         {
+            StructList<SourceFile> mainFiles = new();
             foreach (var mainFile in mainFileList)
             {
                 if (_cache.TryGetValue(mainFile, out var sourceFile))
                 {
+                    mainFiles.AddUnique(sourceFile);
                     MarkRequiredAs(sourceFile, splitName);
                     continue;
                 }
 
                 Check(mainFile, splitName);
+                _cache.TryGetValue(mainFile, out sourceFile);
+                mainFiles.AddUnique(sourceFile!);
             }
 
-            _splitMap[splitName] = new SplitInfo(splitName)
-                {ShortName = _ctx.GenerateBundleName(splitName), PropName = "ERROR", IsMainSplit = true};
+            _splitMap[splitName] = new(splitName)
+            {
+                ShortName = _ctx.GenerateBundleName(splitName), PropName = "ERROR", IsMainSplit = true,
+                MainFiles = mainFiles
+            };
         }
 
         stopwatch.Stop();
@@ -109,7 +117,7 @@ public class BundlerImpl
         foreach (var (splitName, splitInfo) in _splitMap)
         {
             var topLevelAst = Parser.Parse(_ctx.JsHeaders(splitName, lazySplitCounter > 0));
-            if (GlobalDefines != null && GlobalDefines.Count > 0)
+            if (GlobalDefines is { Count: > 0 })
                 topLevelAst.Body.Add(Helpers.EmitVarDefines(GlobalDefines));
             topLevelAst.FigureOutScope();
             foreach (var jsDependency in splitInfo.PlainJsDependencies)
@@ -143,11 +151,18 @@ public class BundlerImpl
                     , BeforeAdd);
             }
 
-            IfNeededPolyfillGlobal(topLevelAst);
+            IfNeededPolyfillGlobal(topLevelAst, (OutputOptions?.Ecma ?? 5) >= 10);
 
-            AddExportsFromLazyBundle(splitInfo, topLevelAst);
+            if (LibraryMode)
+            {
+                AddLibraryExports(splitInfo, topLevelAst);
+            }
+            else
+            {
+                AddExportsFromLazyBundle(splitInfo, topLevelAst);
+                BundlerHelpers.WrapByIIFE(topLevelAst, (OutputOptions?.Ecma ?? 5) >= 6);
+            }
 
-            BundlerHelpers.WrapByIIFE(topLevelAst, (OutputOptions?.Ecma ?? 5) >= 6);
             if (lazySplitCounter > 0 && PartToMainFilesMap.ContainsKey(splitName))
             {
                 var astVar = new AstVar(topLevelAst);
@@ -161,8 +176,8 @@ public class BundlerImpl
                 topLevelAst.FigureOutScope();
                 topLevelAst = topLevelAst.Compress(CompressOptions, new ScopeOptions
                 {
-                    TopLevel = false,
-                    BeforeMangling = IgnoreEvalInTwoScopes
+                    TopLevel = LibraryMode,
+                    BeforeMangling = LibraryMode ? IgnoreEvalInToplevelScope : IgnoreEvalInTwoScopes
                 });
                 stopwatch.Stop();
                 _ctx.ReportTime("Compress", stopwatch.Elapsed);
@@ -174,8 +189,8 @@ public class BundlerImpl
                 topLevelAst.Mangle(new ScopeOptions
                 {
                     FrequencyCounting = MangleWithFrequencyCounting,
-                    TopLevel = false,
-                    BeforeMangling = IgnoreEvalInTwoScopes
+                    TopLevel = LibraryMode,
+                    BeforeMangling = LibraryMode ? IgnoreEvalInToplevelScope : IgnoreEvalInTwoScopes
                 }, OutputOptions);
                 stopwatch.Stop();
                 _ctx.ReportTime("Mangle", stopwatch.Elapsed);
@@ -204,12 +219,13 @@ public class BundlerImpl
     }
 
     /// If there is global variable named `global`, then define it as `window`, because we are bundling for browser
-    static void IfNeededPolyfillGlobal(AstToplevel topLevelAst)
+    static void IfNeededPolyfillGlobal(AstToplevel topLevelAst, bool useModernJS)
     {
         if (topLevelAst.Globals!.ContainsKey("global"))
         {
             var astVar = new AstVar(topLevelAst);
-            astVar.Definitions.Add(new AstVarDef(new AstSymbolVar("global"), new AstSymbolRef("window")));
+            astVar.Definitions.Add(new AstVarDef(new AstSymbolVar("global"),
+                new AstSymbolRef(useModernJS ? "globalThis" : "window")));
             topLevelAst.Body.Insert(0) = astVar;
         }
     }
@@ -260,7 +276,7 @@ public class BundlerImpl
                 if (!sourceSplit.ImportsFromOtherBundles.ContainsKey(astNode))
                 {
                     sourceSplit.ImportsFromOtherBundles[astNode] =
-                        new(fromSplit, fromFile, exportName.AsSpan().Slice(0,prefixLen).ToArray());
+                        new(fromSplit, fromFile, exportName.AsSpan().Slice(0, prefixLen).ToArray());
                 }
 
                 if (!fromSplit.ExportsUsedFromLazyBundles.ContainsKey(astNode))
@@ -273,7 +289,7 @@ public class BundlerImpl
         foreach (var (_, split) in _splitMap)
         {
             if (PartToMainFilesMap.ContainsKey(split.FullName)) continue;
-            ExpandDirectSplitsForcedLazy(split, split, new HashSet<SplitInfo> {split});
+            ExpandDirectSplitsForcedLazy(split, split, new HashSet<SplitInfo> { split });
         }
     }
 
@@ -305,6 +321,35 @@ public class BundlerImpl
         }
     }
 
+    void AddLibraryExports(SplitInfo splitInfo, AstToplevel topLevelAst)
+    {
+        StructList<AstNameMapping> exportMappings = new();
+        foreach (var file in splitInfo.MainFiles)
+        {
+            if (file.Exports != null)
+                foreach (var (key, value) in file.Exports)
+                {
+                    if (key.Count == 0) continue;
+                    if (key.Count != 1)
+                        throw new NotImplementedException("Deep library export " + string.Join('.', key));
+                    if (value is AstSymbolRef symbolRef)
+                    {
+                        exportMappings.Add(new(null, new(), new(),
+                            new AstSymbolExportForeign(new AstSymbolRef(key[0])), new AstSymbolExport(symbolRef)));
+                    }
+                    else
+                    {
+                        throw new NotImplementedException("Library export of " + value.GetType().Name);
+                    }
+                }
+        }
+
+        if (exportMappings.Count > 0)
+        {
+            topLevelAst.Body.Add(new AstExport(ref exportMappings));
+        }
+    }
+
     void AddExternallyImportedFromOtherBundles(AstToplevel toplevel, SplitInfo split)
     {
         foreach (var (astNode, importFromOtherBundle) in split.ImportsFromOtherBundles)
@@ -332,6 +377,15 @@ public class BundlerImpl
             {
                 new EvalIgnoreWalker().Walk(topLevel);
             }
+    }
+
+    void IgnoreEvalInToplevelScope(AstNode astNode)
+    {
+        if (astNode is AstToplevel top)
+        {
+            top.UsesEval = false;
+            top.UsesWith = false;
+        }
     }
 
     class EvalIgnoreWalker : TreeWalker
@@ -406,7 +460,7 @@ public class BundlerImpl
         {
             if (exp is SimpleSelfExport simpleExp)
             {
-                cached.Exports![new[] {simpleExp.Name}] = simpleExp.Symbol;
+                cached.Exports![new[] { simpleExp.Name }] = simpleExp.Symbol;
             }
         }
 
@@ -436,7 +490,7 @@ public class BundlerImpl
         {
             if (exp is SimpleSelfExport simpleExp)
             {
-                cached.Exports![new[] {simpleExp.Name}] = simpleExp.Symbol;
+                cached.Exports![new[] { simpleExp.Name }] = simpleExp.Symbol;
             }
             else if (exp is ReexportSelfExport reexportExp)
             {

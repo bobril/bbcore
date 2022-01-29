@@ -1,0 +1,17 @@
+{
+  "name": "html2text",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "html-to-text": "^8.1.0"
+  },
+  "devDependencies": {
+    "@types/html-to-text": "^8.0.1"
+  }
+}

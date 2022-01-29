@@ -3,14 +3,14 @@
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <LangVersion>latest</LangVersion>
-        <RuntimeIdentifiers>linux-x64;win-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>linux-x64;win-x64;osx-x64</RuntimeIdentifiers>
         <Nullable>enable</Nullable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <PackageId>Njsast</PackageId>
-        <Version>0.5.0</Version> 
+        <Version>1.1.0</Version>
         <Authors>Boris Letocha, Miroslav Pokorný</Authors>
         <PackageProjectUrl>http://github.com/Bobris/Njsast</PackageProjectUrl>
-        <PackageLicenseUrl>http://www.opensource.org/licenses/mit-license.php</PackageLicenseUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <Description>JavaScript AST Parsing, Optimization, Mangling, Bundling, Printing also with SourceMaps</Description>
         <PackageTags>JavaScript AST Bundling Minification SourceMap</PackageTags>

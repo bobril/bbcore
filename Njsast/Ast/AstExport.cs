@@ -25,7 +25,7 @@ public class AstExport : AstStatement
         ref StructList<AstNameMapping> specifiers) : base(source, startPos, endPos)
     {
         ModuleName = moduleName;
-        if (declaration is AstDefun || declaration is AstDefinitions || declaration is AstDefClass)
+        if (declaration is AstDefun or AstDefinitions or AstDefClass)
         {
             ExportedDefinition = declaration;
         }
@@ -50,6 +50,11 @@ public class AstExport : AstStatement
         }
 
         IsDefault = isDefault;
+    }
+
+    public AstExport(ref StructList<AstNameMapping> exportMappings)
+    {
+        ExportedNames.TransferFrom(ref exportMappings);
     }
 
     public override void Visit(TreeWalker w)

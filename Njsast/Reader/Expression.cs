@@ -638,7 +638,6 @@ public sealed partial class Parser
         {
             Next();
 
-            var innerStartLoc = Start;
             var exprList = new StructList<AstNode>();
             var first = true;
             var lastIsComma = false;
@@ -671,7 +670,6 @@ public sealed partial class Parser
                     (parser, item, position, location) => item));
             }
 
-            var innerEndLoc = Start;
             Expect(TokenType.ParenR);
 
             if (canBeArrow && !CanInsertSemicolon() && Eat(TokenType.Arrow))
@@ -699,7 +697,8 @@ public sealed partial class Parser
 
             if (exprList.Count > 1)
             {
-                node = new AstSequence(SourceFile, innerStartLoc, innerEndLoc, ref exprList);
+                // parens around must be part of sequence because there is no special AstNode for parens
+                node = new AstSequence(SourceFile, startLoc, _lastTokEnd, ref exprList);
             }
             else
             {
