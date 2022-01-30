@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 1.63.0
+
 ### Added
 
 Library Bundling mode. (Define/Enable in .bbrc)
