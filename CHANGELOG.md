@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Library Bundling mode. (Define/Enable in .bbrc)
+
 ### Updated
 
 Njsast with fixes and features.
