@@ -154,9 +154,6 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
                 }
 
                 break;
-            case AstBinary _:
-                usage |= SymbolUsage.Read;
-                break;
             case AstUnary astUnary:
                 switch (astUnary.Operator)
                 {
@@ -204,6 +201,7 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
 
                 break;
 
+            case AstBinary _:
             case AstCall _:
             case AstSimpleStatement _:
             case AstReturn _:
@@ -271,6 +269,7 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
             case AstCase _:
             case AstSimpleStatement _:
             case AstBinary _:
+            case AstConditional _:
             case AstIf _:
             case AstFor _:
             case AstForIn _:
@@ -293,7 +292,7 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
                     return true;
                 if (astCall.IsDefinePropertyExportsEsModule())
                     return true;
-                if (astCall.Expression.IsSymbolDef()?.Init is AstLambda lambda && lambda.Pure == true)
+                if (astCall.Expression.IsSymbolDef()?.Init is AstLambda { Pure: true })
                     return true;
                 return false;
             }

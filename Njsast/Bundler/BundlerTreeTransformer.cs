@@ -70,7 +70,7 @@ class BundlerTreeTransformer : TreeTransformer
         if (node is AstLabel)
             return node;
 
-        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { IsSingleInit: true } reqSymbolDef &&
+        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { } reqSymbolDef &&
             _currentSourceFile.Exports!.Values().All(n => n.IsSymbolDef() != reqSymbolDef))
         {
             if (DetectImport(varDef.Value) is { } import)
@@ -94,6 +94,7 @@ class BundlerTreeTransformer : TreeTransformer
             if (!_cache.TryGetValue(resolvedName, out var reqSource))
                 throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
                                                _currentSourceFile!.Name);
+            reqSource.CreateWholeExport(Array.Empty<string>());
             var theDef = CheckIfNewlyUsedSymbolIsUnique((AstSymbol)reqSource.Exports![Array.Empty<string>()]);
             return new AstSymbolRef(node, theDef, SymbolUsage.Read);
         }

@@ -33,6 +33,7 @@ public class BobrilBuildOptions
     public bool? preserveProjectRoot { get; set; }
     public string? proxyUrl { get; set; }
     public string? headlessBrowserStrategy { get; set; }
+    public bool? library { get; set; }
 
     public BobrilBuildOptions Merge(BobrilBuildOptions? with)
     {
@@ -109,6 +110,8 @@ public class BobrilBuildOptions
             proxyUrl = with.proxyUrl;
         if (with.headlessBrowserStrategy != null)
             headlessBrowserStrategy = with.headlessBrowserStrategy;
+        if (with.library != null)
+            library = with.library;
         return this;
     }
 
@@ -225,5 +228,13 @@ public class BobrilBuildOptions
 
         proxyUrl = GetStringProperty(bobrilSection, "proxyUrl");
         headlessBrowserStrategy = GetStringProperty(bobrilSection, "headlessBrowserStrategy");
+        try
+        {
+            library = bobrilSection["library"]?.Value<bool>();
+        }
+        catch
+        {
+            // ignored
+        }
     }
 }

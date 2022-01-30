@@ -34,12 +34,14 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         _mainBuildResult = mainBuildResult;
         _project = project;
         _buildResult = buildResult;
+        _noHtml = _project.LibraryMode || _project.NoHtml;
     }
 
     readonly ProjectOptions _project;
     readonly BuildResult _buildResult;
     readonly MainBuildResult _mainBuildResult;
     bool BuildSourceMap;
+    bool _noHtml;
     string? SourceMapSourceRoot;
     RefDictionary<string, NjsastBundleBundler>? _subBundlers;
 
@@ -111,7 +113,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         _mainJsBundleUrl = _buildResult.BundleJsUrl;
 
         var bundler = new BundlerImpl(this);
-        if ((_project.ExampleSources?.Count ?? 0) > 0)
+        if (!_project.LibraryMode && (_project.ExampleSources?.Count ?? 0) > 0)
         {
             bundler.PartToMainFilesMap = new Dictionary<string, IReadOnlyList<string>>
                 {{"Bundle", new[] {_project.ExampleSources[0]}}};
@@ -127,8 +129,9 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         bundler.OutputOptions = new() {Beautify = beautify, ShortenBooleans = !beautify, Ecma = _project.Target > ScriptTarget.Es5 ? 6 : 5};
         bundler.GenerateSourceMap = BuildSourceMap;
         bundler.GlobalDefines = _project.BuildDefines(_mainBuildResult);
+        bundler.LibraryMode = _project.LibraryMode;
         bundler.Run();
-        if (!_project.NoHtml)
+        if (!_noHtml)
         {
             BuildFastBundlerIndexHtml(cssLink);
             _mainBuildResult.FilesContent.GetOrAddValueRef("index.html") = _indexHtml;
@@ -143,7 +146,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                 if (subProject == null) continue;
                 if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                 {
-                    subBundler = new NjsastBundleBundler(_tools, _logger, _mainBuildResult, subProject,
+                    subBundler = new(_tools, _logger, _mainBuildResult, subProject,
                         _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
                 }
 

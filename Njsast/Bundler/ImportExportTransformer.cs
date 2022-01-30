@@ -12,9 +12,9 @@ public class ImportExportTransformer : TreeTransformer
     readonly Dictionary<string, SymbolDef> _exportName2VarNameMap = new Dictionary<string, SymbolDef>();
     StructList<AstNode> _bodyPrepend;
     SymbolDef? _reexportSymbol;
+    SymbolDef? _importStarSymbol;
 
-    readonly Dictionary<SymbolDef, (string, string[])> _reqSymbolDefMap =
-        new Dictionary<SymbolDef, (string, string[])>();
+    readonly Dictionary<SymbolDef, (string, string[])> _reqSymbolDefMap = new();
 
     public (string, string[])? DetectImport(AstNode? node)
     {
@@ -26,12 +26,17 @@ public class ImportExportTransformer : TreeTransformer
                 _sourceFile.Requires.AddUnique(resolvedName);
                 return (resolvedName, Array.Empty<string>());
             }
+            case AstCall { Expression: AstSymbolRef { Name: "__importDefault" } } astCall:
+            {
+                return DetectImport(astCall.Args[0]);
+            }
             case AstSymbolRef symbolRef when _reqSymbolDefMap.TryGetValue(symbolRef.Thedef!, out var res):
                 return res;
-            case AstPropAccess propAccess when propAccess.PropertyAsString is {} propName &&
-                                               DetectImport(propAccess.Expression) is {} leftImport:
+            case AstPropAccess { PropertyAsString: { } propName } propAccess
+                when DetectImport(propAccess.Expression) is { } leftImport:
                 return (leftImport.Item1, Concat(leftImport.Item2, propName));
         }
+
         return null;
     }
 
@@ -60,23 +65,38 @@ public class ImportExportTransformer : TreeTransformer
             return node;
         }
 
-        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is {} reqSymbolDef && reqSymbolDef.IsSingleInit)
+        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { } reqSymbolDef)
         {
-            if (DetectImport(varDef.Value) is { } import)
+            // In theory these should be only IsSingleInit, but it is not reliant enough to not try to detect import
+            var val = varDef.Value;
+            if (val is AstCall { Expression: AstSymbolRef maybeImportStar, Args.Count: 1 } call &&
+                maybeImportStar.IsSymbolDef() == _importStarSymbol)
+            {
+                val = call.Args[0];
+                varDef.Value = val;
+            }
+
+            if (val is AstCall { Expression: AstSymbolRef { Name: "__importDefault" }, Args.Count: 1 } call2)
+            {
+                val = call2.Args[0];
+                varDef.Value = val;
+            }
+
+            if (DetectImport(val) is { } import)
             {
                 _reqSymbolDefMap[reqSymbolDef] = import;
                 return node;
             }
         }
 
-        if (DetectImport(node) is {} import2)
+        if (DetectImport(node) is { } import2)
         {
             if (!(Parent() is AstSimpleStatement))
                 _sourceFile.NeedsImports.AddUnique(import2);
             return node;
         }
 
-        if (node is AstSimpleStatement {Body: var stmBody })
+        if (node is AstSimpleStatement { Body: var stmBody })
         {
             if (stmBody is AstCall call)
             {
@@ -95,30 +115,36 @@ public class ImportExportTransformer : TreeTransformer
                     astDot.Expression.IsSymbolDef().IsGlobalSymbol() == "Object" &&
                     astDot.PropertyAsString == "defineProperty"
                     && call.Args.Count == 3 && call.Args[0].IsSymbolDef().IsExportsSymbol() &&
-                    call.Args[1] is AstString exportName && call.Args[2] is AstObject { Properties.Count: 2 } astObject && astObject.Properties.Last is AstObjectProperty
+                    call.Args[1] is AstString exportName &&
+                    call.Args[2] is AstObject { Properties.Count: 2 } astObject &&
+                    astObject.Properties.Last is AstObjectProperty
                     {
                         Value: AstLambda
                         {
                             Body.Last: AstReturn astRet
                         }
-                    } && DetectImport(astRet.Value) is {} bindPath)
+                    } && DetectImport(astRet.Value) is { } bindPath)
                 {
-                    _sourceFile.SelfExports.Add(new ReexportSelfExport(exportName.Value, bindPath.Item1, bindPath.Item2));
+                    _sourceFile.SelfExports.Add(
+                        new ReexportSelfExport(exportName.Value, bindPath.Item1, bindPath.Item2));
                     return Remove;
                 }
 
                 if (call.Expression.IsSymbolDef().IsGlobalSymbol() == "__createBinding" && call.Args.Count >= 3 &&
                     call.Args[0].IsSymbolDef().IsExportsSymbol() && call.Args[2] is AstString bindingName &&
-                    DetectImport(call.Args[1]) is {} bindModule && bindModule.Item2.Length == 0)
+                    DetectImport(call.Args[1]) is { } bindModule && bindModule.Item2.Length == 0)
                 {
                     if (call.Args.Count == 3)
                     {
-                        _sourceFile.SelfExports.Add(new ReexportSelfExport(bindingName.Value, bindModule.Item1, Concat(bindModule.Item2, bindingName.Value)));
+                        _sourceFile.SelfExports.Add(new ReexportSelfExport(bindingName.Value, bindModule.Item1,
+                            Concat(bindModule.Item2, bindingName.Value)));
                         return Remove;
                     }
+
                     if (call.Args.Count == 4 && call.Args[3] is AstString asName)
                     {
-                        _sourceFile.SelfExports.Add(new ReexportSelfExport(asName.Value, bindModule.Item1, Concat(bindModule.Item2, bindingName.Value)));
+                        _sourceFile.SelfExports.Add(new ReexportSelfExport(asName.Value, bindModule.Item1,
+                            Concat(bindModule.Item2, bindingName.Value)));
                         return Remove;
                     }
                 }
@@ -171,6 +197,7 @@ public class ImportExportTransformer : TreeTransformer
                         _bodyPrepend.Add(newVar);
                         varName = astSymbolVar.Thedef;
                     }
+
                     ((AstAssign)stmBody).Left =
                         new AstSymbolRef(((AstAssign)stmBody).Left, varName, SymbolUsage.Write);
                     return null;
@@ -179,7 +206,8 @@ public class ImportExportTransformer : TreeTransformer
                 if (pea.Value.value.IsConstantSymbolRef())
                 {
                     // It could be var symbol of required module, than it is namespace export
-                    if (_reqSymbolDefMap.TryGetValue(pea.Value.value.IsSymbolDef()!, out var res) && res.Item2.Length==0)
+                    if (_reqSymbolDefMap.TryGetValue(pea.Value.value.IsSymbolDef()!, out var res) &&
+                        res.Item2.Length == 0)
                     {
                         _sourceFile.SelfExports.Add(new ExportAsNamespaceSelfExport(res.Item1, pea.Value.name));
                     }
@@ -188,10 +216,18 @@ public class ImportExportTransformer : TreeTransformer
                         _exportName2VarNameMap[pea.Value.name] = pea.Value.value.IsSymbolDef()!;
                         _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name, (AstSymbol)pea.Value.value!));
                     }
+
                     return Remove;
                 }
 
-                if (pea.Value.value.IsRequireCall() is {} exportAsNamespace)
+                var callExp = pea.Value.value as AstCall;
+                if (_importStarSymbol != null && callExp is { Expression: { } exp } &&
+                    exp.IsSymbolDef() == _importStarSymbol)
+                {
+                    callExp = callExp.Args[0] as AstCall;
+                }
+
+                if (callExp.IsRequireCall() is { } exportAsNamespace)
                 {
                     var resolvedName = _resolver.Invoke(_sourceFile.Name, exportAsNamespace);
                     _sourceFile.Requires.AddUnique(resolvedName);
@@ -239,15 +275,39 @@ public class ImportExportTransformer : TreeTransformer
             return Remove;
         }
 
-        if (node is AstVar { Definitions: { Count: 1, Last.Name: AstSymbol { Name: "__exportStar" } exportStarSymbol } })
+        if (node is AstVar
+            {
+                Definitions: { Count: 1, Last.Name: AstSymbol { Name: "__exportStar" } exportStarSymbol }
+            })
         {
             _reexportSymbol = exportStarSymbol.IsSymbolDef();
             return Remove;
         }
 
-        if (node is AstVar { Definitions: { Count: 1, Last.Name: AstSymbol { Name: "__createBinding" } } })
+        if (node is AstVar
+            {
+                Definitions: { Count: 1, Last.Name: AstSymbol { Name: "__importStar" } importStarSymbol }
+            })
+        {
+            _importStarSymbol = importStarSymbol.IsSymbolDef();
+            return Remove;
+        }
+
+        if (node is AstVar
+            {
+                Definitions:
+                {
+                    Count: 1,
+                    Last.Name: AstSymbol { Name: "__createBinding" or "__setModuleDefault" or "__importDefault" }
+                }
+            })
         {
             return Remove;
+        }
+
+        if (node is AstCall { Expression: AstSymbolRef { Name: "__importDefault" }, Args.Count: 1 } callImportDefault)
+        {
+            return Transform(callImportDefault.Args[0]);
         }
 
         if (node is AstPropAccess propAccess && propAccess.Expression.IsSymbolDef().IsExportsSymbol() &&
