@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Updated
+
+Njsast with bundling fix.
+
 ## 1.63.0
 
 ### Added

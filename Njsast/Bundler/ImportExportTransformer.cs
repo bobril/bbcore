@@ -65,9 +65,8 @@ public class ImportExportTransformer : TreeTransformer
             return node;
         }
 
-        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { } reqSymbolDef)
+        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { IsSingleInit:true } reqSymbolDef)
         {
-            // In theory these should be only IsSingleInit, but it is not reliant enough to not try to detect import
             var val = varDef.Value;
             if (val is AstCall { Expression: AstSymbolRef maybeImportStar, Args.Count: 1 } call &&
                 maybeImportStar.IsSymbolDef() == _importStarSymbol)

@@ -51,7 +51,7 @@ public class AstSymbolRef : AstSymbol
             return null;
         }
 
-        if (Thedef.IsSingleInit)
+        if (Thedef.IsSingleInitAndDeeplyConst)
         {
             if (Thedef.VarInit == null) return IsVarLetConst(Thedef.Orig[0]) ? AstUndefined.Instance : null;
             return Thedef.VarInit.ConstValue(ctx);

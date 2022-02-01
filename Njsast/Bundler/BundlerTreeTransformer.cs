@@ -70,7 +70,7 @@ class BundlerTreeTransformer : TreeTransformer
         if (node is AstLabel)
             return node;
 
-        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { } reqSymbolDef &&
+        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { IsSingleInit: true } reqSymbolDef &&
             _currentSourceFile.Exports!.Values().All(n => n.IsSymbolDef() != reqSymbolDef))
         {
             if (DetectImport(varDef.Value) is { } import)

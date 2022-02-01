@@ -374,7 +374,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                 case AstCall call:
                 {
                     var symbol = call.Expression.IsSymbolDef();
-                    if (symbol is { IsSingleInit: true, Init: AstLambda { Pure: true } } ||
+                    if (symbol is { IsSingleInitAndDeeplyConst: true, Init: AstLambda { Pure: true } } ||
                         IsWellKnownPureFunction(call.Expression, call is AstNew))
                     {
                         var res = new AstSequence(node.Source, node.Start, node.End);
@@ -532,8 +532,8 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                             return Remove;
                         }
 
-                        if (varDef.Value.IsSymbolDef() is { } rightSymbolDef && def.IsSingleInit &&
-                            rightSymbolDef.IsSingleInit)
+                        if (varDef.Value.IsSymbolDef() is { } rightSymbolDef && def.IsSingleInitAndDeeplyConst &&
+                            rightSymbolDef.IsSingleInitAndDeeplyConst)
                         {
                             _clonedSymbolMap.GetOrAddValueRef(def) = rightSymbolDef;
                         }

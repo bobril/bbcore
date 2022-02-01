@@ -167,7 +167,7 @@ public static class Extensions
         var def = node.IsSymbolDef();
         if (def == null) return false;
         if (def.Undeclared) return false;
-        return def.IsSingleInit;
+        return def.IsSingleInitAndDeeplyConst;
     }
 
     public static T DeepClone<T>(this T node) where T : AstNode
