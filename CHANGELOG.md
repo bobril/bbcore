@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 4.5.5
+
+### Updated
+
+- TypeScript Targets enum to include up to ES2021.
+
 ## 1.63.1
 
 ### Updated
