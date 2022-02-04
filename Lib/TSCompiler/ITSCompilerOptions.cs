@@ -44,7 +44,10 @@ public enum ScriptTarget
     Es2016 = 3,
     Es2017 = 4,
     Es2018 = 5,
-    Esnext = 6,
+    Es2019 = 6,
+    Es2020 = 7,
+    Es2021 = 8,
+    Esnext = 99
 }
 
 public interface ITSCompilerOptions
