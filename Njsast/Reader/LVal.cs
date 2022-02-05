@@ -33,8 +33,10 @@ public sealed partial class Parser
                                 Raise(cur.Start, "Invalid left-hand side in assignment expression");
                             cur = cur.Expression as AstPropAccess;
                         }
+
                         break;
                     }
+
                     goto default;
 
                 case AstDestructuring _:
@@ -44,7 +46,7 @@ public sealed partial class Parser
                     var newProperties = new StructList<AstNode>();
                     newProperties.Reserve(objectExpression.Properties.Count);
                     for (var i = 0; i < objectExpression.Properties.Count; i++)
-                        newProperties.Add(ToAssignable(objectExpression.Properties[(uint) i], isBinding));
+                        newProperties.Add(ToAssignable(objectExpression.Properties[(uint)i], isBinding));
                     node = new AstDestructuring(SourceFile, node.Start, node.End, ref newProperties, false);
                     break;
 
@@ -77,6 +79,9 @@ public sealed partial class Parser
                 case AstDefaultAssign _:
                     break;
 
+                case AstHole _:
+                    break;
+
                 default:
                     Raise(node.Start, "Assigning to rvalue");
                     break;
@@ -98,6 +103,7 @@ public sealed partial class Parser
         {
             kv.Value = ToAssignable(kv.Value, isBinding);
         }
+
         return property;
     }
 
@@ -106,9 +112,9 @@ public sealed partial class Parser
     {
         for (var i = 0; i < expressionList.Count; i++)
         {
-            var element = expressionList[(uint) i];
+            var element = expressionList[(uint)i];
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            if (element != null) expressionList[(uint) i] = ToAssignable(element, isBinding);
+            if (element != null) expressionList[(uint)i] = ToAssignable(element, isBinding);
         }
     }
 

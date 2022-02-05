@@ -9,6 +9,7 @@
 ### Updated
 
 - TypeScript Targets enum to include up to ES2021.
+- Njsast with fix of Array Hole in arguments
 
 ## 1.63.1
 
