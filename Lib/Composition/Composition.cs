@@ -646,10 +646,8 @@ public class Composition
                     }
                     else if (!ctx.OnlyTypeCheck)
                     {
-                        var bundle = bCommand.NewBundler.Value
-                            ? (IBundler)new NjsastBundleBundler(_tools, _logger, _mainBuildResult, proj,
-                                buildResult)
-                            : new BundleBundler(_tools, _mainBuildResult, proj, buildResult);
+                        var bundle = (IBundler)new NjsastBundleBundler(_tools, _logger, _mainBuildResult, proj,
+                                buildResult);
                         bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value,
                             bCommand.SourceMap.Value == "yes", bCommand.SourceMapRoot.Value);
                     }

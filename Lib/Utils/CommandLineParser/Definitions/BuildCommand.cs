@@ -14,9 +14,6 @@ public class BuildCommand : CommonParametersBaseCommand
     public CommandLineArgumentBool Fast { get; } =
         new CommandLineArgumentBool(description: "quick debuggable bundling", words: new[] {"-f", "--fast"});
 
-    public CommandLineArgumentBool NewBundler { get; } = new CommandLineArgumentBool(
-        description: "use new Njsast based bundler", words: new[] {"-x", "--newBundler"}, defaultValue: true);
-
     public CommandLineArgumentEnumValues SourceMap { get; } =
         new CommandLineArgumentEnumValues("build sourcemaps", new[] {"-g", "--sourcemap"}, new[] {"no", "yes"});
 

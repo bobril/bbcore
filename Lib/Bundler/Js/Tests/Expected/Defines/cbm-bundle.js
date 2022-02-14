@@ -1,3 +1,0 @@
-!function(t) {
-    "use strict";
-}();

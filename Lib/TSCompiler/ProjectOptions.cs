@@ -293,8 +293,8 @@ public class ProjectOptions
                 buildResult.FilesContent.GetOrAddValueRef(outPathFileName) =
                     new Lazy<object>(() =>
                     {
-                        var res = ((IFileCache) child).ByteContent;
-                        ((IFileCache) child).FreeCache();
+                        var res = ((IFileCache)child).ByteContent;
+                        ((IFileCache)child).FreeCache();
                         return res;
                     });
             }
@@ -308,7 +308,7 @@ public class ProjectOptions
             sourceMap = true,
             skipLibCheck = false,
             skipDefaultLibCheck = true,
-            target = ScriptTarget.Es5,
+            target = ScriptTarget.Es2019,
             downlevelIteration = true,
             module = ModuleKind.Commonjs,
             declaration = false,
@@ -331,21 +331,21 @@ public class ProjectOptions
     HashSet<string> GetDefaultTSLibs()
     {
         if (Variant == "worker")
-            return new HashSet<string>
+            return new()
             {
-                "es5", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.generator", "es2015.collection",
+                "es2019",
                 "webworker",
                 "webworker.importscripts"
             };
         if (Variant == "serviceworker")
-            return new HashSet<string>
+            return new()
             {
-                "es2017", "webworker"
+                "es2019", "webworker"
             };
-        return new HashSet<string>
+        return new()
         {
-            "es5", "dom", "es2015.core", "es2015.promise", "es2015.iterable", "es2015.generator",
-            "es2015.collection"
+            "es2019",
+            "dom"
         };
     }
 
@@ -404,10 +404,10 @@ public class ProjectOptions
         var newConfigObject = new TSConfigJson
         {
             compilerOptions = GetDefaultTSCompilerOptions()
-                .Merge(new TSCompilerOptions {allowJs = false})
+                .Merge(new TSCompilerOptions { allowJs = false })
                 .Merge(CompilerOptions),
             files = new(2 + IncludeSources?.Length ?? 0),
-            include = new() {"**/*"}
+            include = new() { "**/*" }
         };
 
         if ((TestSources?.Count ?? 0) > 0)
@@ -561,7 +561,7 @@ public class ProjectOptions
                 }
             }
 
-            if (dir.TryGetChild(".bbrc") is IFileCache {IsInvalid: false} f)
+            if (dir.TryGetChild(".bbrc") is IFileCache { IsInvalid: false } f)
             {
                 try
                 {
@@ -835,12 +835,12 @@ public class ProjectOptions
     {
         var constsInput = new Dictionary<string, AstNode>();
         var definesOutput = new Dictionary<string, AstNode>();
-        constsInput["DEBUG"] = Debug ? (AstNode) AstTrue.Instance : AstFalse.Instance;
+        constsInput["DEBUG"] = Debug ? (AstNode)AstTrue.Instance : AstFalse.Instance;
         foreach (var (key, value) in Defines)
         {
             var clone = value.DeepClone();
             clone.FigureOutScope();
-            clone = (AstToplevel) new EnvExpanderTransformer(constsInput, GetSystemEnvValue, GetFileContent)
+            clone = (AstToplevel)new EnvExpanderTransformer(constsInput, GetSystemEnvValue, GetFileContent)
                 .Transform(clone);
             definesOutput[key] = TypeConverter.ToAst((clone.Body.Last as AstSimpleStatement)?.Body.ConstValue());
         }
@@ -850,7 +850,7 @@ public class ProjectOptions
         {
             var clone = value.DeepClone();
             clone.FigureOutScope();
-            clone = (AstToplevel) new EnvExpanderTransformer(definesOutput, GetSystemEnvValue, GetFileContent)
+            clone = (AstToplevel)new EnvExpanderTransformer(definesOutput, GetSystemEnvValue, GetFileContent)
                 .Transform(clone);
             envReplace[key] = TypeConverter.ToAst((clone.Body.Last as AstSimpleStatement)?.Body.ConstValue())
                 .PrintToString();

@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### New defaults
+
+Target and TS Libs are ES2019. ES5 target is still supported just not default anymore.
+
+### Removed
+
+Old Bundler in JS. Command line option -x to choose bundler. New Njsast based bundler is now only options.
+
 ## 1.64.0
 
 ### Changed
