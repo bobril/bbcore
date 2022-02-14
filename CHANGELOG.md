@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.0.0
+
 ### New defaults
 
 Target and TS Libs are ES2019. ES5 target is still supported just not default anymore.
