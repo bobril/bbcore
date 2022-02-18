@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.1.0
+
 ### Added
 
 - Jasmine 4.0.0: "bobril": { "jasmineVersion" : "4.0" }
