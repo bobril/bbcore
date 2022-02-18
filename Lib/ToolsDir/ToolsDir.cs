@@ -45,7 +45,7 @@ public class ToolsDir : IToolsDir
                 }
             }
 
-            SetJasmineVersion("330");
+            SetJasmineVersion("3.3");
             LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js").Replace("\"use strict\";", "");
             JasmineCoreJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.js");
             JasmineDts299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.d.ts");
@@ -53,12 +53,18 @@ public class ToolsDir : IToolsDir
             if (!File.Exists(JasmineDtsPath299) || File.ReadAllText(JasmineDtsPath299) != JasmineDts299)
                 File.WriteAllText(JasmineDtsPath299, JasmineDts299);
             JasmineBootJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot299.js");
+            JasmineBootJs330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot330.js");
+            JasmineBootJs400 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot400.js");
             JasmineCoreJs330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine330.js");
+            JasmineCoreJs400 = ResourceUtils.GetText("Lib.ToolsDir.jasmine400.js");
             JasmineDts330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine330.d.ts");
+            JasmineDts400 = ResourceUtils.GetText("Lib.ToolsDir.jasmine400.d.ts");
             JasmineDtsPath330 = PathUtils.Join(Path, "jasmine330.d.ts");
+            JasmineDtsPath400 = PathUtils.Join(Path, "jasmine400.d.ts");
             if (!File.Exists(JasmineDtsPath330) || File.ReadAllText(JasmineDtsPath330) != JasmineDts330)
                 File.WriteAllText(JasmineDtsPath330, JasmineDts330);
-            JasmineBootJs330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot330.js");
+            if (!File.Exists(JasmineDtsPath400) || File.ReadAllText(JasmineDtsPath400) != JasmineDts400)
+                File.WriteAllText(JasmineDtsPath400, JasmineDts400);
 
             WebtZip = ResourceUtils.GetZip("Lib.ToolsDir.webt.zip");
             WebZip = ResourceUtils.GetZip("Lib.ToolsDir.web.zip");
@@ -152,26 +158,47 @@ public class ToolsDir : IToolsDir
     public string LoaderJs { get; }
 
     public string JasmineCoreJs299 { get; }
-
     public string JasmineBootJs299 { get; }
-
     public string JasmineDts299 { get; }
-
     public string JasmineDtsPath299 { get; }
-    public string JasmineCoreJs330 { get; }
 
+    public string JasmineCoreJs330 { get; }
     public string JasmineBootJs330 { get; }
     public string JasmineDts330 { get; }
-
     public string JasmineDtsPath330 { get; }
 
-    public string JasmineCoreJs => _jasmineVersion == "2.99" ? JasmineCoreJs299 : JasmineCoreJs330;
+    public string JasmineCoreJs400 { get; }
+    public string JasmineBootJs400 { get; }
+    public string JasmineDts400 { get; }
+    public string JasmineDtsPath400 { get; }
 
-    public string JasmineBootJs => _jasmineVersion == "2.99" ? JasmineBootJs299 : JasmineBootJs330;
+    public string JasmineCoreJs => _jasmineVersion switch
+    {
+        "2.99" => JasmineCoreJs299,
+        "4.0" => JasmineCoreJs400,
+        _ => JasmineCoreJs330
+    };
 
-    public string JasmineDts => _jasmineVersion == "2.99" ? JasmineDts299 : JasmineDts330;
+    public string JasmineBootJs => _jasmineVersion switch
+    {
+        "2.99" => JasmineBootJs299,
+        "4.0" => JasmineBootJs400,
+        _ => JasmineBootJs330
+    };
 
-    public string JasmineDtsPath => _jasmineVersion == "2.99" ? JasmineDtsPath299 : JasmineDtsPath330;
+    public string JasmineDts => _jasmineVersion switch
+    {
+        "2.99" => JasmineDts299,
+        "4.0" => JasmineDts400,
+        _ => JasmineDts330
+    };
+
+    public string JasmineDtsPath => _jasmineVersion switch
+    {
+        "2.99" => JasmineDtsPath299,
+        "4.0" => JasmineDtsPath400,
+        _ => JasmineDtsPath330
+    };
 
     readonly JObject _localeDefs;
     string _proxyWeb;
@@ -236,7 +263,7 @@ public class ToolsDir : IToolsDir
 
     public void SetJasmineVersion(string? version)
     {
-        _jasmineVersion = version ?? "330";
+        _jasmineVersion = version ?? "3.3";
     }
 
     public void SetTypeScriptVersion(string version)

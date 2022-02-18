@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Jasmine 4.0.0: "bobril": { "jasmineVersion" : "4.0" }
+
 ## 2.0.0
 
 ### New defaults

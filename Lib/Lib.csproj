@@ -14,10 +14,13 @@
     <None Remove="SCSSProcessor\sass.dart.js" />
     <None Remove="ToolsDir\jasmine-boot299.js" />
     <None Remove="ToolsDir\jasmine-boot330.js" />
+    <None Remove="ToolsDir\jasmine-boot400.js" />
     <None Remove="ToolsDir\jasmine299.js" />
     <None Remove="ToolsDir\jasmine330.js" />
+    <None Remove="ToolsDir\jasmine400.js" />
     <None Remove="ToolsDir\jasmine299.d.ts" />
     <None Remove="ToolsDir\jasmine330.d.ts" />
+    <None Remove="ToolsDir\jasmine400.d.ts" />
     <None Remove="ToolsDir\liveReload.js" />
     <None Remove="ToolsDir\loader.js" />
     <None Remove="ToolsDir\localeDefs.json" />
@@ -35,10 +38,13 @@
     <EmbeddedResource Include="SCSSProcessor\sass.dart.js" />
     <EmbeddedResource Include="ToolsDir\jasmine-boot299.js" />
     <EmbeddedResource Include="ToolsDir\jasmine-boot330.js" />
+    <EmbeddedResource Include="ToolsDir\jasmine-boot400.js" />
     <EmbeddedResource Include="ToolsDir\jasmine299.js" />
     <EmbeddedResource Include="ToolsDir\jasmine330.js" />
+    <EmbeddedResource Include="ToolsDir\jasmine400.js" />
     <EmbeddedResource Include="ToolsDir\jasmine299.d.ts" />
     <EmbeddedResource Include="ToolsDir\jasmine330.d.ts" />
+    <EmbeddedResource Include="ToolsDir\jasmine400.d.ts" />
     <EmbeddedResource Include="ToolsDir\liveReload.js" />
     <EmbeddedResource Include="ToolsDir\loader.js" />
     <EmbeddedResource Include="ToolsDir\localeDefs.json" />

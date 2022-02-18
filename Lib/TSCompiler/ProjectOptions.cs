@@ -496,7 +496,7 @@ public class ProjectOptions
         }
 
         Variant = bbOptions.variant ?? "";
-        JasmineVersion = bbOptions.jasmineVersion ?? "330";
+        JasmineVersion = bbOptions.jasmineVersion ?? "3.3";
         NoHtml = bbOptions.nohtml ?? Variant != "";
         Title = bbOptions.title ?? "Bobril Application";
         HtmlHead = bbOptions.head ?? "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />";
