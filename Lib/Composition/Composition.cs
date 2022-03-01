@@ -21,6 +21,7 @@ using Newtonsoft.Json.Serialization;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
+using System.Runtime.InteropServices;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using BTDB.Collections;
@@ -65,6 +66,7 @@ public class Composition
     NotificationManager _notificationManager;
     readonly IConsoleLogger _logger = new ConsoleLogger();
     CfgManager<MainCfg> _cfgManager;
+    private bool _runningChromeOnWindows;
 
     public Composition(bool inDocker)
     {
@@ -1111,6 +1113,7 @@ public class Composition
         InitTestServer();
         InitMainServer();
         SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory)).SpriteGeneration = command.Sprite.Value;
+        _runningChromeOnWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && _currentProject.HeadlessBrowserStrategy != "PreferFirefoxOnWindows";
         StartWebServer(port, command.BindToAny.Value);
         InitInteractiveMode(command.Localize.Value, command.SourceMapRoot.Value);
         WaitForStop();
@@ -1526,6 +1529,12 @@ public class Composition
                     $"Tests on {results.UserAgent} Failed: {results.TestsFailed}+{results.SuitesFailed} Skipped: {results.TestsSkipped} Total: {results.TotalTests} Duration: {results.Duration * 0.001:F1}s",
                     color);
                 _notificationManager.SendNotification(results.ToNotificationParameters());
+
+                if (_runningChromeOnWindows)
+                {
+                    _browserProcess.Dispose();
+                    _browserProcess = null;
+                }
             });
             _testServer.OnCoverageResults.Subscribe((results) =>
             {
@@ -1569,6 +1578,9 @@ public class Composition
 
         _mainServer.OnRequestRebuild.Subscribe(_ =>
         {
+            if (_runningChromeOnWindows)
+                StartHeadlessBrowserTest();
+            
             _dc.NotifyChange("Request from API");
             _hasBuildWork.Set();
         });
