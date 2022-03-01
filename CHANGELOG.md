@@ -8,6 +8,8 @@ Headless Chrome on Windows is restarted after each test run to workaround hang o
 
 `global` is not anymore defined in TypeScript and ESM JS files (it allows to declare it as let or const under same name). Just use `globalThis` instead if you have to.
 
+Fixed parsing of expansion in object spread in argument of arrow function.
+
 ## 2.1.0
 
 ### Added
