@@ -131,8 +131,11 @@ public class FastBundleBundler
                 {
                     moduleName = PathUtils.WithoutExtension(moduleName);
                 }
+
                 sourceMapBuilder.AddText(
-                    $"R('{PathUtils.Subtract(moduleName, root!)}',function(require, module, exports, global){{");
+                    source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript
+                        ? $"R('{PathUtils.Subtract(moduleName, root!)}',function(require, module, exports){{"
+                        : $"R('{PathUtils.Subtract(moduleName, root!)}',function(require, module, exports, global){{");
                 var adder = sourceMapBuilder.CreateSourceAdder(source.Output, source.MapLink);
                 var sourceReplacer = new SourceReplacer();
                 _project.ApplySourceInfo(sourceReplacer, source.SourceInfo, _buildResult);
