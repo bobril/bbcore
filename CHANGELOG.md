@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.1.1
+
 ### Fixed
 
 Headless Chrome on Windows is restarted after each test run to workaround hang of tests.
