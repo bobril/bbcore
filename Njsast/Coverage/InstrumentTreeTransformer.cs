@@ -105,6 +105,15 @@ class InstrumentTreeTransformer : TreeTransformer
 
     void InstrumentFunction(AstLambda lambda)
     {
+        if (lambda is AstArrow arrow)
+        {
+            if (arrow.Body.Count == 1 && arrow.Body.Last.IsExpression())
+            {
+                var original = arrow.Body[0];
+                arrow.Body[0] = new AstBlock(original)
+                    { Body = new() { new AstReturn(original) { Value = original } } };
+            }
+        }
         if (lambda.Source == null)
         {
             InstrumentBlock(ref lambda.Body);

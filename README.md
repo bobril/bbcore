@@ -1,6 +1,6 @@
 # bbcore
 
-Rewrite of bobril-build to .Net Core. Mainly for speed reasons. It now replaced original JS version.
+Rewrite of bobril-build to .Net. Mainly for speed reasons. It now replaced original JS version.
 
 # How to start
 

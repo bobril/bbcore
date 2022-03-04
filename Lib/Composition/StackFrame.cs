@@ -44,18 +44,18 @@ public class StackFrame
         // Fail-fast but return locations like "(native)"
         if (urlLike.IndexOf(':') < 0)
         {
-            return new List<string> { urlLike };
+            return new() { urlLike };
         }
         var parts = ParseLocationRegexPar.Match(urlLike.Replace("()", ""));
 
         if (parts.Success)
         {
             var gg = (IReadOnlyList<Group>)parts.Groups;
-            return new List<string> { gg.ElementAtOrDefault(1)?.Value, gg.ElementAtOrDefault(2)?.Value, gg.ElementAtOrDefault(3)?.Value };
+            return new() { gg.ElementAtOrDefault(1)?.Value, gg.ElementAtOrDefault(2)?.Value, gg.ElementAtOrDefault(3)?.Value };
         }
         parts = ParseLocationRegex.Match(urlLike.Replace("()", ""));
         var g = (IReadOnlyList<Group>)parts.Groups;
-        return new List<string> { g.ElementAtOrDefault(1)?.Value, g.ElementAtOrDefault(2)?.Value, g.ElementAtOrDefault(3)?.Value };
+        return new() { g.ElementAtOrDefault(1)?.Value, g.ElementAtOrDefault(2)?.Value, g.ElementAtOrDefault(3)?.Value };
     }
 
     static List<StackFrame> ParseV8OrIE(string stack)
@@ -77,10 +77,10 @@ public class StackFrame
             return new StackFrame
             {
                 FunctionName = functionName,
-                Args = new List<string>(),
+                Args = new(),
                 FileName = fileName,
-                LineNumber = int.Parse(locationParts.ElementAtOrDefault(1) ?? "0"),
-                ColumnNumber = int.Parse(locationParts.ElementAtOrDefault(2) ?? "0")
+                LineNumber = int.TryParse(locationParts.ElementAtOrDefault(1) ?? "0", out var lineNum) ? lineNum : 0,
+                ColumnNumber = int.TryParse(locationParts.ElementAtOrDefault(2) ?? "0", out var colNum) ? colNum : 0
             };
         }).ToList();
     }
@@ -94,6 +94,7 @@ public class StackFrame
 
         return filtered.Select(line =>
         {
+            if (line.StartsWith("SyntaxError:")) return new() { FunctionName = line };
             // Throw away eval information
             if (line.IndexOf(" > eval") >= 0)
             {
@@ -103,7 +104,7 @@ public class StackFrame
             if (line.IndexOf('@') == -1 && line.IndexOf(':') == -1)
             {
                 // Safari eval frames only have function names and nothing else
-                return new StackFrame() { FunctionName = line, Args = new List<string>() };
+                return new() { FunctionName = line, Args = new() };
             }
 
             var tokens = line.Split('@');
@@ -112,10 +113,10 @@ public class StackFrame
             return new StackFrame
             {
                 FunctionName = functionName,
-                Args = new List<string>(),
+                Args = new(),
                 FileName = locationParts.ElementAtOrDefault(0),
-                LineNumber = int.Parse(locationParts.ElementAtOrDefault(1) ?? "0"),
-                ColumnNumber = int.Parse(locationParts.ElementAtOrDefault(2) ?? "0")
+                LineNumber = int.TryParse(locationParts.ElementAtOrDefault(1) ?? "0", out var lineNum) ? lineNum : 0,
+                ColumnNumber = int.TryParse(locationParts.ElementAtOrDefault(2) ?? "0", out var colNum) ? colNum : 0
             };
         }).ToList();
     }

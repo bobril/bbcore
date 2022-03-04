@@ -18,6 +18,5 @@
     "envs": {
         "Path": "env[\"Path\"]",
         "Version": "file[\"./src/my.version\"]"
-    },
-    "headlessBrowserStrategy": "PreferFirefoxOnWindows"
+    }
 }

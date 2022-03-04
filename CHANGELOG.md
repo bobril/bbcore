@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Fixed
+
+Regression in 2.1.1 with bb/test.
+
+Coverage works for arrow functions with just expression.
+
 ## 2.1.1
 
 ### Fixed

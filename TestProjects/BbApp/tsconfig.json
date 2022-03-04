@@ -9,13 +9,8 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "lib": [
-      "es5",
-      "dom",
-      "es2015.core",
-      "es2015.promise",
-      "es2015.iterable",
-      "es2015.generator",
-      "es2015.collection"
+      "es2019",
+      "dom"
     ],
     "module": "commonjs",
     "noEmitHelpers": true,
@@ -25,7 +20,7 @@
     "skipDefaultLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "target": "es5",
+    "target": "es2019",
     "resolveJsonModule": true
   },
   "include": [
