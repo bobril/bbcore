@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.1.2
+
 ### Fixed
 
 Regression in 2.1.1 with bb/test.
