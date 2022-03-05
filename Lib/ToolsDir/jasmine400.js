@@ -714,16 +714,7 @@ getJasmineRequireObj().Spec = function (j$) {
          */
         this.description = attrs.description || "";
         // BBCHANGE START
-        var stack;
-        var err = new Error();
-        stack = err.stack || err.stacktrace;
-        if (!stack) {
-            try {
-                i.crash.fast++;
-            } catch (err) {
-                stack = err.stack || err.stacktrace;
-            }
-        }
+        var stack = new Error().stack;
         this.stack = stack;
         // BBCHANGE END
         this.queueableFn = attrs.queueableFn;
@@ -4347,7 +4338,9 @@ getJasmineRequireObj().GlobalErrors = function (j$) {
                 var browserRejectionHandler = function browserRejectionHandler(event) {
                     if (j$.isError_(event.reason)) {
                         event.reason.jasmineMessage = "Unhandled promise rejection: " + event.reason;
-                        global.onerror(event.reason);
+                        // BBCHANGE START
+                        global.onerror(event.reason.jasmineMessage, null, null, null, event.reason.stack);
+                        // BBCHANGE END
                     } else {
                         global.onerror("Unhandled promise rejection: " + event.reason);
                     }
@@ -7545,7 +7538,7 @@ getJasmineRequireObj().QueueRunner = function (j$) {
                 maybeThenable = queueableFn.fn.call(self.userContext);
 
                 if (maybeThenable && j$.isFunction_(maybeThenable.then)) {
-                    maybeThenable.then(next, onPromiseRejection);
+                    maybeThenable.then(wrapInPromiseResolutionHandler(next), onPromiseRejection);
                     completedSynchronously = false;
                     return { completedSynchronously: false };
                 }
@@ -7643,6 +7636,16 @@ getJasmineRequireObj().QueueRunner = function (j$) {
             this.deprecated(msg, { omitStackTrace: true });
         }
     };
+
+    function wrapInPromiseResolutionHandler(fn) {
+        return function (maybeArg) {
+            if (j$.isError_(maybeArg)) {
+                fn(maybeArg);
+            } else {
+                fn();
+            }
+        };
+    }
 
     return QueueRunner;
 };
@@ -9597,5 +9600,5 @@ getJasmineRequireObj().UserContext = function (j$) {
 };
 
 getJasmineRequireObj().version = function () {
-    return "4.0.0";
+    return "4.0.1";
 };

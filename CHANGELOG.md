@@ -6,6 +6,8 @@
 
 Bundling bug.
 
+Jasmine 4.0.0 was upgraded in place to 4.0.1. Also fixing problem with unhandled promise rejection and now showing available stack in console.
+
 ## 2.1.2
 
 ### Fixed

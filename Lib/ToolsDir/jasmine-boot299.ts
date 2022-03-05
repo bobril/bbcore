@@ -200,7 +200,7 @@ declare var jasmineRequire: any;
         if (!stack) {
             try {
                 (<any>i).crash.fast++;
-            } catch (err) {
+            } catch (err: any) {
                 stack = err.stack || err.stacktrace;
             }
         }

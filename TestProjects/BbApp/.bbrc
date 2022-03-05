@@ -1,6 +1,6 @@
 {
     "head": "<link rel=\"icon\" href=\"<<../ImageQuality/assets/light.png>>\">",
-    "jasmineVersion": "330",
+    "jasmineVersion": "4.0",
     "additionalResourcesDirectory": "assets-app",
     "prefixStyleDefs": "pref1x",
     "dependencies": "upgrade",

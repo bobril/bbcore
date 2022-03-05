@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "target": "es2018",
         "module": "commonjs",
         "lib": ["es2015", "dom"],
         // "allowJs": true,                       /* Allow javascript files to be compiled. */

@@ -103,7 +103,7 @@
         }
         return result;
     }
-    var _indent = "  ";
+    const _indent = "  ";
     function primitiveOf(object) {
         var value = object.valueOf();
         switch (typeof value) {
@@ -179,10 +179,10 @@
         }
         return result + arr_obj.join(", ") + "\n" + repeatString(_indent, stack_length - 1) + "}";
     }
-    var testId = window.location.hash;
+    let testId = window.location.hash;
     function realLog(message) {
-        var stack;
-        var err = new Error();
+        let stack;
+        let err = new Error();
         stack = err.stack || err.stacktrace;
         if (!stack) {
             try {
@@ -192,15 +192,15 @@
                 stack = err.stack || err.stacktrace;
             }
         }
-        bbTest("consoleLog" + testId, { message: message, stack: stack });
+        bbTest("consoleLog" + testId, { message, stack });
     }
     var bbTest = window.parent.bbTest;
     if (bbTest) {
         var specFilter = window.parent.specFilter;
-        var specFilterFnc = function (_spec) { return true; };
+        var specFilterFnc = (_spec) => true;
         if (specFilter) {
             var specFilterRegExp = new RegExp(specFilter);
-            specFilterFnc = function (spec) { return specFilterRegExp.test(spec.getFullName()); };
+            specFilterFnc = (spec) => specFilterRegExp.test(spec.getFullName());
         }
         var config = {
             failFast: false,
@@ -208,61 +208,61 @@
             hideDisabled: false,
             specFilter: specFilterFnc,
         };
-        onerror = (function (msg, _url, _lineNo, _columnNo, error) {
+        onerror = ((msg, _url, _lineNo, _columnNo, error) => {
             bbTest("onerror" + testId, { message: msg, stack: error.stack });
         });
         env.configure(config);
         var perfnow;
         if (window.performance) {
-            var p_1 = window.performance;
-            perfnow = p_1.now || p_1.webkitNow || p_1.msNow || p_1.mozNow;
+            let p = window.performance;
+            perfnow = p.now || p.webkitNow || p.msNow || p.mozNow;
             if (perfnow) {
-                var realnow_1 = perfnow;
-                perfnow = function () { return realnow_1.call(p_1); };
+                let realnow = perfnow;
+                perfnow = () => realnow.call(p);
             }
         }
         else if (Date.now) {
             perfnow = Date.now;
         }
         else {
-            perfnow = function () { return +new Date(); };
+            perfnow = () => +new Date();
         }
-        var stack_1 = [];
-        var specStart_1 = 0;
-        var totalStart_1 = 0;
+        let stack = [];
+        let specStart = 0;
+        let totalStart = 0;
         env.addReporter({
-            jasmineStarted: function (suiteInfo) {
+            jasmineStarted: (suiteInfo) => {
                 bbTest("wholeStart" + testId, suiteInfo.totalSpecsDefined);
-                totalStart_1 = perfnow();
+                totalStart = perfnow();
             },
-            jasmineDone: function (suiteInfo) {
+            jasmineDone: (suiteInfo) => {
                 bbTest("wholeDone" + testId, {
                     overallStatus: suiteInfo.overallStatus,
                     incompleteReason: suiteInfo.incompleteReason,
-                    time: perfnow() - totalStart_1,
+                    time: perfnow() - totalStart,
                 });
                 var cov = window.__c0v;
                 if (cov != undefined) {
-                    var pos_1 = 0;
-                    var sendPart_1 = function () {
-                        while (pos_1 < cov.length && cov[pos_1] === 0)
-                            pos_1++;
-                        if (pos_1 < cov.length) {
-                            var maxlen = Math.min(cov.length - pos_1, 10240);
-                            var len = maxlen - 1;
-                            while (cov[pos_1 + len] === 0)
+                    let pos = 0;
+                    const sendPart = () => {
+                        while (pos < cov.length && cov[pos] === 0)
+                            pos++;
+                        if (pos < cov.length) {
+                            let maxlen = Math.min(cov.length - pos, 10240);
+                            let len = maxlen - 1;
+                            while (cov[pos + len] === 0)
                                 len--;
                             len++;
                             bbTest("coverageReportPart" + testId, {
-                                start: pos_1,
-                                data: Array.prototype.slice.call(cov.slice(pos_1, pos_1 + len)),
+                                start: pos,
+                                data: Array.prototype.slice.call(cov.slice(pos, pos + len)),
                             });
-                            pos_1 += maxlen;
-                            if (pos_1 == cov.length) {
-                                sendPart_1();
+                            pos += maxlen;
+                            if (pos == cov.length) {
+                                sendPart();
                             }
                             else {
-                                setTimeout(sendPart_1, 10);
+                                setTimeout(sendPart, 10);
                             }
                         }
                         else {
@@ -270,31 +270,31 @@
                         }
                     };
                     bbTest("coverageReportStarted" + testId, { length: cov.length });
-                    sendPart_1();
+                    sendPart();
                 }
             },
-            suiteStarted: function (result) {
+            suiteStarted: (result) => {
                 bbTest("suiteStart" + testId, result.description);
-                stack_1.push(perfnow());
+                stack.push(perfnow());
             },
-            specStarted: function (result) {
+            specStarted: (result) => {
                 bbTest("testStart" + testId, { name: result.description, stack: result.stack });
-                specStart_1 = perfnow();
+                specStart = perfnow();
             },
-            specDone: function (result) {
-                var duration = perfnow() - specStart_1;
+            specDone: (result) => {
+                let duration = perfnow() - specStart;
                 bbTest("testDone" + testId, {
                     name: result.description,
-                    duration: duration,
+                    duration,
                     status: result.status,
                     failures: result.failedExpectations,
                 });
             },
-            suiteDone: function (result) {
-                var duration = perfnow() - stack_1.pop();
+            suiteDone: (result) => {
+                let duration = perfnow() - stack.pop();
                 bbTest("suiteDone" + testId, {
                     name: result.description,
-                    duration: duration,
+                    duration,
                     status: result.status,
                     failures: result.failedExpectations,
                 });
@@ -308,31 +308,31 @@
                 },
             };
         }
-        var dimensions_limit_1 = 3;
+        let dimensions_limit = 3;
         console.dir = function dir( /* ...arguments */) {
             var result = [];
             for (var i = 0; i < arguments.length; i++) {
-                result.push(source_of(arguments[i], dimensions_limit_1, []));
+                result.push(source_of(arguments[i], dimensions_limit, []));
             }
-            return realLog(result.join(_args_separator_1));
+            return realLog(result.join(_args_separator));
         };
         var log_methods = ["log", "info", "warn", "error", "debug", "dirxml"];
-        var _args_separator_1 = "\n";
-        var _interpolate_1 = /%[sdifo]/gi;
+        const _args_separator = "\n";
+        const _interpolate = /%[sdifo]/gi;
         for (var i = 0; i < log_methods.length; i++) {
             console[log_methods[i]] = function logger(first_arg) {
                 var result = [];
                 var args = Array.prototype.slice.call(arguments, 0);
-                if (typeof first_arg === "string" && _interpolate_1.test(first_arg)) {
+                if (typeof first_arg === "string" && _interpolate.test(first_arg)) {
                     args.shift();
-                    result.push(first_arg.replace(_interpolate_1, function () {
+                    result.push(first_arg.replace(_interpolate, function () {
                         return _inspect(args.shift());
                     }));
                 }
                 for (var i = 0; i < args.length; i++) {
                     result.push(_inspect(args[i]));
                 }
-                return realLog(result.join(_args_separator_1));
+                return realLog(result.join(_args_separator));
             };
         }
         console.trace = function trace() {
@@ -349,28 +349,28 @@
         console.groupEnd = function groupEnd() {
             realLog("\n\n\n");
         };
-        var _counters_1 = {};
+        let _counters = {};
         console.count = function count(title) {
             title = title || "";
-            if (_counters_1[title]) {
-                _counters_1[title]++;
+            if (_counters[title]) {
+                _counters[title]++;
             }
             else {
-                _counters_1[title] = 1;
+                _counters[title] = 1;
             }
-            realLog(title + " " + _counters_1[title]);
+            realLog(title + " " + _counters[title]);
         };
-        var _timers_1 = {};
+        let _timers = {};
         console.time = function time(name) {
             var start = new Date().getTime();
-            _timers_1[name] = {
+            _timers[name] = {
                 start: start,
             };
         };
         console.timeEnd = function timeEnd(name) {
             var end = new Date().getTime();
-            console.info(name + ": " + (end - _timers_1[name].start) + "ms");
-            _timers_1[name].end = end;
+            console.info(name + ": " + (end - _timers[name].start) + "ms");
+            _timers[name].end = end;
         };
     }
     else {
@@ -378,26 +378,26 @@
             failFast: true,
             oneFailurePerSpec: true,
             hideDisabled: false,
-            specFilter: function (_spec) { return true; },
+            specFilter: (_spec) => true,
         };
         env.configure(config);
         env.addReporter({
-            jasmineStarted: function (suiteInfo) {
+            jasmineStarted: (suiteInfo) => {
                 console.log("Started " + suiteInfo.totalSpecsDefined);
             },
-            jasmineDone: function () {
+            jasmineDone: () => {
                 console.log("Done");
             },
-            suiteStarted: function (result) {
+            suiteStarted: (result) => {
                 console.log("Suite " + result.fullName);
             },
-            specStarted: function (result) {
+            specStarted: (result) => {
                 console.log("Spec " + result.fullName);
             },
-            specDone: function (result) {
+            specDone: (result) => {
                 console.log("Spec finished " + result.status);
             },
-            suiteDone: function (result) {
+            suiteDone: (result) => {
                 console.log("Suite finished " + result.status);
             },
         });

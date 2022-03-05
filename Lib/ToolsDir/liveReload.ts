@@ -9,10 +9,10 @@ function liveReloadWaiter() {
             if (xhr.status < 200 || xhr.status >= 300) {
                 liveReloadWaiter();
             } else {
-                window.location.reload(true);
+                window.location.reload();
             }
         }
-    }
+    };
     xhr.send();
 }
 

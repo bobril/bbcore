@@ -1,16 +1,16 @@
 "use strict";
-var R = function (name, fnOrJson) {
+const R = function (name, fnOrJson) {
     R.m.set(name.toLowerCase(), typeof fnOrJson == "function" ? { fn: fnOrJson, exports: undefined } : { exports: fnOrJson });
 };
 R.t = this;
 R.m = new Map();
 R.r = function (name, parent) {
-    var p = name;
+    let p = name;
     if (p[0] === ".") {
-        var parts = parent ? parent.split("/") : [];
+        let parts = parent ? parent.split("/") : [];
         parts.push("..");
         parts = parts.concat(p.split("/"));
-        var newParts = [];
+        const newParts = [];
         for (var i = 0, l = parts.length; i < l; i++) {
             var part = parts[i];
             if (!part || part === ".")
@@ -25,7 +25,7 @@ R.r = function (name, parent) {
             p = lp;
     }
     else {
-        var parts = name.split("/");
+        let parts = name.split("/");
         if (parts.length >= 2) {
             if (parts[0].charCodeAt(0) == 64) {
                 parts[0] = parts[0] + "/" + parts[1];
@@ -56,7 +56,7 @@ R.r = function (name, parent) {
     if (m.exports !== undefined)
         return m.exports;
     m.exports = {};
-    m.fn.call(R.t, function (name) { return R.r(name, p); }, m, m.exports, R.t);
+    m.fn.call(R.t, (name) => R.r(name, p), m, m.exports, R.t);
     if ((typeof m.exports === "function" || typeof m.exports === "object") && !("default" in m.exports)) {
         try {
             Object.defineProperty(m.exports, "default", { value: m.exports, enumerable: false });

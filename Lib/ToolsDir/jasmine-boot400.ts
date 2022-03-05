@@ -220,7 +220,11 @@ declare var jasmineRequire: any;
             specFilter: specFilterFnc,
         };
         onerror = ((msg: string, _url: string, _lineNo: number, _columnNo: number, error: Error) => {
-            bbTest("onerror" + testId, { message: msg, stack: error.stack });
+            if (error?.stack == undefined) {
+                bbTest("onerror" + testId, { message: msg, stack: error ?? "" });
+            } else {
+                bbTest("onerror" + testId, { message: msg, stack: error.stack });
+            }
         }) as any;
         env.configure(config);
         var perfnow: () => number;
