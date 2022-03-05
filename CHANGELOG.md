@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.1.3
+
 ### Fixed
 
 Bundling bug.
