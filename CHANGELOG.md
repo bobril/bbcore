@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Bundling bug.
+
 ## 2.1.2
 
 ### Fixed

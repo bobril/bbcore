@@ -202,7 +202,7 @@ public class ImportExportTransformer : TreeTransformer
                     return null;
                 }
 
-                if (pea.Value.value.IsConstantSymbolRef())
+                if (pea.Value.value.IsConstantSymbolRef() && Parent(1) == null)
                 {
                     // It could be var symbol of required module, than it is namespace export
                     if (_reqSymbolDefMap.TryGetValue(pea.Value.value.IsSymbolDef()!, out var res) &&
