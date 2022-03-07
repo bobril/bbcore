@@ -70,11 +70,12 @@ static class Program
         Console.WriteLine("Press 1 for Major " + majorVersionNumber.ToString(3));
         Console.WriteLine("Press 2 for Minor " + minorVersionNumber.ToString(3));
         Console.WriteLine("Press 3 for Patch " + patchVersionNumber.ToString(3));
+        Console.WriteLine("Press 4 for Just Docker Build");
         var choice = Console.ReadKey().KeyChar;
         Console.WriteLine();
-        if (choice is < '1' or > '3')
+        if (choice is < '1' or > '4')
         {
-            Console.WriteLine("Not pressed 1, 2 or 3. Exiting.");
+            Console.WriteLine("Not pressed 1, 2, 3 or 4. Exiting.");
             return 1;
         }
 
@@ -85,67 +86,74 @@ static class Program
         if (choice == '3')
             lastVersionNumber = patchVersionNumber;
         var newVersion = lastVersionNumber.ToString(3);
-        Console.WriteLine("Building version " + newVersion);
-        var outputLogLines = logLines.ToList();
-        var releaseLogLines = logLines.Skip(topVersionLine + 1).SkipWhile(string.IsNullOrWhiteSpace)
-            .TakeWhile(s => !s.StartsWith("## ")).ToList();
-        while (releaseLogLines.Count > 0 && string.IsNullOrWhiteSpace(releaseLogLines[^1]))
-            releaseLogLines.RemoveAt(releaseLogLines.Count - 1);
-        outputLogLines.Insert(topVersionLine + 1, "## " + newVersion);
-        outputLogLines.Insert(topVersionLine + 1, "");
-        if (Directory.Exists(projDir + "/bb/bin/Release/net6.0"))
-            Directory.Delete(projDir + "/bb/bin/Release/net6.0", true);
-        foreach (var rid in Rids)
+        if (choice == '4')
         {
-            Build(projDir, newVersion, rid);
+            Console.WriteLine("Building just docker version " + newVersion);
         }
+        else
+        {
+            Console.WriteLine("Building version " + newVersion);
+            var outputLogLines = logLines.ToList();
+            var releaseLogLines = logLines.Skip(topVersionLine + 1).SkipWhile(string.IsNullOrWhiteSpace)
+                .TakeWhile(s => !s.StartsWith("## ")).ToList();
+            while (releaseLogLines.Count > 0 && string.IsNullOrWhiteSpace(releaseLogLines[^1]))
+                releaseLogLines.RemoveAt(releaseLogLines.Count - 1);
+            outputLogLines.Insert(topVersionLine + 1, "## " + newVersion);
+            outputLogLines.Insert(topVersionLine + 1, "");
+            if (Directory.Exists(projDir + "/bb/bin/Release/net6.0"))
+                Directory.Delete(projDir + "/bb/bin/Release/net6.0", true);
+            foreach (var rid in Rids)
+            {
+                Build(projDir, newVersion, rid);
+            }
 
-        var client = new GitHubClient(new ProductHeaderValue("bobril-bbcore-releaser"));
-        client.SetRequestTimeout(TimeSpan.FromMinutes(15));
-        var fileNameOfToken = Environment.GetEnvironmentVariable("USERPROFILE") + "/.github/token.txt";
-        string token;
-        try
-        {
-            token = (await File.ReadAllLinesAsync(fileNameOfToken)).First();
-        }
-        catch
-        {
-            Console.WriteLine("Cannot read github token from " + fileNameOfToken);
-            return 1;
-        }
+            var client = new GitHubClient(new ProductHeaderValue("bobril-bbcore-releaser"));
+            client.SetRequestTimeout(TimeSpan.FromMinutes(15));
+            var fileNameOfToken = Environment.GetEnvironmentVariable("USERPROFILE") + "/.github/token.txt";
+            string token;
+            try
+            {
+                token = (await File.ReadAllLinesAsync(fileNameOfToken)).First();
+            }
+            catch
+            {
+                Console.WriteLine("Cannot read github token from " + fileNameOfToken);
+                return 1;
+            }
 
-        client.Credentials = new(token);
-        var bbcoreRepo = (await client.Repository.GetAllForOrg("bobril")).First(r => r.Name == "bbcore");
-        Console.WriteLine("bbcore repo id: " + bbcoreRepo.Id);
-        await File.WriteAllTextAsync(projDir + "/CHANGELOG.md", string.Join("", outputLogLines.Select(s => s + '\n')));
-        Commands.Stage(gitrepo, "CHANGELOG.md");
-        var author = new LibGit2Sharp.Signature("Releaser", "releaser@bobril.com", DateTime.Now);
-        gitrepo.Commit("Released " + newVersion, author, author);
-        gitrepo.ApplyTag(newVersion);
-        var options = new PushOptions
-        {
-            CredentialsProvider = (_, _, _) =>
-                new UsernamePasswordCredentials
-                {
-                    Username = token,
-                    Password = ""
-                }
-        };
-        gitrepo.Network.Push(gitrepo.Head, options);
-        var release = new NewRelease(newVersion)
-        {
-            Name = newVersion,
-            Body = string.Join("", releaseLogLines.Select(s => s + '\n')),
-            Prerelease = true
-        };
-        var release2 = await client.Repository.Release.Create(bbcoreRepo.Id, release);
-        Console.WriteLine("release url:");
-        Console.WriteLine(release2.HtmlUrl);
-        foreach (var rid in Rids)
-        {
-            var uploadAsset = await UploadWithRetry(projDir, client, release2, ToZipName(rid) + ".zip");
-            Console.WriteLine(ToZipName(rid) + " url:");
-            Console.WriteLine(uploadAsset.BrowserDownloadUrl);
+            client.Credentials = new(token);
+            var bbcoreRepo = (await client.Repository.GetAllForOrg("bobril")).First(r => r.Name == "bbcore");
+            Console.WriteLine("bbcore repo id: " + bbcoreRepo.Id);
+            await File.WriteAllTextAsync(projDir + "/CHANGELOG.md", string.Join("", outputLogLines.Select(s => s + '\n')));
+            Commands.Stage(gitrepo, "CHANGELOG.md");
+            var author = new LibGit2Sharp.Signature("Releaser", "releaser@bobril.com", DateTime.Now);
+            gitrepo.Commit("Released " + newVersion, author, author);
+            gitrepo.ApplyTag(newVersion);
+            var options = new PushOptions
+            {
+                CredentialsProvider = (_, _, _) =>
+                    new UsernamePasswordCredentials
+                    {
+                        Username = token,
+                        Password = ""
+                    }
+            };
+            gitrepo.Network.Push(gitrepo.Head, options);
+            var release = new NewRelease(newVersion)
+            {
+                Name = newVersion,
+                Body = string.Join("", releaseLogLines.Select(s => s + '\n')),
+                Prerelease = true
+            };
+            var release2 = await client.Repository.Release.Create(bbcoreRepo.Id, release);
+            Console.WriteLine("release url:");
+            Console.WriteLine(release2.HtmlUrl);
+            foreach (var rid in Rids)
+            {
+                var uploadAsset = await UploadWithRetry(projDir, client, release2, ToZipName(rid) + ".zip");
+                Console.WriteLine(ToZipName(rid) + " url:");
+                Console.WriteLine(uploadAsset.BrowserDownloadUrl);
+            }
         }
 
         DockerBuild(projDir, newVersion);
