@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.1.4
+
 ### Fixed
 
 Parsing and printing `{ [key]: value }`.
