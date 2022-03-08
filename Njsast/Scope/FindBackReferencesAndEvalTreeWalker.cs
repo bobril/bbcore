@@ -184,7 +184,7 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
             case AstObjectKeyVal objectKeyVal:
                 if (objectKeyVal.Key == astSymbol)
                 {
-                    usage |= SymbolUsage.Write;
+                    usage |= SymbolUsage.Read;
                 }
                 else
                 {

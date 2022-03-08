@@ -33,6 +33,7 @@ public class AstObjectKeyVal : AstObjectProperty
         {
             AstString str => str.Value,
             AstNumber num => num.Value.ToString("R", CultureInfo.InvariantCulture),
+            AstSymbolRef _ => null,
             AstSymbol key => GetName(key),
             _ => null
         };

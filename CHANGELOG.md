@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Parsing and printing `{ [key]: value }`.
+
 ## 2.1.3
 
 ### Fixed
