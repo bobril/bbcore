@@ -1,4 +1,5 @@
-﻿using Njsast.Output;
+﻿using Njsast.ConstEval;
+using Njsast.Output;
 using Njsast.Reader;
 
 namespace Njsast.Ast;
@@ -54,5 +55,11 @@ public class AstTemplateString : AstNode
             }
         }
         output.Print("`");
+    }
+
+    public override object? ConstValue(IConstEvalCtx? ctx = null)
+    {
+        if (Segments.Count == 1) return ((AstTemplateSegment)Segments[0]).Value;
+        return null;
     }
 }

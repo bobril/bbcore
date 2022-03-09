@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Allow to use Template strings inside bobril-g11n.t when targeting ES2015.
+
 ## 2.1.4
 
 ### Fixed
