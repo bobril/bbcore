@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 4.6.2
+
 ### Added
 
 Allow to use Template strings inside bobril-g11n.t when targeting ES2015.
