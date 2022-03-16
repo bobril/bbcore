@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- bundler failed on `class { get [x](){} }`
+
 ## 2.2.0
 
 ### Changed
