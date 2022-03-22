@@ -57,7 +57,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
     // Symbol is considered cloned when there is just single initialization by constant symbol
     // var a = 42; var b = a;
     // b could be replaced by a and that what this map contains _clonedSymbolMap[Symbol"b"] = Symbol"a";
-    readonly RefDictionary<SymbolDef, SymbolDef> _clonedSymbolMap = new RefDictionary<SymbolDef, SymbolDef>();
+    readonly RefDictionary<SymbolDef, SymbolDef> _clonedSymbolMap = new();
 
     protected override AstNode? Before(AstNode node, bool inList)
     {
@@ -283,6 +283,11 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     }
 
                     return res.Expressions.Count == 0 ? Remove : res;
+                }
+                case AstExpansion expansion:
+                {
+                    node = expansion.Expression;
+                    continue;
                 }
                 case AstPropAccess propAccess:
                 {
