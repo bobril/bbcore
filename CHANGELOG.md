@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.2.2
+
 ### Fixed
 
 Bundling of template string containing `\$`
