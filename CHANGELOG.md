@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.2.3
+
 ### Fixed
 
 Dead code elimination didn't eliminated expansion creating invalid code.
