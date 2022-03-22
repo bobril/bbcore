@@ -687,7 +687,7 @@ public class OutputContext
         for (var i = 0; i < s.Length; i++)
         {
             var ch = s[i];
-            if (ch == quoteChar)
+            if (ch == quoteChar || ch == '$' && quoteType == QuoteType.Template)
             {
                 TruePrint(s.Slice(lastOk, i - lastOk));
                 lastOk = i;

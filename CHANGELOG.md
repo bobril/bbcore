@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Bundling of template string containing `\$`
+
 ## 2.2.1
 
 ### Fixed
