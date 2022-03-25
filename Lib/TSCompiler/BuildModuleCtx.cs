@@ -826,29 +826,32 @@ public class BuildModuleCtx : IImportResolver
                         try
                         {
                             info.Output = info.Owner!.Utf8Content;
+                            var fullPath = info.Owner.FullPath;
+                            var prepend = fullPath.StartsWith("/") ? "" : fullPath[..2];
+
                             cssContent = scssProcessor.ProcessScss(info.Owner.Utf8Content,
-                                "file://" + info.Owner.FullPath, url =>
+                                "file://" + info.Owner.FullPath[prepend.Length..], url =>
                                 {
-                                    if (url.StartsWith("file://")) url = url[7..];
+                                    if (url.StartsWith("file://")) url = prepend + url[7..];
                                     if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false })
                                     {
-                                        return "file://" + url;
+                                        return "file://" + url[prepend.Length..];
                                     }
 
                                     if (Owner.DiskCache.TryGetItem(url + ".scss") is IFileCache { IsInvalid: false })
                                     {
-                                        return "file://" + url + ".scss";
+                                        return "file://" + url[prepend.Length..] + ".scss";
                                     }
 
                                     if (Owner.DiskCache.TryGetItem(url + ".css") is IFileCache { IsInvalid: false })
                                     {
-                                        return "file://" + url + ".css";
+                                        return "file://" + url[prepend.Length..] + ".css";
                                     }
 
                                     return "file://" + url;
                                 }, url =>
                                 {
-                                    if (url.StartsWith("file://")) url = url[7..];
+                                    if (url.StartsWith("file://")) url = prepend + url[7..];
                                     if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false } fc)
                                     {
                                         info.ReportTranspilationDependency(info.Owner.HashOfContent, url, null);

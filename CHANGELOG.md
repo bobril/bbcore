@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Fixed
+
+Scss import imports failed.
+
+JS Relative import of path failed.
+
 ## 2.2.3
 
 ### Fixed
