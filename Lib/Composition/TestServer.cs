@@ -13,15 +13,15 @@ namespace Lib.Composition;
 
 class TestServer
 {
-    public readonly ConcurrentDictionary<TestServerConnectionHandler, TestServerConnectionHandler> Clients =
-        new ConcurrentDictionary<TestServerConnectionHandler, TestServerConnectionHandler>();
+    public readonly ConcurrentDictionary<TestServerConnectionHandler, TestServerConnectionHandler> Clients = new();
+    public readonly ConcurrentDictionary<TestServerConnectionHandler, TestResultsHolder> LastResults = new();
 
     int _runid;
-    public Subject<Unit> OnChange = new Subject<Unit>();
-    public Subject<Unit> OnTestingStarted = new Subject<Unit>();
-    public Subject<TestResultsHolder> OnTestResults = new Subject<TestResultsHolder>();
-    public Subject<TestResultsHolder> OnCoverageResults = new Subject<TestResultsHolder>();
-    internal Subject<Unit> OnChangeRaw = new Subject<Unit>();
+    public readonly Subject<Unit> OnChange = new();
+    public readonly Subject<Unit> OnTestingStarted = new();
+    public readonly Subject<TestResultsHolder> OnTestResults = new();
+    public readonly Subject<TestResultsHolder> OnCoverageResults = new();
+    internal readonly Subject<Unit> OnChangeRaw = new();
     public bool Verbose;
     public ILogger Logger;
 
@@ -45,15 +45,17 @@ class TestServer
         _runid++;
         Url = url;
         SourceMaps = sourceMaps;
+        LastResults.Clear();
         foreach (var client in Clients.Keys)
         {
             client.StartTest(url, _runid, specFilter);
         }
     }
 
-    internal void NotifyFinishedResults(TestResultsHolder oldResults)
+    internal void NotifyFinishedResults(TestServerConnectionHandler client, TestResultsHolder newResults)
     {
-        OnTestResults.OnNext(oldResults);
+        LastResults.AddOrUpdate(client, newResults, (_, _) => newResults);
+        OnTestResults.OnNext(newResults);
     }
 
     internal void NotifySomeChange()
@@ -68,10 +70,20 @@ class TestServer
 
     internal TestServerState GetState()
     {
-        TestServerState result = new TestServerState();
+        var result = new TestServerState();
+        var clients = new HashSet<TestServerConnectionHandler>();
         foreach (var client in Clients.Keys)
         {
+            clients.Add(client);
             result.Agents.Add(client.GetLatestResults());
+        }
+
+        foreach (var (client, results) in LastResults)
+        {
+            if (clients.Add(client))
+            {
+                result.Agents.Add(results);
+            }
         }
 
         return result;

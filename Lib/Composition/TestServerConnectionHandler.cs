@@ -128,7 +128,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                         _suiteStack = null;
                     }
 
-                    _testServer.NotifyFinishedResults(_oldResults);
+                    _testServer.NotifyFinishedResults(this, _oldResults);
                     _testServer.NotifySomeChange();
                     break;
                 }
@@ -241,22 +241,24 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                         var status = data.Value<string>("status");
                         if (_verbose)
                             _logger.Info("testDone " + test.Name + " " + status);
-                        if (status == "passed")
+                        switch (status)
                         {
-                        }
-                        else if (status == "skipped" || status == "pending" || status == "disabled" ||
-                                 status == "excluded")
-                        {
-                            _curResults.TestsSkipped++;
-                            test.Skipped = true;
-                        }
-                        else
-                        {
-                            _curResults.TestsFailed++;
-                            test.Failure = true;
-                            foreach (var s in _suiteStack)
+                            case "passed":
+                                break;
+                            case "skipped" or "pending" or "disabled" or "excluded":
+                                _curResults.TestsSkipped++;
+                                test.Skipped = true;
+                                break;
+                            default:
                             {
-                                s.Failure = true;
+                                _curResults.TestsFailed++;
+                                test.Failure = true;
+                                foreach (var s in _suiteStack)
+                                {
+                                    s.Failure = true;
+                                }
+
+                                break;
                             }
                         }
                     }

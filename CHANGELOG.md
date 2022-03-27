@@ -4,6 +4,8 @@
 
 ### Fixed
 
+Preserve Tests results even after test client is disconnected. New test run will clear all these old results.
+
 Scss import imports failed.
 
 JS Relative import of path failed.
