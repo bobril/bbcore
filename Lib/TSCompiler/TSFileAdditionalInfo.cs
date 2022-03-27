@@ -73,10 +73,10 @@ public class TsFileAdditionalInfo
     {
         get
         {
-            if (FromModule != null && !FromModule.IsRootProject) return FromModule;
+            if (FromModule is { IsRootProject: false }) return FromModule;
             var dir = Owner?.Parent;
             IDirectoryCache? moduleDir = null;
-            while (dir != null && dir.Project == null)
+            while (dir is { Project: null })
             {
                 if (dir.Parent?.Name == "node_modules")
                 {

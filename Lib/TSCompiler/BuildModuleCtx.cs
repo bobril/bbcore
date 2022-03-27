@@ -854,7 +854,7 @@ public class BuildModuleCtx : IImportResolver
                                     if (url.StartsWith("file://")) url = prepend + url[7..];
                                     if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false } fc)
                                     {
-                                        info.ReportTranspilationDependency(info.Owner.HashOfContent, url, null);
+                                        info.ReportTranspilationDependency(info.Owner.HashOfContent, url, fc.HashOfContent);
                                         return fc.Utf8Content;
                                     }
 
@@ -886,15 +886,15 @@ public class BuildModuleCtx : IImportResolver
 
                         info.Output = "\"use strict\"; const lit = require(\"lit\"); exports.default = lit.css`" +
                                       info.Output.Replace("\\", "\\\\").Replace("$", "\\$").Replace("`", "\\`") + "`;";
-                        var resolved = ResolveImport(info.Owner.FullPath, "lit");
-                        if (resolved != null && resolved != "?")
-                        {
-                            info.ReportDependency(resolved);
-                        }
-                        else
-                        {
-                            info.ReportDiag(true, -3, "Missing import lit", 1, 1, 1, 1);
-                        }
+                    }
+                    var resolved = ResolveImport(info.Owner.FullPath, "lit");
+                    if (resolved != null && resolved != "?")
+                    {
+                        info.ReportDependency(resolved);
+                    }
+                    else
+                    {
+                        info.ReportDiag(true, -3, "Missing import lit", 1, 1, 1, 1);
                     }
 
                     ReportDependenciesFromCss(info);

@@ -1702,7 +1702,8 @@ public class Composition
 
         foreach (var fi in buildResult.Path2FileInfo)
         {
-            if (fi.Value.FromModuleRefresh != options.Owner) continue;
+            var fromModule = fi.Value.FromModuleRefresh;
+            if (fromModule != null && fromModule != options.Owner) continue;
 
             foreach (var dependency in fi.Value.Dependencies)
             {
