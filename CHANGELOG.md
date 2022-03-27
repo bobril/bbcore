@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.3.0
+
 ### Fixed
 
 Preserve Tests results even after test client is disconnected. New test run will clear all these old results.
