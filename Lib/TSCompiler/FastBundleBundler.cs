@@ -108,8 +108,9 @@ public class FastBundleBundler
         var cssLink = "";
 
         var sortedResultSet = incremental
-            ? _buildResult.RecompiledIncrementally.Where(f=>f.Owner != null).OrderBy(f => f.Owner.FullPath).ToArray()
-            : _buildResult.Path2FileInfo.Select(a=>a.Value).Where(f=>f.Owner != null).OrderBy(f => f.Owner.FullPath).ToArray();
+            ? _buildResult.RecompiledIncrementally.Where(f => f.Owner != null).OrderBy(f => f.Owner.FullPath).ToArray()
+            : _buildResult.Path2FileInfo.Select(a => a.Value).Where(f => f.Owner != null).OrderBy(f => f.Owner.FullPath)
+                .ToArray();
 
         if (!incremental)
         {
@@ -121,7 +122,8 @@ public class FastBundleBundler
 
         foreach (var source in sortedResultSet)
         {
-            if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript or FileCompilationType.JavaScript or FileCompilationType.Scss)
+            if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript
+                or FileCompilationType.JavaScript or FileCompilationType.Scss)
             {
                 if (source.Output == null)
                     continue; // Skip d.ts
@@ -217,7 +219,11 @@ public class FastBundleBundler
                 if (_project.MainFile != null)
                     MarkImportant(_project.MainFile, _buildResult, new(), coverageInst);
                 sourceMapBuilder = new SourceMapBuilder();
-                toplevel.PrintToBuilder(sourceMapBuilder, new() {Beautify = true, Ecma = _project.Target > ScriptTarget.Es5 ? 6 : 5 });
+                toplevel.PrintToBuilder(sourceMapBuilder, new()
+                {
+                    Beautify = true, Ecma = _project.Target > ScriptTarget.Es5 ? 6 : 5,
+                    Shorthand = _project.Target > ScriptTarget.Es5
+                });
                 sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
                                          ".map");
             }
@@ -244,15 +250,15 @@ public class FastBundleBundler
                 _sourceMap2String;
             SourceMaps = new Dictionary<string, SourceMap>
             {
-                {PathUtils.GetFile(_buildResult.BundleJsUrl), _sourceMap},
-                {"bundle2.js", _sourceMap2}
+                { PathUtils.GetFile(_buildResult.BundleJsUrl), _sourceMap },
+                { "bundle2.js", _sourceMap2 }
             };
         }
         else
         {
             SourceMaps = new Dictionary<string, SourceMap>
             {
-                {PathUtils.GetFile(_buildResult.BundleJsUrl), _sourceMap}
+                { PathUtils.GetFile(_buildResult.BundleJsUrl), _sourceMap }
             };
         }
 
@@ -540,7 +546,7 @@ public class SourceReader : ITextFileReader
         var item = _diskCache.TryGetItem(PathUtils.Join(_root, fileName));
         if (item.IsFile && !item.IsInvalid)
         {
-            return ((IFileCache) item).ByteContent;
+            return ((IFileCache)item).ByteContent;
         }
 
         return new ReadOnlySpan<byte>();

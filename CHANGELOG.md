@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Compression bug related to destructuring.
+
 ## 2.3.0
 
 ### Fixed

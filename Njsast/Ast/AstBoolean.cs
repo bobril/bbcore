@@ -17,9 +17,7 @@ public abstract class AstBoolean : AstAtom
             var p = output.Parent();
             return p is AstPropAccess propAccess && propAccess.Expression == this
                    || p is AstCall call && call.Expression == this
-                   || p is AstBinary binary
-                   && binary.Operator == Operator.Power
-                   && binary.Left == this;
+                   || p is AstBinary { Operator: Operator.Power } binary && binary.Left == this;
         }
 
         return false;
