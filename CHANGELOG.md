@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Arrow with await `async v => await v`.
+
 ## 2.3.1
 
 ### Fixed

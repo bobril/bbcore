@@ -9,13 +9,13 @@ public static class Extensions
     public static bool IsExpression(this AstNode node)
     {
         return node is AstUnary or AstBinary or AstConstant or AstConditional or AstSequence or AstObject or AstArray
-            or AstClassExpression or AstArrow or AstFunction or AstPropAccess or AstCall or AstTemplateString or AstPrefixedTemplateString or AstSymbolRef;
+            or AstClassExpression or AstArrow or AstFunction or AstPropAccess or AstCall or AstTemplateString
+            or AstPrefixedTemplateString or AstSymbolRef or AstAwait;
     }
 
     public static string? IsGlobalSymbol(this SymbolDef? symbol)
     {
-        if (symbol is { Undeclared: true, Global: true }) return symbol.Name;
-        return null;
+        return symbol is { Undeclared: true, Global: true } ? symbol.Name : null;
     }
 
     public static bool IsRequireSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol) == "require";
@@ -43,7 +43,8 @@ public static class Extensions
 
     public static string? IsRequireCall(this AstNode? node)
     {
-        if (node is not AstCall { Args.Count: 1, Expression: AstSymbol methodNameSymbol } call || !methodNameSymbol.Thedef.IsRequireSymbol()) return null;
+        if (node is not AstCall { Args.Count: 1, Expression: AstSymbol methodNameSymbol } call ||
+            !methodNameSymbol.Thedef.IsRequireSymbol()) return null;
         var arg = call.Args[0];
         if (arg is AstString str)
             return str.Value;
@@ -54,7 +55,8 @@ public static class Extensions
     /// Detects process.env.RESULT pattern
     public static string? IsProcessEnv(this AstNode? node)
     {
-        if (node is AstPropAccess { Expression: AstDot dot } propAccess && dot.Expression.IsSymbolDef().IsProcessSymbol() && dot.PropertyAsString == "env")
+        if (node is AstPropAccess { Expression: AstDot dot } propAccess &&
+            dot.Expression.IsSymbolDef().IsProcessSymbol() && dot.PropertyAsString == "env")
         {
             return propAccess.PropertyAsString;
         }
@@ -83,13 +85,13 @@ public static class Extensions
                 var then = call.Expression;
                 if (then is AstDot dot && dot.Property as string == "then")
                 {
-                    if (dot.Expression is AstCall resolveCall && resolveCall.Args.Count == 0)
+                    if (dot.Expression is AstCall { Args.Count: 0 } resolveCall)
                     {
                         if (resolveCall.Expression is AstDot resolveExpr &&
                             resolveExpr.Property as string == "resolve")
                         {
                             var promiseRef = resolveExpr.Expression;
-                            if (!(promiseRef is AstSymbolRef symbol) || !symbol.Thedef.IsPromiseSymbol())
+                            if (promiseRef is not AstSymbolRef symbol || !symbol.Thedef.IsPromiseSymbol())
                                 return null;
                         }
                         else return null;
@@ -99,13 +101,10 @@ public static class Extensions
                 else return null;
 
                 if (
-                    call.Args[0] is AstFunction { ArgNames.Count: 0 } argumentFunction)
+                    call.Args[0] is AstFunction { ArgNames.Count: 0, Body.Count: 1 } argumentFunction)
                 {
-                    if (argumentFunction.Body.Count == 1)
-                    {
-                        if (argumentFunction.Body[0] is AstReturn returnStatement)
-                            return returnStatement.Value.IsRequireCall();
-                    }
+                    if (argumentFunction.Body[0] is AstReturn returnStatement)
+                        return returnStatement.Value.IsRequireCall();
                 }
 
                 break;
@@ -149,7 +148,8 @@ public static class Extensions
         if (node is AstCall call)
         {
             if (call.Args.Count != 3) return false;
-            if (call.Args[0] is not AstSymbolRef { Name: "exports" } || call.Args[1] is not AstString { Value: "__esModule" }) return false;
+            if (call.Args[0] is not AstSymbolRef { Name: "exports" } ||
+                call.Args[1] is not AstString { Value: "__esModule" }) return false;
             if (call.Expression is not AstPropAccess { PropertyAsString: "defineProperty" } propAccess) return false;
             return propAccess.Expression is AstSymbolRef { Name: "Object" };
         }
@@ -173,7 +173,7 @@ public static class Extensions
     public static T DeepClone<T>(this T node) where T : AstNode
     {
         var tr = new DeepCloneTransformer();
-        return (T) tr.Transform(node);
+        return (T)tr.Transform(node);
     }
 
     public static string DumpToString(this AstNode node, bool withoutPositions = false)
