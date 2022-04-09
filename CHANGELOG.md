@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.3.2
+
 ### Fixed
 
 Arrow with await `async v => await v`.
