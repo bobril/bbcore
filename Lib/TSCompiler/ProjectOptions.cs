@@ -369,6 +369,7 @@ public class ProjectOptions
     public ITSCompilerOptions? FinalCompilerOptions;
     public bool ForbiddenDependencyUpdate;
     public CoverageInstrumentation? CoverageInstrumentation;
+    public Dictionary<string,string>? Assets;
 
     public void UpdateTSConfigJson()
     {
@@ -468,7 +469,7 @@ public class ProjectOptions
     {
         var browserValue = parsed?.GetValue("browser");
         BrowserResolve = null;
-        if (browserValue != null && browserValue.Type == JTokenType.Object)
+        if (browserValue is { Type: JTokenType.Object })
         {
             BrowserResolve = browserValue.ToObject<Dictionary<string, object>>()!
                 .ToDictionary(p => p.Key, p => p.Value as string);
@@ -518,6 +519,7 @@ public class ProjectOptions
         PathToTranslations = bbOptions.pathToTranslations;
         TsconfigUpdate = bbOptions.tsconfigUpdate ?? true;
         BuildOutputDir = bbOptions.buildOutputDir;
+        Assets = bbOptions.assets;
         Defines = (bbOptions.defines ?? new Dictionary<string, string>()).ToDictionary(kv => kv.Key,
             kv => Parser.Parse(kv.Value));
         if (!Defines!.ContainsKey("DEBUG"))
@@ -539,7 +541,7 @@ public class ProjectOptions
         LibraryMode = bbOptions.library ?? false;
     }
 
-    static BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions)
+    public static BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions, bool justSameDir = false)
     {
         while (dir != null)
         {
@@ -576,6 +578,7 @@ public class ProjectOptions
                 }
             }
 
+            if (justSameDir) break;
             dir = dir.Parent;
         }
 

@@ -3,6 +3,7 @@ using Lib.Utils;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Lib.Registry;
 using Lib.Utils.Logger;
 
@@ -16,7 +17,7 @@ public class TSProject
     public string MainFile { get; set; }
 
     public string TypesMainFile { get; set; }
-    public ProjectOptions ProjectOptions { get; set; }
+    public ProjectOptions? ProjectOptions { get; set; }
     public int PackageJsonChangeId { get; set; }
     public bool IsRootProject { get; set; }
 
@@ -197,10 +198,14 @@ public class TSProject
             PackageJsonChangeId = newChangeId;
             Dependencies = deps;
             DevDependencies = devdeps;
-            Assets = ParseBobrilAssets(parsed);
 
-            if (ProjectOptions == null) return;
+            if (ProjectOptions == null)
+            {
+                Assets = ParseBobrilAssets(parsed, Owner);
+                return;
+            }
             ProjectOptions.FillProjectOptionsFromPackageJson(parsed, Owner);
+            Assets = ProjectOptions.Assets;
             if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
             var packageManager = new CurrentNodePackageManager(DiskCache, Logger);
             if (ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade)
@@ -226,29 +231,13 @@ public class TSProject
         }
     }
 
-    Dictionary<string, string> ParseBobrilAssets(JObject parsed)
+    Dictionary<string, string>? ParseBobrilAssets(JObject parsed, IDirectoryCache? dir)
     {
-        Dictionary<string, string> res = null;
-        var bobrilSection = parsed?.GetValue("bobril") as JObject;
-        if (bobrilSection == null)
-            return res;
-        var assetsJson = bobrilSection.GetValue("assets") as JObject;
-        if (assetsJson == null)
-            return res;
-        foreach (var (key, value) in assetsJson)
-        {
-            if (value.Type == JTokenType.String)
-            {
-                if (res == null)
-                {
-                    res = new Dictionary<string, string>();
-                }
-
-                res.Add(key, value.Value<string>());
-            }
-        }
-
-        return res;
+        if (parsed?.GetValue("bobril") is not JObject bobrilSection)
+            return null;
+        var bbOptions = new BobrilBuildOptions(bobrilSection);
+        bbOptions = ProjectOptions.LoadBbrc(dir, bbOptions);
+        return bbOptions.assets;
     }
 
     public static TSProject? Create(IDirectoryCache? dir, IDiskCache diskCache, ILogger logger, string? diskName, bool virtualProject = false)

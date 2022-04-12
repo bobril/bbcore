@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Load assets also from `.bbrc` file not just `package.json`.
+
 ## 2.3.2
 
 ### Fixed

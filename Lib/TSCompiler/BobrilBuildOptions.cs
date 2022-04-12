@@ -34,6 +34,7 @@ public class BobrilBuildOptions
     public string? proxyUrl { get; set; }
     public string? headlessBrowserStrategy { get; set; }
     public bool? library { get; set; }
+    public Dictionary<string, string>? assets { get; set; }
 
     public BobrilBuildOptions Merge(BobrilBuildOptions? with)
     {
@@ -112,6 +113,8 @@ public class BobrilBuildOptions
             headlessBrowserStrategy = with.headlessBrowserStrategy;
         if (with.library != null)
             library = with.library;
+        if (with.assets != null)
+            assets = with.assets;
         return this;
     }
 
@@ -235,6 +238,17 @@ public class BobrilBuildOptions
         catch
         {
             // ignored
+        }
+
+        if (bobrilSection.GetValue("assets") is JObject assetsJson)
+        {
+            foreach (var (key, value) in assetsJson)
+            {
+                if (value?.Type != JTokenType.String) continue;
+                assets ??= new();
+                assets.Add(key, value.Value<string>()!);
+            }
+
         }
     }
 }
