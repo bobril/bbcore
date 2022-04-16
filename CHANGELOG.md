@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.4.1
+
 ### Fixed
 
 Two bundler bugs.
