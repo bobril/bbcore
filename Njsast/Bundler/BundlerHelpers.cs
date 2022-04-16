@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Njsast.Ast;
 using Njsast.Bobril;
@@ -77,7 +78,7 @@ public static class BundlerHelpers
         }
     }
 
-    public static void AppendToplevelWithRename(AstToplevel main, AstToplevel add, string suffix,
+    public static void AppendToplevelWithRename(AstToplevel main, AstToplevel add, string suffix, HashSet<string> knownDeclaredGlobals,
         Func<AstToplevel, AstToplevel>? beforeAdd = null)
     {
         if (main.Body.Count == 0)
@@ -94,6 +95,11 @@ public static class BundlerHelpers
         nonRootSymbolNames.UnionWith(add.CalcNonRootSymbolNames());
         var renameWalker = new ToplevelRenameWalker(main.Variables!, nonRootSymbolNames, suffix);
         renameWalker.Walk(add);
+        nonRootSymbolNames = nonRootSymbolNames.ToHashSet();
+        nonRootSymbolNames.ExceptWith(add.Globals!.Keys);
+        nonRootSymbolNames.ExceptWith(knownDeclaredGlobals);
+        renameWalker = new(new Dictionary<string, SymbolDef>(), nonRootSymbolNames, "m");
+        renameWalker.Walk(main);
 
         add = beforeAdd?.Invoke(add) ?? add;
         main.Body.AddRange(add.Body.AsReadOnlySpan());

@@ -151,6 +151,17 @@ public class AstToplevel : AstScope
 
         protected override void Visit(AstNode node)
         {
+            if (node is IMayBeBlockScope { IsBlockScope: true } mayBeBlockScope && mayBeBlockScope.BlockScope is {} blockScope)
+            {
+                foreach (var name in blockScope.Variables!.Keys)
+                {
+                    _nonRootSymbolNames.Add(name);
+                }
+                foreach (var name in blockScope.Functions!.Keys)
+                {
+                    _nonRootSymbolNames.Add(name);
+                }
+            }
             if (node is AstScope scope)
             {
                 if (scope.ParentScope != null)

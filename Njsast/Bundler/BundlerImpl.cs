@@ -120,6 +120,7 @@ public class BundlerImpl
             if (GlobalDefines is { Count: > 0 })
                 topLevelAst.Body.Add(Helpers.EmitVarDefines(GlobalDefines));
             topLevelAst.FigureOutScope();
+            var knownDeclaredGlobals = topLevelAst.Variables!.Keys.ToHashSet();
             foreach (var jsDependency in splitInfo.PlainJsDependencies)
             {
                 var content = _ctx.ReadContent(jsDependency);
@@ -128,7 +129,7 @@ public class BundlerImpl
                 jsAst.FigureOutScope();
                 BundlerHelpers.SimplifyJavaScriptDependency(jsAst);
                 _currentFileIdent = BundlerHelpers.FileNameToIdent(jsDependency);
-                BundlerHelpers.AppendToplevelWithRename(topLevelAst, jsAst, _currentFileIdent);
+                BundlerHelpers.AppendToplevelWithRename(topLevelAst, jsAst, _currentFileIdent, knownDeclaredGlobals);
             }
 
             foreach (var sourceFile in _order)
@@ -147,8 +148,8 @@ public class BundlerImpl
                 if (sourceFile.PartOfBundle != splitName) continue;
                 _currentSourceFile = sourceFile;
                 _currentFileIdent = BundlerHelpers.FileNameToIdent(sourceFile.Name);
-                BundlerHelpers.AppendToplevelWithRename(topLevelAst, sourceFile.Ast, _currentFileIdent
-                    , BeforeAdd);
+                BundlerHelpers.AppendToplevelWithRename(topLevelAst, sourceFile.Ast, _currentFileIdent,
+                    knownDeclaredGlobals, BeforeAdd);
             }
 
             IfNeededPolyfillGlobal(topLevelAst, (OutputOptions?.Ecma ?? 5) >= 10);
