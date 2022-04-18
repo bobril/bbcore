@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Interactive mode with enabled spriting after change, all sprites shown same icon.
+
 ## 2.4.1
 
 ### Fixed

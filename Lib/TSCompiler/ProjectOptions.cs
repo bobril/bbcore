@@ -691,7 +691,7 @@ public class ProjectOptions
                     var s = os.Me;
                     if (s.Name == null || s.IsSvg())
                         continue;
-                    if (s.HasColor == true && s.Color == null)
+                    if (s.HasColor && s.Color == null)
                     {
                         // Modify method name to b.spritebc and remove first parameter with sprite name
                         sourceReplacer.Replace(s.StartLine, s.StartCol, s.ColorStartLine, s.ColorStartCol,

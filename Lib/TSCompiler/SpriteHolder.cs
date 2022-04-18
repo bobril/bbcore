@@ -26,16 +26,16 @@ public class SpriteHolder : ISpritePlace
     readonly List<OutputSprite> _allSprites;
     readonly List<OutputSprite> _newSprites;
     IReadOnlyList<ImageBytesWithQuality>? _result;
-    readonly Dictionary<string, TsFileAdditionalInfo> _imageCache = new Dictionary<string, TsFileAdditionalInfo>();
+    readonly Dictionary<string, TsFileAdditionalInfo> _imageCache = new();
     bool _wasChange;
 
     public SpriteHolder(IDiskCache dc, ILogger logger)
     {
         _dc = dc;
         _logger = logger;
-        _placer = new Sprite2dPlacer();
-        _allSprites = new List<OutputSprite>();
-        _newSprites = new List<OutputSprite>();
+        _placer = new();
+        _allSprites = new();
+        _newSprites = new();
     }
 
     int _sX, _sY, _sW, _sH;
@@ -63,7 +63,7 @@ public class SpriteHolder : ISpritePlace
             if (sprite.Name != null && !sprite.IsSvg() && sprite.Height == -1 && sprite.Width == -1)
             {
                 if (FindSprite(_allSprites, sprite) < 0 && FindSprite(_newSprites, sprite) < 0)
-                    _newSprites.Add(new OutputSprite { Me = sprite });
+                    _newSprites.Add(new() { Me = sprite });
             }
         }
     }
@@ -73,7 +73,7 @@ public class SpriteHolder : ISpritePlace
         for (var i = 0; i < _allSprites.Count; i++)
         {
             var sprite = _allSprites[i];
-            _allSprites[i] = ProcessOneSprite(sprite.Me);
+            ProcessOneSprite(sprite.Me);
         }
         if (_newSprites.Count == 0)
             return;
@@ -131,7 +131,7 @@ public class SpriteHolder : ISpritePlace
                         }
                         fi.ImageCacheId = item.ChangeId;
                     }
-                    slices.Add(new SpriteSlice { name = item.Name, quality = Quality, width = fi.Image.Width, height = fi.Image.Height });
+                    slices.Add(new() { name = item.Name, quality = Quality, width = fi.Image.Width, height = fi.Image.Height });
                 }
             }
             slices.Sort((l, r) => l.quality < r.quality ? -1 : l.quality > r.quality ? 1 : 0);
@@ -152,7 +152,7 @@ public class SpriteHolder : ISpritePlace
             }
             return res;
         }
-        return new OutputSprite();
+        return new();
     }
 
     public List<OutputSprite> Retrieve(List<SourceInfo.Sprite> sprites)
@@ -236,9 +236,9 @@ public class SpriteHolder : ISpritePlace
                     {
                         if (q != slice.quality)
                             operation = operation.Resize((int)Math.Round(image.Width * q / slice.quality), (int)Math.Round(image.Height * q / slice.quality));
-                        operation.Crop(new Rectangle(new Point((int)(q * Math.Max(0,sprite.Me.X)), (int)(q * Math.Max(0,sprite.Me.Y))), new Size((int)(sprite.owidth * q), (int)(sprite.oheight * q))));
+                        operation.Crop(new(new((int)(q * Math.Max(0,sprite.Me.X)), (int)(q * Math.Max(0,sprite.Me.Y))), new((int)(sprite.owidth * q), (int)(sprite.oheight * q))));
                     });
-                    c.DrawImage(image, new Point((int)(sprite.ox * q), (int)(sprite.oy * q)), new GraphicsOptions());
+                    c.DrawImage(image, new((int)(sprite.ox * q), (int)(sprite.oy * q)), new GraphicsOptions());
                 }
             });
             var ms = new MemoryStream();
@@ -259,7 +259,7 @@ public class SpriteHolder : ISpritePlace
         return slices.Last();
     }
 
-    static readonly Regex RgbaColorParser = new Regex(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript);
+    static readonly Regex RgbaColorParser = new(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript);
 
     public static Rgba32 ParseColor(string color)
     {
@@ -273,14 +273,14 @@ public class SpriteHolder : ISpritePlace
         }
         if (color.Length == 7 && color[0] == '#')
         {
-            return new Rgba32(
+            return new(
                 (byte)int.Parse(color.Substring(1, 2), NumberStyles.HexNumber),
                 (byte)int.Parse(color.Substring(3, 2), NumberStyles.HexNumber),
                 (byte)int.Parse(color.Substring(5, 2), NumberStyles.HexNumber));
         }
         if (color.Length == 9 && color[0] == '#')
         {
-            return new Rgba32(
+            return new(
                 (byte)int.Parse(color.Substring(1, 2), NumberStyles.HexNumber),
                 (byte)int.Parse(color.Substring(3, 2), NumberStyles.HexNumber),
                 (byte)int.Parse(color.Substring(5, 2), NumberStyles.HexNumber),
@@ -289,7 +289,7 @@ public class SpriteHolder : ISpritePlace
         var mrgba = RgbaColorParser.Match(color);
         if (mrgba.Success)
         {
-            return new Rgba32(
+            return new(
                 (byte)int.Parse(mrgba.Groups[1].Value),
                 (byte)int.Parse(mrgba.Groups[2].Value),
                 (byte)int.Parse(mrgba.Groups[3].Value),
