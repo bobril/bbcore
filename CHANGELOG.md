@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.4.2
+
 ### Fixed
 
 Interactive mode with enabled spriting after change, all sprites shown same icon.
