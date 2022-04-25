@@ -296,7 +296,7 @@ public class SourceMapBuilder
                 _index = 0;
             }
 
-            while (line > _line)
+            while (line > _line && _index < _content.Length)
             {
                 while (_index < _content.Length && _content[_index] != '\n') _index++;
                 if (_index < _content.Length) _index++;

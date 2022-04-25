@@ -6,6 +6,8 @@
 
 Interactive mode with enabled spriting after change, all sprites shown same icon.
 
+Extremely slow bundling of sources without source maps for example scss files.
+
 ## 2.4.1
 
 ### Fixed
