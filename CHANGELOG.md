@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.5.0
+
 ### Fixed
 
 Js assets are again at start before IIFE and are not touched in bundling (no renames).
