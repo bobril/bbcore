@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Js assets are again at start before IIFE and are not touched in bundling (no renames).
+
 ## 2.4.2
 
 ### Fixed

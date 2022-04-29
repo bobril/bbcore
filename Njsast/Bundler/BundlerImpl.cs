@@ -121,16 +121,6 @@ public class BundlerImpl
                 topLevelAst.Body.Add(Helpers.EmitVarDefines(GlobalDefines));
             topLevelAst.FigureOutScope();
             var knownDeclaredGlobals = topLevelAst.Variables!.Keys.ToHashSet();
-            foreach (var jsDependency in splitInfo.PlainJsDependencies)
-            {
-                var content = _ctx.ReadContent(jsDependency);
-                var jsAst = Parser.Parse(content.Item1!);
-                content.Item2?.ResolveInAst(jsAst);
-                jsAst.FigureOutScope();
-                BundlerHelpers.SimplifyJavaScriptDependency(jsAst);
-                _currentFileIdent = BundlerHelpers.FileNameToIdent(jsDependency);
-                BundlerHelpers.AppendToplevelWithRename(topLevelAst, jsAst, _currentFileIdent, knownDeclaredGlobals);
-            }
 
             foreach (var sourceFile in _order)
             {
@@ -164,6 +154,19 @@ public class BundlerImpl
                 BundlerHelpers.WrapByIIFE(topLevelAst, (OutputOptions?.Ecma ?? 5) >= 6);
             }
 
+            var backupBody = topLevelAst.Body;
+            topLevelAst.Body = new();
+            foreach (var jsDependency in splitInfo.PlainJsDependencies)
+            {
+                var content = _ctx.ReadContent(jsDependency);
+                var jsAst = Parser.Parse(content.Item1!);
+                content.Item2?.ResolveInAst(jsAst);
+                jsAst.FigureOutScope();
+                //BundlerHelpers.SimplifyJavaScriptDependency(jsAst);
+                topLevelAst.Body.AddRange(jsAst.Body);
+            }
+            topLevelAst.Body.AddRange(backupBody);
+            
             if (lazySplitCounter > 0 && PartToMainFilesMap.ContainsKey(splitName))
             {
                 var astVar = new AstVar(topLevelAst);
