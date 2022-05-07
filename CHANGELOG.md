@@ -2,7 +2,7 @@
 
 ## [unreleased]
 
-## Fixed
+### Fixed
 
 Running tests with code coverage in headless Chrome hangs.
 
