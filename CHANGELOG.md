@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+## Fixed
+
+Running tests with code coverage in headless Chrome hangs.
+
 ## 2.5.0
 
 ### Fixed

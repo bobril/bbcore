@@ -253,7 +253,7 @@
                         while (pos < cov.length && cov[pos] === 0)
                             pos++;
                         if (pos < cov.length) {
-                            let maxlen = Math.min(cov.length - pos, 10240);
+                            let maxlen = Math.min(cov.length - pos, 2048);
                             let len = maxlen - 1;
                             while (cov[pos + len] === 0)
                                 len--;
@@ -267,7 +267,7 @@
                                 sendPart();
                             }
                             else {
-                                setTimeout(sendPart, 10);
+                                Promise.resolve().then(() => sendPart());
                             }
                         }
                         else {

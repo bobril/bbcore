@@ -115,9 +115,9 @@ export class Connection {
             }
         };
         this.processingBatch = true;
-        xhr.send(JSON.stringify(this.closed ? { id: this.id, close: true } : { id: this.id, m: this.toSend }));
+        var partToSend = this.toSend.splice(0, 50);
+        xhr.send(JSON.stringify(this.closed ? { id: this.id, close: true } : { id: this.id, m: partToSend }));
         if (this.closed) this.id = "";
-        this.toSend = [];
     }
 
     private startLongPolling() {

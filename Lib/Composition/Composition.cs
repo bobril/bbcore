@@ -789,7 +789,7 @@ public class Composition
                             messages);
                 }).Wait();
                 PrintMessages(messages);
-                if (testCommand.Dir.Value == null || testCommand.Out.Value != null)
+                if (testCommand.Dir.Value == null && (testCommand.Out.Value != null || proj.CoverageEnabled))
                 {
                     if (errors == 0)
                     {
@@ -869,7 +869,7 @@ public class Composition
             "Test done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " +
             Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " +
             Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure"), color);
-        if (proj.CoverageEnabled)
+        if (proj.CoverageEnabled && proj.CoverageInstrumentation!.DirectoryStats.Count > 0)
         {
             var covInstr = proj.CoverageInstrumentation;
             var stats = covInstr.DirectoryStats[""];
