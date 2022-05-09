@@ -249,33 +249,20 @@
                 var cov = window.__c0v;
                 if (cov != undefined) {
                     let pos = 0;
-                    const sendPart = () => {
-                        while (pos < cov.length && cov[pos] === 0)
-                            pos++;
-                        if (pos < cov.length) {
-                            let maxlen = Math.min(cov.length - pos, 2048);
-                            let len = maxlen - 1;
-                            while (cov[pos + len] === 0)
-                                len--;
-                            len++;
-                            bbTest("coverageReportPart" + testId, {
-                                start: pos,
-                                data: Array.prototype.slice.call(cov.slice(pos, pos + len)),
-                            });
-                            pos += maxlen;
-                            if (pos == cov.length) {
-                                sendPart();
-                            }
-                            else {
-                                Promise.resolve().then(() => sendPart());
-                            }
+                    let data = [];
+                    while (pos < cov.length) {
+                        let nextPos = pos;
+                        while (nextPos < cov.length && cov[nextPos] === 0)
+                            nextPos++;
+                        if (nextPos > pos + 1) {
+                            data.push(pos - nextPos);
+                            pos = nextPos;
                         }
                         else {
-                            bbTest("coverageReportFinished" + testId, { length: cov.length });
+                            data.push(cov[pos++]);
                         }
-                    };
-                    bbTest("coverageReportStarted" + testId, { length: cov.length });
-                    sendPart();
+                    }
+                    bbTest("coverageReport" + testId, { length: cov.length, data: data });
                 }
             },
             suiteStarted: (result) => {

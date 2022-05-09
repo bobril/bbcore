@@ -58,8 +58,10 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                         _logger.Info("Ignoring " + message + " because current runid is " + _runid);
                     return;
                 }
+
                 pureMessage = message.Substring(0, hashPos);
             }
+
             switch (pureMessage)
             {
                 case "newClient":
@@ -304,6 +306,24 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                     break;
                 }
 
+                case "coverageReport":
+                {
+                    _coverageData = new uint[data.Value<int>("length")];
+                    var dataPart = data.Value<JArray>("data").Select(t => t.Value<int>()).ToList();
+                    if (_verbose) _logger.Info("coverageReport " + data.Value<int>("length") + " " + dataPart.Count);
+                    var pos = 0;
+                    foreach (var v in dataPart)
+                    {
+                        if (v < 0)
+                            pos -= v;
+                        else
+                            _coverageData[pos++] = (uint)v;
+                    }
+                    _oldResults.CoverageData = _coverageData;
+                    _testServer.OnCoverageResults.OnNext(_oldResults);
+                    break;
+                }
+
                 case "coverageReportStarted":
                 {
                     if (_verbose) _logger.Info("coverageReportStarted " + data);
@@ -388,6 +408,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
             {
                 rawStack = rawStack.Substring(message.Length);
             }
+
             yield return ConvertMessageAndStack(message, rawStack);
         }
     }
@@ -403,7 +424,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
     void DoStart()
     {
         InitCurResults();
-        _connection.Send("test", new {specFilter = _specFilter, url = _url + "#" + _runid});
+        _connection.Send("test", new { specFilter = _specFilter, url = _url + "#" + _runid });
     }
 
     void InitCurResults()
