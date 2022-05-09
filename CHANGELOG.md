@@ -6,6 +6,8 @@
 
 Running tests with code coverage in headless Chrome hangs. Now fixed and optimized also in Jasmine 3.3.
 
+Printing class calculated method in brckets.
+
 ## 2.5.1
 
 ### Fixed

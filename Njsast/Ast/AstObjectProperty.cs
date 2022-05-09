@@ -69,6 +69,7 @@ public abstract class AstObjectProperty : AstObjectItem
         {
             AstString str => str.Value,
             AstNumber num => num.Value.ToString("R", CultureInfo.InvariantCulture),
+            AstSymbolRef => null,
             AstSymbol key => key.Name,
             _ => null
         };
