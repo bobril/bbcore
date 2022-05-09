@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.5.2
+
 ### Fixed
 
 Running tests with code coverage in headless Chrome hangs. Now fixed and optimized also in Jasmine 3.3.
