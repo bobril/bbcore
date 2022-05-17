@@ -23,6 +23,11 @@ public class ImportExportTransformer : TreeTransformer
             case AstCall _ when node.IsRequireCall() is { } reqName:
             {
                 var resolvedName = _resolver(_sourceFile.Name, reqName);
+                if (resolvedName == IBundlerCtx.LeaveAsExternal)
+                {
+                    _sourceFile.ExternalImports.AddUnique(reqName);
+                    return (reqName, Array.Empty<string>());
+                }
                 _sourceFile.Requires.AddUnique(resolvedName);
                 return (resolvedName, Array.Empty<string>());
             }
@@ -155,8 +160,16 @@ public class ImportExportTransformer : TreeTransformer
                     if (req != null)
                     {
                         var resolvedReq = _resolver.Invoke(_sourceFile.Name, req);
-                        _sourceFile.Requires.AddUnique(resolvedReq);
-                        _sourceFile.SelfExports.Add(new ExportStarSelfExport(resolvedReq));
+                        if (resolvedReq == IBundlerCtx.LeaveAsExternal)
+                        {
+                            _sourceFile.ExternalImports.AddUnique(req);
+                            _sourceFile.SelfExports.Add(new ExportStarSelfExport(req));
+                        }
+                        else
+                        {
+                            _sourceFile.Requires.AddUnique(resolvedReq);
+                            _sourceFile.SelfExports.Add(new ExportStarSelfExport(resolvedReq));
+                        }
                         return Remove;
                     }
                 }
@@ -182,7 +195,7 @@ public class ImportExportTransformer : TreeTransformer
                     if (varName.Init is AstLambda)
                     {
                         newName = BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name,
-                            _sourceFile.Ast.Variables!,
+                            _sourceFile.Ast!.Variables!,
                             _sourceFile.Ast.CalcNonRootSymbolNames(), "");
                         var newVar = new AstVar(stmBody);
                         var astSymbolVar = new AstSymbolVar(stmBody, newName);
@@ -229,12 +242,20 @@ public class ImportExportTransformer : TreeTransformer
                 if (callExp.IsRequireCall() is { } exportAsNamespace)
                 {
                     var resolvedName = _resolver.Invoke(_sourceFile.Name, exportAsNamespace);
-                    _sourceFile.Requires.AddUnique(resolvedName);
-                    _sourceFile.SelfExports.Add(new ExportAsNamespaceSelfExport(resolvedName, pea.Value.name));
+                    if (resolvedName == IBundlerCtx.LeaveAsExternal)
+                    {
+                        _sourceFile.Requires.AddUnique(exportAsNamespace);
+                        _sourceFile.SelfExports.Add(new ExportAsNamespaceSelfExport(exportAsNamespace, pea.Value.name));
+                    }
+                    else
+                    {
+                        _sourceFile.Requires.AddUnique(resolvedName);
+                        _sourceFile.SelfExports.Add(new ExportAsNamespaceSelfExport(resolvedName, pea.Value.name));
+                    }
                     return Remove;
                 }
 
-                newName = BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast.Variables!,
+                newName = BundlerHelpers.MakeUniqueName("__export_" + pea.Value.name, _sourceFile.Ast!.Variables!,
                     _sourceFile.Ast.CalcNonRootSymbolNames(), "");
                 if (Parent(1) != null)
                 {
@@ -317,7 +338,7 @@ public class ImportExportTransformer : TreeTransformer
                 return new AstSymbolRef(node, varName, SymbolUsage.Unknown);
             }
 
-            var newName = BundlerHelpers.MakeUniqueName("__export_" + name, _sourceFile.Ast.Variables!,
+            var newName = BundlerHelpers.MakeUniqueName("__export_" + name, _sourceFile.Ast!.Variables!,
                 _sourceFile.Ast.CalcNonRootSymbolNames(), "");
             var newVar = new AstVar(node);
             var astSymbolVar = new AstSymbolVar(node, newName);

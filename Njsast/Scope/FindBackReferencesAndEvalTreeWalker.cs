@@ -231,6 +231,10 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
                 DetectSymbolUsage(parent, deepness + 1, ref usage, astSymbol);
                 break;
 
+            case AstArrow _:
+                usage |= SymbolUsage.Read;
+                break;
+
             case AstLambda _:
                 usage |= SymbolUsage.Write;
                 break;

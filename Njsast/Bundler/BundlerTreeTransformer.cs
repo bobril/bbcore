@@ -41,6 +41,10 @@ class BundlerTreeTransformer : TreeTransformer
             case AstCall _ when node.IsRequireCall() is { } reqName:
             {
                 var resolvedName = _ctx.ResolveRequire(reqName, _currentSourceFile!.Name);
+                if (resolvedName == IBundlerCtx.LeaveAsExternal)
+                {
+                    return (new SourceFile(reqName), Array.Empty<string>());
+                }
                 if (!_cache.TryGetValue(resolvedName, out var reqSource))
                     throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
                                                    _currentSourceFile!.Name);
@@ -62,6 +66,15 @@ class BundlerTreeTransformer : TreeTransformer
         var res = new string[leftLength + 1];
         left.AsSpan().CopyTo(res);
         res[leftLength] = right;
+        return res;
+    }
+
+    static string[] Concat(string left, string[] right)
+    {
+        var rightLength = right.Length;
+        var res = new string[rightLength + 1];
+        res[0] = left;
+        right.AsSpan().CopyTo(res.AsSpan()[1..]);
         return res;
     }
 
@@ -142,6 +155,19 @@ class BundlerTreeTransformer : TreeTransformer
                  !import2.Item1.Exports!.TryFindLongestPrefix(new[] { "default" }, out _, out _)))
             {
                 needPath = needPath.Slice(1);
+            }
+
+            if (import2.Item1.ExternalImport)
+            {
+                ref var symbol = ref _splitInfo.ImportFromExternals[Concat(import2.Item1.Name, import2.Item2)];
+                if (symbol != null)
+                {
+                    return new AstSymbolRef(symbol);
+                }
+                var name = BundlerHelpers.MakeUniqueName(import2.Item2[^1], _rootVariables, _nonRootSymbolNames,
+                    _suffix);
+                symbol = new AstSymbolRef(node, name);
+                return symbol;
             }
 
             if (import2.Item1.OnlyWholeExport && needPath.Length == 0)

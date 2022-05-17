@@ -79,6 +79,15 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
         }
     }
 
+    public IEnumerable<string> RootKeys()
+    {
+        if (_root.Children == null) yield break;
+        foreach (var u in _root.Children.Index)
+        {
+            yield return _root.Children.KeyRef(u);
+        }
+    }
+
     static IEnumerable<T> RecursiveIterateValues(RefDictionary<string,Val>? children)
     {
         if (children == null) yield break;
@@ -165,7 +174,7 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
                 return RecursiveIterate(null,key);
             }
             key.Add(prefix[0]);
-                
+
             prefix = prefix.Slice(1);
         }
 

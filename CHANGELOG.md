@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Minification of `()=>variable` didn't marked variable as read which could make wrong code generated on other places.
+
 ## 2.5.2
 
 ### Fixed

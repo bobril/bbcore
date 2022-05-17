@@ -230,9 +230,7 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
         }
 
         // statement with body (body is also conditional) or conditional (ternary operator)
-        if (node is AstIterationStatement ||
-            node is AstIf ||
-            node is AstConditional)
+        if (node is AstIterationStatement or AstIf or AstConditional)
             return ProcessConditional(node);
 
         if (node is AstVar astVar)

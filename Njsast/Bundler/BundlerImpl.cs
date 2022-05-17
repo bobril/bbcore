@@ -16,6 +16,10 @@ public interface IBundlerCtx
     (string?, SourceMap.SourceMap?) ReadContent(string fileName);
     IEnumerable<string> GetPlainJsDependencies(string fileName);
     string GenerateBundleName(string forName);
+
+    /// Special result for ResolveRequire if imports should stay unbundled
+    const string LeaveAsExternal = "*External*";
+
     string ResolveRequire(string name, string from);
     string JsHeaders(string forSplit, bool withImport);
     void WriteBundle(string name, string content);
@@ -83,8 +87,8 @@ public class BundlerImpl
         {
             foreach (var (file, path) in sourceFile.NeedsImports)
             {
-                _cache.TryGetValue(file, out var targetFile);
-                targetFile!.CreateWholeExport(path);
+                if (_cache.TryGetValue(file, out var targetFile))
+                    targetFile.CreateWholeExport(path);
             }
         }
 
@@ -125,7 +129,7 @@ public class BundlerImpl
             foreach (var sourceFile in _order)
             {
                 if (sourceFile.PartOfBundle != splitName) continue;
-                foreach (var keyValuePair in sourceFile.Ast.Globals!)
+                foreach (var keyValuePair in sourceFile.Ast!.Globals!)
                 {
                     topLevelAst.Globals!.TryAdd(keyValuePair.Key, keyValuePair.Value);
                     topLevelAst.NonRootSymbolNames?.Add(keyValuePair.Key);
@@ -138,11 +142,12 @@ public class BundlerImpl
                 if (sourceFile.PartOfBundle != splitName) continue;
                 _currentSourceFile = sourceFile;
                 _currentFileIdent = BundlerHelpers.FileNameToIdent(sourceFile.Name);
-                BundlerHelpers.AppendToplevelWithRename(topLevelAst, sourceFile.Ast, _currentFileIdent,
+                BundlerHelpers.AppendToplevelWithRename(topLevelAst, sourceFile.Ast!, _currentFileIdent,
                     knownDeclaredGlobals, BeforeAdd);
             }
 
-            IfNeededPolyfillGlobal(topLevelAst, (OutputOptions?.Ecma ?? 5) >= 10);
+            AddExternalImports(topLevelAst, splitInfo);
+            IfNeededPolyfillGlobal(topLevelAst, (OutputOptions?.Ecma ?? 6) >= 10);
 
             if (LibraryMode)
             {
@@ -151,7 +156,7 @@ public class BundlerImpl
             else
             {
                 AddExportsFromLazyBundle(splitInfo, topLevelAst);
-                BundlerHelpers.WrapByIIFE(topLevelAst, (OutputOptions?.Ecma ?? 5) >= 6);
+                BundlerHelpers.WrapByIIFE(topLevelAst, (OutputOptions?.Ecma ?? 6) >= 6);
             }
 
             var backupBody = topLevelAst.Body;
@@ -165,8 +170,9 @@ public class BundlerImpl
                 //BundlerHelpers.SimplifyJavaScriptDependency(jsAst);
                 topLevelAst.Body.AddRange(jsAst.Body);
             }
+
             topLevelAst.Body.AddRange(backupBody);
-            
+
             if (lazySplitCounter > 0 && PartToMainFilesMap.ContainsKey(splitName))
             {
                 var astVar = new AstVar(topLevelAst);
@@ -351,6 +357,26 @@ public class BundlerImpl
         if (exportMappings.Count > 0)
         {
             topLevelAst.Body.Add(new AstExport(ref exportMappings));
+        }
+    }
+
+    void AddExternalImports(AstToplevel toplevel, SplitInfo split)
+    {
+        foreach (var importModuleName in split.ImportFromExternals.RootKeys())
+        {
+            var mappings = new StructList<AstNameMapping>();
+            foreach (var keyValuePair in split.ImportFromExternals.IteratePrefix(new[] { importModuleName }))
+            {
+                if (keyValuePair.Key.Count == 2)
+                {
+                    mappings.Add(new AstNameMapping(null, new(), new(),
+                        new AstSymbolImportForeign(new AstSymbolRef(keyValuePair.Key[1])),
+                        new AstSymbolImport(keyValuePair.Value)));
+                }
+            }
+
+            toplevel.Body.Insert(0) = new AstImport(null, new(), new(), new(importModuleName), null,
+                ref mappings);
         }
     }
 

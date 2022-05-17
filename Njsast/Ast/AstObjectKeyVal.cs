@@ -28,7 +28,7 @@ public class AstObjectKeyVal : AstObjectProperty
             return symbol.Thedef?.MangledName ?? symbol.Thedef?.Name ?? symbol.Name;
         }
 
-        var allowShortHand = output.Options.Shorthand;
+        var allowShortHand = output.Options.Ecma >= 6;
         var keyString = Key switch
         {
             AstString str => str.Value,

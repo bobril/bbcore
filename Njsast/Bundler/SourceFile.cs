@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using Njsast.Ast;
@@ -7,14 +8,16 @@ namespace Njsast.Bundler;
 public class SourceFile
 {
     internal string Name;
-    public AstToplevel Ast;
+    public AstToplevel? Ast;
     public StructList<string> Requires = new StructList<string>();
     public StructList<string> LazyRequires = new StructList<string>();
     public StructList<SelfExport> SelfExports = new StructList<SelfExport>();
     public StringTrie<AstNode>? Exports = null;
     public StructList<string> PlainJsDependencies = new StructList<string>();
+    public StructList<string> ExternalImports = new StructList<string>();
     public string? PartOfBundle;
     public bool OnlyWholeExport;
+    public bool ExternalImport;
 
     /// list of file name and export name path (think namespaces). Empty array means need whole module imports as object.
     public StructList<(string, string[])> NeedsImports = new StructList<(string, string[])>();
@@ -23,10 +26,19 @@ public class SourceFile
     {
         Name = name;
         Ast = ast;
+        ExternalImport = false;
+    }
+
+    internal SourceFile(string name)
+    {
+        Name = name;
+        Ast = null;
+        ExternalImport = true;
     }
 
     public void CreateWholeExport(string[] needPath)
     {
+        if (Ast == null) throw new InvalidOperationException("ExternalImport cannot be used to create WholeExport");
         if (needPath.Length >= 1 && needPath[0] == "default" &&
             !Exports!.TryFindLongestPrefix(new[] {"default"}, out _, out _))
         {
@@ -35,7 +47,7 @@ public class SourceFile
 
         Exports!.EnsureKeyExists(needPath, tuples =>
         {
-            var init = new AstObject(Ast);
+            var init = new AstObject(Ast!);
             foreach (var (propName, value) in tuples)
             {
                 var valueRef = value;

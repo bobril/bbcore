@@ -409,6 +409,13 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                         symbolDef.Purpose ??= purpose;
                     }
 
+                    // IIFE with unused parameter
+                    if (call.Args.Count == 0 && call.Expression is AstLambda { ArgNames.Count: 1 } lambda &&
+                        lambda.ArgNames[0].IsSymbolDef() is { OnlyDeclared: true })
+                    {
+                        lambda.ArgNames.Clear();
+                    }
+
                     goto default;
                 }
                 case AstAssign assign:

@@ -217,13 +217,24 @@ public static class BundlerHelpers
 
     public static void WrapByIIFE(AstToplevel topLevelAst, bool es6 = false)
     {
-        AstLambda func = es6 ? new AstArrow() : new AstFunction();
-        func.ArgNames.Add(new AstSymbolFunarg("undefined"));
-        func.HasUseStrictDirective = true;
-        func.Body.TransferFrom(ref topLevelAst.Body);
-        var call = new AstCall(new AstDot(func, "call"));
-        call.Args.AddRef() = new AstThis(null, new(), new());
-        topLevelAst.Body.Add(new AstSimpleStatement(new AstUnaryPrefix(Operator.LogicalNot, call)));
+        if (es6)
+        {
+            AstLambda func = new AstArrow();
+            func.ArgNames.Add(new AstSymbolFunarg("undefined"));
+            func.Body.TransferFrom(ref topLevelAst.Body);
+            var call = new AstCall(func);
+            topLevelAst.Body.Add(new AstSimpleStatement(call));
+        }
+        else
+        {
+            AstLambda func = new AstFunction();
+            func.ArgNames.Add(new AstSymbolFunarg("undefined"));
+            func.HasUseStrictDirective = true;
+            func.Body.TransferFrom(ref topLevelAst.Body);
+            var call = new AstCall(new AstDot(func, "call"));
+            call.Args.AddRef() = new AstThis(null, new(), new());
+            topLevelAst.Body.Add(new AstSimpleStatement(new AstUnaryPrefix(Operator.LogicalNot, call)));
+        }
     }
 
     public static void UnwrapIIFE(AstToplevel topLevelAst)

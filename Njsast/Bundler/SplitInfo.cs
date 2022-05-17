@@ -14,6 +14,7 @@ public class SplitInfo
         ExportsAllUsedFromLazyBundles = new Dictionary<string, string>();
         DirectSplitsForcedLazy = new HashSet<SplitInfo>();
         PlainJsDependencies = new OrderedHashSet<string>();
+        ImportFromExternals = new StringTrie<AstSymbolRef>();
     }
     /// file path
     public string FullName;
@@ -25,6 +26,9 @@ public class SplitInfo
     public IDictionary<AstNode,string> ExportsUsedFromLazyBundles;
     /// from split, from file, export name, new AST_SymbolRef
     public IDictionary<AstNode, ImportFromOtherBundle> ImportsFromOtherBundles;
+
+    /// First level is name of import
+    public StringTrie<AstSymbolRef> ImportFromExternals;
     /// map from fileName lower cased to __bbb property name
     public IDictionary<string,string> ExportsAllUsedFromLazyBundles;
     public ISet<SplitInfo> DirectSplitsForcedLazy;
