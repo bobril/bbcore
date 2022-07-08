@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.5.4
+
 ### Fixed
 
 One more time fixed `test` command with combining `--out` and `--dir` options.
