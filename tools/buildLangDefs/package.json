@@ -6,7 +6,7 @@
   "dependencies": {
     "@types/node": "^8.0.53",
     "make-plural": "^4.1.1",
-    "moment": "^2.29.2",
+    "moment": "^2.29.4",
     "numeral": "^2.0.6",
     "uglify-js": "^3.2.0"
   },
