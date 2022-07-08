@@ -761,7 +761,7 @@ public class Composition
             proj.RefreshMainFile();
             proj.RefreshTestSources();
             proj.SpriterInitialization(_mainBuildResult);
-            if (proj.TestSources != null && proj.TestSources.Count > 0)
+            if (proj.TestSources is { Count: > 0 })
             {
                 var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath,
                     _buildCache, "yes");
@@ -782,14 +782,14 @@ public class Composition
                 }
 
                 IncludeMessages(proj, testBuildResult, ref errors, ref warnings, messages);
-                testBuildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
+                testBuildResult.TaskForSemanticCheck!.ContinueWith(semanticDiag =>
                 {
                     if (semanticDiag.IsCompletedSuccessfully)
                         messages = IncludeSemanticMessages(proj, semanticDiag.Result, ref errors, ref warnings,
                             messages);
                 }).Wait();
                 PrintMessages(messages);
-                if (testCommand.Dir.Value == null && (testCommand.Out.Value != null || proj.CoverageEnabled))
+                if (testCommand.Dir.Value == null || testCommand.Out.Value != null || proj.CoverageEnabled)
                 {
                     if (errors == 0)
                     {
@@ -836,7 +836,7 @@ public class Composition
                         testResults.Failures = messages.Where(m => m.IsError).Select(m => new MessageAndStack
                         {
                             Message = m.Text,
-                            Stack = new List<StackFrame>
+                            Stack = new()
                             {
                                 new() { FileName = m.FileName, LineNumber = m.StartLine, ColumnNumber = m.StartCol }
                             }

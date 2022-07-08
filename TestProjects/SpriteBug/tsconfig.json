@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "checkJs": false,
+    "declaration": false,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "react",
+    "lib": [
+      "es2019",
+      "dom"
+    ],
+    "module": "commonjs",
+    "noEmitHelpers": true,
+    "reactNamespace": "b",
+    "removeComments": false,
+    "skipLibCheck": false,
+    "skipDefaultLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2019",
+    "resolveJsonModule": true
+  },
+  "include": [
+    "**/*"
+  ]
+}
