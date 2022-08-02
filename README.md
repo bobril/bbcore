@@ -28,7 +28,7 @@ By setting `BBVERSION` environment variable you can define default version (incl
 
 # How to override where bb store its caches
 
-bb stores its cache in `user_home/.bbcache` directory. In Docker it uses `/bbcache`. You can override it be defining `BBCACHEDIR` environmental variable.
+bb stores its cache in `user_home/.bbcore/tools` directory. In Docker it uses `/bbcache`. You can override it be defining `BBCACHEDIR` environmental variable.
 
 # How to use Docker version
 
