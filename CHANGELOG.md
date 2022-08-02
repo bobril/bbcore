@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Compatibility with TypeScript 4.7. Imports could be jasmine.spy`ed again.
+
 ## 2.5.4
 
 ### Fixed

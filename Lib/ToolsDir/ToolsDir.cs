@@ -117,6 +117,9 @@ public class ToolsDir : IToolsDir
                 // if (true) {
                 _typeScriptJsContent =
                     _typeScriptJsContent.Replace("if (languageVersion === 0 /* ES3 */) {", "if (true) {");
+                // In TypeScript 4.7 it has new form.
+                _typeScriptJsContent =
+                    _typeScriptJsContent.Replace("if (languageVersion === 0 /* ScriptTarget.ES3 */) {", "if (true) {");
 
                 // Patch TS 3.9 and 4.0 to fix https://github.com/microsoft/TypeScript/issues/38691
                 _typeScriptJsContent = _typeScriptJsContent.Replace(
