@@ -228,18 +228,18 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
             if (BuildSourceMap)
             {
                 var sourceMapBuilder = new SourceMapBuilder();
-                var adder = sourceMapBuilder.CreateSourceAdder(fileInfo.Output, fileInfo.MapLink);
+                var adder = sourceMapBuilder.CreateSourceAdder(fileInfo.Output!, fileInfo.MapLink);
                 var sourceReplacer = new SourceReplacer();
-                _project.ApplySourceInfo(sourceReplacer, fileInfo.SourceInfo, _buildResult);
+                _project.ApplySourceInfo(sourceReplacer, fileInfo.Owner!.FullPath, fileInfo.MapLink, fileInfo.SourceInfo, _buildResult);
                 sourceReplacer.Apply(adder);
                 return (sourceMapBuilder.Content(), sourceMapBuilder.Build(".", "."));
             }
             else
             {
                 var sourceMapBuilder = new SourceMapBuilder();
-                var adder = sourceMapBuilder.CreateSourceAdder(fileInfo.Output, fileInfo.MapLink);
+                var adder = sourceMapBuilder.CreateSourceAdder(fileInfo.Output!, fileInfo.MapLink);
                 var sourceReplacer = new SourceReplacer();
-                _project.ApplySourceInfo(sourceReplacer, fileInfo.SourceInfo, _buildResult);
+                _project.ApplySourceInfo(sourceReplacer, fileInfo.Owner!.FullPath, null, fileInfo.SourceInfo, _buildResult);
                 sourceReplacer.Apply(adder);
                 return (sourceMapBuilder.Content(), null);
             }

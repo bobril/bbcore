@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Localization update creates `locations.json` with original source code positions.
+
 ## 2.5.5
 
 ### Fixed

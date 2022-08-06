@@ -9,9 +9,12 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using BTDB.Collections;
 using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
+using Njsast.SourceMap;
 
 namespace Lib.Translation;
 
@@ -27,6 +30,7 @@ public class TranslationDb
     List<TranslationKey> Id2Key = new List<TranslationKey>();
     Dictionary<uint, uint> UsedIdMap = new Dictionary<uint, uint>();
     List<uint> UsedIds = new List<uint>();
+    List<List<string>> Locations = new List<List<string>>();
     Dictionary<string, List<string>> Lang2ValueList = new Dictionary<string, List<string>>();
     HashSet<string> _loadedLanguages = new HashSet<string>();
     readonly IFsAbstraction _fsAbstraction;
@@ -45,6 +49,7 @@ public class TranslationDb
                 if (!info.Name.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase)) continue;
                 if (info.Name.StartsWith("package.", StringComparison.InvariantCultureIgnoreCase)) continue;
                 if (info.Name.StartsWith("tsconfig.", StringComparison.InvariantCultureIgnoreCase)) continue;
+                if (info.Name.StartsWith("locations.", StringComparison.InvariantCultureIgnoreCase)) continue;
                 LoadLangDb(PathUtils.Join(dir, info.Name));
             }
         }
@@ -102,21 +107,21 @@ public class TranslationDb
                     switch (state)
                     {
                         case LoaderState.LangString:
-                            lang = (string) reader.Value;
+                            lang = (string)reader.Value;
                             _loadedLanguages.Add(lang);
                             valueList = AddLanguage(lang);
                             state = LoaderState.BeforeItem;
                             break;
                         case LoaderState.Message:
-                            message = (string) reader.Value;
+                            message = (string)reader.Value;
                             state = LoaderState.Hint;
                             break;
                         case LoaderState.Hint:
-                            hint = (string) reader.Value;
+                            hint = (string)reader.Value;
                             state = LoaderState.Flags;
                             break;
                         case LoaderState.Value:
-                            value = (string) reader.Value;
+                            value = (string)reader.Value;
                             state = LoaderState.AfterValue;
                             break;
                         default:
@@ -129,7 +134,7 @@ public class TranslationDb
                     switch (state)
                     {
                         case LoaderState.Flags:
-                            withParams = (((int) ((long) reader.Value)) & 1) != 0;
+                            withParams = ((int)(long)reader.Value & 1) != 0;
                             state = LoaderState.Value;
                             break;
                         default:
@@ -170,7 +175,7 @@ public class TranslationDb
                             while (valueList.Count <= id) valueList.Add(null);
                             if (value != null)
                             {
-                                valueList[(int) id] = value;
+                                valueList[(int)id] = value;
                             }
 
                             break;
@@ -202,25 +207,49 @@ public class TranslationDb
         }
     }
 
+    public void SaveLocations(string dir)
+    {
+        using var stream = File.Create(PathUtils.Join(dir, "locations.json"));
+        using var jw = CreateJsonWriter(stream);
+        jw.WriteStartArray();
+        for (var i = 0; i < UsedIds.Count; i++)
+        {
+            jw.WriteStartArray();
+            var idx = (int)UsedIds[i];
+            jw.WriteStringValue(Id2Key[idx].Message);
+            jw.WriteStringValue(Id2Key[idx].Hint);
+            jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
+            foreach (var s in Locations[i])
+            {
+                jw.WriteStringValue(s);
+            }
+
+            jw.WriteEndArray();
+        }
+
+        jw.WriteEndArray();
+        jw.Flush();
+    }
+
     public void SaveLangDb(string dir, string lang, bool justUsed)
     {
         var values = Lang2ValueList[lang];
-        var tw = new StringWriter();
-        var jw = new JsonTextWriter(tw);
-        jw.Formatting = Formatting.Indented;
+
+        using var stream = File.Create(PathUtils.Join(dir, lang + ".json"));
+        using var jw = CreateJsonWriter(stream);
         jw.WriteStartArray();
-        jw.WriteValue(lang);
+        jw.WriteStringValue(lang);
         if (justUsed)
         {
             for (var i = 0; i < UsedIds.Count; i++)
             {
                 jw.WriteStartArray();
-                var idx = (int) UsedIds[i];
-                jw.WriteValue(Id2Key[idx].Message);
-                jw.WriteValue(Id2Key[idx].Hint);
-                jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
+                var idx = (int)UsedIds[i];
+                jw.WriteStringValue(Id2Key[idx].Message);
+                jw.WriteStringValue(Id2Key[idx].Hint);
+                jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
                 if (idx < values.Count && values[idx] != null)
-                    jw.WriteValue(values[idx]);
+                    jw.WriteStringValue(values[idx]);
                 jw.WriteEndArray();
             }
         }
@@ -229,18 +258,27 @@ public class TranslationDb
             for (var idx = 0; idx < Id2Key.Count; idx++)
             {
                 jw.WriteStartArray();
-                jw.WriteValue(Id2Key[idx].Message);
-                jw.WriteValue(Id2Key[idx].Hint);
-                jw.WriteValue(Id2Key[idx].WithParams ? 1 : 0);
+                jw.WriteStringValue(Id2Key[idx].Message);
+                jw.WriteStringValue(Id2Key[idx].Hint);
+                jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
                 if (idx < values.Count && values[idx] != null)
-                    jw.WriteValue(values[idx]);
+                    jw.WriteStringValue(values[idx]);
                 jw.WriteEndArray();
             }
         }
 
         jw.WriteEndArray();
         jw.Flush();
-        File.WriteAllText(PathUtils.Join(dir, lang + ".json"), tw.ToString(), new UTF8Encoding(false));
+    }
+
+    static Utf8JsonWriter CreateJsonWriter(FileStream stream)
+    {
+        return new Utf8JsonWriter(stream, new()
+        {
+            Indented = true,
+            SkipValidation = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        });
     }
 
     public bool HasLanguage(string lang) => Lang2ValueList.ContainsKey(lang);
@@ -331,7 +369,7 @@ public class TranslationDb
         var key = new TranslationKey(message, hint, withParams);
         if (!Key2Id.TryGetValue(key, out var id))
         {
-            id = (uint) Id2Key.Count;
+            id = (uint)Id2Key.Count;
             Id2Key.Add(key);
             Key2Id.Add(key, id);
         }
@@ -339,16 +377,18 @@ public class TranslationDb
         return id;
     }
 
-    public uint MapId(uint id)
+    public uint MapId(uint id, SourceCodePosition sourceCodePosition)
     {
         if (UsedIdMap.TryGetValue(id, out var res))
         {
+            Locations[(int)res].Add(sourceCodePosition.ToString());
             return res;
         }
 
         _changed = true;
-        res = (uint) UsedIds.Count;
+        res = (uint)UsedIds.Count;
         UsedIds.Add(id);
+        Locations.Add(new() { sourceCodePosition.ToString() });
         UsedIdMap.Add(id, res);
         return res;
     }
@@ -372,7 +412,7 @@ public class TranslationDb
                 jw.WriteStartArray();
                 for (var i = 0; i < UsedIds.Count; i++)
                 {
-                    var idx = (int) UsedIds[i];
+                    var idx = (int)UsedIds[i];
                     jw.WriteValue(((idx < p.Value.Count) ? p.Value[idx] : null) ?? Id2Key[idx].Message);
                 }
 
@@ -389,7 +429,7 @@ public class TranslationDb
                 jw.WriteStartArray();
                 for (var i = 0; i < UsedIds.Count; i++)
                 {
-                    var idx = (int) UsedIds[i];
+                    var idx = (int)UsedIds[i];
                     var key = Id2Key[idx];
                     var val = key.Message + "\x9" + (key.WithParams ? "1" : "0") + (key.Hint ?? "");
                     jw.WriteValue(val);
@@ -413,15 +453,15 @@ public class TranslationDb
 
     MessageParser _messageParser = new MessageParser();
 
-    public ErrorAst CheckMessage(string message, List<string> knownParams)
+    public ErrorAst? CheckMessage(string message, List<string> knownParams)
     {
         var res = _messageParser.Parse(message);
         if (res is ErrorAst)
         {
-            return (ErrorAst) res;
+            return (ErrorAst)res;
         }
 
-        if (knownParams != null && knownParams.Count > 0)
+        if (knownParams is { Count: > 0 })
         {
             var p = new HashSet<string>();
             res.GatherParams(p);
@@ -471,7 +511,7 @@ public class TranslationDb
                     {
                         var values = Lang2ValueList[language];
                         while (values.Count < idt) values.Add(null);
-                        values[(int) idt] = target;
+                        values[(int)idt] = target;
                     }
                 }
                 else
@@ -481,7 +521,7 @@ public class TranslationDb
                     {
                         var values = Lang2ValueList[language];
                         while (values.Count < idf) values.Add(null);
-                        values[(int) idf] = target;
+                        values[(int)idf] = target;
                     }
                 }
             });
@@ -541,13 +581,12 @@ public class TranslationDb
 
         void AddData(string source, string hint, string target) =>
             keys.Add(new TranslationKey(source, hint, false));
-            
+
         var outputFile = files.Last();
         var langFiles = files.SkipLast(1);
 
         foreach (var file in langFiles)
         {
-                
             ImportTranslatedLanguageInternal(file, AddData);
         }
 

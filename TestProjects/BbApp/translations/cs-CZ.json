@@ -1,7 +1,7 @@
 [
   "cs-CZ",
   [
-    "Hello World! {c, number}",
+    "Hello World! {c, number} {test}",
     null,
     1
   ],
@@ -11,7 +11,12 @@
     0
   ],
   [
-    "Delayed translation message",
+    "Delayed translation message {param}",
+    null,
+    1
+  ],
+  [
+    "with delayed param",
     null,
     0
   ]

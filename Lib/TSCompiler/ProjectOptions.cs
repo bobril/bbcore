@@ -369,7 +369,7 @@ public class ProjectOptions
     public ITSCompilerOptions? FinalCompilerOptions;
     public bool ForbiddenDependencyUpdate;
     public CoverageInstrumentation? CoverageInstrumentation;
-    public Dictionary<string,string>? Assets;
+    public Dictionary<string, string>? Assets;
 
     public void UpdateTSConfigJson()
     {
@@ -541,7 +541,8 @@ public class ProjectOptions
         LibraryMode = bbOptions.library ?? false;
     }
 
-    public static BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions, bool justSameDir = false)
+    public static BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,
+        bool justSameDir = false)
     {
         while (dir != null)
         {
@@ -609,7 +610,9 @@ public class ProjectOptions
         }
     }
 
-    public void ApplySourceInfo(ISourceReplacer sourceReplacer, SourceInfo? sourceInfo, BuildResult buildResult)
+    public void ApplySourceInfo(ISourceReplacer sourceReplacer, string ownerFullPath, SourceMap? sourceMapLink,
+        SourceInfo? sourceInfo,
+        BuildResult buildResult)
     {
         if (sourceInfo == null) return;
 
@@ -732,7 +735,12 @@ public class ProjectOptions
                 if (repls == null)
                     continue;
                 var id = trdb.AddToDB(t.Message, t.Hint, true);
-                var finalId = trdb.MapId(id);
+                var finalId = trdb.MapId(id, sourceMapLink?.FindPosition(t.StartLine + 1, t.StartCol + 1) ??
+                                             new SourceCodePosition
+                                             {
+                                                 SourceName = ownerFullPath, Line = t.StartLine + 1,
+                                                 Col = t.StartCol + 1
+                                             });
                 foreach (var rep in repls)
                 {
                     if (rep.Type == SourceInfo.ReplacementType.MoveToPlace)
@@ -762,7 +770,12 @@ public class ProjectOptions
                 if (t.JustFormat)
                     continue;
                 var id = trdb.AddToDB(t.Message, t.Hint, t.WithParams);
-                var finalId = trdb.MapId(id);
+                var finalId = trdb.MapId(id, sourceMapLink?.FindPosition(t.StartLine + 1, t.StartCol + 1) ??
+                                             new SourceCodePosition
+                                             {
+                                                 SourceName = ownerFullPath, Line = t.StartLine + 1,
+                                                 Col = t.StartCol + 1
+                                             });
                 sourceReplacer.Replace(t.StartLine, t.StartCol, t.EndLine, t.EndCol, "" + finalId);
                 sourceReplacer.Replace(t.StartHintLine, t.StartHintCol, t.EndHintLine, t.EndHintCol, null);
             }
