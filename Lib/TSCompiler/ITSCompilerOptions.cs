@@ -11,6 +11,11 @@ public enum ModuleKind
     Umd = 3,
     System = 4,
     Es2015 = 5,
+    Es2020 = 6,
+    Es2022 = 7,
+    Esnext = 8,
+    Node16 = 9,
+    Nodenext = 10,
 }
 
 public enum JsxEmit
@@ -20,12 +25,18 @@ public enum JsxEmit
     React = 2,
     [EnumMember(Value = "react-native")]
     ReactNative = 3,
+    [EnumMember(Value = "react-jsx")]
+    ReactJsx = 4,
+    [EnumMember(Value = "react-jsxdev")]
+    ReactJsxDev = 5,
 }
 
 public enum ModuleResolutionKind
 {
     Classic = 1,
-    Nodejs = 2,
+    Node = 2,
+    Node12 = 3,
+    Nodenext = 4,
 }
 
 public enum NewLineKind
@@ -47,6 +58,7 @@ public enum ScriptTarget
     Es2019 = 6,
     Es2020 = 7,
     Es2021 = 8,
+    Es2022 = 9,
     Esnext = 99
 }
 
@@ -121,6 +133,7 @@ public interface ITSCompilerOptions
     /** Paths used to compute primary types search locations */
     IList<string>? typeRoots { get; set; }
     bool? useUnknownInCatchVariables { get; set; }
+    bool? resolveJsonModule { get; set; }
 
     ITSCompilerOptions Clone();
     ITSCompilerOptions Merge(ITSCompilerOptions withInterface);
