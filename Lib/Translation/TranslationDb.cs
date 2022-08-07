@@ -207,7 +207,7 @@ public class TranslationDb
         }
     }
 
-    public void SaveLocations(string dir)
+    public void SaveLocations(string dir, string projectRoot)
     {
         using var stream = File.Create(PathUtils.Join(dir, "locations.json"));
         using var jw = CreateJsonWriter(stream);
@@ -221,7 +221,9 @@ public class TranslationDb
             jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
             foreach (var s in Locations[i])
             {
-                jw.WriteStringValue(s);
+                var pathLen = s.LastIndexOf(':', s.LastIndexOf(':') - 1);
+                var p = PathUtils.Subtract(s[..pathLen], projectRoot); 
+                jw.WriteStringValue(p+s[pathLen..]);
             }
 
             jw.WriteEndArray();

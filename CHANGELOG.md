@@ -4,7 +4,11 @@
 
 ### Added
 
-Localization update creates `locations.json` with original source code positions.
+Localization update creates `locations.json` with original source code positions. Format is array of arrays of message, hint, withParams?1:0, ...sourcepath:line:column (line and column are one based, path is relative to project root).
+
+```json
+["Hello World! {c, number} {test}", null, 1, "src/app.ts:51:35"]
+```
 
 ## 2.5.5
 

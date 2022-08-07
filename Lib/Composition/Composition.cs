@@ -636,7 +636,7 @@ public class Composition
                     var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, proj, buildResult);
                     fastBundle.Build("bb/base");
                     proj.TranslationDb!.SaveLangDbs(PathToTranslations(proj), true);
-                    proj.TranslationDb!.SaveLocations(PathToTranslations(proj));
+                    proj.TranslationDb!.SaveLocations(PathToTranslations(proj), proj.Owner.Owner.FullPath);
                 }
                 else
                 {
