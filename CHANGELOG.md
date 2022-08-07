@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default TypeScript version is 4.7.4
+
 ### Added
 
 Localization update creates `locations.json` with original source code positions. Format is array of arrays of message, hint, withParams?1:0, ...sourcepath:line:column (line and column are one based, path is relative to project root).
