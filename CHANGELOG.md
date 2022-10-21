@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.6.1
+
 ### Changed
 
 - Default html head content is empty and not obsolete forcing IE to edge mode.
