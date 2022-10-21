@@ -88,10 +88,13 @@ class BundlerTreeTransformer : TreeTransformer
         {
             if (DetectImport(varDef.Value) is { } import)
             {
-                _reqSymbolDefMap[reqSymbolDef] = import;
-                if (import.Item2.Length == 0) return Remove;
-                if (!import.Item1.Exports!.TryFindLongestPrefix(import.Item2, out _, out _))
-                    return Remove;
+                if (!(_currentSourceFile.ModifiedImports?.Contains((import.Item1.Name, import.Item2)) ?? false))
+                {
+                    _reqSymbolDefMap[reqSymbolDef] = import;
+                    if (import.Item2.Length == 0) return Remove;
+                    if (!import.Item1.Exports!.TryFindLongestPrefix(import.Item2, out _, out _))
+                        return Remove;
+                }
             }
         }
 

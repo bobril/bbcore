@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using Njsast.Ast;
@@ -21,6 +22,8 @@ public class SourceFile
 
     /// list of file name and export name path (think namespaces). Empty array means need whole module imports as object.
     public StructList<(string, string[])> NeedsImports = new StructList<(string, string[])>();
+
+    public HashSet<(string, string[])>? ModifiedImports;
 
     internal SourceFile(string name, AstToplevel ast)
     {
