@@ -15,9 +15,9 @@ public class ImportExportTransformer : TreeTransformer
     SymbolDef? _reexportSymbol;
     SymbolDef? _importStarSymbol;
 
-    readonly Dictionary<SymbolDef, (string, string[])> _reqSymbolDefMap = new();
+    readonly Dictionary<SymbolDef, FileAndPath> _reqSymbolDefMap = new();
 
-    public (string, string[])? DetectImport(AstNode? node)
+    public FileAndPath? DetectImport(AstNode? node)
     {
         switch (node)
         {
@@ -27,10 +27,11 @@ public class ImportExportTransformer : TreeTransformer
                 if (resolvedName == IBundlerCtx.LeaveAsExternal)
                 {
                     _sourceFile.ExternalImports.AddUnique(reqName);
-                    return (reqName, Array.Empty<string>());
+                    return new() { File = reqName, Path = Array.Empty<string>() };
                 }
+
                 _sourceFile.Requires.AddUnique(resolvedName);
-                return (resolvedName, Array.Empty<string>());
+                return new() { File = resolvedName, Path = Array.Empty<string>() };
             }
             case AstCall { Expression: AstSymbolRef { Name: "__importDefault" } } astCall:
             {
@@ -40,7 +41,7 @@ public class ImportExportTransformer : TreeTransformer
                 return res;
             case AstPropAccess { PropertyAsString: { } propName } propAccess
                 when DetectImport(propAccess.Expression) is { } leftImport:
-                return (leftImport.Item1, Concat(leftImport.Item2, propName));
+                return leftImport with { Path = Concat(leftImport.Path, propName) };
         }
 
         return null;
@@ -71,7 +72,7 @@ public class ImportExportTransformer : TreeTransformer
             return node;
         }
 
-        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { IsSingleInit:true } reqSymbolDef)
+        if (node is AstVarDef varDef && varDef.Name.IsSymbolDef() is { IsSingleInit: true } reqSymbolDef)
         {
             var val = varDef.Value;
             if (val is AstCall { Expression: AstSymbolRef maybeImportStar, Args.Count: 1 } call &&
@@ -97,12 +98,12 @@ public class ImportExportTransformer : TreeTransformer
         if (DetectImport(node) is { } import2)
         {
             if (!(Parent() is AstSimpleStatement))
-                _sourceFile.NeedsImports.AddStructurallyUnique(import2);
+                _sourceFile.NeedsImports.Add(import2);
             if (Parent() is AstAssign { Left: var leftNode } && node == leftNode)
             {
-                _sourceFile.ModifiedImports ??=
-                    new HashSet<(string, string[])>();
+                (_sourceFile.ModifiedImports ??= new ()).Add(import2);
             }
+
             return node;
         }
 
@@ -136,25 +137,25 @@ public class ImportExportTransformer : TreeTransformer
                     } && DetectImport(astRet.Value) is { } bindPath)
                 {
                     _sourceFile.SelfExports.Add(
-                        new ReexportSelfExport(exportName.Value, bindPath.Item1, bindPath.Item2));
+                        new ReexportSelfExport(exportName.Value, bindPath.File, bindPath.Path));
                     return Remove;
                 }
 
                 if (call.Expression.IsSymbolDef().IsGlobalSymbol() == "__createBinding" && call.Args.Count >= 3 &&
                     call.Args[0].IsSymbolDef().IsExportsSymbol() && call.Args[2] is AstString bindingName &&
-                    DetectImport(call.Args[1]) is { } bindModule && bindModule.Item2.Length == 0)
+                    DetectImport(call.Args[1]) is { } bindModule && bindModule.Path.Length == 0)
                 {
                     if (call.Args.Count == 3)
                     {
-                        _sourceFile.SelfExports.Add(new ReexportSelfExport(bindingName.Value, bindModule.Item1,
-                            Concat(bindModule.Item2, bindingName.Value)));
+                        _sourceFile.SelfExports.Add(new ReexportSelfExport(bindingName.Value, bindModule.File,
+                            Concat(bindModule.Path, bindingName.Value)));
                         return Remove;
                     }
 
                     if (call.Args.Count == 4 && call.Args[3] is AstString asName)
                     {
-                        _sourceFile.SelfExports.Add(new ReexportSelfExport(asName.Value, bindModule.Item1,
-                            Concat(bindModule.Item2, bindingName.Value)));
+                        _sourceFile.SelfExports.Add(new ReexportSelfExport(asName.Value, bindModule.File,
+                            Concat(bindModule.Path, bindingName.Value)));
                         return Remove;
                     }
                 }
@@ -176,6 +177,7 @@ public class ImportExportTransformer : TreeTransformer
                             _sourceFile.Requires.AddUnique(resolvedReq);
                             _sourceFile.SelfExports.Add(new ExportStarSelfExport(resolvedReq));
                         }
+
                         return Remove;
                     }
                 }
@@ -225,9 +227,9 @@ public class ImportExportTransformer : TreeTransformer
                 {
                     // It could be var symbol of required module, than it is namespace export
                     if (_reqSymbolDefMap.TryGetValue(pea.Value.value.IsSymbolDef()!, out var res) &&
-                        res.Item2.Length == 0)
+                        res.Path.Length == 0)
                     {
-                        _sourceFile.SelfExports.Add(new ExportAsNamespaceSelfExport(res.Item1, pea.Value.name));
+                        _sourceFile.SelfExports.Add(new ExportAsNamespaceSelfExport(res.File, pea.Value.name));
                     }
                     else
                     {
@@ -258,6 +260,7 @@ public class ImportExportTransformer : TreeTransformer
                         _sourceFile.Requires.AddUnique(resolvedName);
                         _sourceFile.SelfExports.Add(new ExportAsNamespaceSelfExport(resolvedName, pea.Value.name));
                     }
+
                     return Remove;
                 }
 

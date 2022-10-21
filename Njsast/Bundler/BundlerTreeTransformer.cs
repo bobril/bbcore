@@ -88,7 +88,7 @@ class BundlerTreeTransformer : TreeTransformer
         {
             if (DetectImport(varDef.Value) is { } import)
             {
-                if (!(_currentSourceFile.ModifiedImports?.Contains((import.Item1.Name, import.Item2)) ?? false))
+                if (!(_currentSourceFile.ModifiedImports?.Contains(new() { File = import.Item1.Name, Path = import.Item2}) ?? false))
                 {
                     _reqSymbolDefMap[reqSymbolDef] = import;
                     if (import.Item2.Length == 0) return Remove;

@@ -6,6 +6,43 @@ using Njsast.Ast;
 
 namespace Njsast.Bundler;
 
+public struct FileAndPath : IEquatable<FileAndPath>
+{
+    public string File;
+    public string[] Path;
+
+    public bool Equals(FileAndPath other)
+    {
+        return File == other.File && Path.AsSpan().SequenceEqual(other.Path.AsSpan());
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is FileAndPath other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        var hc = new HashCode();
+        hc.Add(File);
+        foreach (var s in Path)
+        {
+            hc.Add(s);
+        }
+        return hc.ToHashCode();
+    }
+
+    public static bool operator ==(FileAndPath left, FileAndPath right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(FileAndPath left, FileAndPath right)
+    {
+        return !left.Equals(right);
+    }
+}
+
 public class SourceFile
 {
     internal string Name;
@@ -20,10 +57,10 @@ public class SourceFile
     public bool OnlyWholeExport;
     public bool ExternalImport;
 
-    /// list of file name and export name path (think namespaces). Empty array means need whole module imports as object.
-    public StructList<(string, string[])> NeedsImports = new StructList<(string, string[])>();
+    /// set of file name and export name path (think namespaces). Empty array in Path means need whole module imports as object.
+    public HashSet<FileAndPath> NeedsImports = new ();
 
-    public HashSet<(string, string[])>? ModifiedImports;
+    public HashSet<FileAndPath>? ModifiedImports;
 
     internal SourceFile(string name, AstToplevel ast)
     {

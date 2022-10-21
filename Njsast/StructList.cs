@@ -57,24 +57,6 @@ public struct StructList<T> : IEnumerable<T>
         Add(value);
         return true;
     }
-
-    /// <summary>
-    /// Adds value to a collection only if it is not already contained in collection using structural comparison
-    /// </summary>
-    /// <param name="value"></param>
-    public bool AddStructurallyUnique(in T value)
-    {
-        for (var i = 0u; i < _count; i++)
-        {
-            if (StructuralComparisons.StructuralEqualityComparer.Equals(value!,_a![i]))
-            {
-                return false;
-            }
-        }
-
-        Add(value);
-        return true;
-    }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [DebuggerStepThrough]

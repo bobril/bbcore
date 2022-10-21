@@ -500,7 +500,7 @@ public class ProjectOptions
         JasmineVersion = bbOptions.jasmineVersion ?? "3.3";
         NoHtml = bbOptions.nohtml ?? Variant != "";
         Title = bbOptions.title ?? "Bobril Application";
-        HtmlHead = bbOptions.head ?? "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />";
+        HtmlHead = bbOptions.head ?? "";
         PrefixStyleNames = bbOptions.prefixStyleDefs ?? "";
         Example = bbOptions.example ?? "";
         AdditionalResourcesDirectory = bbOptions.additionalResourcesDirectory;

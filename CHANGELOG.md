@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default html head content is empty and not obsolete forcing IE to edge mode.
+
+### Fixed
+
+- Bundling corrupting code with overwriting import with saving original value.
+
 ## 2.6.0
 
 ### Changed

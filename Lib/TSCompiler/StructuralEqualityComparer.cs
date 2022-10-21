@@ -15,7 +15,7 @@ public class StructuralEqualityComparer<T> : IEqualityComparer<T>
         return StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
     }
 
-    static StructuralEqualityComparer<T> defaultComparer;
+    static StructuralEqualityComparer<T>? defaultComparer;
     public static StructuralEqualityComparer<T> Default
     {
         get

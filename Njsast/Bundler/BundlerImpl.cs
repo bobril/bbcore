@@ -85,10 +85,10 @@ public class BundlerImpl
         _ctx.ReportTime("Parse", stopwatch.Elapsed);
         foreach (var (_, sourceFile) in _cache)
         {
-            foreach (var (file, path) in sourceFile.NeedsImports)
+            foreach (var fileAndPath in sourceFile.NeedsImports)
             {
-                if (_cache.TryGetValue(file, out var targetFile))
-                    targetFile.CreateWholeExport(path);
+                if (_cache.TryGetValue(fileAndPath.File, out var targetFile))
+                    targetFile.CreateWholeExport(fileAndPath.Path);
             }
         }
 
@@ -271,8 +271,10 @@ public class BundlerImpl
                 }
             }
 
-            foreach (var (fromName, exportName) in f.NeedsImports)
+            foreach (var ni in f.NeedsImports)
             {
+                var fromName = ni.File;
+                var exportName = ni.Path;
                 var fromFile = _cache[fromName];
                 var fromSplit = _splitMap[fromFile.PartOfBundle!];
                 if (sourceSplit == fromSplit)
@@ -286,7 +288,7 @@ public class BundlerImpl
                 if (!sourceSplit.ImportsFromOtherBundles.ContainsKey(astNode))
                 {
                     sourceSplit.ImportsFromOtherBundles[astNode] =
-                        new(fromSplit, fromFile, exportName.AsSpan().Slice(0, prefixLen).ToArray());
+                        new(fromSplit, fromFile, exportName.AsSpan()[..prefixLen].ToArray());
                 }
 
                 if (!fromSplit.ExportsUsedFromLazyBundles.ContainsKey(astNode))
