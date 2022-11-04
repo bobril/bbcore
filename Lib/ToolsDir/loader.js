@@ -2,6 +2,12 @@
 const R = function (name, fnOrJson) {
     R.m.set(name.toLowerCase(), typeof fnOrJson == "function" ? { fn: fnOrJson, exports: undefined } : { exports: fnOrJson });
 };
+/*
+ * Store "R" loader to globalThis.
+ * It needs to be globally available for usage in the FastBundleBundler.cs
+ * when code is split into multiple files and files are loaded like ES modules
+ */
+globalThis.R = R;
 R.t = this;
 R.m = new Map();
 R.r = function (name, parent) {

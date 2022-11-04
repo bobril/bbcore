@@ -18,6 +18,12 @@ const R: IR = function (name: string, fnOrJson: ModuleFun | any) {
         typeof fnOrJson == "function" ? { fn: fnOrJson, exports: undefined } : { exports: fnOrJson }
     );
 };
+/*
+ * Store "R" loader to globalThis.
+ * It needs to be globally available for usage in the FastBundleBundler.cs
+ * when code is split into multiple files and files are loaded like ES modules
+ */
+(globalThis as any).R = R;
 R.t = this;
 R.m = new Map();
 R.r = function (name: string, parent: string) {
