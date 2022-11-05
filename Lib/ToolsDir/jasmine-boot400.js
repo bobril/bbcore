@@ -15,7 +15,6 @@
             return arg;
         }
         if (arg && arg.nodeType == 1) {
-            // Is element?
             result = "<" + arg.tagName;
             for (var i = 0, ii = arg.attributes.length; i < ii; i++) {
                 if (arg.attributes[i].specified) {
@@ -37,7 +36,6 @@
             case "Array":
             case "HTMLCollection":
             case "NodeList":
-                // Is array-like object?
                 result = kind == "Array" ? "[" : kind + " [";
                 var arr_list = [];
                 for (var j = 0, jj = arg.length; j < jj; j++) {
@@ -145,7 +143,6 @@
         if (!limit) {
             return prefix + "{?}";
         }
-        // Check circular references
         var stack_length = stack.length;
         for (var si = 0; si < stack_length; si++) {
             if (stack[si] === arg) {
@@ -292,7 +289,6 @@
                 });
             },
         });
-        // Heavily inspired by https://github.com/NV/console.js
         if (typeof console === "undefined") {
             window.console = {
                 toString: function () {
@@ -301,7 +297,7 @@
             };
         }
         let dimensions_limit = 3;
-        console.dir = function dir( /* ...arguments */) {
+        console.dir = function dir() {
             var result = [];
             for (var i = 0; i < arguments.length; i++) {
                 result.push(source_of(arguments[i], dimensions_limit, []));
