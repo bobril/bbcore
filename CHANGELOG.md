@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.7.0
+
 ### Added
 
 Expose loader `R` to `globalThis`.
