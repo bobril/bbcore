@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.8.0
+
 ### Added
 
 - bundle2.js in fast bundler mode could be loaded as module and still works.
