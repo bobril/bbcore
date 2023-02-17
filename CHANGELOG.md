@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- bundle2.js in fast bundler mode could be loaded as module and still works.
+
 ### Changed
 
 - Default TypeScript version is 4.9.5

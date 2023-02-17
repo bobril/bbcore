@@ -102,8 +102,8 @@ public class FastBundleBundler
             sourceMapBuilder.AddText(_tools.LoaderJs);
             sourceMapBuilder.AddText(GetGlobalDefines());
             sourceMapBuilder.AddText(GetModuleMap());
-            sourceMapBuilder.AddText(BundlerHelpers.JsHeaders(false));
         }
+        sourceMapBuilder.AddText(BundlerHelpers.JsHeaders(false));
 
         var cssLink = "";
 
