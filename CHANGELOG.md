@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.8.2
+
 ### Fixed
 
 Async generators were not allowed in parser.
