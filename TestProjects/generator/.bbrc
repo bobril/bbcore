@@ -1,0 +1,13 @@
+{
+  "bbVersion": "*",
+  "library": true,
+  "compilerOptions": {
+    "target": "ES2019",
+    "lib": [
+      "es2021"
+    ],
+    "typeRoots": [
+      "node_modules/@quadient"
+    ]
+  }
+}

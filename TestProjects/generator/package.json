@@ -1,0 +1,12 @@
+{
+  "main": "src/index.ts",
+  "private": true,
+  "scripts": {
+    "build": "bb b -m 0 -b 0",
+    "script-upload": "swarm script upload"
+  },
+  "devDependencies": {
+    "@quadient/evolve-scripting-api": "latest",
+    "typescript": "^4.7.4"
+  }
+}

@@ -732,9 +732,7 @@ public sealed partial class Parser
         bool allowExpressionBody = false,
         bool isAsync = false)
     {
-        var generator = false;
-        if (!isAsync)
-            generator = Eat(TokenType.Star);
+        var generator = Eat(TokenType.Star);
 
         AstSymbol? id = null;
         if (isStatement || isNullableId)
