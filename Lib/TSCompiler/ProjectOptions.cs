@@ -651,7 +651,10 @@ public class ProjectOptions
                 if (assetName.StartsWith("resource:"))
                 {
                     assetName = assetName[9..];
-                }
+                } else if (assetName.StartsWith("html:"))
+                {
+                    assetName = assetName[5..];
+                } 
 
                 sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol,
                     "\"" + buildResult.ToOutputUrl(assetName) + "\"");

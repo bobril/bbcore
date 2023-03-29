@@ -15,6 +15,7 @@ using System.Text;
 using BobrilMdx;
 using Lib.BuildCache;
 using Njsast.Runtime;
+using WebMarkupMin.Core;
 
 namespace Lib.TSCompiler;
 
@@ -133,8 +134,9 @@ public class BuildModuleCtx : IImportResolver
 
     // returns "?" if error in resolving
     public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false,
-        bool forceResource = false, bool skipCheckAdd = false)
+        bool forceResource = false, bool skipCheckAdd = false, FileCompilationType forceCompilationType = FileCompilationType.Unknown)
     {
+        if (forceCompilationType == FileCompilationType.Resource) forceResource = true;
         if (Result!.ResolveCache.TryGetValue((from, name), out var res))
         {
             if (res.IterationId == IterationId) return res.FileName!;
@@ -173,24 +175,32 @@ public class BuildModuleCtx : IImportResolver
         relative: ;
         if (relative)
         {
+            if (forceCompilationType != FileCompilationType.ImportedCss)
+            {
+                if (Owner!.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false })
+                {
+                    res.FileName = fn;
+                    CheckAdd(fn, forceCompilationType);
+                    return res.FileName;
+                }
+            }
             if (fn.EndsWith(".json") || fn.EndsWith(".css"))
             {
-                if (Owner!.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false } fc)
+                if (Owner!.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false })
                 {
                     res.FileName = fn;
                     CheckAdd(fn, forceResource
                         ? FileCompilationType.Resource
                         : fn.EndsWith(".json")
-                            ? (isAsset ? FileCompilationType.Resource : FileCompilationType.Json)
-                            : (isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss));
+                            ? isAsset ? FileCompilationType.Resource : FileCompilationType.Json
+                            : isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss);
                     return res.FileName;
                 }
             }
 
             var dirPath = PathUtils.Parent(fn).ToString();
             var fileOnly = fn.Substring(dirPath.Length + 1);
-            var dc = Owner.DiskCache.TryGetItem(dirPath) as IDirectoryCache;
-            if (dc == null || dc.IsInvalid)
+            if (Owner!.DiskCache.TryGetItem(dirPath) is not IDirectoryCache dc || dc.IsInvalid)
             {
                 res.FileName = "?";
                 return res.FileName;
@@ -818,6 +828,16 @@ public class BuildModuleCtx : IImportResolver
                     break;
                 case FileCompilationType.Resource:
                     break;
+                case FileCompilationType.Html:
+                    if (!TryToResolveFromBuildCacheCss(info))
+                    {
+                        var htmlContent = info.Owner.Utf8Content;
+                        htmlContent = new HtmlMinifier().Minify(htmlContent).MinifiedContent;
+                        info.Output = htmlContent;
+                    }
+
+                    ReportDependenciesFromCss(info);
+                    break;
                 case FileCompilationType.Scss:
                     if (!TryToResolveFromBuildCacheCss(info))
                     {
@@ -1118,27 +1138,33 @@ public class BuildModuleCtx : IImportResolver
 
             string Resolver(IConstEvalCtx myctx, string text)
             {
-                return ResolverWithPossibleForcingResource(myctx, text, false);
+                return ResolverWithPossibleForcingResource(myctx, text, FileCompilationType.Unknown);
             }
 
-            string ResolverWithPossibleForcingResource(IConstEvalCtx myctx, string text, bool forceResource)
+            string ResolverWithPossibleForcingResource(IConstEvalCtx myctx, string text, FileCompilationType forceCompilationType)
             {
                 if (text.StartsWith("project:", StringComparison.Ordinal))
                 {
                     var (pref, name) = SplitProjectAssetName(text);
-                    return pref + ResolverWithPossibleForcingResource(myctx, name, true);
+                    return pref + ResolverWithPossibleForcingResource(myctx, name, FileCompilationType.Resource);
                 }
 
                 if (text.StartsWith("resource:", StringComparison.Ordinal))
                 {
                     return "resource:" +
-                           ResolverWithPossibleForcingResource(myctx, text.Substring("resource:".Length), true);
+                           ResolverWithPossibleForcingResource(myctx, text.Substring("resource:".Length), FileCompilationType.Resource);
                 }
 
+                if (text.StartsWith("html:", StringComparison.Ordinal))
+                {
+                    return "html:" +
+                           ResolverWithPossibleForcingResource(myctx, text.Substring("html:".Length), FileCompilationType.Html);
+                }
+                
                 if (text.StartsWith("node_modules/", StringComparison.Ordinal))
                 {
                     var res2 = ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false,
-                        true, forceResource, true);
+                        true, false, true, forceCompilationType);
                     return res2 == "?" ? text : res2;
                 }
 
@@ -1201,6 +1227,11 @@ public class BuildModuleCtx : IImportResolver
             return "resource:" + ToRelativeName(name.Substring(9), dir);
         }
 
+        if (name.StartsWith("html:"))
+        {
+            return "html:" + ToRelativeName(name.Substring(5), dir);
+        }
+        
         if (PathUtils.IsAnyChildOf(name, dir))
         {
             var p = PathUtils.Subtract(name, dir);
@@ -1251,20 +1282,25 @@ public class BuildModuleCtx : IImportResolver
         return ok;
     }
 
-    string ToAbsoluteName(string relativeName, string from, ref bool ok, bool forceResource = false)
+    string ToAbsoluteName(string relativeName, string from, ref bool ok, FileCompilationType forceCompilationType = FileCompilationType.Unknown)
     {
         if (relativeName.StartsWith("project:"))
         {
             var (pref, name) = SplitProjectAssetName(relativeName);
-            return pref + ToAbsoluteName(name, from, ref ok, true);
+            return pref + ToAbsoluteName(name, from, ref ok, FileCompilationType.Resource);
         }
 
         if (relativeName.StartsWith("resource:"))
         {
-            return "resource:" + ToAbsoluteName(relativeName.Substring(9), from, ref ok, true);
+            return "resource:" + ToAbsoluteName(relativeName.Substring(9), from, ref ok, FileCompilationType.Resource);
         }
 
-        var res = ResolveImport(from, relativeName, false, true, forceResource);
+        if (relativeName.StartsWith("html:"))
+        {
+            return "html:" + ToAbsoluteName(relativeName.Substring(5), from, ref ok, FileCompilationType.Html);
+        }
+        
+        var res = ResolveImport(from, relativeName, false, true, forceCompilationType: forceCompilationType);
         if (res is null or "?")
         {
             ok = false;
@@ -1327,8 +1363,7 @@ public class BuildModuleCtx : IImportResolver
                     name += "/package.json";
                 }
 
-                if (!(Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is
-                        IFileCache))
+                if (Owner!.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is not IFileCache)
                 {
                     fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
                         a.EndLine, a.EndCol);
@@ -1338,6 +1373,15 @@ public class BuildModuleCtx : IImportResolver
             {
                 assetName = assetName.Substring(9);
                 if (ReportDependency(fileInfo, AutodetectAndAddDependency(assetName, true)) == null)
+                {
+                    fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
+                        a.EndLine, a.EndCol);
+                }
+            }
+            else if (assetName.StartsWith("html:"))
+            {
+                assetName = assetName.Substring(5);
+                if (ReportDependency(fileInfo, CheckAdd(assetName, FileCompilationType.Html)) == null)
                 {
                     fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
                         a.EndLine, a.EndCol);

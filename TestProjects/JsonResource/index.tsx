@@ -11,7 +11,7 @@ b.init(() => {
     <>
       <button onClick={() => (init(), true)}>Load</button>
       <div>{data.slice()}</div>
-      <iframe src={b.asset("./iframe.html")} />
+      <iframe src={b.asset("html:iframe.html")} />
     </>
   );
 });

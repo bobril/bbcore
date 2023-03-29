@@ -23,7 +23,8 @@ public enum FileCompilationType
     TypeScriptDefinition,
     Mdxb,
     MdxbList,
-    Scss
+    Scss,
+    Html
 }
 
 public class DependencyTriplet

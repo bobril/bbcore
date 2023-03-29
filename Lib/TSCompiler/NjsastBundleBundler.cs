@@ -57,6 +57,10 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
             {
                 cssToBundle.Add(new SourceFromPair(source.Owner!.Utf8Content, source.Owner.FullPath));
             }
+            else if (source.Type == FileCompilationType.Html)
+            {
+                _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) = source.Output!;
+            }
             else if (source.Type == FileCompilationType.Resource)
             {
                 _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) =
@@ -201,7 +205,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
             throw new InvalidOperationException("Bundler ReadContent does not exists:" + name);
         }
 
-        if (fileInfo.Type is FileCompilationType.ImportedCss or FileCompilationType.Css)
+        if (fileInfo.Type is FileCompilationType.ImportedCss or FileCompilationType.Css or FileCompilationType.Html)
             return ("", null);
         if (fileInfo.Type == FileCompilationType.Json)
         {

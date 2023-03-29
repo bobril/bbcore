@@ -165,6 +165,10 @@ public class FastBundleBundler
                 _mainBuildResult.FilesContent.GetOrAddValueRef(cssPath) = source.Output;
                 cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
             }
+            else if (source.Type == FileCompilationType.Html)
+            {
+                _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) = source.Output!;
+            }
             else if (source.Type == FileCompilationType.Resource)
             {
                 _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) =
