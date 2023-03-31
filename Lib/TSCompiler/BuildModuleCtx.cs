@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using BobrilMdx;
+using HtmlAgilityPack;
 using Lib.BuildCache;
 using Njsast.Runtime;
 using WebMarkupMin.Core;
@@ -832,6 +833,37 @@ public class BuildModuleCtx : IImportResolver
                     if (!TryToResolveFromBuildCacheCss(info))
                     {
                         var htmlContent = info.Owner.Utf8Content;
+                        var htmlDoc = new HtmlDocument();
+                        htmlDoc.LoadHtml(htmlContent);
+                        var toReplace = new StructList<(HtmlNode, string)>();
+                        foreach (var htmlNode in htmlDoc.DocumentNode.Descendants("script"))
+                        {
+                            if (htmlNode.Attributes.AttributesWithName("src").SingleOrDefault() is { } srcattr)
+                            {
+                                var scriptPath = PathUtils.Join( PathUtils.Parent(info.Owner.FullPath), srcattr.Value);
+                                if (Owner!.DiskCache.TryGetItem(scriptPath) is IFileCache { IsInvalid: false } fc)
+                                {
+                                    info.ReportTranspilationDependency(info.Owner.HashOfContent, scriptPath, fc.HashOfContent);
+                                    toReplace.Add((htmlNode,"<script>"+fc.Utf8Content+"</script>"));
+                                }
+                                else
+                                {
+                                    info.ReportDiag(true, -3, "Missing dependency " + srcattr.Value, srcattr.Line, srcattr.LinePosition, srcattr.Line, srcattr.LinePosition);
+                                }
+                            }
+                        }
+
+                        if (toReplace.Count > 0)
+                        {
+                            foreach (var (htmlNode, newHtml) in toReplace)
+                            {
+                                htmlNode.Attributes.RemoveAll();
+                                htmlNode.ChildNodes.Clear();
+                                htmlNode.ParentNode.ReplaceChild(HtmlNode.CreateNode(newHtml), htmlNode);
+                            }
+                            htmlContent = htmlDoc.DocumentNode.WriteContentTo();
+                        }
+                        
                         htmlContent = new HtmlMinifier().Minify(htmlContent).MinifiedContent;
                         info.Output = htmlContent;
                     }
