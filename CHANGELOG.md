@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.9.0
+
 ### Added
 
 b.asset("html:some.html") - it will inline external scripts and minify html and return path to that file.
