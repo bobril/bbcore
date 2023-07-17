@@ -176,7 +176,7 @@ public class BuildModuleCtx : IImportResolver
         relative: ;
         if (relative)
         {
-            if (forceCompilationType != FileCompilationType.ImportedCss)
+            if (forceCompilationType != FileCompilationType.Unknown)
             {
                 if (Owner!.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false })
                 {

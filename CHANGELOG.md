@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+## 2.9.1
+
+### Fixed
+
+Fix regresssion in import of json files.
+
 ## 2.9.0
 
 ### Added
@@ -499,7 +505,7 @@ New `test` command option `-w` or `--printfailed` to see all failed tests with s
 
 ### Fixed
 
-- Patch workround for https://github.com/microsoft/TypeScript/issues/40747
+- Patch workround for <https://github.com/microsoft/TypeScript/issues/40747>
 - Bundler with special import cycle
 
 ## 1.41.0
@@ -663,7 +669,7 @@ Wrongly not removing `var directly_unused = import.namespace`;
 ### Added
 
 - consider also imports from "examples" and "tests" directories as allowed from dev.
-- proper patch for TS 3.9 and TS 4.0 bug https://github.com/microsoft/TypeScript/issues/38691 - it is really needed for some code.
+- proper patch for TS 3.9 and TS 4.0 bug <https://github.com/microsoft/TypeScript/issues/38691> - it is really needed for some code.
 
 ## 1.29.0
 
@@ -673,7 +679,7 @@ Wrongly not removing `var directly_unused = import.namespace`;
 
 ### Added
 
-- Workaround for TS 3.9 and TS 4.0 bug https://github.com/microsoft/TypeScript/issues/38691
+- Workaround for TS 3.9 and TS 4.0 bug <https://github.com/microsoft/TypeScript/issues/38691>
 
 ### Fixed
 
@@ -1267,7 +1273,7 @@ Build mode now sorts multiple css files for bundling in same way as interactive 
 ### Fixed
 
 - js and css files in html head are treated like resources (not touched just copied to output dir).
-- patch TypeScript 3.6.2 bug https://github.com/microsoft/TypeScript/issues/33142
+- patch TypeScript 3.6.2 bug <https://github.com/microsoft/TypeScript/issues/33142>
 
 ## 0.91.3
 
@@ -1613,7 +1619,7 @@ console.log(b.asset("resource:./src/file.js")); // depending on mode prints "src
 
 ### Added
 
-- Command line option to filter tests by any regex in test command (contributed by https://github.com/scottis).
+- Command line option to filter tests by any regex in test command (contributed by <https://github.com/scottis>).
 
 ## 0.68.1
 
@@ -1673,7 +1679,7 @@ Problem with strange compilation error after specific change.
 
 ### Improved
 
-Completely redesigned web inside bobril-build. Contributed by https://github.com/0papen0, sponsored by Quadient.
+Completely redesigned web inside bobril-build. Contributed by <https://github.com/0papen0>, sponsored by Quadient.
 
 ## 0.63.2
 
@@ -1761,7 +1767,7 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Fixed
 
-- detection of triple slash references (TypeScript is still somewhat buggy https://github.com/Microsoft/TypeScript/issues/26439)
+- detection of triple slash references (TypeScript is still somewhat buggy <https://github.com/Microsoft/TypeScript/issues/26439>)
 
 ## 0.58.0
 
@@ -2059,7 +2065,7 @@ Added missing --save parameter for npm version of bb package add command.
 
 - Upgraded to ChakraCore 1.8.3
 - Upgraded to .NetCore 2.1.0 Preview 2 nugets.
-- [Windows specific feature] Notifications about build and test. (Contributed by https://github.com/JanVargovsky)
+- [Windows specific feature] Notifications about build and test. (Contributed by <https://github.com/JanVargovsky>)
 - Added parameter --bindToAny to allow listen for external computers.
 
 ### Fixed
@@ -2086,7 +2092,7 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Added
 
-- Option for tests to generate hierarchical output XML. (Contributed by https://github.com/pstovik)
+- Option for tests to generate hierarchical output XML. (Contributed by <https://github.com/pstovik>)
 
 ## 0.31.0
 
