@@ -109,7 +109,7 @@ static class Program
 
             var client = new GitHubClient(new ProductHeaderValue("bobril-bbcore-releaser"));
             client.SetRequestTimeout(TimeSpan.FromMinutes(15));
-            var fileNameOfToken = Environment.GetEnvironmentVariable("USERPROFILE") + "/.github/token.txt";
+            var fileNameOfToken = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.github/token.txt";
             string token;
             try
             {
