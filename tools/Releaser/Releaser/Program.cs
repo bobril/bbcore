@@ -166,7 +166,7 @@ static class Program
     {
         try
         {
-            RunDocker(projDir, $"build . -t bobril/build --build-arg VERSION={version}");
+            RunDocker(projDir, $"buildx build --platform linux/amd64 -t bobril/build --build-arg VERSION={version} .");
             RunDocker(projDir, $"tag bobril/build bobril/build:{version}");
             RunDocker(projDir, $"push bobril/build:{version}");
             RunDocker(projDir, $"push bobril/build:latest");
