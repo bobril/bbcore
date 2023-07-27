@@ -834,6 +834,7 @@ public sealed partial class Parser
                 key is AstSymbol { Name: "async" } && Type != TokenType.ParenL && !CanInsertSemicolon())
             {
                 isAsync = true;
+                isGenerator = Eat(TokenType.Star);
                 (computed, key) = ParsePropertyName();
             }
 

@@ -21,8 +21,19 @@ export function getDescription(): ScriptDescription {
 }
 
 export async function execute(context: Context): Promise<void> {
+  for await (const val of new ClassGen().foo()) {
+    console.log(123);
+  }
   for await (const val of foo()) {
     console.log(123);
+  }
+}
+
+class ClassGen {
+  async *foo() {
+    yield await Promise.resolve("a");
+    yield await Promise.resolve("b");
+    yield await Promise.resolve("c");
   }
 }
 
