@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.9.3
+
 ### Fixed
 
 JS parser failed on async generator class method.
