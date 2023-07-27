@@ -11,7 +11,7 @@ COPY Lib/*.csproj ./Lib/
 COPY BobrilMdx/*.csproj ./BobrilMdx/
 COPY Njsast/*.csproj ./Njsast/
 WORKDIR /app/bb
-RUN dotnet restore
+RUN dotnet restore --verbosity detailed
 
 # copy and build app and libraries
 WORKDIR /app/
@@ -21,7 +21,6 @@ COPY BobrilMdx/. ./BobrilMdx/
 COPY Njsast/. ./Njsast/
 WORKDIR /app/bb
 RUN dotnet publish -c Release -p:DebugType=None -p:DebugSymbols=false --self-contained true -r linux-x64 -o out -p:Version=$VERSION.0
-RUN rm -r ./out/ru-ru
 RUN rm -r ./out/Resources
 
 FROM mcr.microsoft.com/dotnet/runtime:6.0 AS runtime
