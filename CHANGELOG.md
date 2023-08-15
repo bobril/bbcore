@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.9.4
+
 ### Fixed
 
 New Npm packagelock.json format 3 crashed during "bb p u".
