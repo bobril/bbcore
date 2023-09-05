@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 2.9.5
+
 ### Update
 
 Nuget dependencies.
