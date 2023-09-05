@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Update
+
+Nuget dependencies.
+
+### Fixed
+
+Support for destructuring in catch parameter.
+
 ## 2.9.4
 
 ### Fixed

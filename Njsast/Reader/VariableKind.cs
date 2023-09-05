@@ -4,5 +4,6 @@ public enum VariableKind
 {
     Var,
     Let,
-    Const
+    Const,
+    Catch
 }
