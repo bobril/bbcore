@@ -1,5 +1,3 @@
-using Lib.TSCompiler;
-using Lib.Utils.Logger;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +6,9 @@ using System.Threading.Tasks;
 using BTDB.Collections;
 using Lib.BuildCache;
 using Lib.DiskCache;
+using Lib.TSCompiler;
 using Lib.Utils;
+using Lib.Utils.Logger;
 using Newtonsoft.Json;
 
 namespace Lib.Composition;
@@ -22,20 +22,18 @@ public enum RunTypeCheck
 
 public class BuildCtx
 {
-    BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger,
+    private BuildCtx(DiskCache.DiskCache diskCache, bool verbose,
         string currentDirectory, IBuildCache buildCache, RunTypeCheck typeCheck)
     {
         Verbose = verbose;
-        CompilerPool = compilerPool;
         _diskCache = diskCache;
-        _logger = logger;
         _currentDirectory = currentDirectory;
         _typeCheck = typeCheck;
         BuildCache = buildCache;
     }
 
-    public BuildCtx(ICompilerPool compilerPool, DiskCache.DiskCache diskCache, bool verbose, ILogger logger,
-        string currentDirectory, IBuildCache buildCache, string typeCheckValue) : this(compilerPool, diskCache, verbose, logger,
+    public BuildCtx(DiskCache.DiskCache diskCache, bool verbose,
+        string currentDirectory, IBuildCache buildCache, string typeCheckValue) : this(diskCache, verbose,
         currentDirectory, buildCache, typeCheckValue switch
         {
             "yes" => RunTypeCheck.Yes, "no" => RunTypeCheck.No, "only" => RunTypeCheck.Only,
@@ -144,7 +142,6 @@ public class BuildCtx
     }
 
     public readonly bool Verbose;
-    public readonly ICompilerPool CompilerPool;
     readonly DiskCache.DiskCache _diskCache;
     readonly ILogger _logger;
 
@@ -199,26 +196,25 @@ public class BuildCtx
             case TypeCheckChange.Options:
                 if (_typeChecker != null)
                 {
-                    CompilerPool.ReleaseTs(_typeChecker);
                     _typeChecker = null;
                 }
 
-                _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
+                // _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
                 _typeChecker.ClearDiagnostics();
                 _typeChecker.CreateProgram(_currentDirectory, MakeSourceListArray());
                 break;
             case TypeCheckChange.Once:
                 if (_typeChecker != null)
                 {
-                    CompilerPool.ReleaseTs(_typeChecker);
+                    // CompilerPool.ReleaseTs(_typeChecker);
                     _typeChecker = null;
                 }
 
-                _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
+                // _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
                 _typeChecker.ClearDiagnostics();
                 _typeChecker.CheckProgram(_currentDirectory, MakeSourceListArray());
                 _lastSemantics = _typeChecker.GetDiagnostics().ToList();
-                CompilerPool.ReleaseTs(_typeChecker);
+                // CompilerPool.ReleaseTs(_typeChecker);
                 _typeChecker = null;
                 return;
         }
@@ -285,8 +281,13 @@ public class BuildCtx
         return res.ToArray();
     }
 
-    public void Build(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult,
-        MainBuildResult mainBuildResult, int iterationId)
+    public void Build(
+        ProjectOptions project,
+        bool buildOnlyOnce,
+        BuildResult buildResult,
+        MainBuildResult mainBuildResult,
+        int iterationId,
+        ToolsDir.ToolsDir toolsDir)
     {
         if (project.PreserveProjectRoot)
             mainBuildResult.PreserveProjectRoot = true;
@@ -294,10 +295,10 @@ public class BuildCtx
         _compilerOptionsChanged = false;
         _projectStructureChanged = false;
         MainFile = project.MainFile;
-        AdditionalSources = project.IncludeSources;
-        ExampleSources = project.ExampleSources;
-        TestSources = project.TestSources;
-        JasmineDts = project.TestSources != null ? project.JasmineDts : null;
+        AdditionalSources = project.IncludeSources; // remove
+        ExampleSources = project.ExampleSources; // remove
+        TestSources = project.TestSources; // remove
+        JasmineDts = project.TestSources != null ? project.JasmineDts : null; // remove
         CompilerOptions = project.FinalCompilerOptions!;
 
         var tsProject = project.Owner;
@@ -307,7 +308,17 @@ public class BuildCtx
         {
             buildResult.RecompiledIncrementally.Clear();
         }
-
+        var compiler = new TsCompiler(toolsDir);
+        compiler.CompilerOptions = new TSCompilerOptions
+        {
+            allowJs = true,
+            declaration = true,
+            module = ModuleKind.Commonjs,
+            target = ScriptTarget.Es2019,
+            strict = true,
+            outDir = "dist",
+            moduleResolution = ModuleResolutionKind.Node,
+        };
         var buildModuleCtx = new BuildModuleCtx
         {
             BuildCtx = this,
@@ -316,35 +327,12 @@ public class BuildCtx
             MainResult = mainBuildResult,
             ToCheck = new(),
             IterationId = iterationId,
+            TsCompiler = compiler,
         };
         try
         {
             BuildCache.StartTransaction();
-            ITSCompiler? compiler = null;
-            try
-            {
-                if (!tryDetectChanges)
-                {
-                    if (!project.TypeScriptVersionOverride && tsProject.DevDependencies != null &&
-                        tsProject.DevDependencies.Contains("typescript"))
-                        project.Tools.SetTypeScriptPath(tsProject.Owner.FullPath);
-                    else
-                        project.Tools.SetTypeScriptVersion(project.TypeScriptVersion!);
-                    project.ExpandEnv();
-                }
-
-                compiler = CompilerPool.GetTs(tsProject.DiskCache, CompilerOptions!);
-                var trueTsVersion = compiler.GetTSVersion();
-                ShowTsVersion(trueTsVersion);
-                project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(trueTsVersion,
-                    JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
-                        TSCompilerOptions.GetSerializerSettings()));
-            }
-            finally
-            {
-                if (compiler != null)
-                    CompilerPool.ReleaseTs(compiler);
-            }
+            _typeChecker = compiler;
 
             mainBuildResult.MergeCommonSourceDirectory(tsProject.Owner.FullPath);
             buildResult.TaskForSemanticCheck = StartTypeCheck();
@@ -420,7 +408,6 @@ public class BuildCtx
             }
 
             noDependencyChangeDetected: ;
-            if (project.SpriteGeneration) project.SpriteGenerator.ProcessNew();
             var hasError = false;
             foreach (var item in buildResult.Path2FileInfo)
             {
@@ -439,111 +426,5 @@ public class BuildCtx
         {
             BuildCache.EndTransaction();
         }
-    }
-
-    public void BuildSubProjects(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult,
-        MainBuildResult mainBuildResult, int iterationId)
-    {
-        if (buildResult.HasError)
-            return;
-        var newSubProjects = new RefDictionary<string, ProjectOptions?>();
-        var newSubBuildCtxs = new RefDictionary<string, BuildCtx>();
-        var newSubBuildResults = new RefDictionary<string, BuildResult>();
-        foreach (var item in buildResult.Path2FileInfo)
-        {
-            var si = item.Value.SourceInfo;
-            if (si?.Assets == null) continue;
-            foreach (var asset in si.Assets)
-            {
-                if (asset.Name == null) continue;
-                if (asset.Name.StartsWith("project:"))
-                {
-                    newSubProjects.GetOrAddValueRef(asset.Name);
-                }
-            }
-        }
-
-        foreach (var u in newSubProjects.Index)
-        {
-            var projectPath = newSubProjects.KeyRef(u);
-            if (newSubProjects.ValueRef(u) == null)
-            {
-                if (project.SubProjects == null || !project.SubProjects.TryGetValue(projectPath, out var subProj) ||
-                    subProj == null)
-                {
-                    TSProject? tsProject;
-                    var (pref, name) = BuildModuleCtx.SplitProjectAssetName(projectPath);
-                    if (pref.Length > 8)
-                    {
-                        var mainFile = _diskCache.TryGetItem(name);
-                        if (mainFile == null)
-                            continue;
-                        tsProject = TSProject.Create(mainFile.Parent, _diskCache, _logger, null, true)!;
-                        tsProject.MainFile = mainFile.FullPath;
-                        tsProject.ProjectOptions.Variant = pref.Substring(8, pref.Length - 9);
-                        tsProject.ProjectOptions.NoHtml = true;
-                        tsProject.ProjectOptions.TypeScriptVersion = project.TypeScriptVersion;
-                        tsProject.ProjectOptions.Tools = project.Tools;
-                    }
-                    else
-                    {
-                        var dirCache =
-                            _diskCache.TryGetItem(PathUtils.Join(project.Owner.Owner.FullPath, name)) as
-                                IDirectoryCache;
-                        tsProject = TSProject.Create(dirCache, _diskCache, _logger, null);
-                    }
-
-                    if (tsProject == null)
-                        continue;
-                    tsProject.IsRootProject = true;
-                    if (BuildCache == null)
-                        if (tsProject.Virtual)
-                        {
-                            tsProject.ProjectOptions.Tools = project.Tools;
-                            tsProject.ProjectOptions.ForbiddenDependencyUpdate = true;
-                        }
-                        else
-                        {
-                            tsProject.ProjectOptions = new ProjectOptions
-                            {
-                                Tools = project.Tools,
-                                Owner = tsProject,
-                                ForbiddenDependencyUpdate = project.ForbiddenDependencyUpdate
-                            };
-                        }
-
-                    subProj = tsProject.ProjectOptions;
-                }
-
-                newSubProjects.ValueRef(u) = subProj;
-                subProj.UpdateFromProjectJson(false);
-                subProj.RefreshCompilerOptions();
-                subProj.RefreshMainFile();
-                if (_subBuildCtxs == null || !_subBuildCtxs.TryGetValue(projectPath, out var subBuildCtx))
-                {
-                    subBuildCtx = new BuildCtx(CompilerPool, _diskCache, Verbose, _logger,
-                        subProj.Owner.Owner.FullPath, BuildCache, _typeCheck);
-                }
-
-                newSubBuildCtxs.GetOrAddValueRef(projectPath) = subBuildCtx;
-
-                if (buildResult.SubBuildResults == null ||
-                    !buildResult.SubBuildResults.TryGetValue(projectPath, out var subBuildResult))
-                {
-                    subBuildResult = new BuildResult(mainBuildResult, subProj);
-                }
-
-                newSubBuildResults.GetOrAddValueRef(projectPath) = subBuildResult;
-                subBuildCtx.Build(subProj, buildOnlyOnce, subBuildResult, mainBuildResult, iterationId);
-                buildResult.HasError |= subBuildResult.HasError;
-                buildResult.TaskForSemanticCheck = Task.WhenAll(buildResult.TaskForSemanticCheck,
-                    subBuildResult.TaskForSemanticCheck).ContinueWith(
-                    subresults => { return subresults.Result.Where(d => d != null).SelectMany(d => d).ToList(); });
-            }
-        }
-
-        project.SubProjects = newSubProjects;
-        _subBuildCtxs = newSubBuildCtxs;
-        buildResult.SubBuildResults = newSubBuildResults;
     }
 }

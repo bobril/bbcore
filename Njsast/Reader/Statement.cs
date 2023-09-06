@@ -475,7 +475,7 @@ public sealed partial class Parser
                 param = ParseBindingAtom();
                 EnterLexicalScope();
                 CheckLVal(param, true, VariableKind.Let);
-                param = ToRightDeclarationSymbolKind(param, VariableKind.Catch);
+                param = new AstSymbolCatch((AstSymbol)param);
                 Expect(TokenType.ParenR);
             }
             else
@@ -699,7 +699,6 @@ public sealed partial class Parser
                     VariableKind.Let => new AstSymbolLet(symbol),
                     VariableKind.Const => new AstSymbolConst(symbol),
                     VariableKind.Var => new AstSymbolVar(symbol),
-                    VariableKind.Catch => new AstSymbolCatch(symbol),
                     _ => throw new ArgumentOutOfRangeException(nameof(kind))
                 };
             case AstDestructuring destructuring:

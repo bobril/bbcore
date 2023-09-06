@@ -72,26 +72,6 @@ public class FastBundleBundler
             }
         }
 
-        if (_project.SpriteGeneration)
-        {
-            _bundlePng = _project.BundlePngUrl;
-            var bundlePngContent = _project.SpriteGenerator.BuildImage(false);
-            if (bundlePngContent != null)
-            {
-                _bundlePngInfo = new();
-                foreach (var slice in bundlePngContent)
-                {
-                    _mainBuildResult.FilesContent.GetOrAddValueRef(
-                        PathUtils.InjectQuality(_bundlePng, slice.Quality)) = slice.Content;
-                    _bundlePngInfo.Add(slice.Quality);
-                }
-            }
-            else
-            {
-                _bundlePng = null;
-            }
-        }
-
         if (_bundlePng != null && !incremental)
         {
             sourceMapBuilder.AddText(_mainBuildResult.GenerateCodeForBobrilBPath(_bundlePng, _bundlePngInfo));
@@ -185,13 +165,7 @@ public class FastBundleBundler
                     $"R.r('./{PathUtils.WithoutExtension(PathUtils.Subtract(_project.MainFile, root))}');");
             }
         }
-
-        if (_project.Localize)
-        {
-            _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent,
-                _mainBuildResult.OutputSubDir);
-        }
-
+        
         if (incremental)
         {
             sourceMapBuilder.AddText("//# sourceMappingURL=bundle2.js.map");

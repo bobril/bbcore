@@ -1,1 +1,0 @@
-var KindOfGlobal = 1;

@@ -1,10 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Lib.ToolsDir;
-using System;
 using System.Threading.Tasks;
 using Lib.TSCompiler;
-using Lib.CSSProcessor;
-using Lib.SCSSProcessor;
 using Lib.Utils.Logger;
 
 namespace Lib.Composition;
@@ -25,8 +22,6 @@ public class CompilerPool : ICompilerPool
     readonly System.Threading.SemaphoreSlim _semaphoreCss;
     readonly System.Threading.SemaphoreSlim _semaphoreScss;
     readonly ConcurrentBag<ITSCompiler> _pool = new();
-    readonly ConcurrentBag<ICssProcessor> _poolCss = new();
-    readonly ConcurrentBag<IScssProcessor> _poolScss = new();
 
     readonly IToolsDir _toolsDir;
     readonly ILogger _logger;
@@ -36,7 +31,7 @@ public class CompilerPool : ICompilerPool
     {
         _semaphore.Wait();
         if (!_pool.TryTake(out var res))
-            res = new TsCompiler(_toolsDir, _logger);
+            res = new TsCompiler(_toolsDir);
         res.DiskCache = diskCache;
         if (compilerOptions != null) res.CompilerOptions = compilerOptions;
         return res;
@@ -46,30 +41,6 @@ public class CompilerPool : ICompilerPool
     {
         _pool.Add(value);
         _semaphore.Release();
-    }
-
-    public ICssProcessor GetCss()
-    {
-        _semaphoreCss.Wait();
-        return _poolCss.TryTake(out var res) ? res : new CssProcessor(_toolsDir);
-    }
-
-    public void ReleaseCss(ICssProcessor value)
-    {
-        _poolCss.Add(value);
-        _semaphoreCss.Release();
-    }
-
-    public IScssProcessor GetScss()
-    {
-        _semaphoreScss.Wait();
-        return _poolScss.TryTake(out var res) ? res : new ScssProcessor(_toolsDir);
-    }
-
-    public void ReleaseScss(IScssProcessor value)
-    {
-        _poolScss.Add(value);
-        _semaphoreScss.Release();
     }
 
     public async Task FreeMemory()
@@ -86,11 +57,6 @@ public class CompilerPool : ICompilerPool
                 compiler.Dispose();
             }
             _pool.Clear();
-            foreach (var processor in _poolCss)
-            {
-                processor.Dispose();
-            }
-            _poolCss.Clear();
         }
         finally
         {

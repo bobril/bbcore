@@ -1,17 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using BTDB.Collections;
-using Lib.CSSProcessor;
 using Lib.ToolsDir;
 using Lib.Utils;
 using Lib.Utils.Logger;
 using Njsast.Ast;
 using Njsast.Bundler;
 using Njsast.Compress;
-using Njsast.Output;
 using Njsast.Reader;
 using Njsast.SourceMap;
 
@@ -26,11 +22,10 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
     readonly IToolsDir _tools;
     readonly ILogger _logger;
 
-    public NjsastBundleBundler(IToolsDir tools, ILogger logger, MainBuildResult mainBuildResult,
+    public NjsastBundleBundler(IToolsDir tools, MainBuildResult mainBuildResult,
         ProjectOptions project, BuildResult buildResult)
     {
         _tools = tools;
-        _logger = logger;
         _mainBuildResult = mainBuildResult;
         _project = project;
         _buildResult = buildResult;
@@ -49,15 +44,9 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
     {
         BuildSourceMap = buildSourceMap;
         SourceMapSourceRoot = sourceMapSourceRoot;
-        var cssLink = "";
-        var cssToBundle = new List<SourceFromPair>();
         foreach (var source in _buildResult.Path2FileInfo.Select(a=>a.Value).Where(f=>f.Owner!=null).OrderBy(f => f.Owner!.FullPath).ToArray())
         {
-            if (source.Type is FileCompilationType.Css or FileCompilationType.ImportedCss)
-            {
-                cssToBundle.Add(new SourceFromPair(source.Owner!.Utf8Content, source.Owner.FullPath));
-            }
-            else if (source.Type == FileCompilationType.Html)
+            if (source.Type == FileCompilationType.Html)
             {
                 _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) = source.Output!;
             }
@@ -67,53 +56,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                     source.Owner!.ByteContent;
             }
         }
-
-        if (cssToBundle.Count > 0)
-        {
-            string cssPath = _mainBuildResult.AllocateName("bundle.css");
-            var cssProcessor = new CssProcessor(_project.Tools);
-            var cssContent = cssProcessor.ConcatenateAndMinifyCss(cssToBundle, (string url, string from) =>
-            {
-                var full = PathUtils.Join(@from, url);
-                var fullJustName = full.Split('?', '#')[0];
-                _buildResult.Path2FileInfo.TryGetValue(fullJustName, out var fileAdditionalInfo);
-                _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(fileAdditionalInfo)) =
-                    fileAdditionalInfo.Owner.ByteContent;
-                return PathUtils.GetFile(fileAdditionalInfo.OutputUrl) +
-                       full.Substring(fullJustName.Length);
-            }).Result;
-            var cssImports = "";
-            foreach (var match in Regex.Matches(cssContent, "@import .*;"))
-            {
-                cssImports += match.ToString();
-                cssContent = cssContent.Replace(match.ToString(), "");
-            }
-
-            _mainBuildResult.FilesContent.GetOrAddValueRef(cssPath) = cssImports + cssContent;
-            cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
-        }
-
-        if (_project.SpriteGeneration)
-        {
-            _bundlePng = _project.BundlePngUrl;
-            var bundlePngContent = _project.SpriteGenerator.BuildImage(true);
-            if (bundlePngContent != null)
-            {
-                _bundlePngInfo = new List<float>();
-                foreach (var slice in bundlePngContent)
-                {
-                    _mainBuildResult.FilesContent.GetOrAddValueRef(
-                            PathUtils.InjectQuality(_bundlePng, slice.Quality)) =
-                        slice.Content;
-                    _bundlePngInfo.Add(slice.Quality);
-                }
-            }
-            else
-            {
-                _bundlePng = null;
-            }
-        }
-
+        
         _mainJsBundleUrl = _buildResult.BundleJsUrl;
 
         var bundler = new BundlerImpl(this);
@@ -137,7 +80,6 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         bundler.Run();
         if (!_noHtml)
         {
-            BuildFastBundlerIndexHtml(cssLink);
             _mainBuildResult.FilesContent.GetOrAddValueRef("index.html") = _indexHtml;
         }
 
@@ -150,7 +92,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                 if (subProject == null) continue;
                 if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                 {
-                    subBundler = new(_tools, _logger, _mainBuildResult, subProject,
+                    subBundler = new(_tools, _mainBuildResult, subProject,
                         _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
                 }
 
@@ -177,17 +119,6 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         if (!_project.Localize && _bundlePng == null)
             return "";
         var res = "";
-        if (_project.Localize)
-        {
-            _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent,
-                _mainBuildResult.OutputSubDir);
-            res +=
-                $"function g11nPath(s){{return\"./{_mainBuildResult.OutputSubDirPrefix}\"+s.toLowerCase()+\".js\"}};";
-            if (_project.DefaultLanguage != null)
-            {
-                res += $"var g11nLoc=\"{_project.DefaultLanguage}\";";
-            }
-        }
 
         res += _mainBuildResult.GenerateCodeForBobrilBPath(_bundlePng, _bundlePngInfo);
 
@@ -260,7 +191,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
 
     public void WriteBundle(string name, string content)
     {
-        _logger.Info("Bundler created " + name + " with " + content.Length + " chars");
+        // _logger.Info("Bundler created " + name + " with " + content.Length + " chars");
         _mainBuildResult.FilesContent.GetOrAddValueRef(name) = content;
     }
 
@@ -277,8 +208,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
 
     public void ReportTime(string name, TimeSpan duration)
     {
-        _logger.Info("Bundler phase " + name + " took " +
-                     duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
+        // _logger.Info("Bundler phase " + name + " took " +
+                     // duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
     }
 
     public void ModifyBundle(string name, AstToplevel topLevelAst)

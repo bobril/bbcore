@@ -19,7 +19,7 @@ public class SourceInfo
     public string? BobrilImport { get; set; }
     public string? BobrilG11NImport { get; set; }
 
-    public List<Diagnostic>? Diagnostics { get; set; }
+    public List<Diagnostic>? Diagnostics { get; set; } // todo
 
     public class ProcessEnv
     {

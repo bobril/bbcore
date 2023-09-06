@@ -10,7 +10,6 @@ public interface IFsAbstraction
     FsItemInfo GetItemInfo(ReadOnlySpan<char> path);
     IReadOnlyList<FsItemInfo> GetDirectoryContent(string path);
     byte[] ReadAllBytes(string path);
-    string ReadAllUtf8(string path);
-    bool FileExists(string path);
-    void WriteAllUtf8(string path, string content);
+    void AddTextFile(string path, string content);
+    void AddTextFile(string path, byte[] content);
 }

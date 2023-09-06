@@ -1,7 +1,0 @@
-{
-  "name": "bb-repro",
-  "version": "0.0.1",
-  "flat": true,  
-  "main": "index.ts",
-  "private": true
-}

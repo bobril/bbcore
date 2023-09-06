@@ -113,7 +113,7 @@ public class YarnNodePackageManager : INodePackageManager
     void RunYarnWithParam(IDirectoryCache projectDirectory, string param)
     {
         var fullPath = projectDirectory.FullPath;
-        var project = TSProject.Create(projectDirectory, _diskCache, _logger, null)!;
+        var project = TSProject.Create(projectDirectory, _diskCache, null)!;
         project.LoadProjectJson(true, null);
         if (project.ProjectOptions.NpmRegistry != null)
         {

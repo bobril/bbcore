@@ -14,5 +14,4 @@ public interface IDiskCache
     void ResetChange();
     void UpdateIfNeeded(IDirectoryCache dir);
     public string? IgnoreChangesInPath { get; set; }
-    bool UpdateFile(string path, string content);
 }

@@ -1,9 +1,0 @@
-{
-  "name": "NoHtml",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
-  "bobril": {
-    "nohtml": true
-  }
-}

@@ -12,7 +12,6 @@ using Njsast.Ast;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
-using BobrilMdx;
 using HtmlAgilityPack;
 using Lib.BuildCache;
 using Njsast.Runtime;
@@ -28,6 +27,7 @@ public class BuildModuleCtx : IImportResolver
     public MainBuildResult? MainResult;
     public int IterationId;
     TsFileAdditionalInfo? _currentlyTranspiling;
+    public ITSCompiler? TsCompiler;
 
     static readonly string[] ExtensionsToImport = { ".tsx", ".ts", ".d.ts", ".jsx", ".js", "" };
     static readonly string[] ExtensionsToImportFromJs = { ".jsx", ".js", "" };
@@ -94,7 +94,7 @@ public class BuildModuleCtx : IImportResolver
                     return ResolveModule(dc.Name);
                 }
 
-                module = TSProject.Create(dc, Owner.DiskCache, Owner.Logger, name);
+                module = TSProject.Create(dc, Owner.DiskCache, name);
                 module!.LoadProjectJson(true, Owner.ProjectOptions);
                 if (module.PackageJsonChangeId != -1)
                 {
@@ -176,7 +176,7 @@ public class BuildModuleCtx : IImportResolver
         relative: ;
         if (relative)
         {
-            if (forceCompilationType != FileCompilationType.Unknown)
+            if (forceCompilationType != FileCompilationType.ImportedCss)
             {
                 if (Owner!.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false })
                 {
@@ -257,7 +257,7 @@ public class BuildModuleCtx : IImportResolver
                     var mn = PathUtils.Subtract(fn, Owner.Owner.FullPath);
                     if (!Result!.Modules.TryGetValue(mn, out var module))
                     {
-                        module = TSProject.Create(dc2, Owner.DiskCache, Owner.Logger, mn);
+                        module = TSProject.Create(dc2, Owner.DiskCache, mn);
                         module!.LoadProjectJson(true, Owner.ProjectOptions);
                         Result!.Modules[mn] = module;
                     }
@@ -778,33 +778,6 @@ public class BuildModuleCtx : IImportResolver
             var sw = Stopwatch.StartNew();
             switch (info.Type)
             {
-                case FileCompilationType.MdxbList:
-                {
-                    var newContentList = BuildMdxbList(info.DirOwner, Owner.DiskCache);
-                    var trueChangeDetected =
-                        Owner.DiskCache.UpdateFile(info.DirOwner.FullPath + "/.mdxb.tsx", newContentList);
-                    Owner.Logger.Info((trueChangeDetected ? "Updated" : "Checked") + " " + info.DirOwner.FullPath +
-                                      "/.mdxb.tsx in " + sw.ElapsedMilliseconds + "ms");
-                    break;
-                }
-                case FileCompilationType.Mdxb:
-                {
-                    var mdxToTsx = new MdxToTsx();
-                    var content = info.Owner.Utf8Content;
-                    var newContent = UpdateMdxDependentFileContent(content, info.Owner, Owner.DiskCache);
-                    if (newContent != content)
-                    {
-                        Owner.DiskCache.UpdateFile(info.Owner.FullPath, newContent);
-                        Owner.Logger.Info("Updated Source in " + info.Owner.FullPath);
-                    }
-
-                    mdxToTsx.Parse(newContent);
-                    var trueChangeDetected =
-                        Owner.DiskCache.UpdateFile(info.Owner.FullPath + ".tsx", mdxToTsx.Render().content);
-                    Owner.Logger.Info((trueChangeDetected ? "Updated" : "Checked") + " " + info.Owner.FullPath +
-                                      " in " + sw.ElapsedMilliseconds + "ms");
-                    break;
-                }
                 case FileCompilationType.Json:
                     info.Output = null;
                     info.MapLink = null;
@@ -827,154 +800,6 @@ public class BuildModuleCtx : IImportResolver
                     info.Output = info.Owner.Utf8Content;
                     info.MapLink = SourceMap.Identity(info.Output, info.Owner.FullPath);
                     break;
-                case FileCompilationType.Resource:
-                    break;
-                case FileCompilationType.Html:
-                    if (!TryToResolveFromBuildCacheCss(info))
-                    {
-                        var htmlContent = info.Owner.Utf8Content;
-                        var htmlDoc = new HtmlDocument();
-                        htmlDoc.LoadHtml(htmlContent);
-                        var toReplace = new StructList<(HtmlNode, string)>();
-                        foreach (var htmlNode in htmlDoc.DocumentNode.Descendants("script"))
-                        {
-                            if (htmlNode.Attributes.AttributesWithName("src").SingleOrDefault() is { } srcattr)
-                            {
-                                var scriptPath = PathUtils.Join( PathUtils.Parent(info.Owner.FullPath), srcattr.Value);
-                                if (Owner!.DiskCache.TryGetItem(scriptPath) is IFileCache { IsInvalid: false } fc)
-                                {
-                                    info.ReportTranspilationDependency(info.Owner.HashOfContent, scriptPath, fc.HashOfContent);
-                                    toReplace.Add((htmlNode,"<script>"+fc.Utf8Content+"</script>"));
-                                }
-                                else
-                                {
-                                    info.ReportDiag(true, -3, "Missing dependency " + srcattr.Value, srcattr.Line, srcattr.LinePosition, srcattr.Line, srcattr.LinePosition);
-                                }
-                            }
-                        }
-
-                        if (toReplace.Count > 0)
-                        {
-                            foreach (var (htmlNode, newHtml) in toReplace)
-                            {
-                                htmlNode.Attributes.RemoveAll();
-                                htmlNode.ChildNodes.Clear();
-                                htmlNode.ParentNode.ReplaceChild(HtmlNode.CreateNode(newHtml), htmlNode);
-                            }
-                            htmlContent = htmlDoc.DocumentNode.WriteContentTo();
-                        }
-                        
-                        htmlContent = new HtmlMinifier().Minify(htmlContent).MinifiedContent;
-                        info.Output = htmlContent;
-                    }
-
-                    ReportDependenciesFromCss(info);
-                    break;
-                case FileCompilationType.Scss:
-                    if (!TryToResolveFromBuildCacheCss(info))
-                    {
-                        var scssProcessor = BuildCtx.CompilerPool.GetScss();
-                        string cssContent;
-                        try
-                        {
-                            info.Output = info.Owner!.Utf8Content;
-                            var fullPath = info.Owner.FullPath;
-                            var prepend = fullPath.StartsWith("/") ? "" : fullPath[..2];
-
-                            cssContent = scssProcessor.ProcessScss(info.Owner.Utf8Content,
-                                "file://" + info.Owner.FullPath[prepend.Length..], url =>
-                                {
-                                    if (url.StartsWith("file://")) url = prepend + url[7..];
-                                    if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false })
-                                    {
-                                        return "file://" + url[prepend.Length..];
-                                    }
-
-                                    if (Owner.DiskCache.TryGetItem(url + ".scss") is IFileCache { IsInvalid: false })
-                                    {
-                                        return "file://" + url[prepend.Length..] + ".scss";
-                                    }
-
-                                    if (Owner.DiskCache.TryGetItem(url + ".css") is IFileCache { IsInvalid: false })
-                                    {
-                                        return "file://" + url[prepend.Length..] + ".css";
-                                    }
-
-                                    return "file://" + url;
-                                }, url =>
-                                {
-                                    if (url.StartsWith("file://")) url = prepend + url[7..];
-                                    if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false } fc)
-                                    {
-                                        info.ReportTranspilationDependency(info.Owner.HashOfContent, url, fc.HashOfContent);
-                                        return fc.Utf8Content;
-                                    }
-
-                                    info.ReportDiag(true, -3, "Missing dependency " + url, 1, 1, 1, 1);
-                                    return "";
-                                }, text => { Owner!.Logger.Info(text); }).Result;
-                        }
-                        finally
-                        {
-                            BuildCtx.CompilerPool.ReleaseScss(scssProcessor);
-                        }
-
-                        var cssProcessor = BuildCtx.CompilerPool.GetCss();
-                        try
-                        {
-                            info.Output = cssContent;
-                            cssProcessor.ProcessCss(cssContent,
-                                info.Owner.FullPath, (url, @from) =>
-                                {
-                                    var urlJustName = url.Split('?', '#')[0];
-                                    info.ReportTranspilationDependency(null, urlJustName, null);
-                                    return url;
-                                }).Wait();
-                        }
-                        finally
-                        {
-                            BuildCtx.CompilerPool.ReleaseCss(cssProcessor);
-                        }
-
-                        info.Output = "\"use strict\"; const lit = require(\"lit\"); exports.default = lit.css`" +
-                                      info.Output.Replace("\\", "\\\\").Replace("$", "\\$").Replace("`", "\\`") + "`;";
-                    }
-                    var resolved = ResolveImport(info.Owner.FullPath, "lit");
-                    if (resolved != null && resolved != "?")
-                    {
-                        info.ReportDependency(resolved);
-                    }
-                    else
-                    {
-                        info.ReportDiag(true, -3, "Missing import lit", 1, 1, 1, 1);
-                    }
-
-                    ReportDependenciesFromCss(info);
-                    break;
-                case FileCompilationType.Css:
-                case FileCompilationType.ImportedCss:
-                    if (!TryToResolveFromBuildCacheCss(info))
-                    {
-                        var cssProcessor = BuildCtx.CompilerPool.GetCss();
-                        try
-                        {
-                            info.Output = info.Owner.Utf8Content;
-                            cssProcessor.ProcessCss(info.Owner.Utf8Content,
-                                info.Owner.FullPath, (url, @from) =>
-                                {
-                                    var urlJustName = url.Split('?', '#')[0];
-                                    info.ReportTranspilationDependency(null, urlJustName, null);
-                                    return url;
-                                }).Wait();
-                        }
-                        finally
-                        {
-                            BuildCtx.CompilerPool.ReleaseCss(cssProcessor);
-                        }
-                    }
-
-                    ReportDependenciesFromCss(info);
-                    break;
             }
 
             if (_noDependencyCheck)
@@ -987,28 +812,6 @@ public class BuildModuleCtx : IImportResolver
                 }
             }
         }
-    }
-
-    string BuildMdxbList(IDirectoryCache dir, IDiskCache diskCache)
-    {
-        var files = FindAllMdxbs(dir).OrderBy(i => i.FullPath).ToArray();
-        var sb = new StringBuilder();
-        sb.Append("const r = [\n");
-        foreach (var fc in files)
-        {
-            var mdxToTsx = new MdxToTsx();
-            var content = fc.Utf8Content;
-            mdxToTsx.Parse(content);
-            sb.Append("  [()=>import(\"./");
-            sb.Append(PathUtils.Subtract(fc.FullPath, dir.FullPath));
-            sb.Append("\").then(m=>m.default),");
-            sb.Append(TypeConverter.ToAst(mdxToTsx.Render().metadata).PrintToString());
-            sb.Append("],\n");
-        }
-
-        sb.Append("] as const;\n");
-        sb.Append("export default r;\n");
-        return sb.ToString();
     }
 
     static IEnumerable<IFileCache> FindAllMdxbs(IDirectoryCache dir)
@@ -1119,9 +922,8 @@ public class BuildModuleCtx : IImportResolver
 
             var fileName = info.Owner.FullPath;
             var source = info.Owner.Utf8Content;
-            compiler = BuildCtx.CompilerPool.GetTs(Owner.DiskCache, BuildCtx.CompilerOptions);
             //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);
-            var result = compiler.Transpile(fileName, source);
+            var result = TsCompiler!.Transpile(fileName, source);
             if (result.Diagnostics != null)
             {
                 info.ReportDiag(result.Diagnostics);
@@ -1140,14 +942,11 @@ public class BuildModuleCtx : IImportResolver
             else
             {
                 info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
-                info.MapLink = SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath);
+                // info.MapLink = SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath);
             }
         }
         finally
-        {
-            if (compiler != null)
-                BuildCtx.CompilerPool.ReleaseTs(compiler);
-        }
+        { }
 
         if (info.HasError)
         {
@@ -1456,69 +1255,6 @@ public class BuildModuleCtx : IImportResolver
                         }
                     }
                 }
-            }
-
-            if (Owner.ProjectOptions.SpriteGeneration)
-            {
-                var spriteHolder = Owner.ProjectOptions.SpriteGenerator;
-                spriteHolder.Process(sourceInfo.Sprites);
-            }
-            else
-            {
-                sourceInfo.Sprites.ForEach(s =>
-                {
-                    if (s.Name == null || s.IsSvg())
-                        return;
-                    var assetName = s.Name;
-                    if (ReportDependency(fileInfo, AutodetectAndAddDependency(assetName)) == null)
-                    {
-                        fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, s.NameStartLine,
-                            s.NameStartCol, s.NameEndLine, s.NameEndCol);
-                    }
-                });
-            }
-        }
-
-        if (sourceInfo.VdomTranslations != null)
-        {
-            var trdb = Owner.ProjectOptions.TranslationDb;
-            if (trdb != null)
-            {
-                sourceInfo.VdomTranslations.ForEach(t =>
-                {
-                    if (t.Message == null)
-                        return;
-                    var err = trdb.CheckMessage(t.Message, t.KnownParams);
-                    if (err != null)
-                    {
-                        fileInfo.ReportDiag(false, -7,
-                            "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine,
-                            t.StartCol, t.EndLine, t.EndCol);
-                    }
-                });
-            }
-        }
-
-        if (sourceInfo.Translations != null)
-        {
-            var trdb = Owner.ProjectOptions.TranslationDb;
-            if (trdb != null)
-            {
-                sourceInfo.Translations.ForEach(t =>
-                {
-                    if (t.Message == null)
-                        return;
-                    if (t.WithParams)
-                    {
-                        var err = trdb.CheckMessage(t.Message, t.KnownParams);
-                        if (err != null)
-                        {
-                            fileInfo.ReportDiag(false, -7,
-                                "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine,
-                                t.StartCol, t.EndLine, t.EndCol);
-                        }
-                    }
-                });
             }
         }
     }

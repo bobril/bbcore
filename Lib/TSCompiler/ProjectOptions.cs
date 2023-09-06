@@ -7,14 +7,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BTDB.Collections;
-using Lib.AssetsPlugin;
-using Lib.BuildCache;
 using Lib.DiskCache;
 using Lib.ToolsDir;
-using Lib.Translation;
 using Lib.Utils;
-using Lib.Utils.Logger;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Njsast.Ast;
 using Njsast.Bobril;
@@ -44,7 +39,6 @@ public class ProjectOptions
     public ITSCompilerOptions? CompilerOptions;
     public string? AdditionalResourcesDirectory;
     public bool SpriteGeneration;
-    public SpriteHolder SpriteGenerator;
     public string BundlePngUrl;
     public bool GenerateSpritesTs;
     public string Variant;
@@ -75,9 +69,7 @@ public class ProjectOptions
     public DepedencyUpdate DependencyUpdate;
     public int LiveReloadIdx;
     public RefDictionary<string, ProjectOptions?>? SubProjects;
-
-    public TranslationDb? TranslationDb;
-
+    
     internal string? NpmRegistry;
 
     public TaskCompletionSource<Unit> LiveReloadAwaiter = new();
@@ -107,15 +99,6 @@ public class ProjectOptions
         if (MainFile == null || res == null || MainFile != res)
         {
             MainFile = res;
-        }
-    }
-
-    public void SpriterInitialization(MainBuildResult buildResult)
-    {
-        if (SpriteGeneration && SpriteGenerator == null)
-        {
-            SpriteGenerator = new SpriteHolder(Owner.DiskCache, Owner.Logger);
-            BundlePngUrl = buildResult.AllocateName("bundle.png");
         }
     }
 
@@ -160,16 +143,6 @@ public class ProjectOptions
         if (ExampleSources == null || !ExampleSources.SequenceEqual(res))
         {
             ExampleSources = res;
-        }
-    }
-
-    public void GenerateCode()
-    {
-        var assetsPlugin = new AssetsGenerator(Owner.DiskCache);
-        if (assetsPlugin.Run(Owner.Owner.FullPath, GenerateSpritesTs))
-        {
-            Owner.DiskCache.CheckForTrueChange();
-            Owner.DiskCache.ResetChange();
         }
     }
 
@@ -371,100 +344,6 @@ public class ProjectOptions
     public CoverageInstrumentation? CoverageInstrumentation;
     public Dictionary<string, string>? Assets;
 
-    public void UpdateTSConfigJson()
-    {
-        if (TsconfigUpdate == false)
-        {
-            return;
-        }
-
-        if (SubProjects != null)
-        {
-            foreach (var (name, subProject) in SubProjects)
-            {
-                if (subProject == null) continue;
-                if (subProject.Owner.Virtual) continue;
-                subProject.TsconfigUpdate = true;
-                subProject.UpdateTSConfigJson();
-            }
-        }
-
-        var fsAbstration = Owner.DiskCache.FsAbstraction;
-        var tsConfigPath = PathUtils.Join(Owner.Owner.FullPath, "tsconfig.json");
-        if (_originalContent == null && fsAbstration.FileExists(tsConfigPath))
-        {
-            try
-            {
-                _originalContent = fsAbstration.ReadAllUtf8(tsConfigPath);
-            }
-            catch
-            {
-            }
-        }
-
-        var newConfigObject = new TSConfigJson
-        {
-            compilerOptions = GetDefaultTSCompilerOptions()
-                .Merge(new TSCompilerOptions { allowJs = false })
-                .Merge(CompilerOptions),
-            files = new(2 + IncludeSources?.Length ?? 0),
-            include = new() { "**/*" }
-        };
-
-        if ((TestSources?.Count ?? 0) > 0)
-        {
-            if (Tools.JasmineDtsPath == JasmineDts)
-            {
-                newConfigObject.files.Add(Tools.JasmineDtsPath);
-            }
-        }
-
-        if (IncludeSources != null)
-        {
-            newConfigObject.files.AddRange(IncludeSources);
-        }
-
-        if (newConfigObject.files.Count == 0)
-        {
-            newConfigObject.files = null;
-        }
-
-        var newContent = JsonConvert.SerializeObject(newConfigObject, Formatting.Indented,
-            TSCompilerOptions.GetSerializerSettings());
-        if (newContent != _originalContent)
-        {
-            try
-            {
-                File.WriteAllText(tsConfigPath, newContent, new UTF8Encoding(false));
-            }
-            catch
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Writting to " + tsConfigPath + " failed");
-                Console.ForegroundColor = ConsoleColor.Gray;
-            }
-
-            _originalContent = newContent;
-        }
-    }
-
-    public void InitializeTranslationDb(string? specificPath = null)
-    {
-        if (TranslationDb != null)
-        {
-            TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
-            return;
-        }
-
-        TranslationDb = new TranslationDb(Owner.DiskCache.FsAbstraction, new ConsoleLogger());
-        TranslationDb.AddLanguage(DefaultLanguage ?? "en-us");
-        if (specificPath == null)
-        {
-            TranslationDb.LoadLangDbs(PathUtils.Join(Owner.Owner.FullPath, PathToTranslations ?? "translations"));
-        }
-        else TranslationDb.LoadLangDb(specificPath);
-    }
-
     public void FillProjectOptionsFromPackageJson(JObject? parsed, IDirectoryCache? dir)
     {
         var browserValue = parsed?.GetValue("browser");
@@ -661,129 +540,6 @@ public class ProjectOptions
             }
         }
 
-        if (sourceInfo.Sprites != null)
-        {
-            foreach (var s in sourceInfo.Sprites)
-            {
-                if (!s.IsSvg()) continue;
-                if (Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, s.Name!)) is
-                    IFileCache fc)
-                {
-                    var content = fc.Utf8Content;
-                    var oc = ConvertSvgToJs(content, s);
-                    if (s.HasColor)
-                    {
-                        sourceReplacer.Replace(s.StartLine, s.StartCol, s.ColorStartLine, s.ColorStartCol,
-                            sourceInfo.BobrilImport + ".svgWithColor(" + sourceInfo.BobrilImport + ".svg(" + oc +
-                            "),");
-                        sourceReplacer.Replace(s.ColorEndLine, s.ColorEndCol, s.EndLine, s.EndCol,
-                            ")");
-                    }
-                    else
-                    {
-                        sourceReplacer.Replace(s.StartLine, s.StartCol, s.EndLine, s.EndCol,
-                            sourceInfo.BobrilImport + ".svg(" + oc + ")");
-                    }
-                }
-                else throw new Exception(s.Name + " is not existing file");
-            }
-
-            if (SpriteGeneration)
-            {
-                var spriteHolder = SpriteGenerator;
-                var outputSprites = spriteHolder.Retrieve(sourceInfo.Sprites);
-                foreach (var os in outputSprites)
-                {
-                    var s = os.Me;
-                    if (s.Name == null || s.IsSvg())
-                        continue;
-                    if (s.HasColor && s.Color == null)
-                    {
-                        // Modify method name to b.spritebc and remove first parameter with sprite name
-                        sourceReplacer.Replace(s.StartLine, s.StartCol, s.ColorStartLine, s.ColorStartCol,
-                            sourceInfo.BobrilImport + ".spritebc(");
-                        // Replace parameters after color with sprite size and position
-                        sourceReplacer.Replace(s.ColorEndLine, s.ColorEndCol, s.EndLine, s.EndCol,
-                            "," + os.owidth + "," + os.oheight + "," + os.ox + "," + os.oy + ")");
-                    }
-                    else
-                    {
-                        // Modify method name to b.spriteb and replace parameters with sprite size and position
-                        sourceReplacer.Replace(s.StartLine, s.StartCol, s.EndLine, s.EndCol,
-                            sourceInfo.BobrilImport + ".spriteb(" + os.owidth + "," + os.oheight + "," + os.ox +
-                            "," + os.oy + ")");
-                    }
-                }
-            }
-            else
-            {
-                foreach (var s in sourceInfo.Sprites)
-                {
-                    if (s.Name == null || s.IsSvg())
-                        continue;
-                    sourceReplacer.Replace(s.NameStartLine, s.NameStartCol, s.NameEndLine, s.NameEndCol,
-                        "\"" + buildResult.ToOutputUrl(s.Name) + "\"");
-                }
-            }
-        }
-
-        var trdb = TranslationDb;
-        if (trdb != null && sourceInfo.VdomTranslations != null)
-        {
-            foreach (var t in sourceInfo.VdomTranslations)
-            {
-                if (t.Message == null)
-                    continue;
-                var repls = t.Replacements;
-                if (repls == null)
-                    continue;
-                var id = trdb.AddToDB(t.Message, t.Hint, true);
-                var finalId = trdb.MapId(id, sourceMapLink?.FindPosition(t.StartLine + 1, t.StartCol + 1) ??
-                                             new SourceCodePosition
-                                             {
-                                                 SourceName = ownerFullPath, Line = t.StartLine + 1,
-                                                 Col = t.StartCol + 1
-                                             });
-                foreach (var rep in repls)
-                {
-                    if (rep.Type == SourceInfo.ReplacementType.MoveToPlace)
-                    {
-                        sourceReplacer.Move(rep.StartLine, rep.StartCol, rep.EndLine, rep.EndCol, rep.PlaceLine,
-                            rep.PlaceCol);
-                        continue;
-                    }
-
-                    var tt = rep.Text;
-                    if (rep.Type == SourceInfo.ReplacementType.MessageId)
-                    {
-                        tt = "" + finalId;
-                    }
-
-                    sourceReplacer.Replace(rep.StartLine, rep.StartCol, rep.EndLine, rep.EndCol, tt ?? "");
-                }
-            }
-        }
-
-        if (trdb != null && sourceInfo.Translations != null)
-        {
-            foreach (var t in sourceInfo.Translations)
-            {
-                if (t.Message == null)
-                    continue;
-                if (t.JustFormat)
-                    continue;
-                var id = trdb.AddToDB(t.Message, t.Hint, t.WithParams);
-                var finalId = trdb.MapId(id, sourceMapLink?.FindPosition(t.StartLine + 1, t.StartCol + 1) ??
-                                             new SourceCodePosition
-                                             {
-                                                 SourceName = ownerFullPath, Line = t.StartLine + 1,
-                                                 Col = t.StartCol + 1
-                                             });
-                sourceReplacer.Replace(t.StartLine, t.StartCol, t.EndLine, t.EndCol, "" + finalId);
-                sourceReplacer.Replace(t.StartHintLine, t.StartHintCol, t.EndHintLine, t.EndHintCol, null);
-            }
-        }
-
         var styleDefs = sourceInfo.StyleDefs;
         if (styleDefs != null)
         {
@@ -907,11 +663,6 @@ public class ProjectOptions
 
     public void InitializeLocalizationAndUpdateTsLintJson()
     {
-        if (Localize)
-        {
-            InitializeTranslationDb();
-        }
-
         if (Owner.Virtual)
             return;
         var bbEsLint = Owner.DevDependencies?.FirstOrDefault(s => s.StartsWith("eslint-config-"));
@@ -961,10 +712,10 @@ public class ProjectOptions
             res.Add("swFiles", mainBuildResult.FilesContent.Select(a => a.Key).OrderBy(a => a).ToArray());
         }
 
-        foreach (var p in ExpandedDefines)
-        {
-            res.Add(p.Key, p.Value.ConstValue());
-        }
+        // foreach (var p in ExpandedDefines)
+        // {
+        //     res.Add(p.Key, p.Value.ConstValue());
+        // }
 
         return res;
     }

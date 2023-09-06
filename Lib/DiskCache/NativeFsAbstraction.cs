@@ -1,101 +1,143 @@
-﻿using Lib.Utils;
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
+using Lib.Utils;
 
 namespace Lib.DiskCache;
 
-public class NativeFsAbstraction : IFsAbstraction
+public class FsAbstraction : IFsAbstraction
 {
-    public bool IsMac => RuntimeInformation
-        .IsOSPlatform(OSPlatform.OSX);
+    public bool IsMac => false;
+    public bool IsUnixFs => true;
 
-    public bool IsUnixFs => PathUtils.IsUnixFs;
-
-    public bool FileExists(string path)
+    public class FakeFile
     {
-        return File.Exists(path);
+        public byte[] _content;
+        public ulong _length;
+        public DateTime _lastWriteTimeUtc;
     }
 
-    public void WriteAllUtf8(string path, string content)
-    {
-        File.WriteAllText(path, content, new UTF8Encoding(false));
-    }
+    private readonly IDictionary<KeyValuePair<string, string>, FakeFile> _content =
+        new ConcurrentDictionary<KeyValuePair<string, string>, FakeFile>();
 
     public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
     {
         var res = new List<FsItemInfo>();
-        var di = new DirectoryInfo(path);
-        if (!di.Exists)
-            return res;
-        foreach (var fi in di.EnumerateFileSystemInfos())
+        foreach (var kv in _content)
         {
-            if ((fi.Attributes & FileAttributes.Directory) != 0)
-            {
-                res.Add(FsItemInfo.Directory(fi.Name, (fi.Attributes & FileAttributes.ReparsePoint) != 0));
-            }
+            if (kv.Key.Key != path) continue;
+            if (kv.Value == null)
+                res.Add(FsItemInfo.Directory(kv.Key.Value, false));
             else
-            {
-                res.Add(FsItemInfo.Existing(fi.Name, (ulong)((FileInfo)fi).Length, ((FileInfo)fi).LastWriteTimeUtc));
-            }
+                res.Add(FsItemInfo.Existing(kv.Key.Value, kv.Value._length, kv.Value._lastWriteTimeUtc));
         }
+
         return res;
     }
 
     public FsItemInfo GetItemInfo(ReadOnlySpan<char> path)
     {
-        var p = path.ToString();
-        var fi = new FileInfo(p);
-        if (fi.Exists)
+        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
+        var f = ff.ToString();
+        if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
         {
-            return FsItemInfo.Existing(fi.Name, (ulong)fi.Length, fi.LastWriteTimeUtc);
+            if (file is null)
+                return FsItemInfo.Directory(d, false);
+            return FsItemInfo.Existing(d, file._length, file._lastWriteTimeUtc);
         }
-        var di = new DirectoryInfo(p);
-        if (di.Exists)
-        {
-            return FsItemInfo.Directory(di.Name, (di.Attributes & FileAttributes.ReparsePoint) != 0);
-        }
+
         return FsItemInfo.Missing();
     }
 
     public byte[] ReadAllBytes(string path)
     {
-        var retry = 0;
-        while (true)
+        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
+        var f = ff.ToString();
+        if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
         {
-            try
-            {
-                return File.ReadAllBytes(path);
-            }
-            catch (Exception)
-            {
-                retry++;
-                if (retry > 5)
-                    throw;
-            }
-            Thread.Sleep(50 * retry);
+            if (file == null)
+                throw new Exception("Cannot read directory as file " + path);
+            return file._content;
         }
+
+        throw new Exception("Not found file " + path);
+    }
+
+    public void AddTextFile(string path, string content)
+    {
+        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
+        var f = ff.ToString();
+        if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
+        {
+            if (file == null)
+                throw new Exception("Cannot add file because it is already dir " + path);
+            file._lastWriteTimeUtc = DateTime.UtcNow;
+            file._content = Encoding.UTF8.GetBytes(content);
+            file._length = (ulong) Encoding.UTF8.GetByteCount(content);
+            return;
+        }
+
+        CreateDir(d);
+        _content[new KeyValuePair<string, string>(d, f)] = new FakeFile
+        {
+            _content = Encoding.UTF8.GetBytes(content),
+            _length = (ulong) Encoding.UTF8.GetByteCount(content),
+            _lastWriteTimeUtc = DateTime.UtcNow,
+        };
+    }
+    
+    public void AddTextFile(string path, byte[] content)
+    {
+        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
+        var f = ff.ToString();
+        if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
+        {
+            if (file == null)
+                throw new Exception("Cannot add file because it is already dir " + path);
+            file._lastWriteTimeUtc = DateTime.UtcNow;
+            file._content = content;
+            file._length = (ulong) content.Length;
+            return;
+        }
+
+        CreateDir(d);
+        _content[new KeyValuePair<string, string>(d, f)] = new FakeFile
+        {
+            _content = content,
+            _length = (ulong) content.Length,
+            _lastWriteTimeUtc = DateTime.UtcNow,
+        };
+    }
+
+    private void CreateDir(string path)
+    {
+        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
+        var f = ff.ToString();
+        if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
+        {
+            if (file != null) throw new Exception("mkdir fail already file " + path);
+
+            return;
+        }
+
+        if (d != "") CreateDir(d);
+
+        _content[new KeyValuePair<string, string>(d, f)] = null;
     }
 
     public string ReadAllUtf8(string path)
     {
-        int retry = 0;
-        while (true)
-        {
-            try
-            {
-                return File.ReadAllText(path, Encoding.UTF8);
-            }
-            catch (System.Exception)
-            {
-                retry++;
-                if (retry > 5)
-                    throw;
-            }
-            Thread.Sleep(50 * retry);
-        }
+        throw new NotImplementedException();
+    }
+
+    public bool FileExists(string path)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void WriteAllUtf8(string path, string content)
+    {
+        throw new NotImplementedException();
     }
 }

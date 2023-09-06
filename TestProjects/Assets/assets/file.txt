@@ -1,1 +1,0 @@
-main assets/file.txt assets

@@ -1,11 +1,11 @@
-using Lib.DiskCache;
-using Lib.Utils;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
+using BTDB.Collections;
+using Lib.DiskCache;
 using Lib.Registry;
+using Lib.Utils;
 using Lib.Utils.Logger;
+using Newtonsoft.Json.Linq;
 
 namespace Lib.TSCompiler;
 
@@ -27,7 +27,7 @@ public class TSProject
     public Dictionary<string, string>? Assets;
     public string? Name;
     internal int IterationId;
-    internal BTDB.Collections.StructList<string> NegativeChecks;
+    internal StructList<string> NegativeChecks;
     internal bool Valid;
     internal bool Virtual;
 
@@ -223,7 +223,7 @@ public class TSProject
         else
         {
             PackageJsonChangeId = -1;
-            MainFile = "index.js";
+            MainFile = "index.ts";
             Dependencies = new();
             DevDependencies = new();
             Assets = null;
@@ -240,7 +240,8 @@ public class TSProject
         return bbOptions.assets;
     }
 
-    public static TSProject? Create(IDirectoryCache? dir, IDiskCache diskCache, ILogger logger, string? diskName, bool virtualProject = false)
+    public static TSProject? Create(IDirectoryCache? dir, IDiskCache diskCache, string? diskName,
+        bool virtualProject = false)
     {
         if (dir == null)
             return null;
@@ -262,7 +263,6 @@ public class TSProject
         {
             Owner = dir,
             DiskCache = diskCache,
-            Logger = logger,
             Name = diskName,
             Valid = true,
             ProjectOptions = new(),

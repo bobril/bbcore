@@ -5,7 +5,6 @@ using Lib.ToolsDir;
 using Lib.Utils;
 using JavaScriptEngineSwitcher.Core;
 using Newtonsoft.Json;
-using Lib.Utils.Logger;
 using System.Collections.Generic;
 using Njsast;
 using System.Diagnostics;
@@ -15,16 +14,14 @@ namespace Lib.TSCompiler;
 
 public class TsCompiler : ITSCompiler
 {
-    public TsCompiler(IToolsDir toolsDir, ILogger logger)
+    public TsCompiler(IToolsDir toolsDir)
     {
-        Logger = logger;
         _toolsDir = toolsDir;
         _callbacks = new(this);
     }
 
     readonly IToolsDir _toolsDir;
 
-    public ILogger Logger { get; }
     public IDiskCache DiskCache { get; set; }
 
     TranspileResult _transpileResult;
@@ -76,7 +73,6 @@ public class TsCompiler : ITSCompiler
             {
                 return file.Utf8Content;
             }
-            _owner.Logger.Info("ReadFile missing " + fullPath);
             return null;
         }
 
@@ -140,7 +136,6 @@ public class TsCompiler : ITSCompiler
 
         public void trace(string text)
         {
-            if (!_owner.Logger.Verbose) return;
             if (_stopwatch.IsRunning)
             {
                 _stopwatch.Stop();
@@ -166,15 +161,12 @@ public class TsCompiler : ITSCompiler
             }
             else
             {
-                if (_owner.Logger.Verbose)
                 {
                     if (isError)
                     {
-                        _owner.Logger.Error("TS" + code + ": " + text);
                     }
                     else
                     {
-                        _owner.Logger.Info("TS" + code + ": " + text);
                     }
                 }
                 if (isError) _owner._diagnostics.Add(new Diagnostic

@@ -96,7 +96,7 @@ public class TsFileAdditionalInfo
 
             if (moduleDir != null && (FromModule?.IsRootProject ?? false))
             {
-                FromModule = TSProject.Create(moduleDir, FromModule.DiskCache, FromModule.Logger, null);
+                FromModule = TSProject.Create(moduleDir, FromModule.DiskCache, null);
             }
             return FromModule;
         }

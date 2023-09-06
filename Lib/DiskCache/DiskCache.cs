@@ -407,44 +407,6 @@ public class DiskCache : IDiskCache
 
     bool _ignoringChanges;
 
-    public bool UpdateFile(string path, string content)
-    {
-        lock (_lock)
-        {
-            _ignoringChanges = true;
-            try
-            {
-                var fi = TryGetItemNoLock(path);
-                if (fi == null)
-                {
-                    FsAbstraction.WriteAllUtf8(path, content);
-                    var dir = PathUtils.SplitDirAndFile(path, out var file);
-                    AddFileFromFileInfo(file.ToString(), (IDirectoryCache) TryGetItemNoLock(dir)!,
-                        FsAbstraction.GetItemInfo(path));
-                    fi = TryGetItemNoLock(path);
-                }
-
-                if (fi is not {IsFile: true})
-                {
-                    throw new("Cannot update file " + path);
-                }
-
-                if (((IFileCache) fi).Utf8Content != content)
-                {
-                    FsAbstraction.WriteAllUtf8(path, content);
-                    ((FileCache) fi).IsStale = false;
-                    return true;
-                }
-            }
-            finally
-            {
-                _ignoringChanges = false;
-            }
-        }
-
-        return false;
-    }
-
     public void ResetChange()
     {
         _changed = false;

@@ -56,17 +56,13 @@ public class NpmNodePackageManager : INodePackageManager
         }
 
         var parsed = JObject.Parse(lockFile.Utf8Content);
-        foreach (var prop in parsed["packages"]!.Children<JProperty>())
+        foreach (var prop in parsed["dependencies"].Children<JProperty>())
         {
-            if (!prop.Name.StartsWith("node_modules/"))
-            {
-                continue;
-            }
             yield return new PackagePathVersion
             {
-                Name = prop.Name["node_modules/".Length..],
-                Version = ((JObject) prop.Value)["version"]!.Value<string>()!,
-                Path = PathUtils.Join(projectDirectory.FullPath, prop.Name)
+                Name = prop.Name,
+                Version = ((JObject) prop.Value)["version"].Value<string>(),
+                Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + prop.Name)
             };
         }
     }
@@ -106,7 +102,7 @@ public class NpmNodePackageManager : INodePackageManager
     void RunNpmWithParam(IDirectoryCache projectDirectory, string param)
     {
         var fullPath = projectDirectory.FullPath;
-        var project = TSProject.Create(projectDirectory, _diskCache, _logger, null);
+        var project = TSProject.Create(projectDirectory, _diskCache, null);
         project.LoadProjectJson(true, null);
         if (project.ProjectOptions.NpmRegistry != null)
         {
