@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Update enum ModuleResolutionKind by current TypeScript definition. NodeNext option works again.
+
 ## 2.9.5
 
 ### Update

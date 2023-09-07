@@ -34,9 +34,11 @@ public enum JsxEmit
 public enum ModuleResolutionKind
 {
     Classic = 1,
-    Node = 2,
-    Node12 = 3,
-    Nodenext = 4,
+    NodeJs = 2,
+    Node10 = 2,
+    Node16 = 3,
+    NodeNext = 99,
+    Bundler = 100
 }
 
 public enum NewLineKind
