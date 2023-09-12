@@ -2,6 +2,32 @@
 
 ## [unreleased]
 
+## 2.10.0
+
+### Changed
+
+- Default TypeScript version is 5.2.2
+- Transpiler always overwrite Compiler options by module "CommonJs" and module kind "NodeJs".
+
+These looks like good options to use: (if it will be really good I will make them default)
+
+```json
+  "compilerOptions": {
+    "moduleResolution": "Bundler",
+    "module": "ES2022",
+    "target": "ES2022",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "lib": [
+      "es2021"
+    ]
+  },
+```
+
+### Added
+
+- Support for `allowImportingTsExtensions` compiler option.
+
 ## 2.9.6
 
 ### Fixed
