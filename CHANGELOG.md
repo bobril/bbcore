@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 3.0.0
+
 ### Changed defaults
 
 ```json
