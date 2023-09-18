@@ -325,8 +325,9 @@ public class BuildCtx
             {
                 if (!tryDetectChanges)
                 {
-                    if (!project.TypeScriptVersionOverride && tsProject.DevDependencies != null &&
-                        tsProject.DevDependencies.Contains("typescript"))
+                    if (!project.TypeScriptVersionOverride && 
+                        ((tsProject.DevDependencies?.Contains("typescript") ?? false) 
+                         || (tsProject.Dependencies?.Contains("typescript") ?? false)))
                         project.Tools.SetTypeScriptPath(tsProject.Owner.FullPath);
                     else
                         project.Tools.SetTypeScriptVersion(project.TypeScriptVersion!);

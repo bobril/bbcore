@@ -30,6 +30,7 @@ public class BobrilBuildOptions
     public string? buildOutputDir { get; set; }
     public IDictionary<string, string>? defines { get; set; }
     public IDictionary<string, string>? envs { get; set; }
+    public Dictionary<string, string?>? imports { get; set; }
     public bool? preserveProjectRoot { get; set; }
     public string? proxyUrl { get; set; }
     public string? headlessBrowserStrategy { get; set; }
@@ -105,6 +106,17 @@ public class BobrilBuildOptions
                 envs = with.envs;
         }
 
+        if (with.imports != null)
+        {
+            if (imports != null)
+                foreach (var (k,v) in with.imports)
+                {
+                    imports[k] = v;
+                }
+            else
+                imports = with.imports;
+        }
+        
         if (with.preserveProjectRoot != null)
             preserveProjectRoot = with.preserveProjectRoot;
         if (with.proxyUrl != null)
@@ -248,7 +260,15 @@ public class BobrilBuildOptions
                 assets ??= new();
                 assets.Add(key, value.Value<string>()!);
             }
-
+        }
+        if (bobrilSection.GetValue("imports") is JObject importsJson)
+        {
+            foreach (var (key, value) in importsJson)
+            {
+                if (value?.Type is not (JTokenType.String or JTokenType.Null)) continue;
+                imports ??= new();
+                imports.Add(key, value.Value<string>()!);
+            }
         }
     }
 }

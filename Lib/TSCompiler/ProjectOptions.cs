@@ -56,6 +56,7 @@ public class ProjectOptions
     public string? PathToTranslations;
     public bool TsconfigUpdate;
     public Dictionary<string, string?>? BrowserResolve;
+    public Dictionary<string,string?>? Imports { get; set; }
     public string? ProxyUrl;
 
     public Dictionary<string, string> ExpandedProcessEnvs;
@@ -308,9 +309,9 @@ public class ProjectOptions
             sourceMap = true,
             skipLibCheck = false,
             skipDefaultLibCheck = true,
-            target = ScriptTarget.Es2019,
+            target = ScriptTarget.Es2022,
             downlevelIteration = true,
-            module = ModuleKind.Commonjs,
+            module = ModuleKind.Es2022,
             moduleResolution = ModuleResolutionKind.Bundler,
             allowImportingTsExtensions = true,
             noEmit = true,
@@ -336,18 +337,18 @@ public class ProjectOptions
         if (Variant == "worker")
             return new()
             {
-                "es2019",
+                "es2022",
                 "webworker",
                 "webworker.importscripts"
             };
         if (Variant == "serviceworker")
             return new()
             {
-                "es2019", "webworker"
+                "es2022", "webworker"
             };
         return new()
         {
-            "es2019",
+            "es2022",
             "dom"
         };
     }
@@ -523,6 +524,7 @@ public class ProjectOptions
         TsconfigUpdate = bbOptions.tsconfigUpdate ?? true;
         BuildOutputDir = bbOptions.buildOutputDir;
         Assets = bbOptions.assets;
+        Imports = bbOptions.imports;
         Defines = (bbOptions.defines ?? new Dictionary<string, string>()).ToDictionary(kv => kv.Key,
             kv => Parser.Parse(kv.Value));
         if (!Defines!.ContainsKey("DEBUG"))
@@ -543,7 +545,7 @@ public class ProjectOptions
         HeadlessBrowserStrategy = bbOptions.headlessBrowserStrategy;
         LibraryMode = bbOptions.library ?? false;
     }
-
+    
     public static BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,
         bool justSameDir = false)
     {

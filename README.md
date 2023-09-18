@@ -19,9 +19,9 @@ By default prerelease versions are not used.
 In `.bbrc` file set `bbVersion` to specific version you need. By setting `tsVersion` you can override used TypeScript for compilation. By setting `jasmineVersion` you can override Jasmine version only allowed values are "2.99" (default) and "3.3".
 
     {
-        "bbVersion": "0.9.0",
-        "tsVersion": "2.7.1",
-        "jasmineVersion: "2.99"
+        "bbVersion": "2.10.0",
+        "tsVersion": "5.2.2",
+        "jasmineVersion: "3.3"
     }
 
 By setting `BBVERSION` environment variable you can define default version (including prerelease). If you will start `bb2` instead of `bb`, then `BBVERSION` override what is in `.bbrc` or `package.json`.
@@ -187,6 +187,16 @@ Use this comment in source code with import to ignore this specific import (must
     {
         "preserveProjectRoot": true
     }
+
+## Override imports
+
+    {
+        "imports": {
+            "perf_hooks": null
+        }
+    }
+
+This allows to override imports. If value is null then import is removed (behaves like it would be empty file). If value is string then import path is replaced by this string.
 
 ## Proxy all requests in interactive mode to defined url
 

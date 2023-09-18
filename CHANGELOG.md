@@ -2,6 +2,35 @@
 
 ## [unreleased]
 
+### Changed defaults
+
+```json
+  "compilerOptions": {
+    "moduleResolution": "Bundler",
+    "module": "ES2022",
+    "target": "ES2022",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "lib": [
+      "es2022", "dom"
+    ]
+  },
+```
+
+### Added
+
+Override imports in .bbrc or "bobril" section of package.json define this:
+
+```json
+    {
+        "imports": {
+            "perf_hooks": null
+        }
+    }
+```
+
+This allows to override imports. If value is null then import is removed (behaves like it would be empty file). If value is string then import path is replaced by this string.
+
 ## 2.10.0
 
 ### Changed

@@ -154,6 +154,16 @@ public class BuildModuleCtx : IImportResolver
             res.FileNameJs = null;
         }
 
+        if (Owner?.ProjectOptions?.Imports?.TryGetValue(name, out var import) ?? false)
+        {
+            if (import == null)
+            {
+                res.FileName = "<empty>";
+                return res.FileName;
+            }
+            name = import;
+        }
+
         res.IterationId = IterationId;
         var relative = name.StartsWith("./") || name.StartsWith("../");
         Result.Path2FileInfo.TryGetValue(from, out var parentInfo);
