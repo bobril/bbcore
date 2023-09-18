@@ -1119,7 +1119,10 @@ public class BuildModuleCtx : IImportResolver
 
             var fileName = info.Owner.FullPath;
             var source = info.Owner.Utf8Content;
-            compiler = BuildCtx.CompilerPool.GetTs(Owner.DiskCache, BuildCtx.CompilerOptions);
+            var transpileOptions = BuildCtx!.CompilerOptions.Clone();
+            transpileOptions.module = ModuleKind.Commonjs;
+            transpileOptions.moduleResolution = ModuleResolutionKind.Node10;
+            compiler = BuildCtx.CompilerPool.GetTs(Owner!.DiskCache, transpileOptions);
             //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);
             var result = compiler.Transpile(fileName, source);
             if (result.Diagnostics != null)

@@ -95,6 +95,7 @@ public class DiskCache : IDiskCache
         {
             Owner = owner;
             _isInvalid = isInvalid;
+            IsStale = true;
         }
 
         internal void NoteChange()
@@ -188,16 +189,7 @@ public class DiskCache : IDiskCache
             ((DirectoryCache) _root).FullPath = "";
         }
 
-        DefaultFilter = tuple =>
-        {
-            if (tuple.isDir)
-            {
-                if (tuple.name == ".git" || tuple.name == ".hg")
-                    return false;
-            }
-
-            return true;
-        };
+        DefaultFilter = tuple => tuple is not { isDir: true, name: ".git" or ".hg" };
     }
 
     void WatcherError()

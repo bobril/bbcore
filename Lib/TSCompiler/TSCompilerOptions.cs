@@ -7,6 +7,7 @@ namespace Lib.TSCompiler;
 
 public class TSCompilerOptions : ITSCompilerOptions
 {
+    public bool? allowImportingTsExtensions { get; set; }
     public bool? allowJs { get; set; }
     public bool? allowSyntheticDefaultImports { get; set; }
     public bool? allowUnreachableCode { get; set; }
@@ -105,6 +106,7 @@ public class TSCompilerOptions : ITSCompilerOptions
     {
         return new TSCompilerOptions
         {
+            allowImportingTsExtensions = allowImportingTsExtensions,
             allowJs = allowJs,
             allowSyntheticDefaultImports = allowSyntheticDefaultImports,
             allowUnreachableCode = allowUnreachableCode,
@@ -182,8 +184,10 @@ public class TSCompilerOptions : ITSCompilerOptions
 
     public ITSCompilerOptions Merge(ITSCompilerOptions? withInterface)
     {
-        if (!(withInterface is TSCompilerOptions with))
+        if (withInterface is not TSCompilerOptions with)
             return this;
+        if (with.allowImportingTsExtensions != null)
+            allowImportingTsExtensions = with.allowImportingTsExtensions;
         if (with.allowJs != null)
             allowJs = with.allowJs;
         if (with.allowSyntheticDefaultImports != null)

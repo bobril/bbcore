@@ -66,6 +66,7 @@ public enum ScriptTarget
 
 public interface ITSCompilerOptions
 {
+    bool? allowImportingTsExtensions { get; set; }
     bool? allowJs { get; set; }
     bool? allowSyntheticDefaultImports { get; set; }
     bool? allowUnreachableCode { get; set; }

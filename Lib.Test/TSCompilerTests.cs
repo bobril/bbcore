@@ -15,9 +15,9 @@ namespace Lib.Test;
 
 public class FakeFsAbstraction : IFsAbstraction, IDirectoryWatcher
 {
-    public bool IsMac => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+    public bool IsMac => false;
 
-    public bool IsUnixFs => PathUtils.IsUnixFs;
+    public bool IsUnixFs => true;
 
     public string WatchedDirectory { get; set; }
     public Action<string> OnFileChange { get; set; }
@@ -30,8 +30,7 @@ public class FakeFsAbstraction : IFsAbstraction, IDirectoryWatcher
         public DateTime _lastWriteTimeUtc;
     }
 
-    Dictionary<KeyValuePair<string, string>, FakeFile> _content =
-        new Dictionary<KeyValuePair<string, string>, FakeFile>();
+    readonly Dictionary<KeyValuePair<string, string>, FakeFile?> _content = new();
 
     public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
     {
@@ -50,6 +49,7 @@ public class FakeFsAbstraction : IFsAbstraction, IDirectoryWatcher
 
     public FsItemInfo GetItemInfo(ReadOnlySpan<char> path)
     {
+        if (path.StartsWith("/")) path = path[1..];
         var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
         var f = ff.ToString();
         if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
@@ -182,7 +182,7 @@ public class CompilerTests
     [Fact]
     public void DefaultTypeScriptVersionDidntChanged()
     {
-        Assert.Equal("4.9.5", _tools.TypeScriptVersion);
+        Assert.Equal("5.2.2", _tools.TypeScriptVersion);
     }
 
     [Fact]

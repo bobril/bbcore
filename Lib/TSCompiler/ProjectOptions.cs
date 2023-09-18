@@ -28,7 +28,7 @@ namespace Lib.TSCompiler;
 
 public class ProjectOptions
 {
-    public const string DefaultTypeScriptVersion = "4.9.5";
+    public const string DefaultTypeScriptVersion = "5.2.2";
 
     public IToolsDir Tools;
     public TSProject Owner;
@@ -311,6 +311,9 @@ public class ProjectOptions
             target = ScriptTarget.Es2019,
             downlevelIteration = true,
             module = ModuleKind.Commonjs,
+            moduleResolution = ModuleResolutionKind.Bundler,
+            allowImportingTsExtensions = true,
+            noEmit = true,
             declaration = false,
             jsx = JsxEmit.React,
             reactNamespace = BobrilJsx ? "b" : "React",
