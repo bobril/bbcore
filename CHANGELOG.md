@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Regression fix
+
+Reverting default for target to ES2019.
+
 ## 3.0.0
 
 ### Changed defaults

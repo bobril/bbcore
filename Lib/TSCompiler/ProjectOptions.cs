@@ -309,7 +309,7 @@ public class ProjectOptions
             sourceMap = true,
             skipLibCheck = false,
             skipDefaultLibCheck = true,
-            target = ScriptTarget.Es2022,
+            target = ScriptTarget.Es2019,
             downlevelIteration = true,
             module = ModuleKind.Es2022,
             moduleResolution = ModuleResolutionKind.Bundler,
