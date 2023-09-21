@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Operator ?? must be used with parenthesis when combined with && or ||.
+
 ## 3.0.1
 
 ### Regression fix

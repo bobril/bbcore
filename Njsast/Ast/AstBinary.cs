@@ -107,6 +107,14 @@ public class AstBinary : AstNode
         if (p is AstBinary binary)
         {
             var po = binary.Operator;
+            if (po is Operator.LogicalOr or Operator.LogicalAnd && Operator is Operator.NullishCoalescing)
+            {
+                return true;
+            }
+            if (Operator is Operator.LogicalOr or Operator.LogicalAnd && po is Operator.NullishCoalescing)
+            {
+                return true;
+            }
             var pp = OutputContext.Precedence(po);
             var sp = OutputContext.Precedence(Operator);
             if (pp > sp
@@ -303,7 +311,7 @@ public class AstBinary : AstNode
         var rightType = TypeConverter.GetJsType(right);
         if (leftType == rightType)
         {
-            if (leftType == JsType.Undefined || leftType == JsType.Null)
+            if (leftType is JsType.Undefined or JsType.Null)
                 return true;
             if (leftType == JsType.Number)
             {

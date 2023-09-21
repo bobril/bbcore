@@ -48,8 +48,7 @@ public abstract class AstUnary : AstNode
         var p = output.Parent();
         return p is AstPropAccess propAccess && propAccess.Expression == this
                || p is AstCall call && call.Expression == this
-               || p is AstBinary binary
-               && binary.Operator == Operator.Power
+               || p is AstBinary { Operator: Operator.Power } binary
                && this is AstUnaryPrefix thisUnaryPrefix
                && binary.Left == this
                && thisUnaryPrefix.Operator != Operator.Increment
