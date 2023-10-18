@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 3.1.0
+
 ### Added
 
 New coverage format for Sonarqube.
