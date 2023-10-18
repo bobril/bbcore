@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+New coverage format for Sonarqube.
+
 ### Fixed
 
 Operator ?? must be used with parenthesis when combined with && or ||.

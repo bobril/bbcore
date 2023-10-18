@@ -34,6 +34,6 @@ public class TestCommand : CommonParametersBaseCommand
     public CommandLineArgumentEnumValues Coverage { get; } = new(
         "calculate code coverage",
         new[] {"-c", "--coverage"},
-        new[] { "json-details", "json-summary", "spa", "none" }
+        new[] { "json-details", "json-summary", "spa", "sonar", "none" }
     );
 }

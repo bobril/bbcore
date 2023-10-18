@@ -880,6 +880,9 @@ public class Composition
                          stats.LinesPercentageText);
             switch (testCommand.Coverage.Value)
             {
+                case "sonar":
+                    new CoverageXmlSonarReporter(covInstr).Run();
+                    break;
                 case "json-details":
                     new CoverageJsonDetailsReporter(covInstr).Run();
                     break;
