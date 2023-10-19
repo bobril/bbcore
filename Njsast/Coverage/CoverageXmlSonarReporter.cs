@@ -8,11 +8,14 @@ namespace Njsast.Coverage;
 
 public class CoverageXmlSonarReporter: CoverageReporterBase
 {
+    readonly string? _commonSourceDirectory;
     readonly string _jsonName;
     XmlWriter? _xmlWriter;
 
-    public CoverageXmlSonarReporter(CoverageInstrumentation covInstr, string? xmlName = null): base(covInstr)
+    public CoverageXmlSonarReporter(CoverageInstrumentation covInstr, string? xmlName = null,
+        string? commonSourceDirectory = null): base(covInstr)
     {
+        _commonSourceDirectory = commonSourceDirectory;
         _jsonName = xmlName ?? "coverage-sonar.xml";
     }
 
@@ -39,7 +42,7 @@ public class CoverageXmlSonarReporter: CoverageReporterBase
     {
         if (file.Stats!.LinesTotal==0) return;
         _xmlWriter!.WriteStartElement("file");
-        _xmlWriter!.WriteAttributeString("path", file.RealName ?? file.FileName);
+        _xmlWriter!.WriteAttributeString("path", Path.Combine(_commonSourceDirectory ?? "", file.RealName ?? file.FileName));
         var linesCovered = new HashSet<int>();
         var linesUncovered = new HashSet<int>();
         var branches = new RefDictionary<int, (int, int)>();

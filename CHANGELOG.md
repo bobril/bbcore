@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+Coverage format for Sonarqube now contains absolute path to source file.
+
 ## 3.1.0
 
 ### Added
