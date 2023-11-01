@@ -1,12 +1,11 @@
-﻿using BTDB.StreamLayer;
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
+using BTDB.StreamLayer;
 
-namespace Lib.Utils;
+namespace Shared.Utils;
 
 static public class PathUtils
 {
@@ -146,7 +145,7 @@ static public class PathUtils
         return sb.ToString();
     }
 
-    internal static string GetFile(string fn)
+    public static string GetFile(string fn)
     {
         SplitDirAndFile(fn, out var file);
         return file.ToString();
@@ -293,7 +292,7 @@ static public class PathUtils
         return ExtensionToMimeType(extension);
     }
 
-    internal static string InjectQuality(string fn, float quality)
+    public static string InjectQuality(string fn, float quality)
     {
         if (quality == 1) return fn;
         var lastDotIndex = fn.LastIndexOf('.');
@@ -357,7 +356,7 @@ static public class PathUtils
         return p1.Substring(0, pos);
     }
 
-    internal static string DirToCreateDirectory(ReadOnlySpan<char> dir)
+    public static string DirToCreateDirectory(ReadOnlySpan<char> dir)
     {
         if (dir.Length == 0) return ".";
         return dir.ToString();

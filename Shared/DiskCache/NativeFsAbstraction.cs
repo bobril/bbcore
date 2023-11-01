@@ -1,12 +1,12 @@
-﻿using Lib.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using Shared.Utils;
 
-namespace Lib.DiskCache;
+namespace Shared.DiskCache;
 
 public class NativeFsAbstraction : IFsAbstraction
 {
@@ -20,9 +20,26 @@ public class NativeFsAbstraction : IFsAbstraction
         return File.Exists(path);
     }
 
+    public bool DirectoryExists(string path)
+    {
+        return new DirectoryInfo(path).Exists;
+    }
+
     public void WriteAllUtf8(string path, string content)
     {
+        Directory.CreateDirectory(new FileInfo(path).Directory!.FullName);
         File.WriteAllText(path, content, new UTF8Encoding(false));
+    }
+
+    public void Delete(string path)
+    {
+        File.Delete(path);
+    }
+
+    public void WriteAllBytes(string path, byte[] bytes)
+    {
+        Directory.CreateDirectory(new FileInfo(path).Directory!.FullName);
+        File.WriteAllBytes(path, bytes);
     }
 
     public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
@@ -82,14 +99,14 @@ public class NativeFsAbstraction : IFsAbstraction
 
     public string ReadAllUtf8(string path)
     {
-        int retry = 0;
+        var retry = 0;
         while (true)
         {
             try
             {
                 return File.ReadAllText(path, Encoding.UTF8);
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 retry++;
                 if (retry > 5)

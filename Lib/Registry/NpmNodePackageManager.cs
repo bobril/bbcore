@@ -9,6 +9,7 @@ using Lib.TSCompiler;
 using Lib.Utils;
 using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
+using Shared.Utils;
 
 namespace Lib.Registry;
 
@@ -25,10 +26,10 @@ public class NpmNodePackageManager : INodePackageManager
         _npmPath = GetNpmPath();
     }
 
-    static string GetNpmPath()
+    private string GetNpmPath()
     {
         var npmExecName = "npm";
-        if (!PathUtils.IsUnixFs)
+        if (!_diskCache.FsAbstraction.IsUnixFs)
         {
             npmExecName += ".cmd";
         }
@@ -37,7 +38,7 @@ public class NpmNodePackageManager : INodePackageManager
             .Split(Path.PathSeparator)
             .Where(t => !string.IsNullOrEmpty(t))
             .Select(p => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), npmExecName))
-            .FirstOrDefault(File.Exists);
+            .FirstOrDefault(_diskCache.FsAbstraction.FileExists);
     }
 
     public bool IsAvailable => _npmPath != null;
@@ -112,7 +113,8 @@ public class NpmNodePackageManager : INodePackageManager
         {
             if (!(projectDirectory.TryGetChild(".npmrc") is IFileCache))
             {
-                File.WriteAllText(PathUtils.Join(fullPath, ".npmrc"),
+                _diskCache.FsAbstraction.WriteAllUtf8(
+                    PathUtils.Join(fullPath, ".npmrc"),
                     "registry =" + project.ProjectOptions.NpmRegistry);
             }
         }
@@ -129,7 +131,7 @@ public class NpmNodePackageManager : INodePackageManager
     public void UpgradeAll(IDirectoryCache projectDirectory)
     {
         _diskCache.UpdateIfNeeded(projectDirectory);
-        File.Delete(PathUtils.Join(projectDirectory.FullPath, "package-lock.json"));
+        _diskCache.FsAbstraction.Delete(PathUtils.Join(projectDirectory.FullPath, "package-lock.json"));
         var dirToDelete = projectDirectory.TryGetChild("node_modules") as IDirectoryCache;
         RecursiveDelete(dirToDelete);
         Install(projectDirectory);
@@ -146,7 +148,7 @@ public class NpmNodePackageManager : INodePackageManager
             {
                 try
                 {
-                    File.Delete(item.FullPath);
+                    _diskCache.FsAbstraction.Delete(item.FullPath);
                 }
                 catch (Exception)
                 {

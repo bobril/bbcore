@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -15,6 +14,8 @@ using BTDB.Collections;
 using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
 using Njsast.SourceMap;
+using Shared.DiskCache;
+using Shared.Utils;
 
 namespace Lib.Translation;
 
@@ -209,28 +210,70 @@ public class TranslationDb
 
     public void SaveLocations(string dir, string projectRoot)
     {
-        using var stream = File.Create(PathUtils.Join(dir, "locations.json"));
-        using var jw = CreateJsonWriter(stream);
-        jw.WriteStartArray();
-        for (var i = 0; i < UsedIds.Count; i++)
+        switch (_fsAbstraction)
         {
-            jw.WriteStartArray();
-            var idx = (int)UsedIds[i];
-            jw.WriteStringValue(Id2Key[idx].Message);
-            jw.WriteStringValue(Id2Key[idx].Hint);
-            jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
-            foreach (var s in Locations[i])
+            case NativeFsAbstraction:
             {
-                var pathLen = s.LastIndexOf(':', s.LastIndexOf(':') - 1);
-                var p = PathUtils.Subtract(s[..pathLen], projectRoot); 
-                jw.WriteStringValue(p+s[pathLen..]);
+                using var stream = File.Create(PathUtils.Join(dir, "locations.json"));
+                using var jw = CreateJsonWriter(stream);
+                jw.WriteStartArray();
+                for (var i = 0; i < UsedIds.Count; i++)
+                {
+                    jw.WriteStartArray();
+                    var idx = (int)UsedIds[i];
+                    jw.WriteStringValue(Id2Key[idx].Message);
+                    jw.WriteStringValue(Id2Key[idx].Hint);
+                    jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
+                    foreach (var s in Locations[i])
+                    {
+                        var pathLen = s.LastIndexOf(':', s.LastIndexOf(':') - 1);
+                        var p = PathUtils.Subtract(s[..pathLen], projectRoot); 
+                        jw.WriteStringValue(p+s[pathLen..]);
+                    }
+
+                    jw.WriteEndArray();
+                }
+
+                jw.WriteEndArray();
+                jw.Flush();
+                break;
             }
+            case FakeFsAbstraction:
+            {
+                using var stream = new MemoryStream();
+                using var jw = CreateJsonWriter(stream);
+                jw.WriteStartArray();
+                for (var i = 0; i < UsedIds.Count; i++)
+                {
+                    jw.WriteStartArray();
+                    var idx = (int)UsedIds[i];
+                    jw.WriteStringValue(Id2Key[idx].Message);
+                    jw.WriteStringValue(Id2Key[idx].Hint);
+                    jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
+                    foreach (var s in Locations[i])
+                    {
+                        var pathLen = s.LastIndexOf(':', s.LastIndexOf(':') - 1);
+                        var p = PathUtils.Subtract(s[..pathLen], projectRoot); 
+                        jw.WriteStringValue(p+s[pathLen..]);
+                    }
 
-            jw.WriteEndArray();
+                    jw.WriteEndArray();
+                }
+
+                jw.WriteEndArray();
+                jw.Flush();
+                _fsAbstraction.WriteAllUtf8(PathUtils.Join(dir, "locations.json"), Encoding.UTF8.GetString(stream.ToArray()));
+                break;
+            }
+            default:
+            {
+                if (_fsAbstraction is not FakeFs)
+                {
+                    throw new NotImplementedException("Unknown fs abstraction");
+                }
+                break;
+            }
         }
-
-        jw.WriteEndArray();
-        jw.Flush();
     }
 
     public void SaveLangDb(string dir, string lang, bool justUsed)
@@ -273,7 +316,7 @@ public class TranslationDb
         jw.Flush();
     }
 
-    static Utf8JsonWriter CreateJsonWriter(FileStream stream)
+    static Utf8JsonWriter CreateJsonWriter(Stream stream)
     {
         return new Utf8JsonWriter(stream, new()
         {
@@ -333,7 +376,7 @@ public class TranslationDb
 
         if (contentBuilder.Length > 0)
         {
-            File.WriteAllText(filePath, contentBuilder.ToString(), new UTF8Encoding(false));
+            _fsAbstraction.WriteAllUtf8(filePath, contentBuilder.ToString());
             return true;
         }
 
@@ -342,7 +385,7 @@ public class TranslationDb
 
     string GetLanguageFromSpecificPath(string specificPath)
     {
-        var content = File.ReadAllText(specificPath, new UTF8Encoding(false));
+        var content = _fsAbstraction.ReadAllUtf8(specificPath);
         return JArray.Parse(content).First.ToString();
     }
 
@@ -607,7 +650,7 @@ public class TranslationDb
 
         try
         {
-            File.WriteAllText(outputFile, strBuilder.ToString());
+            _fsAbstraction.WriteAllUtf8(outputFile, strBuilder.ToString());
         }
         catch (Exception e)
         {
@@ -646,7 +689,7 @@ public class TranslationDb
 
         try
         {
-            File.WriteAllText(outputFile, strBuilder.ToString());
+            _fsAbstraction.WriteAllUtf8(outputFile, strBuilder.ToString());
         }
         catch (Exception e)
         {

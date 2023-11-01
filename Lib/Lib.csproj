@@ -70,7 +70,7 @@
     <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.4.3" />
     <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="ProxyKit" Version="2.3.4" />
     <PackageReference Include="SemanticVersioning" Version="2.0.2" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
@@ -85,6 +85,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BobrilMdx\BobrilMdx.csproj" />
     <ProjectReference Include="..\Njsast\Njsast.csproj" />
+    <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Resources\error.png">

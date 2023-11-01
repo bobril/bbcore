@@ -2,164 +2,12 @@ using Lib.DiskCache;
 using Lib.Utils;
 using System;
 using Xunit;
-using System.Collections.Generic;
-using Lib.Watcher;
-using System.Text;
-using System.Linq;
 using Lib.TSCompiler;
 using Lib.Composition;
-using System.Runtime.InteropServices;
-using Lib.BuildCache;
+using Shared.DiskCache;
+using Shared.Utils;
 
 namespace Lib.Test;
-
-public class FakeFsAbstraction : IFsAbstraction, IDirectoryWatcher
-{
-    public bool IsMac => false;
-
-    public bool IsUnixFs => true;
-
-    public string WatchedDirectory { get; set; }
-    public Action<string> OnFileChange { get; set; }
-    public Action OnError { get; set; }
-
-    public class FakeFile
-    {
-        public string _content;
-        public ulong _length;
-        public DateTime _lastWriteTimeUtc;
-    }
-
-    readonly Dictionary<KeyValuePair<string, string>, FakeFile?> _content = new();
-
-    public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
-    {
-        var res = new List<FsItemInfo>();
-        foreach (var kv in _content)
-        {
-            if (kv.Key.Key != path) continue;
-            if (kv.Value == null)
-                res.Add(FsItemInfo.Directory(kv.Key.Value, false));
-            else
-                res.Add(FsItemInfo.Existing(kv.Key.Value, kv.Value._length, kv.Value._lastWriteTimeUtc));
-        }
-
-        return res;
-    }
-
-    public FsItemInfo GetItemInfo(ReadOnlySpan<char> path)
-    {
-        if (path.StartsWith("/")) path = path[1..];
-        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
-        var f = ff.ToString();
-        if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
-        {
-            if (file == null)
-                return FsItemInfo.Directory(d, false);
-            return FsItemInfo.Existing(d, file._length, file._lastWriteTimeUtc);
-        }
-
-        return FsItemInfo.Missing();
-    }
-
-    public byte[] ReadAllBytes(string path)
-    {
-        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
-        var f = ff.ToString();
-        if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
-        {
-            if (file == null)
-                throw new Exception("Cannot read directory as file " + path);
-            return Encoding.UTF8.GetBytes(file._content);
-        }
-
-        throw new Exception("Not found file " + path);
-    }
-
-    public string ReadAllUtf8(string path)
-    {
-        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
-        var f = ff.ToString();
-        if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
-        {
-            if (file == null)
-                throw new Exception("Cannot read directory as file " + path);
-            return file._content;
-        }
-
-        throw new Exception("Not found file " + path);
-    }
-
-    public void Dispose()
-    {
-    }
-
-    public void AddTextFile(string path, string content)
-    {
-        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
-        var f = ff.ToString();
-        if (_content.TryGetValue(new(d, f), out var file))
-        {
-            if (file == null)
-                throw new Exception("Cannot add file because it is already dir " + path);
-            file._lastWriteTimeUtc = DateTime.UtcNow;
-            file._content = content;
-            file._length = (ulong) Encoding.UTF8.GetByteCount(content);
-            return;
-        }
-
-        CreateDir(d);
-        _content[new KeyValuePair<string, string>(d, f)] = new FakeFile
-        {
-            _content = content,
-            _length = (ulong) Encoding.UTF8.GetByteCount(content),
-            _lastWriteTimeUtc = DateTime.UtcNow
-        };
-        OnFileChange?.Invoke(path);
-    }
-
-    void CreateDir(string path)
-    {
-        var d = PathUtils.SplitDirAndFile(path, out var ff).ToString();
-        var f = ff.ToString();
-        if (_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
-        {
-            if (file != null)
-            {
-                throw new Exception("mkdir fail already file " + path);
-            }
-
-            return;
-        }
-
-        if (d != "")
-        {
-            CreateDir(d);
-        }
-
-        _content[new KeyValuePair<string, string>(d, f)] = null;
-    }
-
-    public void AddNativeDir(string path)
-    {
-        var nfs = new NativeFsAbstraction();
-        foreach (var f in nfs.GetDirectoryContent(path))
-        {
-            if (f.IsDirectory) continue;
-            AddTextFile(PathUtils.Join(path, f.Name), nfs.ReadAllUtf8(PathUtils.Join(path, f.Name)));
-        }
-    }
-
-    public bool FileExists(string path)
-    {
-        return true;
-    }
-
-    public void WriteAllUtf8(string path, string content)
-    {
-        AddTextFile(path,content);
-    }
-}
 
 [CollectionDefinition("Serial", DisableParallelization = true)]
 public class CompilerTests
@@ -167,14 +15,14 @@ public class CompilerTests
     string _bbdir;
     ToolsDir.ToolsDir _tools;
     CompilerPool _compilerPool;
-    FakeFsAbstraction fs;
+    IFsAbstraction fs;
     string projdir;
     DiskCache.DiskCache dc;
 
     public CompilerTests()
     {
         _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore");
-        _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"), new DummyLogger());
+        _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"), new DummyLogger(), new NativeFsAbstraction());
         _tools.SetTypeScriptVersion(ProjectOptions.DefaultTypeScriptVersion);
         _compilerPool = new CompilerPool(_tools, new DummyLogger());
     }

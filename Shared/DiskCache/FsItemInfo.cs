@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace Lib.DiskCache;
+namespace Shared.DiskCache;
 
 public struct FsItemInfo
 {
-    public bool Exists { get { return Name != null; } }
-    public bool IsDirectory { get { return Length >= ulong.MaxValue-1; } }
-    public bool IsLink { get { return Length != ulong.MaxValue; } }
+    public bool Exists => Name != null;
+    public bool IsDirectory => Length >= ulong.MaxValue-1;
+    public bool IsLink => Length != ulong.MaxValue;
     public string Name;
     public ulong Length;
     public DateTime LastWriteTimeUtc;

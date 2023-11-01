@@ -14,6 +14,7 @@ using Njsast.Compress;
 using Njsast.Output;
 using Njsast.Reader;
 using Njsast.SourceMap;
+using Shared.Utils;
 
 namespace Lib.TSCompiler;
 

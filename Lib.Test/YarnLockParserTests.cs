@@ -1,6 +1,7 @@
 using System.Linq;
 using Lib.DiskCache;
 using Lib.Registry;
+using Shared.DiskCache;
 using Xunit;
 
 namespace Lib.Test;

@@ -8,7 +8,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BTDB.Collections;
 using Lib.AssetsPlugin;
-using Lib.BuildCache;
 using Lib.DiskCache;
 using Lib.ToolsDir;
 using Lib.Translation;
@@ -23,6 +22,7 @@ using Njsast.Output;
 using Njsast.Reader;
 using Njsast.Runtime;
 using Njsast.SourceMap;
+using Shared.Utils;
 
 namespace Lib.TSCompiler;
 
@@ -439,7 +439,7 @@ public class ProjectOptions
         {
             try
             {
-                File.WriteAllText(tsConfigPath, newContent, new UTF8Encoding(false));
+                Owner.DiskCache.FsAbstraction.WriteAllUtf8(tsConfigPath, newContent);
             }
             catch
             {
@@ -546,7 +546,7 @@ public class ProjectOptions
         LibraryMode = bbOptions.library ?? false;
     }
     
-    public static BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,
+    public BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,
         bool justSameDir = false)
     {
         while (dir != null)
@@ -555,9 +555,9 @@ public class ProjectOptions
             {
                 try
                 {
-                    if (File.Exists(dir.FullPath + "/.bbrc"))
+                    if (Owner.DiskCache.FsAbstraction.FileExists(dir.FullPath + "/.bbrc"))
                     {
-                        var parsed = JObject.Parse(File.ReadAllText(dir.FullPath + "/.bbrc", Encoding.UTF8));
+                        var parsed = JObject.Parse(Owner.DiskCache.FsAbstraction.ReadAllUtf8(dir.FullPath + "/.bbrc"));
                         var n = new BobrilBuildOptions(parsed);
                         n.Merge(bbOptions);
                         bbOptions = n;
@@ -926,7 +926,7 @@ public class ProjectOptions
             var srcFile = Owner.DiskCache.TryGetItem(eslintrc) as IFileCache;
             if (srcFile == null || srcFile.IsInvalid)
             {
-                File.WriteAllText(eslintrc, "{\"extends\": \"" + bbEsLint + "\"}");
+                Owner.DiskCache.FsAbstraction.WriteAllUtf8(eslintrc, "{\"extends\": \"" + bbEsLint + "\"}");
                 Console.WriteLine($"Created .eslintrc using {bbEsLint}");
             }
         }
@@ -940,7 +940,7 @@ public class ProjectOptions
             if (srcFile != null && (!(Owner.DiskCache.TryGetItem(dstTsLint) is IFileCache dstFile) ||
                                     !dstFile.HashOfContent.SequenceEqual(srcFile.HashOfContent)))
             {
-                File.WriteAllBytes(dstTsLint, srcFile.ByteContent);
+                Owner.DiskCache.FsAbstraction.WriteAllBytes(dstTsLint, srcFile.ByteContent);
                 Console.WriteLine($"Updated tslint.json from {srcTsLint}");
             }
         }

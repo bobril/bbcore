@@ -1,6 +1,9 @@
 ﻿using Lib.CSSProcessor;
 using Lib.Utils;
 using System;
+using Lib.DiskCache;
+using Shared.DiskCache;
+using Shared.Utils;
 using Xunit;
 
 namespace Lib.Test;
@@ -14,7 +17,7 @@ public class CssProcessorTests
     public CssProcessorTests()
     {
         _bbdir = PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore");
-        _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"), new DummyLogger());
+        _tools = new ToolsDir.ToolsDir(PathUtils.Join(_bbdir, "tools"), new DummyLogger(), new NativeFsAbstraction());
     }
 
     [Fact]

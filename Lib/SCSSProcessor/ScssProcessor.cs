@@ -4,6 +4,7 @@ using JavaScriptEngineSwitcher.Core;
 using Lib.CSSProcessor;
 using Lib.ToolsDir;
 using Lib.Utils;
+using Shared.Utils;
 
 namespace Lib.SCSSProcessor;
 
