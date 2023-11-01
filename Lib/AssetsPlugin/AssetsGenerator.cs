@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Shared.Utils;
 
 namespace Lib.AssetsPlugin;
 
@@ -73,8 +74,7 @@ public class AssetsGenerator
         if (_cache.TryGetItem(filePath) is IFileCache file && file.Utf8Content == content)
             return false;
         Console.WriteLine("AssetGenerator updating " + PathUtils.Subtract(filePath, projectDir));
-        Directory.CreateDirectory(srcPath);
-        File.WriteAllText(filePath, content, new UTF8Encoding(false));
+        _cache.FsAbstraction.WriteAllUtf8(filePath, content);
         return true;
     }
 }

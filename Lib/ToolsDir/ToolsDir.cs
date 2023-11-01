@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using JavaScriptEngineSwitcher.Core;
+using Lib.DiskCache;
 using Lib.Registry;
 using Lib.Utils;
 using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
+using Shared.DiskCache;
+using Shared.Utils;
 
 namespace Lib.ToolsDir;
 
@@ -18,10 +22,13 @@ public class ToolsDir : IToolsDir
     static readonly object lockInitialization = new();
 
     static readonly object _lock = new();
+    
+    readonly IFsAbstraction _fsAbstraction;
 
-    public ToolsDir(string dir, ILogger logger)
+    public ToolsDir(string dir, ILogger logger, IFsAbstraction fsAbstraction)
     {
         _logger = logger;
+        _fsAbstraction = fsAbstraction;
         lock (lockInitialization)
         {
             Path = dir;
@@ -50,8 +57,8 @@ public class ToolsDir : IToolsDir
             JasmineCoreJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.js");
             JasmineDts299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.d.ts");
             JasmineDtsPath299 = PathUtils.Join(Path, "jasmine.d.ts");
-            if (!File.Exists(JasmineDtsPath299) || File.ReadAllText(JasmineDtsPath299) != JasmineDts299)
-                File.WriteAllText(JasmineDtsPath299, JasmineDts299);
+            if (!fsAbstraction.FileExists(JasmineDtsPath299) || fsAbstraction.ReadAllUtf8(JasmineDtsPath299) != JasmineDts299)
+                fsAbstraction.WriteAllUtf8(JasmineDtsPath299, JasmineDts299);
             JasmineBootJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot299.js");
             JasmineBootJs330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot330.js");
             JasmineBootJs400 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot400.js");
@@ -61,10 +68,10 @@ public class ToolsDir : IToolsDir
             JasmineDts400 = ResourceUtils.GetText("Lib.ToolsDir.jasmine400.d.ts");
             JasmineDtsPath330 = PathUtils.Join(Path, "jasmine330.d.ts");
             JasmineDtsPath400 = PathUtils.Join(Path, "jasmine400.d.ts");
-            if (!File.Exists(JasmineDtsPath330) || File.ReadAllText(JasmineDtsPath330) != JasmineDts330)
-                File.WriteAllText(JasmineDtsPath330, JasmineDts330);
-            if (!File.Exists(JasmineDtsPath400) || File.ReadAllText(JasmineDtsPath400) != JasmineDts400)
-                File.WriteAllText(JasmineDtsPath400, JasmineDts400);
+            if (!fsAbstraction.FileExists(JasmineDtsPath330) || fsAbstraction.ReadAllUtf8(JasmineDtsPath330) != JasmineDts330)
+                fsAbstraction.WriteAllUtf8(JasmineDtsPath330, JasmineDts330);
+            if (!fsAbstraction.FileExists(JasmineDtsPath400) || fsAbstraction.ReadAllUtf8(JasmineDtsPath400) != JasmineDts400)
+                fsAbstraction.WriteAllUtf8(JasmineDtsPath400, JasmineDts400);
 
             WebtZip = ResourceUtils.GetZip("Lib.ToolsDir.webt.zip");
             WebZip = ResourceUtils.GetZip("Lib.ToolsDir.web.zip");
@@ -93,7 +100,7 @@ public class ToolsDir : IToolsDir
         {
             if (_typeScriptJsContent == null)
             {
-                _typeScriptJsContent = File.ReadAllText(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
+                _typeScriptJsContent = _fsAbstraction.ReadAllUtf8(PathUtils.Join(TypeScriptLibDir, "typescript.js"));
 
                 // Revert https://github.com/microsoft/TypeScript/pull/44624 - it makes output longer without real need
                 // Also it prevents detection of bobril-g11n t calls.
@@ -245,14 +252,37 @@ public class ToolsDir : IToolsDir
                     name = name.Substring("package/".Length);
                 var fn = PathUtils.Join(dir, name);
                 Directory.CreateDirectory(PathUtils.DirToCreateDirectory(PathUtils.Parent(fn)));
-                await using var targetStream = File.Create(fn);
-                var buf = new byte[4096];
-                while (size > 0)
+                switch (_fsAbstraction)
                 {
-                    var read = await stream.ReadAsync(buf.AsMemory(0, (int)Math.Min((ulong)buf.Length, size)));
-                    if (read == 0) throw new IOException($"Reading {name} failed");
-                    await targetStream.WriteAsync(buf.AsMemory(0, read));
-                    size -= (ulong)read;
+                    case NativeFsAbstraction:
+                    {
+                        await using var targetStream = File.Create(fn);
+                        var buf = new byte[4096];
+                        while (size > 0)
+                        {
+                            var read = await stream.ReadAsync(buf.AsMemory(0, (int)Math.Min((ulong)buf.Length, size)));
+                            if (read == 0) throw new IOException($"Reading {name} failed");
+                            await targetStream.WriteAsync(buf.AsMemory(0, read));
+                            size -= (ulong)read;
+                        }
+
+                        break;
+                    }
+                    case FakeFsAbstraction:
+                    {
+                        var memoryStream = new MemoryStream();
+                        await stream.CopyToAsync(memoryStream);
+                        _fsAbstraction.WriteAllUtf8(fn, Encoding.UTF8.GetString(memoryStream.ToArray()));
+                        break;
+                    }
+                    default:
+                    {
+                        if (_fsAbstraction is not FakeFs)
+                        {
+                            throw new NotImplementedException("Unknown fs abstraction");
+                        }
+                        break;
+                    }
                 }
 
                 return true;
@@ -278,7 +308,7 @@ public class ToolsDir : IToolsDir
         var tspackage = PathUtils.Join(tsVerDir, "package.json");
         lock (_lock)
         {
-            if (!File.Exists(tspackage))
+            if (!_fsAbstraction.FileExists(tspackage))
             {
                 Directory.CreateDirectory(tsVerDir);
                 DownloadAndExtractTS(tsVerDir, version).Wait();

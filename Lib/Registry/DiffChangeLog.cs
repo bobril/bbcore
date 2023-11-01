@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Lib.DiskCache;
 using Lib.Utils;
+using Shared.Utils;
 
 namespace Lib.Registry;
 

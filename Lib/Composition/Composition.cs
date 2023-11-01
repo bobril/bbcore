@@ -1,6 +1,5 @@
 ﻿using Lib.DiskCache;
 using Lib.TSCompiler;
-using Lib.Utils;
 using Lib.Watcher;
 using System;
 using System.Collections.Generic;
@@ -21,11 +20,9 @@ using Newtonsoft.Json.Serialization;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
-using System.Runtime.InteropServices;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using BTDB.Collections;
-using JavaScriptEngineSwitcher.Core.Resources;
 using Lib.BuildCache;
 using Lib.Configuration;
 using Lib.HeadlessBrowser;
@@ -39,6 +36,9 @@ using Njsast.Coverage;
 using Njsast.Reader;
 using Njsast.SourceMap;
 using ProxyKit;
+using Shared.DiskCache;
+using Shared.Utils;
+using Shared.Watcher;
 
 namespace Lib.Composition;
 
@@ -66,6 +66,7 @@ public class Composition
     NotificationManager _notificationManager;
     readonly IConsoleLogger _logger = new ConsoleLogger();
     CfgManager<MainCfg> _cfgManager;
+    readonly IFsAbstraction _fsAbstraction = new NativeFsAbstraction();
 
     public Composition(bool inDocker)
     {
@@ -107,7 +108,7 @@ public class Composition
         _cfgManager = new(settingsDir + "/.bbcfg", !inDocker);
         _cfgManager.Load();
 
-        _tools = new ToolsDir.ToolsDir(_bbdir, _logger);
+        _tools = new ToolsDir.ToolsDir(_bbdir, _logger, _fsAbstraction);
         _compilerPool = new(_tools, _logger);
         _notificationManager = new();
         NotificationManager.Enabled = _cfgManager.Cfg.NotificationsEnabled;
@@ -148,7 +149,7 @@ public class Composition
             if (commonParams.NoBuildCache.Value)
                 _buildCache = new DummyBuildCache();
             else
-                _buildCache = new PersistentBuildCache(_tools.Path);
+                _buildCache = new PersistentBuildCache(_tools.Path, _fsAbstraction);
         }
 
         if (_command is BuildInteractiveCommand)
@@ -213,24 +214,24 @@ public class Composition
             return 1;
         }
 
-        if (!File.Exists(fn))
+        if (!_dc.FsAbstraction.FileExists(fn))
         {
             _logger.Error($"File {fn} does not exists");
             return 1;
         }
 
         var fnmap = fn + ".map";
-        if (!File.Exists(fnmap))
+        if (!_dc.FsAbstraction.FileExists(fnmap))
         {
             _logger.Error($"File {fn} does not exists");
             return 1;
         }
 
-        var sm = SourceMap.Parse(File.ReadAllText(fnmap), null);
+        var sm = SourceMap.Parse(_dc.FsAbstraction.ReadAllUtf8(fnmap), null);
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
         sb.AppendLine("<html><head><style>abbr {text-decoration:none;} .un { background-color: #f99; } .odd { background-color: #eee; }</style></head><body>");
-        var iter = new SourceMapIterator(SourceMap.RemoveLinkToSourceMap(File.ReadAllText(fn)), sm);
+        var iter = new SourceMapIterator(SourceMap.RemoveLinkToSourceMap(_dc.FsAbstraction.ReadAllUtf8(fn)), sm);
         var approxLineLen = 0;
         var oddEven = false;
         while (!iter.EndOfContent)
@@ -262,7 +263,7 @@ public class Composition
             iter.Next();
         }
         sb.Append("</body></html>");
-        File.WriteAllText(fn+".sourcemap.html", sb.ToString());
+        _dc.FsAbstraction.WriteAllUtf8(fn+".sourcemap.html", sb.ToString());
         _logger.Success("Created "+fn+".sourcemap.html");
         return 0;
     }
@@ -278,7 +279,7 @@ public class Composition
         string inputSource;
         try
         {
-            inputSource = File.ReadAllText(jsGlobalsCommand.FileName.Value!);
+            inputSource = _dc.FsAbstraction.ReadAllUtf8(jsGlobalsCommand.FileName.Value!);
         }
         catch (Exception e)
         {
@@ -397,8 +398,9 @@ public class Composition
         if (lines.Count > 0)
             try
             {
-                File.WriteAllText(PathUtils.Join(project.Owner.Owner.FullPath, "DEPSCHANGELOG.md"),
-                    string.Join('\n', lines) + '\n', Encoding.UTF8);
+                _dc.FsAbstraction.WriteAllUtf8(PathUtils.Join(
+                        project.Owner.Owner.FullPath, "DEPSCHANGELOG.md"),
+                    string.Join('\n', lines) + '\n');
             }
             catch (Exception e)
             {
@@ -451,7 +453,7 @@ public class Composition
             else
             {
                 _logger.WriteLine($"Removing language {removeLanguage}");
-                File.Delete(PathUtils.Join(PathToTranslations(project), $"{removeLanguage}.json"));
+                _dc.FsAbstraction.Delete(PathUtils.Join(PathToTranslations(project), $"{removeLanguage}.json"));
                 _logger.WriteLine($"Removed language {removeLanguage}");
             }
 
@@ -854,8 +856,8 @@ public class Composition
             }
 
             if (testCommand.Out.Value != null)
-                File.WriteAllText(testCommand.Out.Value,
-                    testResults.ToJUnitXml(testCommand.FlatTestSuites.Value), new UTF8Encoding(false));
+                _dc.FsAbstraction.WriteAllUtf8(testCommand.Out.Value,
+                    testResults.ToJUnitXml(testCommand.FlatTestSuites.Value));
         }
         catch (Exception ex)
         {
@@ -884,10 +886,10 @@ public class Composition
                     new CoverageXmlSonarReporter(covInstr,null, _mainBuildResult.CommonSourceDirectory).Run();
                     break;
                 case "json-details":
-                    new CoverageJsonDetailsReporter(covInstr).Run();
+                    new CoverageJsonDetailsReporter(covInstr, _fsAbstraction).Run();
                     break;
                 case "json-summary":
-                    new CoverageJsonSummaryReporter(covInstr).Run();
+                    new CoverageJsonSummaryReporter(covInstr, _fsAbstraction).Run();
                     break;
                 case "spa":
                     Directory.CreateDirectory(".coverage");
@@ -895,11 +897,11 @@ public class Composition
                     {
                         if (content.Length > 14 && Encoding.UTF8.GetString(content, 0, 14) == "var bbcoverage")
                         {
-                            new CoverageJsonDetailsReporter(covInstr, ".coverage/" + name, true).Run();
+                            new CoverageJsonDetailsReporter(covInstr, _fsAbstraction, ".coverage/" + name, true).Run();
                         }
                         else
                         {
-                            File.WriteAllBytes(".coverage/" + name, content);
+                            _dc.FsAbstraction.WriteAllBytes(".coverage/" + name, content);
                         }
                     }
 
@@ -974,7 +976,6 @@ public class Composition
         RefDictionary<string, object>? delta = null, bool freeMem = true)
     {
         dir = PathUtils.Normalize(dir);
-        var utf8WithoutBom = new UTF8Encoding(false);
         foreach (var index in filesContent.Index)
         {
             ref var content = ref filesContent.ValueRef(index);
@@ -1010,11 +1011,11 @@ public class Composition
 
             if (content is string)
             {
-                File.WriteAllText(fileName, (string)content, utf8WithoutBom);
+                _dc.FsAbstraction.WriteAllUtf8(fileName, (string)content);
             }
             else
             {
-                File.WriteAllBytes(fileName, (byte[])content);
+                _dc.FsAbstraction.WriteAllBytes(fileName, (byte[])content);
             }
 
             if (delta == null && freeMem)
@@ -1148,7 +1149,7 @@ public class Composition
         }
     }
 
-    public void InitDiskCache(bool withWatcher = false)
+    private void InitDiskCache(bool withWatcher = false)
     {
         Func<IDirectoryWatcher> watcherFactory = () => (IDirectoryWatcher)new DummyWatcher();
         if (withWatcher)
@@ -1171,7 +1172,7 @@ public class Composition
             }
         }
 
-        _dc = new(new NativeFsAbstraction(), watcherFactory);
+        _dc = new(_fsAbstraction, watcherFactory);
     }
 
     public ProjectOptions SetMainProject(string path)

@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Enumeration;
 using System.Linq;
 using System.Threading;
+using Shared.Watcher;
 
 namespace Lib.Watcher;
 

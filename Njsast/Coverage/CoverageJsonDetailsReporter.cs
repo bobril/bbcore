@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Text.Json;
+using Shared.DiskCache;
 
 namespace Njsast.Coverage;
 
@@ -10,7 +12,11 @@ public class CoverageJsonDetailsReporter: CoverageReporterBase
     readonly bool _script;
     Utf8JsonWriter? _jsonWriter;
 
-    public CoverageJsonDetailsReporter(CoverageInstrumentation covInstr, string? jsonName = null, bool script = false): base(covInstr)
+    public CoverageJsonDetailsReporter(
+        CoverageInstrumentation covInstr,
+        IFsAbstraction fs,
+        string? jsonName = null,
+        bool script = false): base(covInstr, fs)
     {
         _jsonName = jsonName ?? "coverage-details.json";
         _script = script;
@@ -18,12 +24,17 @@ public class CoverageJsonDetailsReporter: CoverageReporterBase
 
     public override void Run()
     {
-        using var stream = System.IO.File.Create(_jsonName);
+        var isFakeFileSystem = _fs is FakeFsAbstraction;
+        using Stream stream = isFakeFileSystem ? new MemoryStream() : File.Create(_jsonName);
         if (_script)
             stream.Write(Encoding.UTF8.GetBytes("var bbcoverage="));
         using var jsonWriter = new Utf8JsonWriter(stream);
         _jsonWriter = jsonWriter;
         base.Run();
+        if (isFakeFileSystem)
+        {
+            _fs.WriteAllUtf8(_jsonName, Encoding.UTF8.GetString(((MemoryStream)stream).ToArray()));
+        }
     }
 
     public override void OnStartRoot(CoverageStats stats)

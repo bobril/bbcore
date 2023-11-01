@@ -8,6 +8,7 @@ using Lib.DiskCache;
 using Lib.TSCompiler;
 using Lib.Utils;
 using Lib.Utils.Logger;
+using Shared.Utils;
 
 namespace Lib.Registry;
 
@@ -24,7 +25,7 @@ public class YarnNodePackageManager : INodePackageManager
         _yarnPath = GetYarnPath();
     }
 
-    static string? GetYarnPath()
+    private string? GetYarnPath()
     {
         var yarnExecName = "yarn";
         if (!PathUtils.IsUnixFs)
@@ -36,7 +37,7 @@ public class YarnNodePackageManager : INodePackageManager
             .Split(Path.PathSeparator)
             .Where(t => !string.IsNullOrEmpty(t))
             .Select(p => PathUtils.Join(PathUtils.Normalize(new DirectoryInfo(p).FullName), yarnExecName))
-            .FirstOrDefault(File.Exists);
+            .FirstOrDefault(_diskCache.FsAbstraction.FileExists);
     }
 
     public bool IsAvailable => _yarnPath != null;
@@ -119,7 +120,8 @@ public class YarnNodePackageManager : INodePackageManager
         {
             if (projectDirectory.TryGetChild(".npmrc") is not IFileCache)
             {
-                File.WriteAllText(PathUtils.Join(fullPath, ".npmrc"),
+                _diskCache.FsAbstraction.WriteAllUtf8(
+                    PathUtils.Join(fullPath, ".npmrc"),
                     "registry =" + project.ProjectOptions.NpmRegistry);
             }
         }

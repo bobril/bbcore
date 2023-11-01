@@ -6,6 +6,8 @@ using System.Threading;
 using Lib.DiskCache;
 using Lib.Utils;
 using Njsast;
+using Shared.DiskCache;
+using Shared.Utils;
 
 namespace Lib.HeadlessBrowser;
 

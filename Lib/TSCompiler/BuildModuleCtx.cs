@@ -16,6 +16,7 @@ using BobrilMdx;
 using HtmlAgilityPack;
 using Lib.BuildCache;
 using Njsast.Runtime;
+using Shared.Utils;
 using WebMarkupMin.Core;
 
 namespace Lib.TSCompiler;

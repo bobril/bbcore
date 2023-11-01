@@ -24,7 +24,7 @@ public class CommandLineParser
 
         // first argument
         string firstArg = args?.Length > 0 ? args[0].Trim() : null;
-        if (firstArg != null && !firstArg.StartsWith('-'))
+        if (firstArg != null && !firstArg.StartsWith("-"))
         {
             // help
             if (HelpWords.Contains(firstArg))

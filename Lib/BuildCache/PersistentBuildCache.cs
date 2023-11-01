@@ -2,6 +2,7 @@
 using System.Threading;
 using BTDB.KVDBLayer;
 using BTDB.ODBLayer;
+using Shared.DiskCache;
 
 namespace Lib.BuildCache;
 
@@ -13,7 +14,7 @@ public class PersistentBuildCache : IBuildCache
     IObjectDBTransaction? _tr;
     readonly Mutex? _mutex;
 
-    public PersistentBuildCache(string dir)
+    public PersistentBuildCache(string dir, IFsAbstraction fs)
     {
         var cacheIndex = 0;
         while (cacheIndex < 100)

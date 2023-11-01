@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using BTDB.Collections;
 using Lib.Utils;
+using Shared.Utils;
 
 namespace Lib.TSCompiler;
 

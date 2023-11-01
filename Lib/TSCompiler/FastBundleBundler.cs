@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Text;
-using Lib.Utils;
 using Lib.ToolsDir;
 using System.Linq;
 using Njsast.SourceMap;
@@ -9,9 +8,9 @@ using BTDB.Collections;
 using Lib.DiskCache;
 using Njsast.Bundler;
 using Njsast.Coverage;
-using Njsast.Output;
 using Njsast.Reader;
 using Njsast.Runtime;
+using Shared.Utils;
 
 namespace Lib.TSCompiler;
 

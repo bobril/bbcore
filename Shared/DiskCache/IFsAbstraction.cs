@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Lib.DiskCache;
+namespace Shared.DiskCache;
 
 public interface IFsAbstraction
 {
@@ -12,5 +12,8 @@ public interface IFsAbstraction
     byte[] ReadAllBytes(string path);
     string ReadAllUtf8(string path);
     bool FileExists(string path);
+    bool DirectoryExists(string path);
     void WriteAllUtf8(string path, string content);
+    void Delete(string path);
+    void WriteAllBytes(string path, byte[] bytes);
 }
