@@ -23,7 +23,7 @@ public class CoverageJsonSummaryReporter: CoverageReporterBase
         base.Run();
         if (isFakeFileSystem)
         {
-            _fs.WriteAllUtf8(path, Encoding.UTF8.GetString(((MemoryStream)stream).ToArray()));
+            _fs.WriteAllBytes(path, ((MemoryStream)stream).ToArray());
         }
     }
 
