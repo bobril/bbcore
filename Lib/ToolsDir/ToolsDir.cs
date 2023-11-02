@@ -214,7 +214,7 @@ public class ToolsDir : IToolsDir
 
     public string LiveReloadJs { get; }
 
-    public async Task DownloadAndExtractTS(string dir, string versionString)
+    private async Task DownloadAndExtractTS(string dir, string versionString)
     {
         _logger.Info($"Downloading and extracting TypeScript {versionString}");
         var version = new SemanticVersioning.Version(versionString);
@@ -250,39 +250,11 @@ public class ToolsDir : IToolsDir
                     name = name.Substring("package/".Length);
                 var fn = PathUtils.Join(dir, name);
                 Directory.CreateDirectory(PathUtils.DirToCreateDirectory(PathUtils.Parent(fn)));
-                switch (_fsAbstraction)
-                {
-                    case NativeFsAbstraction:
-                    {
-                        await using var targetStream = File.Create(fn);
-                        var buf = new byte[4096];
-                        while (size > 0)
-                        {
-                            var read = await stream.ReadAsync(buf.AsMemory(0, (int)Math.Min((ulong)buf.Length, size)));
-                            if (read == 0) throw new IOException($"Reading {name} failed");
-                            await targetStream.WriteAsync(buf.AsMemory(0, read));
-                            size -= (ulong)read;
-                        }
 
-                        break;
-                    }
-                    case InMemoryFs:
-                    {
-                        var memoryStream = new MemoryStream();
-                        await stream.CopyToAsync(memoryStream);
-                        _fsAbstraction.WriteAllBytes(fn, memoryStream.ToArray());
-                        break;
-                    }
-                    default:
-                    {
-                        if (_fsAbstraction is not FakeFs)
-                        {
-                            throw new NotImplementedException("Unknown fs abstraction");
-                        }
-                        break;
-                    }
-                }
-
+                var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                _fsAbstraction.WriteAllBytes(fn, memoryStream.ToArray());
+                
                 return true;
             });
         }
