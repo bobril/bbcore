@@ -11,8 +11,6 @@ using Lib.Registry;
 using Lib.Utils;
 using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
-using Shared.DiskCache;
-using Shared.Utils;
 
 namespace Lib.ToolsDir;
 

@@ -2,7 +2,7 @@
 using System.Threading;
 using BTDB.KVDBLayer;
 using BTDB.ODBLayer;
-using Shared.DiskCache;
+using Lib.DiskCache;
 
 namespace Lib.BuildCache;
 

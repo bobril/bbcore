@@ -1,6 +1,5 @@
 using Lib.DiskCache;
 using Lib.HeadlessBrowser;
-using Shared.DiskCache;
 using Xunit;
 
 namespace Lib.Test;

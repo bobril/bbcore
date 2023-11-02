@@ -1,8 +1,6 @@
 using System;
 using System.IO;
 using Lib.Utils;
-using Shared.Utils;
-using Shared.Watcher;
 
 namespace Lib.Watcher;
 

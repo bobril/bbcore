@@ -1,6 +1,5 @@
 ﻿using Lib.DiskCache;
 using Lib.ToolsDir;
-using Lib.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -11,11 +10,10 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using BTDB.Collections;
+using Lib.Utils;
 using Lib.Utils.Logger;
 using Newtonsoft.Json.Linq;
 using Njsast.SourceMap;
-using Shared.DiskCache;
-using Shared.Utils;
 
 namespace Lib.Translation;
 
@@ -210,70 +208,29 @@ public class TranslationDb
 
     public void SaveLocations(string dir, string projectRoot)
     {
-        switch (_fsAbstraction)
+        using var stream = new MemoryStream();
+        using var jw = CreateJsonWriter(stream);
+        jw.WriteStartArray();
+        for (var i = 0; i < UsedIds.Count; i++)
         {
-            case NativeFsAbstraction:
+            jw.WriteStartArray();
+            var idx = (int) UsedIds[i];
+            jw.WriteStringValue(Id2Key[idx].Message);
+            jw.WriteStringValue(Id2Key[idx].Hint);
+            jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
+            foreach (var s in Locations[i])
             {
-                using var stream = File.Create(PathUtils.Join(dir, "locations.json"));
-                using var jw = CreateJsonWriter(stream);
-                jw.WriteStartArray();
-                for (var i = 0; i < UsedIds.Count; i++)
-                {
-                    jw.WriteStartArray();
-                    var idx = (int)UsedIds[i];
-                    jw.WriteStringValue(Id2Key[idx].Message);
-                    jw.WriteStringValue(Id2Key[idx].Hint);
-                    jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
-                    foreach (var s in Locations[i])
-                    {
-                        var pathLen = s.LastIndexOf(':', s.LastIndexOf(':') - 1);
-                        var p = PathUtils.Subtract(s[..pathLen], projectRoot); 
-                        jw.WriteStringValue(p+s[pathLen..]);
-                    }
-
-                    jw.WriteEndArray();
-                }
-
-                jw.WriteEndArray();
-                jw.Flush();
-                break;
+                var pathLen = s.LastIndexOf(':', s.LastIndexOf(':') - 1);
+                var p = PathUtils.Subtract(s[..pathLen], projectRoot);
+                jw.WriteStringValue(p + s[pathLen..]);
             }
-            case InMemoryFs:
-            {
-                using var stream = new MemoryStream();
-                using var jw = CreateJsonWriter(stream);
-                jw.WriteStartArray();
-                for (var i = 0; i < UsedIds.Count; i++)
-                {
-                    jw.WriteStartArray();
-                    var idx = (int)UsedIds[i];
-                    jw.WriteStringValue(Id2Key[idx].Message);
-                    jw.WriteStringValue(Id2Key[idx].Hint);
-                    jw.WriteNumberValue(Id2Key[idx].WithParams ? 1 : 0);
-                    foreach (var s in Locations[i])
-                    {
-                        var pathLen = s.LastIndexOf(':', s.LastIndexOf(':') - 1);
-                        var p = PathUtils.Subtract(s[..pathLen], projectRoot); 
-                        jw.WriteStringValue(p+s[pathLen..]);
-                    }
 
-                    jw.WriteEndArray();
-                }
-
-                jw.WriteEndArray();
-                jw.Flush();
-                _fsAbstraction.WriteAllBytes(PathUtils.Join(dir, "locations.json"), stream.ToArray());
-                break;
-            }
-            default:
-            {
-                if (_fsAbstraction is not FakeFs)
-                {
-                    throw new NotImplementedException("Unknown fs abstraction");
-                }
-                break;
-            }
+            jw.WriteEndArray();
         }
+
+        jw.WriteEndArray();
+        jw.Flush();
+        _fsAbstraction.WriteAllBytes(PathUtils.Join(dir, "locations.json"), stream.ToArray());
     }
 
     public void SaveLangDb(string dir, string lang, bool justUsed)

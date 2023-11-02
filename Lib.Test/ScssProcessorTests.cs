@@ -2,8 +2,6 @@ using System;
 using Lib.DiskCache;
 using Lib.SCSSProcessor;
 using Lib.Utils;
-using Shared.DiskCache;
-using Shared.Utils;
 using Xunit;
 
 namespace Lib.Test;

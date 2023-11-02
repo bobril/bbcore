@@ -2,10 +2,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
-using Shared.Utils;
-using Shared.Watcher;
+using Lib.Utils;
+using Lib.Watcher;
 
-namespace Shared.DiskCache;
+namespace Lib.DiskCache;
 
 public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
 {
@@ -42,7 +42,7 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
         GetDirectoryAndFileNames(path.ToString(), out var d, out var f);
         if (!_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
             return FsItemInfo.Missing();
-        return file == null
+        return file is null
             ? FsItemInfo.Directory(d, false)
             : FsItemInfo.Existing(d, file._length, file._lastWriteTimeUtc);
     }

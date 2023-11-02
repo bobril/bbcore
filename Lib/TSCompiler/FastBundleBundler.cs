@@ -6,11 +6,11 @@ using Njsast.SourceMap;
 using System;
 using BTDB.Collections;
 using Lib.DiskCache;
+using Lib.Utils;
 using Njsast.Bundler;
 using Njsast.Coverage;
 using Njsast.Reader;
 using Njsast.Runtime;
-using Shared.Utils;
 
 namespace Lib.TSCompiler;
 

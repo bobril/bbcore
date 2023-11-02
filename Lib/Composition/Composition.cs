@@ -29,6 +29,7 @@ using Lib.HeadlessBrowser;
 using Lib.Registry;
 using Lib.Utils.Notification;
 using Lib.Translation;
+using Lib.Utils;
 using Lib.Utils.Logger;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -36,9 +37,6 @@ using Njsast.Coverage;
 using Njsast.Reader;
 using Njsast.SourceMap;
 using ProxyKit;
-using Shared.DiskCache;
-using Shared.Utils;
-using Shared.Watcher;
 
 namespace Lib.Composition;
 

@@ -1,6 +1,5 @@
 using System;
 using Lib.DiskCache;
-using Shared.DiskCache;
 
 namespace Lib.HeadlessBrowser;
 

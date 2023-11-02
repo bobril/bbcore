@@ -2,8 +2,6 @@
 using Lib.Utils;
 using System;
 using Lib.DiskCache;
-using Shared.DiskCache;
-using Shared.Utils;
 using Xunit;
 
 namespace Lib.Test;

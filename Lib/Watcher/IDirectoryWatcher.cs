@@ -1,6 +1,6 @@
 using System;
 
-namespace Shared.Watcher;
+namespace Lib.Watcher;
 
 public interface IDirectoryWatcher : IDisposable
 {

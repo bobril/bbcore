@@ -4,8 +4,6 @@ using System;
 using Xunit;
 using Lib.TSCompiler;
 using Lib.Composition;
-using Shared.DiskCache;
-using Shared.Utils;
 
 namespace Lib.Test;
 

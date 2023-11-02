@@ -8,9 +8,6 @@ using System.Text;
 using BTDB.Collections;
 using Lib.Utils;
 using Lib.Watcher;
-using Shared.DiskCache;
-using Shared.Utils;
-using Shared.Watcher;
 
 namespace Lib.DiskCache;
 
