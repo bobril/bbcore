@@ -238,7 +238,7 @@ public class TranslationDb
                 jw.Flush();
                 break;
             }
-            case FakeFsAbstraction:
+            case InMemoryFs:
             {
                 using var stream = new MemoryStream();
                 using var jw = CreateJsonWriter(stream);
@@ -262,7 +262,7 @@ public class TranslationDb
 
                 jw.WriteEndArray();
                 jw.Flush();
-                _fsAbstraction.WriteAllUtf8(PathUtils.Join(dir, "locations.json"), Encoding.UTF8.GetString(stream.ToArray()));
+                _fsAbstraction.WriteAllBytes(PathUtils.Join(dir, "locations.json"), stream.ToArray());
                 break;
             }
             default:

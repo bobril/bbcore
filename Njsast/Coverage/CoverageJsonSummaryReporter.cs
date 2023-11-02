@@ -16,7 +16,7 @@ public class CoverageJsonSummaryReporter: CoverageReporterBase
     public override void Run()
     {
         const string path = "coverage-summary.json";
-        var isFakeFileSystem = _fs is FakeFsAbstraction;
+        var isFakeFileSystem = _fs is InMemoryFs;
         using Stream stream = isFakeFileSystem ? new MemoryStream() : File.Create(path);
         using var jsonWriter = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
         _jsonWriter = jsonWriter;

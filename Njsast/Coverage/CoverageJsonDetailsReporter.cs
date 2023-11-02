@@ -24,7 +24,7 @@ public class CoverageJsonDetailsReporter: CoverageReporterBase
 
     public override void Run()
     {
-        var isFakeFileSystem = _fs is FakeFsAbstraction;
+        var isFakeFileSystem = _fs is InMemoryFs;
         using Stream stream = isFakeFileSystem ? new MemoryStream() : File.Create(_jsonName);
         if (_script)
             stream.Write(Encoding.UTF8.GetBytes("var bbcoverage="));

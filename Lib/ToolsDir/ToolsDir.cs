@@ -268,7 +268,7 @@ public class ToolsDir : IToolsDir
 
                         break;
                     }
-                    case FakeFsAbstraction:
+                    case InMemoryFs:
                     {
                         var memoryStream = new MemoryStream();
                         await stream.CopyToAsync(memoryStream);

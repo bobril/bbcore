@@ -25,7 +25,7 @@ public class CoverageXmlSonarReporter: CoverageReporterBase
 
     public override void Run()
     {
-        var isFakeFileSystem = _fs is FakeFsAbstraction;
+        var isFakeFileSystem = _fs is InMemoryFs;
         using Stream stream = isFakeFileSystem ? new MemoryStream() : File.Create(_jsonName);
         using var xmlWriter = XmlWriter.Create(stream, new XmlWriterSettings {Indent = true});
         _xmlWriter = xmlWriter;
