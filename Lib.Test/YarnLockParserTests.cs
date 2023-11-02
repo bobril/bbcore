@@ -33,8 +33,8 @@ typescript@^3.0.3:
   version ""3.0.3""
   resolved ""https://registry.yarnpkg.com/typescript/-/typescript-3.0.3.tgz#4853b3e275ecdaa27f78fda46dc273a7eb7fc1c8""
 ";
-        var fs = new FakeFsAbstraction();
-        fs.AddTextFile("proj/package.json", "");
+        var fs = new InMemoryFs();
+        fs.WriteAllUtf8("proj/package.json", "");
         var dc = new DiskCache.DiskCache(fs, () => fs);
         var directory = dc.TryGetItem("proj") as IDirectoryCache;
         var result = YarnNodePackageManager.ParseYarnLock(directory, source).ToArray();
