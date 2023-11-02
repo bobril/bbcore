@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Shared.DiskCache;
+namespace Lib.DiskCache;
 
 public struct FsItemInfo
 {

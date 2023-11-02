@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using BTDB.StreamLayer;
 
-namespace Shared.Utils;
+namespace Lib.Utils;
 
-static public class PathUtils
+public static class PathUtils
 {
     public static readonly bool IsUnixFs;
 

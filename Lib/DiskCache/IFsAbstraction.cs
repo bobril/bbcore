@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Shared.DiskCache;
+namespace Lib.DiskCache;
 
 public interface IFsAbstraction
 {

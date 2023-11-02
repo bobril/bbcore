@@ -4,9 +4,9 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using Shared.Utils;
+using Lib.Utils;
 
-namespace Shared.DiskCache;
+namespace Lib.DiskCache;
 
 public class NativeFsAbstraction : IFsAbstraction
 {

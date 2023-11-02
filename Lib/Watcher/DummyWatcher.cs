@@ -1,5 +1,4 @@
 using System;
-using Shared.Watcher;
 
 namespace Lib.Watcher;
 
