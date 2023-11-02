@@ -32,7 +32,7 @@ public class CoverageXmlSonarReporter: CoverageReporterBase
         base.Run();
         if (isFakeFileSystem)
         {
-            _fs.WriteAllUtf8(_jsonName, Encoding.UTF8.GetString(((MemoryStream)stream).ToArray()));
+            _fs.WriteAllBytes(_jsonName, ((MemoryStream)stream).ToArray());
         }
     }
 

@@ -272,7 +272,7 @@ public class ToolsDir : IToolsDir
                     {
                         var memoryStream = new MemoryStream();
                         await stream.CopyToAsync(memoryStream);
-                        _fsAbstraction.WriteAllUtf8(fn, Encoding.UTF8.GetString(memoryStream.ToArray()));
+                        _fsAbstraction.WriteAllBytes(fn, memoryStream.ToArray());
                         break;
                     }
                     default:
