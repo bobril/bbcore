@@ -21,8 +21,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BobrilMdx.Test", "BobrilMdx
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bbcore.Lib", "Bbcore.Lib\Bbcore.Lib.csproj", "{4034880D-D6AC-4BBD-BAFF-AE3837121BDD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{F91BE946-9BD0-4DA3-AA65-3B6B525B7ACA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -1,16 +1,16 @@
-using Shared.DiskCache;
+using System;
 
 namespace Njsast.Coverage;
 
 public class CoverageReporterBase
 {
     protected readonly CoverageInstrumentation _covInstr;
-    protected readonly IFsAbstraction _fs;
+    protected readonly Action<string, byte[]> _saveReport;
 
-    public CoverageReporterBase(CoverageInstrumentation covInstr, IFsAbstraction fs)
+    public CoverageReporterBase(CoverageInstrumentation covInstr, Action<string, byte[]> saveReport)
     {
         _covInstr = covInstr;
-        _fs = fs;
+        _saveReport = saveReport;
     }
 
     public virtual void Run()

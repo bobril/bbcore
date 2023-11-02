@@ -1,9 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml;
-using Shared.DiskCache;
 
 namespace Njsast.Coverage;
 
@@ -15,9 +14,9 @@ public class CoverageXmlSonarReporter: CoverageReporterBase
 
     public CoverageXmlSonarReporter(
         CoverageInstrumentation covInstr,
-        IFsAbstraction fs,
+        Action<string, byte[]> saveReport,
         string? xmlName = null,
-        string? commonSourceDirectory = null): base(covInstr, fs)
+        string? commonSourceDirectory = null): base(covInstr, saveReport)
     {
         _commonSourceDirectory = commonSourceDirectory;
         _jsonName = xmlName ?? "coverage-sonar.xml";
@@ -25,15 +24,11 @@ public class CoverageXmlSonarReporter: CoverageReporterBase
 
     public override void Run()
     {
-        var isFakeFileSystem = _fs is InMemoryFs;
-        using Stream stream = isFakeFileSystem ? new MemoryStream() : File.Create(_jsonName);
-        using var xmlWriter = XmlWriter.Create(stream, new XmlWriterSettings {Indent = true});
+        using var memoryStream = new MemoryStream();
+        using var xmlWriter = XmlWriter.Create(memoryStream, new XmlWriterSettings {Indent = true});
         _xmlWriter = xmlWriter;
         base.Run();
-        if (isFakeFileSystem)
-        {
-            _fs.WriteAllBytes(_jsonName, ((MemoryStream)stream).ToArray());
-        }
+        _saveReport(_jsonName, memoryStream.ToArray());
     }
 
     public override void OnStartRoot(CoverageStats stats)

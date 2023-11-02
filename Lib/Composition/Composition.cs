@@ -886,10 +886,10 @@ public class Composition
                     new CoverageXmlSonarReporter(covInstr,null, _mainBuildResult.CommonSourceDirectory).Run();
                     break;
                 case "json-details":
-                    new CoverageJsonDetailsReporter(covInstr, _fsAbstraction).Run();
+                    new CoverageJsonDetailsReporter(covInstr, _fsAbstraction.WriteAllBytes).Run();
                     break;
                 case "json-summary":
-                    new CoverageJsonSummaryReporter(covInstr, _fsAbstraction).Run();
+                    new CoverageJsonSummaryReporter(covInstr, _fsAbstraction.WriteAllBytes).Run();
                     break;
                 case "spa":
                     Directory.CreateDirectory(".coverage");
@@ -897,7 +897,7 @@ public class Composition
                     {
                         if (content.Length > 14 && Encoding.UTF8.GetString(content, 0, 14) == "var bbcoverage")
                         {
-                            new CoverageJsonDetailsReporter(covInstr, _fsAbstraction, ".coverage/" + name, true).Run();
+                            new CoverageJsonDetailsReporter(covInstr, _fsAbstraction.WriteAllBytes, ".coverage/" + name, true).Run();
                         }
                         else
                         {
