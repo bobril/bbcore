@@ -85,7 +85,6 @@
   <ItemGroup>
     <ProjectReference Include="..\BobrilMdx\BobrilMdx.csproj" />
     <ProjectReference Include="..\Njsast\Njsast.csproj" />
-    <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Resources\error.png">
