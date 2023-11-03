@@ -106,7 +106,7 @@ public abstract class CommandLineCommand
     {
         var firstArg = args[0].Trim();
         var argument = arguments.FirstOrDefault(a =>
-            a.Words?.Contains(firstArg) ?? !firstArg.StartsWith("-"));
+            a.Words?.Contains(firstArg) ?? !firstArg.StartsWith('-'));
         if (argument == null)
         {
             Console.WriteLine("Unknown parameter " + firstArg);
