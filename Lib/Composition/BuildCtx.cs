@@ -285,8 +285,12 @@ public class BuildCtx
         return res.ToArray();
     }
 
-    public void Build(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult,
-        MainBuildResult mainBuildResult, int iterationId)
+    public void Build(
+        ProjectOptions project,
+        bool buildOnlyOnce,
+        BuildResult buildResult,
+        MainBuildResult mainBuildResult,
+        int iterationId)
     {
         if (project.PreserveProjectRoot)
             mainBuildResult.PreserveProjectRoot = true;
