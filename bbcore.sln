@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BobrilMdx", "BobrilMdx\Bobr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BobrilMdx.Test", "BobrilMdx.Test\BobrilMdx.Test.csproj", "{361C0CC0-2139-434D-A505-3B7784C99953}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bbcore.Lib", "Bbcore.Lib\Bbcore.Lib.csproj", "{3A1F79F7-F518-4DB2-8995-8F522B82AEBD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

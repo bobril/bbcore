@@ -26,8 +26,12 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
     readonly IToolsDir _tools;
     readonly ILogger _logger;
 
-    public NjsastBundleBundler(IToolsDir tools, ILogger logger, MainBuildResult mainBuildResult,
-        ProjectOptions project, BuildResult buildResult)
+    public NjsastBundleBundler(
+        IToolsDir tools,
+        ILogger logger,
+        MainBuildResult mainBuildResult,
+        ProjectOptions project,
+        BuildResult buildResult)
     {
         _tools = tools;
         _logger = logger;
