@@ -13,7 +13,7 @@ using Lib.Utils.Logger;
 using Lib.Watcher;
 
 namespace Bbcore.Lib;
-    
+
 public static partial class BbcoreLibrary
 {
     private static readonly ILogger Logger = new DummyLogger();

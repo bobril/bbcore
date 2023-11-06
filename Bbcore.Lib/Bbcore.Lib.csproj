@@ -2,10 +2,18 @@
 
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <PackageId>BbcoreLib</PackageId>
+        <Version>0.0.1</Version>
+        <Authors>Tomáš Zálešák, Boris Letocha</Authors>
+        <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
+        <ProduceReferenceAssemblyInOutDir>true</ProduceReferenceAssemblyInOutDir>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Lib\Lib.csproj" />
+      <ProjectReference Include="..\Lib\Lib.csproj">
+      </ProjectReference>
     </ItemGroup>
 
 </Project>
