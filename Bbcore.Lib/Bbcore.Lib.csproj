@@ -3,6 +3,9 @@
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <LangVersion>latest</LangVersion>
+        <PackageId>Bbcore.Lib</PackageId>
+        <PackageVersion>1.0.0</PackageVersion>
+        <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>
@@ -1269,9 +1272,6 @@
       <EmbeddedResource Include="..\Lib\SCSSProcessor\tsconfig.json">
         <Link>SCSSProcessor\tsconfig.json</Link>
       </EmbeddedResource>
-      <EmbeddedResource Include="..\Lib\ToolsDir\.DS_Store">
-        <Link>ToolsDir\.DS_Store</Link>
-      </EmbeddedResource>
       <EmbeddedResource Include="..\Lib\ToolsDir\CoverageDetailsVisualizer.zip">
         <Link>ToolsDir\CoverageDetailsVisualizer.zip</Link>
       </EmbeddedResource>
@@ -1384,15 +1384,5 @@
         <Link>TSCompiler\bbtsc.ts</Link>
       </EmbeddedResource>
     </ItemGroup>
-
-  <Target Name="PackLinkedFiles" AfterTargets="Build">
-    <ItemGroup Condition="'$(IsPackable)' == 'true'">
-      <Content Include="$(TargetDir)*.cs">
-        <Pack>true</Pack>
-        <PackagePath>linked</PackagePath>
-        <PackageCopyToOutput>true</PackageCopyToOutput>
-      </Content>
-    </ItemGroup>
-  </Target>
 
 </Project>
