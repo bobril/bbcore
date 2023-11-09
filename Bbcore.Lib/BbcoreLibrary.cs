@@ -19,13 +19,6 @@ public static partial class BbcoreLibrary
     private static readonly ILogger Logger = new DummyLogger();
     private const string FileWithResultOfBuilding = "a.js";
     
-    public static void RunBuild(string[] args)
-    {
-        var composition = new Composition(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER")!=null);
-        composition.ParseCommandLine(args);
-        composition.RunCommand();
-    }
-    
     public static bool RunBuild(
         IFsAbstraction files,
         string typeScriptVersion,
