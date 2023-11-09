@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Njsast.Ast;
 using Njsast.Bobril;
@@ -19,9 +20,10 @@ public static class BundlerHelpers
             Encoding.UTF8);
         return reader.ReadToEnd();
     }
-
-    public static string TslibJs = GetText("Njsast.Bundler.JsHeaders.tslib.js");
-    public static string ImportJs = GetText("Njsast.Bundler.JsHeaders.import.js");
+    
+    private static readonly string _assemblyName = Assembly.GetExecutingAssembly().GetName().Name!;
+    private static string TslibJs = GetText($"{_assemblyName}.Bundler.JsHeaders.tslib.js");
+    private static string ImportJs = GetText($"{_assemblyName}.Bundler.JsHeaders.import.js");
 
     public static string JsHeaders(bool withImport)
     {

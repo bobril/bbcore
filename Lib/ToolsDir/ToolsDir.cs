@@ -51,19 +51,20 @@ public class ToolsDir : IToolsDir
             }
 
             SetJasmineVersion("3.3");
-            LoaderJs = ResourceUtils.GetText("Lib.ToolsDir.loader.js").Replace("\"use strict\";", "");
-            JasmineCoreJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.js");
-            JasmineDts299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine299.d.ts");
+            var assemblyNamePrefix = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+            LoaderJs = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.loader.js").Replace("\"use strict\";", "");
+            JasmineCoreJs299 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine299.js");
+            JasmineDts299 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine299.d.ts");
             JasmineDtsPath299 = PathUtils.Join(Path, "jasmine.d.ts");
             if (!fsAbstraction.FileExists(JasmineDtsPath299) || fsAbstraction.ReadAllUtf8(JasmineDtsPath299) != JasmineDts299)
                 fsAbstraction.WriteAllUtf8(JasmineDtsPath299, JasmineDts299);
-            JasmineBootJs299 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot299.js");
-            JasmineBootJs330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot330.js");
-            JasmineBootJs400 = ResourceUtils.GetText("Lib.ToolsDir.jasmine-boot400.js");
-            JasmineCoreJs330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine330.js");
-            JasmineCoreJs400 = ResourceUtils.GetText("Lib.ToolsDir.jasmine400.js");
-            JasmineDts330 = ResourceUtils.GetText("Lib.ToolsDir.jasmine330.d.ts");
-            JasmineDts400 = ResourceUtils.GetText("Lib.ToolsDir.jasmine400.d.ts");
+            JasmineBootJs299 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine-boot299.js");
+            JasmineBootJs330 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine-boot330.js");
+            JasmineBootJs400 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine-boot400.js");
+            JasmineCoreJs330 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine330.js");
+            JasmineCoreJs400 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine400.js");
+            JasmineDts330 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine330.d.ts");
+            JasmineDts400 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine400.d.ts");
             JasmineDtsPath330 = PathUtils.Join(Path, "jasmine330.d.ts");
             JasmineDtsPath400 = PathUtils.Join(Path, "jasmine400.d.ts");
             if (!fsAbstraction.FileExists(JasmineDtsPath330) || fsAbstraction.ReadAllUtf8(JasmineDtsPath330) != JasmineDts330)
@@ -71,12 +72,12 @@ public class ToolsDir : IToolsDir
             if (!fsAbstraction.FileExists(JasmineDtsPath400) || fsAbstraction.ReadAllUtf8(JasmineDtsPath400) != JasmineDts400)
                 fsAbstraction.WriteAllUtf8(JasmineDtsPath400, JasmineDts400);
 
-            WebtZip = ResourceUtils.GetZip("Lib.ToolsDir.webt.zip");
-            WebZip = ResourceUtils.GetZip("Lib.ToolsDir.web.zip");
-            CoverageDetailsVisualizerZip = ResourceUtils.GetZip("Lib.ToolsDir.CoverageDetailsVisualizer.zip");
+            WebtZip = ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.webt.zip");
+            WebZip = ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.web.zip");
+            CoverageDetailsVisualizerZip = ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.CoverageDetailsVisualizer.zip");
 
-            _localeDefs = JObject.Parse(ResourceUtils.GetText("Lib.ToolsDir.localeDefs.json"));
-            LiveReloadJs = ResourceUtils.GetText("Lib.ToolsDir.liveReload.js");
+            _localeDefs = JObject.Parse(ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.localeDefs.json"));
+            LiveReloadJs = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.liveReload.js");
         }
     }
 

@@ -80,8 +80,9 @@ public class ScssProcessor : IScssProcessor
         var engine = _toolsDir.CreateJsEngine();
         engine.EmbedHostObject("bb", _callbacks);
         var assembly = typeof(CssProcessor).Assembly;
-        engine.ExecuteResource("Lib.SCSSProcessor.bbscss.js", assembly);
-        engine.ExecuteResource("Lib.SCSSProcessor.sass.dart.js", assembly);
+        var assemblyName = assembly.GetName().Name!;
+        engine.ExecuteResource($"{assemblyName}.SCSSProcessor.bbscss.js", assembly);
+        engine.ExecuteResource($"{assemblyName}.SCSSProcessor.sass.dart.js", assembly);
         _engine = engine;
         engine.CallFunction("bbInit");
         return engine;

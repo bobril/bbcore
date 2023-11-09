@@ -1,4 +1,5 @@
-﻿using Lib.TSCompiler;
+﻿using System.Threading.Tasks;
+using Lib.TSCompiler;
 using Lib.CSSProcessor;
 using Lib.SCSSProcessor;
 
@@ -14,4 +15,5 @@ public interface ICompilerPool
 
     IScssProcessor GetScss();
     void ReleaseScss(IScssProcessor value);
+    Task FreeMemory();
 }

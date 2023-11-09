@@ -37,7 +37,6 @@ public static partial class BbcoreLibrary
         parsedMessages = null;
         
         var context = CreateBundlingContext(files, directory, typeScriptVersion);
-        PrepareBundlingContext(context, directory);
         
         var errors = 0;
         var warnings = 0;
@@ -54,39 +53,6 @@ public static partial class BbcoreLibrary
 
         parsedMessages = ParseMessages(context.Messages);
         return false;
-    }
-    
-    private static void PrepareBundlingContext(BuildContext context, string directory)
-    {
-        context.DiskCache = new DiskCache(context.FileSystemAbstraction, () => new DummyWatcher());
-        context.MainBuildResult = new MainBuildResult(true, null, null);
-        context.DirectoryCache = context.DiskCache.TryGetItem(directory) as IDirectoryCache;
-        context.TsProject = TSProject.Create(context.DirectoryCache, context.DiskCache, Logger, null);
-        context.TsProject!.IsRootProject = true;
-        context.TsProject.ProjectOptions!.ForbiddenDependencyUpdate = true;
-        context.TsProject.ProjectOptions!.UpdateFromProjectJson(null);
-        context.TsProject.ProjectOptions.Debug = false;
-        context.TsProject.ProjectOptions.LibraryMode = true;
-        context.TsProject.ProjectOptions.RefreshCompilerOptions();
-        context.TsProject.ProjectOptions.CompilerOptions!.allowJs = true;
-        context.TsProject.ProjectOptions.CompilerOptions.declaration = true;
-        context.TsProject.ProjectOptions.CompilerOptions.module = ModuleKind.Commonjs;
-        context.TsProject.ProjectOptions.CompilerOptions.target = ScriptTarget.Es2019;
-        context.TsProject.ProjectOptions.CompilerOptions.strict = true;
-        context.TsProject.ProjectOptions.CompilerOptions.outDir = "dist";
-        context.TsProject.ProjectOptions.CompilerOptions.moduleResolution = ModuleResolutionKind.NodeJs;
-        context.TsProject.ProjectOptions.RefreshMainFile();
-        context.BuildResult = new BuildResult(context.MainBuildResult, context.TsProject.ProjectOptions);
-        context.Messages = new List<Diagnostic>();
-        context.BuildCache = new DummyBuildCache();
-        context.TranspilationContext = new BuildCtx(
-            new CompilerPool(context.ToolsDir, Logger),
-            context.DiskCache,
-            verbose: true,
-            Logger,
-            currentDirectory: context.TsProject.Owner.FullPath,
-            context.BuildCache,
-            typeCheckValue: "no");
     }
     
     [GeneratedRegex(@".*/(.*?)$")]
@@ -156,6 +122,38 @@ public static partial class BbcoreLibrary
             FileSystemAbstraction = files,
         };
         context.ToolsDir.SetTypeScriptVersion(typeScriptVersion);
+        context.DiskCache = new DiskCache(context.FileSystemAbstraction, () => new DummyWatcher());
+        context.MainBuildResult = new MainBuildResult(true, null, null);
+        context.DirectoryCache = context.DiskCache.TryGetItem(directory) as IDirectoryCache;
+        context.TsProject = TSProject.Create(context.DirectoryCache, context.DiskCache, Logger, null);
+        context.TsProject!.IsRootProject = true;
+        context.TsProject.ProjectOptions!.ForbiddenDependencyUpdate = true;
+        context.TsProject.ProjectOptions!.UpdateFromProjectJson(null);
+        context.TsProject.ProjectOptions.Debug = false;
+        context.TsProject.ProjectOptions.LibraryMode = true;
+        context.TsProject.ProjectOptions.FinalCompilerOptions = context.TsProject.ProjectOptions.GetDefaultTSCompilerOptions();
+        context.TsProject.ProjectOptions.FinalCompilerOptions!.allowJs = true;
+        context.TsProject.ProjectOptions.FinalCompilerOptions.declaration = true;
+        context.TsProject.ProjectOptions.FinalCompilerOptions.module = ModuleKind.Commonjs;
+        context.TsProject.ProjectOptions.FinalCompilerOptions.target = ScriptTarget.Es2019;
+        context.TsProject.ProjectOptions.FinalCompilerOptions.strict = true;
+        context.TsProject.ProjectOptions.FinalCompilerOptions.outDir = "dist";
+        context.TsProject.ProjectOptions.FinalCompilerOptions.moduleResolution = ModuleResolutionKind.NodeJs;
+        context.TsProject.ProjectOptions.MainFile = "/tmp/index.ts";
+        context.TsProject.ProjectOptions.Tools = context.ToolsDir;
+        context.TsProject.ProjectOptions.TypeScriptVersion = typeScriptVersion;
+        context.BuildResult = new BuildResult(context.MainBuildResult, context.TsProject.ProjectOptions);
+        context.Messages = new List<Diagnostic>();
+        context.BuildCache = new DummyBuildCache();
+        context.TranspilationContext = new BuildCtx(
+            new CompilerPool(context.ToolsDir, Logger),
+            context.DiskCache,
+            verbose: true,
+            Logger,
+            currentDirectory: context.TsProject.Owner.FullPath,
+            context.BuildCache,
+            typeCheckValue: "no");
+        
         return context;
     }
     
@@ -170,6 +168,8 @@ public static partial class BbcoreLibrary
             context.BuildResult,
             context.MainBuildResult,
             iterationId: 1);
+
+        context.TranspilationContext.CompilerPool.FreeMemory().GetAwaiter();
         
         IncludeMessages(
             context.TsProject.ProjectOptions,

@@ -233,7 +233,8 @@ public class TsCompiler : ITSCompiler
         engine.Execute(_toolsDir.TypeScriptJsContent, _toolsDir.TypeScriptLibDir + "/typescript.js");
         engine.EmbedHostObject("bb", _callbacks);
         var assembly = typeof(TsCompiler).Assembly;
-        engine.ExecuteResource("Lib.TSCompiler.bbtsc.js", assembly);
+        var assemblyName = assembly.GetName().Name;
+        engine.ExecuteResource($"{assemblyName}.TSCompiler.bbtsc.js", assembly);
         engine.SetVariableValue("bbDefaultLibLocation", _toolsDir.TypeScriptLibDir);
         _engine = engine;
         return engine;
