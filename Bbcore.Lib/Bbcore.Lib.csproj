@@ -6,6 +6,7 @@
         <PackageId>Bbcore.Lib</PackageId>
         <PackageVersion>1.0.0</PackageVersion>
         <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
+        <Authors>Tomáš Zálešák, Boris Letocha</Authors>
     </PropertyGroup>
 
     <ItemGroup>
