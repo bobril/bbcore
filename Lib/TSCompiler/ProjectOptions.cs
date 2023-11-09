@@ -965,6 +965,8 @@ public class ProjectOptions
             res.Add("swFiles", mainBuildResult.FilesContent.Select(a => a.Key).OrderBy(a => a).ToArray());
         }
 
+        if (ExpandedDefines == null) return res;
+        
         foreach (var p in ExpandedDefines)
         {
             res.Add(p.Key, p.Value.ConstValue());

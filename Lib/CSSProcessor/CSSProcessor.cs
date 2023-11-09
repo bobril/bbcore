@@ -59,8 +59,9 @@ public class CssProcessor : ICssProcessor
         var engine = _toolsDir.CreateJsEngine();
         engine.EmbedHostObject("bb", _callbacks);
         var assembly = typeof(CssProcessor).Assembly;
-        engine.ExecuteResource("Lib.CSSProcessor.bundle.min.js", assembly);
-        engine.ExecuteResource("Lib.CSSProcessor.bbcss.js", assembly);
+        var assemblyName = assembly.GetName().Name!;
+        engine.ExecuteResource($"{assemblyName}.CSSProcessor.bundle.min.js", assembly);
+        engine.ExecuteResource($"{assemblyName}.CSSProcessor.bbcss.js", assembly);
         _engine = engine;
         return engine;
     }

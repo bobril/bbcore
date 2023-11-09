@@ -3,17 +3,1396 @@
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <LangVersion>latest</LangVersion>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <PackageId>BbcoreLib</PackageId>
-        <Version>0.0.1</Version>
-        <Authors>Tomáš Zálešák, Boris Letocha</Authors>
-        <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
-        <ProduceReferenceAssemblyInOutDir>true</ProduceReferenceAssemblyInOutDir>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Lib\Lib.csproj">
-      </ProjectReference>
+      <PackageReference Include="BTDB" Version="27.0.2" />
+      <PackageReference Include="HtmlAgilityPack" Version="1.11.54" />
+      <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.21.0" />
+      <PackageReference Include="JavaScriptEngineSwitcher.V8" Version="3.23.2" />
+      <PackageReference Include="JetBrains.Annotations" Version="2023.2.0" />
+      <PackageReference Include="Markdig" Version="0.33.0" />
+      <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="ProxyKit" Version="2.3.4" />
+      <PackageReference Include="SemanticVersioning" Version="2.0.2" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
+      <PackageReference Include="System.Reactive" Version="6.0.0" />
+      <PackageReference Include="UAParser" Version="3.1.47" />
+      <PackageReference Include="WebMarkupMin.Core" Version="2.14.0" />
+      <PackageReference Include="YamlDotNet" Version="13.3.1" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Compile Include="..\BobrilMdx\AbbreviationRenderer.cs">
+        <Link>AbbreviationRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\AutolinkAndJsxInlineParser.cs">
+        <Link>AutolinkAndJsxInlineParser.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\AutolinkInlineRenderer.cs">
+        <Link>AutolinkInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\CodeBlockRenderer.cs">
+        <Link>CodeBlockRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\CodeInlineRenderer.cs">
+        <Link>CodeInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\DelimiterInlineRenderer.cs">
+        <Link>DelimiterInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\EmphasisInlineRenderer.cs">
+        <Link>EmphasisInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\HeadingRenderer.cs">
+        <Link>HeadingRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\HtmlBlockRenderer.cs">
+        <Link>HtmlBlockRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\HtmlEntityInlineRenderer.cs">
+        <Link>HtmlEntityInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\HtmlInlineRenderer.cs">
+        <Link>HtmlInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\HtmlTableRenderer.cs">
+        <Link>HtmlTableRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\ImportBlock.cs">
+        <Link>ImportBlock.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\LineBreakInlineRenderer.cs">
+        <Link>LineBreakInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\LinkInlineRenderer.cs">
+        <Link>LinkInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\ListRenderer.cs">
+        <Link>ListRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\LiteralInlineRenderer.cs">
+        <Link>LiteralInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\MdxBlockParser.cs">
+        <Link>MdxBlockParser.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\MdxCodeInline.cs">
+        <Link>MdxCodeInline.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\MdxCodeInlineParser.cs">
+        <Link>MdxCodeInlineParser.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\MdxCodeInlineRenderer.cs">
+        <Link>MdxCodeInlineRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\MdxToTsx.cs">
+        <Link>MdxToTsx.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\ParagraphRenderer.cs">
+        <Link>ParagraphRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\QuoteBlockRenderer.cs">
+        <Link>QuoteBlockRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\ThematicBreakRenderer.cs">
+        <Link>ThematicBreakRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\TsxDefinitionListRenderer.cs">
+        <Link>TsxDefinitionListRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\TsxFigureCaptionRenderer.cs">
+        <Link>TsxFigureCaptionRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\TsxFigureRenderer.cs">
+        <Link>TsxFigureRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\TsxFooterBlockRenderer.cs">
+        <Link>TsxFooterBlockRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\TsxObjectRenderer.cs">
+        <Link>TsxObjectRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\TsxProps.cs">
+        <Link>TsxProps.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\TsxRenderer.cs">
+        <Link>TsxRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\BobrilMdx\TsxTaskListRenderer.cs">
+        <Link>TsxTaskListRenderer.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\AssetsPlugin\AssetsContentBuilder.cs">
+        <Link>AssetsPlugin\AssetsContentBuilder.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\AssetsPlugin\AssetsGenerator.cs">
+        <Link>AssetsPlugin\AssetsGenerator.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\AssetsPlugin\ContentBuilder.cs">
+        <Link>AssetsPlugin\ContentBuilder.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\AssetsPlugin\SpritesContentBuilder.cs">
+        <Link>AssetsPlugin\SpritesContentBuilder.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\BuildCache\BuildCacheDB.cs">
+        <Link>BuildCache\BuildCacheDB.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\BuildCache\DummyBuildCache.cs">
+        <Link>BuildCache\DummyBuildCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\BuildCache\IBuildCache.cs">
+        <Link>BuildCache\IBuildCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\BuildCache\PersistentBuildCache.cs">
+        <Link>BuildCache\PersistentBuildCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\BuildCtx.cs">
+        <Link>Composition\BuildCtx.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\CompilerPool.cs">
+        <Link>Composition\CompilerPool.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\Composition.cs">
+        <Link>Composition\Composition.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\GetFileCoverageRequest.cs">
+        <Link>Composition\GetFileCoverageRequest.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\ICompilerPool.cs">
+        <Link>Composition\ICompilerPool.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\MainServer.cs">
+        <Link>Composition\MainServer.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\MainServerConnectionHandler.cs">
+        <Link>Composition\MainServerConnectionHandler.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\MessageAndStack.cs">
+        <Link>Composition\MessageAndStack.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\StackFrame.cs">
+        <Link>Composition\StackFrame.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\SuiteOrTest.cs">
+        <Link>Composition\SuiteOrTest.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\TestResultsHolder.cs">
+        <Link>Composition\TestResultsHolder.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\TestServer.cs">
+        <Link>Composition\TestServer.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\TestServerConnectionHandler.cs">
+        <Link>Composition\TestServerConnectionHandler.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Composition\TestServerState.cs">
+        <Link>Composition\TestServerState.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Configuration\CfgManager.cs">
+        <Link>Configuration\CfgManager.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Configuration\MainCfg.cs">
+        <Link>Configuration\MainCfg.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\CSSProcessor\CSSProcessor.cs">
+        <Link>CSSProcessor\CSSProcessor.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\CSSProcessor\ICSSProcessor.cs">
+        <Link>CSSProcessor\ICSSProcessor.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\CSSProcessor\SourceFromPair.cs">
+        <Link>CSSProcessor\SourceFromPair.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\DiskCache.cs">
+        <Link>DiskCache\DiskCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\FakeFs.cs">
+        <Link>DiskCache\FakeFs.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\FsItemInfo.cs">
+        <Link>DiskCache\FsItemInfo.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\IDirectoryCache.cs">
+        <Link>DiskCache\IDirectoryCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\IDiskCache.cs">
+        <Link>DiskCache\IDiskCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\IFileCache.cs">
+        <Link>DiskCache\IFileCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\IFsAbstraction.cs">
+        <Link>DiskCache\IFsAbstraction.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\IItemCache.cs">
+        <Link>DiskCache\IItemCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\InMemoryFs.cs">
+        <Link>DiskCache\InMemoryFs.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\DiskCache\NativeFsAbstraction.cs">
+        <Link>DiskCache\NativeFsAbstraction.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\GlobalSuppressions.cs">
+        <Link>GlobalSuppressions.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\HeadlessBrowser\BrowserLauncher.cs">
+        <Link>HeadlessBrowser\BrowserLauncher.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\HeadlessBrowser\BrowserPathFinder.cs">
+        <Link>HeadlessBrowser\BrowserPathFinder.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\CurrentNodePackageManager.cs">
+        <Link>Registry\CurrentNodePackageManager.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\DiffChangeLog.cs">
+        <Link>Registry\DiffChangeLog.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\INodePackageManager.cs">
+        <Link>Registry\INodePackageManager.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\NpmNodePackageManager.cs">
+        <Link>Registry\NpmNodePackageManager.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\NpmRepositoryAccessor.cs">
+        <Link>Registry\NpmRepositoryAccessor.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\PackageInfo.cs">
+        <Link>Registry\PackageInfo.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\PackageJson.cs">
+        <Link>Registry\PackageJson.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\PackageJsonDist.cs">
+        <Link>Registry\PackageJsonDist.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\PackagePathVersion.cs">
+        <Link>Registry\PackagePathVersion.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\RegistryCache.cs">
+        <Link>Registry\RegistryCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\TarExtractor.cs">
+        <Link>Registry\TarExtractor.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\YarnLockParser.cs">
+        <Link>Registry\YarnLockParser.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\YarnNodePackageManager.cs">
+        <Link>Registry\YarnNodePackageManager.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\SCSSProcessor\IScssProcessor.cs">
+        <Link>SCSSProcessor\IScssProcessor.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\SCSSProcessor\ScssProcessor.cs">
+        <Link>SCSSProcessor\ScssProcessor.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Spriter\Dim2.cs">
+        <Link>Spriter\Dim2.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Spriter\ISpritePlace.cs">
+        <Link>Spriter\ISpritePlace.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Spriter\OutputSprite.cs">
+        <Link>Spriter\OutputSprite.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Spriter\Sprite2dPlacer.cs">
+        <Link>Spriter\Sprite2dPlacer.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Spriter\SpriteSlice.cs">
+        <Link>Spriter\SpriteSlice.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\ToolsDir\IToolsDir.cs">
+        <Link>ToolsDir\IToolsDir.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\ToolsDir\ToolsDir.cs">
+        <Link>ToolsDir\ToolsDir.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Translation\MessageParser.cs">
+        <Link>Translation\MessageParser.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Translation\TranslationDb.cs">
+        <Link>Translation\TranslationDb.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Translation\TranslationKey.cs">
+        <Link>Translation\TranslationKey.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\BobrilBuildOptions.cs">
+        <Link>TSCompiler\BobrilBuildOptions.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\BuildModuleCtx.cs">
+        <Link>TSCompiler\BuildModuleCtx.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\BuildResult.cs">
+        <Link>TSCompiler\BuildResult.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\DepedencyUpdate.cs">
+        <Link>TSCompiler\DepedencyUpdate.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\Diagnostic.cs">
+        <Link>TSCompiler\Diagnostic.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\FastBundleBundler.cs">
+        <Link>TSCompiler\FastBundleBundler.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\IBundler.cs">
+        <Link>TSCompiler\IBundler.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\ITSCompiler.cs">
+        <Link>TSCompiler\ITSCompiler.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\ITSCompilerOptions.cs">
+        <Link>TSCompiler\ITSCompilerOptions.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\MainBuildResult.cs">
+        <Link>TSCompiler\MainBuildResult.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\NjsastBundleBundler.cs">
+        <Link>TSCompiler\NjsastBundleBundler.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\PragmaParser.cs">
+        <Link>TSCompiler\PragmaParser.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\ProjectOptions.cs">
+        <Link>TSCompiler\ProjectOptions.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\SpriteHolder.cs">
+        <Link>TSCompiler\SpriteHolder.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\StructuralEqualityComparer.cs">
+        <Link>TSCompiler\StructuralEqualityComparer.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\StyleDefNamingStyle.cs">
+        <Link>TSCompiler\StyleDefNamingStyle.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\TranspileResult.cs">
+        <Link>TSCompiler\TranspileResult.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\TSCompiler.cs">
+        <Link>TSCompiler\TSCompiler.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\TSCompilerOptions.cs">
+        <Link>TSCompiler\TSCompilerOptions.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\TSConfigJson.cs">
+        <Link>TSCompiler\TSConfigJson.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\TSFileAdditionalInfo.cs">
+        <Link>TSCompiler\TSFileAdditionalInfo.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\TSCompiler\TSProject.cs">
+        <Link>TSCompiler\TSProject.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\BuildCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\BuildCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\BuildInteractiveCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\BuildInteractiveCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\BuildInteractiveNoUpdateCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\BuildInteractiveNoUpdateCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\CommonInteractiveCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\CommonInteractiveCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\CommonParametersBaseCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\CommonParametersBaseCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\FindUnusedCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\FindUnusedCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\GenerateTsConfigCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\GenerateTsConfigCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\JSCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\JSCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\JSGlobalsCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\JSGlobalsCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\PackageManagerAddCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\PackageManagerAddCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\PackageManagerCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\PackageManagerCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\PackageManagerInstallCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\PackageManagerInstallCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\PackageManagerUpgradeCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\PackageManagerUpgradeCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\TestCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\TestCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\TranslationCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\TranslationCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\VisualizeSourceMapCommand.cs">
+        <Link>Utils\CommandLineParser\Definitions\VisualizeSourceMapCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineArgument.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineArgument.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineArgumentBool.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineArgumentBool.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineArgumentBoolNullable.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineArgumentBoolNullable.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineArgumentEnumValues.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineArgumentEnumValues.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineArgumentsDynamicStrings.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineArgumentsDynamicStrings.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineArgumentString.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineArgumentString.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineArgumentStrings.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineArgumentStrings.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineArgumentSwitch.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineArgumentSwitch.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineCommand.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineCommand.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\CommandLineParser\Parser\CommandLineParser.cs">
+        <Link>Utils\CommandLineParser\Parser\CommandLineParser.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\Disposer.cs">
+        <Link>Utils\Disposer.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\Logger\ConsoleLogger.cs">
+        <Link>Utils\Logger\ConsoleLogger.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\Logger\DummyLogger.cs">
+        <Link>Utils\Logger\DummyLogger.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\Logger\ILogger.cs">
+        <Link>Utils\Logger\ILogger.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\Notification\NotificationExtensions.cs">
+        <Link>Utils\Notification\NotificationExtensions.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\Notification\NotificationManager.cs">
+        <Link>Utils\Notification\NotificationManager.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\OrderedHashSet.cs">
+        <Link>Utils\OrderedHashSet.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\PathUtils.cs">
+        <Link>Utils\PathUtils.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\ResourceUtils.cs">
+        <Link>Utils\ResourceUtils.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Watcher\DummyWatcher.cs">
+        <Link>Watcher\DummyWatcher.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Watcher\IDirectoryWatcher.cs">
+        <Link>Watcher\IDirectoryWatcher.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Watcher\OsWatcher.cs">
+        <Link>Watcher\OsWatcher.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Watcher\PollingWatcher.cs">
+        <Link>Watcher\PollingWatcher.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\WebServer\ILongPollingConnection.cs">
+        <Link>WebServer\ILongPollingConnection.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\WebServer\ILongPollingConnectionHandler.cs">
+        <Link>WebServer\ILongPollingConnectionHandler.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\WebServer\ILongPollingServer.cs">
+        <Link>WebServer\ILongPollingServer.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\WebServer\IWebServerBuilder.cs">
+        <Link>WebServer\IWebServerBuilder.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\WebServer\LongPollingServer.cs">
+        <Link>WebServer\LongPollingServer.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\WebServer\WebServerHost.cs">
+        <Link>WebServer\WebServerHost.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\AstDump\AstDumpWriter.cs">
+        <Link>AstDump\AstDumpWriter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\AstDump\ConsoleLineSink.cs">
+        <Link>AstDump\ConsoleLineSink.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\AstDump\DumpAst.cs">
+        <Link>AstDump\DumpAst.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\AstDump\IAstDumpWriter.cs">
+        <Link>AstDump\IAstDumpWriter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\AstDump\ILineSink.cs">
+        <Link>AstDump\ILineSink.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\AstDump\StringLineSink.cs">
+        <Link>AstDump\StringLineSink.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstAccessor.cs">
+        <Link>Ast\AstAccessor.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstArray.cs">
+        <Link>Ast\AstArray.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstArrow.cs">
+        <Link>Ast\AstArrow.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstAssign.cs">
+        <Link>Ast\AstAssign.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstAtom.cs">
+        <Link>Ast\AstAtom.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstAwait.cs">
+        <Link>Ast\AstAwait.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstBigInt.cs">
+        <Link>Ast\AstBigInt.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstBinary.cs">
+        <Link>Ast\AstBinary.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstBlock.cs">
+        <Link>Ast\AstBlock.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstBlockStatement.cs">
+        <Link>Ast\AstBlockStatement.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstBoolean.cs">
+        <Link>Ast\AstBoolean.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstBreak.cs">
+        <Link>Ast\AstBreak.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstCall.cs">
+        <Link>Ast\AstCall.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstCase.cs">
+        <Link>Ast\AstCase.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstCatch.cs">
+        <Link>Ast\AstCatch.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstClass.cs">
+        <Link>Ast\AstClass.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstClassExpression.cs">
+        <Link>Ast\AstClassExpression.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstConciseMethod.cs">
+        <Link>Ast\AstConciseMethod.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstConditional.cs">
+        <Link>Ast\AstConditional.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstConst.cs">
+        <Link>Ast\AstConst.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstConstant.cs">
+        <Link>Ast\AstConstant.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstContinue.cs">
+        <Link>Ast\AstContinue.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDebugger.cs">
+        <Link>Ast\AstDebugger.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDefault.cs">
+        <Link>Ast\AstDefault.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDefaultAssign.cs">
+        <Link>Ast\AstDefaultAssign.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDefClass.cs">
+        <Link>Ast\AstDefClass.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDefinitions.cs">
+        <Link>Ast\AstDefinitions.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDefun.cs">
+        <Link>Ast\AstDefun.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDestructuring.cs">
+        <Link>Ast\AstDestructuring.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDo.cs">
+        <Link>Ast\AstDo.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDot.cs">
+        <Link>Ast\AstDot.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstDWLoop.cs">
+        <Link>Ast\AstDWLoop.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstEmptyStatement.cs">
+        <Link>Ast\AstEmptyStatement.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstExit.cs">
+        <Link>Ast\AstExit.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstExpansion.cs">
+        <Link>Ast\AstExpansion.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstExport.cs">
+        <Link>Ast\AstExport.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstFalse.cs">
+        <Link>Ast\AstFalse.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstFinally.cs">
+        <Link>Ast\AstFinally.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstFor.cs">
+        <Link>Ast\AstFor.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstForIn.cs">
+        <Link>Ast\AstForIn.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstForOf.cs">
+        <Link>Ast\AstForOf.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstFunction.cs">
+        <Link>Ast\AstFunction.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstHole.cs">
+        <Link>Ast\AstHole.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstIf.cs">
+        <Link>Ast\AstIf.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstImport.cs">
+        <Link>Ast\AstImport.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstImportExpression.cs">
+        <Link>Ast\AstImportExpression.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstImportMeta.cs">
+        <Link>Ast\AstImportMeta.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstInfinity.cs">
+        <Link>Ast\AstInfinity.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstIterationStatement.cs">
+        <Link>Ast\AstIterationStatement.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstJump.cs">
+        <Link>Ast\AstJump.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstLabel.cs">
+        <Link>Ast\AstLabel.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstLabeledStatement.cs">
+        <Link>Ast\AstLabeledStatement.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstLabelRef.cs">
+        <Link>Ast\AstLabelRef.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstLambda.cs">
+        <Link>Ast\AstLambda.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstLet.cs">
+        <Link>Ast\AstLet.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstLoopControl.cs">
+        <Link>Ast\AstLoopControl.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstNameMapping.cs">
+        <Link>Ast\AstNameMapping.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstNaN.cs">
+        <Link>Ast\AstNaN.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstNew.cs">
+        <Link>Ast\AstNew.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstNewTarget.cs">
+        <Link>Ast\AstNewTarget.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstNode.cs">
+        <Link>Ast\AstNode.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstNull.cs">
+        <Link>Ast\AstNull.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstNumber.cs">
+        <Link>Ast\AstNumber.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstObject.cs">
+        <Link>Ast\AstObject.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstObjectGetter.cs">
+        <Link>Ast\AstObjectGetter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstObjectKeyVal.cs">
+        <Link>Ast\AstObjectKeyVal.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstObjectProperty.cs">
+        <Link>Ast\AstObjectProperty.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstObjectSetter.cs">
+        <Link>Ast\AstObjectSetter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstPrefixedTemplateString.cs">
+        <Link>Ast\AstPrefixedTemplateString.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstPropAccess.cs">
+        <Link>Ast\AstPropAccess.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstRegExp.cs">
+        <Link>Ast\AstRegExp.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstReturn.cs">
+        <Link>Ast\AstReturn.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstScope.cs">
+        <Link>Ast\AstScope.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSequence.cs">
+        <Link>Ast\AstSequence.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSimpleStatement.cs">
+        <Link>Ast\AstSimpleStatement.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstStatement.cs">
+        <Link>Ast\AstStatement.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstStatementWithBody.cs">
+        <Link>Ast\AstStatementWithBody.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstString.cs">
+        <Link>Ast\AstString.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSub.cs">
+        <Link>Ast\AstSub.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSuper.cs">
+        <Link>Ast\AstSuper.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSwitch.cs">
+        <Link>Ast\AstSwitch.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSwitchBranch.cs">
+        <Link>Ast\AstSwitchBranch.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbol.cs">
+        <Link>Ast\AstSymbol.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolBlockDeclaration.cs">
+        <Link>Ast\AstSymbolBlockDeclaration.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolCatch.cs">
+        <Link>Ast\AstSymbolCatch.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolClass.cs">
+        <Link>Ast\AstSymbolClass.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolConst.cs">
+        <Link>Ast\AstSymbolConst.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolDeclaration.cs">
+        <Link>Ast\AstSymbolDeclaration.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolDefClass.cs">
+        <Link>Ast\AstSymbolDefClass.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolDefun.cs">
+        <Link>Ast\AstSymbolDefun.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolExport.cs">
+        <Link>Ast\AstSymbolExport.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolExportForeign.cs">
+        <Link>Ast\AstSymbolExportForeign.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolFunarg.cs">
+        <Link>Ast\AstSymbolFunarg.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolImport.cs">
+        <Link>Ast\AstSymbolImport.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolImportForeign.cs">
+        <Link>Ast\AstSymbolImportForeign.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolLambda.cs">
+        <Link>Ast\AstSymbolLambda.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolLet.cs">
+        <Link>Ast\AstSymbolLet.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolMethod.cs">
+        <Link>Ast\AstSymbolMethod.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolProperty.cs">
+        <Link>Ast\AstSymbolProperty.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolRef.cs">
+        <Link>Ast\AstSymbolRef.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolVar.cs">
+        <Link>Ast\AstSymbolVar.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstTemplateSegment.cs">
+        <Link>Ast\AstTemplateSegment.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstTemplateString.cs">
+        <Link>Ast\AstTemplateString.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstThis.cs">
+        <Link>Ast\AstThis.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstThrow.cs">
+        <Link>Ast\AstThrow.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstToplevel.cs">
+        <Link>Ast\AstToplevel.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstTrue.cs">
+        <Link>Ast\AstTrue.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstTry.cs">
+        <Link>Ast\AstTry.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstUnary.cs">
+        <Link>Ast\AstUnary.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstUnaryPostfix.cs">
+        <Link>Ast\AstUnaryPostfix.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstUnaryPrefix.cs">
+        <Link>Ast\AstUnaryPrefix.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstUndefined.cs">
+        <Link>Ast\AstUndefined.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstVar.cs">
+        <Link>Ast\AstVar.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstVarDef.cs">
+        <Link>Ast\AstVarDef.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstWhile.cs">
+        <Link>Ast\AstWhile.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstWith.cs">
+        <Link>Ast\AstWith.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\AstYield.cs">
+        <Link>Ast\AstYield.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\DeepCloneTransformer.cs">
+        <Link>Ast\DeepCloneTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\Extensions.cs">
+        <Link>Ast\Extensions.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\Helpers.cs">
+        <Link>Ast\Helpers.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\IAstStatementWithBody.cs">
+        <Link>Ast\IAstStatementWithBody.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\IMayBeBlockScope.cs">
+        <Link>Ast\IMayBeBlockScope.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\IPurpose.cs">
+        <Link>Ast\IPurpose.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\JsModule.cs">
+        <Link>Ast\JsModule.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\JsModuleExport.cs">
+        <Link>Ast\JsModuleExport.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Ast\SymbolUsage.cs">
+        <Link>Ast\SymbolUsage.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bobril\CommentListener.cs">
+        <Link>Bobril\CommentListener.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bobril\EnvExpanderTransformer.cs">
+        <Link>Bobril\EnvExpanderTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bobril\GatherBobrilSourceInfo.cs">
+        <Link>Bobril\GatherBobrilSourceInfo.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bobril\SourceInfo.cs">
+        <Link>Bobril\SourceInfo.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bundler\BundlerHelpers.cs">
+        <Link>Bundler\BundlerHelpers.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bundler\BundlerImpl.cs">
+        <Link>Bundler\BundlerImpl.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bundler\BundlerTreeTransformer.cs">
+        <Link>Bundler\BundlerTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bundler\ImportExportTransformer.cs">
+        <Link>Bundler\ImportExportTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bundler\SourceFile.cs">
+        <Link>Bundler\SourceFile.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bundler\SplitInfo.cs">
+        <Link>Bundler\SplitInfo.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bundler\StringTrie.cs">
+        <Link>Bundler\StringTrie.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Bundler\ToplevelRenameWalker.cs">
+        <Link>Bundler\ToplevelRenameWalker.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\BlockEliminationTreeTransformer.cs">
+        <Link>Compress\BlockEliminationTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\BooleanConstantsTreeTransformer.cs">
+        <Link>Compress\BooleanConstantsTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\CompressModuleTreeTransformerBase.cs">
+        <Link>Compress\CompressModuleTreeTransformerBase.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\CompressOptions.cs">
+        <Link>Compress\CompressOptions.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\CompressTreeTransformer.cs">
+        <Link>Compress\CompressTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\CompressUtils.cs">
+        <Link>Compress\CompressUtils.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\ControlFlow.cs">
+        <Link>Compress\ControlFlow.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\DeclarationCollectorTreeWalker.cs">
+        <Link>Compress\DeclarationCollectorTreeWalker.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\EmptyStatementEliminationTreeTransformer.cs">
+        <Link>Compress\EmptyStatementEliminationTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\FunctionReturnTreeTransformer.cs">
+        <Link>Compress\FunctionReturnTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\ICompressOptions.cs">
+        <Link>Compress\ICompressOptions.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\LoopControlFinderTreeWalker.cs">
+        <Link>Compress\LoopControlFinderTreeWalker.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\NodeFinderTreeWalker.cs">
+        <Link>Compress\NodeFinderTreeWalker.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\RemoveSideEffectFreeCodeTreeTransformer.cs">
+        <Link>Compress\RemoveSideEffectFreeCodeTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\UnreachableAfterJumpCodeEliminationTreeTransformerBase.cs">
+        <Link>Compress\UnreachableAfterJumpCodeEliminationTreeTransformerBase.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\UnreachableCodeEliminationTreeTransformer.cs">
+        <Link>Compress\UnreachableCodeEliminationTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\UnreachableFunctionCodeEliminationTreeTransformer.cs">
+        <Link>Compress\UnreachableFunctionCodeEliminationTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\UnreachableLoopCodeEliminationTreeTransformer.cs">
+        <Link>Compress\UnreachableLoopCodeEliminationTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\UnreachableSwitchCodeEliminationTreeTransformer.cs">
+        <Link>Compress\UnreachableSwitchCodeEliminationTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\UnusedFunctionEliminationTreeTransformer.cs">
+        <Link>Compress\UnusedFunctionEliminationTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Compress\VariableHoistingTreeTransformer.cs">
+        <Link>Compress\VariableHoistingTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\ConstEval\ExportFinder.cs">
+        <Link>ConstEval\ExportFinder.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\ConstEval\IConstEvalCtx.cs">
+        <Link>ConstEval\IConstEvalCtx.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\ConstEval\IImportResolver.cs">
+        <Link>ConstEval\IImportResolver.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\ConstEval\InMemoryImportResolver.cs">
+        <Link>ConstEval\InMemoryImportResolver.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\ConstEval\ResolvingConstEvalCtx.cs">
+        <Link>ConstEval\ResolvingConstEvalCtx.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\CoverageFile.cs">
+        <Link>Coverage\CoverageFile.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\CoverageInfo.cs">
+        <Link>Coverage\CoverageInfo.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\CoverageInstrumentation.cs">
+        <Link>Coverage\CoverageInstrumentation.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\CoverageJsonDetailsReporter.cs">
+        <Link>Coverage\CoverageJsonDetailsReporter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\CoverageJsonSummaryReporter.cs">
+        <Link>Coverage\CoverageJsonSummaryReporter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\CoverageReporterBase.cs">
+        <Link>Coverage\CoverageReporterBase.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\CoverageStats.cs">
+        <Link>Coverage\CoverageStats.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\CoverageXmlSonarReporter.cs">
+        <Link>Coverage\CoverageXmlSonarReporter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\InstrumentedFile.cs">
+        <Link>Coverage\InstrumentedFile.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\InstrumentedFileConverter.cs">
+        <Link>Coverage\InstrumentedFileConverter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\InstrumentedInfo.cs">
+        <Link>Coverage\InstrumentedInfo.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\InstrumentedInfoConverter.cs">
+        <Link>Coverage\InstrumentedInfoConverter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\InstrumentedInfoType.cs">
+        <Link>Coverage\InstrumentedInfoType.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\InstrumentTreeTransformer.cs">
+        <Link>Coverage\InstrumentTreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Coverage\ITextFileReader.cs">
+        <Link>Coverage\ITextFileReader.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\DictionaryExtensions.cs">
+        <Link>DictionaryExtensions.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\HashHelpers.cs">
+        <Link>HashHelpers.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Output\OutputContext.cs">
+        <Link>Output\OutputContext.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Output\OutputOptions.cs">
+        <Link>Output\OutputOptions.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Output\QuoteType.cs">
+        <Link>Output\QuoteType.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\CharCode.cs">
+        <Link>Reader\CharCode.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Expression.cs">
+        <Link>Reader\Expression.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Extensions.cs">
+        <Link>Reader\Extensions.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Identifier.cs">
+        <Link>Reader\Identifier.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Location.cs">
+        <Link>Reader\Location.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\LVal.cs">
+        <Link>Reader\LVal.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Operator.cs">
+        <Link>Reader\Operator.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Options.cs">
+        <Link>Reader\Options.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Parser.cs">
+        <Link>Reader\Parser.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\ParseUtil.cs">
+        <Link>Reader\ParseUtil.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Position.cs">
+        <Link>Reader\Position.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\PropertyKind.cs">
+        <Link>Reader\PropertyKind.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Scope.cs">
+        <Link>Reader\Scope.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\SourceLocation.cs">
+        <Link>Reader\SourceLocation.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\SourceType.cs">
+        <Link>Reader\SourceType.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Statement.cs">
+        <Link>Reader\Statement.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\SyntaxError.cs">
+        <Link>Reader\SyntaxError.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\TokContext.cs">
+        <Link>Reader\TokContext.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Token.cs">
+        <Link>Reader\Token.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\TokenContext.cs">
+        <Link>Reader\TokenContext.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\TokenInformation.cs">
+        <Link>Reader\TokenInformation.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Tokenise.cs">
+        <Link>Reader\Tokenise.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\TokenType.cs">
+        <Link>Reader\TokenType.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\VariableKind.cs">
+        <Link>Reader\VariableKind.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Reader\Whitespace.cs">
+        <Link>Reader\Whitespace.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\RefDictionary.cs">
+        <Link>RefDictionary.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\RegExp.cs">
+        <Link>RegExp.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\RegExpFlags.cs">
+        <Link>RegExpFlags.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Runtime\JsType.cs">
+        <Link>Runtime\JsType.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Runtime\TypeConverter.cs">
+        <Link>Runtime\TypeConverter.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Scope\FindBackReferencesAndEvalTreeWalker.cs">
+        <Link>Scope\FindBackReferencesAndEvalTreeWalker.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Scope\MangleTreeWalker.cs">
+        <Link>Scope\MangleTreeWalker.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Scope\ScopeOptions.cs">
+        <Link>Scope\ScopeOptions.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Scope\ScopeParser.cs">
+        <Link>Scope\ScopeParser.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Scope\SetupScopeChainingAndHandleDefinitionsTreeWalker.cs">
+        <Link>Scope\SetupScopeChainingAndHandleDefinitionsTreeWalker.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\SourceMap\ISourceAdder.cs">
+        <Link>SourceMap\ISourceAdder.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\SourceMap\ISourceReplacer.cs">
+        <Link>SourceMap\ISourceReplacer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\SourceMap\SourceCodePosition.cs">
+        <Link>SourceMap\SourceCodePosition.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\SourceMap\SourceMap.cs">
+        <Link>SourceMap\SourceMap.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\SourceMap\SourceMapBuilder.cs">
+        <Link>SourceMap\SourceMapBuilder.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\SourceMap\SourceReplacer.cs">
+        <Link>SourceMap\SourceReplacer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\StructList.cs">
+        <Link>StructList.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\SymbolDef.cs">
+        <Link>SymbolDef.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\TreeTransformer.cs">
+        <Link>TreeTransformer.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\TreeWalker.cs">
+        <Link>TreeWalker.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\TreeWalkerBase.cs">
+        <Link>TreeWalkerBase.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Utils\LineCol.cs">
+        <Link>Utils\LineCol.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Utils\OrderedHashSet.cs">
+        <Link>Utils\OrderedHashSet.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Utils\PathUtils.cs">
+        <Link>Utils\PathUtils.cs</Link>
+      </Compile>
+      <Compile Include="..\Njsast\Utils\SemanticError.cs">
+        <Link>Utils\SemanticError.cs</Link>
+      </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="..\Lib\CSSProcessor\bbcss.js">
+        <Link>CSSProcessor\bbcss.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\CSSProcessor\bundle.min.js">
+        <Link>CSSProcessor\bundle.min.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\CSSProcessor\tsconfig.json">
+        <Link>CSSProcessor\tsconfig.json</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\Resources\error.png">
+        <Link>Resources\error.png</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\Resources\SendNotification.ps1">
+        <Link>Resources\SendNotification.ps1</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\Resources\success.png">
+        <Link>Resources\success.png</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\SCSSProcessor\bbscss.js">
+        <Link>SCSSProcessor\bbscss.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\SCSSProcessor\sass.dart.js">
+        <Link>SCSSProcessor\sass.dart.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\SCSSProcessor\tsconfig.json">
+        <Link>SCSSProcessor\tsconfig.json</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\.DS_Store">
+        <Link>ToolsDir\.DS_Store</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\CoverageDetailsVisualizer.zip">
+        <Link>ToolsDir\CoverageDetailsVisualizer.zip</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine-boot299.js">
+        <Link>ToolsDir\jasmine-boot299.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine-boot330.js">
+        <Link>ToolsDir\jasmine-boot330.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine-boot400.js">
+        <Link>ToolsDir\jasmine-boot400.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine299.js">
+        <Link>ToolsDir\jasmine299.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine330.js">
+        <Link>ToolsDir\jasmine330.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine400.js">
+        <Link>ToolsDir\jasmine400.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\liveReload.js">
+        <Link>ToolsDir\liveReload.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\loader.js">
+        <Link>ToolsDir\loader.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\localeDefs.json">
+        <Link>ToolsDir\localeDefs.json</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\localeDefsBuilder\.vscode\launch.json">
+        <Link>ToolsDir\localeDefsBuilder\.vscode\launch.json</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\localeDefsBuilder\index.js">
+        <Link>ToolsDir\localeDefsBuilder\index.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\localeDefsBuilder\package-lock.json">
+        <Link>ToolsDir\localeDefsBuilder\package-lock.json</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\localeDefsBuilder\package.json">
+        <Link>ToolsDir\localeDefsBuilder\package.json</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\localeDefsBuilder\pathUtils.js">
+        <Link>ToolsDir\localeDefsBuilder\pathUtils.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\localeDefsBuilder\tsconfig.json">
+        <Link>ToolsDir\localeDefsBuilder\tsconfig.json</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\tsconfig.json">
+        <Link>ToolsDir\tsconfig.json</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\web.zip">
+        <Link>ToolsDir\web.zip</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\webt.zip">
+        <Link>ToolsDir\webt.zip</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\TSCompiler\bbtsc.js">
+        <Link>TSCompiler\bbtsc.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\TSCompiler\tsconfig.json">
+        <Link>TSCompiler\tsconfig.json</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Njsast\Bundler\JsHeaders\import.js">
+        <Link>Bundler\JsHeaders\import.js</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Njsast\Bundler\JsHeaders\tslib.js">
+        <Link>Bundler\JsHeaders\tslib.js</Link>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="..\Lib\CSSProcessor\bbcss.ts">
+        <Link>CSSProcessor\bbcss.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\SCSSProcessor\bbscss.ts">
+        <Link>SCSSProcessor\bbscss.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine-boot299.ts">
+        <Link>ToolsDir\jasmine-boot299.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine-boot330.ts">
+        <Link>ToolsDir\jasmine-boot330.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine-boot400.ts">
+        <Link>ToolsDir\jasmine-boot400.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine299.d.ts">
+        <Link>ToolsDir\jasmine299.d.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine330.d.ts">
+        <Link>ToolsDir\jasmine330.d.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\jasmine400.d.ts">
+        <Link>ToolsDir\jasmine400.d.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\liveReload.ts">
+        <Link>ToolsDir\liveReload.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\loader.ts">
+        <Link>ToolsDir\loader.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\localeDefsBuilder\index.ts">
+        <Link>ToolsDir\localeDefsBuilder\index.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\ToolsDir\localeDefsBuilder\pathUtils.ts">
+        <Link>ToolsDir\localeDefsBuilder\pathUtils.ts</Link>
+      </EmbeddedResource>
+      <EmbeddedResource Include="..\Lib\TSCompiler\bbtsc.ts">
+        <Link>TSCompiler\bbtsc.ts</Link>
+      </EmbeddedResource>
+    </ItemGroup>
+
+  <Target Name="PackLinkedFiles" AfterTargets="Build">
+    <ItemGroup Condition="'$(IsPackable)' == 'true'">
+      <Content Include="$(TargetDir)*.cs">
+        <Pack>true</Pack>
+        <PackagePath>linked</PackagePath>
+        <PackageCopyToOutput>true</PackageCopyToOutput>
+      </Content>
+    </ItemGroup>
+  </Target>
 
 </Project>

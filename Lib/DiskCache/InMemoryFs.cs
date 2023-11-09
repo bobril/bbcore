@@ -26,6 +26,7 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
     public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
     {
         var res = new List<FsItemInfo>();
+        if (path.StartsWith('/')) path = path[1..];
         foreach (var kv in _content)
         {
             if (kv.Key.Key != path) continue;
@@ -81,7 +82,10 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
         if (file == null)
             throw new Exception("Cannot read directory as file " + path);
         
-        return file._content.ToString();
+        if (file._content is byte[] bytes)
+            return Encoding.UTF8.GetString(bytes);
+        
+        return file._content as string;
     }
 
     public bool FileExists(string path)
