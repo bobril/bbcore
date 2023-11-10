@@ -4,6 +4,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Releaser;
@@ -92,6 +94,18 @@ static class Program
         }
         else
         {
+            var fileNameOfNugetToken = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.nuget/token.txt";
+            string nugetToken;
+            try
+            {
+                nugetToken = File.ReadAllLines(fileNameOfNugetToken).First();
+            }
+            catch
+            {
+                Console.WriteLine("Cannot read nuget token from " + fileNameOfNugetToken);
+                return 1;
+            }
+            
             Console.WriteLine("Building version " + newVersion);
             var outputLogLines = logLines.ToList();
             var releaseLogLines = logLines.Skip(topVersionLine + 1).SkipWhile(string.IsNullOrWhiteSpace)
@@ -102,6 +116,8 @@ static class Program
             outputLogLines.Insert(topVersionLine + 1, "");
             if (Directory.Exists(projDir + "/bb/bin/Release/net6.0"))
                 Directory.Delete(projDir + "/bb/bin/Release/net6.0", true);
+            await UpdateCsProj(projDir, newVersion);
+            BuildNuget(projDir, newVersion, nugetToken);
             foreach (var rid in Rids)
             {
                 Build(projDir, newVersion, rid);
@@ -162,6 +178,32 @@ static class Program
         return 0;
     }
 
+    static async Task UpdateCsProj(string projDir, string newVersion)
+    {
+        var fn = projDir + "/Bbcore.Lib/Bbcore.Lib.csproj";
+        var content = await File.ReadAllTextAsync(fn);
+        content = new Regex("<Version>.+</Version>").Replace(content, "<Version>" + newVersion + "</Version>");
+        await File.WriteAllTextAsync(fn, content, new UTF8Encoding(false));
+    }
+    
+    static void BuildNuget(string projDir, string newVersion, string nugetToken)
+    {
+        var start = new ProcessStartInfo("dotnet", "pack -c Release")
+        {
+            UseShellExecute = true,
+            WorkingDirectory = projDir + "/Bbcore.Lib"
+        };
+        var process = Process.Start(start);
+        process!.WaitForExit();
+        start = new("dotnet", "nuget push Bbcore.Lib." + newVersion + ".nupkg -s https://nuget.org -k "+nugetToken)
+        {
+            UseShellExecute = true,
+            WorkingDirectory = projDir + "/Bbcore.Lib/bin/Release"
+        };
+        process = Process.Start(start);
+        process!.WaitForExit();
+    }
+    
     static void DockerBuild(string projDir, string version)
     {
         try

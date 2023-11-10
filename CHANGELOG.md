@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Newly distributed also as Nuget package Bbbore.Lib.
+
 ## 3.1.1
 
 ### Changed
