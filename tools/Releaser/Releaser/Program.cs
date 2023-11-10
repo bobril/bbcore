@@ -142,6 +142,7 @@ static class Program
             Console.WriteLine("bbcore repo id: " + bbcoreRepo.Id);
             await File.WriteAllTextAsync(projDir + "/CHANGELOG.md", string.Join("", outputLogLines.Select(s => s + '\n')));
             Commands.Stage(gitrepo, "CHANGELOG.md");
+            Commands.Stage(gitrepo, "Bbcore.Lib/Bbcore.Lib.csproj");
             var author = new LibGit2Sharp.Signature("Releaser", "releaser@bobril.com", DateTime.Now);
             gitrepo.Commit("Released " + newVersion, author, author);
             gitrepo.ApplyTag(newVersion);
