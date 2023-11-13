@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 3.3.0
+
 ### Added
 
 New features in Bbcore.Lib, new interface for better testing also ability to run it like bbcore commandline.

@@ -4,7 +4,7 @@
         <TargetFramework>net7.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <PackageId>Bbcore.Lib</PackageId>
-        <Version>3.2.2</Version>
+        <Version>3.3.0</Version>
         <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
         <Authors>Tomáš Zálešák, Boris Letocha</Authors>
     </PropertyGroup>
