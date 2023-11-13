@@ -2,11 +2,15 @@
 
 ## [unreleased]
 
+### Added
+
+New features in Bbcore.Lib, new interface for better testing also ability to run it like bbcore commandline.
+
 ## 3.2.0
 
 ### Added
 
-Newly distributed also as Nuget package Bbbore.Lib.
+Newly distributed also as Nuget package Bbcore.Lib.
 
 ## 3.1.1
 
