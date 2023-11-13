@@ -19,6 +19,16 @@ public static partial class BbcoreLibrary
     private static readonly ILogger Logger = new DummyLogger();
     private const string FileWithResultOfBuilding = "a.js";
     
+    public static int RunBuild(string[] args, IConsoleLogger logger)
+    {
+        var composition = new Composition(
+            inDocker: Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER")!=null,
+            logger);
+        composition.ParseCommandLine(args);
+        composition.RunCommand();
+        return Environment.ExitCode;
+    }
+    
     public static bool RunBuild(
         IFsAbstraction files,
         string typeScriptVersion,

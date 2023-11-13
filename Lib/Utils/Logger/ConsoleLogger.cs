@@ -2,11 +2,6 @@ using System;
 
 namespace Lib.Utils.Logger;
 
-public interface IConsoleLogger : ILogger
-{
-    void WriteLine(string message, ConsoleColor color);
-}
-
 public class ConsoleLogger : IConsoleLogger
 {
     readonly object _lock = new();
