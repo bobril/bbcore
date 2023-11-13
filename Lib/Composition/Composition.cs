@@ -607,7 +607,6 @@ public class Composition
         var errors = 0;
         var warnings = 0;
         var messages = new List<Diagnostic>();
-        errors++;
         try
         {
             _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
