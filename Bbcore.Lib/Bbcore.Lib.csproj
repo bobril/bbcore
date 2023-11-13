@@ -4,7 +4,7 @@
         <TargetFramework>net7.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <PackageId>Bbcore.Lib</PackageId>
-        <Version>3.2.0</Version>
+        <Version>3.2.1</Version>
         <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
         <Authors>Tomáš Zálešák, Boris Letocha</Authors>
     </PropertyGroup>
@@ -25,6 +25,10 @@
       <PackageReference Include="UAParser" Version="3.1.47" />
       <PackageReference Include="WebMarkupMin.Core" Version="2.14.0" />
       <PackageReference Include="YamlDotNet" Version="13.3.1" />
+      <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.4.4" />
+      <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.4.4" />
+      <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-arm64" Version="7.4.4" />
+      <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.4.4" />
     </ItemGroup>
 
     <ItemGroup>
@@ -471,6 +475,12 @@
       </Compile>
       <Compile Include="..\Lib\Utils\Logger\ConsoleLogger.cs">
         <Link>Utils\Logger\ConsoleLogger.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\Logger\IConsoleLogger.cs">
+        <Link>Utils\Logger\IConsoleLogger.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Utils\Logger\InMemoryConsoleLogger.cs">
+        <Link>Utils\Logger\InMemoryConsoleLogger.cs</Link>
       </Compile>
       <Compile Include="..\Lib\Utils\Logger\DummyLogger.cs">
         <Link>Utils\Logger\DummyLogger.cs</Link>

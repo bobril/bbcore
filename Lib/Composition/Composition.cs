@@ -62,12 +62,13 @@ public class Composition
     bool _verbose;
     bool _forbiddenDependencyUpdate;
     NotificationManager _notificationManager;
-    readonly IConsoleLogger _logger = new ConsoleLogger();
+    readonly IConsoleLogger _logger;
     CfgManager<MainCfg> _cfgManager;
     readonly IFsAbstraction _fsAbstraction = new NativeFsAbstraction();
 
-    public Composition(bool inDocker)
+    public Composition(bool inDocker, IConsoleLogger logger)
     {
+        _logger = logger;
         _inDocker = inDocker;
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
@@ -605,6 +606,7 @@ public class Composition
         var errors = 0;
         var warnings = 0;
         var messages = new List<Diagnostic>();
+        errors++;
         try
         {
             _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
