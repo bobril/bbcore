@@ -14,12 +14,23 @@ using Lib.Watcher;
 
 namespace Bbcore.Lib;
 
-public static partial class BbcoreLibrary
+public interface IBbcoreLibrary
+{
+    public int Run(string[] args, IConsoleLogger logger);
+    public bool RunBuild(
+        IFsAbstraction files,
+        string typeScriptVersion,
+        string directory,
+        out string javaScript,
+        out string parsedMessages);
+}
+
+public partial class BbcoreLibrary : IBbcoreLibrary
 {
     private static readonly ILogger Logger = new DummyLogger();
     private const string FileWithResultOfBuilding = "a.js";
-    
-    public static int Run(string[] args, IConsoleLogger logger)
+
+    public int Run(string[] args, IConsoleLogger logger)
     {
         var composition = new Composition(
             inDocker: Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER")!=null,
@@ -30,7 +41,7 @@ public static partial class BbcoreLibrary
         return Environment.ExitCode;
     }
     
-    public static bool RunBuild(
+    public bool RunBuild(
         IFsAbstraction files,
         string typeScriptVersion,
         string directory,
@@ -65,7 +76,7 @@ public static partial class BbcoreLibrary
     private static string GetFileName(string path)
     {
         var match = FileNameRegex().Match(path);
-        return !match.Success ? "" : string.Concat(match.Groups[1].Value);
+        return !match.Success ? "" : match.Groups[1].Value;
     }
     
     private static string ParseMessages(IList<Diagnostic> messages, bool onlySemantic = false)
