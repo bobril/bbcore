@@ -64,11 +64,12 @@ public class Composition
     NotificationManager _notificationManager;
     readonly IConsoleLogger _logger;
     CfgManager<MainCfg> _cfgManager;
-    readonly IFsAbstraction _fsAbstraction = new NativeFsAbstraction();
+    readonly IFsAbstraction _fsAbstraction;
 
-    public Composition(bool inDocker, IConsoleLogger logger)
+    public Composition(bool inDocker, IConsoleLogger logger, IFsAbstraction fsAbstraction)
     {
         _logger = logger;
+        _fsAbstraction = fsAbstraction;
         _inDocker = inDocker;
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;

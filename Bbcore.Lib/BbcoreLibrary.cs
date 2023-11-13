@@ -23,7 +23,8 @@ public static partial class BbcoreLibrary
     {
         var composition = new Composition(
             inDocker: Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER")!=null,
-            logger);
+            logger,
+            new NativeFsAbstraction());
         composition.ParseCommandLine(args);
         composition.RunCommand();
         return Environment.ExitCode;
