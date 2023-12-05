@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 3.3.2
+
 ### Update
 
 Nodejs to 20 in docker image.
