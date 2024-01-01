@@ -245,17 +245,12 @@ public class ToolsDir : IToolsDir
         {
             var bytes = await task;
             _logger.Info($"Extracting {bytes.Length} bytes");
-            await TarExtractor.ExtractTgzAsync(bytes, async (name, stream, size) =>
+            await TarExtractor.ExtractTgzAsync(bytes, async (name, content, size) =>
             {
                 if (name.StartsWith("package/"))
-                    name = name.Substring("package/".Length);
+                    name = name["package/".Length..];
                 var fn = PathUtils.Join(dir, name);
-                Directory.CreateDirectory(PathUtils.DirToCreateDirectory(PathUtils.Parent(fn)));
-
-                var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                _fsAbstraction.WriteAllBytes(fn, memoryStream.ToArray());
-                
+                _fsAbstraction.WriteAllBytes(fn, content);
                 return true;
             });
         }
