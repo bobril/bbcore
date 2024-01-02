@@ -115,6 +115,8 @@ Global
 		{361C0CC0-2139-434D-A505-3B7784C99953}.Release|x64.Build.0 = Release|Any CPU
 		{361C0CC0-2139-434D-A505-3B7784C99953}.Release|x86.ActiveCfg = Release|Any CPU
 		{361C0CC0-2139-434D-A505-3B7784C99953}.Release|x86.Build.0 = Release|Any CPU
+		{3A1F79F7-F518-4DB2-8995-8F522B82AEBD}.Release|x64.ActiveCfg = Release|Any CPU
+		{3A1F79F7-F518-4DB2-8995-8F522B82AEBD}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
