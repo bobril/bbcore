@@ -17,7 +17,7 @@ static class Program
         MainAsync().Wait();
     }
 
-    static readonly string[] Rids = ["win10-x64", "linux-x64", "osx-x64", "osx-arm64"];
+    static readonly string[] Rids = ["win-x64", "linux-x64", "osx-x64", "osx-arm64"];
 
     static async Task<int> MainAsync()
     {
@@ -294,6 +294,6 @@ static class Program
 
     static string ToZipName(string rid)
     {
-        return rid.Replace("win10", "win");
+        return rid;
     }
 }
