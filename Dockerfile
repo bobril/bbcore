@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 ARG VERSION=0.0.0
 
@@ -23,7 +23,7 @@ WORKDIR /app/bb
 RUN dotnet publish -c Release -p:DebugType=None -p:DebugSymbols=false --self-contained true -r linux-x64 -o out -p:Version=$VERSION.0
 RUN rm -r ./out/Resources
 
-FROM mcr.microsoft.com/dotnet/runtime:6.0 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
 
 # Install deps + add Chrome, Nodejs, Yarn + clean up
 RUN apt-get update && apt-get install -y \
@@ -32,7 +32,9 @@ RUN apt-get update && apt-get install -y \
 	curl \
 	gnupg \
 	--no-install-recommends \
-	&& curl -sL https://deb.nodesource.com/setup_20.x | bash - \
+	&& mkdir -p /etc/apt/keyrings \
+	&& curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+	&& echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
 	&& curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
 	&& echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \
 	&& curl -sSL https://dl.google.com/linux/linux_signing_key.pub | apt-key add - \

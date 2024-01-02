@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Lib.Configuration;
 
@@ -24,7 +25,7 @@ public class CfgManager<T> where T : class, new()
             {
                 WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 DictionaryKeyPolicy = JsonNamingPolicy.CamelCase, ReadCommentHandling = JsonCommentHandling.Skip,
-                AllowTrailingCommas = true, IgnoreNullValues = false
+                AllowTrailingCommas = true, TypeInfoResolver = new DefaultJsonTypeInfoResolver()
             };
             if (File.Exists(_configName))
             {

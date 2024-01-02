@@ -22,6 +22,7 @@ using System.Text;
 using System.Reactive;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using BTDB.Collections;
 using Lib.BuildCache;
 using Lib.Configuration;
@@ -65,6 +66,7 @@ public class Composition
     readonly IConsoleLogger _logger;
     CfgManager<MainCfg> _cfgManager;
     readonly IFsAbstraction _fsAbstraction;
+    static readonly JsonSerializerOptions _apiJsonSerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
 
     public Composition(bool inDocker, IConsoleLogger logger, IFsAbstraction fsAbstraction)
     {
@@ -883,7 +885,7 @@ public class Composition
             switch (testCommand.Coverage.Value)
             {
                 case "sonar":
-                    new CoverageXmlSonarReporter(covInstr,null, _mainBuildResult.CommonSourceDirectory).Run();
+                    new CoverageXmlSonarReporter(covInstr, _fsAbstraction.WriteAllBytes, null, _mainBuildResult.CommonSourceDirectory).Run();
                     break;
                 case "json-details":
                     new CoverageJsonDetailsReporter(covInstr, _fsAbstraction.WriteAllBytes).Run();
@@ -1367,11 +1369,11 @@ public class Composition
     {
         var reqBody = await new StreamReader(context.Request.Body, Encoding.UTF8).ReadToEndAsync();
         var req = System.Text.Json.JsonSerializer.Deserialize<TReq>(reqBody,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            _apiJsonSerializerOptions);
         var resp = func(req);
         context.Response.ContentType = "application/json";
         await System.Text.Json.JsonSerializer.SerializeAsync(context.Response.Body, resp,
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            _apiJsonSerializerOptions);
     }
 
     GetFileCoverageResponse GetFileCoverage(GetFileCoverageRequest req)

@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using BTDB.KVDBLayer;
 using BTDB.ODBLayer;
@@ -33,7 +35,7 @@ public class PersistentBuildCache : IBuildCache
             Directory.CreateDirectory(dir);
 
         _diskFileCollection = new OnDiskFileCollection(dir);
-        _kvdb = new KeyValueDB(new KeyValueDBOptions
+        _kvdb = new BTreeKeyValueDB(new KeyValueDBOptions
         {
             FileCollection = _diskFileCollection,
             Compression = new SnappyCompressionStrategy(),
@@ -104,6 +106,11 @@ public class PersistentBuildCache : IBuildCache
     {
         if (!IsEnabled) return;
         var relation = _tr!.GetRelation<ITSFileBuildCacheTable>();
+        if (value.ContentHash.SequenceEqual(new byte[20]
+                { 100, 14, 98, 202, 246, 243, 90, 30, 186, 252, 57, 28, 57, 251, 199, 104, 238, 153, 98, 71 }))
+        {
+            Debugger.Break();
+        }
         relation.Upsert(value);
     }
 }
