@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.0.0
+
 ### Update
 
 All dependencies. Converted to .Net 8.0.
