@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Update
+
+All dependencies. Converted to .Net 8.0.
+
 ## 3.3.3
 
 ## 3.3.2
