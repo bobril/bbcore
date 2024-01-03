@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 ARG VERSION=0.0.0
 
@@ -11,7 +11,7 @@ COPY Lib/*.csproj ./Lib/
 COPY BobrilMdx/*.csproj ./BobrilMdx/
 COPY Njsast/*.csproj ./Njsast/
 WORKDIR /app/bb
-RUN dotnet restore --verbosity detailed
+RUN dotnet restore -r linux-x64
 
 # copy and build app and libraries
 WORKDIR /app/
