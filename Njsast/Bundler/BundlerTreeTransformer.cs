@@ -39,17 +39,18 @@ class BundlerTreeTransformer : TreeTransformer
         switch (node)
         {
             case AstCall _ when node.IsRequireCall() is { } reqName:
-            {
-                var resolvedName = _ctx.ResolveRequire(reqName, _currentSourceFile!.Name);
-                if (resolvedName == IBundlerCtx.LeaveAsExternal)
                 {
-                    return (new SourceFile(reqName), Array.Empty<string>());
+                    var resolvedName = _ctx.ResolveRequire(reqName, _currentSourceFile!.Name);
+                    if (resolvedName == IBundlerCtx.LeaveAsExternal)
+                    {
+                        return (new SourceFile(reqName), Array.Empty<string>());
+                    }
+
+                    if (!_cache.TryGetValue(resolvedName, out var reqSource))
+                        throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
+                                                       _currentSourceFile!.Name);
+                    return (reqSource, Array.Empty<string>());
                 }
-                if (!_cache.TryGetValue(resolvedName, out var reqSource))
-                    throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
-                                                   _currentSourceFile!.Name);
-                return (reqSource, Array.Empty<string>());
-            }
             case AstSymbolRef symbolRef when _reqSymbolDefMap.TryGetValue(symbolRef.Thedef!, out var res):
                 return res;
             case AstPropAccess propAccess when propAccess.PropertyAsString is { } propName &&
@@ -88,7 +89,7 @@ class BundlerTreeTransformer : TreeTransformer
         {
             if (DetectImport(varDef.Value) is { } import)
             {
-                if (!(_currentSourceFile.ModifiedImports?.Contains(new() { File = import.Item1.Name, Path = import.Item2}) ?? false))
+                if (!(_currentSourceFile.ModifiedImports?.Contains(new() { File = import.Item1.Name, Path = import.Item2 }) ?? false))
                 {
                     _reqSymbolDefMap[reqSymbolDef] = import;
                     if (import.Item2.Length == 0) return Remove;
@@ -154,10 +155,11 @@ class BundlerTreeTransformer : TreeTransformer
         {
             var needPath = import2.Item2.AsSpan();
             if (needPath.Length >= 1 && needPath[0] == "default" &&
-                (import2.Item1.Exports!.IsJustRoot ||
-                 !import2.Item1.Exports!.TryFindLongestPrefix(new[] { "default" }, out _, out _)))
+                !import2.Item1.ExternalImport && (import2.Item1.Exports!.IsJustRoot ||
+                                                  !import2.Item1.Exports!.TryFindLongestPrefix(new[] { "default" },
+                                                      out _, out _)))
             {
-                needPath = needPath.Slice(1);
+                needPath = needPath[1..];
             }
 
             if (import2.Item1.ExternalImport)
@@ -167,7 +169,10 @@ class BundlerTreeTransformer : TreeTransformer
                 {
                     return new AstSymbolRef(symbol);
                 }
-                var name = BundlerHelpers.MakeUniqueName(import2.Item2[^1], _rootVariables, _nonRootSymbolNames,
+
+                var varName = import2.Item2[^1];
+                if (varName == "default" && import2.Item2.Length == 1) varName = BundlerHelpers.FileNameToIdent(import2.Item1.Name);
+                var name = BundlerHelpers.MakeUniqueName(varName, _rootVariables, _nonRootSymbolNames,
                     _suffix);
                 symbol = new AstSymbolRef(node, name);
                 return symbol;
@@ -237,10 +242,12 @@ class BundlerTreeTransformer : TreeTransformer
             return Remove;
         if (node is AstDefinitions { Definitions.Count: 0 })
             return Remove;
-        if (node is AstSequence { Expressions: { Count: 2 } expressions } && expressions[0] is AstNumber { Value:0 } && expressions[1] is AstSymbolRef)
+        if (node is AstSequence { Expressions: { Count: 2 } expressions } && expressions[0] is AstNumber { Value: 0 } &&
+            expressions[1] is AstSymbolRef)
         {
             return expressions[1];
         }
+
         return node;
     }
 }

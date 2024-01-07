@@ -1,6 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Njsast.Ast;
 using Njsast.Reader;
 
@@ -10,7 +10,7 @@ public class ImportExportTransformer : TreeTransformer
 {
     readonly SourceFile _sourceFile;
     readonly Func<string, string, string> _resolver;
-    readonly Dictionary<string, SymbolDef> _exportName2VarNameMap = new Dictionary<string, SymbolDef>();
+    readonly Dictionary<string, SymbolDef> _exportName2VarNameMap = new();
     StructList<AstNode> _bodyPrepend;
     SymbolDef? _reexportSymbol;
     SymbolDef? _importStarSymbol;
@@ -22,21 +22,21 @@ public class ImportExportTransformer : TreeTransformer
         switch (node)
         {
             case AstCall _ when node.IsRequireCall() is { } reqName:
-            {
-                var resolvedName = _resolver(_sourceFile.Name, reqName);
-                if (resolvedName == IBundlerCtx.LeaveAsExternal)
                 {
-                    _sourceFile.ExternalImports.AddUnique(reqName);
-                    return new() { File = reqName, Path = Array.Empty<string>() };
-                }
+                    var resolvedName = _resolver(_sourceFile.Name, reqName);
+                    if (resolvedName == IBundlerCtx.LeaveAsExternal)
+                    {
+                        _sourceFile.ExternalImports.AddUnique(reqName);
+                        return new() { File = reqName, Path = Array.Empty<string>() };
+                    }
 
-                _sourceFile.Requires.AddUnique(resolvedName);
-                return new() { File = resolvedName, Path = Array.Empty<string>() };
-            }
+                    _sourceFile.Requires.AddUnique(resolvedName);
+                    return new() { File = resolvedName, Path = Array.Empty<string>() };
+                }
             case AstCall { Expression: AstSymbolRef { Name: "__importDefault" } } astCall:
-            {
-                return DetectImport(astCall.Args[0]);
-            }
+                {
+                    return DetectImport(astCall.Args[0]);
+                }
             case AstSymbolRef symbolRef when _reqSymbolDefMap.TryGetValue(symbolRef.Thedef!, out var res):
                 return res;
             case AstPropAccess { PropertyAsString: { } propName } propAccess
@@ -101,7 +101,7 @@ public class ImportExportTransformer : TreeTransformer
                 _sourceFile.NeedsImports.Add(import2);
             if (Parent() is AstAssign { Left: var leftNode } && node == leftNode)
             {
-                (_sourceFile.ModifiedImports ??= new ()).Add(import2);
+                (_sourceFile.ModifiedImports ??= new()).Add(import2);
             }
 
             return node;
@@ -127,35 +127,43 @@ public class ImportExportTransformer : TreeTransformer
                     astDot.PropertyAsString == "defineProperty"
                     && call.Args.Count == 3 && call.Args[0].IsSymbolDef().IsExportsSymbol() &&
                     call.Args[1] is AstString exportName &&
-                    call.Args[2] is AstObject { Properties.Count: 2 } astObject &&
-                    astObject.Properties.Last is AstObjectProperty
+                    call.Args[2] is AstObject
                     {
-                        Value: AstLambda
+                        Properties:
                         {
-                            Body.Last: AstReturn astRet
+                            Count: 2, Last: AstObjectProperty
+                            {
+                                Value: AstLambda
+                                {
+                                    Body.Last: AstReturn astRet
+                                }
+                            }
                         }
                     } && DetectImport(astRet.Value) is { } bindPath)
                 {
                     _sourceFile.SelfExports.Add(
-                        new ReexportSelfExport(exportName.Value, bindPath.File, bindPath.Path));
+                        new ReexportSelfExport(exportName.Value, bindPath.File, bindPath.Path,
+                            _sourceFile.ExternalImports.Contains(bindPath.File)));
                     return Remove;
                 }
 
                 if (call.Expression.IsSymbolDef().IsGlobalSymbol() == "__createBinding" && call.Args.Count >= 3 &&
                     call.Args[0].IsSymbolDef().IsExportsSymbol() && call.Args[2] is AstString bindingName &&
-                    DetectImport(call.Args[1]) is { } bindModule && bindModule.Path.Length == 0)
+                    DetectImport(call.Args[1]) is { Path.Length: 0 } bindModule)
                 {
                     if (call.Args.Count == 3)
                     {
                         _sourceFile.SelfExports.Add(new ReexportSelfExport(bindingName.Value, bindModule.File,
-                            Concat(bindModule.Path, bindingName.Value)));
+                            Concat(bindModule.Path, bindingName.Value),
+                            _sourceFile.ExternalImports.Contains(bindModule.File)));
                         return Remove;
                     }
 
                     if (call.Args.Count == 4 && call.Args[3] is AstString asName)
                     {
                         _sourceFile.SelfExports.Add(new ReexportSelfExport(asName.Value, bindModule.File,
-                            Concat(bindModule.Path, bindingName.Value)));
+                            Concat(bindModule.Path, bindingName.Value),
+                            _sourceFile.ExternalImports.Contains(bindModule.File)));
                         return Remove;
                     }
                 }
@@ -234,7 +242,7 @@ public class ImportExportTransformer : TreeTransformer
                     else
                     {
                         _exportName2VarNameMap[pea.Value.name] = pea.Value.value.IsSymbolDef()!;
-                        _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name, (AstSymbol)pea.Value.value!));
+                        _sourceFile.SelfExports.Add(new SimpleSelfExport(pea.Value.name, (AstSymbol)pea.Value.value));
                     }
 
                     return Remove;
@@ -369,7 +377,7 @@ public class ImportExportTransformer : TreeTransformer
         {
             if (node == null) return false;
             var pea = node.IsExportsAssign();
-            if (!pea.HasValue) return node is AstUnary unary && unary.Operator == Operator.Void;
+            if (!pea.HasValue) return node is AstUnary { Operator: Operator.Void };
             node = pea!.Value.value;
         }
     }

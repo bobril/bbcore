@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Njsast.AstDump;
-using Njsast.Output;
 using Njsast.Reader;
 using Njsast.Scope;
 
@@ -23,6 +22,9 @@ public class AstScope : AstBlock
 
     /// [boolean/S] tells whether this scope contains a direct call to the global `eval`
     public bool UsesEval;
+
+    /// This is mistake in user code but oh well at least it prevents block inlining
+    public bool DeclaresFunction;
 
     /// [AstScope?/S] link to the parent scope
     public AstScope? ParentScope;
@@ -98,9 +100,8 @@ public class AstScope : AstBlock
     public SymbolDef DefFunction(AstSymbol symbol, AstNode? init)
     {
         var def = DefVariable(symbol, init);
-        if (def.Init == null || def.Init is AstDefun) def.Init = init;
-        if (!Functions!.ContainsKey(symbol.Name))
-            Functions!.Add(symbol.Name, def);
+        if (def.Init is null or AstDefun) def.Init = init;
+        Functions!.TryAdd(symbol.Name, def);
         return def;
     }
 
@@ -139,14 +140,14 @@ public class AstScope : AstBlock
     public static string Base54(ReadOnlySpan<char> chars, uint idx)
     {
         Span<char> buf = stackalloc char[8];
-        idx = (uint)Math.DivRem((int) idx, 54, out var rem);
+        idx = (uint)Math.DivRem((int)idx, 54, out var rem);
         buf[0] = chars[rem];
         var resIdx = 1;
 
         while (idx > 0)
         {
             idx--;
-            buf[resIdx++] = chars[(int) (idx % 64)];
+            buf[resIdx++] = chars[(int)(idx % 64)];
             idx /= 64;
         }
 
@@ -155,7 +156,7 @@ public class AstScope : AstBlock
 
     public static int Debase54(ReadOnlySpan<char> chars, ReadOnlySpan<char> value)
     {
-        var res = 0L+chars.IndexOf(value[0]);
+        var res = 0L + chars.IndexOf(value[0]);
         if (res < 0) return -1;
         var multiplier = 54L;
         for (var i = 1; i < value.Length; i++)
@@ -199,6 +200,7 @@ public class AstScope : AstBlock
 
                     sym.MangledIdx = mIdx;
                 }
+
                 if (mangledIdx == mIdx)
                 {
                     goto again;
@@ -212,10 +214,16 @@ public class AstScope : AstBlock
 
     public bool IsSafelyInlinenable()
     {
-        foreach (var (name, def) in Variables!)
+        if (DeclaresFunction) return false;
+        if (UsesWith) return false;
+        if (UsesEval)
         {
-            if (def.Orig[0] is AstSymbolLet || def.Orig[0] is AstSymbolConst)
-                return false;
+            foreach (var (name, def) in Variables!)
+            {
+                if (def.Orig[0] is AstSymbolLet || def.Orig[0] is AstSymbolConst)
+                    if (ParentScope!.Variables!.ContainsKey(name))
+                        return false;
+            }
         }
 
         return true;

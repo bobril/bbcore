@@ -1,4 +1,5 @@
 using Njsast.Ast;
+using Njsast.Bundler;
 using Njsast.Reader;
 using Njsast.Runtime;
 
@@ -86,6 +87,11 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     if (lambda.Body.Count == 0) lambda.Pure = true;
                     if (lambda.Purpose == null)
                         lambda.Purpose = DetectPurpose(lambda);
+                    if (lambda is AstArrow && lambda.Body is { Count: 1 } body2 &&
+                        body2[0] is AstReturn { Value: { } } astReturn)
+                    {
+                        lambda.Body[0] = astReturn.Value;
+                    }
 
                     NeedValue = lambda.Body is { Count: 1 } body && body[0].IsExpression();
                     TransformList(ref lambda.Body);
@@ -583,6 +589,25 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                         astIf.Alternative = alternative == Remove ? null : (AstStatement)alternative;
                     }
 
+                    if (astIf.Alternative == null && astIf.Body is AstBlock { Body.Count: 0 })
+                    {
+                        node = Transform(astIf.Condition);
+                        continue;
+                    }
+
+                    if (astIf.Alternative == null && astIf.Body.TryToExpression() is { } bodyExpression)
+                    {
+                        var cond = astIf.Condition;
+                        var op = Operator.LogicalAnd;
+                        if (cond is AstUnary { Operator: Operator.LogicalNot } condNeg)
+                        {
+                            op = Operator.LogicalOr;
+                            cond = condNeg.Expression;
+                        }
+                        node = new AstSimpleStatement(node.Source, node.Start, node.End,
+                            new AstBinary(node.Source, node.Start, node.End, cond, bodyExpression,
+                                op));
+                    }
                     return node;
                 }
                 case AstBlock block:
@@ -718,6 +743,40 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
         for (var i = 0; i < block.Body.Count; i++)
         {
             var si = block.Body[i];
+            if (si is AstConst astConst)
+            {
+                block.Body[i] = new AstLet(si.Source, si.Start, si.End, ref astConst.Definitions);
+            }
+            else if (si is AstBlockStatement statement)
+            {
+                var parentScope = statement.BlockScope!.ParentScope!;
+                if (statement.BlockScope!.IsSafelyInlinenable())
+                {
+                    foreach (var (name, symbolDef) in statement.BlockScope!.Variables!)
+                    {
+                        if (parentScope.Variables!.ContainsKey(name))
+                        {
+                            var newName = BundlerHelpers.MakeUniqueName(name, parentScope.Variables!,
+                                ((AstToplevel)Stack[0]).CalcNonRootSymbolNames(), null);
+                            Helpers.RenameSymbol(symbolDef, newName);
+                            parentScope.Variables!.Add(newName, symbolDef);
+                        }
+                        else
+                        {
+                            parentScope.Variables!.Add(name, symbolDef);
+                        }
+                    }
+
+                    block.Body.ReplaceItemAt(i, statement.Body.AsReadOnlySpan());
+                    Modified = true;
+                    i--;
+                }
+            }
+        }
+
+        for (var i = 0; i < block.Body.Count; i++)
+        {
+            var si = block.Body[i];
             if (si is AstVar astVar && i < block.Body.Count - 1)
             {
                 var si2 = block.Body[i + 1];
@@ -736,26 +795,6 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                 {
                     astLet.Definitions.AddRange(astLet2.Definitions);
                     block.Body.RemoveAt(i + 1);
-                    Modified = true;
-                    i--;
-                }
-            }
-            else if (si is AstConst astConst && i < block.Body.Count - 1)
-            {
-                var si2 = block.Body[i + 1];
-                if (si2 is AstConst astConst2)
-                {
-                    astConst.Definitions.AddRange(astConst2.Definitions);
-                    block.Body.RemoveAt(i + 1);
-                    Modified = true;
-                    i--;
-                }
-            }
-            else if (si is AstBlockStatement statement)
-            {
-                if (statement.BlockScope!.IsSafelyInlinenable())
-                {
-                    block.Body.ReplaceItemAt(i, statement.Body.AsReadOnlySpan());
                     Modified = true;
                     i--;
                 }

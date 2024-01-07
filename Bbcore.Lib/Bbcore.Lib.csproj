@@ -827,6 +827,9 @@
       <Compile Include="..\Njsast\Ast\AstSymbolExportForeign.cs">
         <Link>Ast\AstSymbolExportForeign.cs</Link>
       </Compile>
+      <Compile Include="..\Njsast\Ast\AstSymbolExternalImport.cs">
+        <Link>Ast\AstSymbolExternalImport.cs</Link>
+      </Compile>
       <Compile Include="..\Njsast\Ast\AstSymbolFunarg.cs">
         <Link>Ast\AstSymbolFunarg.cs</Link>
       </Compile>

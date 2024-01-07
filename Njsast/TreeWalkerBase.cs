@@ -96,7 +96,7 @@ public abstract class TreeWalkerBase
         while (i < Stack.Count)
         {
             var p = Stack[i];
-            if (p is T1 || p is T2)
+            if (p is T1 or T2)
                 return p;
             i--;
         }

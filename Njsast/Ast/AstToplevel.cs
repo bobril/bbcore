@@ -151,7 +151,7 @@ public class AstToplevel : AstScope
 
         protected override void Visit(AstNode node)
         {
-            if (node is IMayBeBlockScope { IsBlockScope: true } mayBeBlockScope && mayBeBlockScope.BlockScope is {} blockScope)
+            if (node is IMayBeBlockScope { IsBlockScope: true, BlockScope: {} blockScope })
             {
                 foreach (var name in blockScope.Variables!.Keys)
                 {

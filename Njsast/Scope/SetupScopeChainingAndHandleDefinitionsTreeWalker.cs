@@ -21,7 +21,7 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
 
     protected override void Visit(AstNode node)
     {
-        if (node is IMayBeBlockScope blockScope && blockScope.IsBlockScope)
+        if (node is IMayBeBlockScope { IsBlockScope: true } blockScope)
         {
             var saveScope = _currentScope;
             _currentScope = blockScope.BlockScope ?? new AstScope(node);
@@ -51,9 +51,10 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
         {
             astScope.InitScopeVars(_currentScope);
             var saveScope = _currentScope;
+            if (_currentScope is { } && node is AstLambda) _currentScope.DeclaresFunction = true;
             var saveDefun = _defun;
             var saveLabels = _labels;
-            _labels = new Dictionary<string, AstLabel>();
+            _labels = new();
             _defun = _currentScope = astScope;
             DescendOnce();
             _defun = saveDefun;
@@ -92,7 +93,7 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
 
         if (node is AstLabel astLabel)
         {
-            astLabel.References = new StructList<AstLoopControl>();
+            astLabel.References = new();
         }
         else if (node is AstSymbolLambda astSymbolLambda)
         {
@@ -120,15 +121,14 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
         else if (node is AstSymbolDefClass astSymbolDefClassNode)
         {
             // This deals with the name of the class being available
-            // inside the class.
-            var symbol =
+            // inside the class. For class expressions strictly only inside class.
+            var symbol = _defun is AstClassExpression ?
+                (astSymbolDefClassNode.Scope = _defun)?.DefFunction(astSymbolDefClassNode, _defun) :
                 (astSymbolDefClassNode.Scope = _defun?.ParentScope)?.DefFunction(astSymbolDefClassNode, _defun);
             if (symbol != null)
                 MarkExport(symbol, 1);
         }
-        else if (node is AstSymbolVar
-                 || node is AstSymbolLet
-                 || node is AstSymbolConst)
+        else if (node is AstSymbolVar or AstSymbolLet or AstSymbolConst)
         {
             SymbolDef def;
             if (node is AstSymbolBlockDeclaration astSymbolBlockDeclarationNode)
@@ -137,7 +137,7 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
             }
             else
             {
-                def = _defun!.DefVariable((AstSymbol) node, null);
+                def = _defun!.DefVariable((AstSymbol)node, null);
             }
 
             if (!def.Orig.All(sym =>
@@ -148,22 +148,22 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
                         return sym is AstSymbolLambda;
                     }
 
-                    return !(sym is AstSymbolLet || sym is AstSymbolConst);
+                    return !(sym is AstSymbolLet or AstSymbolConst);
                 }))
             {
-                throw new Exception(((AstSymbol) node).Name + " redeclared");
+                throw new Exception(((AstSymbol)node).Name + " redeclared");
             }
 
             MarkExport(def, 2);
             def.Destructuring = _inDestructuring;
             if (_defun != _currentScope)
             {
-                ((AstSymbol) node).MarkEnclosed(_options);
-                var def2 = _currentScope!.FindVariable((AstSymbol) node);
-                if (((AstSymbol) node).Thedef != def2)
+                ((AstSymbol)node).MarkEnclosed(_options);
+                var def2 = _currentScope!.FindVariable((AstSymbol)node);
+                if (((AstSymbol)node).Thedef != def2)
                 {
-                    ((AstSymbol) node).Thedef = def2;
-                    ((AstSymbol) node).Reference(_options);
+                    ((AstSymbol)node).Thedef = def2;
+                    ((AstSymbol)node).Reference(_options);
                 }
             }
         }
@@ -182,7 +182,7 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
         }
 
 #if DEBUG
-        if (!(_currentScope is AstToplevel) && (node is AstExport || node is AstImport))
+        if (!(_currentScope is AstToplevel) && node is AstExport or AstImport)
         {
             throw new Exception(node.PrintToString() + " statement may only appear at top level");
         }

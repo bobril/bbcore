@@ -76,7 +76,9 @@ public class BundlerImpl
 
             _splitMap[splitName] = new(splitName)
             {
-                ShortName = _ctx.GenerateBundleName(splitName), PropName = "ERROR", IsMainSplit = true,
+                ShortName = _ctx.GenerateBundleName(splitName),
+                PropName = "ERROR",
+                IsMainSplit = true,
                 MainFiles = mainFiles
             };
         }
@@ -144,6 +146,11 @@ public class BundlerImpl
                 _currentFileIdent = BundlerHelpers.FileNameToIdent(sourceFile.Name);
                 BundlerHelpers.AppendToplevelWithRename(topLevelAst, sourceFile.Ast!, _currentFileIdent,
                     knownDeclaredGlobals, BeforeAdd);
+            }
+
+            if (LibraryMode)
+            {
+                ResolveLibraryExports(splitInfo, topLevelAst);
             }
 
             AddExternalImports(topLevelAst, splitInfo);
@@ -293,7 +300,8 @@ public class BundlerImpl
 
                 if (!fromSplit.ExportsUsedFromLazyBundles.ContainsKey(astNode))
                 {
-                    fromSplit.ExportsUsedFromLazyBundles[astNode] = BundlerHelpers.NumberToIdent(lazySplitCounter++);
+                    fromSplit.ExportsUsedFromLazyBundles[astNode] =
+                        BundlerHelpers.NumberToIdent(lazySplitCounter++);
                 }
             }
         }
@@ -333,17 +341,45 @@ public class BundlerImpl
         }
     }
 
-    void AddLibraryExports(SplitInfo splitInfo, AstToplevel topLevelAst)
+    static void ResolveLibraryExports(SplitInfo splitInfo, AstToplevel topLevelAst)
+    {
+        foreach (var file in splitInfo.MainFiles)
+        {
+            if (file.Exports == null) continue;
+            foreach (var (key, value) in file.Exports)
+            {
+                if (value is not AstSymbolExternalImport externalImport) continue;
+                ref var symbol =
+                    ref splitInfo.ImportFromExternals[
+                        Concat(externalImport.ImportFile, externalImport.ImportSymbolPath)];
+                var varName = externalImport.ImportSymbolPath[^1];
+                if (varName == "default" && externalImport.ImportSymbolPath.Length == 1)
+                    varName = BundlerHelpers.FileNameToIdent(externalImport.ImportFile);
+                var name = BundlerHelpers.MakeUniqueName(varName, topLevelAst.Variables!,
+                    topLevelAst.NonRootSymbolNames!,
+                    splitInfo.ShortName);
+                symbol = new(topLevelAst, name);
+                file.Exports[key] = symbol;
+            }
+        }
+    }
+
+    static void AddLibraryExports(SplitInfo splitInfo, AstToplevel topLevelAst)
     {
         StructList<AstNameMapping> exportMappings = new();
         foreach (var file in splitInfo.MainFiles)
         {
             if (file.Exports != null)
+            {
                 foreach (var (key, value) in file.Exports)
                 {
-                    if (key.Count == 0) continue;
-                    if (key.Count != 1)
-                        throw new NotImplementedException("Deep library export " + string.Join('.', key));
+                    if (key.Count <= 1) continue;
+                    file.CreateWholeExport(new[] { key[0] }, topLevelAst);
+                }
+
+                foreach (var (key, value) in file.Exports)
+                {
+                    if (key.Count != 1) continue;
                     if (value is AstSymbolRef symbolRef)
                     {
                         exportMappings.Add(new(null, new(), new(),
@@ -351,9 +387,10 @@ public class BundlerImpl
                     }
                     else
                     {
-                        throw new NotImplementedException("Library export of " + value.GetType().Name);
+                        throw new NotSupportedException("Library export of " + value.GetType().Name);
                     }
                 }
+            }
         }
 
         if (exportMappings.Count > 0)
@@ -367,17 +404,31 @@ public class BundlerImpl
         foreach (var importModuleName in split.ImportFromExternals.RootKeys())
         {
             var mappings = new StructList<AstNameMapping>();
+            var importName = default(AstSymbolImport);
             foreach (var keyValuePair in split.ImportFromExternals.IteratePrefix(new[] { importModuleName }))
             {
-                if (keyValuePair.Key.Count == 2)
+                var key = keyValuePair.Key.AsReadOnlySpan()[1..];
+                if (key.Length >= 1 && key[0] == "default")
                 {
-                    mappings.Add(new AstNameMapping(null, new(), new(),
-                        new AstSymbolImportForeign(new AstSymbolRef(keyValuePair.Key[1])),
-                        new AstSymbolImport(keyValuePair.Value)));
+                    key = key[1..];
+                }
+
+                switch (key.Length)
+                {
+                    case 0:
+                        importName = new(keyValuePair.Value);
+                        break;
+                    case 1:
+                        mappings.Add(new(null, new(), new(),
+                            new AstSymbolImportForeign(new AstSymbolRef(key[0])),
+                            new AstSymbolImport(keyValuePair.Value)));
+                        break;
+                    default:
+                        throw new NotSupportedException("Add external imports "+string.Join('.', key.ToArray())+" "+keyValuePair.Value.Name);
                 }
             }
 
-            toplevel.Body.Insert(0) = new AstImport(null, new(), new(), new(importModuleName), null,
+            toplevel.Body.Insert(0) = new AstImport(null, new(), new(), new(importModuleName), importName,
                 ref mappings);
         }
     }
@@ -526,12 +577,20 @@ public class BundlerImpl
             }
             else if (exp is ReexportSelfExport reexportExp)
             {
-                var module = _cache[reexportExp.SourceName];
-                foreach (var keyValuePair in module.Exports!.IteratePrefix(reexportExp.Path.AsSpan()))
+                if (reexportExp.ExternalSource)
                 {
-                    cached.Exports![
-                            Concat(reexportExp.AsName, keyValuePair.Key.AsSpan(reexportExp.Path.Length))] =
-                        keyValuePair.Value;
+                    cached.Exports![new[] { reexportExp.AsName }] =
+                        new AstSymbolExternalImport(reexportExp.SourceName, reexportExp.Path);
+                }
+                else
+                {
+                    var module = _cache[reexportExp.SourceName];
+                    foreach (var keyValuePair in module.Exports!.IteratePrefix(reexportExp.Path.AsSpan()))
+                    {
+                        cached.Exports![
+                                Concat(reexportExp.AsName, keyValuePair.Key.AsSpan(reexportExp.Path.Length))] =
+                            keyValuePair.Value;
+                    }
                 }
             }
             else if (exp is ExportAsNamespaceSelfExport asNamespaceExp)

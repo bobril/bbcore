@@ -20,10 +20,10 @@ public static class BundlerHelpers
             Encoding.UTF8);
         return reader.ReadToEnd();
     }
-    
-    private static readonly string _assemblyName = Assembly.GetExecutingAssembly().GetName().Name!;
-    private static string TslibJs = GetText($"{_assemblyName}.Bundler.JsHeaders.tslib.js");
-    private static string ImportJs = GetText($"{_assemblyName}.Bundler.JsHeaders.import.js");
+
+    static readonly string _assemblyName = Assembly.GetExecutingAssembly().GetName().Name!;
+    static string TslibJs = GetText($"{_assemblyName}.Bundler.JsHeaders.tslib.js");
+    static string ImportJs = GetText($"{_assemblyName}.Bundler.JsHeaders.import.js");
 
     public static string JsHeaders(bool withImport)
     {

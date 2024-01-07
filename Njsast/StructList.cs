@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Njsast.Coverage;
 
 namespace Njsast;
 
@@ -57,7 +56,7 @@ public struct StructList<T> : IEnumerable<T>
         Add(value);
         return true;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [DebuggerStepThrough]
     public ref T AddRef()

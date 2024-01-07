@@ -13,6 +13,16 @@ public static class Extensions
             or AstPrefixedTemplateString or AstSymbolRef or AstAwait;
     }
 
+    public static AstNode? TryToExpression(this AstNode node)
+    {
+        return node switch
+        {
+            AstBlock { Body.Count: 1 } block when block.Body[0].TryToExpression() is { } res => res,
+            AstSimpleStatement simpleStatement when simpleStatement.Body.IsExpression() => simpleStatement.Body,
+            _ => node.IsExpression() ? node : null
+        };
+    }
+
     public static string? IsGlobalSymbol(this SymbolDef? symbol)
     {
         return symbol is { Undeclared: true, Global: true } ? symbol.Name : null;
