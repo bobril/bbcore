@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Fixed
+
+Scoping of class expression names.
+
+### Update
+
+Updated Njsast to 2.0.0 which contains some new optimizations in minifier.
+
 ## 4.0.0
 
 ### Update
