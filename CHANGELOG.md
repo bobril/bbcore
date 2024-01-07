@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.1.0
+
 ### Fixed
 
 Scoping of class expression names.
