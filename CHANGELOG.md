@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+## 4.1.1
+
+### Fixed
+
+Build was too much aggressively trimmed.
+
 ## 4.1.0
 
 ### Fixed
