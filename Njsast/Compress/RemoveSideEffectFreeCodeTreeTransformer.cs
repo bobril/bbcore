@@ -592,6 +592,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     if (astIf.Alternative == null && astIf.Body is AstBlock { Body.Count: 0 })
                     {
                         node = Transform(astIf.Condition);
+                        if (node == Remove) return Remove;
                         continue;
                     }
 

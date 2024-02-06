@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Fixed crash in optimizer of `if` without any sideeffects.
+
 ## 4.1.2
 
 ## 4.1.1
