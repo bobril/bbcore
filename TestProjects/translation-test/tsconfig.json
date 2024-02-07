@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "checkJs": false,
@@ -9,15 +10,12 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "lib": [
-      "es5",
-      "dom",
-      "es2015.core",
-      "es2015.promise",
-      "es2015.iterable",
-      "es2015.generator",
-      "es2015.collection"
+      "es2022",
+      "dom"
     ],
-    "module": "commonjs",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "noEmit": true,
     "noEmitHelpers": true,
     "reactNamespace": "b",
     "removeComments": false,
@@ -25,7 +23,7 @@
     "skipDefaultLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "target": "es5",
+    "target": "es2019",
     "types": [],
     "resolveJsonModule": true
   },

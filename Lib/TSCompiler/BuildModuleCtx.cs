@@ -1500,7 +1500,12 @@ public class BuildModuleCtx : IImportResolver
                 sourceInfo.VdomTranslations.ForEach(t =>
                 {
                     if (t.Message == null)
+                    {
+                        fileInfo.ReportDiag(true, -8,
+                            "Translation message must be compile time resolvable constant string, use f instead if intended", t.StartLine,
+                            t.StartCol, t.EndLine, t.EndCol);
                         return;
+                    }
                     var err = trdb.CheckMessage(t.Message, t.KnownParams);
                     if (err != null)
                     {
@@ -1520,7 +1525,12 @@ public class BuildModuleCtx : IImportResolver
                 sourceInfo.Translations.ForEach(t =>
                 {
                     if (t.Message == null)
+                    {
+                        fileInfo.ReportDiag(true, -8,
+                            "Translation message must be compile time resolvable constant string, use f instead if intended", t.StartLine,
+                            t.StartCol, t.EndLine, t.EndCol);
                         return;
+                    }
                     if (t.WithParams)
                     {
                         var err = trdb.CheckMessage(t.Message, t.KnownParams);
