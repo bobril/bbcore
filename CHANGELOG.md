@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.2.0
+
 ### Added
 
 Error -8 when used g.t without compile time constant string.
