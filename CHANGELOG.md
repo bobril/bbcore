@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Error -8 when used g.t without compile time constant string.
+
 ## 4.1.3
 
 ### Fixed
