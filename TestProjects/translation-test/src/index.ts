@@ -10,4 +10,5 @@ import { t } from "bobril-g11n";
   });
 })();
 
+g.f("" + Math.random());
 b.init(() => t("test-en-key"));

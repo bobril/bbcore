@@ -1526,9 +1526,12 @@ public class BuildModuleCtx : IImportResolver
                 {
                     if (t.Message == null)
                     {
-                        fileInfo.ReportDiag(true, -8,
-                            "Translation message must be compile time resolvable constant string, use f instead if intended", t.StartLine,
-                            t.StartCol, t.EndLine, t.EndCol);
+                        if (!t.JustFormat)
+                        {
+                            fileInfo.ReportDiag(true, -8,
+                                "Translation message must be compile time resolvable constant string, use f instead if intended", t.StartLine,
+                                t.StartCol, t.EndLine, t.EndCol);
+                        }
                         return;
                     }
                     if (t.WithParams)
