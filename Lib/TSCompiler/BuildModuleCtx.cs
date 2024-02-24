@@ -1233,7 +1233,7 @@ public class BuildModuleCtx : IImportResolver
         }
     }
 
-    public void MakeSourceInfoRelative(SourceInfo sourceInfo, string dir)
+    public void MakeSourceInfoRelative(SourceInfo? sourceInfo, string dir)
     {
         if (sourceInfo == null) return;
         sourceInfo.Assets?.ForEach(a =>
@@ -1291,7 +1291,7 @@ public class BuildModuleCtx : IImportResolver
         return "./" + PathUtils.Subtract(name, dir);
     }
 
-    public bool MakeSourceInfoAbsolute(SourceInfo sourceInfo, string from)
+    public bool MakeSourceInfoAbsolute(SourceInfo? sourceInfo, string from)
     {
         if (sourceInfo == null) return true;
         bool ok = true;
