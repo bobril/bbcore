@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.2.2
+
 ### Fixed
 
 Locations of diagnostics by properly resolving source maps.
