@@ -1223,9 +1223,8 @@ public class BuildModuleCtx : IImportResolver
         }
         catch (SyntaxError error)
         {
-            var pos = info.MapLink?.FindPosition(error.Position.Line, error.Position.Column) ??
-                      new SourceCodePosition { Line = error.Position.Line, Col = error.Position.Column };
-            info.ReportDiag(true, -16, error.Message, pos.Line, pos.Col, pos.Line, pos.Col);
+            var pos = new SourceCodePosition { Line = error.Position.Line, Col = error.Position.Column };
+            info.ReportDiagWithMapLink(true, -16, error.Message, pos.Line, pos.Col, pos.Line, pos.Col);
             info.SourceInfo = null;
         }
         finally
@@ -1385,7 +1384,7 @@ public class BuildModuleCtx : IImportResolver
             }
             else
             {
-                fileInfo.ReportDiag(true, -3, "Missing import " + i.Name, i.StartLine, i.StartCol, i.EndLine,
+                fileInfo.ReportDiagWithMapLink(true, -3, "Missing import " + i.Name, i.StartLine, i.StartCol, i.EndLine,
                     i.EndCol);
             }
         });
@@ -1393,7 +1392,7 @@ public class BuildModuleCtx : IImportResolver
         {
             if (a.Name == null)
             {
-                fileInfo.ReportDiag(true, -5, "First parameter of b.asset must be resolved as constant string",
+                fileInfo.ReportDiagWithMapLink(true, -5, "First parameter of b.asset must be resolved as constant string",
                     a.StartLine, a.StartCol, a.EndLine,
                     a.EndCol);
                 return;
@@ -1410,7 +1409,7 @@ public class BuildModuleCtx : IImportResolver
 
                 if (Owner!.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is not IFileCache)
                 {
-                    fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
+                    fileInfo.ReportDiagWithMapLink(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
                         a.EndLine, a.EndCol);
                 }
             }
@@ -1419,7 +1418,7 @@ public class BuildModuleCtx : IImportResolver
                 assetName = assetName.Substring(9);
                 if (ReportDependency(fileInfo, AutodetectAndAddDependency(assetName, true)) == null)
                 {
-                    fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
+                    fileInfo.ReportDiagWithMapLink(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
                         a.EndLine, a.EndCol);
                 }
             }
@@ -1428,7 +1427,7 @@ public class BuildModuleCtx : IImportResolver
                 assetName = assetName.Substring(5);
                 if (ReportDependency(fileInfo, CheckAdd(assetName, FileCompilationType.Html)) == null)
                 {
-                    fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
+                    fileInfo.ReportDiagWithMapLink(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
                         a.EndLine, a.EndCol);
                 }
             }
@@ -1436,7 +1435,7 @@ public class BuildModuleCtx : IImportResolver
             {
                 if (ReportDependency(fileInfo, AutodetectAndAddDependency(assetName)) == null)
                 {
-                    fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
+                    fileInfo.ReportDiagWithMapLink(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
                         a.EndLine, a.EndCol);
                 }
             }
@@ -1451,7 +1450,7 @@ public class BuildModuleCtx : IImportResolver
                     if (!(Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is
                             IFileCache fc))
                     {
-                        fileInfo.ReportDiag(true, -3, "Missing dependency " + name, sourceInfoSprite.StartLine,
+                        fileInfo.ReportDiagWithMapLink(true, -3, "Missing dependency " + name, sourceInfoSprite.StartLine,
                             sourceInfoSprite.StartCol,
                             sourceInfoSprite.EndLine, sourceInfoSprite.EndCol);
                     }
@@ -1463,7 +1462,7 @@ public class BuildModuleCtx : IImportResolver
                         }
                         catch
                         {
-                            fileInfo.ReportDiag(true, -17, "Invalid or unusable svg " + name,
+                            fileInfo.ReportDiagWithMapLink(true, -17, "Invalid or unusable svg " + name,
                                 sourceInfoSprite.StartLine, sourceInfoSprite.StartCol,
                                 sourceInfoSprite.EndLine, sourceInfoSprite.EndCol);
                         }
@@ -1485,7 +1484,7 @@ public class BuildModuleCtx : IImportResolver
                     var assetName = s.Name;
                     if (ReportDependency(fileInfo, AutodetectAndAddDependency(assetName)) == null)
                     {
-                        fileInfo.ReportDiag(true, -3, "Missing dependency " + assetName, s.NameStartLine,
+                        fileInfo.ReportDiagWithMapLink(true, -3, "Missing dependency " + assetName, s.NameStartLine,
                             s.NameStartCol, s.NameEndLine, s.NameEndCol);
                     }
                 });
@@ -1501,7 +1500,7 @@ public class BuildModuleCtx : IImportResolver
                 {
                     if (t.Message == null)
                     {
-                        fileInfo.ReportDiag(true, -8,
+                        fileInfo.ReportDiagWithMapLink(true, -8,
                             "Translation message must be compile time resolvable constant string, use f instead if intended", t.StartLine,
                             t.StartCol, t.EndLine, t.EndCol);
                         return;
@@ -1509,7 +1508,7 @@ public class BuildModuleCtx : IImportResolver
                     var err = trdb.CheckMessage(t.Message, t.KnownParams);
                     if (err != null)
                     {
-                        fileInfo.ReportDiag(false, -7,
+                        fileInfo.ReportDiagWithMapLink(false, -7,
                             "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine,
                             t.StartCol, t.EndLine, t.EndCol);
                     }
@@ -1528,7 +1527,7 @@ public class BuildModuleCtx : IImportResolver
                     {
                         if (!t.JustFormat)
                         {
-                            fileInfo.ReportDiag(true, -8,
+                            fileInfo.ReportDiagWithMapLink(true, -8,
                                 "Translation message must be compile time resolvable constant string, use f instead if intended", t.StartLine,
                                 t.StartCol, t.EndLine, t.EndCol);
                         }
@@ -1539,7 +1538,7 @@ public class BuildModuleCtx : IImportResolver
                         var err = trdb.CheckMessage(t.Message, t.KnownParams);
                         if (err != null)
                         {
-                            fileInfo.ReportDiag(false, -7,
+                            fileInfo.ReportDiagWithMapLink(false, -7,
                                 "Problem with translation message \"" + t.Message + "\" " + err, t.StartLine,
                                 t.StartCol, t.EndLine, t.EndCol);
                         }

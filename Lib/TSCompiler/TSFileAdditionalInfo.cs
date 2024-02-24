@@ -180,4 +180,18 @@ public class TsFileAdditionalInfo
         ChangeId = Owner.ChangeId;
         return res;
     }
+
+    public void ReportDiagWithMapLink(bool isError, int code, string text, int startLine, int startCharacter, int endLine, int endCharacter)
+    {
+        if (MapLink != null)
+        {
+            var pos = MapLink.FindPosition(startLine, startCharacter);
+            startLine = pos.Line;
+            startCharacter = pos.Col;
+            pos = MapLink.FindPosition(endLine, endCharacter);
+            endLine = pos.Line;
+            endCharacter = pos.Col;
+        }
+        ReportDiag(isError, code, text, startLine, startCharacter, endLine, endCharacter);
+    }
 }
