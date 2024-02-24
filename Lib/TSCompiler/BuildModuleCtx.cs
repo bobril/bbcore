@@ -920,7 +920,7 @@ public class BuildModuleCtx : IImportResolver
                                         return fc.Utf8Content;
                                     }
 
-                                    info.ReportDiag(true, -3, "Missing dependency " + url, 1, 1, 1, 1);
+                                    info.ReportDiag(true, -3, "Missing dependency " + url, 0, 0, 0, 0);
                                     return "";
                                 }, text => { Owner!.Logger.Info(text); }).Result;
                         }
@@ -956,7 +956,7 @@ public class BuildModuleCtx : IImportResolver
                     }
                     else
                     {
-                        info.ReportDiag(true, -3, "Missing import lit", 1, 1, 1, 1);
+                        info.ReportDiag(true, -3, "Missing import lit", 0, 0, 0, 0);
                     }
 
                     ReportDependenciesFromCss(info);

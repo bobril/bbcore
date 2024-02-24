@@ -98,6 +98,7 @@ public class TsFileAdditionalInfo
             {
                 FromModule = TSProject.Create(moduleDir, FromModule.DiskCache, FromModule.Logger, null);
             }
+
             return FromModule;
         }
     }
@@ -126,6 +127,7 @@ public class TsFileAdditionalInfo
         });
     }
 
+    // Line and Character are zero based
     public void ReportDiag(bool isError, int code, string text, int startLine, int startCharacter, int endLine,
         int endCharacter)
     {
@@ -151,7 +153,7 @@ public class TsFileAdditionalInfo
             dir = dir.Parent;
         }
 
-        return new() {Owner = file, FromModule = dir?.Project as TSProject};
+        return new() { Owner = file, FromModule = dir?.Project as TSProject };
     }
 
     public static TsFileAdditionalInfo CreateVirtual(IDirectoryCache? inDir)
@@ -162,7 +164,7 @@ public class TsFileAdditionalInfo
             dir = dir.Parent;
         }
 
-        return new() {Owner = null, FromModule = dir?.Project as TSProject};
+        return new() { Owner = null, FromModule = dir?.Project as TSProject };
     }
 
     internal void ReportDiag(List<Diagnostic> diagnostics)
@@ -181,17 +183,20 @@ public class TsFileAdditionalInfo
         return res;
     }
 
-    public void ReportDiagWithMapLink(bool isError, int code, string text, int startLine, int startCharacter, int endLine, int endCharacter)
+    // Line and Character are zero based
+    public void ReportDiagWithMapLink(bool isError, int code, string text, int startLine, int startCharacter,
+        int endLine, int endCharacter)
     {
         if (MapLink != null)
         {
-            var pos = MapLink.FindPosition(startLine, startCharacter);
-            startLine = pos.Line;
-            startCharacter = pos.Col;
-            pos = MapLink.FindPosition(endLine, endCharacter);
-            endLine = pos.Line;
-            endCharacter = pos.Col;
+            var pos = MapLink.FindPosition(startLine + 1, startCharacter + 1);
+            startLine = pos.Line - 1;
+            startCharacter = pos.Col - 1;
+            pos = MapLink.FindPosition(endLine + 1, endCharacter + 1);
+            endLine = pos.Line - 1;
+            endCharacter = pos.Col - 1;
         }
+
         ReportDiag(isError, code, text, startLine, startCharacter, endLine, endCharacter);
     }
 }

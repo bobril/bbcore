@@ -224,6 +224,7 @@ public class SourceMap
         new DerefVisitor(this).Walk(node);
     }
 
+    // Both input and outputs are one based
     public SourceCodePosition FindPosition(int line, int col)
     {
         if (_searchCache == null)
