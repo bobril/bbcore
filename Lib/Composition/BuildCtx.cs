@@ -371,7 +371,16 @@ public class BuildCtx
                     info.Value.IterationId = iterationId - 1;
                 }
             }
-
+            else
+            {
+                _projectStructureChanged = true;
+                buildResult.Incremental = false;
+                buildResult.JavaScriptAssets.Clear();
+                foreach (var info in buildResult.Path2FileInfo)
+                {
+                    info.Value.IterationId = iterationId - 1;
+                }
+            }
             buildModuleCtx.CrawledCount = 0;
             buildModuleCtx.ToCheck.Clear();
             buildModuleCtx.ExpandHtmlHead(project.HtmlHead);

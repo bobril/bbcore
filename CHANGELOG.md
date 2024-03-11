@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Fixed
+
+Wrong Incremental build when package.json was changed.
+
+### Update
+
+All dependencies. Especially ImageSharp to 2.1.7.
+
 ## 4.2.2
 
 ### Fixed

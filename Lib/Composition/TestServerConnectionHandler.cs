@@ -98,8 +98,12 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                         if (_suiteStack == null)
                         {
                             _suiteStack = new Stack<SuiteOrTest>();
-                            _suiteStack.Push(_curResults);
                         }
+                        else
+                        {
+                            _suiteStack.Clear();
+                        }
+                        _suiteStack.Push(_curResults);
                     }
 
                     _testServer.NotifyTestingStarted();
