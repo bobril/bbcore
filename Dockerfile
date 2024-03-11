@@ -5,7 +5,6 @@ ARG VERSION=0.0.0
 WORKDIR /app
 
 # copy csproj and restore as distinct layers
-COPY nuget.config ./
 COPY bb/*.csproj ./bb/
 COPY Lib/*.csproj ./Lib/
 COPY BobrilMdx/*.csproj ./BobrilMdx/
