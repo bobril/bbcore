@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.3.0
+
 ### Fixed
 
 Wrong Incremental build when package.json was changed.
