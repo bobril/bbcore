@@ -20,7 +20,7 @@
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
       <PackageReference Include="ProxyKit" Version="2.3.4" />
       <PackageReference Include="SemanticVersioning" Version="2.0.2" />
-      <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="2.1.7" />
       <PackageReference Include="System.Reactive" Version="6.0.0" />
       <PackageReference Include="UAParser" Version="3.1.47" />
       <PackageReference Include="WebMarkupMin.Core" Version="2.14.0" />

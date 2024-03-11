@@ -122,7 +122,7 @@ public class SpriteHolder : ISpritePlace
                         _wasChange = true;
                         try
                         {
-                            fi.Image = Image.Load((item as IFileCache)!.ByteContent);
+                            fi.Image = Image.Load<Rgba32>((item as IFileCache)!.ByteContent);
                         }
                         catch (Exception ex)
                         {
