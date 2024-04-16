@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.3.1
+
 ### Update
 
 All dependencies. Especially ImageSharp to 2.1.8.
