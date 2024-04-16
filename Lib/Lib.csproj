@@ -55,25 +55,25 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BTDB" Version="32.5.0" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.59" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.60" />
     <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.24.1" />
-    <PackageReference Include="JavaScriptEngineSwitcher.V8" Version="3.24.1" />
+    <PackageReference Include="JavaScriptEngineSwitcher.V8" Version="3.24.2" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.2.1" />
-    <PackageReference Include="Microsoft.ClearScript.V8" Version="7.4.4" />
-    <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.4.4" />
-    <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.4.4" />
-    <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-arm64" Version="7.4.4" />
-    <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.4.4" />
+    <PackageReference Include="Microsoft.ClearScript.V8" Version="7.4.5" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.4.5" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.4.5" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-arm64" Version="7.4.5" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.4.5" />
     <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="ProxyKit" Version="2.3.4" />
     <PackageReference Include="SemanticVersioning" Version="2.0.2" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.7" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.8" />
     <PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
     <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
     <PackageReference Include="System.Reactive" Version="6.0.0" />
