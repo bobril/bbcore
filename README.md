@@ -233,3 +233,15 @@ Docker on Windows filesystem has limitation in creating links. To workaround thi
 ## Recognize when running in Docker
 
 It uses same variable like all other dotnet containers `DOTNET_RUNNING_IN_CONTAINER`.
+
+# Global configuration
+
+In `~/.bbcore/.bbcfg` you can define global configuration. It is JSON file with following settings.
+
+## Windows Notifications
+
+If you want to disable Windows notifications after build/test finished, you can create this file with following content:
+
+```json
+{ "notificationsEnabled": false }
+```
