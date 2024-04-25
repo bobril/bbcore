@@ -21,6 +21,8 @@ let semitransparentLight = b.sprite("light.png", "rgba(200,100,0,0.5)");
 let undefinedLight = b.sprite("light.png", undefined);
 let svgGradientBase = b.sprite("gradient.svg", "blue");
 let svgGradient = svgGradientBase;
+let svgGradient2Base = b.sprite("gradient2.svg");
+let svgGradient2 = b.svgWithColor(svgGradient2Base, { green: "#ff2211", blue: "#1122ff" });
 
 function dontDoThis(cn: string) {
     b.styleDef({}, undefined, cn);
@@ -86,6 +88,8 @@ let page = b.createVirtualComponent({
             b.styledDiv(" ", { backgroundColor: "green", display: "inline-block" }, semitransparentLight),
             b.styledDiv(" ", { display: "inline-block" }, undefinedLight),
             b.styledDiv(" ", { display: "inline-block" }, svgGradient),
+            b.styledDiv(" ", { display: "inline-block" }, svgGradient2Base),
+            b.styledDiv(" ", { display: "inline-block" }, svgGradient2),
             lightSwitch({
                 value: switchValue,
                 onChange: () => {
