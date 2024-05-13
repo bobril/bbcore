@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Update
+
+In Docker image Nodejs to 22.
+
 ## 4.3.1
 
 ### Update
@@ -128,11 +132,11 @@ Reverting default for target to ES2019.
 Override imports in .bbrc or "bobril" section of package.json define this:
 
 ```json
-    {
-        "imports": {
-            "perf_hooks": null
-        }
-    }
+{
+  "imports": {
+    "perf_hooks": null
+  }
+}
 ```
 
 This allows to override imports. If value is null then import is removed (behaves like it would be empty file). If value is string then import path is replaced by this string.
