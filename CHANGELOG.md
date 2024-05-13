@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.3.2
+
 ### Update
 
 In Docker image Nodejs to 22.
