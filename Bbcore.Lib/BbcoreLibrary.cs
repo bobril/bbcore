@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using JetBrains.Annotations;
 using Lib.BuildCache;
 using Lib.Composition;
 using Lib.DiskCache;
@@ -17,18 +18,25 @@ namespace Bbcore.Lib;
 public interface IBbcoreLibrary
 {
     public int Run(string[] args, IConsoleLogger logger);
+    public bool RunBuild(IFsAbstraction files,
+        string typeScriptVersion,
+        string directory,
+        out string? javaScript,
+        out string? parsedMessages);
     public bool RunBuild(
         IFsAbstraction files,
         string typeScriptVersion,
         string directory,
-        out string javaScript,
-        out string parsedMessages);
+        out string? javaScript,
+        out string? parsedMessages,
+        out string? sourceMap);
+    
 }
 
 public partial class BbcoreLibrary : IBbcoreLibrary
 {
-    private static readonly ILogger Logger = new DummyLogger();
-    private const string FileWithResultOfBuilding = "a.js";
+    static readonly ILogger Logger = new DummyLogger();
+    const string FileWithResultOfBuilding = "a.js";
 
     public int Run(string[] args, IConsoleLogger logger)
     {
@@ -41,12 +49,11 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         return Environment.ExitCode;
     }
     
-    public bool RunBuild(
-        IFsAbstraction files,
+    public bool RunBuild(IFsAbstraction files,
         string typeScriptVersion,
         string directory,
-        out string javaScript,
-        out string parsedMessages)
+        out string? javaScript,
+        out string? parsedMessages)
     {
         javaScript = null;
         parsedMessages = null;
@@ -69,17 +76,44 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         parsedMessages = ParseMessages(context.Messages);
         return false;
     }
-    
+
+    public bool RunBuild(IFsAbstraction files, string typeScriptVersion, string directory, out string? javaScript,
+        out string? parsedMessages, out string? sourceMap)
+    {
+        javaScript = null!;
+        parsedMessages = null!;
+        sourceMap = null!;
+        
+        var context = CreateBundlingContext(files, directory, typeScriptVersion);
+        
+        var errors = 0;
+        var warnings = 0;
+        
+        Transpile(context, ref errors, ref warnings);
+        
+        if (errors == 0) Bundle(context, withSourceMap: true, directory);
+        
+        if (errors <= 0 && !context.BuildResult.HasError)
+        {
+            javaScript = context.MainBuildResult.FilesContent.GetOrAddValueRef(FileWithResultOfBuilding) as string;
+            sourceMap = context.MainBuildResult.FilesContent.GetOrAddValueRef(FileWithResultOfBuilding + ".map") as string;
+            return true;
+        }
+
+        parsedMessages = ParseMessages(context.Messages);
+        return false;
+    }
+
     [GeneratedRegex(@".*/(.*?)$")]
     private static partial Regex FileNameRegex();
 
-    private static string GetFileName(string path)
+    static string GetFileName(string path)
     {
         var match = FileNameRegex().Match(path);
         return !match.Success ? "" : match.Groups[1].Value;
     }
-    
-    private static string ParseMessages(IList<Diagnostic> messages, bool onlySemantic = false)
+
+    static string ParseMessages(IList<Diagnostic> messages, bool onlySemantic = false)
     {
         var result = new StringBuilder();
         foreach (var message in messages)
@@ -107,8 +141,8 @@ public partial class BbcoreLibrary : IBbcoreLibrary
 
         return result.ToString();
     }
-    
-    private static void Bundle(BuildContext context)
+
+    static void Bundle(BuildContext context, bool withSourceMap = false, string? directory = null)
     {
         context.Bundler =
             new NjsastBundleBundler(
@@ -122,12 +156,11 @@ public partial class BbcoreLibrary : IBbcoreLibrary
             compress: true,
             mangle: false,
             beautify: true,
-            buildSourceMap: false,
-            sourceMapSourceRoot: null);
+            buildSourceMap: withSourceMap,
+            sourceMapSourceRoot: directory);
     }
-        
-    private static BuildContext CreateBundlingContext(
-        IFsAbstraction files,
+
+    static BuildContext CreateBundlingContext(IFsAbstraction files,
         string directory,
         string typeScriptVersion)
     {
@@ -171,8 +204,8 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         
         return context;
     }
-    
-    private static void Transpile(
+
+    static void Transpile(
         BuildContext context,
         ref int errors,
         ref int warnings)   
@@ -194,8 +227,8 @@ public partial class BbcoreLibrary : IBbcoreLibrary
             ref warnings,
             context.Messages);
     }
-    
-    private static void IncludeMessages(
+
+    static void IncludeMessages(
         ProjectOptions options,
         MainBuildResult mainBuildResult,
         BuildResult buildResult,

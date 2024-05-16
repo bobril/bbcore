@@ -13,7 +13,6 @@ public class CompilerTests
     string _bbdir;
     ToolsDir.ToolsDir _tools;
     CompilerPool _compilerPool;
-    IFsAbstraction fs;
     string projdir;
     DiskCache.DiskCache dc;
 

@@ -187,6 +187,8 @@ static public class PathUtils
 
     public static string Join(string dir1, string dir2)
     {
+        if (dir2.StartsWith("file://", StringComparison.Ordinal))
+            dir2 = dir2.Substring(7);
         if (Path.IsPathRooted(dir2))
             return dir2;
         if (dir1 == "/") dir1 = "";
