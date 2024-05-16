@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+Bbcore.Lib supports building source maps.
+
+### Update
+
+All dependencies. Especially .Net SDK 8.0.300
+
 ## 4.3.2
 
 ### Update
