@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.4.0
+
 ### Added
 
 Bbcore.Lib supports building source maps.
