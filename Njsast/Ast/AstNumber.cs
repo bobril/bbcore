@@ -63,4 +63,15 @@ public class AstNumber : AstConstant
     {
         return Value;
     }
+
+    public override bool IsStructurallyEquivalentTo(AstNode? with)
+    {
+        if (with is AstNumber astNumber)
+        {
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            return Value == astNumber.Value;
+        }
+
+        return false;
+    }
 }

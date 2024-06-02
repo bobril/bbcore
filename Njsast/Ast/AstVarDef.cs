@@ -45,7 +45,7 @@ public class AstVarDef : AstNode
         if (Value != null)
         {
             Value = tt.Transform(Value);
-            if (Value == TreeTransformer.Remove)
+            if (TreeTransformer.IsRemove(Value))
                 Value = null;
         }
     }

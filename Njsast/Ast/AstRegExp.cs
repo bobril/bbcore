@@ -46,4 +46,19 @@ public class AstRegExp : AstConstant
         if (f.HasFlag(RegExpFlags.DotAll))
             output.Print("s");
     }
+
+    public override bool IsStructurallyEquivalentTo(AstNode? with)
+    {
+        if (with is AstRegExp withRegExp)
+        {
+            return Value.Pattern == withRegExp.Value.Pattern && Value.Flags == withRegExp.Value.Flags;
+        }
+
+        return false;
+    }
+
+    public override bool IsConstantLike()
+    {
+        return Value.Flags.HasFlag(RegExpFlags.GlobalMatch);
+    }
 }

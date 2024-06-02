@@ -33,7 +33,7 @@ public class AstIf : AstStatementWithBody
         if (Alternative != null)
         {
             var alt = tt.Transform(Alternative);
-            Alternative = alt == TreeTransformer.Remove ? null : (AstStatement) alt;
+            Alternative = TreeTransformer.IsRemove(alt) ? null : (AstStatement) alt;
         }
 
     }

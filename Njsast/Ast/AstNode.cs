@@ -107,4 +107,14 @@ public abstract class AstNode
     {
         return null;
     }
+
+    public virtual bool IsStructurallyEquivalentTo(AstNode? with)
+    {
+        return false;
+    }
+
+    public virtual bool IsConstantLike()
+    {
+        return false;
+    }
 }

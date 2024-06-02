@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using JetBrains.Annotations;
 using Njsast.Ast;
 using Njsast.Output;
@@ -39,8 +40,15 @@ public abstract class TreeTransformer : TreeWalkerBase
 
     class AstRemoveMe : AstNode
     {
+#if DEBUG
+        static uint Counter = 1;
+        readonly uint Id;
+#endif
         public AstRemoveMe()
         {
+#if DEBUG
+            Id = Counter++;
+#endif
         }
 
         public override void Visit(TreeWalker w)
@@ -64,7 +72,16 @@ public abstract class TreeTransformer : TreeWalkerBase
         }
     }
 
+    public static bool IsRemove(AstNode? node)
+    {
+        return node is AstRemoveMe;
+    }
+
+#if DEBUG
+    public static AstNode Remove => new AstRemoveMe();
+#else
     public static readonly AstNode Remove = new AstRemoveMe();
+#endif
 
     protected static AstNode SpreadStructList(AstBlock block)
     {
@@ -119,7 +136,7 @@ public abstract class TreeTransformer : TreeWalkerBase
         {
             var originalNode = list[i];
             var item = Transform(originalNode, true);
-            if (item == Remove)
+            if (IsRemove(item))
             {
                 list.RemoveAt(i);
                 Modified = true;

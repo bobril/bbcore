@@ -36,4 +36,9 @@ public class AstTemplateSegment : AstNode
     {
         throw new InvalidOperationException();
     }
+
+    public override bool IsConstantLike()
+    {
+        return true;
+    }
 }

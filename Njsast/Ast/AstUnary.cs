@@ -54,4 +54,11 @@ public abstract class AstUnary : AstNode
                && thisUnaryPrefix.Operator != Operator.Increment
                && thisUnaryPrefix.Operator != Operator.Decrement;
     }
+
+    public override bool IsConstantLike()
+    {
+        if (Operator == Operator.Void || Operator == Operator.TypeOf || Operator == Operator.Subtraction || Operator == Operator.Addition || Operator == Operator.BitwiseNot || Operator == Operator.LogicalNot)
+            return Expression.IsConstantLike();
+        return false;
+    }
 }

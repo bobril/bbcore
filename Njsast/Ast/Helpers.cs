@@ -184,6 +184,7 @@ public static class Helpers
                 return null;
         }
 
+        if (res.Count == 0) return null;
         return res;
     }
 }

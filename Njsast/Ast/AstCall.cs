@@ -110,4 +110,21 @@ public class AstCall : AstNode
         base.DumpScalars(writer);
         writer.PrintProp("Optional", Optional);
     }
+
+    public override bool IsStructurallyEquivalentTo(AstNode? with)
+    {
+        if (with is AstCall astCall)
+        {
+            if (!Expression.IsStructurallyEquivalentTo(astCall.Expression)) return false;
+            if (Args.Count != astCall.Args.Count) return false;
+            for (var i = 0; i < Args.Count; i++)
+            {
+                if (!Args[i].IsStructurallyEquivalentTo(astCall.Args[i])) return false;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
 }

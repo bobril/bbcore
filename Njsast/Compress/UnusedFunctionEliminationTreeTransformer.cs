@@ -17,7 +17,7 @@ public class UnusedFunctionEliminationTreeTransformer : CompressModuleTreeTransf
         {
             DescendBinaryOrVar();
 
-            if (astBinary.Right == Remove)
+            if (IsRemove(astBinary.Right))
             {
                 return astBinary.Left; // TODO tree transformer which remove alone symbol refs
             }

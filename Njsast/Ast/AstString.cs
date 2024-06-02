@@ -47,4 +47,14 @@ public class AstString : AstConstant
         if (ctx != null) return ctx.ConstStringResolver(Value);
         return Value;
     }
+
+    public override bool IsStructurallyEquivalentTo(AstNode? with)
+    {
+        if (with is AstString astString)
+        {
+            return Value == astString.Value;
+        }
+
+        return false;
+    }
 }

@@ -80,4 +80,9 @@ public class AstConditional : AstNode
         if (cond == null) return null;
         return TypeConverter.ToBoolean(cond) ? Consequent.ConstValue(ctx) : Alternative.ConstValue(ctx);
     }
+
+    public override bool IsConstantLike()
+    {
+        return Condition.IsConstantLike() && Consequent.IsConstantLike() && Alternative.IsConstantLike();
+    }
 }

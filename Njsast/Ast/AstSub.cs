@@ -23,4 +23,20 @@ public class AstSub : AstPropAccess
         ((AstNode) Property).Print(output);
         output.Print("]");
     }
+
+    public override bool IsStructurallyEquivalentTo(AstNode? with)
+    {
+        if (with is AstSub withSub)
+        {
+            return Expression.IsStructurallyEquivalentTo(withSub.Expression) &&
+                   ((AstNode) Property).IsStructurallyEquivalentTo((AstNode) withSub.Property);
+        }
+
+        return false;
+    }
+
+    public override bool IsConstantLike()
+    {
+        return Expression.IsConstantLike() && ((AstNode) Property).IsConstantLike();
+    }
 }

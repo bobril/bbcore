@@ -77,4 +77,20 @@ public class AstObjectKeyVal : AstObjectProperty
             Value.Print(output);
         }
     }
+
+    public override bool IsStructurallyEquivalentTo(AstNode? with)
+    {
+        if (with is AstObjectKeyVal astObjectKeyVal)
+        {
+            return Key.IsStructurallyEquivalentTo(astObjectKeyVal.Key) &&
+                   Value.IsStructurallyEquivalentTo(astObjectKeyVal.Value);
+        }
+
+        return false;
+    }
+
+    public override bool IsConstantLike()
+    {
+        return Key.IsConstantLike() && Value.IsConstantLike();
+    }
 }

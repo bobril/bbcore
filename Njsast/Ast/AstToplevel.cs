@@ -111,6 +111,8 @@ public class AstToplevel : AstScope
                 {
                     //File.WriteAllText("CompressIter" + iteration + ".js",
                     //    transformed.PrintToString(new OutputOptions {Beautify = true}));
+                    var trDetect = new DetectPurposeTransformer();
+                    transformed = (AstToplevel) trDetect.Transform(transformed);
                     var tr = new RemoveSideEffectFreeCodeTreeTransformer();
                     transformed = (AstToplevel) tr.Transform(transformed);
                     if (tr.Modified) shouldIterateAgain = true;
@@ -129,6 +131,8 @@ public class AstToplevel : AstScope
                 if (compressOptions.EnableRemoveSideEffectFreeCode)
                 {
                     transformed.FigureOutScope(scopeOptions);
+                    var trDetect = new DetectPurposeTransformer();
+                    transformed = (AstToplevel) trDetect.Transform(transformed);
                     var tr = new RemoveSideEffectFreeCodeTreeTransformer();
                     transformed = (AstToplevel) tr.Transform(transformed);
                     if (tr.Modified) shouldIterateAgain = true;

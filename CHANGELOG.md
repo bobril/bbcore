@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Optimization deduplication of same pure functions. 
+
 ## 4.4.0
 
 ### Added

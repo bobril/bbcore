@@ -62,4 +62,14 @@ public class AstTemplateString : AstNode
         if (Segments.Count == 1) return ((AstTemplateSegment)Segments[0]).Value;
         return null;
     }
+
+    public override bool IsConstantLike()
+    {
+        for (var i = 0u; i < Segments.Count; i++)
+        {
+            if (!Segments[i].IsConstantLike()) return false;
+        }
+
+        return true;
+    }
 }

@@ -85,7 +85,7 @@ public class AstSequence : AstNode
 
     public void AddIntelligently(AstNode node)
     {
-        if (node == TreeTransformer.Remove)
+        if (TreeTransformer.IsRemove(node))
             return;
         if (node is AstSequence seq)
         {
@@ -94,5 +94,15 @@ public class AstSequence : AstNode
         }
 
         Expressions.Add(node);
+    }
+
+    public override bool IsConstantLike()
+    {
+        for (var i = 0u; i < Expressions.Count; i++)
+        {
+            if (!Expressions[i].IsConstantLike()) return false;
+        }
+
+        return true;
     }
 }

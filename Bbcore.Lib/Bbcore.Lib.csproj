@@ -993,6 +993,9 @@
       <Compile Include="..\Njsast\Compress\DeclarationCollectorTreeWalker.cs">
         <Link>Compress\DeclarationCollectorTreeWalker.cs</Link>
       </Compile>
+      <Compile Include="..\Njsast\Compress\DetectPurposeTransformer.cs">
+        <Link>Compress\DetectPurposeTransformer.cs</Link>
+      </Compile>
       <Compile Include="..\Njsast\Compress\EmptyStatementEliminationTreeTransformer.cs">
         <Link>Compress\EmptyStatementEliminationTreeTransformer.cs</Link>
       </Compile>

@@ -238,7 +238,7 @@ class BundlerTreeTransformer : TreeTransformer
 
     protected override AstNode After(AstNode node, bool inList)
     {
-        if (node is AstSimpleStatement simple && simple.Body == Remove)
+        if (node is AstSimpleStatement simple && IsRemove(simple.Body))
             return Remove;
         if (node is AstDefinitions { Definitions.Count: 0 })
             return Remove;

@@ -128,4 +128,20 @@ public abstract class AstPropAccess : AstNode
 
         return null;
     }
+
+    public override bool IsStructurallyEquivalentTo(AstNode? with)
+    {
+        if (with is AstPropAccess withPropAccess)
+        {
+            return Expression.IsStructurallyEquivalentTo(withPropAccess.Expression) &&
+                   (Property is string str && str == (string) withPropAccess.Property ||
+                   Property is AstNode node && node.IsStructurallyEquivalentTo((AstNode) withPropAccess.Property));
+        }
+        return false;
+    }
+
+    public override bool IsConstantLike()
+    {
+        return Expression.IsConstantLike() && (Property is string || Property is AstNode node && node.IsConstantLike());
+    }
 }

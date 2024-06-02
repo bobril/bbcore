@@ -18,4 +18,9 @@ public abstract class AstConstant : AstNode
     {
         return this;
     }
+
+    public override bool IsConstantLike()
+    {
+        return true;
+    }
 }

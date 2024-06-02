@@ -28,7 +28,7 @@ public class AstSimpleStatement : AstStatement, IAstStatementWithBody
     public override void Transform(TreeTransformer tt)
     {
         base.Transform(tt);
-        if (Body != TreeTransformer.Remove)
+        if (!TreeTransformer.IsRemove(Body))
             Body = tt.Transform(Body);
     }
 

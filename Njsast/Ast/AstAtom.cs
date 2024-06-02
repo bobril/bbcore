@@ -12,4 +12,9 @@ public abstract class AstAtom : AstConstant
     protected AstAtom()
     {
     }
+
+    public override bool IsStructurallyEquivalentTo(AstNode? with)
+    {
+        return GetType()==with?.GetType();
+    }
 }
