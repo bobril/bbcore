@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.5.1
+
 ### Fixed
 
 Now it is possible to export enums in Library mode.
