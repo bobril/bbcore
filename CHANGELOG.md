@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Now it is possible to export enums in Library mode.
+
 ## 4.5.0
 
 ### Added

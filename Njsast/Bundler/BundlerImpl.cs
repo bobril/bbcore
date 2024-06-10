@@ -380,7 +380,7 @@ public class BundlerImpl
                 foreach (var (key, value) in file.Exports)
                 {
                     if (key.Count != 1) continue;
-                    if (value is AstSymbolRef symbolRef)
+                    if (value is AstSymbol symbolRef)
                     {
                         exportMappings.Add(new(null, new(), new(),
                             new AstSymbolExportForeign(new AstSymbolRef(key[0])), new AstSymbolExport(symbolRef)));
