@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.5.2
+
 ### Update
 
 TSLib updated to correctly support private fields.
