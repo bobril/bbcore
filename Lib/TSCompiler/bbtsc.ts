@@ -255,7 +255,9 @@ const mySys: ts.System = {
         return path;
     },
     getDirectories(path: string): string[] {
-        return bb.getDirectories(path).split("|");
+        let res = bb.getDirectories(path);
+        if (res.length == 0) return [];
+        return res.split("|");
     },
     realpath(path: string): string {
         return bb.realPath(path);
@@ -352,7 +354,7 @@ function createCompilerHost(): ts.CompilerHost {
         let text: string | undefined;
         try {
             text = bb.readFile(fileName);
-        } catch (e) {
+        } catch (e:any) {
             if (onError) {
                 onError(e.message);
             }

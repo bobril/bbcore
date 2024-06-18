@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+It correctly ignores empty '@types' directory.
+
 ## 4.5.2
 
 ### Update

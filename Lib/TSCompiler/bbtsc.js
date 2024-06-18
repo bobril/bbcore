@@ -198,7 +198,10 @@ var mySys = {
         return path;
     },
     getDirectories: function (path) {
-        return bb.getDirectories(path).split("|");
+        var res = bb.getDirectories(path);
+        if (res.length == 0)
+            return [];
+        return res.split("|");
     },
     realpath: function (path) {
         return bb.realPath(path);
