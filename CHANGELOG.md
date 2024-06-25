@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+bb test now prints exit code at end.
+
 ### Fixed
 
 It correctly ignores empty '@types' directory.

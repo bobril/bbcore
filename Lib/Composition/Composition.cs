@@ -917,6 +917,7 @@ public class Composition
         }
 
         Environment.ExitCode = errors + testFailures != 0 || incompleteTest ? 1 : 0;
+        _logger.Info("Exiting with code " + Environment.ExitCode);
     }
 
     void PrintFailed(SuiteOrTest testResults, IConsoleLogger logger, int indent = 0)
