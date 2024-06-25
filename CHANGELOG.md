@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.5.3
+
 ### Added
 
 bb test now prints exit code at end.
