@@ -133,7 +133,9 @@ public class TsCompiler : ITSCompiler
 
         public string realPath(string path)
         {
-            return PathUtils.RealPath(path);
+            var res = PathUtils.RealPath(path);
+            if (_owner.Logger.Verbose && path != res) _owner.Logger.Info("TSC:RealPath " + path + " -> " + res);
+            return res;
         }
 
         readonly Stopwatch _stopwatch = new Stopwatch();

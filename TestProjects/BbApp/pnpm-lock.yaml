@@ -1,0 +1,49 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      bobril:
+        specifier: '*'
+        version: 20.7.1
+      bobril-g11n:
+        specifier: '*'
+        version: 5.1.1
+    devDependencies:
+      typescript:
+        specifier: '*'
+        version: 5.5.3
+
+packages:
+
+  bobril-g11n@5.1.1:
+    resolution: {integrity: sha512-c1PdUCIIxLXnu1FsYAxhezDppHjohjTjmrZN9aCRD5LPtFrHugLbtMXOh6y4GEpD1ZBJbM2Dvf5b4eccRgARlQ==}
+
+  bobril@20.7.1:
+    resolution: {integrity: sha512-KiyG/zysyze3w87O/6eHl1XmLPMkZdAW6Pt4y5k5w2ZtORsLKLyB+yEWvTHQl/XFE6OucwxexZplwpHJO6Wlwg==}
+
+  moment@2.30.1:
+    resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
+
+  typescript@5.5.3:
+    resolution: {integrity: sha512-/hreyEujaB0w76zKo6717l3L0o/qEUtRgdvUBvlkhoWeOVMjMuHNHk0BRBzikzuGDqNmPQbg5ifMEqsHLiIUcQ==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+snapshots:
+
+  bobril-g11n@5.1.1:
+    dependencies:
+      bobril: 20.7.1
+      moment: 2.30.1
+
+  bobril@20.7.1: {}
+
+  moment@2.30.1: {}
+
+  typescript@5.5.3: {}

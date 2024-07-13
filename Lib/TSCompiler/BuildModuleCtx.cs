@@ -55,7 +55,7 @@ public class BuildModuleCtx : IImportResolver
         return name.EndsWith(".mdxb");
     }
 
-    public TSProject? ResolveModule(string name)
+    public TSProject? ResolveModule(string name, string from)
     {
         if (Result!.Modules.TryGetValue(name, out var module))
         {
@@ -78,7 +78,7 @@ public class BuildModuleCtx : IImportResolver
 
         again: ;
         var negativeChecks = new BTDB.Collections.StructList<string>();
-        var dir = Owner!.Owner.FullPath;
+        var dir = from;
         while (dir.Length > 0)
         {
             var dc = Owner.DiskCache.TryGetItem(dir + "/node_modules/" + name) as IDirectoryCache;
@@ -91,9 +91,10 @@ public class BuildModuleCtx : IImportResolver
                 if (dc.FullPath != dir + "/node_modules/" + name)
                 {
                     // Create it with proper casing
-                    return ResolveModule(dc.Name);
+                    return ResolveModule(dc.Name, from);
                 }
 
+                dc = dc.RealPath;
                 module = TSProject.Create(dc, Owner.DiskCache, Owner.Logger, name);
                 module!.LoadProjectJson(true, Owner.ProjectOptions);
                 if (module.PackageJsonChangeId != -1)
@@ -368,7 +369,7 @@ public class BuildModuleCtx : IImportResolver
                 }
             }
 
-            var moduleInfo = ResolveModule(moduleName);
+            var moduleInfo = ResolveModule(moduleName, from);
             if (moduleInfo == null)
             {
                 ReportMissingImport(from, name);

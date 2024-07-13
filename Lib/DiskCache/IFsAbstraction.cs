@@ -16,4 +16,5 @@ public interface IFsAbstraction
     void WriteAllUtf8(string path, string content);
     void Delete(string path);
     void WriteAllBytes(string path, byte[] bytes);
+    string RealPath(string path) => path;
 }

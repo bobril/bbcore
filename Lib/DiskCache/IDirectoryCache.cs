@@ -11,4 +11,5 @@ public interface IDirectoryCache: IItemCache, IEnumerable<IItemCache>
     bool IsLink { get; set; }
     object? Project { get; set; }
     Func<(IDirectoryCache parent,string name,bool isDir),bool> Filter { get; set; }
+    IDirectoryCache RealPath { get; }
 }

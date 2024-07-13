@@ -300,8 +300,7 @@ function createCompilerHost() {
         },
         getDirectories: function (path) { return mySys.getDirectories(path); },
         realpath: function (path) {
-            // It should call bb.realpath, but for now this is faster
-            return path;
+            return bb.realPath(path);
         },
         readDirectory: function (path, extensions, include, exclude, depth) {
             return mySys.readDirectory(path, extensions, include, exclude, depth);

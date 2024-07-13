@@ -115,4 +115,6 @@ public class NativeFsAbstraction : IFsAbstraction
             Thread.Sleep(50 * retry);
         }
     }
+
+    public string RealPath(string path) => PathUtils.RealPath(path);
 }

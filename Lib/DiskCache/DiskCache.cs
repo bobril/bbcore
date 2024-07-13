@@ -82,6 +82,28 @@ public class DiskCache : IDiskCache
 
         public Func<(IDirectoryCache parent, string name, bool isDir), bool> Filter { get; set; }
 
+        public IDirectoryCache RealPath
+        {
+            get
+            {
+                if (_realPath == null)
+                {
+                    var fp = FullPath;
+                    var fp2 = Owner.FsAbstraction.RealPath(fp);
+                    if (fp2 == fp)
+                    {
+                        _realPath = this;
+                    }
+                    else
+                    {
+                        _realPath = Owner.TryGetItem(fp2) as IDirectoryCache ?? this;
+                    }
+                }
+
+                return _realPath;
+            }
+        }
+
         public int ChangeId => _changeId;
 
         public IItemCache[] Items = Array.Empty<IItemCache>();
@@ -90,6 +112,7 @@ public class DiskCache : IDiskCache
         bool _isInvalid;
         internal readonly DiskCache Owner;
         bool _isWatcherRoot;
+        IDirectoryCache? _realPath;
 
         public DirectoryCache(DiskCache owner, bool isInvalid)
         {

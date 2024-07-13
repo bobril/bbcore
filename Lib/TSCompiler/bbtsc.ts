@@ -383,8 +383,7 @@ function createCompilerHost(): ts.CompilerHost {
         },
         getDirectories: (path: string) => mySys.getDirectories(path),
         realpath(path: string) {
-            // It should call bb.realpath, but for now this is faster
-            return path;
+            return bb.realPath(path);
         },
         readDirectory: (path, extensions, include, exclude, depth) =>
             mySys.readDirectory(path, extensions, include, exclude, depth)
