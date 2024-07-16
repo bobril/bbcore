@@ -5,6 +5,7 @@
 ### Added
 
 Support for Pnpm node_modules layout.
+Support for Pnpm module manager and it has higher priority than Yarn.
 
 ## 4.5.3
 

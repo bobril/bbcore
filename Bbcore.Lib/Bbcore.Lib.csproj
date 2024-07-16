@@ -279,8 +279,17 @@
       <Compile Include="..\Lib\Registry\PackagePathVersion.cs">
         <Link>Registry\PackagePathVersion.cs</Link>
       </Compile>
+      <Compile Include="..\Lib\Registry\PnpmLockParser.cs">
+        <Link>Registry\PnpmNodePackageManager.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\PnpmNodePackageManager.cs">
+        <Link>Registry\PnpmNodePackageManager.cs</Link>
+      </Compile>
       <Compile Include="..\Lib\Registry\RegistryCache.cs">
         <Link>Registry\RegistryCache.cs</Link>
+      </Compile>
+      <Compile Include="..\Lib\Registry\SimpleYamlTokenizer.cs">
+        <Link>Registry\PnpmNodePackageManager.cs</Link>
       </Compile>
       <Compile Include="..\Lib\Registry\TarExtractor.cs">
         <Link>Registry\TarExtractor.cs</Link>

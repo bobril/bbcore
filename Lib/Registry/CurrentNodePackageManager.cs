@@ -8,23 +8,27 @@ namespace Lib.Registry;
 class CurrentNodePackageManager : INodePackageManager
 {
     readonly ILogger _logger;
+    PnpmNodePackageManager _pnpm;
     YarnNodePackageManager _yarn;
     NpmNodePackageManager _npm;
 
     public CurrentNodePackageManager(IDiskCache diskCache, ILogger logger)
     {
         _logger = logger;
+        _pnpm = new PnpmNodePackageManager(diskCache, logger);
         _yarn = new YarnNodePackageManager(diskCache, logger);
         _npm = new NpmNodePackageManager(diskCache, logger);
     }
 
-    public bool IsAvailable
-    {
-        get => _yarn.IsAvailable || _npm.IsAvailable;
-    }
+    public bool IsAvailable => _pnpm.IsAvailable || _yarn.IsAvailable || _npm.IsAvailable;
 
     public bool IsUsedInProject(IDirectoryCache projectDirectory)
     {
+        if (_pnpm.IsUsedInProject(projectDirectory))
+        {
+            return true;
+        }
+        
         if (_npm.IsUsedInProject(projectDirectory))
         {
             return true;
@@ -40,6 +44,11 @@ class CurrentNodePackageManager : INodePackageManager
 
     public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
     {
+        if (_pnpm.IsUsedInProject(projectDirectory))
+        {
+            return _pnpm.GetLockedDependencies(projectDirectory);
+        }
+        
         if (_npm.IsUsedInProject(projectDirectory))
         {
             return _npm.GetLockedDependencies(projectDirectory);
@@ -53,13 +62,22 @@ class CurrentNodePackageManager : INodePackageManager
         return Enumerable.Empty<PackagePathVersion>();
     }
 
-    INodePackageManager Choose(IDirectoryCache projectDirectory)
+    INodePackageManager? Choose(IDirectoryCache projectDirectory)
     {
-        if (_npm.IsUsedInProject(projectDirectory))
+        var npmIsUsed = _npm.IsUsedInProject(projectDirectory);
+        var pnpmIsUsed = _pnpm.IsUsedInProject(projectDirectory);
+        var yarnIsUsed = _yarn.IsUsedInProject(projectDirectory);
+
+        if (npmIsUsed)
         {
-            if (_yarn.IsUsedInProject(projectDirectory))
+            if (yarnIsUsed)
             {
                 _logger.Error("Both package-lock.json and yarn.lock found. Skipping ...");
+                return null;
+            }
+            if (pnpmIsUsed)
+            {
+                _logger.Error("Both package-lock.json and pnpm-lock.yaml found. Skipping ...");
                 return null;
             }
             if (_npm.IsAvailable)
@@ -69,16 +87,43 @@ class CurrentNodePackageManager : INodePackageManager
             _logger.Error("Npm is used in project, but it is not found installed in PATH. Skipping ...");
             return null;
         }
+        
+        if (pnpmIsUsed || _pnpm.IsAvailable)
+        {
+            if (pnpmIsUsed && yarnIsUsed)
+            {
+                _logger.Error("Both pnpm-lock.yaml and yarn.lock found. Skipping ...");
+                return null;
+            }
 
-        var yarnIsUsed = _yarn.IsUsedInProject(projectDirectory);
+            if (!pnpmIsUsed)
+            {
+                _logger.Info("Introducing Pnpm into project");
+                return _pnpm;
+            }
+
+            if (_pnpm.IsAvailable)
+            {
+                return _pnpm;
+            }
+            
+            _logger.Error("Pnpm is used in project, but it is not found installed in PATH. Skipping ...");
+            return null;
+        }
+        
         if (yarnIsUsed || _yarn.IsAvailable)
         {
-            if (_yarn.IsAvailable)
+            if (!yarnIsUsed)
             {
-                if (!yarnIsUsed)
-                    _logger.Info("Introducing Yarn into project");
+                _logger.Info("Introducing Yarn into project");
                 return _yarn;
             }
+
+            if (_yarn.IsAvailable)
+            {
+                return _yarn;
+            }
+
             _logger.Error("Yarn is used in project, but it is not found installed in PATH. Skipping ...");
             return null;
         }
@@ -87,7 +132,7 @@ class CurrentNodePackageManager : INodePackageManager
             _logger.Info("Introducing Npm into project");
             return _npm;
         }
-        _logger.Error("Yarn and Npm are not found installed in PATH. Skipping package manager operation.");
+        _logger.Error("Pnpm, Yarn and Npm are not found installed in PATH. Skipping package manager operation.");
         return null;
     }
 

@@ -12,10 +12,10 @@
         "printWidth": 120
     },
     "dependencies": {
-        "bobril": "*",
-        "bobril-g11n": "*"
+        "bobril": "^20.7.1",
+        "bobril-g11n": "^5.1.1"
     },
     "devDependencies": {
-        "typescript": "*"
+        "typescript": "^5.5.3"
     }
 }
