@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.6.0
+
 ### Added
 
 Support for Pnpm node_modules layout.
