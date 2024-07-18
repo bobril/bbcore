@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Wrong optimization of if and try statements.
+
 ## 4.6.0
 
 ### Added
@@ -35,7 +39,7 @@ Now it is possible to export enums in Library mode.
 
 ### Added
 
-Optimization deduplication of same pure functions. 
+Optimization deduplication of same pure functions.
 
 ## 4.4.0
 

@@ -17,7 +17,7 @@ public static class Extensions
     {
         return node switch
         {
-            AstBlock { Body.Count: 1 } block when block.Body[0].TryToExpression() is { } res => res,
+            AstBlockStatement { Body.Count: 1 } block when block.Body[0].TryToExpression() is { } res => res,
             AstSimpleStatement simpleStatement when simpleStatement.Body.IsExpression() => simpleStatement.Body,
             _ => node.IsExpression() ? node : null
         };
