@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.6.1
+
 ### Fixed
 
 Wrong optimization of if and try statements.
