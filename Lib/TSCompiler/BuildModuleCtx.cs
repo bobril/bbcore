@@ -395,7 +395,7 @@ public class BuildModuleCtx : IImportResolver
                 }
             }
 
-            if (moduleName != moduleInfo.Name)
+            if (moduleName.Length == (moduleInfo.Name?.Length ?? 0) && moduleName != moduleInfo.Name)
             {
                 parentInfo.ReportDiag(false, -2,
                     "Module import has wrong casing '" + moduleName + "' on disk '" + moduleInfo.Name + "'", 0, 0,

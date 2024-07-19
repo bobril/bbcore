@@ -42,7 +42,7 @@ public class NpmNodePackageManager : INodePackageManager
 
     public bool IsAvailable => _npmPath != null;
 
-    public bool IsUsedInProject(IDirectoryCache projectDirectory)
+    public bool IsUsedInProject(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
         return projectDirectory.TryGetChild("package-lock.json") is IFileCache;
     }
@@ -98,7 +98,7 @@ public class NpmNodePackageManager : INodePackageManager
         _logger.WriteLine(e.Data);
     }
 
-    public void Install(IDirectoryCache projectDirectory)
+    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
         RunNpmWithParam(projectDirectory, "install");
     }
@@ -127,13 +127,13 @@ public class NpmNodePackageManager : INodePackageManager
         RunNpm(fullPath, par);
     }
 
-    public void UpgradeAll(IDirectoryCache projectDirectory)
+    public void UpgradeAll(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
         _diskCache.UpdateIfNeeded(projectDirectory);
         _diskCache.FsAbstraction.Delete(PathUtils.Join(projectDirectory.FullPath, "package-lock.json"));
         var dirToDelete = projectDirectory.TryGetChild("node_modules") as IDirectoryCache;
         RecursiveDelete(dirToDelete);
-        Install(projectDirectory);
+        Install(projectDirectory, dc);
     }
 
     void RecursiveDelete(IDirectoryCache dirToDelete)
@@ -183,12 +183,12 @@ public class NpmNodePackageManager : INodePackageManager
         }
     }
 
-    public void Upgrade(IDirectoryCache projectDirectory, string packageName)
+    public void Upgrade(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName)
     {
         RunNpmWithParam(projectDirectory, "update " + packageName);
     }
 
-    public void Add(IDirectoryCache projectDirectory, string packageName, bool devDependency = false)
+    public void Add(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName, bool devDependency = false)
     {
         RunNpmWithParam(projectDirectory, "install " + packageName + (devDependency ? " --save-dev" : " --save"));
     }

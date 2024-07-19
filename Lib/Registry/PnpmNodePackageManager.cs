@@ -42,9 +42,27 @@ public class PnpmNodePackageManager : INodePackageManager
 
     public bool IsAvailable => _pnpmPath != null;
 
-    public bool IsUsedInProject(IDirectoryCache projectDirectory)
+    public bool IsUsedInProject(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
-        return projectDirectory.TryGetChild("pnpm-lock.yaml") is IFileCache;
+        while (projectDirectory != null)
+        {
+            if (projectDirectory.IsFake && dc != null)
+            {
+                if (dc.FsAbstraction.FileExists(PathUtils.Join(projectDirectory.FullPath, "pnpm-lock.yaml")))
+                {
+                    return true;
+                }
+            }
+
+            if (projectDirectory.TryGetChild("pnpm-lock.yaml") is IFileCache)
+            {
+                return true;
+            }
+
+            projectDirectory = projectDirectory.Parent;
+        }
+
+        return false;
     }
 
     public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
@@ -102,7 +120,7 @@ public class PnpmNodePackageManager : INodePackageManager
         _logger.WriteLine(e.Data);
     }
 
-    public void Install(IDirectoryCache projectDirectory)
+    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
         RunNpmWithParam(projectDirectory, "install");
     }
@@ -132,19 +150,19 @@ public class PnpmNodePackageManager : INodePackageManager
         RunPnpm(fullPath, par);
     }
 
-    public void UpgradeAll(IDirectoryCache projectDirectory)
+    public void UpgradeAll(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
         _diskCache.UpdateIfNeeded(projectDirectory);
         RunNpmWithParam(projectDirectory, "update");
     }
-    
-    public void Upgrade(IDirectoryCache projectDirectory, string packageName)
+
+    public void Upgrade(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName)
     {
         RunNpmWithParam(projectDirectory, "update " + packageName);
     }
 
-    public void Add(IDirectoryCache projectDirectory, string packageName, bool devDependency = false)
+    public void Add(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName, bool devDependency = false)
     {
-        RunNpmWithParam(projectDirectory, "add "  + (devDependency ? "-D " : "") + packageName);
+        RunNpmWithParam(projectDirectory, "add " + (devDependency ? "-D " : "") + packageName);
     }
 }

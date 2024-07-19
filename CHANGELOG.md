@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+Do not show errors when directory name does not match module name.
+Better detect that Yarn is used by looking for `yarn.lock` file in parent directories.
+
 ## 4.6.1
 
 ### Fixed

@@ -369,7 +369,7 @@ public class Composition
         }
         else
         {
-            currentNodePackageManager.Add(project.Owner.Owner, addCommand.PackageName.Value, addCommand.Dev.Value);
+            currentNodePackageManager.Add(project.Owner.Owner, _dc, addCommand.PackageName.Value, addCommand.Dev.Value);
         }
     }
 
@@ -381,11 +381,11 @@ public class Composition
         var before = currentNodePackageManager.GetLockedDependencies(project.Owner.Owner).ToArray();
         if (upgradeCommand.PackageName.Value == null)
         {
-            currentNodePackageManager.UpgradeAll(project.Owner.Owner);
+            currentNodePackageManager.UpgradeAll(project.Owner.Owner, _dc);
         }
         else
         {
-            currentNodePackageManager.Upgrade(project.Owner.Owner, upgradeCommand.PackageName.Value);
+            currentNodePackageManager.Upgrade(project.Owner.Owner, _dc, upgradeCommand.PackageName.Value);
         }
 
         _dc.CheckForTrueChange();
@@ -414,7 +414,7 @@ public class Composition
     {
         InitDiskCache();
         var project = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
-        new CurrentNodePackageManager(_dc, _logger).Install(project.Owner.Owner);
+        new CurrentNodePackageManager(_dc, _logger).Install(project.Owner.Owner, _dc);
     }
 
     void RunTranslation(TranslationCommand tCommand)

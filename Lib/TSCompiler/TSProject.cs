@@ -15,7 +15,7 @@ public class TSProject
     public IDirectoryCache Owner { get; set; }
     public string MainFile { get; set; }
 
-    public string TypesMainFile { get; set; }
+    public string? TypesMainFile { get; set; }
     public ProjectOptions? ProjectOptions { get; set; }
     public int PackageJsonChangeId { get; set; }
     public bool IsRootProject { get; set; }
@@ -70,6 +70,11 @@ public class TSProject
                 parsed = new();
             }
 
+            if (parsed.GetValue("name") is JValue nameV)
+            {
+                Name = nameV.ToString();
+            }
+            
             var deps = new HashSet<string>();
             var devdeps = new HashSet<string>();
             var hasMain = false;
@@ -209,11 +214,11 @@ public class TSProject
             var packageManager = new CurrentNodePackageManager(DiskCache, Logger);
             if (ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade)
             {
-                packageManager.UpgradeAll(Owner);
+                packageManager.UpgradeAll(Owner, DiskCache);
             }
             else
             {
-                packageManager.Install(Owner);
+                packageManager.Install(Owner, DiskCache);
             }
 
             DiskCache.CheckForTrueChange();

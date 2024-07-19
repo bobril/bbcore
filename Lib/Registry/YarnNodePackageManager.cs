@@ -41,9 +41,27 @@ public class YarnNodePackageManager : INodePackageManager
 
     public bool IsAvailable => _yarnPath != null;
 
-    public bool IsUsedInProject(IDirectoryCache projectDirectory)
+    public bool IsUsedInProject(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
-        return projectDirectory.TryGetChild("yarn.lock") is IFileCache;
+        while (projectDirectory != null)
+        {
+            if (projectDirectory.IsFake && dc != null)
+            {
+                if (dc.FsAbstraction.FileExists(PathUtils.Join(projectDirectory.FullPath, "yarn.lock")))
+                {
+                    return true;
+                }
+            }
+
+            if (projectDirectory.TryGetChild("yarn.lock") is IFileCache)
+            {
+                return true;
+            }
+
+            projectDirectory = projectDirectory.Parent;
+        }
+
+        return false;
     }
 
     public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
@@ -73,7 +91,7 @@ public class YarnNodePackageManager : INodePackageManager
             yield return new()
             {
                 Name = name,
-                Version = (((Dictionary<string, object>) pair.Value)["version"] as string)!,
+                Version = (((Dictionary<string, object>)pair.Value)["version"] as string)!,
                 Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + name)
             };
         }
@@ -105,7 +123,7 @@ public class YarnNodePackageManager : INodePackageManager
         _logger.WriteLine(e.Data!);
     }
 
-    public void Install(IDirectoryCache projectDirectory)
+    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
         RunYarnWithParam(projectDirectory, "install --ignore-optional");
     }
@@ -135,23 +153,23 @@ public class YarnNodePackageManager : INodePackageManager
         RunYarn(fullPath, par);
     }
 
-    public void UpgradeAll(IDirectoryCache projectDirectory)
+    public void UpgradeAll(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
-        if (!IsUsedInProject(projectDirectory))
+        if (!IsUsedInProject(projectDirectory, dc))
         {
-            Install(projectDirectory);
+            Install(projectDirectory, dc);
             return;
         }
 
         RunYarnWithParam(projectDirectory, "upgrade");
     }
 
-    public void Upgrade(IDirectoryCache projectDirectory, string packageName)
+    public void Upgrade(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName)
     {
         RunYarnWithParam(projectDirectory, "upgrade " + packageName);
     }
 
-    public void Add(IDirectoryCache projectDirectory, string packageName, bool devDependency = false)
+    public void Add(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName, bool devDependency = false)
     {
         RunYarnWithParam(projectDirectory, "add " + packageName + (devDependency ? " --dev" : ""));
     }

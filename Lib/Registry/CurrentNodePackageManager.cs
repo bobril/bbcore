@@ -22,19 +22,19 @@ class CurrentNodePackageManager : INodePackageManager
 
     public bool IsAvailable => _pnpm.IsAvailable || _yarn.IsAvailable || _npm.IsAvailable;
 
-    public bool IsUsedInProject(IDirectoryCache projectDirectory)
+    public bool IsUsedInProject(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
-        if (_pnpm.IsUsedInProject(projectDirectory))
-        {
-            return true;
-        }
-        
-        if (_npm.IsUsedInProject(projectDirectory))
+        if (_pnpm.IsUsedInProject(projectDirectory, dc))
         {
             return true;
         }
 
-        if (_yarn.IsUsedInProject(projectDirectory))
+        if (_npm.IsUsedInProject(projectDirectory, dc))
+        {
+            return true;
+        }
+
+        if (_yarn.IsUsedInProject(projectDirectory, dc))
         {
             return true;
         }
@@ -44,17 +44,17 @@ class CurrentNodePackageManager : INodePackageManager
 
     public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
     {
-        if (_pnpm.IsUsedInProject(projectDirectory))
+        if (_pnpm.IsUsedInProject(projectDirectory, null))
         {
             return _pnpm.GetLockedDependencies(projectDirectory);
         }
-        
-        if (_npm.IsUsedInProject(projectDirectory))
+
+        if (_npm.IsUsedInProject(projectDirectory, null))
         {
             return _npm.GetLockedDependencies(projectDirectory);
         }
 
-        if (_yarn.IsUsedInProject(projectDirectory))
+        if (_yarn.IsUsedInProject(projectDirectory, null))
         {
             return _yarn.GetLockedDependencies(projectDirectory);
         }
@@ -62,11 +62,11 @@ class CurrentNodePackageManager : INodePackageManager
         return Enumerable.Empty<PackagePathVersion>();
     }
 
-    INodePackageManager? Choose(IDirectoryCache projectDirectory)
+    INodePackageManager? Choose(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
-        var npmIsUsed = _npm.IsUsedInProject(projectDirectory);
-        var pnpmIsUsed = _pnpm.IsUsedInProject(projectDirectory);
-        var yarnIsUsed = _yarn.IsUsedInProject(projectDirectory);
+        var npmIsUsed = _npm.IsUsedInProject(projectDirectory, dc);
+        var pnpmIsUsed = _pnpm.IsUsedInProject(projectDirectory, dc);
+        var yarnIsUsed = _yarn.IsUsedInProject(projectDirectory, dc);
 
         if (npmIsUsed)
         {
@@ -75,20 +75,23 @@ class CurrentNodePackageManager : INodePackageManager
                 _logger.Error("Both package-lock.json and yarn.lock found. Skipping ...");
                 return null;
             }
+
             if (pnpmIsUsed)
             {
                 _logger.Error("Both package-lock.json and pnpm-lock.yaml found. Skipping ...");
                 return null;
             }
+
             if (_npm.IsAvailable)
             {
                 return _npm;
             }
+
             _logger.Error("Npm is used in project, but it is not found installed in PATH. Skipping ...");
             return null;
         }
-        
-        if (pnpmIsUsed || _pnpm.IsAvailable)
+
+        if (pnpmIsUsed || !yarnIsUsed && _pnpm.IsAvailable)
         {
             if (pnpmIsUsed && yarnIsUsed)
             {
@@ -106,11 +109,11 @@ class CurrentNodePackageManager : INodePackageManager
             {
                 return _pnpm;
             }
-            
+
             _logger.Error("Pnpm is used in project, but it is not found installed in PATH. Skipping ...");
             return null;
         }
-        
+
         if (yarnIsUsed || _yarn.IsAvailable)
         {
             if (!yarnIsUsed)
@@ -127,32 +130,34 @@ class CurrentNodePackageManager : INodePackageManager
             _logger.Error("Yarn is used in project, but it is not found installed in PATH. Skipping ...");
             return null;
         }
+
         if (_npm.IsAvailable)
         {
             _logger.Info("Introducing Npm into project");
             return _npm;
         }
+
         _logger.Error("Pnpm, Yarn and Npm are not found installed in PATH. Skipping package manager operation.");
         return null;
     }
 
-    public void Install(IDirectoryCache projectDirectory)
+    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
-        Choose(projectDirectory)?.Install(projectDirectory);
+        Choose(projectDirectory, dc)?.Install(projectDirectory, dc);
     }
 
-    public void UpgradeAll(IDirectoryCache projectDirectory)
+    public void UpgradeAll(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
-        Choose(projectDirectory)?.UpgradeAll(projectDirectory);
+        Choose(projectDirectory, dc)?.UpgradeAll(projectDirectory, dc);
     }
 
-    public void Upgrade(IDirectoryCache projectDirectory, string packageName)
+    public void Upgrade(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName)
     {
-        Choose(projectDirectory)?.Upgrade(projectDirectory, packageName);
+        Choose(projectDirectory, dc)?.Upgrade(projectDirectory, dc, packageName);
     }
 
-    public void Add(IDirectoryCache projectDirectory, string packageName, bool devDependency = false)
+    public void Add(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName, bool devDependency = false)
     {
-        Choose(projectDirectory)?.Add(projectDirectory, packageName, devDependency);
+        Choose(projectDirectory, dc)?.Add(projectDirectory, dc, packageName, devDependency);
     }
 }
