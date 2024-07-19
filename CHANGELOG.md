@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.6.2
+
 ### Fixed
 
 Do not show errors when directory name does not match module name.
