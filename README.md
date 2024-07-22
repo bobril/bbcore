@@ -95,6 +95,26 @@ Content must be always JavaScript expression with specially handled build-ins `D
 }
 ```
 
+## Update/Install of dependencies
+
+Default is to update all dependencies to latest version defined by package.json:
+
+    {
+        "dependencies": "upgrade"
+    }
+
+If you want just install missing dependencies:
+
+    {
+        "dependencies": "install"
+    }
+
+Or if you want to completely disable this feature:
+
+    {
+        "dependencies": "disabled"
+    }
+
 ## Update of tsconfig.json
 
 Build generates tsconfig.json by default. You can disable this feature by:
