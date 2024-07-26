@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Update
+
+ImageSharp to 2.1.9.
+
 ## 4.6.2
 
 ### Fixed
