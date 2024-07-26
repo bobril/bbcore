@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.6.3
+
 ### Update
 
 ImageSharp to 2.1.9.
