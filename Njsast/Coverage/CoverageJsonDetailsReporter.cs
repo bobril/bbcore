@@ -29,6 +29,7 @@ public class CoverageJsonDetailsReporter: CoverageReporterBase
         using var jsonWriter = new Utf8JsonWriter(memoryStream);
         _jsonWriter = jsonWriter;
         base.Run();
+        jsonWriter.Flush();
         _saveReport(_jsonName, memoryStream.ToArray());
     }
 

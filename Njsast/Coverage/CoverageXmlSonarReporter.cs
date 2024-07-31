@@ -28,6 +28,7 @@ public class CoverageXmlSonarReporter: CoverageReporterBase
         using var xmlWriter = XmlWriter.Create(memoryStream, new XmlWriterSettings {Indent = true});
         _xmlWriter = xmlWriter;
         base.Run();
+        xmlWriter.Flush();
         _saveReport(_jsonName, memoryStream.ToArray());
     }
 
