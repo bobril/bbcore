@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.6.4
+
 ### Fixed
 
 Coverage XML and JSON files were not complete because of missing flush.
