@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Lib.BuildCache;
 using Lib.Composition;
@@ -17,12 +18,14 @@ namespace Bbcore.Lib;
 
 public interface IBbcoreLibrary
 {
-    public int Run(string[] args, IConsoleLogger logger);
+    public Task<int> Run(string[] args, IConsoleLogger logger);
+
     public bool RunBuild(IFsAbstraction files,
         string typeScriptVersion,
         string directory,
         out string? javaScript,
         out string? parsedMessages);
+
     public bool RunBuild(
         IFsAbstraction files,
         string typeScriptVersion,
@@ -30,7 +33,6 @@ public interface IBbcoreLibrary
         out string? javaScript,
         out string? parsedMessages,
         out string? sourceMap);
-    
 }
 
 public partial class BbcoreLibrary : IBbcoreLibrary
@@ -38,17 +40,17 @@ public partial class BbcoreLibrary : IBbcoreLibrary
     static readonly ILogger Logger = new DummyLogger();
     const string FileWithResultOfBuilding = "a.js";
 
-    public int Run(string[] args, IConsoleLogger logger)
+    public async Task<int> Run(string[] args, IConsoleLogger logger)
     {
         var composition = new Composition(
-            inDocker: Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER")!=null,
+            inDocker: Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != null,
             logger,
             new NativeFsAbstraction());
         composition.ParseCommandLine(args);
-        composition.RunCommand();
+        await composition.RunCommand();
         return Environment.ExitCode;
     }
-    
+
     public bool RunBuild(IFsAbstraction files,
         string typeScriptVersion,
         string directory,
@@ -57,16 +59,16 @@ public partial class BbcoreLibrary : IBbcoreLibrary
     {
         javaScript = null;
         parsedMessages = null;
-        
+
         var context = CreateBundlingContext(files, directory, typeScriptVersion);
-        
+
         var errors = 0;
         var warnings = 0;
-        
+
         Transpile(context, ref errors, ref warnings);
-        
+
         if (errors == 0) Bundle(context);
-        
+
         if (errors <= 0 && !context.BuildResult.HasError)
         {
             javaScript = context.MainBuildResult.FilesContent.GetOrAddValueRef(FileWithResultOfBuilding) as string;
@@ -83,20 +85,21 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         javaScript = null!;
         parsedMessages = null!;
         sourceMap = null!;
-        
+
         var context = CreateBundlingContext(files, directory, typeScriptVersion);
-        
+
         var errors = 0;
         var warnings = 0;
-        
+
         Transpile(context, ref errors, ref warnings);
-        
+
         if (errors == 0) Bundle(context, withSourceMap: true, directory);
-        
+
         if (errors <= 0 && !context.BuildResult.HasError)
         {
             javaScript = context.MainBuildResult.FilesContent.GetOrAddValueRef(FileWithResultOfBuilding) as string;
-            sourceMap = context.MainBuildResult.FilesContent.GetOrAddValueRef(FileWithResultOfBuilding + ".map") as string;
+            sourceMap =
+                context.MainBuildResult.FilesContent.GetOrAddValueRef(FileWithResultOfBuilding + ".map") as string;
             return true;
         }
 
@@ -179,7 +182,8 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         context.TsProject.ProjectOptions!.UpdateFromProjectJson(null);
         context.TsProject.ProjectOptions.Debug = false;
         context.TsProject.ProjectOptions.LibraryMode = true;
-        context.TsProject.ProjectOptions.FinalCompilerOptions = context.TsProject.ProjectOptions.GetDefaultTSCompilerOptions();
+        context.TsProject.ProjectOptions.FinalCompilerOptions =
+            context.TsProject.ProjectOptions.GetDefaultTSCompilerOptions();
         context.TsProject.ProjectOptions.FinalCompilerOptions!.allowJs = true;
         context.TsProject.ProjectOptions.FinalCompilerOptions.declaration = true;
         context.TsProject.ProjectOptions.FinalCompilerOptions.module = ModuleKind.Commonjs;
@@ -201,14 +205,14 @@ public partial class BbcoreLibrary : IBbcoreLibrary
             currentDirectory: context.TsProject.Owner.FullPath,
             context.BuildCache,
             typeCheckValue: "no");
-        
+
         return context;
     }
 
     static void Transpile(
         BuildContext context,
         ref int errors,
-        ref int warnings)   
+        ref int warnings)
     {
         context.TranspilationContext.Build(
             context.TsProject.ProjectOptions!,
@@ -218,7 +222,7 @@ public partial class BbcoreLibrary : IBbcoreLibrary
             iterationId: 1);
 
         context.TranspilationContext.CompilerPool.FreeMemory().GetAwaiter();
-        
+
         IncludeMessages(
             context.TsProject.ProjectOptions,
             context.MainBuildResult,

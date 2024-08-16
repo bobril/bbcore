@@ -2,6 +2,13 @@
 
 ## [unreleased]
 
+### Added
+
+New subcommand `bb js locate https://example.com/something.js:123:456`. It will download that file, beautify it, save it
+into a.js and print code -g command line to open that file on that location. It could be also just path to javascript file like `bb js locate my.js:12:34`.
+
+```sh
+
 ## 4.6.4
 
 ### Fixed
@@ -211,7 +218,8 @@ Override imports in .bbrc or "bobril" section of package.json define this:
 }
 ```
 
-This allows to override imports. If value is null then import is removed (behaves like it would be empty file). If value is string then import path is replaced by this string.
+This allows to override imports. If value is null then import is removed (behaves like it would be empty file). If value
+is string then import path is replaced by this string.
 
 ## 2.10.0
 
@@ -327,7 +335,8 @@ Expose loader `R` to `globalThis`.
 
 ### Added
 
-Localization update creates `locations.json` with original source code positions. Format is array of arrays of message, hint, withParams?1:0, ...sourcepath:line:column (line and column are one based, path is relative to project root).
+Localization update creates `locations.json` with original source code positions. Format is array of arrays of message,
+hint, withParams?1:0, ...sourcepath:line:column (line and column are one based, path is relative to project root).
 
 ```json
 ["Hello World! {c, number} {test}", null, 1, "src/app.ts:51:35"]
@@ -453,7 +462,8 @@ Parsing and printing `{ [key]: value }`.
 
 Bundling bug.
 
-Jasmine 4.0.0 was upgraded in place to 4.0.1. Also fixing problem with unhandled promise rejection and now showing available stack in console.
+Jasmine 4.0.0 was upgraded in place to 4.0.1. Also fixing problem with unhandled promise rejection and now showing
+available stack in console.
 
 ## 2.1.2
 
@@ -469,7 +479,8 @@ Coverage works for arrow functions with just expression.
 
 Headless Chrome on Windows is restarted after each test run to workaround hang of tests.
 
-`global` is not anymore defined in TypeScript and ESM JS files (it allows to declare it as let or const under same name). Just use `globalThis` instead if you have to.
+`global` is not anymore defined in TypeScript and ESM JS files (it allows to declare it as let or const under same
+name). Just use `globalThis` instead if you have to.
 
 Fixed parsing of expansion in object spread in argument of arrow function.
 
@@ -682,7 +693,8 @@ New `test` command option `-w` or `--printfailed` to see all failed tests with s
 
 ### Added
 
-- Mdxb support for autoupdating code blocks from another source code. Optionally add just line and column using colon. This `from:` directive must be last on line.
+- Mdxb support for autoupdating code blocks from another source code. Optionally add just line and column using colon.
+  This `from:` directive must be last on line.
 
 ````md
 ```tsx from:app.tsx
@@ -710,7 +722,8 @@ New `test` command option `-w` or `--printfailed` to see all failed tests with s
 ### Added
 
 - Updated dependencies
-- `bb test` with both options `--dir` and `--out` now run also tests. Only `--dir` command without `--out` will just write build output and not run tests.
+- `bb test` with both options `--dir` and `--out` now run also tests. Only `--dir` command without `--out` will just
+  write build output and not run tests.
 
 ## 1.45.1
 
@@ -734,7 +747,9 @@ New `test` command option `-w` or `--printfailed` to see all failed tests with s
 
 ### Added
 
-- Configuration is now also loaded from `.bbrc` files. They have exactly same content as `bobril` section in `package.json`. Options defined in parent directories `.bbrc` files are overwritten by current one, allowing sharing common options for multiple projects.
+- Configuration is now also loaded from `.bbrc` files. They have exactly same content as `bobril` section in
+  `package.json`. Options defined in parent directories `.bbrc` files are overwritten by current one, allowing sharing
+  common options for multiple projects.
 
 ## 1.43.3
 
@@ -779,7 +794,8 @@ New `test` command option `-w` or `--printfailed` to see all failed tests with s
 
 ### Added
 
-- Interactive mode can write all build files to distributed directory by defining in `package.json` in `bobril` section `"interactiveDumpsToDist": true`. Useful for using Bobril with Cordova.
+- Interactive mode can write all build files to distributed directory by defining in `package.json` in `bobril` section
+  `"interactiveDumpsToDist": true`. Useful for using Bobril with Cordova.
 
 ## 1.40.1
 
@@ -815,7 +831,8 @@ New `test` command option `-w` or `--printfailed` to see all failed tests with s
 
 ### Added
 
-- New build parameter to control if run type checking (default `-t yes`) or not (`-t no`) or only type check (`-t only`).
+- New build parameter to control if run type checking (default `-t yes`) or not (`-t no`) or only type check (
+  `-t only`).
 
 ### Fixed
 
@@ -922,7 +939,8 @@ Wrongly not removing `var directly_unused = import.namespace`;
 
 ### Fixed
 
-- auto patching TypeScript to force it to use `__createBinding` helper for `export { x } from "y"` pattern. That's allow mocking of it, also it should improve release bundling.
+- auto patching TypeScript to force it to use `__createBinding` helper for `export { x } from "y"` pattern. That's allow
+  mocking of it, also it should improve release bundling.
 
 ## 1.30.1
 
@@ -936,7 +954,8 @@ Wrongly not removing `var directly_unused = import.namespace`;
 ### Added
 
 - consider also imports from "examples" and "tests" directories as allowed from dev.
-- proper patch for TS 3.9 and TS 4.0 bug <https://github.com/microsoft/TypeScript/issues/38691> - it is really needed for some code.
+- proper patch for TS 3.9 and TS 4.0 bug <https://github.com/microsoft/TypeScript/issues/38691> - it is really needed
+  for some code.
 
 ## 1.29.0
 
@@ -962,7 +981,8 @@ Wrongly not removing `var directly_unused = import.namespace`;
 
 ### Fixed
 
-- Warning -12 and -13 for @ scoped modules and detecting special named directories ("example", "test", "spec") in any parents directories as well.
+- Warning -12 and -13 for @ scoped modules and detecting special named directories ("example", "test", "spec") in any
+  parents directories as well.
 
 ## 1.28.0
 
@@ -1016,7 +1036,8 @@ Wrongly not removing `var directly_unused = import.namespace`;
 
 ### Added
 
-- Warnings about dependencies (-12 and -13) should work again. In case you have Warnings as Errors it could be breaking change.
+- Warnings about dependencies (-12 and -13) should work again. In case you have Warnings as Errors it could be breaking
+  change.
 
 ## 1.25.0
 
@@ -1029,14 +1050,16 @@ Wrongly not removing `var directly_unused = import.namespace`;
 
 ### Fixed
 
-- package.json - bobril - assets correctly find directory starting with "node_modules/" even when "node_modules" are not in project root dir.
+- package.json - bobril - assets correctly find directory starting with "node_modules/" even when "node_modules" are not
+  in project root dir.
 
 ## 1.24.3
 
 ### Fixed
 
 - Forgotten recalculation of variables and scopes after fixing these 2 patterns in previous version.
-- Wrong ordering of JS dependencies when b.asset links mixed relative and node_modules dependencies (happen only first time without cache).
+- Wrong ordering of JS dependencies when b.asset links mixed relative and node_modules dependencies (happen only first
+  time without cache).
 
 ## 1.24.2
 
@@ -1044,7 +1067,8 @@ Wrongly not removing `var directly_unused = import.namespace`;
 
 - Bundling of JS dependency with `var x = (function(){ window.x = window.x || {}; ...; return x; })();` pattern.
 - Bundling of JS dependency with `if (typeof module !== "undefined" && module.exports) {` pattern.
-- Made autogenerated assets source files deterministic and identical on all platforms by alphabetical sorting of declarations.
+- Made autogenerated assets source files deterministic and identical on all platforms by alphabetical sorting of
+  declarations.
 
 ## 1.24.1
 
@@ -1067,7 +1091,8 @@ Wrongly not removing `var directly_unused = import.namespace`;
 ### Fixed
 
 - Global variable could still be wrongly shadowed
-- Added workaround for incompatible change in Moment library, by ignoring JS module in src, because default exports and typings are mess.
+- Added workaround for incompatible change in Moment library, by ignoring JS module in src, because default exports and
+  typings are mess.
 
 ## 1.23.0
 
@@ -1124,7 +1149,8 @@ Wrongly not removing `var directly_unused = import.namespace`;
 
 ### Added
 
-- Made Chrome default everywhere. And allowed define headless browser strategy in `project.json` see `README.md` for details.
+- Made Chrome default everywhere. And allowed define headless browser strategy in `project.json` see `README.md` for
+  details.
 
 ## 1.18.1
 
@@ -1138,7 +1164,8 @@ Wrongly not removing `var directly_unused = import.namespace`;
 
 - Inline worker reference support: `b.asset("project:worker:node_modules/monaco-editor/esm/vs/editor/editor.worker.js")`
 
-- Fast bundler in Interactive mode does not use inline scripts, which allow to always enable (preventing all XSS in modern browsers):
+- Fast bundler in Interactive mode does not use inline scripts, which allow to always enable (preventing all XSS in
+  modern browsers):
 
 ```json
   "bobril": {
@@ -1184,7 +1211,8 @@ Mangling of bundled code with eval.
 
 ### Added
 
-Autodetect important files for code coverage. Resolve links in workspaces. Don't files only in node_modules are not considered important.
+Autodetect important files for code coverage. Resolve links in workspaces. Don't files only in node_modules are not
+considered important.
 
 ### Fixed
 
@@ -1208,7 +1236,8 @@ BB test works again also without coverage.
 
 ### Added
 
-Test command can generate coverage. `bb test -c json-summary` will create `coverage-summary.json`. `bb test -c none` will just print total coverage percentages.
+Test command can generate coverage. `bb test -c json-summary` will create `coverage-summary.json`. `bb test -c none`
+will just print total coverage percentages.
 
 ## 1.12.1
 
@@ -1297,7 +1326,8 @@ Don't crash on syntax errors (for these TS compiles invalid code, without report
 
 ### Added
 
-- Option to proxy all unknown requests to project defined url including websockets (`"proxyUrl": "http://localhost:3001"` in `bobril` section in `package.json`)
+- Option to proxy all unknown requests to project defined url including websockets (
+  `"proxyUrl": "http://localhost:3001"` in `bobril` section in `package.json`)
 - Chrome on Linux could be installed by Snap
 
 ## 1.7.0
@@ -1315,7 +1345,8 @@ Don't crash on syntax errors (for these TS compiles invalid code, without report
 
 ### Added
 
-- Option to disable calculation of common project root (`"preserveProjectRoot": true` in `bobril` section in `package.json`)
+- Option to disable calculation of common project root (`"preserveProjectRoot": true` in `bobril` section in
+  `package.json`)
 
 ## 1.5.1
 
@@ -1346,8 +1377,10 @@ Don't crash on syntax errors (for these TS compiles invalid code, without report
 
 - All module \*.js imports are now compiled and detected for dependencies.
 - Support for `browser` in `package.json` by [spec](https://github.com/defunctzombie/package-browser-field-spec)
-  - Additionally if you define `"browser" : { "module_name": "module_name/dist/bundle.js" }` it override main js file for module imported by its name.
-- Njsast based bundler supports bundling of `module.exports =` commonjs pattern. For example it is capable of bundling `sockjs-client` as is.
+    - Additionally if you define `"browser" : { "module_name": "module_name/dist/bundle.js" }` it override main js file
+      for module imported by its name.
+- Njsast based bundler supports bundling of `module.exports =` commonjs pattern. For example it is capable of bundling
+  `sockjs-client` as is.
 - `process.env.X` replacement works in js files too.
 
 ## 1.3.0
@@ -1365,10 +1398,11 @@ Don't crash on syntax errors (for these TS compiles invalid code, without report
 ### Added
 
 - Support for ServiceWorkers/PWA and WebWorkers
-  - `b.asset` support new `project:` prefix which needs to be followed by relative directory path with `project.json`
-  - target project must have defined `"bobril": { "variant": "worker" }` or `"bobril": { "variant": "serviceworker" }`
-  - service worker automatically defines `swBuildDate` (contains date of build in string), `swBuildId` (contains obfuscated date of build in string), `swFiles` (array with all files in compilation)
-  - example in `TestProjects/PWA/main`
+    - `b.asset` support new `project:` prefix which needs to be followed by relative directory path with `project.json`
+    - target project must have defined `"bobril": { "variant": "worker" }` or `"bobril": { "variant": "serviceworker" }`
+    - service worker automatically defines `swBuildDate` (contains date of build in string), `swBuildId` (contains
+      obfuscated date of build in string), `swFiles` (array with all files in compilation)
+    - example in `TestProjects/PWA/main`
 
 ```ts
 import * as b from "bobril";
@@ -1435,7 +1469,9 @@ g.t("Normal text {1}bold text {2}with{/2} {param}{/1}", {
 
 ### Added
 
-- New bundler from Njsast purely in C#. Currently not enabled by default, but could enabled by adding `bb b -x 1`. New bundler allows to generate source map, enable by `-g yes`. Using `--sourceRoot ".."` define what should be written in source map sourceRoot field, default is `..` which nicely works with default `dist` output directory.
+- New bundler from Njsast purely in C#. Currently not enabled by default, but could enabled by adding `bb b -x 1`. New
+  bundler allows to generate source map, enable by `-g yes`. Using `--sourceRoot ".."` define what should be written in
+  source map sourceRoot field, default is `..` which nicely works with default `dist` output directory.
 
 ## 0.97.1
 
@@ -1451,13 +1487,18 @@ g.t("Normal text {1}bold text {2}with{/2} {param}{/1}", {
 
 ### Added
 
-- Support for `process.env.X` constants which are replaced during compilation by some constant. They don't directly read system environment, what whey do must be specified in `package.json` by JavaScript expression. There is default definition for `NODE_ENV` to be `DEBUG?"development":"production"` like in React/Node apps.
+- Support for `process.env.X` constants which are replaced during compilation by some constant. They don't directly read
+  system environment, what whey do must be specified in `package.json` by JavaScript expression. There is default
+  definition for `NODE_ENV` to be `DEBUG?"development":"production"` like in React/Node apps.
 
-- You can define global constants also using `package.json`. Till now there was only `DEBUG` which has default definition to be equal to build-in `DEBUG`.
+- You can define global constants also using `package.json`. Till now there was only `DEBUG` which has default
+  definition to be equal to build-in `DEBUG`.
 
-- In these definition you can use build-in `env` object which allows to get value of environmental variable. See examples in README.
+- In these definition you can use build-in `env` object which allows to get value of environmental variable. See
+  examples in README.
 
-- Interactive mode could now correctly watch for changes in Docker. There is also new BBWATCHER environmental variable to control responsiveness of such watcher. See README for details.
+- Interactive mode could now correctly watch for changes in Docker. There is also new BBWATCHER environmental variable
+  to control responsiveness of such watcher. See README for details.
 
 ## 0.96.3
 
@@ -1655,7 +1696,8 @@ Build mode now sorts multiple css files for bundling in same way as interactive 
 
 ### Changed
 
-- Print original path in console messages relative to common root (that's behaviour change, but fixes also regression on focusing compilation errors from 0.83.1). Open original path in VSCode.
+- Print original path in console messages relative to common root (that's behaviour change, but fixes also regression on
+  focusing compilation errors from 0.83.1). Open original path in VSCode.
 
 ## 0.84.0
 
@@ -1820,7 +1862,8 @@ console.log(b.asset("resource:./src/file.js")); // depending on mode prints "src
 
 ### Improved
 
-- Decreased memory consumption of Build and Test command. Test command with -d parameter does not run tests just create output.
+- Decreased memory consumption of Build and Test command. Test command with -d parameter does not run tests just create
+  output.
 - Updated ChakraCore dependency.
 
 ### Fixed
@@ -1869,14 +1912,16 @@ console.log(b.asset("resource:./src/file.js")); // depending on mode prints "src
 
 ### Added
 
-- special handling for node_modules path in new assets feature. Also make module as used when just assets are taken from it.
+- special handling for node_modules path in new assets feature. Also make module as used when just assets are taken from
+  it.
 
 ## 0.70.0
 
 ### Added
 
 - findunused command which list all \*.ts files which are not part of project.
-- Used Modules can now add assets to dist. In package.json bobril section you can define assets object which key is original asset name and value is name of asset in dist.
+- Used Modules can now add assets to dist. In package.json bobril section you can define assets object which key is
+  original asset name and value is name of asset in dist.
 
 ### Removed
 
@@ -1928,7 +1973,8 @@ Implemented support for `resolveJsonModule` and it is enabled by default.
 
 ### Added
 
-Allow to specify version of Jasmine want to use default is "2.99", but you can also set "3.3". In some future version 3.3 will be made default.
+Allow to specify version of Jasmine want to use default is "2.99", but you can also set "3.3". In some future version
+3.3 will be made default.
 
 ## 0.64.2
 
@@ -2005,7 +2051,8 @@ BB b -u 1 now removes unused texts from translation files.
 
 ### Added, but possibly breaking changes
 
-If both package-lock.json and yarn.lock exists, bobril-build will refuse to use yarn or npm. Which will prevent inconsistent installed packages.
+If both package-lock.json and yarn.lock exists, bobril-build will refuse to use yarn or npm. Which will prevent
+inconsistent installed packages.
 
 Improved command line parser to stop on invalid or unknown parameter, only help should be shown.
 
@@ -2013,7 +2060,9 @@ Improved command line parser to stop on invalid or unknown parameter, only help 
 
 ### Added
 
-Simplified development of bb and bb/test webs. New parameters allow to proxy request to another bobril-build. Both webs are also stored as zip in resources which allows to have variable number of files not just html and js. tools/WebUpdateUI automates builds and update zip files.
+Simplified development of bb and bb/test webs. New parameters allow to proxy request to another bobril-build. Both webs
+are also stored as zip in resources which allows to have variable number of files not just html and js.
+tools/WebUpdateUI automates builds and update zip files.
 
     tools/web> bb -p 10000
     sometestproject> bb --proxybb http://localhost:10000
@@ -2034,7 +2083,8 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Fixed
 
-- detection of triple slash references (TypeScript is still somewhat buggy <https://github.com/Microsoft/TypeScript/issues/26439>)
+- detection of triple slash references (TypeScript is still somewhat
+  buggy <https://github.com/Microsoft/TypeScript/issues/26439>)
 
 ## 0.58.0
 
@@ -2055,13 +2105,15 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Fixed
 
-- Detection of dependencies does not break build in second rebuild. It also does not show as missing dependency when it is in devDependencies. Automatically ignore @types/ dependencies.
+- Detection of dependencies does not break build in second rebuild. It also does not show as missing dependency when it
+  is in devDependencies. Automatically ignore @types/ dependencies.
 
 ## 0.56.0
 
 ### Added
 
-- Detection of missing or superfluous dependencies in package.json. For temporary disable this feature use "ignoreDiagnostic": [-12, -13]
+- Detection of missing or superfluous dependencies in package.json. For temporary disable this feature use "
+  ignoreDiagnostic": [-12, -13]
 
 ## 0.55.1
 
@@ -2069,7 +2121,8 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Added
 
-- ignoreDiagnostic array in bobril section that allows list warnings and errors which you want to ignore (not count and not show)
+- ignoreDiagnostic array in bobril section that allows list warnings and errors which you want to ignore (not count and
+  not show)
 
 ### Fixed
 
@@ -2324,7 +2377,8 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Fixed
 
-- Spritting didn't worked due to incompatibility of nugets. Now whole project works on .NetCore 2.1 Preview 2. It means you need Visual Studio 15.7.0 Preview for development of bbcore.
+- Spritting didn't worked due to incompatibility of nugets. Now whole project works on .NetCore 2.1 Preview 2. It means
+  you need Visual Studio 15.7.0 Preview for development of bbcore.
 
 ## 0.34.0
 
@@ -2365,7 +2419,8 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Added
 
-- IncludeSources feature mainly for including d.ts files into compilation. See TestProjects/IncludeSources/package.json for example.
+- IncludeSources feature mainly for including d.ts files into compilation. See TestProjects/IncludeSources/package.json
+  for example.
 
 ## 0.30.0
 
@@ -2385,7 +2440,8 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Fixed
 
-- Regression with failing tests after recompilation. Do not include virtual d.ts files to list of files to automatically compile.
+- Regression with failing tests after recompilation. Do not include virtual d.ts files to list of files to automatically
+  compile.
 - JUnit xml correctly specify utf-8 encoding.
 
 ## 0.28.0
@@ -2413,7 +2469,8 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Fixed
 
-- Hosting source code in case of sandboxes projects. In `TestProjects/Sandbox/piskoviste` there is example of setup how to enable debugging from VS Code.
+- Hosting source code in case of sandboxes projects. In `TestProjects/Sandbox/piskoviste` there is example of setup how
+  to enable debugging from VS Code.
 
 ## 0.27.1
 
@@ -2452,7 +2509,8 @@ Added missing --save parameter for npm version of bb package add command.
 ### Fixed
 
 - Disabling dependencies update from package.json didn't worked.
-- More then doubled stack size for ChakraCore by forking JavaScriptEngineSwitcher.ChakraCore preventing stack overflows for complex TypeScript code.
+- More then doubled stack size for ChakraCore by forking JavaScriptEngineSwitcher.ChakraCore preventing stack overflows
+  for complex TypeScript code.
 
 ## 0.23.0
 
@@ -2468,7 +2526,8 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Added
 
-- Auto patching of TypeScript 2.8.1 to make it possible to use. Still left TS 2.7.2 as default, due to new errors occurring in large code bases.
+- Auto patching of TypeScript 2.8.1 to make it possible to use. Still left TS 2.7.2 as default, due to new errors
+  occurring in large code bases.
 
 ## 0.21.0
 
@@ -2670,7 +2729,8 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Fixed
 
-- Testing crash when throwing string from test method. You should throws Error objects instead, because there is no way to get stack trace from it.
+- Testing crash when throwing string from test method. You should throws Error objects instead, because there is no way
+  to get stack trace from it.
 - Tried to make starting webserver on free port more resilient to strange problems.
 
 ## 0.5.0
@@ -2702,9 +2762,11 @@ Added missing --save parameter for npm version of bb package add command.
 
 ### Added
 
-- Parsing commandline and running commands implemented. Interactive command is now true default command, so all its parameters works without specifying it too.
+- Parsing commandline and running commands implemented. Interactive command is now true default command, so all its
+  parameters works without specifying it too.
 - Listening port in iteractive mode selectable from command line.
-- New --verbose parameter for interactive commands (it logs all first chance exceptions). Shortened output without --verbose.
+- New --verbose parameter for interactive commands (it logs all first chance exceptions). Shortened output without
+  --verbose.
 
 ### Fixed
 

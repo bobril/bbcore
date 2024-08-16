@@ -23,6 +23,7 @@ using System.Reactive;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using System.Text.RegularExpressions;
 using BTDB.Collections;
 using Lib.BuildCache;
 using Lib.Configuration;
@@ -34,7 +35,10 @@ using Lib.Utils;
 using Lib.Utils.Logger;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Njsast.Ast;
+using Njsast.AstDump;
 using Njsast.Coverage;
+using Njsast.Output;
 using Njsast.Reader;
 using Njsast.SourceMap;
 using ProxyKit;
@@ -66,7 +70,9 @@ public class Composition
     readonly IConsoleLogger _logger;
     CfgManager<MainCfg> _cfgManager;
     readonly IFsAbstraction _fsAbstraction;
-    static readonly JsonSerializerOptions _apiJsonSerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+
+    static readonly JsonSerializerOptions _apiJsonSerializerOptions = new()
+        { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
 
     public Composition(bool inDocker, IConsoleLogger logger, IFsAbstraction fsAbstraction)
     {
@@ -136,7 +142,7 @@ public class Composition
         );
     }
 
-    public void RunCommand()
+    public async Task RunCommand()
     {
         if (_command == null)
             return;
@@ -205,6 +211,102 @@ public class Composition
         {
             Environment.ExitCode = RunVisualizeSourceMap(visualizeSourceMapCommand);
         }
+        else if (_command is JsLocateCommand locateCommand)
+        {
+            Environment.ExitCode = await RunLocate(locateCommand);
+        }
+    }
+
+    async Task<int> RunLocate(JsLocateCommand jsLocateCommand)
+    {
+        var fnWithPos = jsLocateCommand.FileNameWithPos.Value ?? "";
+        if (fnWithPos == "")
+        {
+            _logger.Error("Didn't specified file name with position");
+            return 1;
+        }
+
+        var regex = new Regex(@"^(?<URL>https?://[^\s:]+)(:(?<line>\d+))?(:(?<column>\d+))?$");
+        var match = regex.Match(fnWithPos);
+
+        if (match.Success)
+        {
+            var content = await new HttpClient().GetStringAsync(match.Groups["URL"].Value);
+
+            LocateFromContent(content, match);
+        }
+        else
+        {
+            regex = new Regex(@"^(?<FileName>[^:]+)(:(?<line>\d+))?(:(?<column>\d+))?$");
+            match = regex.Match(fnWithPos);
+
+            if (match.Success)
+            {
+                var content = await File.ReadAllTextAsync(match.Groups["FileName"].Value);
+
+                LocateFromContent(content, match);
+            }
+            else
+            {
+                _logger.Error("Invalid URL format");
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    void LocateFromContent(string content, Match match)
+    {
+        try
+        {
+            var parser = new Parser(
+                new()
+                {
+                    SourceFile = "a.js",
+                    SourceType = SourceType.Script
+                },
+                content);
+            var toplevel = parser.Parse();
+            //SourceMap? inputSourceMap = null;
+            //inputSourceMap = SourceMap.Parse("sourcemap", ".");
+            //inputSourceMap.ResolveInAst(toplevel);
+            toplevel.FigureOutScope();
+            var outputOptions = new OutputOptions
+            {
+                Beautify = true
+            };
+            var outNiceJsBuilder = new SourceMapBuilder();
+            toplevel.PrintToBuilder(outNiceJsBuilder, outputOptions);
+            outNiceJsBuilder.AddText(
+                $"//# sourceMappingURL={PathUtils.ChangeExtension("a.js", "js.map")}");
+            // outNiceJsBuilder.AttachSourcesContent(inputSourceMap);
+            var outNiceJs = outNiceJsBuilder.Content();
+            var outNiceJsMap = outNiceJsBuilder.Build(".", ".").ToString();
+            File.WriteAllText("a.js", outNiceJs);
+            File.WriteAllText("a.js.map", outNiceJsMap);
+            var sm = SourceMap.Parse(outNiceJsMap, ".");
+            var position = sm.ReverseFindPosition(new SourceCodePosition
+            {
+                SourceName = "./a.js",
+                Line = int.Parse(match.Groups["line"].Success ? match.Groups["line"].Value : "1"),
+                Col = int.Parse(match.Groups["column"].Success ? match.Groups["column"].Value : "1")
+            });
+            if (position.line != 0)
+            {
+                _logger.Info(
+                    $"code -g a.js:{position.line}:{position.col}");
+            }
+            else
+            {
+                _logger.Error(
+                    $"Position not found");
+            }
+        }
+        catch (SyntaxError e)
+        {
+            _logger.Error(e.Message);
+        }
     }
 
     int RunVisualizeSourceMap(VisualizeSourceMapCommand visualizeSourceMapCommand)
@@ -232,7 +334,8 @@ public class Composition
         var sm = SourceMap.Parse(_dc.FsAbstraction.ReadAllUtf8(fnmap), null);
         var sb = new StringBuilder();
         sb.AppendLine("<!DOCTYPE html>");
-        sb.AppendLine("<html><head><style>abbr {text-decoration:none;} .un { background-color: #f99; } .odd { background-color: #eee; }</style></head><body>");
+        sb.AppendLine(
+            "<html><head><style>abbr {text-decoration:none;} .un { background-color: #f99; } .odd { background-color: #eee; }</style></head><body>");
         var iter = new SourceMapIterator(SourceMap.RemoveLinkToSourceMap(_dc.FsAbstraction.ReadAllUtf8(fn)), sm);
         var approxLineLen = 0;
         var oddEven = false;
@@ -253,20 +356,23 @@ public class Composition
                 sb.Append(sm.sources[iter.SourceIndex]);
                 sb.Append("\"");
             }
+
             sb.Append('>');
-            sb.Append(HtmlEncoder.Default.Encode(new(iter.ContentSpan)).Replace(" ","&nbsp;"));
+            sb.Append(HtmlEncoder.Default.Encode(new(iter.ContentSpan)).Replace(" ", "&nbsp;"));
             sb.Append("</abbr>");
             approxLineLen += iter.ContentSpan.Length;
-            if (iter.TillEndOfLine || approxLineLen>200)
+            if (iter.TillEndOfLine || approxLineLen > 200)
             {
                 sb.Append("<br>");
                 approxLineLen = 0;
             }
+
             iter.Next();
         }
+
         sb.Append("</body></html>");
-        _dc.FsAbstraction.WriteAllUtf8(fn+".sourcemap.html", sb.ToString());
-        _logger.Success("Created "+fn+".sourcemap.html");
+        _dc.FsAbstraction.WriteAllUtf8(fn + ".sourcemap.html", sb.ToString());
+        _logger.Success("Created " + fn + ".sourcemap.html");
         return 0;
     }
 
@@ -653,7 +759,7 @@ public class Composition
                     else if (!ctx.OnlyTypeCheck)
                     {
                         var bundle = (IBundler)new NjsastBundleBundler(_tools, _logger, _mainBuildResult, proj,
-                                buildResult);
+                            buildResult);
                         bundle.Build(bCommand.Compress.Value, bCommand.Mangle.Value, bCommand.Beautify.Value,
                             bCommand.SourceMap.Value == "yes", bCommand.SourceMapRoot.Value);
                     }
@@ -847,6 +953,7 @@ public class Composition
                             }
                         }).ToList();
                     }
+
                     messages = null;
                 }
             }
@@ -885,7 +992,8 @@ public class Composition
             switch (testCommand.Coverage.Value)
             {
                 case "sonar":
-                    new CoverageXmlSonarReporter(covInstr, _fsAbstraction.WriteAllBytes, null, _mainBuildResult.CommonSourceDirectory).Run();
+                    new CoverageXmlSonarReporter(covInstr, _fsAbstraction.WriteAllBytes, null,
+                        _mainBuildResult.CommonSourceDirectory).Run();
                     break;
                 case "json-details":
                     new CoverageJsonDetailsReporter(covInstr, _fsAbstraction.WriteAllBytes).Run();
@@ -899,7 +1007,8 @@ public class Composition
                     {
                         if (content.Length > 14 && Encoding.UTF8.GetString(content, 0, 14) == "var bbcoverage")
                         {
-                            new CoverageJsonDetailsReporter(covInstr, _fsAbstraction.WriteAllBytes, ".coverage/" + name, true).Run();
+                            new CoverageJsonDetailsReporter(covInstr, _fsAbstraction.WriteAllBytes, ".coverage/" + name,
+                                true).Run();
                         }
                         else
                         {
@@ -1536,7 +1645,8 @@ public class Composition
                     color);
                 _notificationManager.SendNotification(results.ToNotificationParameters());
 
-                if (results.UserAgent.Contains("HeadlessChrome")) // Kill headless Chrome to prevent hang after idle time
+                if (results.UserAgent
+                    .Contains("HeadlessChrome")) // Kill headless Chrome to prevent hang after idle time
                 {
                     _browserProcess?.Dispose();
                     _browserProcess = null;

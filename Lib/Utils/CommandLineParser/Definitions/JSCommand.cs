@@ -12,6 +12,7 @@ public class JsCommand : CommandLineCommand
     public override List<CommandLineCommand> SubCommands { get; } = new()
     {
         new JsGlobalsCommand(),
-        new VisualizeSourceMapCommand()
+        new VisualizeSourceMapCommand(),
+        new JsLocateCommand(),
     };
 }

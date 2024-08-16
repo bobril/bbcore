@@ -16,6 +16,7 @@ public class SourceMap
     {
         sources = new();
     }
+
     public SourceMap(List<string> sources)
     {
         version = 3;
@@ -55,7 +56,7 @@ public class SourceMap
     public override string ToString()
     {
         return JsonConvert.SerializeObject(this,
-            new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore});
+            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
     }
 
     public static SourceMap Empty()
@@ -77,7 +78,7 @@ public class SourceMap
                 sb.Append(";AACA");
         if (endsWithNL)
             sb.Append(';');
-        return new(new() {fileName})
+        return new(new() { fileName })
         {
             mappings = sb.ToString()
         };
@@ -155,7 +156,7 @@ public class SourceMap
             }
             else
             {
-                var b = (int) SourceMapBuilder.Char2Int[ch];
+                var b = (int)SourceMapBuilder.Char2Int[ch];
                 if (b == 255)
                     throw new Exception("Invalid sourceMap");
                 value += (b & 31) << shift;
@@ -213,6 +214,7 @@ public class SourceMap
                 end.Line = start.Line + node.End.Line - node.Start.Line;
                 end.Col = start.Col + node.End.Column - node.Start.Column;
             }
+
             node.Source = start.SourceName == "" ? null : start.SourceName;
             node.Start = new(start.Line - 1, start.Col - 1, -1);
             node.End = new(end.Line - 1, end.Col - 1, -1);
@@ -222,6 +224,147 @@ public class SourceMap
     public void ResolveInAst(AstNode node)
     {
         new DerefVisitor(this).Walk(node);
+    }
+
+    // Both input and outputs are one based returns (0,0) if not found
+    public (int line, int col) ReverseFindPosition(SourceCodePosition inputPosition)
+    {
+        var inputMappings = mappings;
+        var outputLine = 1;
+        var ip = 0;
+        var inOutputCol = 0;
+        var inSourceIndex = 0;
+        var inSourceLine = 0;
+        var inSourceCol = 0;
+        var shift = 0;
+        var value = 0;
+        var valpos = 0;
+        var lastOutputCol = 0;
+        var lastSourceIndex = -1;
+        var lastSourceLine = 0;
+        var lastSourceCol = 0;
+        var res = new SourceCodePosition();
+
+        bool commit()
+        {
+            if (valpos == 0)
+            {
+                lastSourceIndex = -1;
+                return false;
+            }
+
+            if (lastSourceIndex >= 0 &&
+                sources[lastSourceIndex] == inputPosition.SourceName)
+            {
+                // 
+                if (lastSourceLine == inSourceLine)
+                {
+                    if (lastSourceLine == inputPosition.Line - 1 && lastSourceCol <= inputPosition.Col - 1 &&
+                        inputPosition.Col - 1 <= inSourceCol)
+                    {
+                        res.Line = outputLine;
+                        res.Col = lastOutputCol + inputPosition.Col - lastSourceCol;
+                        return true;
+                    }
+                }
+                else if (lastSourceLine == inputPosition.Line - 1)
+                {
+                    if (lastSourceCol <= inputPosition.Col - 1)
+                    {
+                        res.Line = outputLine;
+                        res.Col = lastOutputCol + inputPosition.Col - lastSourceCol;
+                        return true;
+                    }
+                }
+                else if (inSourceLine == inputPosition.Line - 1)
+                {
+                    if (inSourceCol >= inputPosition.Col - 1)
+                    {
+                        res.Line = outputLine;
+                        res.Col = inOutputCol + inputPosition.Col - inSourceCol;
+                        return true;
+                    }
+                }
+                else if (lastSourceLine < inputPosition.Line - 1 && inSourceLine > inputPosition.Line - 1)
+                {
+                    res.Line = outputLine;
+                    res.Col = inputPosition.Col;
+                    return true;
+                }
+            }
+
+            if (valpos == 1)
+            {
+                lastSourceIndex = -1;
+            }
+            else
+            {
+                lastSourceIndex = inSourceIndex;
+                lastSourceLine = inSourceLine;
+                lastSourceCol = inSourceCol;
+            }
+
+            lastOutputCol = inOutputCol;
+            valpos = 0;
+            return false;
+        }
+
+        while (ip < inputMappings.Length)
+        {
+            var ch = inputMappings[ip++];
+            if (ch == ';')
+            {
+                if (commit())
+                    return (res.Line, res.Col);
+                inOutputCol = 0;
+                lastOutputCol = 0;
+                outputLine++;
+            }
+            else if (ch == ',')
+            {
+                if (commit())
+                    return (res.Line, res.Col);
+            }
+            else
+            {
+                var b = (int)SourceMapBuilder.Char2Int[ch];
+                if (b == 255)
+                    throw new Exception("Invalid sourceMap");
+                value += (b & 31) << shift;
+                if ((b & 32) != 0)
+                {
+                    shift += 5;
+                }
+                else
+                {
+                    var shouldNegate = value & 1;
+                    value >>= 1;
+                    if (shouldNegate != 0)
+                        value = -value;
+                    switch (valpos)
+                    {
+                        case 0:
+                            inOutputCol += value;
+                            break;
+                        case 1:
+                            inSourceIndex += value;
+                            break;
+                        case 2:
+                            inSourceLine += value;
+                            break;
+                        case 3:
+                            inSourceCol += value;
+                            break;
+                    }
+
+                    valpos++;
+                    value = shift = 0;
+                }
+            }
+        }
+
+        commit();
+        return (res.Line, res.Col);
     }
 
     // Both input and outputs are one based
@@ -249,9 +392,9 @@ public class SourceMap
         var res = new SourceCodePosition();
         if (line > CacheLineSkip)
         {
-            var pos = (uint) (line - 1) / CacheLineSkip;
+            var pos = (uint)(line - 1) / CacheLineSkip;
             ref var entry = ref _searchCache![pos - 1];
-            outputLine = (int) (pos * CacheLineSkip);
+            outputLine = (int)(pos * CacheLineSkip);
             ip = entry.Pos;
             inSourceIndex = entry.Index;
             inSourceLine = entry.Line;
@@ -332,7 +475,7 @@ public class SourceMap
             }
             else
             {
-                var b = (int) SourceMapBuilder.Char2Int[ch];
+                var b = (int)SourceMapBuilder.Char2Int[ch];
                 if (b == 255)
                     throw new Exception("Invalid sourceMap");
                 value += (b & 31) << shift;
@@ -377,6 +520,7 @@ public class SourceMap
                 res.Col = lastSourceCol + 1;
             }
         }
+
         return res;
     }
 }
@@ -491,7 +635,7 @@ public class SourceMapIterator
                 return;
             }
 
-            var b = (int) SourceMapBuilder.Char2Int[ch];
+            var b = (int)SourceMapBuilder.Char2Int[ch];
             if (b == 255)
                 throw new("Invalid sourceMap");
             value += (b & 31) << shift;
