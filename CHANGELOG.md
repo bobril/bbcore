@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.7.0
+
 ### Added
 
 New subcommand `bb js locate https://example.com/something.js:123:456`. It will download that file, beautify it, save it
