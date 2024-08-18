@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+New parameter `-t` or `--typecheck` for `bb` command. It allows to disable running type checking in interactive build.
+Or just running type checking without building and test running.
+
 ### Improved
 
 Tried to decrease memory consumption of type checks.

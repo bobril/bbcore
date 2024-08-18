@@ -1226,11 +1226,19 @@ public class Composition
 
         InitDiskCache(true);
         _mainBuildResult = new MainBuildResult(false, command.VersionDir.Value, command.SpriteVersionDir.Value);
-        InitTestServer();
-        InitMainServer();
+        if (command.TypeCheck.Value != "only")
+        {
+            InitTestServer();
+            InitMainServer();
+        }
+
         SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory)).SpriteGeneration = command.Sprite.Value;
-        StartWebServer(port, command.BindToAny.Value);
-        InitInteractiveMode(command.Localize.Value, command.SourceMapRoot.Value);
+        if (command.TypeCheck.Value != "only")
+        {
+            StartWebServer(port, command.BindToAny.Value);
+        }
+
+        InitInteractiveMode(command.Localize.Value, command.SourceMapRoot.Value, command.TypeCheck.Value);
         WaitForStop();
     }
 
@@ -1668,7 +1676,7 @@ public class Composition
         _testServer.OnCoverageResults.Subscribe(_ => { _mainServer.NotifyCoverageChange(); });
     }
 
-    public void InitInteractiveMode(bool? localizeValue, string? sourceMapRoot)
+    public void InitInteractiveMode(bool? localizeValue, string? sourceMapRoot, string typeCheckValue)
     {
         _hasBuildWork.Set();
         var throttled = _dc.ChangeObservable.Select(s =>
@@ -1683,7 +1691,7 @@ public class Composition
         throttled.Merge(throttled.Delay(TimeSpan.FromMilliseconds(300))).Subscribe((_) => _hasBuildWork.Set());
         var iterationId = 0;
         var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath,
-            _buildCache, "yes");
+            _buildCache, typeCheckValue);
         var buildResult = new BuildResult(_mainBuildResult, _currentProject);
         var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, _currentProject, buildResult);
         var start = DateTime.UtcNow;
@@ -1692,7 +1700,7 @@ public class Composition
         var warnings = 0;
         var messages = new List<Diagnostic>();
 
-        _mainServer.OnRequestRebuild.Subscribe(_ =>
+        _mainServer?.OnRequestRebuild.Subscribe(_ =>
         {
             StartHeadlessBrowserTest();
 
@@ -1713,7 +1721,7 @@ public class Composition
                 _hasBuildWork.Set();
                 start = DateTime.UtcNow;
                 iterationId++;
-                _mainServer.NotifyCompilationStarted();
+                _mainServer?.NotifyCompilationStarted();
                 errors = 0;
                 warnings = 0;
                 messages.Clear();
@@ -1732,7 +1740,7 @@ public class Composition
                     ctx.Build(proj, false, buildResult, _mainBuildResult, iterationId);
                     ctx.BuildSubProjects(proj, false, buildResult, _mainBuildResult, iterationId);
                     proj.UpdateTSConfigJson();
-                    if (!buildResult.HasError)
+                    if (!buildResult.HasError && typeCheckValue != "only")
                     {
                         proj.FillOutputByAdditionalResourcesDirectory(buildResult.Modules, _mainBuildResult);
                         fastBundle.Build(sourceMapRoot ?? "bb/base");
@@ -1740,7 +1748,7 @@ public class Composition
                     }
 
                     IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
-                    if (!buildResult.HasError)
+                    if (!buildResult.HasError && typeCheckValue != "only")
                         AddUnusedDependenciesMessages(proj, buildResult, ref errors, ref warnings, messages);
                     buildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
                     {
@@ -1748,15 +1756,18 @@ public class Composition
                         var allmess = IncludeSemanticMessages(_currentProject, semanticDiag.Result, ref errors,
                             ref warnings,
                             messages);
-                        _mainServer.NotifyCompilationFinished(errors, warnings, duration, allmess);
+                        _mainServer?.NotifyCompilationFinished(errors, warnings, duration, allmess);
                         _notificationManager.SendNotification(
                             NotificationParameters.CreateBuildParameters(errors, warnings, duration));
                         if (!buildResult.HasError) PrintMessages(allmess, true);
                         var color = errors != 0 ? ConsoleColor.Red :
                             warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                        _logger.WriteLine(
-                            $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}",
-                            color);
+                        if (typeCheckValue != "no")
+                        {
+                            _logger.WriteLine(
+                                $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}",
+                                color);
+                        }
                     }, TaskContinuationOptions.OnlyOnRanToCompletion);
                     if (errors == 0)
                     {
@@ -1766,7 +1777,7 @@ public class Composition
                             proj.LiveReloadAwaiter.TrySetResult(Unit.Default);
                         }
 
-                        if (proj.InteractiveDumpsToDist)
+                        if (proj.InteractiveDumpsToDist && typeCheckValue != "only")
                         {
                             var distPath = PathUtils.Join(proj.Owner.Owner.FullPath,
                                 proj.BuildOutputDir ?? "./dist");
@@ -1774,7 +1785,7 @@ public class Composition
                             SaveFilesContentToDisk(_mainBuildResult.FilesContent, distPath, delta);
                         }
 
-                        if (proj.TestSources != null && proj.TestSources.Count > 0)
+                        if (proj.TestSources is { Count: > 0 } && typeCheckValue != "only")
                         {
                             fastBundle.BuildHtml(true);
                             _testServer.StartTest("/test.html", fastBundle.SourceMaps);
@@ -1789,13 +1800,16 @@ public class Composition
                 }
 
                 var duration = (DateTime.UtcNow - start).TotalSeconds;
-                _mainServer.NotifyCompilationFinished(errors, warnings, duration, messages);
+                _mainServer?.NotifyCompilationFinished(errors, warnings, duration, messages);
                 PrintMessages(messages);
-                var color = errors != 0 ? ConsoleColor.Red :
-                    warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
-                _logger.WriteLine(
-                    $"Build done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(_mainBuildResult.FilesContent.Count, "file")}",
-                    color);
+                if (typeCheckValue != "only")
+                {
+                    var color = errors != 0 ? ConsoleColor.Red :
+                        warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                    _logger.WriteLine(
+                        $"Build done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(_mainBuildResult.FilesContent.Count, "file")}",
+                        color);
+                }
             }
         });
     }

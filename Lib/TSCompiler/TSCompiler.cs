@@ -35,14 +35,17 @@ public class TsCompiler : ITSCompiler
         get
         {
             var engine = getJSEnviroment();
-            return JsonConvert.DeserializeObject<TSCompilerOptions>(engine.CallFunction<string>("bbGetCurrentCompilerOptions"));
+            return JsonConvert.DeserializeObject<TSCompilerOptions>(
+                engine.CallFunction<string>("bbGetCurrentCompilerOptions"));
         }
         set
         {
             if (_lastCompilerOptions == value) return;
             _lastCompilerOptions = value;
             var engine = getJSEnviroment();
-            engine.CallFunction("bbSetCurrentCompilerOptions", JsonConvert.SerializeObject(value, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+            engine.CallFunction("bbSetCurrentCompilerOptions",
+                JsonConvert.SerializeObject(value, Formatting.None,
+                    new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
         }
     }
 
@@ -76,6 +79,7 @@ public class TsCompiler : ITSCompiler
             {
                 return file.Utf8Content;
             }
+
             _owner.Logger.Info("ReadFile missing " + fullPath);
             return null;
         }
@@ -127,6 +131,7 @@ public class TsCompiler : ITSCompiler
                     sb.Append(item.Name);
                 }
             }
+
             //_owner.Logger.Info("getDirectories " + directoryPath + " "+sb.ToString());
             return sb.ToString();
         }
@@ -134,7 +139,7 @@ public class TsCompiler : ITSCompiler
         public string realPath(string path)
         {
             var res = PathUtils.RealPath(path);
-            if (_owner.Logger.Verbose && path != res) _owner.Logger.Info("TSC:RealPath " + path + " -> " + res);
+            //if (_owner.Logger.Verbose && path != res) _owner.Logger.Info("TSC:RealPath " + path + " -> " + res);
             return res;
         }
 
@@ -150,6 +155,7 @@ public class TsCompiler : ITSCompiler
             }
             else
                 Console.WriteLine("Trace:" + text);
+
             _stopwatch.Restart();
         }
 
@@ -179,16 +185,19 @@ public class TsCompiler : ITSCompiler
                         _owner.Logger.Info("TS" + code + ": " + text);
                     }
                 }
-                if (isError) _owner._diagnostics.Add(new Diagnostic
-                {
-                    IsError = isError,
-                    Code = code,
-                    Text = text,
-                });
+
+                if (isError)
+                    _owner._diagnostics.Add(new Diagnostic
+                    {
+                        IsError = isError,
+                        Code = code,
+                        Text = text,
+                    });
             }
         }
 
-        public void reportTypeScriptDiagFile(bool isError, int code, string text, string fileName, int startLine, int startCharacter, int endLine, int endCharacter)
+        public void reportTypeScriptDiagFile(bool isError, int code, string text, string fileName, int startLine,
+            int startCharacter, int endLine, int endCharacter)
         {
             var tr = _owner._transpileResult;
             if (tr != null)
@@ -291,6 +300,7 @@ public class TsCompiler : ITSCompiler
         var engine = getJSEnviroment();
         engine.CallFunction("bbUpdateSourceList", string.Join('|', mainFiles));
     }
+
     string _currentDirectory;
 
     public void TriggerUpdate()
