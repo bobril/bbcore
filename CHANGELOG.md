@@ -2,12 +2,17 @@
 
 ## [unreleased]
 
+### Improved
+
+Tried to decrease memory consumption of type checks.
+
 ## 4.7.0
 
 ### Added
 
 New subcommand `bb js locate https://example.com/something.js:123:456`. It will download that file, beautify it, save it
-into a.js and print code -g command line to open that file on that location. It could be also just path to javascript file like `bb js locate my.js:12:34`.
+into a.js and print code -g command line to open that file on that location. It could be also just path to javascript
+file like `bb js locate my.js:12:34`.
 
 ```sh
 

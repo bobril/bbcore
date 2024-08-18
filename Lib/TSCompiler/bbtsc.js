@@ -83,24 +83,18 @@ var FileWatcher = /** @class */ (function () {
                     : oldChangeId === undefined
                         ? ts.FileWatcherEventKind.Created
                         : ts.FileWatcherEventKind.Changed);
-            this.content = undefined;
         }
     };
     FileWatcher.prototype.getContent = function () {
-        var content = this.content;
-        if (content != undefined)
-            return content;
         if (this.changeId == undefined) {
             return undefined;
         }
-        content = bb.readFile(this.path);
-        this.content = content;
-        return content;
+        return bb.readFile(this.path);
     };
     FileWatcher.prototype.close = function () {
         if (this.closed)
             return;
-        bb.trace("Closed watching file " + this.path);
+        bb.trace("Closed watching file: " + this.path);
         this.closed = true;
         watchDirMap.delete(this.path);
     };
@@ -128,7 +122,7 @@ var DirWatcher = /** @class */ (function () {
     DirWatcher.prototype.close = function () {
         if (this.closed)
             return;
-        bb.trace("Closed watching dir " + this.path);
+        bb.trace("Closed watching dir: " + this.path);
         this.closed = true;
         watchDirMap.delete(this.path);
     };

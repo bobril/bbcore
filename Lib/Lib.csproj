@@ -1,100 +1,100 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <LangVersion>latest</LangVersion>
-    <WarningsAsErrors />
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Remove="CSSProcessor\bbcss.js" />
-    <None Remove="CSSProcessor\bundle.min.js" />
-    <None Remove="SCSSProcessor\bbscss.js" />
-    <None Remove="SCSSProcessor\sass.dart.js" />
-    <None Remove="ToolsDir\jasmine-boot299.js" />
-    <None Remove="ToolsDir\jasmine-boot330.js" />
-    <None Remove="ToolsDir\jasmine-boot400.js" />
-    <None Remove="ToolsDir\jasmine299.js" />
-    <None Remove="ToolsDir\jasmine330.js" />
-    <None Remove="ToolsDir\jasmine400.js" />
-    <None Remove="ToolsDir\jasmine299.d.ts" />
-    <None Remove="ToolsDir\jasmine330.d.ts" />
-    <None Remove="ToolsDir\jasmine400.d.ts" />
-    <None Remove="ToolsDir\liveReload.js" />
-    <None Remove="ToolsDir\loader.js" />
-    <None Remove="ToolsDir\localeDefs.json" />
-    <None Remove="ToolsDir\webt_a.js" />
-    <None Remove="ToolsDir\webt_index.html" />
-    <None Remove="ToolsDir\web_a.js" />
-    <None Remove="ToolsDir\web_index.html" />
-    <None Remove="TSCompiler\import.js" />
-    <None Remove="TSCompiler\tslib.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="CSSProcessor\bbcss.js" />
-    <EmbeddedResource Include="CSSProcessor\bundle.min.js" />
-    <EmbeddedResource Include="SCSSProcessor\bbscss.js" />
-    <EmbeddedResource Include="SCSSProcessor\sass.dart.js" />
-    <EmbeddedResource Include="ToolsDir\jasmine-boot299.js" />
-    <EmbeddedResource Include="ToolsDir\jasmine-boot330.js" />
-    <EmbeddedResource Include="ToolsDir\jasmine-boot400.js" />
-    <EmbeddedResource Include="ToolsDir\jasmine299.js" />
-    <EmbeddedResource Include="ToolsDir\jasmine330.js" />
-    <EmbeddedResource Include="ToolsDir\jasmine400.js" />
-    <EmbeddedResource Include="ToolsDir\jasmine299.d.ts" />
-    <EmbeddedResource Include="ToolsDir\jasmine330.d.ts" />
-    <EmbeddedResource Include="ToolsDir\jasmine400.d.ts" />
-    <EmbeddedResource Include="ToolsDir\liveReload.js" />
-    <EmbeddedResource Include="ToolsDir\loader.js" />
-    <EmbeddedResource Include="ToolsDir\localeDefs.json" />
-    <EmbeddedResource Include="ToolsDir\web.zip" />
-    <EmbeddedResource Include="ToolsDir\webt.zip" />
-    <EmbeddedResource Include="ToolsDir\CoverageDetailsVisualizer.zip" />
-    <EmbeddedResource Include="TSCompiler\bbtsc.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="BTDB" Version="32.12.1" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.61" />
-    <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.24.1" />
-    <PackageReference Include="JavaScriptEngineSwitcher.V8" Version="3.24.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.2.1" />
-    <PackageReference Include="Microsoft.ClearScript.V8" Version="7.4.5" />
-    <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.4.5" />
-    <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.4.5" />
-    <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-arm64" Version="7.4.5" />
-    <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.4.5" />
-    <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="ProxyKit" Version="2.3.4" />
-    <PackageReference Include="SemanticVersioning" Version="2.0.2" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9" />
-    <PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
-    <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.Reactive" Version="6.0.1" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
-    <PackageReference Include="UAParser" Version="3.1.47" />
-    <PackageReference Include="WebMarkupMin.Core" Version="2.16.2" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\BobrilMdx\BobrilMdx.csproj" />
-    <ProjectReference Include="..\Njsast\Njsast.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="Resources\error.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\SendNotification.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\success.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+        <LangVersion>latest</LangVersion>
+        <WarningsAsErrors/>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Remove="CSSProcessor\bbcss.js"/>
+        <None Remove="CSSProcessor\bundle.min.js"/>
+        <None Remove="SCSSProcessor\bbscss.js"/>
+        <None Remove="SCSSProcessor\sass.dart.js"/>
+        <None Remove="ToolsDir\jasmine-boot299.js"/>
+        <None Remove="ToolsDir\jasmine-boot330.js"/>
+        <None Remove="ToolsDir\jasmine-boot400.js"/>
+        <None Remove="ToolsDir\jasmine299.js"/>
+        <None Remove="ToolsDir\jasmine330.js"/>
+        <None Remove="ToolsDir\jasmine400.js"/>
+        <None Remove="ToolsDir\jasmine299.d.ts"/>
+        <None Remove="ToolsDir\jasmine330.d.ts"/>
+        <None Remove="ToolsDir\jasmine400.d.ts"/>
+        <None Remove="ToolsDir\liveReload.js"/>
+        <None Remove="ToolsDir\loader.js"/>
+        <None Remove="ToolsDir\localeDefs.json"/>
+        <None Remove="ToolsDir\webt_a.js"/>
+        <None Remove="ToolsDir\webt_index.html"/>
+        <None Remove="ToolsDir\web_a.js"/>
+        <None Remove="ToolsDir\web_index.html"/>
+        <None Remove="TSCompiler\import.js"/>
+        <None Remove="TSCompiler\tslib.js"/>
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="CSSProcessor\bbcss.js"/>
+        <EmbeddedResource Include="CSSProcessor\bundle.min.js"/>
+        <EmbeddedResource Include="SCSSProcessor\bbscss.js"/>
+        <EmbeddedResource Include="SCSSProcessor\sass.dart.js"/>
+        <EmbeddedResource Include="ToolsDir\jasmine-boot299.js"/>
+        <EmbeddedResource Include="ToolsDir\jasmine-boot330.js"/>
+        <EmbeddedResource Include="ToolsDir\jasmine-boot400.js"/>
+        <EmbeddedResource Include="ToolsDir\jasmine299.js"/>
+        <EmbeddedResource Include="ToolsDir\jasmine330.js"/>
+        <EmbeddedResource Include="ToolsDir\jasmine400.js"/>
+        <EmbeddedResource Include="ToolsDir\jasmine299.d.ts"/>
+        <EmbeddedResource Include="ToolsDir\jasmine330.d.ts"/>
+        <EmbeddedResource Include="ToolsDir\jasmine400.d.ts"/>
+        <EmbeddedResource Include="ToolsDir\liveReload.js"/>
+        <EmbeddedResource Include="ToolsDir\loader.js"/>
+        <EmbeddedResource Include="ToolsDir\localeDefs.json"/>
+        <EmbeddedResource Include="ToolsDir\web.zip"/>
+        <EmbeddedResource Include="ToolsDir\webt.zip"/>
+        <EmbeddedResource Include="ToolsDir\CoverageDetailsVisualizer.zip"/>
+        <EmbeddedResource Include="TSCompiler\bbtsc.js"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="BTDB" Version="32.14.1"/>
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.63"/>
+        <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.24.1"/>
+        <PackageReference Include="JavaScriptEngineSwitcher.V8" Version="3.24.2"/>
+        <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7"/>
+        <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.2.1"/>
+        <PackageReference Include="Microsoft.ClearScript.V8" Version="7.4.5"/>
+        <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.4.5"/>
+        <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.4.5"/>
+        <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-arm64" Version="7.4.5"/>
+        <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.4.5"/>
+        <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageReference Include="ProxyKit" Version="2.3.4"/>
+        <PackageReference Include="SemanticVersioning" Version="2.0.2"/>
+        <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9"/>
+        <PackageReference Include="System.Collections.Concurrent" Version="4.3.0"/>
+        <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.3.0"/>
+        <PackageReference Include="System.Reactive" Version="6.0.1"/>
+        <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0"/>
+        <PackageReference Include="System.ValueTuple" Version="4.5.0"/>
+        <PackageReference Include="UAParser" Version="3.1.47"/>
+        <PackageReference Include="WebMarkupMin.Core" Version="2.17.0"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\BobrilMdx\BobrilMdx.csproj"/>
+        <ProjectReference Include="..\Njsast\Njsast.csproj"/>
+    </ItemGroup>
+    <ItemGroup>
+        <None Update="Resources\error.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Resources\SendNotification.ps1">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Resources\success.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 </Project>

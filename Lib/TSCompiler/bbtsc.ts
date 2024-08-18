@@ -7,14 +7,23 @@ declare const bb: IBB;
 
 interface IBB {
     getChangeId(fileName: string): number | undefined;
+
     readFile(fileName: string): string;
+
     writeFile(fileName: string, data: string): boolean;
+
     dirExists(directoryPath: string): boolean;
+
     fileExists(fileName: string): boolean;
+
     getDirectories(directoryPath: string): string;
+
     realPath(path: string): string;
+
     trace(text: string): void;
+
     reportTypeScriptDiag(isError: boolean, code: number, text: string): void;
+
     reportTypeScriptDiagFile(
         isError: boolean,
         code: number,
@@ -66,7 +75,7 @@ let lastSourceMap: string | undefined;
 
 function bbTranspile(fileName: string, input: string): string {
     //bb.trace(JSON.stringify(compilerOptions));
-    var res = ts.transpileModule(input, { compilerOptions, reportDiagnostics: true, fileName });
+    var res = ts.transpileModule(input, {compilerOptions, reportDiagnostics: true, fileName});
     if (res.diagnostics) reportDiagnostics(res.diagnostics);
     lastSourceMap = res.sourceMapText;
     return res.outputText;
@@ -114,7 +123,6 @@ class FileWatcher {
     path: string;
     callback: ts.FileWatcherCallback | undefined;
     changeId: number | undefined;
-    content?: string;
     closed: boolean;
 
     constructor(path: string, callback?: ts.FileWatcherCallback) {
@@ -136,27 +144,22 @@ class FileWatcher {
                     newChangeId === undefined
                         ? ts.FileWatcherEventKind.Deleted
                         : oldChangeId === undefined
-                        ? ts.FileWatcherEventKind.Created
-                        : ts.FileWatcherEventKind.Changed
+                            ? ts.FileWatcherEventKind.Created
+                            : ts.FileWatcherEventKind.Changed
                 );
-            this.content = undefined;
         }
     }
 
     getContent(): string | undefined {
-        let content = this.content;
-        if (content != undefined) return content;
         if (this.changeId == undefined) {
             return undefined;
         }
-        content = bb.readFile(this.path);
-        this.content = content;
-        return content;
+        return bb.readFile(this.path);
     }
 
     close() {
         if (this.closed) return;
-        bb.trace("Closed watching file " + this.path);
+        bb.trace("Closed watching file: " + this.path);
         this.closed = true;
         watchDirMap.delete(this.path);
     }
@@ -188,7 +191,7 @@ class DirWatcher {
 
     close() {
         if (this.closed) return;
-        bb.trace("Closed watching dir " + this.path);
+        bb.trace("Closed watching dir: " + this.path);
         this.closed = true;
         watchDirMap.delete(this.path);
     }
@@ -202,7 +205,8 @@ const mySys: ts.System = {
     args: [],
     newLine: "\n",
     useCaseSensitiveFileNames: true,
-    createDirectory() {},
+    createDirectory() {
+    },
     write(s: string) {
         bb.trace(s);
     },
@@ -213,7 +217,8 @@ const mySys: ts.System = {
         launchBuild = args[0];
         return 1;
     },
-    clearTimeout() {},
+    clearTimeout() {
+    },
     writeFile(path: string, _data: string, _writeOrderMark?: boolean) {
         bb.trace("should not be called writeFile: " + path);
     },
@@ -354,7 +359,7 @@ function createCompilerHost(): ts.CompilerHost {
         let text: string | undefined;
         try {
             text = bb.readFile(fileName);
-        } catch (e:any) {
+        } catch (e: any) {
             if (onError) {
                 onError(e.message);
             }
@@ -367,7 +372,8 @@ function createCompilerHost(): ts.CompilerHost {
         getSourceFile,
         getDefaultLibLocation: () => bbDefaultLibLocation,
         getDefaultLibFileName: options => bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options),
-        writeFile() {},
+        writeFile() {
+        },
         getCurrentDirectory: () => bbCurrentDirectory,
         useCaseSensitiveFileNames: () => true,
         getCanonicalFileName(path: string) {

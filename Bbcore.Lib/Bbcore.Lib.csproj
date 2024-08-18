@@ -11,8 +11,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BTDB" Version="32.12.1"/>
-        <PackageReference Include="HtmlAgilityPack" Version="1.11.61"/>
+        <PackageReference Include="BTDB" Version="32.14.1"/>
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.63"/>
         <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.24.1"/>
         <PackageReference Include="JavaScriptEngineSwitcher.V8" Version="3.24.2"/>
         <PackageReference Include="JetBrains.Annotations" Version="2024.2.0"/>
@@ -24,7 +24,7 @@
         <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9"/>
         <PackageReference Include="System.Reactive" Version="6.0.1"/>
         <PackageReference Include="UAParser" Version="3.1.47"/>
-        <PackageReference Include="WebMarkupMin.Core" Version="2.16.2"/>
+        <PackageReference Include="WebMarkupMin.Core" Version="2.17.0"/>
         <PackageReference Include="YamlDotNet" Version="16.0.0"/>
         <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.4.5"/>
         <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.4.5"/>
