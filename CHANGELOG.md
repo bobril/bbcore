@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.8.0
+
 ### Added
 
 New parameter `-t` or `--typecheck` for `bb` command. It allows to disable running type checking in interactive build.
