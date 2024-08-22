@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.8.1
+
 ### Fixed
 
 Fixed behaviour of export star in bundler when reexporting already locally exported something with same name. Local
