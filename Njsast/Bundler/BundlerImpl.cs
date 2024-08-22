@@ -292,15 +292,15 @@ public class BundlerImpl
                                                     fromFile.Name + " used in " + f.Name);
                 }
 
-                if (!sourceSplit.ImportsFromOtherBundles.ContainsKey(astNode))
+                if (!sourceSplit.ImportsFromOtherBundles.ContainsKey(astNode!))
                 {
-                    sourceSplit.ImportsFromOtherBundles[astNode] =
+                    sourceSplit.ImportsFromOtherBundles[astNode!] =
                         new(fromSplit, fromFile, exportName.AsSpan()[..prefixLen].ToArray());
                 }
 
-                if (!fromSplit.ExportsUsedFromLazyBundles.ContainsKey(astNode))
+                if (!fromSplit.ExportsUsedFromLazyBundles.ContainsKey(astNode!))
                 {
-                    fromSplit.ExportsUsedFromLazyBundles[astNode] =
+                    fromSplit.ExportsUsedFromLazyBundles[astNode!] =
                         BundlerHelpers.NumberToIdent(lazySplitCounter++);
                 }
             }
@@ -607,6 +607,8 @@ public class BundlerImpl
                 var reexModule = _cache[starExp.SourceName];
                 foreach (var reexModuleExport in reexModule.Exports!)
                 {
+                    if (cached.Exports.TryFindLongestPrefix(reexModuleExport.Key.AsReadOnlySpan()[..1], out _, out var astNode) && astNode is not null)
+                        continue;
                     cached.Exports[reexModuleExport.Key] = reexModuleExport.Value;
                 }
             }

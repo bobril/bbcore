@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+Fixed behaviour of export star in bundler when reexporting already locally exported something with same name. Local
+export must have always priority regardless of order of exports.
+
 ## 4.8.0
 
 ### Added

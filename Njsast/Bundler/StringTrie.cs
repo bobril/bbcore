@@ -117,10 +117,10 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
     /// <param name="prefixLen">len of prefix with longest match</param>
     /// <param name="value">value on that longest match</param>
     /// <returns>true if value exists on exact key</returns>
-    public bool TryFindLongestPrefix(in ReadOnlySpan<string> key, out int prefixLen, out T value)
+    public bool TryFindLongestPrefix(in ReadOnlySpan<string> key, out int prefixLen, out T? value)
     {
         prefixLen = -1;
-        value = default!;
+        value = default;
         var prefix = key;
         ref var p = ref _root;
         if (p.HasValue)
