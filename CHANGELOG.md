@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+In fast bundler importing with `.ts(x)` extension was not working.
+
 ## 4.8.1
 
 ### Fixed

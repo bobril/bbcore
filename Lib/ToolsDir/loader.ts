@@ -5,17 +5,22 @@ type ModuleFun = (
     exports: any,
     global: typeof globalThis
 ) => void;
+
 interface IR {
     (name: string, fn: ModuleFun): void;
+
     t: typeof globalThis;
     m: Map<string, { fn?: ModuleFun; exports: any }>;
+
     r(name: string, parent: string): any;
+
     map?: { [name: string]: string };
 }
+
 const R: IR = function (name: string, fnOrJson: ModuleFun | any) {
     R.m.set(
         name.toLowerCase(),
-        typeof fnOrJson == "function" ? { fn: fnOrJson, exports: undefined } : { exports: fnOrJson }
+        typeof fnOrJson == "function" ? {fn: fnOrJson, exports: undefined} : {exports: fnOrJson}
     );
 };
 /*
@@ -61,8 +66,9 @@ R.r = function (name: string, parent: string) {
     }
     var lp = p.toLowerCase();
     var m = R.m.get(lp);
-    if (m == null && /\.js$/.test(lp)) {
-        m = R.m.get(lp.slice(0, lp.length - 3));
+    var lp2;
+    if (m == null && (lp2 = lp.replace(/\.[jt]sx?$/, "")) != lp) {
+        m = R.m.get(lp2);
     }
     if (m == null) {
         m = R.m.get(lp + "/index");
@@ -74,8 +80,9 @@ R.r = function (name: string, parent: string) {
     m.fn!.call(R.t, (name: string) => R.r(name, p), m, m.exports, R.t);
     if ((typeof m.exports === "function" || typeof m.exports === "object") && !("default" in m.exports)) {
         try {
-            Object.defineProperty(m.exports, "default", { value: m.exports, enumerable: false });
-        } catch {}
+            Object.defineProperty(m.exports, "default", {value: m.exports, enumerable: false});
+        } catch {
+        }
     }
     return m.exports;
 };
