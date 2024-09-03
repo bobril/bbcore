@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.8.2
+
 ### Fixed
 
 In fast bundler importing with `.ts(x)` extension was not working.
