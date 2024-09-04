@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.9.0
+
 ### Added
 
 Basic package.json imports support.
