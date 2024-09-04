@@ -168,6 +168,8 @@ public static class PathUtils
     {
         if (Path.IsPathRooted(dir2))
             return dir2;
+        if (dir1 is "/")
+            return Normalize(dir1.ToString() + dir2);
         return Normalize(dir1.ToString() + "/" + dir2);
     }
 

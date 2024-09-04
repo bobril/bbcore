@@ -14,7 +14,6 @@ public class CompilerTests
     ToolsDir.ToolsDir _tools;
     CompilerPool _compilerPool;
     string projdir;
-    DiskCache.DiskCache dc;
 
     public CompilerTests()
     {

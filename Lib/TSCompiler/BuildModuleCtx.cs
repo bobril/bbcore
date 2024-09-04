@@ -11,6 +11,7 @@ using Njsast.Bobril;
 using Njsast.Ast;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using BobrilMdx;
 using HtmlAgilityPack;
@@ -136,7 +137,8 @@ public class BuildModuleCtx : IImportResolver
 
     // returns "?" if error in resolving
     public string ResolveImport(string from, string name, bool preferDts = false, bool isAsset = false,
-        bool forceResource = false, bool skipCheckAdd = false, FileCompilationType forceCompilationType = FileCompilationType.Unknown)
+        bool forceResource = false, bool skipCheckAdd = false,
+        FileCompilationType forceCompilationType = FileCompilationType.Unknown)
     {
         if (forceCompilationType == FileCompilationType.Resource) forceResource = true;
         if (Result!.ResolveCache.TryGetValue((from, name), out var res))
@@ -155,19 +157,20 @@ public class BuildModuleCtx : IImportResolver
             res.FileNameJs = null;
         }
 
-        if (Owner?.ProjectOptions?.Imports?.TryGetValue(name, out var import) ?? false)
+        Result.Path2FileInfo.TryGetValue(from, out var parentInfo);
+        var fromModule = parentInfo?.FromModule ?? Owner!;
+
+        var name2 = fromModule.ResolveImports(name);
+        if (name2 == null)
         {
-            if (import == null)
-            {
-                res.FileName = "<empty>";
-                return res.FileName;
-            }
-            name = import;
+            res.FileName = "<empty>";
+            return res.FileName;
         }
+
+        name = name2;
 
         res.IterationId = IterationId;
         var relative = name.StartsWith("./") || name.StartsWith("../");
-        Result.Path2FileInfo.TryGetValue(from, out var parentInfo);
         string? fn = null;
         if (relative)
         {
@@ -196,6 +199,7 @@ public class BuildModuleCtx : IImportResolver
                     return res.FileName;
                 }
             }
+
             if (fn.EndsWith(".json") || fn.EndsWith(".css"))
             {
                 if (Owner!.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false })
@@ -205,7 +209,9 @@ public class BuildModuleCtx : IImportResolver
                         ? FileCompilationType.Resource
                         : fn.EndsWith(".json")
                             ? isAsset ? FileCompilationType.Resource : FileCompilationType.Json
-                            : isAsset ? FileCompilationType.Css : FileCompilationType.ImportedCss);
+                            : isAsset
+                                ? FileCompilationType.Css
+                                : FileCompilationType.ImportedCss);
                     return res.FileName;
                 }
             }
@@ -851,15 +857,17 @@ public class BuildModuleCtx : IImportResolver
                         {
                             if (htmlNode.Attributes.AttributesWithName("src").SingleOrDefault() is { } srcattr)
                             {
-                                var scriptPath = PathUtils.Join( PathUtils.Parent(info.Owner.FullPath), srcattr.Value);
+                                var scriptPath = PathUtils.Join(PathUtils.Parent(info.Owner.FullPath), srcattr.Value);
                                 if (Owner!.DiskCache.TryGetItem(scriptPath) is IFileCache { IsInvalid: false } fc)
                                 {
-                                    info.ReportTranspilationDependency(info.Owner.HashOfContent, scriptPath, fc.HashOfContent);
-                                    toReplace.Add((htmlNode,"<script>"+fc.Utf8Content+"</script>"));
+                                    info.ReportTranspilationDependency(info.Owner.HashOfContent, scriptPath,
+                                        fc.HashOfContent);
+                                    toReplace.Add((htmlNode, "<script>" + fc.Utf8Content + "</script>"));
                                 }
                                 else
                                 {
-                                    info.ReportDiag(true, -3, "Missing dependency " + srcattr.Value, srcattr.Line, srcattr.LinePosition, srcattr.Line, srcattr.LinePosition);
+                                    info.ReportDiag(true, -3, "Missing dependency " + srcattr.Value, srcattr.Line,
+                                        srcattr.LinePosition, srcattr.Line, srcattr.LinePosition);
                                 }
                             }
                         }
@@ -872,9 +880,10 @@ public class BuildModuleCtx : IImportResolver
                                 htmlNode.ChildNodes.Clear();
                                 htmlNode.ParentNode.ReplaceChild(HtmlNode.CreateNode(newHtml), htmlNode);
                             }
+
                             htmlContent = htmlDoc.DocumentNode.WriteContentTo();
                         }
-                        
+
                         htmlContent = new HtmlMinifier().Minify(htmlContent).MinifiedContent;
                         info.Output = htmlContent;
                     }
@@ -917,7 +926,8 @@ public class BuildModuleCtx : IImportResolver
                                     if (url.StartsWith("file://")) url = prepend + url[7..];
                                     if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false } fc)
                                     {
-                                        info.ReportTranspilationDependency(info.Owner.HashOfContent, url, fc.HashOfContent);
+                                        info.ReportTranspilationDependency(info.Owner.HashOfContent, url,
+                                            fc.HashOfContent);
                                         return fc.Utf8Content;
                                     }
 
@@ -950,6 +960,7 @@ public class BuildModuleCtx : IImportResolver
                         info.Output = "\"use strict\"; const lit = require(\"lit\"); exports.default = lit.css`" +
                                       info.Output.Replace("\\", "\\\\").Replace("$", "\\$").Replace("`", "\\`") + "`;";
                     }
+
                     var resolved = ResolveImport(info.Owner.FullPath, "lit");
                     if (resolved != null && resolved != "?")
                     {
@@ -1187,7 +1198,8 @@ public class BuildModuleCtx : IImportResolver
                 return ResolverWithPossibleForcingResource(myctx, text, FileCompilationType.Unknown);
             }
 
-            string ResolverWithPossibleForcingResource(IConstEvalCtx myctx, string text, FileCompilationType forceCompilationType)
+            string ResolverWithPossibleForcingResource(IConstEvalCtx myctx, string text,
+                FileCompilationType forceCompilationType)
             {
                 if (text.StartsWith("project:", StringComparison.Ordinal))
                 {
@@ -1198,15 +1210,17 @@ public class BuildModuleCtx : IImportResolver
                 if (text.StartsWith("resource:", StringComparison.Ordinal))
                 {
                     return "resource:" +
-                           ResolverWithPossibleForcingResource(myctx, text.Substring("resource:".Length), FileCompilationType.Resource);
+                           ResolverWithPossibleForcingResource(myctx, text.Substring("resource:".Length),
+                               FileCompilationType.Resource);
                 }
 
                 if (text.StartsWith("html:", StringComparison.Ordinal))
                 {
                     return "html:" +
-                           ResolverWithPossibleForcingResource(myctx, text.Substring("html:".Length), FileCompilationType.Html);
+                           ResolverWithPossibleForcingResource(myctx, text.Substring("html:".Length),
+                               FileCompilationType.Html);
                 }
-                
+
                 if (text.StartsWith("node_modules/", StringComparison.Ordinal))
                 {
                     var res2 = ResolveImport(info.Owner.FullPath, text.Substring("node_modules/".Length), false,
@@ -1276,7 +1290,7 @@ public class BuildModuleCtx : IImportResolver
         {
             return "html:" + ToRelativeName(name.Substring(5), dir);
         }
-        
+
         if (PathUtils.IsAnyChildOf(name, dir))
         {
             var p = PathUtils.Subtract(name, dir);
@@ -1327,7 +1341,8 @@ public class BuildModuleCtx : IImportResolver
         return ok;
     }
 
-    string ToAbsoluteName(string relativeName, string from, ref bool ok, FileCompilationType forceCompilationType = FileCompilationType.Unknown)
+    string ToAbsoluteName(string relativeName, string from, ref bool ok,
+        FileCompilationType forceCompilationType = FileCompilationType.Unknown)
     {
         if (relativeName.StartsWith("project:"))
         {
@@ -1344,7 +1359,7 @@ public class BuildModuleCtx : IImportResolver
         {
             return "html:" + ToAbsoluteName(relativeName.Substring(5), from, ref ok, FileCompilationType.Html);
         }
-        
+
         var res = ResolveImport(from, relativeName, false, true, forceCompilationType: forceCompilationType);
         if (res is null or "?")
         {
@@ -1393,7 +1408,8 @@ public class BuildModuleCtx : IImportResolver
         {
             if (a.Name == null)
             {
-                fileInfo.ReportDiagWithMapLink(true, -5, "First parameter of b.asset must be resolved as constant string",
+                fileInfo.ReportDiagWithMapLink(true, -5,
+                    "First parameter of b.asset must be resolved as constant string",
                     a.StartLine, a.StartCol, a.EndLine,
                     a.EndCol);
                 return;
@@ -1451,7 +1467,8 @@ public class BuildModuleCtx : IImportResolver
                     if (!(Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is
                             IFileCache fc))
                     {
-                        fileInfo.ReportDiagWithMapLink(true, -3, "Missing dependency " + name, sourceInfoSprite.StartLine,
+                        fileInfo.ReportDiagWithMapLink(true, -3, "Missing dependency " + name,
+                            sourceInfoSprite.StartLine,
                             sourceInfoSprite.StartCol,
                             sourceInfoSprite.EndLine, sourceInfoSprite.EndCol);
                     }
@@ -1502,10 +1519,12 @@ public class BuildModuleCtx : IImportResolver
                     if (t.Message == null)
                     {
                         fileInfo.ReportDiagWithMapLink(true, -8,
-                            "Translation message must be compile time resolvable constant string, use f instead if intended", t.StartLine,
+                            "Translation message must be compile time resolvable constant string, use f instead if intended",
+                            t.StartLine,
                             t.StartCol, t.EndLine, t.EndCol);
                         return;
                     }
+
                     var err = trdb.CheckMessage(t.Message, t.KnownParams);
                     if (err != null)
                     {
@@ -1529,11 +1548,14 @@ public class BuildModuleCtx : IImportResolver
                         if (!t.JustFormat)
                         {
                             fileInfo.ReportDiagWithMapLink(true, -8,
-                                "Translation message must be compile time resolvable constant string, use f instead if intended", t.StartLine,
+                                "Translation message must be compile time resolvable constant string, use f instead if intended",
+                                t.StartLine,
                                 t.StartCol, t.EndLine, t.EndCol);
                         }
+
                         return;
                     }
+
                     if (t.WithParams)
                     {
                         var err = trdb.CheckMessage(t.Message, t.KnownParams);

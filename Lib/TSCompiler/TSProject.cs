@@ -24,6 +24,8 @@ public class TSProject
     public HashSet<string>? DevDependencies;
     public HashSet<string>? UsedDependencies;
     public Dictionary<string, string>? Assets;
+    public Dictionary<string, string>? Imports { get; set; }
+
     public string? Name;
     internal int IterationId;
     internal BTDB.Collections.StructList<string> NegativeChecks;
@@ -40,6 +42,7 @@ public class TSProject
             Assets = null;
             return;
         }
+
         DiskCache.UpdateIfNeeded(Owner);
         var packageJsonFile = Owner.TryGetChild("package.json");
         if (packageJsonFile is IFileCache cache)
@@ -74,7 +77,7 @@ public class TSProject
             {
                 Name = nameV.ToString();
             }
-            
+
             var deps = new HashSet<string>();
             var devdeps = new HashSet<string>();
             var hasMain = false;
@@ -199,6 +202,15 @@ public class TSProject
                 }
             }
 
+            if (parsed.GetValue("imports") is JObject imports)
+            {
+                Imports = new Dictionary<string, string>();
+                foreach (var i in imports.Properties())
+                {
+                    Imports[i.Name] = i.Value.ToString();
+                }
+            }
+
             PackageJsonChangeId = newChangeId;
             Dependencies = deps;
             DevDependencies = devdeps;
@@ -208,6 +220,7 @@ public class TSProject
                 Assets = ParseBobrilAssets(parsed, Owner);
                 return;
             }
+
             ProjectOptions.FillProjectOptionsFromPackageJson(parsed, Owner);
             Assets = ProjectOptions.Assets;
             if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
@@ -244,7 +257,8 @@ public class TSProject
         return bbOptions.assets;
     }
 
-    public static TSProject? Create(IDirectoryCache? dir, IDiskCache diskCache, ILogger logger, string? diskName, bool virtualProject = false)
+    public static TSProject? Create(IDirectoryCache? dir, IDiskCache diskCache, ILogger logger, string? diskName,
+        bool virtualProject = false)
     {
         if (dir == null)
             return null;
@@ -316,14 +330,14 @@ public class TSProject
                 buildResult.TakenNames.Add(asset.Value);
                 buildResult.FilesContent.GetOrAddValueRef(asset.Value) = new Lazy<object>(() =>
                 {
-                    var res = ((IFileCache) item).ByteContent;
-                    ((IFileCache) item).FreeCache();
+                    var res = ((IFileCache)item).ByteContent;
+                    ((IFileCache)item).FreeCache();
                     return res;
                 });
             }
             else
             {
-                RecursiveAddFilesContent((IDirectoryCache) item, buildResult, asset.Value);
+                RecursiveAddFilesContent((IDirectoryCache)item, buildResult, asset.Value);
             }
         }
     }
@@ -353,5 +367,35 @@ public class TSProject
                     break;
             }
         }
+    }
+
+    public string? ResolveImports(string name)
+    {
+        if (Imports == null) return name;
+        if (Imports.TryGetValue(name, out var res))
+        {
+            return res;
+        }
+
+        foreach (var (key, value) in Imports)
+        {
+            var pos = key.IndexOf('*');
+            if (pos < 0) continue;
+            var pos2 = value?.IndexOf('*') ?? -1;
+            if (pos2 < 0) continue;
+            if (name.StartsWith(key[..pos], StringComparison.Ordinal) &&
+                name.EndsWith(key[(pos + 1)..], StringComparison.Ordinal))
+            {
+                res = value![..pos2] + name[pos..^(key.Length - pos - 1)] + value[(pos2 + 1)..];
+                if (res.StartsWith("./", StringComparison.Ordinal))
+                {
+                    res = PathUtils.Join(Owner.FullPath, res);
+                }
+
+                return res;
+            }
+        }
+
+        return name;
     }
 }

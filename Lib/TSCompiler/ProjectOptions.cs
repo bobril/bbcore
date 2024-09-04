@@ -55,7 +55,7 @@ public class ProjectOptions
     public string? PathToTranslations;
     public bool TsconfigUpdate;
     public Dictionary<string, string?>? BrowserResolve;
-    public Dictionary<string,string?>? Imports { get; set; }
+    public Dictionary<string, string?>? Imports { get; set; }
     public string? ProxyUrl;
 
     public Dictionary<string, string> ExpandedProcessEnvs;
@@ -544,7 +544,7 @@ public class ProjectOptions
         HeadlessBrowserStrategy = bbOptions.headlessBrowserStrategy;
         LibraryMode = bbOptions.library ?? false;
     }
-    
+
     public BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,
         bool justSameDir = false)
     {
@@ -655,10 +655,11 @@ public class ProjectOptions
                 if (assetName.StartsWith("resource:"))
                 {
                     assetName = assetName[9..];
-                } else if (assetName.StartsWith("html:"))
+                }
+                else if (assetName.StartsWith("html:"))
                 {
                     assetName = assetName[5..];
-                } 
+                }
 
                 sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol,
                     "\"" + buildResult.ToOutputUrl(assetName) + "\"");
@@ -966,7 +967,7 @@ public class ProjectOptions
         }
 
         if (ExpandedDefines == null) return res;
-        
+
         foreach (var p in ExpandedDefines)
         {
             res.Add(p.Key, p.Value.ConstValue());
