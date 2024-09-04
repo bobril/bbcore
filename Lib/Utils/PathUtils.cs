@@ -92,7 +92,7 @@ public static class PathUtils
         if (res == null) return path;
         return Normalize(res);
     }
-        
+
     public static (string Name, float Quality) ExtractQuality(string name)
     {
         var lastDot = name.LastIndexOf('.');
@@ -168,7 +168,7 @@ public static class PathUtils
     {
         if (Path.IsPathRooted(dir2))
             return dir2;
-        if (dir1 is "/")
+        if (dir1.EndsWith("/"))
             return Normalize(dir1.ToString() + dir2);
         return Normalize(dir1.ToString() + "/" + dir2);
     }
