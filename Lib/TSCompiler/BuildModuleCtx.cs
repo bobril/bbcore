@@ -11,7 +11,6 @@ using Njsast.Bobril;
 using Njsast.Ast;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 using BobrilMdx;
 using HtmlAgilityPack;
@@ -155,6 +154,17 @@ public class BuildModuleCtx : IImportResolver
         {
             res.FileName = null;
             res.FileNameJs = null;
+        }
+
+        if (Owner?.ProjectOptions?.Imports?.TryGetValue(name, out var import) ?? false)
+        {
+            if (import == null)
+            {
+                res.FileName = "<empty>";
+                return res.FileName;
+            }
+
+            name = import;
         }
 
         Result.Path2FileInfo.TryGetValue(from, out var parentInfo);
