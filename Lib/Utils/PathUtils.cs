@@ -313,18 +313,18 @@ public static class PathUtils
             case "gif":
                 return "image/gif";
             case "svg":
-                return "image/svg+xml";
+                return "image/svg+xml; charset=utf-8";
             case "css":
                 return "text/css";
             case "html":
             case "htm":
-                return "text/html";
+                return "text/html; charset=utf-8";
             case "jsx":
             case "js":
-                return "application/javascript";
+                return "text/javascript; charset=utf-8";
             case "tsx":
             case "ts":
-                return "text/plain";
+                return "text/plain; charset=utf-8";
             case "map":
             case "json":
                 return "application/json";
