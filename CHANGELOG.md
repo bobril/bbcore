@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.9.1
+
 ### Fixed
 
 Set charset utf-8 to content type header when serving in interactive mode.
