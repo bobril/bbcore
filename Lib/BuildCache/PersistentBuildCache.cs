@@ -28,6 +28,7 @@ public class PersistentBuildCache : IBuildCache
             _mutex = null;
             cacheIndex++;
         }
+
         if (_mutex == null)
             return;
         dir = dir + "/cache" + (cacheIndex == 0 ? "" : cacheIndex.ToString());
@@ -86,6 +87,7 @@ public class PersistentBuildCache : IBuildCache
         {
             return cfg.Id;
         }
+
         var id = (uint)configRelation.Count;
         configRelation.Insert(new TSConfiguration
         {
@@ -106,11 +108,6 @@ public class PersistentBuildCache : IBuildCache
     {
         if (!IsEnabled) return;
         var relation = _tr!.GetRelation<ITSFileBuildCacheTable>();
-        if (value.ContentHash.SequenceEqual(new byte[20]
-                { 100, 14, 98, 202, 246, 243, 90, 30, 186, 252, 57, 28, 57, 251, 199, 104, 238, 153, 98, 71 }))
-        {
-            Debugger.Break();
-        }
         relation.Upsert(value);
     }
 }
