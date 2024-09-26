@@ -43,18 +43,19 @@ public class StrategyEnhancedBrowserProcessFactory : IBrowserProcessFactory
         if (!_fsAbstraction.IsUnixFs && _strategy == "PreferFirefoxOnWindows")
         {
             var browserPath = BrowserPathFinder.GetBrowserPath(_fsAbstraction, true);
-            if (browserPath!=null) browserPathsToRun.AddUnique(browserPath);
+            if (browserPath != null) browserPathsToRun.AddUnique(browserPath);
         }
 
         if (browserPathsToRun.Count == 0)
         {
             var browserPath = BrowserPathFinder.GetBrowserPath(_fsAbstraction, false);
-            if (browserPath!=null) browserPathsToRun.AddUnique(browserPath);
+            if (browserPath != null) browserPathsToRun.AddUnique(browserPath);
         }
 
         if (browserPathsToRun.Count == 0)
         {
-            throw new Exception("Cannot find browser on common known paths, use BBBROWSER environmental variable to define path to browser.");
+            throw new Exception(
+                "Cannot find browser on common known paths, use BBBROWSER environmental variable to define path to browser.");
         }
 
         return new BrowserProcessFactory(_inDocker, browserPathsToRun[0]).Create(urlToOpen);
@@ -93,6 +94,7 @@ public class BrowserProcessFactory : IBrowserProcessFactory
             {
                 Console.WriteLine(e);
             }
+
             processArgs.Clear();
             processArgs.Add("--headless");
             processArgs.Add("--no-remote");
@@ -118,7 +120,9 @@ public class BrowserProcessFactory : IBrowserProcessFactory
             processArgs.Add("--disable-gpu");
             processArgs.Add("--no-first-run");
             processArgs.Add("--disable-background-timer-throttling");
+            processArgs.Add("--window-position=-10000,-10000"); // Workaround to be really headless
         }
+
         processArgs.Add("\"" + urlToOpen + "\"");
         var processStartInfo = new ProcessStartInfo(_browserPath, string.Join(" ", processArgs));
         processStartInfo.RedirectStandardError = true;
@@ -138,7 +142,10 @@ public class BrowserProcessFactory : IBrowserProcessFactory
         public LocalBrowserProcess(DirectoryInfo? userDirectory, Process process)
         {
             Process = process;
-            process.Exited += (sender, args) => { Console.WriteLine("Headless browser stopped with " + process.ExitCode); };
+            process.Exited += (sender, args) =>
+            {
+                Console.WriteLine("Headless browser stopped with " + process.ExitCode);
+            };
             _userDirectory = userDirectory;
             _disposeHandler = (s, e) => Dispose();
             _unhandledExceptionHandler = (s, e) => Dispose();
