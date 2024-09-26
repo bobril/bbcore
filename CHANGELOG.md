@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.9.2
+
 ### Fixed
 
 Added workaround to Chrome to be really headless.
