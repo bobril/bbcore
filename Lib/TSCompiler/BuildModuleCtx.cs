@@ -1156,7 +1156,15 @@ public class BuildModuleCtx : IImportResolver
             transpileOptions.moduleResolution = ModuleResolutionKind.Node10;
             compiler = BuildCtx.CompilerPool.GetTs(Owner!.DiskCache, transpileOptions);
             //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);
-            var result = compiler.Transpile(fileName, source);
+            var newFileName = fileName switch
+            {
+                _ when fileName.EndsWith(".mjs") => PathUtils.ChangeExtension(fileName, "js"),
+                _ when fileName.EndsWith(".mts") => PathUtils.ChangeExtension(fileName, "ts"),
+                _ when fileName.EndsWith(".mtsx") => PathUtils.ChangeExtension(fileName, "tsx"),
+                _ => fileName // Preserve all other extensions
+            };
+
+            var result = compiler.Transpile(newFileName, source);
             if (result.Diagnostics != null)
             {
                 info.ReportDiag(result.Diagnostics);
@@ -1176,6 +1184,7 @@ public class BuildModuleCtx : IImportResolver
             {
                 info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
                 info.MapLink = SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath);
+                info.MapLink.sources = [fileName];
             }
         }
         finally

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Fix compatibility with TypeScript 5.6 and mjs/mts/mtsx files.
+
 ## 4.9.2
 
 ### Fixed
