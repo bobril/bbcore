@@ -184,7 +184,7 @@ public static class SimpleYamlTokenizer
                 yield return BuildToken(TokenTypes.ObjectEnd);
                 chop++;
             }
-            else if (new Regex("^[0-9a-zA-Z\\.@/-]").IsMatch(input))
+            else if (new Regex("^[0-9a-zA-Z^\\.@/-]").IsMatch(input))
             {
                 var name = "";
                 foreach (var ch in input)
