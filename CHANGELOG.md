@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.9.4
+
 ### Fixed
 
 More fixes around mjs files. Pnpm yaml parser precision.
