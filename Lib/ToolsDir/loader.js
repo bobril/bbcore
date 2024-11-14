@@ -47,7 +47,7 @@ R.r = function (name, parent) {
     var lp = p.toLowerCase();
     var m = R.m.get(lp);
     var lp2;
-    if (m == null && (lp2 = lp.replace(/\.[jt]sx?$/, "")) != lp) {
+    if (m == null && (lp2 = lp.replace(/\.[mc]?[jt]sx?$/, "")) != lp) {
         m = R.m.get(lp2);
     }
     if (m == null) {

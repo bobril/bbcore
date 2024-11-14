@@ -45,9 +45,10 @@ public class BuildModuleCtx : IImportResolver
         return name.EndsWith(".ts") || name.EndsWith(".tsx");
     }
 
-    static bool IsTsOrTsxOrJsOrJsx(ReadOnlySpan<char> name)
+    static bool IsTsOrJsWithAllCombinations(ReadOnlySpan<char> name)
     {
-        return name.EndsWith(".ts") || name.EndsWith(".tsx") || name.EndsWith(".js") || name.EndsWith(".jsx");
+        return name.EndsWith(".ts") || name.EndsWith(".tsx") || name.EndsWith(".js") || name.EndsWith(".jsx") ||
+               name.EndsWith(".mjs") || name.EndsWith(".mjsx") || name.EndsWith(".cjs") || name.EndsWith(".cjsx");
     }
 
     static bool IsMdxb(ReadOnlySpan<char> name)
@@ -330,7 +331,7 @@ public class BuildModuleCtx : IImportResolver
                     }
                     // else implementation for .d.ts file does not have same name, it needs to be added to build by b.asset("lib.js") and cannot have dependencies
                 }
-                else if (IsTsOrTsxOrJsOrJsx(item.Name))
+                else if (IsTsOrJsWithAllCombinations(item.Name))
                 {
                     CheckAdd(item.FullPath,
                         IsTsOrTsx(item.Name) ? FileCompilationType.TypeScript :
@@ -771,10 +772,23 @@ public class BuildModuleCtx : IImportResolver
                 else
                 {
                     var ext = PathUtils.GetExtension(fileName);
-                    if (ext.SequenceEqual("css")) info.Type = FileCompilationType.Css;
-                    else if (ext.SequenceEqual("scss")) info.Type = FileCompilationType.Scss;
-                    else if (ext.SequenceEqual("js") || ext.SequenceEqual("jsx"))
-                        info.Type = FileCompilationType.EsmJavaScript;
+                    switch (ext)
+                    {
+                        case "css":
+                            info.Type = FileCompilationType.Css;
+                            break;
+                        case "scss":
+                            info.Type = FileCompilationType.Scss;
+                            break;
+                        case "js":
+                        case "jsx":
+                        case "mjs":
+                        case "mjsx":
+                        case "cjs":
+                        case "cjsx":
+                            info.Type = FileCompilationType.EsmJavaScript;
+                            break;
+                    }
                 }
             }
 
