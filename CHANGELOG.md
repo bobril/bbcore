@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Fixed
+
+Another bug in TypeScript 5.6 support.
+
+### Changed
+
+- Default TypeScript version is 5.6.3
+
 ## 4.9.4
 
 ### Fixed

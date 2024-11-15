@@ -27,7 +27,7 @@ namespace Lib.TSCompiler;
 
 public class ProjectOptions
 {
-    public const string DefaultTypeScriptVersion = "5.2.2";
+    public const string DefaultTypeScriptVersion = "5.6.3";
 
     public IToolsDir Tools;
     public TSProject Owner;
@@ -249,7 +249,7 @@ public class ProjectOptions
         }
 
         var nodeModulesDir = Owner.Owner.FullPath;
-        while (nodeModulesDir.Length > 0)
+        while (nodeModulesDir.Length > 1)
         {
             if (Owner.DiskCache.TryGetItem(nodeModulesDir + "/node_modules") is IDirectoryCache dc && !dc.IsInvalid)
             {

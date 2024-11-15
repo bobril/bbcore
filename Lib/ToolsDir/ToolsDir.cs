@@ -20,7 +20,7 @@ public class ToolsDir : IToolsDir
     static readonly object lockInitialization = new();
 
     static readonly object _lock = new();
-    
+
     readonly IFsAbstraction _fsAbstraction;
 
     public ToolsDir(string dir, ILogger logger, IFsAbstraction fsAbstraction)
@@ -56,7 +56,8 @@ public class ToolsDir : IToolsDir
             JasmineCoreJs299 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine299.js");
             JasmineDts299 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine299.d.ts");
             JasmineDtsPath299 = PathUtils.Join(Path, "jasmine.d.ts");
-            if (!fsAbstraction.FileExists(JasmineDtsPath299) || fsAbstraction.ReadAllUtf8(JasmineDtsPath299) != JasmineDts299)
+            if (!fsAbstraction.FileExists(JasmineDtsPath299) ||
+                fsAbstraction.ReadAllUtf8(JasmineDtsPath299) != JasmineDts299)
                 fsAbstraction.WriteAllUtf8(JasmineDtsPath299, JasmineDts299);
             JasmineBootJs299 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine-boot299.js");
             JasmineBootJs330 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine-boot330.js");
@@ -67,14 +68,17 @@ public class ToolsDir : IToolsDir
             JasmineDts400 = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.jasmine400.d.ts");
             JasmineDtsPath330 = PathUtils.Join(Path, "jasmine330.d.ts");
             JasmineDtsPath400 = PathUtils.Join(Path, "jasmine400.d.ts");
-            if (!fsAbstraction.FileExists(JasmineDtsPath330) || fsAbstraction.ReadAllUtf8(JasmineDtsPath330) != JasmineDts330)
+            if (!fsAbstraction.FileExists(JasmineDtsPath330) ||
+                fsAbstraction.ReadAllUtf8(JasmineDtsPath330) != JasmineDts330)
                 fsAbstraction.WriteAllUtf8(JasmineDtsPath330, JasmineDts330);
-            if (!fsAbstraction.FileExists(JasmineDtsPath400) || fsAbstraction.ReadAllUtf8(JasmineDtsPath400) != JasmineDts400)
+            if (!fsAbstraction.FileExists(JasmineDtsPath400) ||
+                fsAbstraction.ReadAllUtf8(JasmineDtsPath400) != JasmineDts400)
                 fsAbstraction.WriteAllUtf8(JasmineDtsPath400, JasmineDts400);
 
             WebtZip = ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.webt.zip");
             WebZip = ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.web.zip");
-            CoverageDetailsVisualizerZip = ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.CoverageDetailsVisualizer.zip");
+            CoverageDetailsVisualizerZip =
+                ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.CoverageDetailsVisualizer.zip");
 
             _localeDefs = JObject.Parse(ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.localeDefs.json"));
             LiveReloadJs = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.liveReload.js");
@@ -158,6 +162,26 @@ public class ToolsDir : IToolsDir
 
                 // Remove too defensive check for TS2742 - it is ok in Bobril-build to have relative paths into node_modules when in sandboxes
                 _typeScriptJsContent = _typeScriptJsContent.Replace(".indexOf(\"/node_modules/\") >= 0", "===null");
+
+                // Patch TS to generate also setter for reexported nodes
+                var patchPos = _typeScriptJsContent.IndexOf(
+                    "function createExportExpression(name, value, location, liveBinding)", StringComparison.Ordinal);
+                var patchPos2 = patchPos < 0
+                    ? -1
+                    : _typeScriptJsContent.IndexOf("createReturnStatement(value)])", patchPos,
+                        StringComparison.Ordinal);
+                var patchPos3 = patchPos2 < 0
+                    ? -1
+                    : _typeScriptJsContent.IndexOf(")", patchPos2 + "createReturnStatement(value)])".Length,
+                        StringComparison.Ordinal);
+                var patchPos4 = patchPos3 < 0
+                    ? -1
+                    : _typeScriptJsContent.IndexOf(")", patchPos3 + 1, StringComparison.Ordinal);
+                if (patchPos4 > 0)
+                {
+                    _typeScriptJsContent = _typeScriptJsContent.Insert(patchPos4 + 1,
+                        ",factory2.createPropertyAssignment(\n              \"set\",\n              factory2.createFunctionExpression(\n                /*modifiers*/\n                void 0,\n                /*asteriskToken*/\n                void 0,\n                /*name*/\n                void 0,\n                /*typeParameters*/\n                void 0,\n                /*parameters*/\n                [factory2.createParameterDeclaration(void 0, void 0, factory2.createIdentifier(\"v\"))],\n                /*type*/\n                void 0,\n                factory2.createBlock([factory2.createAssignment(value, factory2.createIdentifier(\"v\"))])\n              )\n            )\n");
+                }
             }
 
             return _typeScriptJsContent;

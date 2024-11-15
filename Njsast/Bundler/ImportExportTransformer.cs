@@ -22,21 +22,21 @@ public class ImportExportTransformer : TreeTransformer
         switch (node)
         {
             case AstCall _ when node.IsRequireCall() is { } reqName:
+            {
+                var resolvedName = _resolver(_sourceFile.Name, reqName);
+                if (resolvedName == IBundlerCtx.LeaveAsExternal)
                 {
-                    var resolvedName = _resolver(_sourceFile.Name, reqName);
-                    if (resolvedName == IBundlerCtx.LeaveAsExternal)
-                    {
-                        _sourceFile.ExternalImports.AddUnique(reqName);
-                        return new() { File = reqName, Path = Array.Empty<string>() };
-                    }
+                    _sourceFile.ExternalImports.AddUnique(reqName);
+                    return new() { File = reqName, Path = Array.Empty<string>() };
+                }
 
-                    _sourceFile.Requires.AddUnique(resolvedName);
-                    return new() { File = resolvedName, Path = Array.Empty<string>() };
-                }
+                _sourceFile.Requires.AddUnique(resolvedName);
+                return new() { File = resolvedName, Path = Array.Empty<string>() };
+            }
             case AstCall { Expression: AstSymbolRef { Name: "__importDefault" } } astCall:
-                {
-                    return DetectImport(astCall.Args[0]);
-                }
+            {
+                return DetectImport(astCall.Args[0]);
+            }
             case AstSymbolRef symbolRef when _reqSymbolDefMap.TryGetValue(symbolRef.Thedef!, out var res):
                 return res;
             case AstPropAccess { PropertyAsString: { } propName } propAccess
@@ -121,25 +121,27 @@ public class ImportExportTransformer : TreeTransformer
                 //    get: function() {
                 //      return SomeImportDotPath;
                 //    }
+                //    set: function(value) {
+                //      SomeImportDotPath = value;
+                //    }
                 // });
                 if (call.Expression is AstDot astDot &&
                     astDot.Expression.IsSymbolDef().IsGlobalSymbol() == "Object" &&
                     astDot.PropertyAsString == "defineProperty"
-                    && call.Args.Count == 3 && call.Args[0].IsSymbolDef().IsExportsSymbol() &&
+                    && call.Args.Count is 3 && call.Args[0].IsSymbolDef().IsExportsSymbol() &&
                     call.Args[1] is AstString exportName &&
                     call.Args[2] is AstObject
                     {
-                        Properties:
+                        Properties: { Count: 2 or 3 } properties
+                    }
+                    && properties[1] is AstObjectProperty
+                    {
+                        Value: AstLambda
                         {
-                            Count: 2, Last: AstObjectProperty
-                            {
-                                Value: AstLambda
-                                {
-                                    Body.Last: AstReturn astRet
-                                }
-                            }
+                            Body.Last: AstReturn astRet
                         }
-                    } && DetectImport(astRet.Value) is { } bindPath)
+                    }
+                    && DetectImport(astRet.Value) is { } bindPath)
                 {
                     _sourceFile.SelfExports.Add(
                         new ReexportSelfExport(exportName.Value, bindPath.File, bindPath.Path,

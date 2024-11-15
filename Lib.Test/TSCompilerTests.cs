@@ -26,7 +26,7 @@ public class CompilerTests
     [Fact]
     public void DefaultTypeScriptVersionDidntChanged()
     {
-        Assert.Equal("5.2.2", _tools.TypeScriptVersion);
+        Assert.Equal("5.6.3", _tools.TypeScriptVersion);
     }
 
     [Fact]
