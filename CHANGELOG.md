@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.10.0
+
 ### Fixed
 
 Another bug in TypeScript 5.6 support.
