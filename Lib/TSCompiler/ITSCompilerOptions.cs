@@ -23,12 +23,9 @@ public enum JsxEmit
     None = 0,
     Preserve = 1,
     React = 2,
-    [EnumMember(Value = "react-native")]
-    ReactNative = 3,
-    [EnumMember(Value = "react-jsx")]
-    ReactJsx = 4,
-    [EnumMember(Value = "react-jsxdev")]
-    ReactJsxDev = 5,
+    [EnumMember(Value = "react-native")] ReactNative = 3,
+    [EnumMember(Value = "react-jsx")] ReactJsx = 4,
+    [EnumMember(Value = "react-jsxdev")] ReactJsxDev = 5,
 }
 
 public enum ModuleResolutionKind
@@ -43,10 +40,8 @@ public enum ModuleResolutionKind
 
 public enum NewLineKind
 {
-    [EnumMember(Value = "crlf")]
-    CarriageReturnLineFeed = 0,
-    [EnumMember(Value = "lf")]
-    LineFeed = 1,
+    [EnumMember(Value = "crlf")] CarriageReturnLineFeed = 0,
+    [EnumMember(Value = "lf")] LineFeed = 1,
 }
 
 public enum ScriptTarget
@@ -133,11 +128,13 @@ public interface ITSCompilerOptions
     ScriptTarget? target { get; set; }
     bool? traceResolution { get; set; }
     IList<string>? types { get; set; }
+
     /** Paths used to compute primary types search locations */
     IList<string>? typeRoots { get; set; }
+
     bool? useUnknownInCatchVariables { get; set; }
     bool? resolveJsonModule { get; set; }
 
     ITSCompilerOptions Clone();
-    ITSCompilerOptions Merge(ITSCompilerOptions withInterface);
+    ITSCompilerOptions Merge(ITSCompilerOptions? withInterface);
 }

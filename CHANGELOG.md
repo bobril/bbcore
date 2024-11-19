@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Changed
+
+Tsconfig.json is now generated with all files in project, so tsc could be used for TypeChecking.
+
+Attempt to modify V8 settings to allow to use more memory.
+
 ### Added
 
 New option to disable type checking in test command. `bb test -t no`

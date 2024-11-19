@@ -39,7 +39,7 @@ public class ToolsDir : IToolsDir
                 {
                     jsEngineSwitcher.EngineFactories.Add(
                         new JavaScriptEngineSwitcher.V8.V8JsEngineFactory(
-                            new() { DisableGlobalMembers = false }));
+                            new() { DisableGlobalMembers = false, HeapExpansionMultiplier = 1.5 }));
                     jsEngineSwitcher.DefaultEngineName =
                         JavaScriptEngineSwitcher.V8.V8JsEngine.EngineName;
                     /*jsEngineSwitcher.EngineFactories.Add(

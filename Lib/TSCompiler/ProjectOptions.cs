@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reactive;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BTDB.Collections;
@@ -28,6 +26,7 @@ namespace Lib.TSCompiler;
 public class ProjectOptions
 {
     public const string DefaultTypeScriptVersion = "5.6.3";
+    public const string DefaultTestRegex = @"^.*?(?:\.s|S)pec(?:\.d)?\.ts(?:x)?$";
 
     public IToolsDir Tools;
     public TSProject Owner;
@@ -60,8 +59,8 @@ public class ProjectOptions
 
     public Dictionary<string, string> ExpandedProcessEnvs;
     public Dictionary<string, AstNode> ExpandedDefines;
-    public string MainFile;
-    public string JasmineDts;
+    public string? MainFile;
+    public string? JasmineDts;
     public List<string>? TestSources;
     public List<string>? ExampleSources;
     public bool LiveReloadEnabled;
@@ -410,9 +409,34 @@ public class ProjectOptions
             compilerOptions = GetDefaultTSCompilerOptions()
                 .Merge(new TSCompilerOptions { allowJs = false })
                 .Merge(CompilerOptions),
-            files = new(2 + IncludeSources?.Length ?? 0),
-            include = new() { "**/*" }
+            files = new(),
+            include = new(6)
         };
+
+        if (MainFile != null)
+        {
+            newConfigObject.files.Add(MainFile);
+        }
+
+        if (ExampleSources != null)
+        {
+            newConfigObject.files.AddRange(ExampleSources);
+        }
+
+        if (TestSourcesRegExp == DefaultTestRegex && TestDirectories == null)
+        {
+            newConfigObject.include.Add("**/*.spec.ts");
+            newConfigObject.include.Add("**/*.spec.tsx");
+            newConfigObject.include.Add("**/*.spec.d.ts");
+            newConfigObject.include.Add("**/*Spec.ts");
+            newConfigObject.include.Add("**/*Spec.tsx");
+            newConfigObject.include.Add("**/*Spec.d.ts");
+        }
+        else
+        {
+            if ((TestSources?.Count ?? 0) > 0)
+                newConfigObject.files.AddRange(TestSources!);
+        }
 
         if ((TestSources?.Count ?? 0) > 0)
         {
@@ -429,7 +453,7 @@ public class ProjectOptions
 
         if (newConfigObject.files.Count == 0)
         {
-            newConfigObject.files = null;
+            newConfigObject.files = null!;
         }
 
         var newContent = JsonConvert.SerializeObject(newConfigObject, Formatting.Indented,
@@ -479,7 +503,7 @@ public class ProjectOptions
         }
 
         Localize = Owner.Dependencies?.Contains("bobril-g11n") ?? false;
-        TestSourcesRegExp = "^.*?(?:\\.s|S)pec(?:\\.d)?\\.ts(?:x)?$";
+        TestSourcesRegExp = DefaultTestRegex;
         if (parsed?.GetValue("publishConfig") is JObject publishConfigSection)
         {
             NpmRegistry = publishConfigSection.Value<string>("registry");
