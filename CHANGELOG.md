@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+New option to disable type checking in test command. `bb test -t no`
+
 ## 4.10.0
 
 ### Fixed

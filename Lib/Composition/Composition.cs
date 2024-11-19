@@ -875,7 +875,7 @@ public class Composition
             if (proj.TestSources is { Count: > 0 })
             {
                 var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath,
-                    _buildCache, "yes");
+                    _buildCache, testCommand.TypeCheck.Value!);
                 ctx.Build(proj, true, testBuildResult, _mainBuildResult, 1);
                 ctx.BuildSubProjects(proj, true, testBuildResult, _mainBuildResult, 1);
                 var fastBundle = new FastBundleBundler(_tools, _mainBuildResult, proj, testBuildResult);
