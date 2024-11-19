@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.11.0
+
 ### Changed
 
 Tsconfig.json is now generated with all files in project, so tsc could be used for TypeChecking.
