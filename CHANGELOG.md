@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.12.0
+
 ### Fixed
 
 Removed strange old feature ignoring d.ts when ts file is present, making it inline with tsc behaviour.
