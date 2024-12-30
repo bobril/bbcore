@@ -415,7 +415,7 @@ public class ProjectOptions
 
         if (MainFile != null)
         {
-            newConfigObject.files.Add(MainFile);
+            newConfigObject.files.Add(PathUtils.Subtract(MainFile, Owner.Owner.FullPath));
         }
 
         if (ExampleSources != null)

@@ -65,8 +65,8 @@ public class TsCompiler : ITSCompiler
             //_owner.Logger.Info("getChangeId " + fileName);
             var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
             var file = _owner.DiskCache.TryGetItem(fullPath);
-            if (FileExistsIgnoreDtsIfTsExists(file))
-                return file.ChangeId;
+            if (FileExists(file))
+                return file!.ChangeId;
             return null;
         }
 
@@ -89,7 +89,7 @@ public class TsCompiler : ITSCompiler
             //_owner.Logger.Info("dirExists " + directoryPath);
             var fullPath = PathUtils.Join(_owner._currentDirectory, directoryPath);
             var dir = _owner.DiskCache.TryGetItem(fullPath) as IDirectoryCache;
-            return dir != null && !dir.IsInvalid;
+            return dir is { IsInvalid: false };
         }
 
         public bool fileExists(string fileName)
@@ -97,23 +97,26 @@ public class TsCompiler : ITSCompiler
             //_owner.Logger.Info("fileExists " + fileName);
             var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
             var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
-            return FileExistsIgnoreDtsIfTsExists(file);
+            return FileExists(file);
         }
 
-        static bool FileExistsIgnoreDtsIfTsExists(IItemCache file)
+        static bool FileExists(IItemCache? file)
         {
             if (file == null || file.IsInvalid)
             {
                 return false;
             }
 
+            return true;
+            /* probably not needed to ignore d.ts files if ts file exists
             if (!file.IsFile || !file.Name.EndsWith(".d.ts", StringComparison.Ordinal)) return true;
-            var nameImpl = file.Name.Substring(0, file.Name.Length - 5) + ".ts";
-            var file2 = file.Parent.TryGetChild(nameImpl);
-            if (file2 != null && !file2.IsInvalid)
+            var nameImpl = file.Name[..^5] + ".ts";
+            var file2 = file.Parent!.TryGetChild(nameImpl);
+            if (file2 is { IsInvalid: false })
                 return false;
             file2 = file.Parent.TryGetChild(nameImpl + "x");
             return file2 == null || file2.IsInvalid;
+            */
         }
 
         public string getDirectories(string directoryPath)
