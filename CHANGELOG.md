@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+`bb js globals` command was broken.
+
 ## 4.12.0
 
 ### Fixed

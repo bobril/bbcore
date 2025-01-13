@@ -387,7 +387,7 @@ public class Composition
         string inputSource;
         try
         {
-            inputSource = _dc.FsAbstraction.ReadAllUtf8(jsGlobalsCommand.FileName.Value!);
+            inputSource = _fsAbstraction.ReadAllUtf8(jsGlobalsCommand.FileName.Value!);
         }
         catch (Exception e)
         {
