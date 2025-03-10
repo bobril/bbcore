@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.13.0
+
 ### Added
 
 New bobril/.bbrc options: `include`, `exclude`, `files`. They have same meaning as in `tsconfig.json`. If you define
