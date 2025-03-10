@@ -114,8 +114,8 @@ static class Program
                 releaseLogLines.RemoveAt(releaseLogLines.Count - 1);
             outputLogLines.Insert(topVersionLine + 1, "## " + newVersion);
             outputLogLines.Insert(topVersionLine + 1, "");
-            if (Directory.Exists(projDir + "/bb/bin/Release/net8.0"))
-                Directory.Delete(projDir + "/bb/bin/Release/net8.0", true);
+            if (Directory.Exists(projDir + "/bb/bin/Release/net9.0"))
+                Directory.Delete(projDir + "/bb/bin/Release/net9.0", true);
             await UpdateCsProj(projDir, newVersion);
             BuildNuget(projDir, newVersion, nugetToken);
             foreach (var rid in Rids)
@@ -246,7 +246,7 @@ static class Program
             {
                 return await client.Repository.Release.UploadAsset(release2,
                     new(fileName, "application/zip",
-                        File.OpenRead(projDir + "/bb/bin/Release/net8.0/" + fileName), TimeSpan.FromMinutes(14)));
+                        File.OpenRead(projDir + "/bb/bin/Release/net9.0/" + fileName), TimeSpan.FromMinutes(14)));
             }
             catch (Exception)
             {
@@ -268,27 +268,27 @@ static class Program
         };
         var process = Process.Start(start);
         process!.WaitForExit();
-        if (Directory.Exists(projDir + $"/bb/bin/Release/net8.0/{rid}/publish/ru-ru"))
+        if (Directory.Exists(projDir + $"/bb/bin/Release/net9.0/{rid}/publish/ru-ru"))
         {
-            Directory.Delete(projDir + $"/bb/bin/Release/net8.0/{rid}/publish/ru-ru", true);
+            Directory.Delete(projDir + $"/bb/bin/Release/net9.0/{rid}/publish/ru-ru", true);
         }
 
         if (!rid.StartsWith("win"))
         {
-            if (Directory.Exists(projDir + $"/bb/bin/Release/net8.0/{rid}/publish/Resources"))
+            if (Directory.Exists(projDir + $"/bb/bin/Release/net9.0/{rid}/publish/Resources"))
             {
-                Directory.Delete(projDir + $"/bb/bin/Release/net8.0/{rid}/publish/Resources", true);
+                Directory.Delete(projDir + $"/bb/bin/Release/net9.0/{rid}/publish/Resources", true);
             }
         }
 
         if (rid == "osx-arm64")
         {
-            File.Copy(projDir +"/tools/Releaser/Releaser/OsxArm64/bb", projDir + $"/bb/bin/Release/net8.0/{rid}/publish/bb", true);
+            File.Copy(projDir +"/tools/Releaser/Releaser/OsxArm64/bb", projDir + $"/bb/bin/Release/net9.0/{rid}/publish/bb", true);
             Console.WriteLine("Overwritten Osx Arm64 bb to be signed");
         }
 
-        System.IO.Compression.ZipFile.CreateFromDirectory(projDir + $"/bb/bin/Release/net8.0/{rid}/publish",
-            projDir + $"/bb/bin/Release/net8.0/{ToZipName(rid)}.zip", System.IO.Compression.CompressionLevel.Optimal,
+        System.IO.Compression.ZipFile.CreateFromDirectory(projDir + $"/bb/bin/Release/net9.0/{rid}/publish",
+            projDir + $"/bb/bin/Release/net9.0/{ToZipName(rid)}.zip", System.IO.Compression.CompressionLevel.Optimal,
             false);
     }
 

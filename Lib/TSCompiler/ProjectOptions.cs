@@ -372,6 +372,9 @@ public class ProjectOptions
     public bool ForbiddenDependencyUpdate;
     public CoverageInstrumentation? CoverageInstrumentation;
     public Dictionary<string, string>? Assets;
+    public IList<string>? Include;
+    public IList<string>? Exclude;
+    public IList<string>? Files;
 
     public void UpdateTSConfigJson()
     {
@@ -413,42 +416,68 @@ public class ProjectOptions
             include = new(6)
         };
 
-        if (MainFile != null)
+        if (Include != null)
         {
-            newConfigObject.files.Add(PathUtils.Subtract(MainFile, Owner.Owner.FullPath));
-        }
-
-        if (ExampleSources != null)
-        {
-            newConfigObject.files.AddRange(ExampleSources);
-        }
-
-        if (TestSourcesRegExp == DefaultTestRegex && TestDirectories == null)
-        {
-            newConfigObject.include.Add("**/*.spec.ts");
-            newConfigObject.include.Add("**/*.spec.tsx");
-            newConfigObject.include.Add("**/*.spec.d.ts");
-            newConfigObject.include.Add("**/*Spec.ts");
-            newConfigObject.include.Add("**/*Spec.tsx");
-            newConfigObject.include.Add("**/*Spec.d.ts");
+            newConfigObject.include.AddRange(Include);
+            if (Files != null)
+            {
+                newConfigObject.files.AddRange(Files);
+            }
+            else
+            {
+                if ((TestSources?.Count ?? 0) > 0)
+                {
+                    if (Tools.JasmineDtsPath == JasmineDts)
+                    {
+                        newConfigObject.files.Add(Tools.JasmineDtsPath);
+                    }
+                }
+            }
         }
         else
         {
-            if ((TestSources?.Count ?? 0) > 0)
-                newConfigObject.files.AddRange(TestSources!);
-        }
-
-        if ((TestSources?.Count ?? 0) > 0)
-        {
-            if (Tools.JasmineDtsPath == JasmineDts)
+            if (MainFile != null)
             {
-                newConfigObject.files.Add(Tools.JasmineDtsPath);
+                newConfigObject.files.Add(PathUtils.Subtract(MainFile, Owner.Owner.FullPath));
+            }
+
+            if (ExampleSources != null)
+            {
+                newConfigObject.files.AddRange(ExampleSources);
+            }
+
+            if (TestSourcesRegExp == DefaultTestRegex && TestDirectories == null)
+            {
+                newConfigObject.include.Add("**/*.spec.ts");
+                newConfigObject.include.Add("**/*.spec.tsx");
+                newConfigObject.include.Add("**/*.spec.d.ts");
+                newConfigObject.include.Add("**/*Spec.ts");
+                newConfigObject.include.Add("**/*Spec.tsx");
+                newConfigObject.include.Add("**/*Spec.d.ts");
+            }
+            else
+            {
+                if ((TestSources?.Count ?? 0) > 0)
+                    newConfigObject.files.AddRange(TestSources!);
+            }
+
+            if ((TestSources?.Count ?? 0) > 0)
+            {
+                if (Tools.JasmineDtsPath == JasmineDts)
+                {
+                    newConfigObject.files.Add(Tools.JasmineDtsPath);
+                }
+            }
+
+            if (IncludeSources != null)
+            {
+                newConfigObject.files.AddRange(IncludeSources);
             }
         }
 
-        if (IncludeSources != null)
+        if (Exclude != null)
         {
-            newConfigObject.files.AddRange(IncludeSources);
+            newConfigObject.exclude = Exclude;
         }
 
         if (newConfigObject.files.Count == 0)
@@ -537,6 +566,9 @@ public class ProjectOptions
         IncludeSources = bbOptions.includeSources?.ToArray();
         if (bbOptions.ignoreDiagnostic != null)
             IgnoreDiagnostic = new(bbOptions.ignoreDiagnostic);
+        Include = bbOptions.include;
+        Exclude = bbOptions.exclude;
+        Files = bbOptions.files;
         GenerateSpritesTs = bbOptions.GenerateSpritesTs ?? false;
         WarningsAsErrors = bbOptions.warningsAsErrors ?? false;
         ObsoleteMessage = bbOptions.obsolete;

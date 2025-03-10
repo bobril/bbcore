@@ -2,6 +2,13 @@
 
 ## [unreleased]
 
+### Added
+
+New bobril/.bbrc options: `include`, `exclude`, `files`. They have same meaning as in `tsconfig.json`. If you define
+`include` it will overwrite any currently generated (including files, except jasmine.d.ts).
+
+Updated all dependencies. And moved to .Net 9.
+
 ## 4.12.1
 
 ### Fixed
@@ -98,8 +105,6 @@ Tried to decrease memory consumption of type checks.
 New subcommand `bb js locate https://example.com/something.js:123:456`. It will download that file, beautify it, save it
 into a.js and print code -g command line to open that file on that location. It could be also just path to javascript
 file like `bb js locate my.js:12:34`.
-
-````sh
 
 ## 4.6.4
 
@@ -296,7 +301,7 @@ Reverting default for target to ES2019.
       "es2022", "dom"
     ]
   },
-````
+```
 
 ### Added
 

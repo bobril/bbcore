@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <RuntimeIdentifiers>linux-x64;win-x64;osx-x64</RuntimeIdentifiers>
         <Nullable>enable</Nullable>
@@ -18,15 +18,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="Bundler\JsHeaders\import.js" />
-      <EmbeddedResource Include="Bundler\JsHeaders\import.js" />
-      <None Remove="Bundler\JsHeaders\tslib.js" />
-      <EmbeddedResource Include="Bundler\JsHeaders\tslib.js" />
+        <None Remove="Bundler\JsHeaders\import.js"/>
+        <EmbeddedResource Include="Bundler\JsHeaders\import.js"/>
+        <None Remove="Bundler\JsHeaders\tslib.js"/>
+        <EmbeddedResource Include="Bundler\JsHeaders\tslib.js"/>
     </ItemGroup>
 
 </Project>

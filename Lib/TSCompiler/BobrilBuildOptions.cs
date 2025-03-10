@@ -18,6 +18,9 @@ public class BobrilBuildOptions
     public ITSCompilerOptions? compilerOptions { get; set; }
     public string? dependencies { get; set; }
     public IList<string>? includeSources { get; set; }
+    public IList<string>? files { get; set; }
+    public IList<string>? include { get; set; }
+    public IList<string>? exclude { get; set; }
     public IList<int>? ignoreDiagnostic { get; set; }
     public bool? GenerateSpritesTs { get; set; } // plugins.bb-assets-generator-plugin.generateSpritesFile
     public bool? warningsAsErrors { get; set; }
@@ -59,11 +62,19 @@ public class BobrilBuildOptions
         if (with.additionalResourcesDirectory != null)
             additionalResourcesDirectory = with.additionalResourcesDirectory;
         if (with.compilerOptions != null)
-            compilerOptions = compilerOptions != null ? compilerOptions.Merge(with.compilerOptions) : with.compilerOptions;
+            compilerOptions = compilerOptions != null
+                ? compilerOptions.Merge(with.compilerOptions)
+                : with.compilerOptions;
         if (with.dependencies != null)
             dependencies = with.dependencies;
         if (with.includeSources != null)
             includeSources = with.includeSources;
+        if (with.include != null)
+            include = with.include;
+        if (with.exclude != null)
+            exclude = with.exclude;
+        if (with.files != null)
+            files = with.files;
         if (with.ignoreDiagnostic != null)
             ignoreDiagnostic = with.ignoreDiagnostic;
         if (with.GenerateSpritesTs != null)
@@ -87,7 +98,7 @@ public class BobrilBuildOptions
         if (with.defines != null)
         {
             if (defines != null)
-                foreach (var (k,v) in with.defines)
+                foreach (var (k, v) in with.defines)
                 {
                     defines[k] = v;
                 }
@@ -98,7 +109,7 @@ public class BobrilBuildOptions
         if (with.envs != null)
         {
             if (envs != null)
-                foreach (var (k,v) in with.envs)
+                foreach (var (k, v) in with.envs)
                 {
                     envs[k] = v;
                 }
@@ -109,14 +120,14 @@ public class BobrilBuildOptions
         if (with.imports != null)
         {
             if (imports != null)
-                foreach (var (k,v) in with.imports)
+                foreach (var (k, v) in with.imports)
                 {
                     imports[k] = v;
                 }
             else
                 imports = with.imports;
         }
-        
+
         if (with.preserveProjectRoot != null)
             preserveProjectRoot = with.preserveProjectRoot;
         if (with.proxyUrl != null)
@@ -133,7 +144,7 @@ public class BobrilBuildOptions
     static string? GetStringProperty(JObject? obj, string name)
     {
         if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
-            return (string) value!;
+            return (string)value!;
         return null;
     }
 
@@ -160,9 +171,12 @@ public class BobrilBuildOptions
             GetStringProperty(bobrilSection, "additionalResourcesDirectory");
         compilerOptions = TSCompilerOptions.Parse(bobrilSection!.GetValue("compilerOptions") as JObject);
         dependencies = GetStringProperty(bobrilSection, "dependencies");
-        var includeSourcesJson = bobrilSection.GetValue("includeSources") as JArray;
-        includeSources = includeSourcesJson?.Select(i => i.ToString()).ToArray();
-        if (bobrilSection.GetValue("ignoreDiagnostic") is JArray ignoreDiagnosticJson)
+        includeSources = (bobrilSection.GetValue(nameof(includeSources)) as JArray)?.Select(i => i.ToString())
+            .ToArray();
+        include = (bobrilSection.GetValue(nameof(include)) as JArray)?.Select(i => i.ToString()).ToArray();
+        exclude = (bobrilSection.GetValue(nameof(exclude)) as JArray)?.Select(i => i.ToString()).ToArray();
+        files = (bobrilSection.GetValue(nameof(files)) as JArray)?.Select(i => i.ToString()).ToArray();
+        if (bobrilSection.GetValue(nameof(ignoreDiagnostic)) is JArray ignoreDiagnosticJson)
             ignoreDiagnostic = ignoreDiagnosticJson.Select(i => i.Value<int>()).ToArray();
         var pluginsSection = bobrilSection.GetValue("plugins") as JObject;
         GenerateSpritesTs =
@@ -212,6 +226,7 @@ public class BobrilBuildOptions
         {
             // ignored
         }
+
         pathToTranslations = GetStringProperty(bobrilSection, "pathToTranslations");
 
         try
@@ -227,11 +242,11 @@ public class BobrilBuildOptions
         defines = (bobrilSection.GetValue("defines") as JObject)?
             .Select<KeyValuePair<string, JToken?>, KeyValuePair<string, string>>(kv =>
                 KeyValuePair.Create(kv.Key, kv.Value?.ToString() ?? ""))?
-            .ToDictionary(kv=>kv.Key,kv=>kv.Value);
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
         envs = (bobrilSection.GetValue("envs") as JObject)?
             .Select<KeyValuePair<string, JToken?>, KeyValuePair<string, string>>(kv =>
                 KeyValuePair.Create(kv.Key, kv.Value?.ToString() ?? ""))?
-            .ToDictionary(kv=>kv.Key,kv=>kv.Value);
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
         try
         {
             preserveProjectRoot = bobrilSection["preserveProjectRoot"]?.Value<bool>();
@@ -261,6 +276,7 @@ public class BobrilBuildOptions
                 assets.Add(key, value.Value<string>()!);
             }
         }
+
         if (bobrilSection.GetValue("imports") is JObject importsJson)
         {
             foreach (var (key, value) in importsJson)

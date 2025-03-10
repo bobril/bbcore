@@ -10,13 +10,19 @@ Rewrite of bobril-build to .Net. Mainly for speed reasons. It now replaced origi
 
 # What to do when bb failing to start for first time because Github rate limit
 
-Github by default has limit of 60 anonymous requests per hour from one IP. So if it fails you have 2 options, wait or provide token to authenticate as yourself. First read [https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/] how to create your token. Token can have just read only rights, you don't need to select any scopes. Then you can either store it into your user profile directory in .github/token.txt file or set environment variable GITHUB_TOKEN.
+Github by default has limit of 60 anonymous requests per hour from one IP. So if it fails you have 2 options, wait or
+provide token to authenticate as yourself. First
+read [https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/] how to create your token.
+Token can have just read only rights, you don't need to select any scopes. Then you can either store it into your user
+profile directory in .github/token.txt file or set environment variable GITHUB_TOKEN.
 
 # How to override used version
 
 By default prerelease versions are not used.
 
-In `.bbrc` file set `bbVersion` to specific version you need. By setting `tsVersion` you can override used TypeScript for compilation. By setting `jasmineVersion` you can override Jasmine version only allowed values are "2.99" (default) and "3.3".
+In `.bbrc` file set `bbVersion` to specific version you need. By setting `tsVersion` you can override used TypeScript
+for compilation. By setting `jasmineVersion` you can override Jasmine version only allowed values are "2.99" (default)
+and "3.3".
 
     {
         "bbVersion": "2.10.0",
@@ -24,11 +30,13 @@ In `.bbrc` file set `bbVersion` to specific version you need. By setting `tsVers
         "jasmineVersion: "3.3"
     }
 
-By setting `BBVERSION` environment variable you can define default version (including prerelease). If you will start `bb2` instead of `bb`, then `BBVERSION` override what is in `.bbrc` or `package.json`.
+By setting `BBVERSION` environment variable you can define default version (including prerelease). If you will start
+`bb2` instead of `bb`, then `BBVERSION` override what is in `.bbrc` or `package.json`.
 
 # How to override where bb store its caches
 
-bb stores its cache in `user_home/.bbcore/tools` directory. In Docker it uses `/bbcache`. You can override it be defining `BBCACHEDIR` environmental variable.
+bb stores its cache in `user_home/.bbcore/tools` directory. In Docker it uses `/bbcache`. You can override it be
+defining `BBCACHEDIR` environmental variable.
 
 # How to use Docker version
 
@@ -58,7 +66,7 @@ bb stores its cache in `user_home/.bbcore/tools` directory. In Docker it uses `/
 # List of bobril-build specific warnings and errors
 
 | Number | Severity | Message                                                                                        |
-| ------ | -------- | ---------------------------------------------------------------------------------------------- |
+|--------|----------|------------------------------------------------------------------------------------------------|
 | -1     | Warn     | Local import has wrong casing                                                                  |
 | -2     | Warn     | Module import has wrong casing                                                                 |
 | -3     | Error    | Missing dependency                                                                             |
@@ -80,8 +88,13 @@ bb stores its cache in `user_home/.bbcore/tools` directory. In Docker it uses `/
 
 ## Define global constants and process.env
 
-global constants are defined using "defines" object. If `DEBUG` is not defined is it automatically defined as `DEBUG` build-in constant which is true in interactive, test modes and fast build mode. First are expanded all `defines`, than result of this expansion is input to `envs` expansion. In `envs` you define replacement for `process.env` object. If `NODE_ENV` is not defined is it automatically defined like in example below.
-Content must be always JavaScript expression with specially handled build-ins `DEBUG`, `env`, `file`. `env` is virtually object with system environment variables. `file` is virtually object with utf-8 content of all files where property name is file name relative to project root directory.
+global constants are defined using "defines" object. If `DEBUG` is not defined is it automatically defined as `DEBUG`
+build-in constant which is true in interactive, test modes and fast build mode. First are expanded all `defines`, than
+result of this expansion is input to `envs` expansion. In `envs` you define replacement for `process.env` object. If
+`NODE_ENV` is not defined is it automatically defined like in example below.
+Content must be always JavaScript expression with specially handled build-ins `DEBUG`, `env`, `file`. `env` is virtually
+object with system environment variables. `file` is virtually object with utf-8 content of all files where property name
+is file name relative to project root directory.
 
 ```JSON
 "defines": {
@@ -153,9 +166,32 @@ It is relative to project. Default is "translations".
 
 It checks only for existence of this `interactiveDumpsToDist` key, value does not matter for now.
 
+## Override generated tsconfig.json include
+
+    {
+        "include": [ "**/*" ]
+    }
+
+If you override include, it will also stop generating of tsconfig.json `files`.
+
+## Specify generated tsconfig.json exclude
+
+    {
+        "exclude": [ "node_modules" ]
+    }
+
+## Add generated tsconfig.json files
+
+    {
+        "files": [ "src/main.ts" ]
+    }
+
+If used together with `include` it will overwrite files in generated tsconfig.json.
+
 ## Where to find test sources
 
-By default it finds all tests in project directory (it always skips `node_modules`). By defining this, you can limit or add additional directories where to search.
+By default it finds all tests in project directory (it always skips `node_modules`). By defining this, you can limit or
+add additional directories where to search.
 
     {
         "testDirectories": [ "spec" ]
@@ -216,11 +252,13 @@ Use this comment in source code with import to ignore this specific import (must
         }
     }
 
-This allows to override imports. If value is null then import is removed (behaves like it would be empty file). If value is string then import path is replaced by this string.
+This allows to override imports. If value is null then import is removed (behaves like it would be empty file). If value
+is string then import path is replaced by this string.
 
 ## Proxy all requests in interactive mode to defined url
 
-Useful if your API server does not uses CORS, so proxy requests through bobril-build localhost:8080. It includes support for WebSockets connections. Url have to start with `http://` or `https://`.
+Useful if your API server does not uses CORS, so proxy requests through bobril-build localhost:8080. It includes support
+for WebSockets connections. Url have to start with `http://` or `https://`.
 
     {
         "proxyUrl": "http://localhost:3001"
@@ -228,7 +266,8 @@ Useful if your API server does not uses CORS, so proxy requests through bobril-b
 
 ## Define headless browser strategy
 
-By default it will use only Chrome or Chromium to test your code. But because headless Chrome on Windows does hang with some projects you can use use Firefox on Windows by defining this:
+By default it will use only Chrome or Chromium to test your code. But because headless Chrome on Windows does hang with
+some projects you can use use Firefox on Windows by defining this:
 
     {
         "headlessBrowserStrategy": "PreferFirefoxOnWindows"
@@ -238,7 +277,9 @@ By default it will use only Chrome or Chromium to test your code. But because he
 
 ## Forcing Polling watcher
 
-Watcher inside Docker cannot use OS notification of filesystem changes. So by default BB inside docker uses polling implementation with 250ms check frequency. You modify this time in milliseconds by `BBWATCHER` variable, also without Docker it forces polling watcher:
+Watcher inside Docker cannot use OS notification of filesystem changes. So by default BB inside docker uses polling
+implementation with 250ms check frequency. You modify this time in milliseconds by `BBWATCHER` variable, also without
+Docker it forces polling watcher:
 
     set BBWATCHER=1000
 
@@ -248,7 +289,8 @@ Watcher inside Docker cannot use OS notification of filesystem changes. So by de
 
 ## Disable yarn creating links
 
-Docker on Windows filesystem has limitation in creating links. To workaround this issue create environment variable `BBCoreNoLinks` with not empty value so bbcore will add `--no-bin-links` parameter to yarn command line.
+Docker on Windows filesystem has limitation in creating links. To workaround this issue create environment variable
+`BBCoreNoLinks` with not empty value so bbcore will add `--no-bin-links` parameter to yarn command line.
 
 ## Recognize when running in Docker
 

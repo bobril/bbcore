@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <PackageId>Bbcore.Lib</PackageId>
         <Version>4.12.1</Version>
@@ -11,25 +11,25 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BTDB" Version="32.16.4" />
-        <PackageReference Include="HtmlAgilityPack" Version="1.11.71" />
+        <PackageReference Include="BTDB" Version="33.3.0"/>
+        <PackageReference Include="HtmlAgilityPack" Version="1.11.74"/>
         <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.24.1"/>
-        <PackageReference Include="JavaScriptEngineSwitcher.V8" Version="3.24.2"/>
-        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
-        <PackageReference Include="Markdig" Version="0.38.0" />
+        <PackageReference Include="JavaScriptEngineSwitcher.V8" Version="3.29.0"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0"/>
+        <PackageReference Include="Markdig" Version="0.40.0"/>
         <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="ProxyKit" Version="2.3.4"/>
-        <PackageReference Include="SemanticVersioning" Version="2.0.2"/>
-        <PackageReference Include="SixLabors.ImageSharp" Version="2.1.9"/>
+        <PackageReference Include="SemanticVersioning" Version="3.0.0"/>
+        <PackageReference Include="SixLabors.ImageSharp" Version="2.1.10"/>
         <PackageReference Include="System.Reactive" Version="6.0.1"/>
         <PackageReference Include="UAParser" Version="3.1.47"/>
         <PackageReference Include="WebMarkupMin.Core" Version="2.17.0"/>
-        <PackageReference Include="YamlDotNet" Version="16.2.0" />
-        <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.4.5"/>
-        <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.4.5"/>
-        <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-arm64" Version="7.4.5"/>
-        <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.4.5"/>
+        <PackageReference Include="YamlDotNet" Version="16.3.0"/>
+        <PackageReference Include="Microsoft.ClearScript.V8.Native.linux-x64" Version="7.5.0"/>
+        <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-x64" Version="7.5.0"/>
+        <PackageReference Include="Microsoft.ClearScript.V8.Native.osx-arm64" Version="7.5.0"/>
+        <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.5.0"/>
     </ItemGroup>
 
     <ItemGroup>

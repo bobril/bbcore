@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
 ARG VERSION=0.0.0
 
@@ -22,7 +22,7 @@ WORKDIR /app/bb
 RUN dotnet publish -c Release -p:DebugType=None -p:DebugSymbols=false --self-contained true -r linux-x64 -o out -p:Version=$VERSION.0
 RUN rm -r ./out/Resources
 
-FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:9.0 AS runtime
 
 # Install deps + add Chrome, Nodejs, Yarn + clean up
 RUN apt-get update && apt-get install -y \
