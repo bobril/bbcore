@@ -416,63 +416,53 @@ public class ProjectOptions
             include = new(6)
         };
 
-        if (Include != null)
+        if (MainFile != null)
         {
-            newConfigObject.include.AddRange(Include);
-            if (Files != null)
-            {
-                newConfigObject.files.AddRange(Files);
-            }
-            else
-            {
-                if ((TestSources?.Count ?? 0) > 0)
-                {
-                    if (Tools.JasmineDtsPath == JasmineDts)
-                    {
-                        newConfigObject.files.Add(Tools.JasmineDtsPath);
-                    }
-                }
-            }
+            newConfigObject.files.Add(PathUtils.Subtract(MainFile, Owner.Owner.FullPath));
+        }
+
+        if (ExampleSources != null)
+        {
+            newConfigObject.files.AddRange(ExampleSources);
+        }
+
+        if (TestSourcesRegExp == DefaultTestRegex && TestDirectories == null)
+        {
+            newConfigObject.include.Add("**/*.spec.ts");
+            newConfigObject.include.Add("**/*.spec.tsx");
+            newConfigObject.include.Add("**/*.spec.d.ts");
+            newConfigObject.include.Add("**/*Spec.ts");
+            newConfigObject.include.Add("**/*Spec.tsx");
+            newConfigObject.include.Add("**/*Spec.d.ts");
         }
         else
         {
-            if (MainFile != null)
-            {
-                newConfigObject.files.Add(PathUtils.Subtract(MainFile, Owner.Owner.FullPath));
-            }
-
-            if (ExampleSources != null)
-            {
-                newConfigObject.files.AddRange(ExampleSources);
-            }
-
-            if (TestSourcesRegExp == DefaultTestRegex && TestDirectories == null)
-            {
-                newConfigObject.include.Add("**/*.spec.ts");
-                newConfigObject.include.Add("**/*.spec.tsx");
-                newConfigObject.include.Add("**/*.spec.d.ts");
-                newConfigObject.include.Add("**/*Spec.ts");
-                newConfigObject.include.Add("**/*Spec.tsx");
-                newConfigObject.include.Add("**/*Spec.d.ts");
-            }
-            else
-            {
-                if ((TestSources?.Count ?? 0) > 0)
-                    newConfigObject.files.AddRange(TestSources!);
-            }
-
             if ((TestSources?.Count ?? 0) > 0)
-            {
-                if (Tools.JasmineDtsPath == JasmineDts)
-                {
-                    newConfigObject.files.Add(Tools.JasmineDtsPath);
-                }
-            }
+                newConfigObject.files.AddRange(TestSources!);
+        }
 
-            if (IncludeSources != null)
+        if ((TestSources?.Count ?? 0) > 0)
+        {
+            if (Tools.JasmineDtsPath == JasmineDts)
             {
-                newConfigObject.files.AddRange(IncludeSources);
+                newConfigObject.files.Add(Tools.JasmineDtsPath);
             }
+        }
+
+        if (IncludeSources != null)
+        {
+            newConfigObject.files.AddRange(IncludeSources);
+        }
+
+        if (Include != null)
+        {
+            newConfigObject.include.Clear();
+            newConfigObject.include.AddRange(Include);
+        }
+
+        if (Files != null)
+        {
+            newConfigObject.files.AddRange(Files);
         }
 
         if (Exclude != null)

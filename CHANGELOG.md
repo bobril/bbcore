@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Changed
+
+`include` now overrides just `include` from `tsconfig.json` and not whole `files` section.
+`files` are appended to `files` from `tsconfig.json`.
+
 ## 4.13.0
 
 ### Added

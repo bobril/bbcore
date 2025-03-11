@@ -172,8 +172,6 @@ It checks only for existence of this `interactiveDumpsToDist` key, value does no
         "include": [ "**/*" ]
     }
 
-If you override include, it will also stop generating of tsconfig.json `files`.
-
 ## Specify generated tsconfig.json exclude
 
     {
@@ -186,7 +184,7 @@ If you override include, it will also stop generating of tsconfig.json `files`.
         "files": [ "src/main.ts" ]
     }
 
-If used together with `include` it will overwrite files in generated tsconfig.json.
+This list is just appended to generated tsconfig.json files list.
 
 ## Where to find test sources
 

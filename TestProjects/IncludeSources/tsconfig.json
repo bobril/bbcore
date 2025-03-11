@@ -26,6 +26,10 @@
     "target": "es2019",
     "resolveJsonModule": true
   },
+  "files": [
+    "index.ts",
+    "include1.d.ts"
+  ],
   "include": [
     "**/*"
   ],
