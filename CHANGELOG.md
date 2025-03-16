@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.14.1
+
 ### Fixed
 
 Async import didn't work because pattern was not recognized.
