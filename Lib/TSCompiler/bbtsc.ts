@@ -75,14 +75,14 @@ let lastSourceMap: string | undefined;
 
 function bbTranspile(fileName: string, input: string): string {
     //bb.trace(JSON.stringify(compilerOptions));
-    var res = ts.transpileModule(input, {compilerOptions, reportDiagnostics: true, fileName});
+    let res = ts.transpileModule(input, {compilerOptions, reportDiagnostics: true, fileName});
     if (res.diagnostics) reportDiagnostics(res.diagnostics);
     lastSourceMap = res.sourceMapText;
     return res.outputText;
 }
 
 function bbGetLastSourceMap(): string | undefined {
-    var res = lastSourceMap;
+    let res = lastSourceMap;
     lastSourceMap = undefined;
     return res;
 }
@@ -92,8 +92,8 @@ let wasError = false;
 function reportDiagnostic(diagnostic: ts.Diagnostic) {
     if (diagnostic.category === ts.DiagnosticCategory.Error) wasError = true;
     if (diagnostic.file) {
-        var locStart = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
-        var locEnd = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start! + diagnostic.length!);
+        let locStart = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
+        let locEnd = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start! + diagnostic.length!);
         bb.reportTypeScriptDiagFile(
             diagnostic.category === ts.DiagnosticCategory.Error,
             diagnostic.code,
@@ -114,7 +114,7 @@ function reportDiagnostic(diagnostic: ts.Diagnostic) {
 }
 
 function reportDiagnostics(diagnostics: ReadonlyArray<ts.Diagnostic>) {
-    for (var i = 0; i < diagnostics.length; i++) {
+    for (let i = 0; i < diagnostics.length; i++) {
         reportDiagnostic(diagnostics[i]);
     }
 }

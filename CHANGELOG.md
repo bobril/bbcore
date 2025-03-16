@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Async import didn't work because pattern was not recognized.
+
 ## 4.14.0
 
 ### Changed

@@ -110,10 +110,13 @@ public static class Extensions
                 }
                 else return null;
 
-                if (
-                    call.Args[0] is AstFunction { ArgNames.Count: 0, Body.Count: 1 } argumentFunction)
+
+                switch (call.Args[0])
                 {
-                    if (argumentFunction.Body[0] is AstReturn returnStatement)
+                    case AstArrow { ArgNames.Count: 0, Body.Count: 1 } argumentArrow:
+                        return argumentArrow.Body[0].IsRequireCall();
+                    case AstFunction { ArgNames.Count: 0, Body.Count: 1 } argumentFunction
+                        when argumentFunction.Body[0] is AstReturn returnStatement:
                         return returnStatement.Value.IsRequireCall();
                 }
 

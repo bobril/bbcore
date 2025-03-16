@@ -260,13 +260,13 @@ public class TsCompiler : ITSCompiler
         _transpileResult = new TranspileResult();
         try
         {
-            _transpileResult.JavaScript = engine.CallFunction("bbTranspile", fileName, content) as string;
-            _transpileResult.SourceMap = engine.CallFunction("bbGetLastSourceMap") as string;
+            _transpileResult.JavaScript = (string)engine.CallFunction("bbTranspile", fileName, content);
+            _transpileResult.SourceMap = (string)engine.CallFunction("bbGetLastSourceMap");
             return _transpileResult;
         }
         finally
         {
-            _transpileResult = null;
+            _transpileResult = null!;
         }
     }
 
