@@ -326,8 +326,14 @@ public class BundlerImpl
 
     void AddExportsFromLazyBundle(SplitInfo splitInfo, AstToplevel topLevelAst)
     {
+        var exportAllUsed = false;
         foreach (var (fromSourceName, propName) in splitInfo.ExportsAllUsedFromLazyBundles)
         {
+            if (propName == splitInfo.PropName)
+            {
+                exportAllUsed = true;
+            }
+
             var fromSourceFile = _cache[fromSourceName];
             topLevelAst.Body.Add(new AstSimpleStatement(
                 new AstAssign(new AstDot(new AstSymbolRef("__bbb"), propName),
@@ -336,8 +342,20 @@ public class BundlerImpl
 
         foreach (var (node, propName) in splitInfo.ExportsUsedFromLazyBundles)
         {
+            if (propName == splitInfo.PropName)
+            {
+                exportAllUsed = true;
+            }
+
             topLevelAst.Body.Add(new AstSimpleStatement(
                 new AstAssign(new AstDot(new AstSymbolRef("__bbb"), propName), node)));
+        }
+
+        if (!exportAllUsed && !splitInfo.IsMainSplit)
+        {
+            // Bundle export all is used for successfully import from lazy bundle so we need to at least set it to undefined
+            topLevelAst.Body.Add(new AstSimpleStatement(
+                new AstAssign(new AstDot(new AstSymbolRef("__bbb"), splitInfo.PropName!), AstUndefined.Instance)));
         }
     }
 
@@ -424,7 +442,8 @@ public class BundlerImpl
                             new AstSymbolImport(keyValuePair.Value)));
                         break;
                     default:
-                        throw new NotSupportedException("Add external imports "+string.Join('.', key.ToArray())+" "+keyValuePair.Value.Name);
+                        throw new NotSupportedException("Add external imports " + string.Join('.', key.ToArray()) +
+                                                        " " + keyValuePair.Value.Name);
                 }
             }
 
@@ -607,7 +626,8 @@ public class BundlerImpl
                 var reexModule = _cache[starExp.SourceName];
                 foreach (var reexModuleExport in reexModule.Exports!)
                 {
-                    if (cached.Exports.TryFindLongestPrefix(reexModuleExport.Key.AsReadOnlySpan()[..1], out _, out var astNode) && astNode is not null)
+                    if (cached.Exports.TryFindLongestPrefix(reexModuleExport.Key.AsReadOnlySpan()[..1], out _,
+                            out var astNode) && astNode is not null)
                         continue;
                     cached.Exports[reexModuleExport.Key] = reexModuleExport.Value;
                 }

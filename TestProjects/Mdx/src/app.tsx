@@ -1,33 +1,89 @@
 import * as b from "bobril";
-import * as mdxCodeBlock from "@bobril/mdx/highlighter";
-import * as styles from "@bobril/highlighter/styles";
-
+import "@bobril/mdx";
 import mdFeatures from "./mdFeatures/.mdxb";
 
 //import Sample from "./sample.mdxb";
 
-mdxCodeBlock.setDefaultCodeBlock(styles.docco);
-
-function Lazy({ import: from }: { import: () => Promise<b.IComponentFactory<any>> }) {
-    var factory = b.useState<b.IComponentFactory<any> | undefined>(undefined);
-    b.useEffect(() => {
-        from().then((f) => factory(f));
-    });
-    return factory() != undefined ? factory()!() : <div>Loading ...</div>;
-}
+const mdFeaturesLazy = mdFeatures.map(
+    (f) =>
+        [
+            b.lazy(async () => {
+                await import("./initHighlighter");
+                return await f[0]();
+            }),
+            f[1],
+        ] as const
+);
 
 function Features() {
     var i = b.useState(0);
-    var f = mdFeatures[i()];
+    var f = mdFeaturesLazy[i()];
+    var Content = f[0];
     return (
-        <>
-            <button onClick={() => i((i() + mdFeatures.length - 1) % mdFeatures.length)}>Prev</button>
-            <button onClick={() => i((i() + 1) % mdFeatures.length)}>Next</button>
-            <h1>{f[1].name}</h1>
-            <Lazy import={f[0]} />
-        </>
+        <div style={{ display: "flex", minHeight: "100vh" }}>
+            <nav
+                style={{
+                    width: "250px",
+                    padding: "20px",
+                    borderRight: "1px solid #eaeaea",
+                    backgroundColor: "#f8f9fa",
+                }}
+            >
+                {mdFeaturesLazy.map((feature, idx) => (
+                    <button
+                        key={idx}
+                        onClick={(e) => {
+                            i(idx);
+                            e.stopPropagation();
+                        }}
+                        style={{
+                            display: "block",
+                            width: "100%",
+                            padding: "10px",
+                            margin: "5px 0",
+                            textAlign: "left",
+                            border: "none",
+                            borderRadius: "4px",
+                            backgroundColor: idx === i() ? "#e9ecef" : "transparent",
+                            cursor: "pointer",
+                        }}
+                    >
+                        {feature[1].name}
+                    </button>
+                ))}
+            </nav>
+            <main
+                style={{
+                    flex: 1,
+                    padding: "40px",
+                    backgroundColor: "#ffffff",
+                }}
+            >
+                <h1
+                    style={{
+                        marginTop: 0,
+                        marginBottom: "30px",
+                        color: "#212529",
+                    }}
+                >
+                    {f[1].name}
+                </h1>
+                <b.Suspense fallback={<div>Loading ...</div>}>
+                    <Content />
+                </b.Suspense>
+            </main>
+        </div>
     );
 }
+
+b.injectCss(`
+    html {
+        margin: 0;
+    }
+    body {
+        margin: 0;
+    }
+`);
 
 b.init(() => <Features />);
 

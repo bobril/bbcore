@@ -1,3 +1,20 @@
+---
+name: Component
+---
+
+```mdx
+import { Counter } from "../counter";
+
+Counter <Counter />
+```
+
+import { Counter } from "../counter";
+
+Counter <Counter />
+
+Source code for Counter component:
+
+```tsx
 import * as b from "bobril";
 
 export function Counter() {
@@ -8,3 +25,4 @@ export function Counter() {
     }, []);
     return <i>{c()}</i>;
 }
+```

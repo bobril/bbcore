@@ -12,8 +12,8 @@
         "printWidth": 120
     },
     "dependencies": {
-        "@bobril/highlighter": "^0.3.0",
-        "@bobril/mdx": "*",
+        "@bobril/highlighter": "^1.0.0",
+        "@bobril/mdx": "^1.0.1",
         "bobril": "*"
     },
     "devDependencies": {
