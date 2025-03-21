@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.14.2
+
 ### Fixed
 
 async import produced wrong code in bundler.
