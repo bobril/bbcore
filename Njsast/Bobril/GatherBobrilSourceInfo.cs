@@ -29,7 +29,7 @@ public class GatherBobrilSourceInfo
             _ctx = ctx;
         }
 
-        public JsModule ResolveRequire(string name)
+        public JsModule? ResolveRequire(string name)
         {
             return _ctx.ResolveRequire(name);
         }
@@ -56,6 +56,8 @@ public class GatherBobrilSourceInfo
         {
             return this;
         }
+
+        public bool PropWritesForbidConstEval => false;
 
         virtual public string ConstStringResolver(string str)
         {

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Minification bug with not recognizing property as variable.
+
 ## 4.14.2
 
 ### Fixed

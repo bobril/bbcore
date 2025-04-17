@@ -63,11 +63,11 @@ public class AstTemplateString : AstNode
         return null;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         for (var i = 0u; i < Segments.Count; i++)
         {
-            if (!Segments[i].IsConstantLike()) return false;
+            if (!Segments[i].IsConstantLike(false)) return false;
         }
 
         return true;

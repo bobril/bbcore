@@ -96,11 +96,11 @@ public class AstSequence : AstNode
         Expressions.Add(node);
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         for (var i = 0u; i < Expressions.Count; i++)
         {
-            if (!Expressions[i].IsConstantLike()) return false;
+            if (!Expressions[i].IsConstantLike(forbidPropWrite)) return false;
         }
 
         return true;

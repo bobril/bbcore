@@ -34,7 +34,7 @@ public class AstSymbolProperty : AstSymbol
         return false;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         return true;
     }

@@ -51,7 +51,7 @@ public class AstSymbolRef : AstSymbol
             return null;
         }
 
-        if (Thedef.IsSingleInitAndDeeplyConst)
+        if (Thedef.IsSingleInitAndDeeplyConst(ctx?.PropWritesForbidConstEval??false))
         {
             if (Thedef.Destructuring != null) return null;
             if (Thedef.VarInit == null) return IsVarLetConst(Thedef.Orig[0]) ? AstUndefined.Instance : null;
@@ -71,8 +71,8 @@ public class AstSymbolRef : AstSymbol
         return false;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
-        return Thedef is { IsSingleInitAndDeeplyConst: true };
+        return Thedef?.IsSingleInitAndDeeplyConst(forbidPropWrite) ?? false;
     }
 }

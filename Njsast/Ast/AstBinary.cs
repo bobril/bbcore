@@ -367,11 +367,11 @@ public class AstBinary : AstNode
         return leftN == rightN;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         if (Operator is Operator.LogicalOr or Operator.LogicalAnd or Operator.NullishCoalescing or Operator.Addition or Operator.Multiplication or Operator.BitwiseAnd or Operator.BitwiseOr or Operator.BitwiseXOr or Operator.Subtraction or Operator.Division or Operator.Modulus or Operator.Power or Operator.LeftShift or Operator.RightShift or Operator.RightShiftUnsigned or Operator.LessThan or Operator.GreaterThan or Operator.LessEquals or Operator.GreaterEquals or Operator.Equals or Operator.NotEquals or Operator.StrictEquals or Operator.StrictNotEquals)
         {
-            return Left.IsConstantLike() && Right.IsConstantLike();
+            return Left.IsConstantLike(forbidPropWrite) && Right.IsConstantLike(forbidPropWrite);
         }
 
         return false;

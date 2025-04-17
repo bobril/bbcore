@@ -120,11 +120,11 @@ public class AstObject : AstNode
         return false;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         for (var i = 0u; i < Properties.Count; i++)
         {
-            if (!Properties[i].IsConstantLike()) return false;
+            if (!Properties[i].IsConstantLike(false)) return false;
         }
 
         return true;

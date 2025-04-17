@@ -368,7 +368,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                 case AstCall call:
                 {
                     var symbol = call.Expression.IsSymbolDef();
-                    if (symbol is { IsSingleInitAndDeeplyConst: true, Init: AstLambda { Pure: true } } ||
+                    if (symbol is { Init: AstLambda { Pure: true } } && symbol.IsSingleInitAndDeeplyConst(false) ||
                         IsWellKnownPureFunction(call.Expression, call is AstNew))
                     {
                         var res = new AstSequence(node.Source, node.Start, node.End);
@@ -520,14 +520,14 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                             return Remove;
                         }
 
-                        if (varDef.Value.IsSymbolDef() is { } rightSymbolDef && def.IsSingleInitAndDeeplyConst &&
-                            rightSymbolDef.IsSingleInitAndDeeplyConst)
+                        if (varDef.Value.IsSymbolDef() is { } rightSymbolDef && def.IsSingleInitAndDeeplyConst(false) &&
+                            rightSymbolDef.IsSingleInitAndDeeplyConst(false))
                         {
                             _clonedSymbolMap.GetOrAddValueRef(def) = rightSymbolDef;
                         }
 
                         if (varDef.Value is AstCall { Expression: AstSymbolRef { Thedef: { } funcDef }, Args.Count: >0 } call &&
-                            def.IsSingleInitAndDeeplyConst && def.VarInit == call && call.Args.All(n=>n.IsConstantLike()) && funcDef is { IsSingleInitAndDeeplyConst: true, Init: AstLambda { Pure: true } })
+                            def.IsSingleInitAndDeeplyConst(false) && def.VarInit == call && call.Args.All(n=>n.IsConstantLike(false)) && funcDef is { Init: AstLambda { Pure: true } } && funcDef.IsSingleInitAndDeeplyConst(false))
                         {
                             ref var list = ref _pureFunctionCallMap.GetOrAddValueRef(funcDef);
                             list ??= [];

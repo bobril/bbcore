@@ -19,7 +19,7 @@ public abstract class AstConstant : AstNode
         return this;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         return true;
     }

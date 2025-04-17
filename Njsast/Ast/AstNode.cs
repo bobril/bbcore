@@ -113,7 +113,7 @@ public abstract class AstNode
         return false;
     }
 
-    public virtual bool IsConstantLike()
+    public virtual bool IsConstantLike(bool forbidPropWrite)
     {
         return false;
     }

@@ -37,7 +37,7 @@ public class AstTemplateSegment : AstNode
         throw new InvalidOperationException();
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         return true;
     }

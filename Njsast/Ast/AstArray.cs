@@ -79,11 +79,11 @@ public class AstArray : AstNode
         return false;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         foreach (var element in Elements)
         {
-            if (!element.IsConstantLike()) return false;
+            if (!element.IsConstantLike(false)) return false;
         }
 
         return true;

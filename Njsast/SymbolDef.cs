@@ -40,12 +40,16 @@ public class SymbolDef: IEquatable<SymbolDef>
         Defun = null;
     }
 
-    public bool IsSingleInitAndDeeplyConst
+    public bool IsSingleInitAndDeeplyConst(bool forbidPropWrite = false)
     {
-        get
+        if (Orig.Count != 1) return false;
+        if (forbidPropWrite)
         {
-            if (Orig.Count != 1) return false;
             return References.All(sym => !sym.Usage.HasFlag(SymbolUsage.Write) && !sym.Usage.HasFlag(SymbolUsage.PropWrite));
+        }
+        else
+        {
+            return References.All(sym => !sym.Usage.HasFlag(SymbolUsage.Write));
         }
     }
 

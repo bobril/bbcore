@@ -57,7 +57,7 @@ public class AstRegExp : AstConstant
         return false;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         return Value.Flags.HasFlag(RegExpFlags.GlobalMatch);
     }

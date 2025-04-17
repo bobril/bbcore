@@ -81,8 +81,8 @@ public class AstConditional : AstNode
         return TypeConverter.ToBoolean(cond) ? Consequent.ConstValue(ctx) : Alternative.ConstValue(ctx);
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
-        return Condition.IsConstantLike() && Consequent.IsConstantLike() && Alternative.IsConstantLike();
+        return Condition.IsConstantLike(false) && Consequent.IsConstantLike(forbidPropWrite) && Alternative.IsConstantLike(forbidPropWrite);
     }
 }

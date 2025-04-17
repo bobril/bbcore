@@ -55,10 +55,10 @@ public abstract class AstUnary : AstNode
                && thisUnaryPrefix.Operator != Operator.Decrement;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
         if (Operator == Operator.Void || Operator == Operator.TypeOf || Operator == Operator.Subtraction || Operator == Operator.Addition || Operator == Operator.BitwiseNot || Operator == Operator.LogicalNot)
-            return Expression.IsConstantLike();
+            return Expression.IsConstantLike(forbidPropWrite);
         return false;
     }
 }

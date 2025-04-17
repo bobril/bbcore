@@ -58,6 +58,8 @@ public class ResolvingConstEvalCtx : IConstEvalCtx
         return this;
     }
 
+    public bool PropWritesForbidConstEval => false;
+
     public string ConstStringResolver(string str)
     {
         return str;

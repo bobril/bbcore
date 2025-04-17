@@ -107,9 +107,67 @@ public abstract class AstPropAccess : AstNode
         return false;
     }
 
+    class ConstEvalWithPropWritesForbidConstEval : IConstEvalCtx
+    {
+        readonly IConstEvalCtx? _parent;
+
+        public ConstEvalWithPropWritesForbidConstEval(IConstEvalCtx? parent)
+        {
+            _parent = parent;
+            if (parent != null)
+            {
+                JustModuleExports = parent.JustModuleExports;
+            }
+        }
+
+        public string SourceName => _parent?.SourceName ?? "";
+
+        public JsModule? ResolveRequire(string name)
+        {
+            return _parent?.ResolveRequire(name);
+        }
+
+        public object? ConstValue(IConstEvalCtx ctx, JsModule module, object export)
+        {
+            return _parent?.ConstValue(ctx, module, export);
+        }
+
+        public bool AllowEvalObjectWithJustConstKeys => _parent?.AllowEvalObjectWithJustConstKeys ?? false;
+
+        public bool JustModuleExports { get; set; }
+
+        public bool PropWritesForbidConstEval => true;
+
+        public string ConstStringResolver(string str)
+        {
+            if (_parent == null) return str;
+            return _parent.ConstStringResolver(str);
+        }
+
+        public IConstEvalCtx StripPathResolver()
+        {
+            if (_parent == null) return this;
+            var res = _parent.StripPathResolver();
+            return res.PropWritesForbidConstEval ? res : new ConstEvalWithPropWritesForbidConstEval(res);
+        }
+
+        public IConstEvalCtx CreateForSourceName(string sourceName)
+        {
+            if (_parent == null) return this;
+            var res = _parent.CreateForSourceName(sourceName);
+            return res.PropWritesForbidConstEval ? res : new ConstEvalWithPropWritesForbidConstEval(res);
+        }
+    }
+
+    static IConstEvalCtx MakeConstEvalWithPropWritesForbidConstEval(IConstEvalCtx? ctx)
+    {
+        if (ctx?.PropWritesForbidConstEval == true) return ctx;
+        return new ConstEvalWithPropWritesForbidConstEval(ctx);
+    }
+
     public override object? ConstValue(IConstEvalCtx? ctx = null)
     {
-        var expr = Expression.ConstValue(ctx);
+        var expr = Expression.ConstValue(MakeConstEvalWithPropWritesForbidConstEval(ctx));
         object? prop = Property;
         if (prop is AstNode node) prop = node.ConstValue(ctx?.StripPathResolver());
         if (prop == null) return null;
@@ -140,8 +198,8 @@ public abstract class AstPropAccess : AstNode
         return false;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
-        return Expression.IsConstantLike() && (Property is string || Property is AstNode node && node.IsConstantLike());
+        return Expression.IsConstantLike(true) && (Property is string || Property is AstNode node && node.IsConstantLike(false));
     }
 }

@@ -89,8 +89,8 @@ public class AstObjectKeyVal : AstObjectProperty
         return false;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
-        return Key.IsConstantLike() && Value.IsConstantLike();
+        return Key.IsConstantLike(false) && Value.IsConstantLike(false);
     }
 }

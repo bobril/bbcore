@@ -48,6 +48,7 @@ public abstract class AstSymbol : AstNode
         writer.PrintProp("Name", Name);
         writer.PrintProp("Read", Usage.HasFlag(SymbolUsage.Read));
         writer.PrintProp("Write", Usage.HasFlag(SymbolUsage.Write));
+        writer.PrintProp("PropWrite", Usage.HasFlag(SymbolUsage.PropWrite));
     }
 
     public override void CodeGen(OutputContext output)

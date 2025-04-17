@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Serialization;
 using Njsast.Ast;
 using Njsast.Reader;
@@ -201,8 +202,12 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
 
                 break;
 
+            case AstCall astCall:
+                usage |= SymbolUsage.Read;
+                if (astCall.Args.Contains(astSymbol)) usage |= SymbolUsage.PropWrite;
+                break;
+
             case AstBinary _:
-            case AstCall _:
             case AstSimpleStatement _:
             case AstReturn _:
             case AstIf _:

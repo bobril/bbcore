@@ -35,8 +35,8 @@ public class AstSub : AstPropAccess
         return false;
     }
 
-    public override bool IsConstantLike()
+    public override bool IsConstantLike(bool forbidPropWrite)
     {
-        return Expression.IsConstantLike() && ((AstNode) Property).IsConstantLike();
+        return Expression.IsConstantLike(true) && ((AstNode) Property).IsConstantLike(false);
     }
 }
