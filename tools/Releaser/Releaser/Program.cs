@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 
 namespace Releaser;
 
+// colima start --vm-type=vz --vz-rosetta --cpu 4 --memory 16 --disk 100
+
 static class Program
 {
     static void Main()
@@ -94,7 +96,8 @@ static class Program
         }
         else
         {
-            var fileNameOfNugetToken = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.nuget/token.txt";
+            var fileNameOfNugetToken =
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.nuget/token.txt";
             string nugetToken;
             try
             {
@@ -105,7 +108,7 @@ static class Program
                 Console.WriteLine("Cannot read nuget token from " + fileNameOfNugetToken);
                 return 1;
             }
-            
+
             Console.WriteLine("Building version " + newVersion);
             var outputLogLines = logLines.ToList();
             var releaseLogLines = logLines.Skip(topVersionLine + 1).SkipWhile(string.IsNullOrWhiteSpace)
@@ -125,7 +128,8 @@ static class Program
 
             var client = new GitHubClient(new ProductHeaderValue("bobril-bbcore-releaser"));
             client.SetRequestTimeout(TimeSpan.FromMinutes(15));
-            var fileNameOfToken = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.github/token.txt";
+            var fileNameOfToken =
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.github/token.txt";
             string token;
             try
             {
@@ -140,7 +144,8 @@ static class Program
             client.Credentials = new(token);
             var bbcoreRepo = (await client.Repository.GetAllForOrg("bobril")).First(r => r.Name == "bbcore");
             Console.WriteLine("bbcore repo id: " + bbcoreRepo.Id);
-            await File.WriteAllTextAsync(projDir + "/CHANGELOG.md", string.Join("", outputLogLines.Select(s => s + '\n')));
+            await File.WriteAllTextAsync(projDir + "/CHANGELOG.md",
+                string.Join("", outputLogLines.Select(s => s + '\n')));
             Commands.Stage(gitrepo, "CHANGELOG.md");
             Commands.Stage(gitrepo, "Bbcore.Lib/Bbcore.Lib.csproj");
             var author = new LibGit2Sharp.Signature("Releaser", "releaser@bobril.com", DateTime.Now);
@@ -186,7 +191,7 @@ static class Program
         content = new Regex("<Version>.+</Version>").Replace(content, "<Version>" + newVersion + "</Version>");
         await File.WriteAllTextAsync(fn, content, new UTF8Encoding(false));
     }
-    
+
     static void BuildNuget(string projDir, string newVersion, string nugetToken)
     {
         var start = new ProcessStartInfo("dotnet", "pack -c Release")
@@ -196,7 +201,7 @@ static class Program
         };
         var process = Process.Start(start);
         process!.WaitForExit();
-        start = new("dotnet", "nuget push Bbcore.Lib." + newVersion + ".nupkg -s https://nuget.org -k "+nugetToken)
+        start = new("dotnet", "nuget push Bbcore.Lib." + newVersion + ".nupkg -s https://nuget.org -k " + nugetToken)
         {
             UseShellExecute = true,
             WorkingDirectory = projDir + "/Bbcore.Lib/bin/Release"
@@ -204,7 +209,7 @@ static class Program
         process = Process.Start(start);
         process!.WaitForExit();
     }
-    
+
     static void DockerBuild(string projDir, string version)
     {
         try
@@ -283,7 +288,8 @@ static class Program
 
         if (rid == "osx-arm64")
         {
-            File.Copy(projDir +"/tools/Releaser/Releaser/OsxArm64/bb", projDir + $"/bb/bin/Release/net9.0/{rid}/publish/bb", true);
+            File.Copy(projDir + "/tools/Releaser/Releaser/OsxArm64/bb",
+                projDir + $"/bb/bin/Release/net9.0/{rid}/publish/bb", true);
             Console.WriteLine("Overwritten Osx Arm64 bb to be signed");
         }
 
