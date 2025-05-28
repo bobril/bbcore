@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.15.0
+
 ### Added
 
 Support for Windows on ARM64 architecture.
