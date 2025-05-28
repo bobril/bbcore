@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Added
+
+Support for Windows on ARM64 architecture.
+
+Updated dependencies.
+
 ## 4.14.3
 
 ### Fixed

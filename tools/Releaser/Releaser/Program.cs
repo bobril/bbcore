@@ -19,7 +19,7 @@ static class Program
         MainAsync().Wait();
     }
 
-    static readonly string[] Rids = ["win-x64", "linux-x64", "osx-x64", "osx-arm64"];
+    static readonly string[] Rids = ["win-x64", "win-arm64", "linux-x64", "osx-x64", "osx-arm64"];
 
     static async Task<int> MainAsync()
     {
