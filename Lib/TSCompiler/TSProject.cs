@@ -94,6 +94,8 @@ public class TSProject
                 }
             }
 
+            var name = parsed.GetValue("name") is JValue vname ? vname.ToString() : "";
+
             if (!hasMain && parsed.GetValue("browser") is JValue browserMain)
             {
                 MainFile = PathUtils.Normalize(browserMain.ToString());
@@ -103,9 +105,7 @@ public class TSProject
                 }
             }
 
-            var name = parsed.GetValue("name") is JValue vname ? vname.ToString() : "";
-
-            if (!hasMain && parsed.GetValue("module") is JValue moduleV)
+            if ((!hasMain || name == "marked") && parsed.GetValue("module") is JValue moduleV)
             {
                 if (name != "moment")
                 {
