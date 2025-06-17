@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.15.2
+
 ### Fixed
 
 For marked module prefer esm version over umd version.
