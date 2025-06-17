@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.15.1
+
 ### Fixed
 
 Added missing function `__setFunctionName` which TypeScript uses for emulation of ES2022 class fields.
