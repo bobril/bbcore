@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+Added missing function `__setFunctionName` which TypeScript uses for emulation of ES2022 class fields.
+Transpile function threw exception when sourcemap was not available.
+
 ## 4.15.0
 
 ### Added

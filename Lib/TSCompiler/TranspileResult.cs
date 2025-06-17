@@ -5,6 +5,6 @@ namespace Lib.TSCompiler;
 public class TranspileResult
 {
     public string JavaScript;
-    public string SourceMap;
+    public string? SourceMap;
     public List<Diagnostic>? Diagnostics;
 }

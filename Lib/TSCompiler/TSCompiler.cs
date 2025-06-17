@@ -261,7 +261,16 @@ public class TsCompiler : ITSCompiler
         try
         {
             _transpileResult.JavaScript = (string)engine.CallFunction("bbTranspile", fileName, content);
-            _transpileResult.SourceMap = (string)engine.CallFunction("bbGetLastSourceMap");
+            var sm = engine.CallFunction("bbGetLastSourceMap");
+            if (sm is string smStr)
+            {
+                _transpileResult.SourceMap = smStr;
+            }
+            else
+            {
+                _transpileResult.SourceMap = null!;
+            }
+
             return _transpileResult;
         }
         finally
