@@ -197,7 +197,7 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
                 usage |= SymbolUsage.Read;
                 if (propAccess.Expression == astSymbol)
                 {
-                    if (!IsPropAccessReadOnly(astSymbol)) usage |= SymbolUsage.PropWrite;
+                    if (!IsPropAccessReadOnly(astSymbol)) usage |= SymbolUsage.PropWriteDirect;
                 }
 
                 break;

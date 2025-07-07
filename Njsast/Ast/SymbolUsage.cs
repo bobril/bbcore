@@ -12,5 +12,7 @@ public enum SymbolUsage
     /// Increment, decrement, assignments with reads of original value
     ReadWrite = 3,
     /// Read prop usage which possibly modify member
-    PropWrite = 4
+    PropWrite = 4,
+    /// Read prop usage which for sure does modify member
+    PropWriteDirect = 4+8,
 }

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Regression from 4.14.3 in wrong deduplication of pure functions.
+
 ## 4.15.2
 
 ### Fixed

@@ -53,6 +53,12 @@ public class SymbolDef: IEquatable<SymbolDef>
         }
     }
 
+    public bool IsSingleInitAndDeeplyConstForbidDirectPropWrites()
+    {
+        if (Orig.Count != 1) return false;
+        return References.All(sym => !sym.Usage.HasFlag(SymbolUsage.Write) && !sym.Usage.HasFlag(SymbolUsage.PropWriteDirect));
+    }
+
     public bool IsSingleInit
     {
         get
