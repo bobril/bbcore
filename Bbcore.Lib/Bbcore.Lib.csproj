@@ -4,7 +4,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <PackageId>Bbcore.Lib</PackageId>
-        <Version>4.15.2</Version>
+        <Version>4.15.3</Version>
         <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
         <Authors>Tomáš Zálešák, Boris Letocha</Authors>
         <Nullable>enable</Nullable>
