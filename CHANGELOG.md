@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.16.0
+
 ### Fixed/Added
 
 Mermaid now correctly builds and bundle.
