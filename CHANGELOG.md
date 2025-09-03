@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+Updated dependencies.
+
 ## 4.16.0
 
 ### Fixed/Added

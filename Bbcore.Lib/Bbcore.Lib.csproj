@@ -11,19 +11,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BTDB" Version="33.6.7"/>
-        <PackageReference Include="HtmlAgilityPack" Version="1.12.1"/>
+        <PackageReference Include="BTDB" Version="33.8.3"/>
+        <PackageReference Include="HtmlAgilityPack" Version="1.12.2"/>
         <PackageReference Include="JavaScriptEngineSwitcher.Core" Version="3.24.1"/>
         <PackageReference Include="JavaScriptEngineSwitcher.V8" Version="3.29.1"/>
-        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0"/>
-        <PackageReference Include="Markdig" Version="0.41.1"/>
+        <PackageReference Include="JetBrains.Annotations" Version="2025.2.2"/>
+        <PackageReference Include="Markdig" Version="0.41.3"/>
         <PackageReference Include="Microsoft.ClearScript.V8.Native.win-arm64" Version="7.5.0"/>
         <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="ProxyKit" Version="2.3.4"/>
         <PackageReference Include="SemanticVersioning" Version="3.0.0"/>
-        <PackageReference Include="SixLabors.ImageSharp" Version="2.1.10"/>
-        <PackageReference Include="System.Reactive" Version="6.0.1"/>
+        <PackageReference Include="SixLabors.ImageSharp" Version="2.1.11"/>
+        <PackageReference Include="System.Reactive" Version="6.0.2"/>
         <PackageReference Include="UAParser" Version="3.1.47"/>
         <PackageReference Include="WebMarkupMin.Core" Version="2.19.0"/>
         <PackageReference Include="YamlDotNet" Version="16.3.0"/>
