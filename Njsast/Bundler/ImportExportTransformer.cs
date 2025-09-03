@@ -98,7 +98,10 @@ public class ImportExportTransformer : TreeTransformer
         if (DetectImport(node) is { } import2)
         {
             if (!(Parent() is AstSimpleStatement))
+            {
                 _sourceFile.NeedsImports.Add(import2);
+            }
+
             if (Parent() is AstAssign { Left: var leftNode } && node == leftNode)
             {
                 (_sourceFile.ModifiedImports ??= new()).Add(import2);

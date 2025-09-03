@@ -8,7 +8,7 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
 {
     struct Val
     {
-        public T Value;
+        public T? Value;
         public bool HasValue;
         public RefDictionary<string, Val>? Children;
     }
@@ -22,7 +22,7 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
         this[key] = value;
     }
 
-    public ref T this[in ReadOnlySpan<string> key]
+    public ref T? this[in ReadOnlySpan<string> key]
     {
         get
         {
@@ -34,6 +34,7 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
                 p = ref p.Children.GetOrAddValueRef(prefix[0]);
                 prefix = prefix.Slice(1);
             }
+
             p.HasValue = true;
             return ref p.Value;
         }
@@ -50,9 +51,11 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
             {
                 return;
             }
+
             p = ref p.Children.GetOrFakeValueRef(prefix[0]);
             prefix = prefix.Slice(1);
         }
+
         if (p.HasValue) return;
         p.Value = valueFactory(Iterate(p.Children, valueFactory));
         p.HasValue = true;
@@ -63,7 +66,7 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
         Func<IEnumerable<(string key, T value)>, T> valueFactory)
     {
         ref var child = ref children.ValueRef(idx);
-        if (child.HasValue) return child.Value;
+        if (child.HasValue) return child.Value!;
         child.Value = valueFactory(Iterate(child.Children, valueFactory));
         child.HasValue = true;
         return child.Value;
@@ -72,7 +75,7 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
     public IEnumerable<T> Values()
     {
         if (_root.HasValue)
-            yield return _root.Value;
+            yield return _root.Value!;
         foreach (var value in RecursiveIterateValues(_root.Children))
         {
             yield return value;
@@ -88,15 +91,16 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
         }
     }
 
-    static IEnumerable<T> RecursiveIterateValues(RefDictionary<string,Val>? children)
+    static IEnumerable<T> RecursiveIterateValues(RefDictionary<string, Val>? children)
     {
         if (children == null) yield break;
         foreach (var (_, value) in children)
         {
             if (value.HasValue)
             {
-                yield return value.Value;
+                yield return value.Value!;
             }
+
             foreach (var pair in RecursiveIterateValues(value.Children))
             {
                 yield return pair;
@@ -104,7 +108,8 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
         }
     }
 
-    static IEnumerable<(string key, T value)> Iterate(RefDictionary<string, Val>? children, Func<IEnumerable<(string key, T value)>,T> valueFactory)
+    static IEnumerable<(string key, T value)> Iterate(RefDictionary<string, Val>? children,
+        Func<IEnumerable<(string key, T value)>, T> valueFactory)
     {
         if (children == null) yield break;
         foreach (var idx in children.Index)
@@ -128,6 +133,7 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
             prefixLen = 0;
             value = p.Value;
         }
+
         var idx = 0;
         while (!prefix.IsEmpty)
         {
@@ -135,6 +141,7 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
             {
                 return idx == prefixLen;
             }
+
             p = ref p.Children.GetOrFakeValueRef(prefix[0]);
             idx++;
             if (p.HasValue)
@@ -142,8 +149,10 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
                 prefixLen = idx;
                 value = p.Value;
             }
+
             prefix = prefix.Slice(1);
         }
+
         return idx == prefixLen;
     }
 
@@ -151,7 +160,7 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
     {
         var key = new StructList<string>();
         if (_root.HasValue)
-            yield return new KeyValuePair<StructList<string>, T>(key, _root.Value);
+            yield return new KeyValuePair<StructList<string>, T>(key, _root.Value!);
         foreach (var pair in RecursiveIterate(_root.Children, key))
         {
             yield return pair;
@@ -166,13 +175,15 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
         {
             if (p.Children == null)
             {
-                return RecursiveIterate(null,key);
+                return RecursiveIterate(null, key);
             }
+
             p = ref p.Children.GetOrFakeValueRef(prefix[0]);
             if (!p.HasValue && p.Children == null) // Got Fake?
             {
-                return RecursiveIterate(null,key);
+                return RecursiveIterate(null, key);
             }
+
             key.Add(prefix[0]);
 
             prefix = prefix.Slice(1);
@@ -181,19 +192,22 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
         return RecursiveIterateWithRootValue(p, key);
     }
 
-    static IEnumerable<KeyValuePair<StructList<string>, T>> RecursiveIterateWithRootValue(Val root, StructList<string> key)
+    static IEnumerable<KeyValuePair<StructList<string>, T>> RecursiveIterateWithRootValue(Val root,
+        StructList<string> key)
     {
         if (root.HasValue)
         {
-            yield return new KeyValuePair<StructList<string>, T>(key, root.Value);
+            yield return new KeyValuePair<StructList<string>, T>(key, root.Value!);
         }
+
         foreach (var pair in RecursiveIterate(root.Children, key))
         {
             yield return pair;
         }
     }
 
-    static IEnumerable<KeyValuePair<StructList<string>,T>> RecursiveIterate(RefDictionary<string,Val>? children, StructList<string> key)
+    static IEnumerable<KeyValuePair<StructList<string>, T>> RecursiveIterate(RefDictionary<string, Val>? children,
+        StructList<string> key)
     {
         if (children == null) yield break;
         foreach (var (name, value) in children)
@@ -201,12 +215,14 @@ public class StringTrie<T> : IEnumerable<KeyValuePair<StructList<string>, T>>
             key.Add(name);
             if (value.HasValue)
             {
-                yield return new KeyValuePair<StructList<string>, T>(key, value.Value);
+                yield return new KeyValuePair<StructList<string>, T>(key, value.Value!);
             }
+
             foreach (var pair in RecursiveIterate(value.Children, key))
             {
                 yield return pair;
             }
+
             key.Pop();
         }
     }

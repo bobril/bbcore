@@ -39,18 +39,18 @@ class BundlerTreeTransformer : TreeTransformer
         switch (node)
         {
             case AstCall _ when node.IsRequireCall() is { } reqName:
+            {
+                var resolvedName = _ctx.ResolveRequire(reqName, _currentSourceFile!.Name);
+                if (resolvedName == IBundlerCtx.LeaveAsExternal)
                 {
-                    var resolvedName = _ctx.ResolveRequire(reqName, _currentSourceFile!.Name);
-                    if (resolvedName == IBundlerCtx.LeaveAsExternal)
-                    {
-                        return (new SourceFile(reqName), Array.Empty<string>());
-                    }
-
-                    if (!_cache.TryGetValue(resolvedName, out var reqSource))
-                        throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
-                                                       _currentSourceFile!.Name);
-                    return (reqSource, Array.Empty<string>());
+                    return (new SourceFile(reqName), []);
                 }
+
+                if (!_cache.TryGetValue(resolvedName, out var reqSource))
+                    throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
+                                                   _currentSourceFile!.Name);
+                return (reqSource, []);
+            }
             case AstSymbolRef symbolRef when _reqSymbolDefMap.TryGetValue(symbolRef.Thedef!, out var res):
                 return res;
             case AstPropAccess propAccess when propAccess.PropertyAsString is { } propName &&
@@ -89,7 +89,8 @@ class BundlerTreeTransformer : TreeTransformer
         {
             if (DetectImport(varDef.Value) is { } import)
             {
-                if (!(_currentSourceFile.ModifiedImports?.Contains(new() { File = import.Item1.Name, Path = import.Item2 }) ?? false))
+                if (!(_currentSourceFile.ModifiedImports?.Contains(new()
+                        { File = import.Item1.Name, Path = import.Item2 }) ?? false))
                 {
                     _reqSymbolDefMap[reqSymbolDef] = import;
                     if (import.Item2.Length == 0) return Remove;
@@ -111,8 +112,8 @@ class BundlerTreeTransformer : TreeTransformer
             if (!_cache.TryGetValue(resolvedName, out var reqSource))
                 throw new ApplicationException("Cannot find " + resolvedName + " imported from " +
                                                _currentSourceFile!.Name);
-            reqSource.CreateWholeExport(Array.Empty<string>());
-            var theDef = CheckIfNewlyUsedSymbolIsUnique((AstSymbol)reqSource.Exports![Array.Empty<string>()]);
+            reqSource.CreateWholeExport([]);
+            var theDef = CheckIfNewlyUsedSymbolIsUnique((AstSymbol)reqSource.Exports![[]]!);
             return new AstSymbolRef(node, theDef, SymbolUsage.Read);
         }
 
@@ -171,17 +172,19 @@ class BundlerTreeTransformer : TreeTransformer
                 }
 
                 var varName = import2.Item2[^1];
-                if (varName == "default" && import2.Item2.Length == 1) varName = BundlerHelpers.FileNameToIdent(import2.Item1.Name);
+                if (varName == "default" && import2.Item2.Length == 1)
+                    varName = BundlerHelpers.FileNameToIdent(import2.Item1.Name);
                 var name = BundlerHelpers.MakeUniqueName(varName, _rootVariables, _nonRootSymbolNames,
                     _suffix);
                 symbol = new AstSymbolRef(node, name);
                 return symbol;
             }
 
+
             if (import2.Item1.OnlyWholeExport && needPath.Length == 0)
             {
                 var theDef =
-                    CheckIfNewlyUsedSymbolIsUnique((AstSymbol)import2.Item1.Exports![new ReadOnlySpan<string>()]);
+                    CheckIfNewlyUsedSymbolIsUnique((AstSymbol)import2.Item1.Exports![[]]!);
                 return new AstSymbolRef(node, theDef, SymbolUsage.Read);
             }
 

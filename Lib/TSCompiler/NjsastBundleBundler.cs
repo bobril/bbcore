@@ -55,7 +55,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         SourceMapSourceRoot = sourceMapSourceRoot;
         var cssLink = "";
         var cssToBundle = new List<SourceFromPair>();
-        foreach (var source in _buildResult.Path2FileInfo.Select(a=>a.Value).Where(f=>f.Owner!=null).OrderBy(f => f.Owner!.FullPath).ToArray())
+        foreach (var source in _buildResult.Path2FileInfo.Select(a => a.Value).Where(f => f.Owner != null)
+                     .OrderBy(f => f.Owner!.FullPath).ToArray())
         {
             if (source.Type is FileCompilationType.Css or FileCompilationType.ImportedCss)
             {
@@ -124,17 +125,18 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         if (!_project.LibraryMode && (_project.ExampleSources?.Count ?? 0) > 0)
         {
             bundler.PartToMainFilesMap = new Dictionary<string, IReadOnlyList<string>>
-                {{"Bundle", new[] {_project.ExampleSources[0]}}};
+                { { "Bundle", new[] { _project.ExampleSources[0] } } };
         }
         else
         {
             bundler.PartToMainFilesMap = new Dictionary<string, IReadOnlyList<string>>
-                {{"Bundle", new[] {_project.MainFile}}};
+                { { "Bundle", new[] { _project.MainFile } } };
         }
 
         bundler.CompressOptions = compress ? CompressOptions.FastDefault : null;
         bundler.Mangle = mangle;
-        bundler.OutputOptions = new() {Beautify = beautify, ShortenBooleans = !beautify, Ecma = _project.Target > ScriptTarget.Es5 ? 6 : 5 };
+        bundler.OutputOptions = new()
+            { Beautify = beautify, ShortenBooleans = !beautify, Ecma = _project.Target > ScriptTarget.Es5 ? 6 : 5 };
         bundler.GenerateSourceMap = BuildSourceMap;
         bundler.GlobalDefines = _project.BuildDefines(_mainBuildResult);
         bundler.LibraryMode = _project.LibraryMode;
@@ -204,6 +206,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         {
             return ("module.exports = {};", null);
         }
+
         if (!_buildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
         {
             throw new InvalidOperationException("Bundler ReadContent does not exists:" + name);
@@ -219,7 +222,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
             return (fileInfo.Owner.Utf8Content, null);
         }
 
-        if (fileInfo.Type is FileCompilationType.JavaScriptAsset or FileCompilationType.JavaScript or FileCompilationType.Scss)
+        if (fileInfo.Type is FileCompilationType.JavaScriptAsset or FileCompilationType.JavaScript
+            or FileCompilationType.Scss)
         {
             if (BuildSourceMap)
                 return (fileInfo.Output, SourceMap.Identity(fileInfo.Output, fileInfo.Owner.FullPath));
@@ -238,7 +242,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                 var sourceMapBuilder = new SourceMapBuilder();
                 var adder = sourceMapBuilder.CreateSourceAdder(fileInfo.Output!, fileInfo.MapLink);
                 var sourceReplacer = new SourceReplacer();
-                _project.ApplySourceInfo(sourceReplacer, fileInfo.Owner!.FullPath, fileInfo.MapLink, fileInfo.SourceInfo, _buildResult);
+                _project.ApplySourceInfo(sourceReplacer, fileInfo.Owner!.FullPath, fileInfo.MapLink,
+                    fileInfo.SourceInfo, _buildResult);
                 sourceReplacer.Apply(adder);
                 return (sourceMapBuilder.Content(), sourceMapBuilder.Build(".", "."));
             }
@@ -247,7 +252,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                 var sourceMapBuilder = new SourceMapBuilder();
                 var adder = sourceMapBuilder.CreateSourceAdder(fileInfo.Output!, fileInfo.MapLink);
                 var sourceReplacer = new SourceReplacer();
-                _project.ApplySourceInfo(sourceReplacer, fileInfo.Owner!.FullPath, null, fileInfo.SourceInfo, _buildResult);
+                _project.ApplySourceInfo(sourceReplacer, fileInfo.Owner!.FullPath, null, fileInfo.SourceInfo,
+                    _buildResult);
                 sourceReplacer.Apply(adder);
                 return (sourceMapBuilder.Content(), null);
             }
@@ -331,7 +337,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         var sourceInfo = fileInfo.SourceInfo;
         if (sourceInfo?.Assets == null)
             return Array.Empty<string>();
-        return sourceInfo.Assets.Select(i => i.Name).Where(i => !i.StartsWith("resource:") && !i.StartsWith("project:") && i.EndsWith(".js"))
+        return sourceInfo.Assets.Select(i => i.Name).Where(i =>
+                !i.StartsWith("resource:") && !i.StartsWith("project:") && i.EndsWith(".js"))
             .ToList();
     }
 }

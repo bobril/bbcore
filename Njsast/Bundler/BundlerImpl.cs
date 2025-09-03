@@ -255,7 +255,7 @@ public class BundlerImpl
             foreach (var lazyRequire in f.LazyRequires)
             {
                 var targetFile = _cache[lazyRequire];
-                targetFile.CreateWholeExport(Array.Empty<string>());
+                targetFile.CreateWholeExport([]);
                 var targetSplit = _splitMap[targetFile.PartOfBundle!];
                 if (targetSplit.ExportsAllUsedFromLazyBundles.ContainsKey(lazyRequire)) continue;
                 if (targetSplit.FullName == lazyRequire)
@@ -292,16 +292,31 @@ public class BundlerImpl
                                                     fromFile.Name + " used in " + f.Name);
                 }
 
-                if (!sourceSplit.ImportsFromOtherBundles.ContainsKey(astNode!))
+                if (astNode!.Source != null && astNode!.Source != fromFile.Name)
                 {
-                    sourceSplit.ImportsFromOtherBundles[astNode!] =
+                    var realFromFile = _cache[astNode.Source];
+                    if (realFromFile.PartOfBundle != fromFile.PartOfBundle)
+                    {
+                        fromSplit = _splitMap[realFromFile.PartOfBundle!];
+                        if (sourceSplit == fromSplit)
+                            continue;
+                        fromFile = realFromFile;
+                        // export name does not need to change as it is used just for naming variable
+                    }
+                }
+
+                if (!sourceSplit.ImportsFromOtherBundles.ContainsKey(astNode))
+                {
+                    sourceSplit.ImportsFromOtherBundles[astNode] =
                         new(fromSplit, fromFile, exportName.AsSpan()[..prefixLen].ToArray());
                 }
 
-                if (!fromSplit.ExportsUsedFromLazyBundles.ContainsKey(astNode!))
+                if (!fromSplit.ExportsUsedFromLazyBundles.ContainsKey(astNode))
                 {
-                    fromSplit.ExportsUsedFromLazyBundles[astNode!] =
-                        BundlerHelpers.NumberToIdent(lazySplitCounter++);
+                    var fromSplitExportsUsedFromLazyBundle = BundlerHelpers.NumberToIdent(lazySplitCounter++);
+
+                    fromSplit.ExportsUsedFromLazyBundles[astNode] =
+                        fromSplitExportsUsedFromLazyBundle;
                 }
             }
         }
@@ -337,7 +352,7 @@ public class BundlerImpl
             var fromSourceFile = _cache[fromSourceName];
             topLevelAst.Body.Add(new AstSimpleStatement(
                 new AstAssign(new AstDot(new AstSymbolRef("__bbb"), propName),
-                    fromSourceFile.Exports![Array.Empty<string>()])));
+                    fromSourceFile.Exports![[]]!)));
         }
 
         foreach (var (node, propName) in splitInfo.ExportsUsedFromLazyBundles)
@@ -526,6 +541,13 @@ public class BundlerImpl
             if (PartToMainFilesMap.ContainsKey(fromSplitName))
             {
                 sourceFile.PartOfBundle = fromSplitName;
+                foreach (var r in sourceFile.Requires)
+                {
+                    if (_cache.TryGetValue(r, out var rCached))
+                    {
+                        MarkRequiredAs(rCached, fromSplitName);
+                    }
+                }
             }
             else
             {

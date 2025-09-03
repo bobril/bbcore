@@ -157,6 +157,8 @@ public class BuildModuleCtx : IImportResolver
             res.FileNameJs = null;
         }
 
+        name = name.Replace("//", "/");
+
         if (Owner?.ProjectOptions?.Imports?.TryGetValue(name, out var import) ?? false)
         {
             if (import == null)
@@ -435,8 +437,14 @@ public class BuildModuleCtx : IImportResolver
             res.FileName = mainFile;
             if (!skipCheckAdd)
             {
-                CheckAdd(mainFile,
-                    IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript : FileCompilationType.EsmJavaScript);
+                if (CheckAdd(mainFile,
+                        IsTsOrTsx(mainFile) ? FileCompilationType.TypeScript : FileCompilationType.EsmJavaScript) ==
+                    null)
+                {
+                    parentInfo.ReportDiag(true, -15,
+                        "Cannot resolve main file '" + mainFile + "' of import '" + name + "' from '" + from + "'", 0,
+                        0, 0, 0);
+                }
             }
 
             if (moduleInfo.ProjectOptions?.ObsoleteMessage != null)

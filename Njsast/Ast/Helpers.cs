@@ -10,7 +10,7 @@ public static class Helpers
     public static AstVar EmitVarDefines(IReadOnlyDictionary<string, object> defines)
     {
         var defs = new StructList<AstVarDef>();
-        defs.Reserve((uint) defines.Count);
+        defs.Reserve((uint)defines.Count);
         foreach (var (name, value) in defines)
         {
             defs.Add(new AstVarDef(new AstSymbolVar(name), TypeConverter.ToAst(value)));
@@ -23,9 +23,9 @@ public static class Helpers
         string? varName = null)
     {
         varName ??= "content";
-        var parser = new Parser(new Options {SourceFile = fileName}, $"var {varName}={json}");
+        var parser = new Parser(new Options { SourceFile = fileName }, $"var {varName}={json}");
         var toplevel = parser.Parse();
-        return (toplevel, (AstSymbolVar) ((AstVar) toplevel.Body[0]).Definitions[0].Name);
+        return (toplevel, (AstSymbolVar)((AstVar)toplevel.Body[0]).Definitions[0].Name);
     }
 
     public static (AstToplevel toplevel, AstSymbolVar varExports) EmitCommonJsWrapper(AstBlock code,
@@ -33,13 +33,13 @@ public static class Helpers
     {
         varName ??= "exports";
         var toplevel = new Parser(new Options(),
-                $"var {varName}=(function(){{ var exports = {{}}; var module = {{ exports: exports }}; var global = this; return module.exports; }}).call(window);")
+                $"var {varName}=(function(){{ var exports = {{}}; var module = {{ exports: exports }}; var global = this; return __bbcjs(module.exports); }}).call(window);")
             .Parse();
         var mainFunc =
-            (AstFunction) ((AstDot) ((AstCall) ((AstVar) toplevel.Body[0]).Definitions[0].Value!).Expression)
+            (AstFunction)((AstDot)((AstCall)((AstVar)toplevel.Body[0]).Definitions[0].Value!).Expression)
             .Expression;
         mainFunc.Body.InsertRange(^1, code.Body.AsReadOnlySpan());
-        return (toplevel, (AstSymbolVar) ((AstVar) toplevel.Body[0]).Definitions[0].Name);
+        return (toplevel, (AstSymbolVar)((AstVar)toplevel.Body[0]).Definitions[0].Name);
     }
 
     public static void RenameSymbol(SymbolDef symbol, string newName)
@@ -64,7 +64,7 @@ public static class Helpers
         if (toplevel.Globals!["module"].References.Count != 1)
             return (toplevel, null);
         var tt = new ModuleExportsTreeTransformer(varName);
-        toplevel = (AstToplevel) tt.Transform(toplevel);
+        toplevel = (AstToplevel)tt.Transform(toplevel);
         return (toplevel, tt.ResultingSymbol);
     }
 
@@ -103,7 +103,8 @@ public static class Helpers
 
             if (node is AstSimpleStatement { Body: AstAssign { Operator: Operator.Assignment } assigment })
             {
-                if (assigment.Left is AstDot { PropertyAsString: "exports" } dot && dot.Expression.IsSymbolDef().IsGlobalSymbol() == "module")
+                if (assigment.Left is AstDot { PropertyAsString: "exports" } dot &&
+                    dot.Expression.IsSymbolDef().IsGlobalSymbol() == "module")
                 {
                     var res = new AstVar(node);
                     var newVar = new AstSymbolVar(assigment.Left, _varName);
@@ -140,8 +141,10 @@ public static class Helpers
     public static Dictionary<string, AstNode>? DetectEnumTypeScriptFunction(AstNode node)
     {
         if (!(node is AstLambda
-                {IsGenerator: false, Async: false, UsesArguments: false, ArgNames: {Count: 1}} lambda)) return null;
-        if (!(lambda.ArgNames[0] is AstSymbolFunarg {Thedef: { } symbolDef})) return null;
+            {
+                IsGenerator: false, Async: false, UsesArguments: false, ArgNames: { Count: 1 }
+            } lambda)) return null;
+        if (!(lambda.ArgNames[0] is AstSymbolFunarg { Thedef: { } symbolDef })) return null;
         var res = new Dictionary<string, AstNode>();
         foreach (var statement in lambda.Body)
         {
@@ -149,17 +152,17 @@ public static class Helpers
                 {
                     Body: AstAssign
                     {
-                        Operator: Operator.Assignment, Right: AstString {Value: { } rightString},
+                        Operator: Operator.Assignment, Right: AstString { Value: { } rightString },
                         Left: AstSub
                         {
-                            Expression: AstSymbolRef {Thedef: { } symbolDef2},
+                            Expression: AstSymbolRef { Thedef: { } symbolDef2 },
                             Property: AstAssign
                             {
                                 Operator: Operator.Assignment,
                                 Left: AstSub
                                 {
-                                    Expression: AstSymbolRef {Thedef: { } symbolDef3},
-                                    Property: AstString {Value: { } leftString}
+                                    Expression: AstSymbolRef { Thedef: { } symbolDef3 },
+                                    Property: AstString { Value: { } leftString }
                                 },
                                 Right: AstNumber value
                             }
@@ -174,8 +177,8 @@ public static class Helpers
                              Operator: Operator.Assignment, Right: AstString valueString,
                              Left: AstSub
                              {
-                                 Expression: AstSymbolRef {Thedef: { } symbolDef4},
-                                 Property: AstString {Value: { } propString}
+                                 Expression: AstSymbolRef { Thedef: { } symbolDef4 },
+                                 Property: AstString { Value: { } propString }
                              }
                          }
                      } && symbolDef == symbolDef4)

@@ -122,6 +122,31 @@ public class TSProject
                 TypesMainFile = PathUtils.Normalize(typingsV.ToString());
             }
 
+            if (parsed.GetValue("exports") is JObject exports)
+            {
+                if (exports.GetValue(".") is JObject exportMain)
+                {
+                    if (exportMain.GetValue("import") is JValue exportMainImport)
+                    {
+                        MainFile = PathUtils.Normalize(exportMainImport.ToString());
+                        if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
+                        {
+                            TypesMainFile = null;
+                            hasMain = true;
+                        }
+                    }
+                    else if (exportMain.GetValue("default") is JValue exportMainDefault)
+                    {
+                        MainFile = PathUtils.Normalize(exportMainDefault.ToString());
+                        if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
+                        {
+                            TypesMainFile = null;
+                            hasMain = true;
+                        }
+                    }
+                }
+            }
+
             if (!hasMain)
             {
                 if (parsed.GetValue("main") is JValue mainV2)
