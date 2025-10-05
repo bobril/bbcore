@@ -103,8 +103,23 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     // Need value for Block is nonsense - optimize like it would not be needed
                     OptimizeBlock(block);
 
+                    if (block is AstCase astCase)
+                    {
+                        NeedValue = true;
+                        astCase.Expression = Transform(astCase.Expression);
+                        NeedValue = false;
+                    }
+
                     NeedValue = false;
                     TransformList(ref block.Body);
+                    if (block is AstTry astTry)
+                    {
+                        if (astTry.Bcatch != null)
+                            astTry.Bcatch = Transform(astTry.Bcatch) as AstCatch;
+                        if (astTry.Bfinally != null)
+                            astTry.Bfinally = Transform(astTry.Bfinally) as AstFinally;
+                    }
+
                     NeedValue = true;
                     return block;
                 }
@@ -523,11 +538,28 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                         if (varDef.Value.IsSymbolDef() is { } rightSymbolDef && def.IsSingleInitAndDeeplyConst(false) &&
                             rightSymbolDef.IsSingleInitAndDeeplyConst(false))
                         {
+                            // rename to some unique name to avoid collisions
+                            rightSymbolDef.Name = rightSymbolDef.Name + "__" + def.Name;
+                            foreach (var astSymbol in rightSymbolDef.Orig)
+                            {
+                                astSymbol.Name = rightSymbolDef.Name;
+                            }
+
+                            foreach (var astSymbol in rightSymbolDef.References)
+                            {
+                                astSymbol.Name = rightSymbolDef.Name;
+                            }
+
                             _clonedSymbolMap.GetOrAddValueRef(def) = rightSymbolDef;
                         }
 
-                        if (varDef.Value is AstCall { Expression: AstSymbolRef { Thedef: { } funcDef }, Args.Count: >0 } call &&
-                            def.IsSingleInitAndDeeplyConstForbidDirectPropWrites() && def.VarInit == call && call.Args.All(n=>n.IsConstantLike(false)) && funcDef is { Init: AstLambda { Pure: true } } && funcDef.IsSingleInitAndDeeplyConst(false))
+                        if (varDef.Value is AstCall
+                            {
+                                Expression: AstSymbolRef { Thedef: { } funcDef }, Args.Count: > 0
+                            } call &&
+                            def.IsSingleInitAndDeeplyConstForbidDirectPropWrites() && def.VarInit == call &&
+                            call.Args.All(n => n.IsConstantLike(false)) &&
+                            funcDef is { Init: AstLambda { Pure: true } } && funcDef.IsSingleInitAndDeeplyConst(false))
                         {
                             ref var list = ref _pureFunctionCallMap.GetOrAddValueRef(funcDef);
                             list ??= [];
@@ -541,6 +573,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                                     break;
                                 }
                             }
+
                             if (!found)
                             {
                                 list.Add(def);
@@ -596,10 +629,12 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                             op = Operator.LogicalOr;
                             cond = condNeg.Expression;
                         }
+
                         node = new AstSimpleStatement(node.Source, node.Start, node.End,
                             new AstBinary(node.Source, node.Start, node.End, cond, bodyExpression,
                                 op));
                     }
+
                     return node;
                 }
                 case AstBlock block:
@@ -611,6 +646,14 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                         NeedValue = true;
                         astCase.Expression = Transform(astCase.Expression);
                         NeedValue = false;
+                    }
+
+                    if (block is AstTry astTry)
+                    {
+                        if (astTry.Bcatch != null)
+                            astTry.Bcatch = Transform(astTry.Bcatch) as AstCatch;
+                        if (astTry.Bfinally != null)
+                            astTry.Bfinally = Transform(astTry.Bfinally) as AstFinally;
                     }
 
                     TransformList(ref block.Body);
