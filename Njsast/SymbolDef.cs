@@ -4,7 +4,7 @@ using Njsast.Scope;
 
 namespace Njsast;
 
-public class SymbolDef: IEquatable<SymbolDef>
+public class SymbolDef : IEquatable<SymbolDef>
 {
     public string Name;
     public string? MangledName;
@@ -29,8 +29,10 @@ public class SymbolDef: IEquatable<SymbolDef>
     {
         Name = orig.Name;
         Scope = scope;
-        Orig = new StructList<AstSymbol>();
-        Orig.Add(orig);
+        Orig =
+        [
+            orig
+        ];
         Init = init;
         References = new StructList<AstSymbol>();
         Global = false;
@@ -45,7 +47,8 @@ public class SymbolDef: IEquatable<SymbolDef>
         if (Orig.Count != 1) return false;
         if (forbidPropWrite)
         {
-            return References.All(sym => !sym.Usage.HasFlag(SymbolUsage.Write) && !sym.Usage.HasFlag(SymbolUsage.PropWrite));
+            return References.All(sym =>
+                !sym.Usage.HasFlag(SymbolUsage.Write) && !sym.Usage.HasFlag(SymbolUsage.PropWrite));
         }
         else
         {
@@ -56,7 +59,8 @@ public class SymbolDef: IEquatable<SymbolDef>
     public bool IsSingleInitAndDeeplyConstForbidDirectPropWrites()
     {
         if (Orig.Count != 1) return false;
-        return References.All(sym => !sym.Usage.HasFlag(SymbolUsage.Write) && !sym.Usage.HasFlag(SymbolUsage.PropWriteDirect));
+        return References.All(sym =>
+            !sym.Usage.HasFlag(SymbolUsage.Write) && !sym.Usage.HasFlag(SymbolUsage.PropWriteDirect));
     }
 
     public bool IsSingleInit
@@ -68,8 +72,10 @@ public class SymbolDef: IEquatable<SymbolDef>
         }
     }
 
-    public bool OnlyDeclared => References.Count == 0  && !Scope.Pinned();
-    public bool NeverRead => References.All(s => s.Usage.HasFlag(SymbolUsage.Write) && !s.Usage.HasFlag(SymbolUsage.Read));
+    public bool OnlyDeclared => References.Count == 0 && !Scope.Pinned();
+
+    public bool NeverRead =>
+        References.All(s => s.Usage.HasFlag(SymbolUsage.Write) && !s.Usage.HasFlag(SymbolUsage.Read));
 
     public SymbolDef? Redefined()
     {
@@ -108,8 +114,10 @@ public class SymbolDef: IEquatable<SymbolDef>
                     }
                 }
             }
+
             return;
         }
+
         var def = Redefined();
         if (def != null)
         {

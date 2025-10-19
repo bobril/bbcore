@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Fixed regression in minifier to not inline variables which assigning global variables.
+
 ## 4.18.0
 
 ### Fixed

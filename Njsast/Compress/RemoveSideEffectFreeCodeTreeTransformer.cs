@@ -535,11 +535,13 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                             return Remove;
                         }
 
-                        if (varDef.Value.IsSymbolDef() is { } rightSymbolDef && def.IsSingleInitAndDeeplyConst(false) &&
+                        if (varDef.Value.IsSymbolDef() is { Global: false } rightSymbolDef &&
+                            def.IsSingleInitAndDeeplyConst(false) &&
                             rightSymbolDef.IsSingleInitAndDeeplyConst(false))
                         {
                             // rename to some unique name to avoid collisions
-                            rightSymbolDef.Name = rightSymbolDef.Name + "__" + def.Name;
+                            if (!rightSymbolDef.Name.Contains("__"))
+                                rightSymbolDef.Name = rightSymbolDef.Name + "__" + def.Name;
                             foreach (var astSymbol in rightSymbolDef.Orig)
                             {
                                 astSymbol.Name = rightSymbolDef.Name;
