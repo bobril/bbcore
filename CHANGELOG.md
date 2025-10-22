@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 4.18.2
+
 ### Fixed
 
 Incremental build now correctly works even with preserveProjectRoot enabled and some files outside of project root.
