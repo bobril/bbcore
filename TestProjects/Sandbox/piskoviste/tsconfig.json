@@ -1,30 +1,40 @@
 {
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "allowJs": false,
+    "allowSyntheticDefaultImports": true,
     "checkJs": false,
     "declaration": false,
+    "downlevelIteration": true,
     "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "lib": [
-      "es5",
-      "dom",
-      "es2015.core",
-      "es2015.promise",
-      "es2015.iterable",
-      "es2015.collection"
+      "es2022",
+      "dom"
     ],
-    "module": "commonjs",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "noEmit": true,
     "noEmitHelpers": true,
-    "preserveConstEnums": false,
     "reactNamespace": "b",
     "removeComments": false,
     "skipLibCheck": false,
     "skipDefaultLibCheck": true,
     "sourceMap": true,
-    "target": "es5",
+    "strict": true,
+    "target": "es2019",
     "resolveJsonModule": true
   },
+  "files": [
+    "index.ts"
+  ],
   "include": [
-    "**/*"
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/*.spec.d.ts",
+    "**/*Spec.ts",
+    "**/*Spec.tsx",
+    "**/*Spec.d.ts"
   ]
 }

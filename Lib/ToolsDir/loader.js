@@ -9,14 +9,15 @@ R.r = function (name, parent) {
     let p = name;
     if (p[0] === ".") {
         let parts = parent ? parent.split("/") : [];
-        parts.push("..");
+        if (parent)
+            parts.push("..");
         parts = parts.concat(p.split("/"));
         const newParts = [];
         for (var i = 0, l = parts.length; i < l; i++) {
             var part = parts[i];
             if (!part || part === ".")
                 continue;
-            if (part === "..")
+            if (part === ".." && newParts.length > 0 && newParts[newParts.length - 1] !== "..")
                 newParts.pop();
             else
                 newParts.push(part);

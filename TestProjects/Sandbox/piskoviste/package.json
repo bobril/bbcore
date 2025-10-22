@@ -1,17 +1,18 @@
 {
-    "name": "piskoviste",
-    "version": "1.0.0",
-    "description": "sandbox like project test",
-    "main": "index.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "author": "",
-    "license": "ISC",
-    "bobril": {
-        "head": "<script src=\"<<../temp/jshead.js>>\"></script>"
-    },
-    "dependencies": {
-        "bobril": "*"
-    }
+  "name": "piskoviste",
+  "version": "1.0.0",
+  "description": "sandbox like project test",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "bobril": {
+    "head": "<script src=\"<<../temp/jshead.js>>\"></script>",
+    "preserveProjectRoot": true
+  },
+  "dependencies": {
+    "bobril": "*"
+  }
 }
