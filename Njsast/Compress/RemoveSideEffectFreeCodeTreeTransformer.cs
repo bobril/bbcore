@@ -535,7 +535,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                             return Remove;
                         }
 
-                        if (varDef.Value.IsSymbolDef() is { Global: false } rightSymbolDef &&
+                        if (varDef.Value.IsSymbolDef() is { Global: false, Name: not "arguments" } rightSymbolDef &&
                             def.IsSingleInitAndDeeplyConst(false) &&
                             rightSymbolDef.IsSingleInitAndDeeplyConst(false))
                         {

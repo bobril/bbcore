@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Fixed regression in minifier to not inline variables which assigning `arguments` virtual function parameter.
+
 ## 4.18.2
 
 ### Fixed
