@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Autodetection of index.ts or index.tsx without package.json. Detection of new files in directory watcher improved.
+
 ## 4.18.3
 
 ### Fixed

@@ -265,7 +265,17 @@ public class TSProject
         else
         {
             PackageJsonChangeId = -1;
+            string[] tryNames = ["index.tsx", "index.ts", "index.js"];
             MainFile = "index.js";
+            foreach (var tryName in tryNames)
+            {
+                if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, tryName)) is IFileCache { IsInvalid: false })
+                {
+                    MainFile = tryName;
+                    break;
+                }
+            }
+
             Dependencies = new();
             DevDependencies = new();
             Assets = null;

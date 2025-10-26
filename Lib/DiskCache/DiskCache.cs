@@ -226,6 +226,16 @@ public class DiskCache : IDiskCache
         if (IgnoreChangesInPath != null && path.StartsWith(IgnoreChangesInPath, StringComparison.Ordinal))
             return;
         //Console.WriteLine("Change: " + path);
+        lock (_lock)
+        {
+            var item = TryGetItemNoLock(PathUtils.Parent(path));
+            if (item is IDirectoryCache { IsFake: false } dir)
+            {
+                //Console.WriteLine("Setting stale for " + dir.FullPath);
+                dir.IsStale = true;
+            }
+        }
+
         _changeSubject.OnNext(path);
     }
 
