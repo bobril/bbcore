@@ -5,6 +5,7 @@
 ### Fixed
 
 Autodetection of index.ts or index.tsx without package.json. Detection of new files in directory watcher improved.
+Bundle2.js and bundle2.js.map are now cleared when incremental build makes nonincremental change.
 
 ## 4.18.3
 

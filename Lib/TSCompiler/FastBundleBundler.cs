@@ -102,6 +102,7 @@ public class FastBundleBundler
             sourceMapBuilder.AddText(GetGlobalDefines());
             sourceMapBuilder.AddText(GetModuleMap());
         }
+
         sourceMapBuilder.AddText(BundlerHelpers.JsHeaders(false));
 
         var cssLink = "";
@@ -139,7 +140,8 @@ public class FastBundleBundler
                         : $"R('{PathUtils.Subtract(moduleName, root!)}',function(require, module, exports, global){{");
                 var adder = sourceMapBuilder.CreateSourceAdder(source.Output, source.MapLink);
                 var sourceReplacer = new SourceReplacer();
-                _project.ApplySourceInfo(sourceReplacer, source.Owner.FullPath, source.MapLink, source.SourceInfo, _buildResult);
+                _project.ApplySourceInfo(sourceReplacer, source.Owner.FullPath, source.MapLink, source.SourceInfo,
+                    _buildResult);
                 sourceReplacer.Apply(adder);
                 sourceMapBuilder.AddText("\n});");
             }
@@ -258,6 +260,8 @@ public class FastBundleBundler
         }
         else
         {
+            _mainBuildResult.FilesContent.GetOrFakeValueRef(_versionDirPrefix + "bundle2.js") = "";
+            _mainBuildResult.FilesContent.GetOrFakeValueRef(_versionDirPrefix + "bundle2.js.map") = "";
             SourceMaps = new Dictionary<string, SourceMap>
             {
                 { PathUtils.GetFile(_buildResult.BundleJsUrl), _sourceMap }
