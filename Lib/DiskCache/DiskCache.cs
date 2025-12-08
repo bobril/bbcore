@@ -118,7 +118,6 @@ public class DiskCache : IDiskCache
         {
             Owner = owner;
             _isInvalid = isInvalid;
-            IsStale = true;
         }
 
         internal void NoteChange()
@@ -226,16 +225,6 @@ public class DiskCache : IDiskCache
         if (IgnoreChangesInPath != null && path.StartsWith(IgnoreChangesInPath, StringComparison.Ordinal))
             return;
         //Console.WriteLine("Change: " + path);
-        lock (_lock)
-        {
-            var item = TryGetItemNoLock(PathUtils.Parent(path));
-            if (item is IDirectoryCache { IsFake: false } dir)
-            {
-                //Console.WriteLine("Setting stale for " + dir.FullPath);
-                dir.IsStale = true;
-            }
-        }
-
         _changeSubject.OnNext(path);
     }
 
@@ -247,7 +236,6 @@ public class DiskCache : IDiskCache
             FullPath = parent.FullPath + (parent != _root ? "/" : "") + name,
             Parent = parent,
             Filter = DefaultFilter,
-            IsStale = true,
             IsLink = isLink,
             IsFake = true
         };
@@ -417,8 +405,7 @@ public class DiskCache : IDiskCache
                         UpdateIfNeededNoLock((IDirectoryCache)subItem);
                         foreach (var item in (IDirectoryCache)subItem)
                         {
-                            if (item is IDirectoryCache &&
-                                (!((IDirectoryCache)item).IsStale || ((IDirectoryCache)item).IsFake))
+                            if (item is IDirectoryCache)
                                 CheckUpdateIfNeededNoLock((IDirectoryCache)item);
                         }
                     }
@@ -494,8 +481,6 @@ public class DiskCache : IDiskCache
 
     void UpdateIfNeededNoLock(IDirectoryCache directory)
     {
-        if (!directory.IsStale)
-            return;
         var wasFake = directory.IsFake;
         directory.IsFake = false;
         var fullPath = directory.FullPath;
@@ -597,7 +582,6 @@ public class DiskCache : IDiskCache
 
         directory.IsWatcherRoot =
             !directory.IsInvalid && (directory.IsLink || NotWatchedByParents(directory.Parent));
-        directory.IsStale = false;
     }
 
     bool NotWatchedByParents(IDirectoryCache directory)
@@ -637,12 +621,10 @@ public class DiskCache : IDiskCache
                 if (info.IsDirectory)
                 {
                     directory.IsLink = info.IsLink;
-                    directory.IsStale = true;
                     UpdateIfNeededNoLock(directory);
                     foreach (var item in directory)
                     {
-                        if (item is IDirectoryCache &&
-                            (!((IDirectoryCache)item).IsStale || ((IDirectoryCache)item).IsFake))
+                        if (item is IDirectoryCache)
                             CheckUpdateIfNeededNoLock((IDirectoryCache)item);
                     }
                 }

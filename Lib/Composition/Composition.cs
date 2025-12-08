@@ -1688,7 +1688,7 @@ public class Composition
 
             return s;
         }).Where(s => !s.EndsWith(".mdxb.tsx", StringComparison.Ordinal)).Throttle(TimeSpan.FromMilliseconds(200));
-        throttled.Merge(throttled.Delay(TimeSpan.FromMilliseconds(300))).Subscribe((_) => _hasBuildWork.Set());
+        throttled.Subscribe((_) => _hasBuildWork.Set());
         var iterationId = 0;
         var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath,
             _buildCache, typeCheckValue);
@@ -1716,7 +1716,7 @@ public class Composition
                     continue;
                 }
 
-                if (_logger.Verbose) _logger.Info("Change detected in " + _dc.LastTrueChange);
+                _logger.Info("Change detected in " + _dc.LastTrueChange);
                 _dc.ResetChange();
                 _hasBuildWork.Set();
                 start = DateTime.UtcNow;

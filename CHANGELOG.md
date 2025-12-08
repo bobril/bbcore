@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Improved
+
+- Change detection made more reliable, but slightly slower.
+
 ## 4.18.4
 
 ### Fixed
