@@ -4,7 +4,12 @@
 
 ### Improved
 
+- Upgraded to .Net 10.
 - Change detection made more reliable, but slightly slower.
+
+### Fixed
+
+- Minification with export namespace with same name as another export.
 
 ## 4.18.4
 

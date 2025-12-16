@@ -2000,9 +2000,9 @@ public class Composition
         while (true)
         {
             var line = Console.ReadLine();
-            if (line == "f" || line == "free" || line == "free ram")
+            if (line is "f" or "free" or "free ram")
                 _compilerPool.FreeMemory().GetAwaiter();
-            if (line == "q" || line == "quit")
+            if (line is "q" or "quit")
                 break;
         }
 

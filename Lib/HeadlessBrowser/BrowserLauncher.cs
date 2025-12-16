@@ -80,7 +80,7 @@ public class BrowserProcessFactory : IBrowserProcessFactory
     public IBrowserProcess Create(string urlToOpen)
     {
         var processArgs = new List<string>();
-        DirectoryInfo directoryInfo = null;
+        DirectoryInfo directoryInfo = null!;
         if (_isFirefox)
         {
             processArgs.Add("-CreateProfile bb");
