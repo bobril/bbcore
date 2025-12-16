@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.0.0
+
 ### Improved
 
 - Upgraded to .Net 10.
