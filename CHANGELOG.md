@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.0.1
+
 ### Fixed
 
 - Another case of minification with export namespace with same name as another export.
