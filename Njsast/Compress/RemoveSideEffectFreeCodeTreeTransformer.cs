@@ -182,7 +182,8 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                             && astAssign.Left.IsSymbolDef() == symbolX
                             && astAssign.Right is AstObject { Properties.Count: 0 }
                             && symbolX.References.All(r =>
-                                r == astAssign.Left || !r.Usage.HasFlag(SymbolUsage.Write)))
+                                r == astAssign.Left || !r.Usage.HasFlag(SymbolUsage.Write))
+                            && symbolX.VarInit is null)
                         {
                             if (symbolX.Orig is not { Count: 1 } || symbolX.Orig[0] is not AstSymbolVar
                                 {
