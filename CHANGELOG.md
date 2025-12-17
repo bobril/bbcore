@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.0.2
+
 ### Fixed
 
 - Change detection speed regression.
