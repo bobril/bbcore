@@ -495,7 +495,17 @@ public class DiskCache : IDiskCache
     void UpdateIfNeededNoLock(IDirectoryCache directory)
     {
         if (!directory.IsStale)
+        {
+            var origItems = ((DirectoryCache)directory).Items;
+            foreach (var item in origItems)
+            {
+                if (item.IsDirectory)
+                    UpdateIfNeededNoLock((IDirectoryCache)item);
+            }
+
             return;
+        }
+
         var wasFake = directory.IsFake;
         directory.IsFake = false;
         var fullPath = directory.FullPath;
