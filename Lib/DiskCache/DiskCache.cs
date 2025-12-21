@@ -38,7 +38,7 @@ public class DiskCache : IDiskCache
             {
                 if (!_isInvalid && value)
                 {
-                    foreach (var i in Items) i.IsInvalid = true;
+                    foreach (var i in Items.Values) i.IsInvalid = true;
                 }
 
                 var wasChange = _isInvalid != value;
@@ -48,7 +48,16 @@ public class DiskCache : IDiskCache
             }
         }
 
-        public bool IsStale { get; set; }
+        public bool IsStale
+        {
+            get => field;
+            set
+            {
+                _caseInsensitiveItems = null;
+                if (value == false) WasNonStale = true;
+                field = value;
+            }
+        }
 
         public bool IsFake { get; set; }
         public bool IsLink { get; set; }
@@ -56,12 +65,12 @@ public class DiskCache : IDiskCache
 
         public bool IsWatcherRoot
         {
-            get => _isWatcherRoot;
+            get;
             set
             {
-                if (_isWatcherRoot == value)
+                if (field == value)
                     return;
-                _isWatcherRoot = value;
+                field = value;
                 if (value)
                 {
                     var w = Owner._directoryWatcherFactory();
@@ -86,33 +95,34 @@ public class DiskCache : IDiskCache
         {
             get
             {
-                if (_realPath == null)
+                if (field == null)
                 {
                     var fp = FullPath;
                     var fp2 = Owner.FsAbstraction.RealPath(fp);
                     if (fp2 == fp)
                     {
-                        _realPath = this;
+                        field = this;
                     }
                     else
                     {
-                        _realPath = Owner.TryGetItem(fp2) as IDirectoryCache ?? this;
+                        field = Owner.TryGetItem(fp2) as IDirectoryCache ?? this;
                     }
                 }
 
-                return _realPath;
+                return field;
             }
         }
 
+        public bool WasNonStale { get; private set; }
+
         public int ChangeId => _changeId;
 
-        public IItemCache[] Items = Array.Empty<IItemCache>();
+        public Dictionary<string, IItemCache> Items = new();
+        Dictionary<string, IItemCache>? _caseInsensitiveItems;
 
         int _changeId;
         bool _isInvalid;
         internal readonly DiskCache Owner;
-        bool _isWatcherRoot;
-        IDirectoryCache? _realPath;
 
         public DirectoryCache(DiskCache owner, bool isInvalid)
         {
@@ -132,29 +142,26 @@ public class DiskCache : IDiskCache
             var items = Items;
             foreach (var t in items)
             {
-                yield return t;
+                yield return t.Value;
             }
         }
 
         public IItemCache? TryGetChild(ReadOnlySpan<char> name)
         {
-            foreach (var item in Items)
+            if (Items.TryGetValue(new string(name), out var value))
+                return value;
+            if (_caseInsensitiveItems == null)
             {
-                if (name.SequenceEqual(item.Name))
+                _caseInsensitiveItems =
+                    new Dictionary<string, IItemCache>(Items.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (var t in Items)
                 {
-                    return item;
+                    _caseInsensitiveItems.TryAdd(t.Key, t.Value);
                 }
             }
 
-            foreach (var item in Items)
-            {
-                if (name.Equals(item.Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    return item;
-                }
-            }
-
-            return null;
+            _caseInsensitiveItems.TryGetValue(new string(name), out value);
+            return value;
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -164,21 +171,8 @@ public class DiskCache : IDiskCache
 
         public void Add(IItemCache item)
         {
-            var items = Items;
-            Array.Resize(ref items, items.Length + 1);
-            items[^1] = item;
-            Items = items;
-        }
-
-        public void Remove(IItemCache item)
-        {
-            var items = Items;
-            var idx = items.IndexOf(item);
-            if (idx < 0) return;
-            var newItems = new IItemCache[items.Length - 1];
-            items.AsSpan(0, idx).CopyTo(newItems);
-            items.AsSpan(idx + 1).CopyTo(newItems.AsSpan(idx));
-            Items = newItems;
+            Items.Add(item.Name, item);
+            _caseInsensitiveItems = null;
         }
     }
 
@@ -233,10 +227,9 @@ public class DiskCache : IDiskCache
             {
                 //Console.WriteLine("Setting stale for " + dir.FullPath);
                 dir.IsStale = true;
+                _changeSubject.OnNext(path);
             }
         }
-
-        _changeSubject.OnNext(path);
     }
 
     IDirectoryCache AddDirectoryFromName(string name, IDirectoryCache parent, bool isLink, bool isInvalid)
@@ -496,16 +489,10 @@ public class DiskCache : IDiskCache
     {
         if (!directory.IsStale)
         {
-            var origItems = ((DirectoryCache)directory).Items;
-            foreach (var item in origItems)
-            {
-                if (item.IsDirectory)
-                    UpdateIfNeededNoLock((IDirectoryCache)item);
-            }
-
             return;
         }
 
+        //Console.WriteLine("Updating " + directory.FullPath);
         var wasFake = directory.IsFake;
         directory.IsFake = false;
         var fullPath = directory.FullPath;
@@ -517,47 +504,18 @@ public class DiskCache : IDiskCache
         {
             var fsis = FsAbstraction.GetDirectoryContent(fullPath);
             var origItems = ((DirectoryCache)directory).Items;
-            var items = origItems;
+            ((DirectoryCache)directory).Items = new Dictionary<string, IItemCache>();
 
-            var names = new HashSet<string>();
-            foreach (var fsi in fsis)
-            {
-                if (!directory.Filter((directory, fsi.Name, fsi.IsDirectory)))
-                    continue;
-                names.Add(fsi.Name);
-            }
-
-            var realChildren = 0;
-            for (var i = items.Length; i-- > 0;)
-            {
-                var item = origItems[i];
-                if (item.IsInvalid) continue;
-                realChildren++;
-                if (names.Contains(item.Name)) continue;
-                item.IsInvalid = true;
-                var newItems = new IItemCache[items.Length - 1];
-                items.AsSpan(0, i).CopyTo(newItems);
-                items.AsSpan(i + 1).CopyTo(newItems.AsSpan(i));
-                items = newItems;
-            }
-
-            if (items != origItems)
-            {
-                ((DirectoryCache)directory).Items = items;
-                if (!wasFake) ((DirectoryCache)directory).NoteChange();
-            }
-            else if (realChildren != names.Count)
-            {
-                if (!wasFake) ((DirectoryCache)directory).NoteChange();
-            }
+            var wasChanged = false;
 
             foreach (var fsi in fsis)
             {
                 if (!directory.Filter((directory, fsi.Name, fsi.IsDirectory)))
                     continue;
-                var item = directory.TryGetChild(fsi.Name);
+                origItems.TryGetValue(fsi.Name, out var item);
                 if (item == null)
                 {
+                    wasChanged = true;
                     if (fsi.IsDirectory)
                     {
                         AddDirectoryFromName(fsi.Name, directory, fsi.IsLink, false);
@@ -574,12 +532,14 @@ public class DiskCache : IDiskCache
                         if (!item.IsDirectory)
                         {
                             item.IsInvalid = true;
-                            ((DirectoryCache)directory).Remove(item);
                             AddDirectoryFromName(fsi.Name, directory, fsi.IsLink, false);
+                            wasChanged = true;
                         }
                         else
                         {
                             ((IDirectoryCache)item).IsLink = fsi.IsLink;
+                            origItems.Remove(fsi.Name);
+                            ((DirectoryCache)directory).Items.Add(fsi.Name, item);
                         }
                     }
                     else
@@ -593,15 +553,23 @@ public class DiskCache : IDiskCache
                                 fitem.Length = fsi.Length;
                                 fitem.IsStale = false;
                             }
+
+                            origItems.Remove(fsi.Name);
+                            ((DirectoryCache)directory).Items.Add(fsi.Name, item);
                         }
                         else
                         {
                             item.IsInvalid = true;
-                            ((DirectoryCache)directory).Remove(item);
                             AddFileFromFileInfo(fsi.Name, directory, fsi);
+                            wasChanged = true;
                         }
                     }
                 }
+            }
+
+            if (wasChanged || origItems.Count != 0)
+            {
+                if (!wasFake) ((DirectoryCache)directory).NoteChange();
             }
         }
 
@@ -651,9 +619,9 @@ public class DiskCache : IDiskCache
                     UpdateIfNeededNoLock(directory);
                     foreach (var item in directory)
                     {
-                        if (item is IDirectoryCache &&
-                            (!((IDirectoryCache)item).IsStale || ((IDirectoryCache)item).IsFake))
-                            CheckUpdateIfNeededNoLock((IDirectoryCache)item);
+                        if (item is IDirectoryCache cache &&
+                            (cache.WasNonStale || cache.IsFake))
+                            CheckUpdateIfNeededNoLock(cache);
                     }
                 }
                 else
