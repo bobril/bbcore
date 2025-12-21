@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+## 5.0.3
+
+### Fixed
+
+- Another change detection rewrite for speed.
+
 ## 5.0.2
 
 ### Fixed
