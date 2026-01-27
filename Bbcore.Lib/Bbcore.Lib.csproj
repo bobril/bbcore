@@ -4,7 +4,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <PackageId>Bbcore.Lib</PackageId>
-        <Version>5.0.3</Version>
+        <Version>5.0.4</Version>
         <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
         <Authors>Tomáš Zálešák, Boris Letocha</Authors>
         <Nullable>enable</Nullable>
