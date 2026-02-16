@@ -267,12 +267,36 @@ static class Program
         {
             var start = new ProcessStartInfo("docker", "info -f {{.ServerVersion}}")
             {
-                UseShellExecute = true,
-                WorkingDirectory = projDir
+                UseShellExecute = false,
+                WorkingDirectory = projDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
             };
             var process = Process.Start(start);
+            var output = process!.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
             process!.WaitForExit();
-            return process.ExitCode == 0;
+            if (error.Contains("Cannot connect to the Docker daemon", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine(error.Trim());
+                return false;
+            }
+
+            if (process.ExitCode != 0)
+            {
+                if (!string.IsNullOrWhiteSpace(error))
+                    Console.WriteLine(error.Trim());
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(output))
+            {
+                if (!string.IsNullOrWhiteSpace(error))
+                    Console.WriteLine(error.Trim());
+                return false;
+            }
+
+            return true;
         }
         catch (Exception ex)
         {
