@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Interactive mode now skips test/headless-browser run for stale intermediate rebuilds when newer file changes are already pending.
+
+### Added
+
+- Verbose logs for headless browser lifecycle (factory init, start, already running, stop, already stopped).
+
 ## 5.0.4
 
 ## 5.0.3

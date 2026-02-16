@@ -1787,9 +1787,21 @@ public class Composition
 
                         if (proj.TestSources is { Count: > 0 } && typeCheckValue != "only")
                         {
-                            fastBundle.BuildHtml(true);
-                            _testServer.StartTest("/test.html", fastBundle.SourceMaps);
-                            StartHeadlessBrowserTest();
+                            // Skip tests for stale builds and only run for the latest stable filesystem state.
+                            if (_dc.CheckForTrueChange())
+                            {
+                                if (_logger.Verbose)
+                                {
+                                    _logger.Info(
+                                        "Skipping test run for current build because newer file changes are pending.");
+                                }
+                            }
+                            else
+                            {
+                                fastBundle.BuildHtml(true);
+                                _testServer.StartTest("/test.html", fastBundle.SourceMaps);
+                                StartHeadlessBrowserTest();
+                            }
                         }
                     }
                 }
@@ -1963,15 +1975,28 @@ public class Composition
     {
         if (_browserProcessFactory == null)
         {
+            if (_logger.Verbose)
+            {
+                _logger.Info("Initializing headless browser process factory.");
+            }
             _browserProcessFactory = new StrategyEnhancedBrowserProcessFactory(_inDocker,
                 _currentProject.HeadlessBrowserStrategy, new NativeFsAbstraction());
         }
 
         if (_browserProcess == null)
         {
+            var testUrl = $"http://localhost:{_webServer.Port}/bb/test/";
+            if (_logger.Verbose)
+            {
+                _logger.Info("Starting headless browser for " + testUrl);
+            }
             try
             {
-                _browserProcess = _browserProcessFactory.Create($"http://localhost:{_webServer.Port}/bb/test/");
+                _browserProcess = _browserProcessFactory.Create(testUrl);
+                if (_logger.Verbose)
+                {
+                    _logger.Info("Headless browser process started.");
+                }
             }
             catch (Exception ex)
             {
@@ -1979,14 +2004,30 @@ public class Composition
                 _logger.Error(ex.ToString());
             }
         }
+        else if (_logger.Verbose)
+        {
+            _logger.Info("Headless browser start requested, but process is already running.");
+        }
     }
 
     public void StopBrowserTest()
     {
         if (_browserProcess != null)
         {
+            if (_logger.Verbose)
+            {
+                _logger.Info("Stopping headless browser process.");
+            }
             _browserProcess.Dispose();
             _browserProcess = null;
+            if (_logger.Verbose)
+            {
+                _logger.Info("Headless browser process stopped.");
+            }
+        }
+        else if (_logger.Verbose)
+        {
+            _logger.Info("Headless browser stop requested, but no process is running.");
         }
     }
 
