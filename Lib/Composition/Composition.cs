@@ -1980,7 +1980,7 @@ public class Composition
                 _logger.Info("Initializing headless browser process factory.");
             }
             _browserProcessFactory = new StrategyEnhancedBrowserProcessFactory(_inDocker,
-                _currentProject.HeadlessBrowserStrategy, new NativeFsAbstraction());
+                _currentProject.HeadlessBrowserStrategy, new NativeFsAbstraction(), _logger.Verbose);
         }
 
         if (_browserProcess == null)

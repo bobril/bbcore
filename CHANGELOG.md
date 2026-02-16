@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Headless browser stdout/stderr and exit message are printed only in verbose mode.
+
 ## 5.1.1
 
 ### Fixed

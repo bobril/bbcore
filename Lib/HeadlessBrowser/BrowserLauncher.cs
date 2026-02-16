@@ -23,12 +23,15 @@ public class StrategyEnhancedBrowserProcessFactory : IBrowserProcessFactory
     readonly bool _inDocker;
     readonly string _strategy;
     readonly IFsAbstraction _fsAbstraction;
+    readonly bool _verbose;
 
-    public StrategyEnhancedBrowserProcessFactory(bool inDocker, string? strategy, IFsAbstraction fsAbstraction)
+    public StrategyEnhancedBrowserProcessFactory(bool inDocker, string? strategy, IFsAbstraction fsAbstraction,
+        bool verbose = false)
     {
         _inDocker = inDocker;
         _strategy = strategy ?? "default";
         _fsAbstraction = fsAbstraction;
+        _verbose = verbose;
     }
 
     public IBrowserProcess Create(string urlToOpen)
@@ -58,7 +61,7 @@ public class StrategyEnhancedBrowserProcessFactory : IBrowserProcessFactory
                 "Cannot find browser on common known paths, use BBBROWSER environmental variable to define path to browser.");
         }
 
-        return new BrowserProcessFactory(_inDocker, browserPathsToRun[0]).Create(urlToOpen);
+        return new BrowserProcessFactory(_inDocker, browserPathsToRun[0], _verbose).Create(urlToOpen);
     }
 }
 
@@ -67,14 +70,16 @@ public class BrowserProcessFactory : IBrowserProcessFactory
     readonly bool _inDocker;
     readonly string _browserPath;
     readonly bool _isFirefox;
+    readonly bool _verbose;
 
     public BrowserProcessFactory(bool inDocker,
-        string browserPath = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe")
+        string browserPath = "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe", bool verbose = false)
     {
         _inDocker = inDocker;
         _browserPath = browserPath;
         _isFirefox = PathUtils.GetFile(PathUtils.Normalize(browserPath))
             .Contains("firefox", StringComparison.OrdinalIgnoreCase);
+        _verbose = verbose;
     }
 
     public IBrowserProcess Create(string urlToOpen)
@@ -133,15 +138,15 @@ public class BrowserProcessFactory : IBrowserProcessFactory
         browserProcess.EnableRaisingEvents = true;
         browserProcess.ErrorDataReceived += (e, d) =>
         {
-            if (!string.IsNullOrEmpty(d.Data)) Console.WriteLine(d.Data);
+            if (_verbose && !string.IsNullOrEmpty(d.Data)) Console.WriteLine(d.Data);
         };
         browserProcess.OutputDataReceived += (e, d) =>
         {
-            if (!string.IsNullOrEmpty(d.Data)) Console.WriteLine(d.Data);
+            if (_verbose && !string.IsNullOrEmpty(d.Data)) Console.WriteLine(d.Data);
         };
         browserProcess.BeginErrorReadLine();
         browserProcess.BeginOutputReadLine();
-        return new LocalBrowserProcess(directoryInfo, browserProcess);
+        return new LocalBrowserProcess(directoryInfo, browserProcess, _verbose);
     }
 
     public class LocalBrowserProcess : IBrowserProcess
@@ -149,14 +154,17 @@ public class BrowserProcessFactory : IBrowserProcessFactory
         readonly DirectoryInfo? _userDirectory;
         readonly EventHandler _disposeHandler;
         readonly UnhandledExceptionEventHandler _unhandledExceptionHandler;
+        readonly bool _verbose;
         int _disposed;
 
-        public LocalBrowserProcess(DirectoryInfo? userDirectory, Process process)
+        public LocalBrowserProcess(DirectoryInfo? userDirectory, Process process, bool verbose)
         {
             Process = process;
+            _verbose = verbose;
             process.Exited += (sender, args) =>
             {
-                Console.WriteLine("Headless browser stopped with " + process.ExitCode);
+                if (_verbose)
+                    Console.WriteLine("Headless browser stopped with " + process.ExitCode);
             };
             _userDirectory = userDirectory;
             _disposeHandler = (s, e) => Dispose();
