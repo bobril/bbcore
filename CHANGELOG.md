@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.1.0
+
 ### Fixed
 
 - Interactive mode now skips test/headless-browser run for stale intermediate rebuilds when newer file changes are already pending.
