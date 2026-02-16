@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Improved headless Chromium shutdown on Windows in interactive/test flow to better terminate process tree and clean temporary profile directory.
+
 ## 5.1.0
 
 ### Fixed

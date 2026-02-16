@@ -128,16 +128,28 @@ public class BrowserProcessFactory : IBrowserProcessFactory
         processStartInfo.RedirectStandardError = true;
         processStartInfo.RedirectStandardOutput = true;
         var browserProcess = Process.Start(processStartInfo);
-        browserProcess.ErrorDataReceived += (e, d) => { Console.Write(d.Data); };
-        browserProcess.OutputDataReceived += (e, d) => { Console.Write(d.Data); };
+        if (browserProcess == null)
+            throw new Exception("Headless browser process did not start.");
+        browserProcess.EnableRaisingEvents = true;
+        browserProcess.ErrorDataReceived += (e, d) =>
+        {
+            if (!string.IsNullOrEmpty(d.Data)) Console.WriteLine(d.Data);
+        };
+        browserProcess.OutputDataReceived += (e, d) =>
+        {
+            if (!string.IsNullOrEmpty(d.Data)) Console.WriteLine(d.Data);
+        };
+        browserProcess.BeginErrorReadLine();
+        browserProcess.BeginOutputReadLine();
         return new LocalBrowserProcess(directoryInfo, browserProcess);
     }
 
     public class LocalBrowserProcess : IBrowserProcess
     {
-        readonly DirectoryInfo _userDirectory;
+        readonly DirectoryInfo? _userDirectory;
         readonly EventHandler _disposeHandler;
         readonly UnhandledExceptionEventHandler _unhandledExceptionHandler;
+        int _disposed;
 
         public LocalBrowserProcess(DirectoryInfo? userDirectory, Process process)
         {
@@ -158,36 +170,22 @@ public class BrowserProcessFactory : IBrowserProcessFactory
 
         public void Dispose()
         {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+                return;
             GC.SuppressFinalize(this);
             AppDomain.CurrentDomain.DomainUnload -= _disposeHandler;
             AppDomain.CurrentDomain.ProcessExit -= _disposeHandler;
             AppDomain.CurrentDomain.UnhandledException -= _unhandledExceptionHandler;
             if (Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                // On Windows Chrome locks pma file with some child process, so we have to kill whole process tree
-                try
-                {
-                    var processStartInfo = new ProcessStartInfo("taskkill", "/F /T /pid " + this.Process.Id)
-                    {
-                        WindowStyle = ProcessWindowStyle.Hidden,
-                        CreateNoWindow = true,
-                        UseShellExecute = false,
-                        WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-                        //RedirectStandardOutput = true,
-                        //RedirectStandardError = true
-                    };
-                    Process.Start(processStartInfo).WaitForExit();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                }
+                KillWindowsBrowserProcesses();
             }
             else
             {
                 try
                 {
-                    Process.Kill();
+                    if (!Process.HasExited)
+                        Process.Kill();
                 }
                 catch
                 {
@@ -195,19 +193,95 @@ public class BrowserProcessFactory : IBrowserProcessFactory
                 }
             }
 
-            Process.WaitForExit();
-            var repetition = 0;
-            while (repetition++ < 5)
+            try
             {
-                try
+                Process.WaitForExit(5000);
+            }
+            catch
+            {
+                // ignored
+            }
+
+            DeleteUserDirectoryWithRetry();
+        }
+
+        void KillWindowsBrowserProcesses()
+        {
+            // Taskkill /T should kill complete subtree started by parent browser process.
+            RunWindowsCommand("taskkill", "/F /T /pid " + Process.Id);
+
+            // Fallback for detached descendants still using user-data-dir.
+            if (_userDirectory != null)
+            {
+                var escapedProfileDir = _userDirectory.FullName.Replace("'", "''");
+                var psCommand = "$pattern = '" + escapedProfileDir + "';" +
+                                "Get-CimInstance Win32_Process | Where-Object { " +
+                                "$_.CommandLine -like ('*' + $pattern + '*') -and " +
+                                "($_.Name -ieq 'chrome.exe' -or $_.Name -ieq 'msedge.exe' -or $_.Name -ieq 'chromium.exe') " +
+                                "} | ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop } catch {} }";
+                RunWindowsCommand("powershell",
+                    "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"" + psCommand + "\"");
+            }
+
+            try
+            {
+                if (!Process.HasExited)
                 {
-                    _userDirectory?.Delete(true);
-                    return;
+                    Process.Kill(true);
                 }
-                catch
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+
+        void DeleteUserDirectoryWithRetry()
+        {
+            if (_userDirectory == null)
+                return;
+            var repetition = 0;
+            while (repetition++ < 20)
+            {
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
-                    Thread.Sleep(50 * repetition);
+                    RunWindowsCommand("cmd", "/C rd /s /q \"" + _userDirectory.FullName + "\"");
+                    if (!Directory.Exists(_userDirectory.FullName))
+                        return;
                 }
+                else
+                {
+                    try
+                    {
+                        _userDirectory.Delete(true);
+                        return;
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+
+                Thread.Sleep(100 * repetition);
+            }
+        }
+
+        static void RunWindowsCommand(string fileName, string arguments)
+        {
+            try
+            {
+                var processStartInfo = new ProcessStartInfo(fileName, arguments)
+                {
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory
+                };
+                Process.Start(processStartInfo)?.WaitForExit();
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
