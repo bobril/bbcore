@@ -18,6 +18,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Lib\Lib.csproj"/>
         <ProjectReference Include="..\Njsast\Njsast.csproj"/>
+        <ProjectReference Include="..\bb\bb.csproj" ReferenceOutputAssembly="false"/>
     </ItemGroup>
 
 </Project>

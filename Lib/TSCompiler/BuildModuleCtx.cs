@@ -1175,7 +1175,8 @@ public class BuildModuleCtx : IImportResolver
             var source = info.Owner.Utf8Content;
             var transpileOptions = BuildCtx!.CompilerOptions.Clone();
             transpileOptions.module = ModuleKind.Commonjs;
-            transpileOptions.moduleResolution = ModuleResolutionKind.Node10;
+            if (transpileOptions.moduleResolution == ModuleResolutionKind.Bundler)
+                transpileOptions.moduleResolution = null;
             transpileOptions.sourceMap = true;
             compiler = BuildCtx.CompilerPool.GetTs(Owner!.DiskCache, transpileOptions);
             //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);

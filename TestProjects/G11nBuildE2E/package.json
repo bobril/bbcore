@@ -1,0 +1,14 @@
+{
+  "name": "g11n-build-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.15.1",
+  "bobril": {
+    "dependencies": "disabled",
+    "tsVersion": "6.0.2"
+  },
+  "dependencies": {
+    "bobril": "^20.10.1",
+    "bobril-g11n": "^5.1.2"
+  }
+}

@@ -190,7 +190,6 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         context.TsProject.ProjectOptions.FinalCompilerOptions.target = ScriptTarget.Es2019;
         context.TsProject.ProjectOptions.FinalCompilerOptions.strict = true;
         context.TsProject.ProjectOptions.FinalCompilerOptions.outDir = "dist";
-        context.TsProject.ProjectOptions.FinalCompilerOptions.moduleResolution = ModuleResolutionKind.NodeJs;
         context.TsProject.ProjectOptions.MainFile = "/tmp/index.ts";
         context.TsProject.ProjectOptions.Tools = context.ToolsDir;
         context.TsProject.ProjectOptions.TypeScriptVersion = typeScriptVersion;

@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+Compatibility with TypeScript 6.0.2
+
 ## 5.1.2
 
 ### Fixed
@@ -12,13 +16,15 @@
 
 ### Fixed
 
-- Improved headless Chromium shutdown on Windows in interactive/test flow to better terminate process tree and clean temporary profile directory.
+- Improved headless Chromium shutdown on Windows in interactive/test flow to better terminate process tree and clean
+  temporary profile directory.
 
 ## 5.1.0
 
 ### Fixed
 
-- Interactive mode now skips test/headless-browser run for stale intermediate rebuilds when newer file changes are already pending.
+- Interactive mode now skips test/headless-browser run for stale intermediate rebuilds when newer file changes are
+  already pending.
 
 ### Added
 
