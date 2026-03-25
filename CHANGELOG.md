@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.2.0
+
 ### Fixed
 
 Compatibility with TypeScript 6.0.2
