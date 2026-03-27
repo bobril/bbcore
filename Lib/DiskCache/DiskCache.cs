@@ -36,15 +36,18 @@ public class DiskCache : IDiskCache
             get => _isInvalid;
             set
             {
-                if (!_isInvalid && value)
+                lock (Owner._lock)
                 {
-                    foreach (var i in Items.Values) i.IsInvalid = true;
-                }
+                    if (!_isInvalid && value)
+                    {
+                        foreach (var i in Items.Values) i.IsInvalid = true;
+                    }
 
-                var wasChange = _isInvalid != value;
-                _isInvalid = value;
-                if (value) IsWatcherRoot = false;
-                if (wasChange) NoteChange();
+                    var wasChange = _isInvalid != value;
+                    _isInvalid = value;
+                    if (value) IsWatcherRoot = false;
+                    if (wasChange) NoteChange();
+                }
             }
         }
 
@@ -139,7 +142,12 @@ public class DiskCache : IDiskCache
 
         public IEnumerator<IItemCache> GetEnumerator()
         {
-            var items = Items;
+            KeyValuePair<string, IItemCache>[] items;
+            lock (Owner._lock)
+            {
+                items = Items.ToArray();
+            }
+
             foreach (var t in items)
             {
                 yield return t.Value;
@@ -148,20 +156,23 @@ public class DiskCache : IDiskCache
 
         public IItemCache? TryGetChild(ReadOnlySpan<char> name)
         {
-            if (Items.TryGetValue(new string(name), out var value))
-                return value;
-            if (_caseInsensitiveItems == null)
+            lock (Owner._lock)
             {
-                _caseInsensitiveItems =
-                    new Dictionary<string, IItemCache>(Items.Count, StringComparer.OrdinalIgnoreCase);
-                foreach (var t in Items)
+                if (Items.TryGetValue(new string(name), out var value))
+                    return value;
+                if (_caseInsensitiveItems == null)
                 {
-                    _caseInsensitiveItems.TryAdd(t.Key, t.Value);
+                    _caseInsensitiveItems =
+                        new Dictionary<string, IItemCache>(Items.Count, StringComparer.OrdinalIgnoreCase);
+                    foreach (var t in Items)
+                    {
+                        _caseInsensitiveItems.TryAdd(t.Key, t.Value);
+                    }
                 }
-            }
 
-            _caseInsensitiveItems.TryGetValue(new string(name), out value);
-            return value;
+                _caseInsensitiveItems.TryGetValue(new string(name), out value);
+                return value;
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -171,8 +182,11 @@ public class DiskCache : IDiskCache
 
         public void Add(IItemCache item)
         {
-            Items.Add(item.Name, item);
-            _caseInsensitiveItems = null;
+            lock (Owner._lock)
+            {
+                Items.Add(item.Name, item);
+                _caseInsensitiveItems = null;
+            }
         }
     }
 
