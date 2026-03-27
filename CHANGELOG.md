@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.2.1
+
 ### Fixed
 
 - Synchronized `DiskCache` directory child lookup and enumeration to avoid race conditions during concurrent refreshes.
