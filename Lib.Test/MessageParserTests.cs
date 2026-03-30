@@ -10,6 +10,24 @@ namespace Lib.Test;
 public class MessageParserTests
 {
     [Fact]
+    public void CustomFormatterParses()
+    {
+        var ast = new MessageParser().Parse("The {name, space}room is full.");
+        Assert.IsNotType<ErrorAst>(ast);
+
+        var ast2 = new MessageParser().Parse("{name, surround_test}");
+        Assert.IsNotType<ErrorAst>(ast2);
+    }
+
+    [Fact]
+    public void CustomFormatterDoesNotAcceptParameters()
+    {
+        var ast = new MessageParser().Parse("{name, surround_test, extra}");
+        var error = Assert.IsType<ErrorAst>(ast);
+        Assert.Equal("Custom formatter does not accept parameters", error.Message);
+    }
+
+    [Fact]
     public void ParamExtractionWorks()
     {
         var ast = new MessageParser().Parse(@"{gender_of_host, select,

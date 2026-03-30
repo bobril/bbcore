@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- `Lib.Translation.MessageParser` now accepts generic custom message formatters without parameters, matching `bobril-g11n` support for `registerCustomFormatter` and the default `space` formatter.
+
 ## 5.2.1
 
 ### Fixed

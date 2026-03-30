@@ -636,8 +636,14 @@ public class MessageParser
             return res;
         }
 
-        return BuildError(
-            "Expecting one of \"number\", \"time\", \"date\", \"plural\", \"selectordinal\", \"select\".");
+        res.Format = new FormatTypeAst((string) name);
+        if (IsCloseBracketToken())
+        {
+            AdvanceNextToken();
+            return res;
+        }
+
+        return BuildError("Custom formatter does not accept parameters");
     }
 
     MessageAst ParseNumberAsAst()
