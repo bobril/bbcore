@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Restored `b.sprite(...svg...)` processing with TypeScript 6.0.2 namespace imports emitted through `__importStar(require(...))`.
+
 ## 5.3.0
 
 ### Added

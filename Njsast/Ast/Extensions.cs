@@ -38,6 +38,9 @@ public static class Extensions
 
     public static bool IsTsReexportSymbol(this SymbolDef? symbol) => IsGlobalSymbol(symbol) == "__exportStar";
 
+    public static bool IsTsImportHelperSymbol(this SymbolDef? symbol) =>
+        symbol is { Name: "__importStar" or "__importDefault" };
+
     public static bool IsParentScopeFor(this AstScope parentScope, AstScope? potentiallyNestedScope)
     {
         var scope = potentiallyNestedScope;
@@ -53,11 +56,22 @@ public static class Extensions
 
     public static string? IsRequireCall(this AstNode? node)
     {
-        if (node is not AstCall { Args.Count: 1, Expression: AstSymbol methodNameSymbol } call ||
-            !methodNameSymbol.Thedef.IsRequireSymbol()) return null;
-        var arg = call.Args[0];
-        if (arg is AstString str)
-            return str.Value;
+        if (node is not AstCall { Args.Count: 1 } call) return null;
+        if (call.Expression is AstSymbol methodNameSymbol)
+        {
+            if (methodNameSymbol.Thedef.IsRequireSymbol())
+            {
+                var arg = call.Args[0];
+                if (arg is AstString str)
+                    return str.Value;
+                return null;
+            }
+
+            if (methodNameSymbol.Thedef.IsTsImportHelperSymbol())
+            {
+                return call.Args[0].IsRequireCall();
+            }
+        }
 
         return null;
     }

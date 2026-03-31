@@ -90,19 +90,9 @@ public class AstCall : AstNode
 
     public override object? ConstValue(IConstEvalCtx? ctx = null)
     {
-        if (Expression is AstSymbolRef symb)
-        {
-            var def = symb.Thedef;
-            if (def == null || ctx == null || Args.Count != 1) return null;
-            if (def.Undeclared && def.Global && def.Name == "require")
-            {
-                var param = Args[0].ConstValue(ctx.StripPathResolver());
-                if (param is not string s) return null;
-                return ctx.ResolveRequire(s);
-            }
-        }
-
-        return null;
+        if (ctx == null) return null;
+        var requireName = this.IsRequireCall();
+        return requireName == null ? null : ctx.ResolveRequire(requireName);
     }
 
     public override void DumpScalars(IAstDumpWriter writer)

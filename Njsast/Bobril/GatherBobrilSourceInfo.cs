@@ -142,37 +142,30 @@ public class GatherBobrilSourceInfo
             }
             else if (node is AstCall call)
             {
-                if (call.Expression is AstSymbol expSymbol && !(call.Expression is AstThis) && call.Args.Count == 1)
+                if (call.IsRequireCall() is { } requireName)
                 {
-                    var def = expSymbol.Thedef!;
-                    if (def.Global && def.Name == "require")
+                    var importNode = FindRequireStringNode(call) ?? call;
+                    var imp = new SourceInfo.Import
                     {
-                        var arg = call.Args[0];
-                        if (arg is AstString str)
-                        {
-                            var imp = new SourceInfo.Import
-                            {
-                                Name = str.Value,
-                                StartLine = str.Start.Line,
-                                StartCol = str.Start.Column,
-                                EndLine = str.End.Line,
-                                EndCol = str.End.Column
-                            };
-                            if (SourceInfo.Imports == null)
-                            {
-                                SourceInfo.Imports = new();
-                            }
+                        Name = requireName,
+                        StartLine = importNode.Start.Line,
+                        StartCol = importNode.Start.Column,
+                        EndLine = importNode.End.Line,
+                        EndCol = importNode.End.Column
+                    };
+                    if (SourceInfo.Imports == null)
+                    {
+                        SourceInfo.Imports = new();
+                    }
 
-                            SourceInfo.Imports.Add(imp);
-                            if (str.Value == "bobril" && SourceInfo.BobrilImport == null)
-                            {
-                                SourceInfo.BobrilImport = ExpressionName();
-                            }
-                            else if (str.Value == "bobril-g11n" && SourceInfo.BobrilG11NImport == null)
-                            {
-                                SourceInfo.BobrilG11NImport = ExpressionName();
-                            }
-                        }
+                    SourceInfo.Imports.Add(imp);
+                    if (requireName == "bobril" && SourceInfo.BobrilImport == null)
+                    {
+                        SourceInfo.BobrilImport = ExpressionName();
+                    }
+                    else if (requireName == "bobril-g11n" && SourceInfo.BobrilG11NImport == null)
+                    {
+                        SourceInfo.BobrilG11NImport = ExpressionName();
                     }
 
                     return;
@@ -840,6 +833,24 @@ public class GatherBobrilSourceInfo
                 if (assign.Left is AstSymbol astSymbol)
                 {
                     return astSymbol.Name;
+                }
+            }
+
+            return null;
+        }
+
+        static AstNode? FindRequireStringNode(AstCall call)
+        {
+            if (call.Expression is AstSymbol expSymbol)
+            {
+                if (expSymbol.Thedef.IsRequireSymbol())
+                {
+                    return call.Args.Count == 1 ? call.Args[0] : null;
+                }
+
+                if (expSymbol.Thedef.IsTsImportHelperSymbol() && call.Args.Count == 1)
+                {
+                    return (call.Args[0] as AstCall) is { } wrapped ? FindRequireStringNode(wrapped) : null;
                 }
             }
 

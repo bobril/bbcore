@@ -7,6 +7,9 @@ using Xunit;
 using Lib.TSCompiler;
 using Lib.Composition;
 using Lib.Watcher;
+using Njsast.Bobril;
+using Njsast.ConstEval;
+using Njsast.Reader;
 
 namespace Lib.Test;
 
@@ -77,6 +80,65 @@ public class CompilerTests
         {
             _compilerPool.ReleaseTs(ts);
             Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void TypeScript6StillFindsBobrilSpritesInGatheredSourceInfo()
+    {
+        _tools.SetTypeScriptVersion("6.0.2");
+        var ts = _compilerPool.GetTs(null, new TSCompilerOptions
+        {
+            jsx = JsxEmit.React,
+            module = ModuleKind.Commonjs,
+            reactNamespace = "b",
+            resolveJsonModule = true,
+            sourceMap = true,
+            target = ScriptTarget.Es2019
+        });
+        try
+        {
+            var input = """
+                        import * as b from "bobril";
+
+                        let icon1 = b.sprite("gradient.svg", "blue");
+                        let icon2 = b.sprite("gradient2.svg");
+                        let icon3 = b.sprite("light.png", undefined);
+                        """;
+            var transpileResult = ts.Transpile("index.ts", input);
+            var parser = new Parser(new Options(), transpileResult.JavaScript);
+            var toplevel = parser.Parse();
+            toplevel.FigureOutScope();
+            var sourceInfo = GatherBobrilSourceInfo.Gather(
+                toplevel,
+                new ResolvingConstEvalCtx("/tmp/index.ts", null!),
+                static (ctx, text) => text
+            );
+            Assert.Equal("b", sourceInfo.BobrilImport);
+            Assert.NotNull(sourceInfo.Imports);
+            Assert.Contains(sourceInfo.Imports!, import => import.Name == "bobril");
+            Assert.NotNull(sourceInfo.Sprites);
+            Assert.Collection(sourceInfo.Sprites!,
+                sprite =>
+                {
+                    Assert.Equal("gradient.svg", sprite.Name);
+                    Assert.Equal("blue", sprite.Color);
+                },
+                sprite =>
+                {
+                    Assert.Equal("gradient2.svg", sprite.Name);
+                    Assert.False(sprite.HasColor);
+                },
+                sprite =>
+                {
+                    Assert.Equal("light.png", sprite.Name);
+                    Assert.True(sprite.HasColor);
+                    Assert.Null(sprite.Color);
+                });
+        }
+        finally
+        {
+            _compilerPool.ReleaseTs(ts);
         }
     }
 }
