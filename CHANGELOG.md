@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.3.2
+
 ### Fixed
 
 - Adjusted bundled TypeScript helper interop for current `__importStar`/`__importDefault` behavior.
