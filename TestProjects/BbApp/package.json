@@ -1,21 +1,21 @@
 {
-    "name": "sample",
-    "version": "1.0.0",
-    "description": "",
-    "typescript": {
-        "main": "src/app.ts"
-    },
-    "author": "Bobris",
-    "license": "MIT",
-    "prettier": {
-        "tabWidth": 4,
-        "printWidth": 120
-    },
-    "dependencies": {
-        "bobril": "^20.10.1",
-        "bobril-g11n": "^5.1.2"
-    },
-    "devDependencies": {
-        "typescript": "^5.6.3"
-    }
+  "name": "sample",
+  "version": "1.0.0",
+  "description": "",
+  "typescript": {
+    "main": "src/app.ts"
+  },
+  "author": "Bobris",
+  "license": "MIT",
+  "prettier": {
+    "tabWidth": 4,
+    "printWidth": 120
+  },
+  "dependencies": {
+    "bobril": "^20.11.3",
+    "bobril-g11n": "^5.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
 }

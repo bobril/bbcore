@@ -9,41 +9,41 @@ importers:
   .:
     dependencies:
       bobril:
-        specifier: ^20.10.1
-        version: 20.10.1
+        specifier: ^20.11.3
+        version: 20.11.3
       bobril-g11n:
-        specifier: ^5.1.2
-        version: 5.1.2
+        specifier: ^5.6.0
+        version: 5.6.0
     devDependencies:
       typescript:
-        specifier: ^5.6.3
-        version: 5.6.3
+        specifier: ^6.0.2
+        version: 6.0.2
 
 packages:
 
-  bobril-g11n@5.1.2:
-    resolution: {integrity: sha512-ekOsll6gxEuOXNB9D2FgyodXYugMuh14xB0L5GlepQMPUAJGjjIZelwiuCrgc/euxN01IWalxlWYlBJOZp4Eiw==}
+  bobril-g11n@5.6.0:
+    resolution: {integrity: sha512-IKCKJ0EawCWHmF2JOii8PwcbGTOxvW33YrAQwgsUVWy01yZ8+y4gqZoamBwYuQ5ee8+6lBVhGHSdYcfGad/5WA==}
 
-  bobril@20.10.1:
-    resolution: {integrity: sha512-uThVNdfuo0zfyW2VMYZdxGi8NnFH6aTbuWGT2cd7kMu43ZlhHmuYCz0k1A/O6E2EsrzFy6Fe26r2OCvIyG1BRA==}
+  bobril@20.11.3:
+    resolution: {integrity: sha512-39m8W+iV/AA471hv7YzyQYLPZLBoTuAmhiUbD4MvpX2DsHlZJ4D4PFXxy4bgnPK7Igx/P3hwVQA9leGehzlHYg==}
 
   moment@2.30.1:
     resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
 
-  typescript@5.6.3:
-    resolution: {integrity: sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==}
+  typescript@6.0.2:
+    resolution: {integrity: sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ==}
     engines: {node: '>=14.17'}
     hasBin: true
 
 snapshots:
 
-  bobril-g11n@5.1.2:
+  bobril-g11n@5.6.0:
     dependencies:
-      bobril: 20.10.1
+      bobril: 20.11.3
       moment: 2.30.1
 
-  bobril@20.10.1: {}
+  bobril@20.11.3: {}
 
   moment@2.30.1: {}
 
-  typescript@5.6.3: {}
+  typescript@6.0.2: {}

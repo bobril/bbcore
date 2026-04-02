@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Adjusted bundled TypeScript helper interop for current `__importStar`/`__importDefault` behavior.
+- Bumped the TypeScript file build cache table version so older cached transpilation results are not reused after the helper change.
+
 ## 5.3.1
 
 ### Fixed
