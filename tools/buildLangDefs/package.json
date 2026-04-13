@@ -2,6 +2,9 @@
   "name": "buildLangDefs",
   "version": "1.0.0",
   "main": "index.js",
+  "scripts": {
+    "generate-quotes-cs": "node generateLocaleQuotesCs.js"
+  },
   "license": "MIT",
   "dependencies": {
     "@types/node": "^8.0.53",

@@ -10,6 +10,7 @@ using Lib.DiskCache;
 using Lib.Registry;
 using Lib.Utils;
 using Lib.Utils.Logger;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Lib.ToolsDir;
@@ -79,7 +80,6 @@ public class ToolsDir : IToolsDir
             WebZip = ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.web.zip");
             CoverageDetailsVisualizerZip =
                 ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.CoverageDetailsVisualizer.zip");
-
             _localeDefs = JObject.Parse(ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.localeDefs.json"));
             LiveReloadJs = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.liveReload.js");
         }
@@ -232,7 +232,7 @@ public class ToolsDir : IToolsDir
         "4.0" => JasmineDtsPath400,
         _ => JasmineDtsPath330
     };
-
+    
     readonly JObject _localeDefs;
     string _proxyWeb;
     string _proxyWebt;
@@ -378,18 +378,50 @@ public class ToolsDir : IToolsDir
         _proxyWebt = url;
     }
 
-    public string GetLocaleDef(string locale)
+    public string? GetLocaleDef(string locale)
     {
+        locale = locale.ToLowerInvariant();
         while (true)
         {
             if (_localeDefs.TryGetValue(locale, StringComparison.InvariantCultureIgnoreCase, out var val))
             {
-                return val.ToString();
+                return AppendLocaleQuotes(val.ToString(), locale);
             }
 
             var dashIndex = locale.IndexOf('-');
             if (dashIndex < 0)
                 return null;
+            locale = locale.Substring(0, dashIndex);
+        }
+    }
+
+    static string AppendLocaleQuotes(string langInit, string locale)
+    {
+        if (!TryGetLocaleQuotes(locale, out var openQuote, out var closeQuote))
+            return langInit;
+
+        var insertPos = langInit.LastIndexOf("],", StringComparison.Ordinal);
+        if (insertPos < 0)
+            return langInit;
+
+        return langInit.Substring(0, insertPos) + "," + JsonConvert.ToString(openQuote) + "," +
+               JsonConvert.ToString(closeQuote) + langInit.Substring(insertPos);
+    }
+
+    static bool TryGetLocaleQuotes(string locale, out string openQuote, out string closeQuote)
+    {
+        locale = locale.ToLowerInvariant();
+        while (true)
+        {
+            if (LocaleQuotesGenerated.TryGetExactQuotes(locale, out openQuote, out closeQuote))
+                return true;
+
+            var dashIndex = locale.LastIndexOf('-');
+            if (dashIndex < 0)
+            {
+                return LocaleQuotesGenerated.TryGetExactQuotes("en", out openQuote, out closeQuote);
+            }
+
             locale = locale.Substring(0, dashIndex);
         }
     }

@@ -325,6 +325,9 @@
         <Compile Include="..\Lib\ToolsDir\IToolsDir.cs">
             <Link>ToolsDir\IToolsDir.cs</Link>
         </Compile>
+        <Compile Include="..\Lib\ToolsDir\LocaleQuotesGenerated.cs">
+            <Link>ToolsDir\LocaleQuotesGenerated.cs</Link>
+        </Compile>
         <Compile Include="..\Lib\ToolsDir\ToolsDir.cs">
             <Link>ToolsDir\ToolsDir.cs</Link>
         </Compile>

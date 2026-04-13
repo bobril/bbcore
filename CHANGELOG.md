@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Generated compact locale quote metadata (`openQuote`/`closeQuote`) for translations and appended it to `bobrilRegisterTranslations(...)` locale data.
+
 ## 5.3.2
 
 ### Fixed
