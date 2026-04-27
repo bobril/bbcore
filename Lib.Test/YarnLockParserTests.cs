@@ -8,6 +8,49 @@ namespace Lib.Test;
 public class YarnLockParserTests
 {
     [Fact]
+    public void YarnV4Lock()
+    {
+        const string source = """
+                              __metadata:
+                                version: 8
+                                cacheKey: 10
+
+                              "@types/node@npm:^20.0.0":
+                                version: 20.11.30
+                                resolution: "@types/node@npm:20.11.30"
+                                checksum: 10/abc
+                                languageName: node
+                                linkType: hard
+
+                              bobril@npm:*:
+                                version: 20.7.1
+                                resolution: "bobril@npm:20.7.1"
+                                checksum: 10/def
+                                languageName: node
+                                linkType: hard
+
+                              typescript@patch:typescript@npm%3A^5.5.3#optional!builtin<compat/typescript>:
+                                version: 5.5.3
+                                resolution: "typescript@patch:typescript@npm%3A5.5.3#optional!builtin<compat/typescript>::version=5.5.3&hash=379a07"
+                                languageName: node
+                                linkType: hard
+                              """;
+
+        var fs = new InMemoryFs();
+        fs.WriteAllUtf8("proj/package.json", "");
+        var dc = new DiskCache.DiskCache(fs, () => fs);
+        var directory = dc.TryGetItem("proj") as IDirectoryCache;
+        var result = YarnNodePackageManager.ParseYarnLock(directory, source).ToArray();
+        Assert.Equal(3, result.Length);
+        Assert.Equal("@types/node", result[0].Name);
+        Assert.Equal("20.11.30", result[0].Version);
+        Assert.Equal("bobril", result[1].Name);
+        Assert.Equal("20.7.1", result[1].Version);
+        Assert.Equal("typescript", result[2].Name);
+        Assert.Equal("5.5.3", result[2].Version);
+    }
+
+    [Fact]
     public void MoreComplexYarnLock()
     {
         const string source = """

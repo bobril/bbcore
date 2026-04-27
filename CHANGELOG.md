@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Added
+
+- Added Bun package manager support for projects using `bun.lock` or `bun.lockb`.
+
+### Fixed
+
+- Added support for reading Yarn v4 lockfiles.
+
 ## 5.4.0
 
 ### Added

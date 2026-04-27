@@ -8,6 +8,7 @@ namespace Lib.Registry;
 class CurrentNodePackageManager : INodePackageManager
 {
     readonly ILogger _logger;
+    BunNodePackageManager _bun;
     PnpmNodePackageManager _pnpm;
     YarnNodePackageManager _yarn;
     NpmNodePackageManager _npm;
@@ -15,15 +16,21 @@ class CurrentNodePackageManager : INodePackageManager
     public CurrentNodePackageManager(IDiskCache diskCache, ILogger logger)
     {
         _logger = logger;
+        _bun = new BunNodePackageManager(diskCache, logger);
         _pnpm = new PnpmNodePackageManager(diskCache, logger);
         _yarn = new YarnNodePackageManager(diskCache, logger);
         _npm = new NpmNodePackageManager(diskCache, logger);
     }
 
-    public bool IsAvailable => _pnpm.IsAvailable || _yarn.IsAvailable || _npm.IsAvailable;
+    public bool IsAvailable => _bun.IsAvailable || _pnpm.IsAvailable || _yarn.IsAvailable || _npm.IsAvailable;
 
     public bool IsUsedInProject(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
+        if (_bun.IsUsedInProject(projectDirectory, dc))
+        {
+            return true;
+        }
+
         if (_pnpm.IsUsedInProject(projectDirectory, dc))
         {
             return true;
@@ -44,6 +51,11 @@ class CurrentNodePackageManager : INodePackageManager
 
     public IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory)
     {
+        if (_bun.IsUsedInProject(projectDirectory, null))
+        {
+            return _bun.GetLockedDependencies(projectDirectory);
+        }
+
         if (_pnpm.IsUsedInProject(projectDirectory, null))
         {
             return _pnpm.GetLockedDependencies(projectDirectory);
@@ -67,9 +79,16 @@ class CurrentNodePackageManager : INodePackageManager
         var npmIsUsed = _npm.IsUsedInProject(projectDirectory, dc);
         var pnpmIsUsed = _pnpm.IsUsedInProject(projectDirectory, dc);
         var yarnIsUsed = _yarn.IsUsedInProject(projectDirectory, dc);
+        var bunIsUsed = _bun.IsUsedInProject(projectDirectory, dc);
 
         if (npmIsUsed)
         {
+            if (bunIsUsed)
+            {
+                _logger.Error("Both package-lock.json and bun.lock found. Skipping ...");
+                return null;
+            }
+
             if (yarnIsUsed)
             {
                 _logger.Error("Both package-lock.json and yarn.lock found. Skipping ...");
@@ -88,6 +107,29 @@ class CurrentNodePackageManager : INodePackageManager
             }
 
             _logger.Error("Npm is used in project, but it is not found installed in PATH. Skipping ...");
+            return null;
+        }
+
+        if (bunIsUsed)
+        {
+            if (pnpmIsUsed)
+            {
+                _logger.Error("Both bun.lock and pnpm-lock.yaml found. Skipping ...");
+                return null;
+            }
+
+            if (yarnIsUsed)
+            {
+                _logger.Error("Both bun.lock and yarn.lock found. Skipping ...");
+                return null;
+            }
+
+            if (_bun.IsAvailable)
+            {
+                return _bun;
+            }
+
+            _logger.Error("Bun is used in project, but it is not found installed in PATH. Skipping ...");
             return null;
         }
 
@@ -116,6 +158,12 @@ class CurrentNodePackageManager : INodePackageManager
 
         if (yarnIsUsed || _yarn.IsAvailable)
         {
+            if (yarnIsUsed && bunIsUsed)
+            {
+                _logger.Error("Both yarn.lock and bun.lock found. Skipping ...");
+                return null;
+            }
+
             if (!yarnIsUsed)
             {
                 _logger.Info("Introducing Yarn into project");
@@ -131,13 +179,19 @@ class CurrentNodePackageManager : INodePackageManager
             return null;
         }
 
+        if (_bun.IsAvailable)
+        {
+            _logger.Info("Introducing Bun into project");
+            return _bun;
+        }
+
         if (_npm.IsAvailable)
         {
             _logger.Info("Introducing Npm into project");
             return _npm;
         }
 
-        _logger.Error("Pnpm, Yarn and Npm are not found installed in PATH. Skipping package manager operation.");
+        _logger.Error("Bun, Pnpm, Yarn and Npm are not found installed in PATH. Skipping package manager operation.");
         return null;
     }
 

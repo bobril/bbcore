@@ -77,24 +77,116 @@ public class YarnNodePackageManager : INodePackageManager
 
     public static string ExtractPackageName(string nameWithVersion)
     {
+        var protocolIndex = nameWithVersion.IndexOf("@npm:", StringComparison.Ordinal);
+        if (protocolIndex > 0)
+        {
+            return nameWithVersion[..protocolIndex];
+        }
+
+        var patchProtocolIndex = nameWithVersion.IndexOf("@patch:", StringComparison.Ordinal);
+        if (patchProtocolIndex > 0)
+        {
+            return nameWithVersion[..patchProtocolIndex];
+        }
+
         return nameWithVersion[..nameWithVersion.LastIndexOf('@')];
     }
 
     public static IEnumerable<PackagePathVersion> ParseYarnLock(IDirectoryCache projectDirectory, string content)
     {
+        if (content.Contains("__metadata:"))
+        {
+            foreach (var dependency in ParseModernYarnLock(projectDirectory, content))
+            {
+                yield return dependency;
+            }
+
+            yield break;
+        }
+
         var parsed = YarnLockParser.Parse(content);
         var known = new HashSet<string>();
         foreach (var pair in parsed)
         {
+            if (!pair.Key.Contains('@') ||
+                pair.Value is not Dictionary<string, object> packageInfo ||
+                !packageInfo.ContainsKey("version"))
+            {
+                continue;
+            }
+
             var name = ExtractPackageName(pair.Key);
             if (!known.Add(name)) continue;
             yield return new()
             {
                 Name = name,
-                Version = (((Dictionary<string, object>)pair.Value)["version"] as string)!,
+                Version = packageInfo["version"].ToString()!,
                 Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + name)
             };
         }
+    }
+
+    static IEnumerable<PackagePathVersion> ParseModernYarnLock(IDirectoryCache projectDirectory, string content)
+    {
+        string? currentKey = null;
+        var known = new HashSet<string>();
+
+        foreach (var rawLine in content.Replace("\r\n", "\n").Split('\n'))
+        {
+            var line = rawLine.TrimEnd();
+            if (line.Length == 0)
+            {
+                continue;
+            }
+
+            if (!char.IsWhiteSpace(line[0]))
+            {
+                currentKey = NormalizeModernYarnKey(line);
+                continue;
+            }
+
+            if (currentKey == null)
+            {
+                continue;
+            }
+
+            var trimmed = line.TrimStart();
+            const string versionPrefix = "version:";
+            if (!trimmed.StartsWith(versionPrefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (!currentKey.Contains('@'))
+            {
+                continue;
+            }
+
+            var name = ExtractPackageName(currentKey);
+            if (!known.Add(name))
+            {
+                continue;
+            }
+
+            var version = trimmed[versionPrefix.Length..].Trim().Trim('"');
+            yield return new()
+            {
+                Name = name,
+                Version = version,
+                Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + name)
+            };
+        }
+    }
+
+    static string NormalizeModernYarnKey(string line)
+    {
+        var key = line.Trim();
+        if (key.EndsWith(':'))
+        {
+            key = key[..^1];
+        }
+
+        return key.Trim('"');
     }
 
     public void RunYarn(string dir, string aParams)

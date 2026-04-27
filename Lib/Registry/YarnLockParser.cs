@@ -131,11 +131,19 @@ public static class YarnLockParser
 
                     if (valToken.Type == SimpleYamlTokenizer.TokenTypes.Colon)
                     {
-                        // object
                         Next();
 
-                        // parse object
-                        var val = Parse(indent + 1);
+                        object val;
+                        if (SimpleYamlTokenizer.IsValidPropValueToken(_token!.Type))
+                        {
+                            val = _token.Value!;
+                            Next();
+                        }
+                        else
+                        {
+                            // object
+                            val = Parse(indent + 1);
+                        }
 
                         foreach (var key in keys)
                         {

@@ -256,6 +256,9 @@
         <Compile Include="..\Lib\Registry\CurrentNodePackageManager.cs">
             <Link>Registry\CurrentNodePackageManager.cs</Link>
         </Compile>
+        <Compile Include="..\Lib\Registry\BunNodePackageManager.cs">
+            <Link>Registry\BunNodePackageManager.cs</Link>
+        </Compile>
         <Compile Include="..\Lib\Registry\DiffChangeLog.cs">
             <Link>Registry\DiffChangeLog.cs</Link>
         </Compile>
