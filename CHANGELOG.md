@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.5.0
+
 ### Added
 
 - Added Bun package manager support for projects using `bun.lock` or `bun.lockb`.
