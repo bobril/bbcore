@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Management;
 using System.Threading;
 using Lib.DiskCache;
 using Lib.Utils;
@@ -215,27 +216,50 @@ public class BrowserProcessFactory : IBrowserProcessFactory
 
         void KillWindowsBrowserProcesses()
         {
-            // Taskkill /T should kill complete subtree started by parent browser process.
-            RunWindowsCommand("taskkill", "/F /T /pid " + Process.Id);
+            KillProcessTree(Process);
 
             // Fallback for detached descendants still using user-data-dir.
             if (_userDirectory != null)
             {
-                var escapedProfileDir = _userDirectory.FullName.Replace("'", "''");
-                var psCommand = "$pattern = '" + escapedProfileDir + "';" +
-                                "Get-CimInstance Win32_Process | Where-Object { " +
-                                "$_.CommandLine -like ('*' + $pattern + '*') -and " +
-                                "($_.Name -ieq 'chrome.exe' -or $_.Name -ieq 'msedge.exe' -or $_.Name -ieq 'chromium.exe') " +
-                                "} | ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop } catch {} }";
-                RunWindowsCommand("powershell",
-                    "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"" + psCommand + "\"");
+                KillDetachedWindowsBrowserProcesses(_userDirectory.FullName);
             }
+        }
 
+        static void KillProcessTree(Process process)
+        {
             try
             {
-                if (!Process.HasExited)
+                if (!process.HasExited)
                 {
-                    Process.Kill(true);
+                    process.Kill(true);
+                }
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+
+        static void KillDetachedWindowsBrowserProcesses(string userDirectory)
+        {
+            try
+            {
+                using var searcher = new ManagementObjectSearcher(
+                    "SELECT ProcessId, Name, CommandLine FROM Win32_Process " +
+                    "WHERE Name = 'chrome.exe' OR Name = 'msedge.exe' OR Name = 'chromium.exe'");
+                using var processes = searcher.Get();
+                foreach (ManagementObject processInfo in processes)
+                {
+                    var commandLine = processInfo["CommandLine"] as string;
+                    if (commandLine == null ||
+                        commandLine.IndexOf(userDirectory, StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        continue;
+                    }
+
+                    var processId = Convert.ToInt32(processInfo["ProcessId"]);
+                    using var process = Process.GetProcessById(processId);
+                    KillProcessTree(process);
                 }
             }
             catch

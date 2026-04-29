@@ -9,6 +9,8 @@
 ### Fixed
 
 - Added support for reading Yarn v4 lockfiles.
+- Replaced Windows `taskkill`/PowerShell headless Chromium shutdown with direct C# process tree termination and
+  user-data-dir based cleanup of detached browser processes.
 
 ## 5.4.0
 

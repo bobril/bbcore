@@ -24,6 +24,7 @@
         <PackageReference Include="SemanticVersioning" Version="3.0.0"/>
         <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
         <PackageReference Include="System.Reactive" Version="6.1.0" />
+        <PackageReference Include="System.Management" Version="10.0.0"/>
         <PackageReference Include="UAParser" Version="3.1.47"/>
         <PackageReference Include="WebMarkupMin.Core" Version="2.20.0" />
         <PackageReference Include="YamlDotNet" Version="16.3.0"/>
