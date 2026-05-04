@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using BTDB.Collections;
 using Lib.Utils;
 using Lib.Utils.Logger;
@@ -356,6 +357,7 @@ public class TranslationDb
             stringifyHint = stringifyHint.Substring(1, stringifyHint.Length - 2).Replace(@"\\n", @"\n");
         }
 
+        source = NormalizeMessageForExport(source);
         var stringifySource = JsonConvert.SerializeObject(source);
         stringifySource = stringifySource.Substring(1, stringifySource.Length - 2).Replace(@"\\n", @"\n");
 
@@ -453,6 +455,81 @@ public class TranslationDb
         }
     }
 
+    Dictionary<string, List<TranslationKey>>? _normalizedKeyLookup;
+
+    void EnsureNormalizedLookup()
+    {
+        if (_normalizedKeyLookup != null) return;
+        _normalizedKeyLookup = new Dictionary<string, List<TranslationKey>>();
+        foreach (var kvp in Key2Id)
+        {
+            var key = kvp.Key;
+            if (!key.WithParams) continue;
+            var normalized = NormalizeMessageForExport(key.Message);
+            if (normalized == key.Message) continue;
+            if (!_normalizedKeyLookup.TryGetValue(normalized, out var list))
+            {
+                list = new List<TranslationKey>();
+                _normalizedKeyLookup[normalized] = list;
+            }
+
+            list.Add(key);
+        }
+    }
+
+    bool TryFindByNormalizedSource(string normalizedSource, string? hint, out uint id)
+    {
+        EnsureNormalizedLookup();
+        if (!_normalizedKeyLookup!.TryGetValue(normalizedSource, out var candidates))
+        {
+            id = 0;
+            return false;
+        }
+
+        foreach (var c in candidates)
+        {
+            if (c.Hint == hint)
+            {
+                id = Key2Id[c];
+                return true;
+            }
+        }
+
+        id = Key2Id[candidates[0]];
+        return true;
+    }
+
+    static readonly Regex _customFormatterRegex = new Regex(
+        @"\{([a-zA-Z_][a-zA-Z0-9_]*)\s*,\s*(?!number\b|date\b|time\b|plural\b|select\b|selectordinal\b)([a-zA-Z_][a-zA-Z0-9_]*)\s*\}",
+        RegexOptions.Compiled);
+
+    internal static string NormalizeMessageForExport(string message)
+    {
+        return _customFormatterRegex.Replace(message, "{$1} ");
+    }
+
+    internal static string RestoreCustomFormatters(string originalMessage, string target)
+    {
+        var formatters = new Dictionary<string, string>();
+        foreach (Match m in _customFormatterRegex.Matches(originalMessage))
+        {
+            var paramName = m.Groups[1].Value;
+            var formatterType = m.Groups[2].Value;
+            if (!formatters.ContainsKey(paramName))
+                formatters[paramName] = formatterType;
+        }
+
+        if (formatters.Count == 0) return target;
+
+        var escapedNames = formatters.Keys.Select(Regex.Escape).ToArray();
+        var pattern = new Regex(@"\{(" + string.Join("|", escapedNames) + @")\} ?", RegexOptions.Compiled);
+        return pattern.Replace(target, match =>
+        {
+            var paramName = match.Groups[1].Value;
+            return "{" + paramName + ", " + formatters[paramName] + "}";
+        });
+    }
+
     MessageParser _messageParser = new MessageParser();
 
     public ErrorAst? CheckMessage(string message, List<string> knownParams)
@@ -480,6 +557,28 @@ public class TranslationDb
 
     public IEnumerable<string> GetLanguages() => _loadedLanguages;
 
+    void StoreImportedValue(string language, string target, int id, bool withParamsCheck,
+        string source, string? hint)
+    {
+        if (withParamsCheck)
+        {
+            var msg = _messageParser.Parse(target);
+            if (msg is ErrorAst errorMsg)
+            {
+                _logger?.Error("Skipping wrong translation entry:");
+                _logger?.Warn($"S: {source}");
+                _logger?.Warn($"I: {hint}");
+                _logger?.Warn($"T: {target}");
+                _logger?.Error($"Error in g11n format: {errorMsg.Message}");
+                return;
+            }
+        }
+
+        var values = Lang2ValueList[language];
+        while (values.Count < id) values.Add(null);
+        values[id] = target;
+    }
+
     public bool ImportTranslatedLanguage(string pathFrom, string? pathTo = null)
     {
         var normalizedPath = PathUtils.Normalize(pathFrom);
@@ -500,30 +599,20 @@ public class TranslationDb
                 var key = new TranslationKey(source, hint, true);
                 if (Key2Id.TryGetValue(key, out var idt))
                 {
-                    var msg = _messageParser.Parse(target);
-                    if (msg is ErrorAst errorMsg)
-                    {
-                        _logger?.Error("Skipping wrong translation entry:");
-                        _logger?.Warn($"S: {source}");
-                        _logger?.Warn($"I: {hint}");
-                        _logger?.Warn($"T: {target}");
-                        _logger?.Error($"Error in g11n format: {errorMsg.Message}");
-                    }
-                    else
-                    {
-                        var values = Lang2ValueList[language];
-                        while (values.Count < idt) values.Add(null);
-                        values[(int)idt] = target;
-                    }
+                    StoreImportedValue(language, target, (int)idt, true, source, hint);
                 }
                 else
                 {
                     key = new TranslationKey(source, hint, false);
                     if (Key2Id.TryGetValue(key, out var idf))
                     {
-                        var values = Lang2ValueList[language];
-                        while (values.Count < idf) values.Add(null);
-                        values[(int)idf] = target;
+                        StoreImportedValue(language, target, (int)idf, false, source, hint);
+                    }
+                    else if (TryFindByNormalizedSource(source, hint, out var idn))
+                    {
+                        var originalMessage = Id2Key[(int)idn].Message;
+                        target = RestoreCustomFormatters(originalMessage, target);
+                        StoreImportedValue(language, target, (int)idn, true, source, hint);
                     }
                 }
             });

@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Changed
+
+- Export now strips non-standard ICU custom formatters (like `quoted`) from translation messages and adds a trailing space.
+- Import does a normalized fallback lookup when the exported source key (without custom formatters) doesn't match the original stored key. Custom formatters are restored back into the target translation on import.
+
 ## 5.5.1
 
 ### Fixed
