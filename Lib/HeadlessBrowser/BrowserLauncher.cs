@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Management;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using Lib.DiskCache;
 using Lib.Utils;
@@ -289,7 +290,7 @@ public class BrowserProcessFactory : IBrowserProcessFactory
             AppDomain.CurrentDomain.UnhandledException -= _unhandledExceptionHandler;
             KillProcessTree(Process);
 
-            if (_userDirectory != null && Environment.OSVersion.Platform == PlatformID.Win32NT)
+            if (_userDirectory != null && OperatingSystem.IsWindows())
             {
                 KillDetachedWindowsBrowserProcesses(_userDirectory.FullName);
             }
@@ -326,6 +327,7 @@ public class BrowserProcessFactory : IBrowserProcessFactory
             }
         }
 
+        [SupportedOSPlatform("windows")]
         static void KillDetachedWindowsBrowserProcesses(string userDirectory)
         {
             try
