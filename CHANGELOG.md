@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.5.1
+
 ### Fixed
 
 - Headless browser child processes are now properly killed on force-exit. On Windows the browser is placed into a
