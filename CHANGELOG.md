@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.6.0
+
 ### Changed
 
 - Export now strips non-standard ICU custom formatters (like `quoted`) from translation messages and adds a trailing space.
