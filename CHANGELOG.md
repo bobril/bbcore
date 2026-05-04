@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Headless browser child processes are now properly killed on force-exit. On Windows the browser is placed into a
+  kill-on-close Job Object so the OS terminates it even when bbcore is killed externally.
+
 ## 5.5.0
 
 ### Added

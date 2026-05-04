@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Management;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Lib.DiskCache;
 using Lib.Utils;
@@ -147,7 +148,105 @@ public class BrowserProcessFactory : IBrowserProcessFactory
         };
         browserProcess.BeginErrorReadLine();
         browserProcess.BeginOutputReadLine();
-        return new LocalBrowserProcess(directoryInfo, browserProcess, _verbose);
+
+        var jobHandle = IntPtr.Zero;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            jobHandle = CreateKillOnCloseJobObject();
+            if (jobHandle != IntPtr.Zero)
+            {
+                AssignProcessToJobObject(jobHandle, browserProcess.Handle);
+            }
+        }
+
+        return new LocalBrowserProcess(directoryInfo, browserProcess, _verbose, jobHandle);
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string? lpName);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr hProcess);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool SetInformationJobObject(
+        IntPtr hJob,
+        int jobObjectInfoClass,
+        IntPtr lpJobObjectInfo,
+        uint cbJobObjectInfoLength);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool CloseHandle(IntPtr hObject);
+
+    const int JobObjectExtendedLimitInformation = 9;
+    const uint JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x00002000;
+
+    static IntPtr CreateKillOnCloseJobObject()
+    {
+        var hJob = CreateJobObject(IntPtr.Zero, null);
+        if (hJob == IntPtr.Zero)
+            return IntPtr.Zero;
+
+        var infoSize = Marshal.SizeOf<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>();
+        var infoPtr = Marshal.AllocHGlobal(infoSize);
+        try
+        {
+            var info = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+            {
+                BasicLimitInformation = new JOBOBJECT_BASIC_LIMIT_INFORMATION
+                {
+                    LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+                }
+            };
+            Marshal.StructureToPtr(info, infoPtr, false);
+            if (!SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, infoPtr, (uint)infoSize))
+            {
+                CloseHandle(hJob);
+                return IntPtr.Zero;
+            }
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(infoPtr);
+        }
+
+        return hJob;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct JOBOBJECT_BASIC_LIMIT_INFORMATION
+    {
+        public long PerProcessUserTimeLimit;
+        public long PerJobUserTimeLimit;
+        public uint LimitFlags;
+        public UIntPtr MinimumWorkingSetSize;
+        public UIntPtr MaximumWorkingSetSize;
+        public uint ActiveProcessLimit;
+        public IntPtr Affinity;
+        public uint PriorityClass;
+        public uint SchedulingClass;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct IO_COUNTERS
+    {
+        public ulong ReadOperationCount;
+        public ulong WriteOperationCount;
+        public ulong OtherOperationCount;
+        public ulong ReadTransferCount;
+        public ulong WriteTransferCount;
+        public ulong OtherTransferCount;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+    {
+        public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
+        public IO_COUNTERS IoInfo;
+        public UIntPtr ProcessMemoryLimit;
+        public UIntPtr JobMemoryLimit;
+        public UIntPtr PeakProcessMemoryUsed;
+        public UIntPtr PeakJobMemoryUsed;
     }
 
     public class LocalBrowserProcess : IBrowserProcess
@@ -156,12 +255,15 @@ public class BrowserProcessFactory : IBrowserProcessFactory
         readonly EventHandler _disposeHandler;
         readonly UnhandledExceptionEventHandler _unhandledExceptionHandler;
         readonly bool _verbose;
+        readonly IntPtr _jobHandle;
         int _disposed;
 
-        public LocalBrowserProcess(DirectoryInfo? userDirectory, Process process, bool verbose)
+        public LocalBrowserProcess(DirectoryInfo? userDirectory, Process process, bool verbose,
+            IntPtr jobHandle = default)
         {
             Process = process;
             _verbose = verbose;
+            _jobHandle = jobHandle;
             process.Exited += (sender, args) =>
             {
                 if (_verbose)
@@ -185,21 +287,11 @@ public class BrowserProcessFactory : IBrowserProcessFactory
             AppDomain.CurrentDomain.DomainUnload -= _disposeHandler;
             AppDomain.CurrentDomain.ProcessExit -= _disposeHandler;
             AppDomain.CurrentDomain.UnhandledException -= _unhandledExceptionHandler;
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            KillProcessTree(Process);
+
+            if (_userDirectory != null && Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
-                KillWindowsBrowserProcesses();
-            }
-            else
-            {
-                try
-                {
-                    if (!Process.HasExited)
-                        Process.Kill();
-                }
-                catch
-                {
-                    // ignored
-                }
+                KillDetachedWindowsBrowserProcesses(_userDirectory.FullName);
             }
 
             try
@@ -212,16 +304,10 @@ public class BrowserProcessFactory : IBrowserProcessFactory
             }
 
             DeleteUserDirectoryWithRetry();
-        }
 
-        void KillWindowsBrowserProcesses()
-        {
-            KillProcessTree(Process);
-
-            // Fallback for detached descendants still using user-data-dir.
-            if (_userDirectory != null)
+            if (_jobHandle != IntPtr.Zero)
             {
-                KillDetachedWindowsBrowserProcesses(_userDirectory.FullName);
+                CloseHandle(_jobHandle);
             }
         }
 
