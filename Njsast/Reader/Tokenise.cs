@@ -804,19 +804,11 @@ public sealed partial class Parser : IEnumerable<Token>
         FinishToken(TokenType.String, @out);
     }
 
-    // Reads template string tokens.
-    sealed class InvalidTemplateEscapeError : Exception
-    {
-    }
-
     public void TryReadTemplateToken()
     {
         _inTemplateElement = true;
-        try
-        {
-            ReadTmplToken();
-        }
-        catch (InvalidTemplateEscapeError)
+        _invalidTemplateEscape = false;
+        if (!ReadTmplToken())
         {
             ReadInvalidTemplateToken();
         }
@@ -828,13 +820,14 @@ public sealed partial class Parser : IEnumerable<Token>
     {
         if (_inTemplateElement && Options.EcmaVersion >= 9)
         {
-            throw new InvalidTemplateEscapeError();
+            _invalidTemplateEscape = true;
+            return;
         }
 
         Raise(position, message);
     }
 
-    void ReadTmplToken()
+    bool ReadTmplToken()
     {
         var @out = "";
         var chunkStart = _pos;
@@ -851,24 +844,27 @@ public sealed partial class Parser : IEnumerable<Token>
                     {
                         _pos = _pos.Increment(2);
                         FinishToken(TokenType.DollarBraceL);
-                        return;
+                        return true;
                     }
 
                     _pos = _pos.Increment(1);
                     FinishToken(TokenType.BackQuote);
-                    return;
+                    return true;
                 }
 
                 @out += _input.Substring(chunkStart.Index, _pos - chunkStart);
                 FinishToken(TokenType.Template, @out);
-                return;
+                return true;
             }
 
             if (ch == 92)
             {
                 // '\'
                 @out += _input.Substring(chunkStart.Index, _pos - chunkStart);
-                @out += ReadEscapedChar(true);
+                var escapedChar = ReadEscapedChar(true);
+                if (_invalidTemplateEscape)
+                    return false;
+                @out += escapedChar;
                 chunkStart = _pos;
             }
             else if (IsNewLine(ch))
@@ -940,8 +936,16 @@ public sealed partial class Parser : IEnumerable<Token>
         {
             case 110: return "\n"; // 'n' -> '\n'
             case 114: return "\r"; // 'r' -> '\r'
-            case 120: return ((char)ReadHexChar(2)).ToString(); // 'x'
-            case 117: return CodePointToString(ReadCodePoint()); // 'u'
+            case 120:
+            {
+                var code = ReadHexChar(2);
+                return _invalidTemplateEscape ? "" : ((char)code).ToString(); // 'x'
+            }
+            case 117:
+            {
+                var code = ReadCodePoint();
+                return _invalidTemplateEscape ? "" : CodePointToString(code); // 'u'
+            }
             case 116: return "\t"; // 't' -> '\t'
             case 98: return "\b"; // 'b' -> '\b'
             case 118: return "\u000b"; // 'v' -> '\u000b'

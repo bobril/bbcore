@@ -38,6 +38,7 @@ public sealed partial class Parser
     bool _allowContinue;
     bool _canBeDirective;
     bool _wasImportKeyword;
+    bool _invalidTemplateEscape;
 
     public static AstToplevel Parse(string input, Options? options = null)
     {
