@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- When build is started always print reason for build. It is either "Initial build" or path to file which changed.
+
 ## 5.6.0
 
 ### Changed
@@ -1689,8 +1693,8 @@ Don't crash on syntax errors (for these TS compiles invalid code, without report
 
 - All module \*.js imports are now compiled and detected for dependencies.
 - Support for `browser` in `package.json` by [spec](https://github.com/defunctzombie/package-browser-field-spec)
-    - Additionally if you define `"browser" : { "module_name": "module_name/dist/bundle.js" }` it override main js file
-      for module imported by its name.
+  - Additionally if you define `"browser" : { "module_name": "module_name/dist/bundle.js" }` it override main js file
+    for module imported by its name.
 - Njsast based bundler supports bundling of `module.exports =` commonjs pattern. For example it is capable of bundling
   `sockjs-client` as is.
 - `process.env.X` replacement works in js files too.
@@ -1710,11 +1714,11 @@ Don't crash on syntax errors (for these TS compiles invalid code, without report
 ### Added
 
 - Support for ServiceWorkers/PWA and WebWorkers
-    - `b.asset` support new `project:` prefix which needs to be followed by relative directory path with `project.json`
-    - target project must have defined `"bobril": { "variant": "worker" }` or `"bobril": { "variant": "serviceworker" }`
-    - service worker automatically defines `swBuildDate` (contains date of build in string), `swBuildId` (contains
-      obfuscated date of build in string), `swFiles` (array with all files in compilation)
-    - example in `TestProjects/PWA/main`
+  - `b.asset` support new `project:` prefix which needs to be followed by relative directory path with `project.json`
+  - target project must have defined `"bobril": { "variant": "worker" }` or `"bobril": { "variant": "serviceworker" }`
+  - service worker automatically defines `swBuildDate` (contains date of build in string), `swBuildId` (contains
+    obfuscated date of build in string), `swFiles` (array with all files in compilation)
+  - example in `TestProjects/PWA/main`
 
 ```ts
 import * as b from "bobril";
