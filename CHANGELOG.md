@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.7.1
+
 ### Fixed
 
 - Interactive watcher now ignores events from sibling files that are only visible because a broader parent directory is used as watcher root.
