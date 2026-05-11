@@ -226,6 +226,9 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
             case AstYield _:
             case AstObject _:
             case AstAwait _:
+            case AstJsxExpression _:
+            case AstJsxSpreadChild _:
+            case AstJsxSpreadAttribute _:
             case AstObjectGetter _:
             case AstObjectSetter _:
             case AstClass _: // extends
@@ -247,6 +250,13 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
                 if (conciseMethod.Key == astSymbol)
                 {
                     usage |= SymbolUsage.Write;
+                }
+
+                break;
+            case AstClassField classField:
+                if (classField.Key == astSymbol)
+                {
+                    usage |= classField.Computed ? SymbolUsage.Read : SymbolUsage.Write;
                 }
 
                 break;

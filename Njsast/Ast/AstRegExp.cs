@@ -33,18 +33,22 @@ public class AstRegExp : AstConstant
         output.Print(Value.Pattern);
         output.Print("/");
         var f = Value.Flags;
+        if (f.HasFlag(RegExpFlags.HasIndices))
+            output.Print("d");
         if (f.HasFlag(RegExpFlags.GlobalMatch))
             output.Print("g");
         if (f.HasFlag(RegExpFlags.IgnoreCase))
             output.Print("i");
         if (f.HasFlag(RegExpFlags.Multiline))
             output.Print("m");
-        if (f.HasFlag(RegExpFlags.Sticky))
-            output.Print("y");
-        if (f.HasFlag(RegExpFlags.Unicode))
-            output.Print("u");
         if (f.HasFlag(RegExpFlags.DotAll))
             output.Print("s");
+        if (f.HasFlag(RegExpFlags.Unicode))
+            output.Print("u");
+        if (f.HasFlag(RegExpFlags.UnicodeSets))
+            output.Print("v");
+        if (f.HasFlag(RegExpFlags.Sticky))
+            output.Print("y");
     }
 
     public override bool IsStructurallyEquivalentTo(AstNode? with)

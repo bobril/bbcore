@@ -24,6 +24,7 @@ public enum TokenType
     Regexp,
     String,
     Name,
+    PrivateName,
 
     BracketL,
 
@@ -100,4 +101,5 @@ public enum TokenType
     Typeof,
     Void,
     Delete,
+    Decorator,
 }

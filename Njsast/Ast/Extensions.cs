@@ -10,7 +10,7 @@ public static class Extensions
     {
         return node is AstUnary or AstBinary or AstConstant or AstConditional or AstSequence or AstObject or AstArray
             or AstClassExpression or AstArrow or AstFunction or AstPropAccess or AstCall or AstTemplateString
-            or AstPrefixedTemplateString or AstSymbolRef or AstAwait;
+            or AstPrefixedTemplateString or AstSymbolRef or AstAwait or AstJsxElement or AstJsxFragment;
     }
 
     public static AstNode? TryToExpression(this AstNode node)

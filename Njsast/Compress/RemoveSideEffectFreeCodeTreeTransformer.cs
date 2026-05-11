@@ -217,10 +217,20 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                 }
                 case AstCall:
                 {
+                    if (TryOptimizeOptionalCall((AstCall)node) is { } optimized)
+                    {
+                        return Transform(optimized);
+                    }
+
                     return null;
                 }
                 case AstPropAccess propAccess:
                 {
+                    if (TryOptimizeOptionalPropAccess(propAccess) is { } optimized)
+                    {
+                        return Transform(optimized);
+                    }
+
                     if (propAccess.Expression.IsSymbolDef() is
                             { Purpose: EnumDefinitionPurpose enumDefinitionPurpose } &&
                         propAccess.PropertyAsString is { } propName &&
@@ -774,6 +784,63 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     return node;
             }
         }
+    }
+
+    static AstNode? TryOptimizeOptionalCall(AstCall call)
+    {
+        if (!call.Optional)
+            return null;
+
+        var expressionValue = call.Expression.ConstValue();
+        if (expressionValue == null)
+            return null;
+
+        if (IsNullish(expressionValue))
+        {
+            return new AstUndefined(call.Source, call.Start, call.End);
+        }
+
+        call.Optional = false;
+        return null;
+    }
+
+    static AstNode? TryOptimizeOptionalPropAccess(AstPropAccess propAccess)
+    {
+        if (!propAccess.Optional)
+            return null;
+
+        var expressionValue = propAccess.Expression.ConstValue();
+        if (expressionValue == null)
+            return null;
+
+        if (IsNullish(expressionValue))
+        {
+            return new AstUndefined(propAccess.Source, propAccess.Start, propAccess.End);
+        }
+
+        propAccess.Optional = false;
+        return TryFoldSinglePropertyObjectAccess(propAccess);
+    }
+
+    static bool IsNullish(object value)
+    {
+        return value is AstNull or AstUndefined;
+    }
+
+    static AstNode? TryFoldSinglePropertyObjectAccess(AstPropAccess propAccess)
+    {
+        if (propAccess.Expression is not AstObject { Properties.Count: 1 } obj ||
+            obj.Properties[0] is not AstObjectKeyVal keyVal)
+        {
+            return null;
+        }
+
+        var propertyName = propAccess.PropertyAsString;
+        if (propertyName == null)
+            return null;
+
+        var key = keyVal.Key.ConstValue();
+        return key is string keyName && keyName == propertyName ? keyVal.Value : null;
     }
 
     void OptimizeBlock(AstBlock block)

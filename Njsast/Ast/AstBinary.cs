@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using Njsast.AstDump;
 using Njsast.ConstEval;
 using Njsast.Output;
@@ -156,11 +157,23 @@ public class AstBinary : AstNode
             case Operator.NullishCoalescing: // we know that left is nullish
                 return right;
             case Operator.BitwiseOr:
+            {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                    return lbi | rbi;
                 return TypeConverter.ToInt32(left) | TypeConverter.ToInt32(right);
+            }
             case Operator.BitwiseAnd:
+            {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                    return lbi & rbi;
                 return TypeConverter.ToInt32(left) & TypeConverter.ToInt32(right);
+            }
             case Operator.BitwiseXOr:
+            {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                    return lbi ^ rbi;
                 return TypeConverter.ToInt32(left) ^ TypeConverter.ToInt32(right);
+            }
             case Operator.Equals:
                 return JsEquals(left, right) ? AstTrue.BoxedTrue : AstFalse.BoxedFalse;
             case Operator.NotEquals:
@@ -170,6 +183,9 @@ public class AstBinary : AstNode
             case Operator.StrictNotEquals:
                 return JsStrictEquals(left, right) ? AstFalse.BoxedFalse : AstTrue.BoxedTrue;
             case Operator.Addition:
+            {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                    return lbi + rbi;
                 left = TypeConverter.ToPrimitive(left);
                 right = TypeConverter.ToPrimitive(right);
                 if (left is string || right is string)
@@ -178,11 +194,26 @@ public class AstBinary : AstNode
                 }
 
                 return TypeConverter.ToNumber(left) + TypeConverter.ToNumber(right);
+            }
             case Operator.Subtraction:
+            {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                    return lbi - rbi;
                 return TypeConverter.ToNumber(left) - TypeConverter.ToNumber(right);
+            }
             case Operator.Multiplication:
+            {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                    return lbi * rbi;
                 return TypeConverter.ToNumber(left) * TypeConverter.ToNumber(right);
+            }
             case Operator.Division:
+            {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                {
+                    if (rbi == 0) return null;
+                    return lbi / rbi;
+                }
                 try
                 {
                     return TypeConverter.ToNumber(left) / TypeConverter.ToNumber(right);
@@ -191,7 +222,14 @@ public class AstBinary : AstNode
                 {
                     return AstNaN.Instance;
                 }
+            }
             case Operator.Modulus:
+            {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                {
+                    if (rbi == 0) return null;
+                    return lbi % rbi;
+                }
                 try
                 {
                     return TypeConverter.ToNumber(left) % TypeConverter.ToNumber(right);
@@ -200,8 +238,24 @@ public class AstBinary : AstNode
                 {
                     return AstNaN.Instance;
                 }
+            }
             case Operator.Power:
+            {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                {
+                    try
+                    {
+                        if (rbi < 0) return null;
+                        if (rbi > int.MaxValue) return null;
+                        return BigInteger.Pow(lbi, (int)rbi);
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                }
                 return Math.Pow(TypeConverter.ToNumber(left), TypeConverter.ToNumber(right));
+            }
             case Operator.LessThan:
             {
                 left = TypeConverter.ToPrimitive(left);
@@ -234,18 +288,24 @@ public class AstBinary : AstNode
             }
             case Operator.LeftShift:
             {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                    return lbi << (int)(rbi & 0x1f);
                 var leftNum = TypeConverter.ToInt32(left);
                 var rightNum = TypeConverter.ToUint32(right);
                 return leftNum << (int)(rightNum & 0x1f);
             }
             case Operator.RightShift:
             {
+                if (left is BigInteger lbi && right is BigInteger rbi)
+                    return lbi >> (int)(rbi & 0x1f);
                 var leftNum = TypeConverter.ToInt32(left);
                 var rightNum = TypeConverter.ToUint32(right);
                 return leftNum >> (int)(rightNum & 0x1f);
             }
             case Operator.RightShiftUnsigned:
             {
+                if (left is BigInteger)
+                    return null;
                 var leftNum = TypeConverter.ToUint32(left);
                 var rightNum = TypeConverter.ToUint32(right);
                 return leftNum >> (int)(rightNum & 0x1f);
@@ -263,6 +323,9 @@ public class AstBinary : AstNode
                 ? AstTrue.BoxedTrue
                 : AstFalse.BoxedFalse;
         }
+
+        if (left is BigInteger lbi && right is BigInteger rbi)
+            return lbi < rbi ? AstTrue.BoxedTrue : AstFalse.BoxedFalse;
 
         var leftNumber = TypeConverter.ToNumber(left);
         var rightNumber = TypeConverter.ToNumber(right);
@@ -301,6 +364,11 @@ public class AstBinary : AstNode
             return TypeConverter.ToBoolean(left) == TypeConverter.ToBoolean(right);
         }
 
+        if (leftType == JsType.BigInt)
+        {
+            return (BigInteger)left == (BigInteger)right;
+        }
+
         // Return true if x and y refer to the same object. Otherwise, return false. We cannot compare references for now
         return false;
     }
@@ -328,6 +396,11 @@ public class AstBinary : AstNode
             if (leftType == JsType.Boolean)
             {
                 return TypeConverter.ToBoolean(left) == TypeConverter.ToBoolean(right);
+            }
+
+            if (leftType == JsType.BigInt)
+            {
+                return (BigInteger)left == (BigInteger)right;
             }
 
             // Return true if x and y refer to the same object. Otherwise, return false. We cannot compare references for now

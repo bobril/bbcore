@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Njsast.Ast;
 
@@ -31,6 +32,7 @@ public class TypeConverter
         }
 
         if (o is bool b) return b ? AstTrue.Instance : (AstNode) AstFalse.Instance;
+        if (o is BigInteger bigInt) return new AstBigInt(bigInt);
         if (o is Dictionary<object, object> dict)
         {
             var res = new AstObject();
@@ -77,6 +79,8 @@ public class TypeConverter
                 return i != 0;
             case uint u:
                 return u != 0;
+            case BigInteger bigInt:
+                return bigInt != 0;
             case AstTrue _:
             case AstInfinity _:
                 return true;
@@ -113,6 +117,8 @@ public class TypeConverter
                 return 0;
             case string s:
                 return ToNumber(s);
+            case BigInteger:
+                throw new InvalidCastException("Cannot convert BigInt to Number");
             default:
                 throw new ArgumentOutOfRangeException(nameof(o), o, "Cannot ToNumber");
         }
@@ -266,6 +272,8 @@ public class TypeConverter
                 return i.ToString();
             case uint u:
                 return u.ToString();
+            case BigInteger bigInt:
+                return bigInt.ToString(CultureInfo.InvariantCulture);
             case AstUndefined _:
                 return "undefined";
             case AstNull _:
@@ -310,6 +318,8 @@ public class TypeConverter
                 return (double) i;
             case uint u:
                 return (double) u;
+            case BigInteger:
+                return o;
             case AstUndefined _:
                 return o;
             case AstNull _:
@@ -347,6 +357,8 @@ public class TypeConverter
                 return JsType.Number;
             case uint _:
                 return JsType.Number;
+            case BigInteger _:
+                return JsType.BigInt;
             case AstUndefined _:
                 return JsType.Undefined;
             case AstNull _:

@@ -17,4 +17,8 @@ public enum RegExpFlags
     Sticky = 16,
     /// s
     DotAll = 32,
+    /// d
+    HasIndices = 64,
+    /// v
+    UnicodeSets = 128,
 }

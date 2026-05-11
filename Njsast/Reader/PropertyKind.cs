@@ -6,5 +6,6 @@ public enum PropertyKind
     Get,
     Set,
     Method,
-    Constructor
+    Constructor,
+    Field,
 }

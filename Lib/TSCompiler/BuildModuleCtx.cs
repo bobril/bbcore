@@ -1188,6 +1188,9 @@ public class BuildModuleCtx : IImportResolver
                 _ => fileName // Preserve all other extensions
             };
 
+            var njsastTask = NjsastTsValidator.Enabled
+                ? NjsastTsValidator.StartTranspile(newFileName, source)
+                : null;
             var result = compiler.Transpile(newFileName, source);
             if (result.Diagnostics != null)
             {
@@ -1206,6 +1209,9 @@ public class BuildModuleCtx : IImportResolver
             }
             else
             {
+                if (NjsastTsValidator.Enabled)
+                    NjsastTsValidator.Validate(Owner!.Owner.FullPath, newFileName, source, result.JavaScript,
+                        njsastTask, Owner.Logger.Info);
                 info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
                 info.MapLink = SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath);
                 info.MapLink.sources = [fileName];

@@ -6,6 +6,7 @@ public enum JsType
     Null,
     Boolean,
     Number,
+    BigInt,
     String,
     Object,
 }

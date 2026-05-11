@@ -74,7 +74,8 @@ public sealed partial class Parser
                     node = new AstDefaultAssign(SourceFile, node.Start, node.End, left, right);
                     break;
 
-                case AstDefaultAssign _:
+                case AstDefaultAssign defaultAssign:
+                    defaultAssign.Left = ToAssignable(defaultAssign.Left, isBinding)!;
                     break;
 
                 case AstHole _:
@@ -134,6 +135,8 @@ public sealed partial class Parser
         Next();
 
         var argument = ParseBindingAtom();
+        TsTrySkipOptionalOrDefiniteBindingMarker();
+        TsTrySkipTypeAnnotation();
         return new AstExpansion(SourceFile, startLoc, _lastTokEnd, argument);
     }
 
@@ -160,7 +163,9 @@ public sealed partial class Parser
         return ParseIdent();
     }
 
-    void ParseBindingList(ref StructList<AstNode> elts, TokenType close, bool allowEmpty, bool allowTrailingComma)
+    void ParseBindingList(ref StructList<AstNode> elts, TokenType close, bool allowEmpty, bool allowTrailingComma,
+        List<AstSymbol>? tsParameterProperties = null,
+        List<(int Index, AstNode Decorator)>? tsParameterDecorators = null)
     {
         var first = true;
         while (!Eat(close))
@@ -175,17 +180,57 @@ public sealed partial class Parser
             {
                 break;
             }
-            else if (Type == TokenType.Ellipsis)
-            {
-                var rest = ParseRestBinding();
-                elts.Add(rest);
-                if (Type == TokenType.Comma) Raise(Start, "Comma is not permitted after the rest element");
-                Expect(close);
-                break;
-            }
             else
             {
+                var parameterDecoratorStart = tsParameterDecorators?.Count ?? 0;
+                if (IsTypeScript && tsParameterDecorators != null && Type == TokenType.Decorator)
+                {
+                    var parameterDecorators = TsParseDecorators();
+                    foreach (var decorator in parameterDecorators)
+                        tsParameterDecorators.Add(((int)elts.Count, decorator));
+                }
+
+                var isParameterProperty = tsParameterProperties != null && TsTrySkipParameterPropertyModifiers();
+                if (!isParameterProperty)
+                    TsTrySkipStaticParameterModifier();
+                if (Type == TokenType.Ellipsis)
+                {
+                    var rest = ParseRestBinding();
+                    if (isParameterProperty && tsParameterProperties != null)
+                    {
+                        if (rest is AstExpansion { Expression: AstSymbol symbol })
+                            tsParameterProperties.Add(symbol);
+                        else
+                            Raise(rest.Start, "Parameter property must be an identifier");
+                    }
+                    elts.Add(rest);
+                    if (Type == TokenType.Comma) Raise(Start, "Comma is not permitted after the rest element");
+                    Expect(close);
+                    break;
+                }
+
+                if (IsTypeScript && Type == TokenType.This)
+                {
+                    Next();
+                    TsTrySkipTypeAnnotation();
+                    if (tsParameterDecorators != null)
+                    {
+                        while (tsParameterDecorators.Count > parameterDecoratorStart)
+                            tsParameterDecorators.RemoveAt(tsParameterDecorators.Count - 1);
+                    }
+                    continue;
+                }
+
                 var elem = ParseMaybeDefault(Start);
+                if (isParameterProperty && tsParameterProperties != null)
+                {
+                    if (elem is AstSymbol symbol)
+                        tsParameterProperties.Add(symbol);
+                    else if (elem is AstDefaultAssign { Left: AstSymbol defaultSymbol })
+                        tsParameterProperties.Add(defaultSymbol);
+                    else
+                        Raise(elem.Start, "Parameter property must be an identifier");
+                }
                 elts.Add(elem);
             }
         }
@@ -195,6 +240,8 @@ public sealed partial class Parser
     AstNode ParseMaybeDefault(Position startLoc, AstNode? left = null)
     {
         left ??= ParseBindingAtom();
+        TsTrySkipOptionalOrDefiniteBindingMarker();
+        TsTrySkipTypeAnnotation();
         if (!Eat(TokenType.Eq))
             return left;
         var right = ParseMaybeAssign(Start);
@@ -211,7 +258,8 @@ public sealed partial class Parser
         switch (expr)
         {
             case AstSymbol identifierNode:
-                if (_strict && _reservedWordsStrictBind.IsMatch(identifierNode.Name))
+                if (_strict && _reservedWordsStrictBind.IsMatch(identifierNode.Name) &&
+                    !TsCanUseContextualModifierAsIdentifier(identifierNode.Name))
                     RaiseRecoverable(expr.Start,
                         (isBinding ? "Binding " : "Assigning to ") + identifierNode.Name + " in strict mode");
                 if (checkClashes != null)
@@ -275,5 +323,11 @@ public sealed partial class Parser
                 Raise(expr.Start, (bindingType != null ? "Binding" : "Assigning to") + " rvalue");
                 break;
         }
+    }
+
+    bool TsCanUseContextualModifierAsIdentifier(string name)
+    {
+        return IsTypeScript &&
+               name is "public" or "private" or "protected" or "readonly" or "accessor" or "declare" or "override";
     }
 }

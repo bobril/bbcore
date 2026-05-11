@@ -12,6 +12,12 @@ public class AstNameMapping : AstNode
     /// [AstSymbolRef|AstSymbolImport] The name as it is visible to this module.
     public AstSymbol Name;
 
+    public bool ForeignNameIsStringLiteral;
+
+    public bool NameIsStringLiteral;
+
+    public bool TypeScriptGeneratedNamespaceExport;
+
     public AstNameMapping(string? source, Position startLoc, Position endLoc, AstSymbol foreignName, AstSymbol name)
         : base(source, startLoc, endLoc)
     {
@@ -35,7 +41,12 @@ public class AstNameMapping : AstNode
 
     public override AstNode ShallowClone()
     {
-        return new AstNameMapping(Source, Start, End, ForeignName, Name);
+        return new AstNameMapping(Source, Start, End, ForeignName, Name)
+        {
+            ForeignNameIsStringLiteral = ForeignNameIsStringLiteral,
+            NameIsStringLiteral = NameIsStringLiteral,
+            TypeScriptGeneratedNamespaceExport = TypeScriptGeneratedNamespaceExport
+        };
     }
 
     public override void CodeGen(OutputContext output)
@@ -44,16 +55,17 @@ public class AstNameMapping : AstNode
         var definition = Name.Thedef;
         var namesAreDifferent =
             (definition?.MangledName ?? Name.Name) !=
-            ForeignName.Name;
+            ForeignName.Name ||
+            ForeignNameIsStringLiteral != NameIsStringLiteral;
         if (namesAreDifferent)
         {
             if (isImport)
             {
-                output.Print(ForeignName.Name);
+                PrintForeignName(output);
             }
             else
             {
-                Name.Print(output);
+                PrintName(output, Name, NameIsStringLiteral);
             }
 
             output.Space();
@@ -61,16 +73,32 @@ public class AstNameMapping : AstNode
             output.Space();
             if (isImport)
             {
-                Name.Print(output);
+                PrintName(output, Name, NameIsStringLiteral);
             }
             else
             {
-                output.Print(ForeignName.Name);
+                PrintForeignName(output);
             }
         }
         else
         {
-            Name.Print(output);
+            PrintName(output, Name, NameIsStringLiteral);
         }
+    }
+
+    static void PrintName(OutputContext output, AstSymbol symbol, bool isStringLiteral)
+    {
+        if (isStringLiteral)
+            output.PrintString(symbol.Name);
+        else
+            symbol.Print(output);
+    }
+
+    void PrintForeignName(OutputContext output)
+    {
+        if (ForeignNameIsStringLiteral)
+            output.PrintString(ForeignName.Name);
+        else
+            output.Print(ForeignName.Name);
     }
 }

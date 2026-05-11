@@ -12,11 +12,11 @@ public class AstClass : AstScope
     /// [AstNode]? optional parent class
     public AstNode? Extends;
 
-    /// [AstObjectProperty*] array of properties
-    public StructList<AstObjectProperty> Properties;
+    /// [AstObjectProperty|AstStaticBlock*] array of class body elements
+    public StructList<AstNode> Properties;
 
     public AstClass(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, AstNode? extends,
-        ref StructList<AstObjectProperty> properties) : base(source, startPos, endPos)
+        ref StructList<AstNode> properties) : base(source, startPos, endPos)
     {
         Name = name;
         Extends = extends;
@@ -33,7 +33,7 @@ public class AstClass : AstScope
 
     public override AstNode ShallowClone()
     {
-        var prop = new StructList<AstObjectProperty>();
+        var prop = new StructList<AstNode>();
         prop.AddRange(Properties);
         return new AstClass(Source, Start, End, Name, Extends, ref prop);
     }

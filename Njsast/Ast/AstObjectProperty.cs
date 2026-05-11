@@ -65,16 +65,23 @@ public abstract class AstObjectProperty : AstObjectItem
             output.Space();
         }
 
-        var keyString = Key switch
+        if (Key is AstString stringKey)
         {
-            AstString str => str.Value,
-            AstNumber num => num.Value.ToString("R", CultureInfo.InvariantCulture),
-            AstSymbolRef => null,
-            AstSymbol key => key.Name,
-            _ => null
-        };
-
-        if (keyString != null)
+            stringKey.Print(output);
+        }
+        else if (Key is AstSymbolRef)
+        {
+            output.Print("[");
+            Key.Print(output);
+            output.Print("]");
+        }
+        else if (Key switch
+                 {
+                     AstNumber num => num.Value.ToString("R", CultureInfo.InvariantCulture),
+                     AstSymbolPrivate privateKey => "#" + privateKey.Name,
+                     AstSymbol key => key.Name,
+                     _ => null
+                 } is { } keyString)
         {
             output.PrintPropertyName(keyString);
         }

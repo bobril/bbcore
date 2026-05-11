@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Njsast.Ast;
 
 namespace Njsast.Reader;
@@ -29,7 +30,7 @@ public sealed class Options
     public bool AllowImportExportEverywhere = false;
     // When enabled, hashbang directive in the beginning of file
     // is allowed and treated as a line comment.
-    public bool AllowHashBang = false;
+    public bool AllowHashBang = true;
     // It is possible to parse multiple files into a single AST by
     // passing the tree produced by parsing the first file as
     // `program` option in subsequent parses. This will add the
@@ -41,6 +42,15 @@ public sealed class Options
     public string? SourceFile = null;
     public bool StartInFunction;
     public OnCommentAction? OnComment;
+    public bool ParseTypeScript;
+    public bool ParseJSX;
+    internal bool ParseTypeScriptNamespaceBody;
+    internal int TypeScriptUsingEnvIndex;
+    internal int TypeScriptUsingErrorIndex;
+    internal int TypeScriptUsingResultIndex;
+    internal bool ReserveTopLevelUsingTemp;
+    internal bool ReserveTopLevelAwaitUsingResultTemp;
+    internal Dictionary<string, Dictionary<string, string>>? TypeScriptRuntimeEnumConstants;
 
     public static Options GetOptions(Options? options)
     {

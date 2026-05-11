@@ -39,6 +39,35 @@ public sealed partial class Parser
     bool _canBeDirective;
     bool _wasImportKeyword;
     bool _invalidTemplateEscape;
+    bool _tsParsingLabelBody;
+    int _tsBlockDepth;
+    int _tsVarScopeDepth;
+    List<AstStatement>? _tsPendingClassDecoratorStatements;
+    List<AstNode>? _tsPendingClassDecorators;
+    List<(AstStatement Statement, int TargetBlockDepth, int VarScopeDepth)>? _tsPendingClassComputedKeyStatements;
+    string? _tsDefaultExportClassName;
+    bool _tsDefaultExportClassNameUsed;
+    string? _tsAnonymousClassStaticAccessorName;
+    bool _tsForceAnonymousStaticAccessorNameForDefaultExportClass;
+    int _tsAutoAccessorTempIndex;
+    int _tsAutoAccessorStorageTempIndex;
+    bool _tsAddDisposableResourceHelperUsed;
+    bool _tsDisposeResourcesHelperUsed;
+    bool _tsSetFunctionNameHelperUsed;
+    bool _tsRuntimeModuleSyntaxUsed;
+    bool _tsErasedTypeOnlyModuleSyntaxUsed;
+    int _tsUsingEnvIndex;
+    int _tsUsingErrorIndex;
+    int _tsUsingResultIndex;
+    bool _tsReserveTopLevelUsingTemp;
+    bool _tsReserveTopLevelAwaitUsingResultTemp;
+    bool _tsTopLevelUsingEnvTempConsumed;
+    bool _tsTopLevelUsingErrorTempConsumed;
+    bool _tsTopLevelAwaitUsingResultTempConsumed;
+    Dictionary<string, int>? _tsUsingForOfValueIndexes;
+    Dictionary<string, Dictionary<string, string>>? _tsConstEnums;
+    Dictionary<string, Dictionary<string, string>>? _tsRuntimeEnumConstants;
+    HashSet<string>? _tsErasedTypeOnlyNamespaces;
 
     public static AstToplevel Parse(string input, Options? options = null)
     {
@@ -49,6 +78,7 @@ public sealed partial class Parser
     {
         Options = options = Options.GetOptions(options);
         SourceFile = options.SourceFile;
+        _tsRuntimeEnumConstants = options.TypeScriptRuntimeEnumConstants;
         _keywords = options.EcmaVersion >= 6 ? Ecmascript6KeywordsRegex : Ecmascript5KeywordsRegex;
 
         if (options.AllowReserved == null || options.AllowReserved is bool && (bool)options.AllowReserved == false)
@@ -115,6 +145,11 @@ public sealed partial class Parser
 
         // Flags to track whether we are in a function, a generator, an async function.
         _inFunction = options.StartInFunction;
+        _tsUsingEnvIndex = options.TypeScriptUsingEnvIndex;
+        _tsUsingErrorIndex = options.TypeScriptUsingErrorIndex;
+        _tsUsingResultIndex = options.TypeScriptUsingResultIndex;
+        _tsReserveTopLevelUsingTemp = options.ReserveTopLevelUsingTemp;
+        _tsReserveTopLevelAwaitUsingResultTemp = options.ReserveTopLevelAwaitUsingResultTemp;
         // Positions to delayed-check that yield/await does not exist in default parameters.
         _yieldPos = _awaitPos = default;
         // Labels in scope.
@@ -123,7 +158,7 @@ public sealed partial class Parser
         _allowContinue = false;
 
         // If enabled, skip leading hashbang line.
-        if (_pos.Index == 0 && options.AllowHashBang && _input.Substring(0, 2) == "#!")
+        if (_pos.Index == 0 && options.AllowHashBang && _input.Length >= 2 && _input.Substring(0, 2) == "#!")
             SkipLineComment(2);
 
         // Scope tracking for duplicate variable names (see scope.js)

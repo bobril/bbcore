@@ -3,6 +3,7 @@ using Lib.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Xunit;
 using Lib.TSCompiler;
 using Lib.Composition;
@@ -139,6 +140,43 @@ public class CompilerTests
         finally
         {
             _compilerPool.ReleaseTs(ts);
+        }
+    }
+
+    [Fact]
+    public void ValidateTsWritesNjsastRegressionCaseWhenFormattedOutputDiffers()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "bbcore-njsast-validate-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var testCasePath = NjsastTsValidator.WriteRegressionTestCase(
+                tempDir,
+                "/project/src/index.tsx",
+                "export const value: number = 1;\n",
+                "\"use strict\";\nexports.value = 1;\n",
+                "\"use strict\";\nexports.value = 2;\n");
+
+            Assert.NotNull(testCasePath);
+            Assert.True(Path.IsPathFullyQualified(testCasePath));
+            Assert.True(File.Exists(testCasePath));
+            Assert.Equal("index.tsx", Path.GetFileName(testCasePath));
+            var content = File.ReadAllText(testCasePath);
+            Assert.Contains("export const value: number = 1;", content);
+            var inputDir = Path.Combine(tempDir, ".bbcore", "Input");
+            var wrongDir = Path.Combine(tempDir, ".bbcore", "Wrong");
+            Assert.Equal(
+                "\"use strict\";\nexports.value = 1;\n",
+                File.ReadAllText(Path.Combine(inputDir, "index.tsx.expected.js")));
+            Assert.Equal(
+                "\"use strict\";\nexports.value = 2;\n",
+                File.ReadAllText(Path.Combine(wrongDir, "index.tsx.expected.js")));
+            Assert.Equal(2, Directory.EnumerateFiles(inputDir).Count());
+            Assert.Single(Directory.EnumerateFiles(wrongDir));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
         }
     }
 }

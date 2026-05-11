@@ -44,7 +44,8 @@ public class AstPrefixedTemplateString : AstNode
                               || Prefix is AstBinary
                               || Prefix is AstConditional
                               || Prefix is AstSequence
-                              || Prefix is AstUnary;
+                              || Prefix is AstUnary
+                              || Prefix is AstPropAccess { Optional: true };
         if (parenthesizeTag) output.Print("(");
         Prefix.Print(output);
         if (parenthesizeTag) output.Print(")");

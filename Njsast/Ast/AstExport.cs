@@ -21,10 +21,16 @@ public class AstExport : AstStatement
     /// Name of the file to load exports from
     public AstString? ModuleName;
 
+    public AstObject? Attributes;
+
+    public string AttributeKeyword = "with";
+
     public AstExport(string? source, Position startPos, Position endPos, AstString? moduleName, AstNode? declaration,
-        ref StructList<AstNameMapping> specifiers) : base(source, startPos, endPos)
+        ref StructList<AstNameMapping> specifiers, AstObject? attributes = null, string attributeKeyword = "with") : base(source, startPos, endPos)
     {
         ModuleName = moduleName;
+        Attributes = attributes;
+        AttributeKeyword = attributeKeyword;
         if (declaration is AstDefun or AstDefinitions or AstDefClass)
         {
             ExportedDefinition = declaration;
@@ -61,6 +67,7 @@ public class AstExport : AstStatement
     {
         base.Visit(w);
         w.Walk(ModuleName);
+        w.Walk(Attributes);
         w.Walk(ExportedDefinition);
         w.Walk(ExportedValue);
         w.WalkList(ExportedNames);
@@ -71,6 +78,8 @@ public class AstExport : AstStatement
         base.Transform(tt);
         if (ModuleName != null)
             ModuleName = (AstString)tt.Transform(ModuleName);
+        if (Attributes != null)
+            Attributes = (AstObject)tt.Transform(Attributes);
         if (ExportedDefinition != null)
             ExportedDefinition = tt.Transform(ExportedDefinition);
         if (ExportedValue != null)
@@ -88,6 +97,8 @@ public class AstExport : AstStatement
     {
         var res = new AstExport(Source, Start, End, ExportedDefinition ?? ExportedValue!, IsDefault);
         res.ModuleName = ModuleName;
+        res.Attributes = Attributes;
+        res.AttributeKeyword = AttributeKeyword;
         res.ExportedNames.AddRange(ExportedNames.AsReadOnlySpan());
         return res;
     }
@@ -102,7 +113,8 @@ public class AstExport : AstStatement
             output.Space();
         }
 
-        if (ExportedNames.Count > 0)
+        var emptySpecifierList = ExportedNames.Count == 0 && ExportedValue == null && ExportedDefinition == null;
+        if (ExportedNames.Count > 0 || emptySpecifierList)
         {
             if (ExportedNames.Count == 1 && ExportedNames[0].Name.Name == "*")
             {
@@ -138,6 +150,13 @@ public class AstExport : AstStatement
             output.Print("from");
             output.Space();
             ModuleName.Print(output);
+            if (Attributes != null)
+            {
+                output.Space();
+                output.Print(AttributeKeyword);
+                output.Space();
+                Attributes.Print(output);
+            }
         }
 
         if (ExportedValue != null
@@ -146,6 +165,7 @@ public class AstExport : AstStatement
                  ExportedValue is AstClass)
             || ModuleName != null
             || ExportedNames.Count > 0
+            || emptySpecifierList
            )
         {
             output.Semicolon();

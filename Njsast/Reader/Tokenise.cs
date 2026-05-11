@@ -394,6 +394,14 @@ public sealed partial class Parser : IEnumerable<Token>
                 ReadTokenQuestion();
                 return;
 
+            case 64: // '@'
+                if (Options.ParseTypeScript)
+                {
+                    FinishOp(TokenType.Decorator, 1);
+                    return;
+                }
+                break;
+
             case 96: // '`'
                 if (Options.EcmaVersion < 6) break;
                 _pos = _pos.Increment(1);
@@ -485,6 +493,9 @@ public sealed partial class Parser : IEnumerable<Token>
             case 126: // '~'
                 FinishOp(TokenType.Prefix, 1);
                 return;
+            case 35: // '#'
+                readToken_privateName();
+                return;
         }
 
         Raise(_pos, "Unexpected character '" + CodePointToString(code) + "'");
@@ -557,6 +568,7 @@ public sealed partial class Parser : IEnumerable<Token>
         {
             Regex validFlags = Options.EcmaVersion switch
             {
+                >= 11 => new Regex("^[dgimsuvys]*$"),
                 >= 9 => new Regex("^[gimuys]*$"),
                 >= 6 => new Regex("^[gimuy]*$"),
                 _ => new Regex("^[gim]*$")
@@ -624,12 +636,18 @@ public sealed partial class Parser : IEnumerable<Token>
 
         if (next == 'n' && Options.EcmaVersion >= 11)
         {
+            Span<char> buf = stackalloc char[_pos - start];
+            var withoutUnderscores = WithoutUnderscores(buf, _input.AsSpan(start.Index, _pos - start));
             BigInteger bigInt = 0;
             switch (radix)
             {
                 case 16:
                 {
-                    if (!BigInteger.TryParse(_input.AsSpan(start.Index, _pos - start), NumberStyles.AllowHexSpecifier,
+                    Span<char> hexBuf = stackalloc char[withoutUnderscores.Length + 2];
+                    hexBuf[0] = '0';
+                    hexBuf[1] = '0';
+                    withoutUnderscores.CopyTo(hexBuf[2..]);
+                    if (!BigInteger.TryParse(hexBuf, NumberStyles.AllowHexSpecifier,
                             null, out bigInt))
                     {
                         Raise(_pos, "Cannot parse BigInteger");
@@ -639,7 +657,7 @@ public sealed partial class Parser : IEnumerable<Token>
                 }
                 case 2:
                 {
-                    foreach (var c in _input.AsSpan(start.Index, _pos - start))
+                    foreach (var c in withoutUnderscores)
                     {
                         bigInt <<= 1;
                         bigInt += c - '0';
@@ -649,7 +667,7 @@ public sealed partial class Parser : IEnumerable<Token>
                 }
                 case 8:
                 {
-                    foreach (var c in _input.AsSpan(start.Index, _pos - start))
+                    foreach (var c in withoutUnderscores)
                     {
                         bigInt <<= 3;
                         bigInt += c - '0';
@@ -1059,6 +1077,32 @@ public sealed partial class Parser : IEnumerable<Token>
         }
 
         return word + _input.Substring(chunkStart.Index, _pos - chunkStart);
+    }
+
+    // Read a private name token starting with #
+    void readToken_privateName()
+    {
+        var start = _pos;
+        _pos = _pos.Increment(1); // skip #
+        var next = _input.Get(_pos.Index);
+        if (start.Index == 0 && next == '!' && Options.AllowHashBang)
+        {
+            SkipLineComment(2);
+            NextToken();
+            return;
+        }
+
+        var code = FullCharCodeAtPos();
+        if (!IsIdentifierStart(code, Options.EcmaVersion >= 6))
+        {
+            Raise(start,
+                start.Index == 0 && !Options.AllowHashBang
+                    ? "Unexpected character '#'"
+                    : "Invalid private name: '#' must be followed by an identifier");
+        }
+
+        var name = ReadWord1();
+        FinishToken(TokenType.PrivateName, name);
     }
 
     // Read an identifier or keyword token. Will check for reserved

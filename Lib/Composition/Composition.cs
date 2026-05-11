@@ -1679,6 +1679,7 @@ public class Composition
     public void InitInteractiveMode(bool? localizeValue, string? sourceMapRoot, string typeCheckValue)
     {
         _hasBuildWork.Set();
+        string? pendingChangePath = "Initial build";
         var throttled = _dc.ChangeObservable.Select(s =>
         {
             if (s.EndsWith(".bbrc"))
@@ -1688,7 +1689,11 @@ public class Composition
 
             return s;
         }).Where(s => !s.EndsWith(".mdxb.tsx", StringComparison.Ordinal)).Throttle(TimeSpan.FromMilliseconds(200));
-        throttled.Subscribe((_) => _hasBuildWork.Set());
+        throttled.Subscribe(s =>
+        {
+            pendingChangePath = s;
+            _hasBuildWork.Set();
+        });
         var iterationId = 0;
         var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, _currentProject.Owner.Owner.FullPath,
             _buildCache, typeCheckValue);
@@ -1705,6 +1710,7 @@ public class Composition
             StartHeadlessBrowserTest();
 
             _dc.NotifyChange("Request from API");
+            pendingChangePath = "Request from API";
             _hasBuildWork.Set();
         });
         Task.Run(() =>
@@ -1716,8 +1722,9 @@ public class Composition
                     continue;
                 }
 
-                if (_logger.Verbose) _logger.Info("Change detected in " + _dc.LastTrueChange);
+                var buildReason = pendingChangePath ?? _dc.LastTrueChange;
                 _dc.ResetChange();
+                pendingChangePath = null;
                 _hasBuildWork.Set();
                 start = DateTime.UtcNow;
                 iterationId++;
@@ -1726,7 +1733,8 @@ public class Composition
                 warnings = 0;
                 messages.Clear();
                 var proj = _currentProject;
-                _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Cyan);
+                _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath + " because of " + buildReason,
+                    ConsoleColor.Cyan);
                 try
                 {
                     proj.UpdateFromProjectJson(localizeValue);

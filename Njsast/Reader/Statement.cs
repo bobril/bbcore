@@ -15,9 +15,86 @@ public sealed partial class Parser
     {
         var exports = new Dictionary<string, bool>();
         _canBeDirective = true;
+        if (IsTypeScript && !Options.ParseTypeScriptNamespaceBody)
+            TsReserveTopLevelUsingTemps();
         while (Type != TokenType.Eof)
         {
-            var stmt = ParseStatement(true, true, exports);
+            if (IsTypeScript && !Options.ParseTypeScriptNamespaceBody && Type == TokenType.Export &&
+                TsExportStartsUsingDeclaration())
+            {
+                _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                Next();
+                var usingStatements = TsParseUsingScope(topLevel: true, () => Type == TokenType.Eof);
+                foreach (var usingStatement in usingStatements)
+                    node.Body.Add(usingStatement);
+                break;
+            }
+
+            if (IsTypeScript && TsIsUsingDeclarationStart())
+            {
+                var usingStatements = TsParseUsingScope(topLevel: !Options.ParseTypeScriptNamespaceBody,
+                    () => Type == TokenType.Eof);
+                foreach (var usingStatement in usingStatements)
+                    node.Body.Add(usingStatement);
+                break;
+            }
+
+            if (IsTypeScript && TsTryParseNamespaceStatements(out var namespaceStatements))
+            {
+                TsAddNamespaceStatements(ref node.Body, namespaceStatements);
+                continue;
+            }
+
+            if (IsTypeScript && TsTryParseEnumStatements(out var enumStatements,
+                    local: Options.ParseTypeScriptNamespaceBody,
+                    preserveConstEnum: Options.ParseTypeScriptNamespaceBody))
+            {
+                TsAddEnumStatements(ref node.Body, enumStatements);
+                continue;
+            }
+
+            AstStatement stmt;
+            if (IsTypeScript && Type == TokenType.Decorator)
+            {
+                var decorators = TsParseDecorators();
+                var oldForceAnonymousDefaultClass = _tsForceAnonymousStaticAccessorNameForDefaultExportClass;
+                _tsForceAnonymousStaticAccessorNameForDefaultExportClass =
+                    TsNextDecoratedDefaultExportClassIsAnonymous();
+                try
+                {
+                    stmt = ParseStatement(true, true, exports);
+                }
+                finally
+                {
+                    _tsForceAnonymousStaticAccessorNameForDefaultExportClass = oldForceAnonymousDefaultClass;
+                }
+                if (stmt is AstDefClass classDecl)
+                {
+                    TsEmitDecoratedClass(node, decorators, classDecl);
+                    continue;
+                }
+                if (stmt is AstExport { ExportedDefinition: AstDefClass exportedClass, IsDefault: false } export)
+                {
+                    TsEmitDecoratedExportedClass(node, decorators, export, exportedClass);
+                    continue;
+                }
+                if (stmt is AstExport { ExportedDefinition: AstDefClass defaultExportedClass, IsDefault: true } defaultExport)
+                {
+                    TsEmitDecoratedDefaultExportedClass(node, decorators, defaultExport, defaultExportedClass);
+                    continue;
+                }
+            }
+            else
+            {
+                if (IsTypeScript && TsIsImportEqualsStatementStart())
+                {
+                    stmt = TsParseImportEqualsStatement(Start);
+                }
+                else
+                {
+                stmt = ParseStatement(true, true, exports);
+                }
+            }
 
             if (_canBeDirective)
             {
@@ -36,8 +113,51 @@ public sealed partial class Parser
                 }
             }
 
+            if (IsTypeScript && _tsPendingClassDecorators != null &&
+                stmt is AstExport { ExportedDefinition: AstDefClass pendingExportedClass, IsDefault: false } pendingExport)
+            {
+                var decorators = _tsPendingClassDecorators;
+                _tsPendingClassDecorators = null;
+                TsEmitDecoratedExportedClass(node, decorators, pendingExport, pendingExportedClass);
+                continue;
+            }
+            if (IsTypeScript && _tsPendingClassDecorators != null &&
+                stmt is AstExport { ExportedDefinition: AstDefClass pendingDefaultExportedClass, IsDefault: true } pendingDefaultExport)
+            {
+                var decorators = _tsPendingClassDecorators;
+                _tsPendingClassDecorators = null;
+                TsEmitDecoratedDefaultExportedClass(node, decorators, pendingDefaultExport, pendingDefaultExportedClass);
+                continue;
+            }
+            if (IsTypeScript && _tsPendingClassDecorators != null && stmt is AstDefClass decoratedClass)
+            {
+                var decorators = _tsPendingClassDecorators;
+                _tsPendingClassDecorators = null;
+                TsEmitDecoratedClass(node, decorators, decoratedClass);
+                continue;
+            }
+
+            if (IsTypeScript && stmt is AstImport or AstExport)
+                _tsRuntimeModuleSyntaxUsed = true;
             node.Body.Add(stmt);
+            if (_tsPendingClassDecoratorStatements != null)
+            {
+                foreach (var decoratorStatement in _tsPendingClassDecoratorStatements)
+                    node.Body.Add(decoratorStatement);
+                _tsPendingClassDecoratorStatements = null;
+            }
+
         }
+
+        TsInsertPendingClassComputedKeyStatements(ref node.Body);
+        if (!Options.ParseTypeScriptNamespaceBody)
+            TsInsertUsingHelperStatements(ref node.Body);
+        if (IsTypeScript && !Options.ParseTypeScriptNamespaceBody &&
+            _tsErasedTypeOnlyModuleSyntaxUsed && !_tsRuntimeModuleSyntaxUsed)
+            TsInsertEmptyExportModuleMarker(ref node.Body);
+
+        if (IsTypeScript && _tsConstEnums is { Count: > 0 })
+            new TypeScriptConstEnumInlineTransformer(SourceFile, _tsConstEnums).Transform(node);
 
         Next();
         node.End = _lastTokEnd;
@@ -95,6 +215,60 @@ public sealed partial class Parser
         {
             starttype = TokenType.Var;
             kind = VariableKind.Let;
+        }
+
+        if (IsTypeScript && TsIsAwaitArrayUsingExpressionStart())
+            return TsParseAwaitArrayUsingExpressionStatementAsRaw(startLocation);
+        if (IsTypeScript && TsIsUsingDeclarationStart())
+            return TsParseUsingDeclarationAsPreservedStatement();
+        if (TsIsTypeOnlyStatementStart())
+            return TsParseTypeOnlyStatement(startLocation);
+        if (TsIsDeclareStatementStart())
+            return TsParseDeclareStatement(startLocation);
+                if (TsIsImportEqualsStatementStart())
+                    return TsParseImportEqualsStatement(startLocation);
+        if (IsTypeScript && Type == TokenType.Decorator)
+            return TsParseDecoratedClassAsBlockStatement(startLocation);
+        if (IsTypeScript && TsTryParseEnumStatements(out var enumStatements,
+                local: !topLevel && declaration && !_tsParsingLabelBody,
+                preserveConstEnum: !topLevel))
+        {
+            if (enumStatements.Count == 0)
+                return new AstEmptyStatement(SourceFile, startLocation, _lastTokEnd);
+            if (enumStatements.Count == 1)
+                return enumStatements[0];
+
+            var body = new StructList<AstNode>();
+            foreach (var statement in enumStatements)
+                body.Add(statement);
+            return new AstBlockStatement(SourceFile, startLocation, _lastTokEnd, ref body);
+        }
+        if (starttype == TokenType.Function && TsTryParseFunctionOverloadStatement(startLocation, out var typeOnlyStatement))
+            return typeOnlyStatement;
+        if (TsIsNamespaceStatementStart())
+        {
+            if (TsTryParseNamespaceStatements(out var namespaceStatements,
+                    local: !topLevel && declaration && !_tsParsingLabelBody))
+            {
+                if (namespaceStatements.Count == 0)
+                    return new AstTypeScriptOnly(SourceFile, startLocation, _lastTokEnd);
+                if (namespaceStatements.Count == 1)
+                    return namespaceStatements[0];
+
+                var body = new StructList<AstNode>();
+                foreach (var statement in namespaceStatements)
+                    body.Add(statement);
+                return new AstBlockStatement(SourceFile, startLocation, _lastTokEnd, ref body);
+            }
+            Raise(startLocation, "Unexpected token");
+        }
+        if (IsTypeScript && IsContextual("abstract"))
+        {
+            if (TsIsClassFollowing())
+            {
+                Next();
+                return ParseClass(startLocation, true, false);
+            }
         }
 
         // Most types of statements are recognized by the keyword they
@@ -157,7 +331,21 @@ public sealed partial class Parser
             case TokenType.Export:
             case TokenType.Import:
                 Next();
-                if (starttype == TokenType.Import && Type is TokenType.ParenL or TokenType.Dot)
+                if (IsTypeScript && starttype == TokenType.Import && IsContextual("type"))
+                {
+                    if (topLevel)
+                        _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                    return TsParseTypeOnlyStatement(startLocation);
+                }
+                if (IsTypeScript && starttype == TokenType.Export &&
+                    (IsContextual("type") || IsContextual("interface")))
+                {
+                    if (topLevel)
+                        _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                    return TsParseTypeOnlyStatement(startLocation);
+                }
+                if (starttype == TokenType.Import && (Type is TokenType.ParenL or TokenType.Dot ||
+                                                      IsTypeScript && Type == TokenType.Relational && "<".Equals(Value)))
                 {
                     _wasImportKeyword = true;
                     break;
@@ -173,7 +361,7 @@ public sealed partial class Parser
 
                 return starttype == TokenType.Import
                     ? ParseImport(startLocation)
-                    : (AstStatement)ParseExport(startLocation, exports);
+                    : ParseExport(startLocation, exports);
         }
 
         if (!_wasImportKeyword && IsAsyncFunction() && declaration)
@@ -293,7 +481,7 @@ public sealed partial class Parser
     // whether the next token is `in` or `of`. When there is no init
     // part (semicolon immediately after the opening parenthesis), it
     // is a regular `for` loop.
-    AstIterationStatement ParseForStatement(Position nodeStart)
+    AstStatement ParseForStatement(Position nodeStart)
     {
         Next();
         var isAwait = EatContextual("await");
@@ -303,6 +491,11 @@ public sealed partial class Parser
         {
             return ParseFor(nodeStart, null, isAwait);
         }
+
+        if (IsTypeScript && TsIsForUsingDeclarationStart())
+            return TsParseForUsingStatement(nodeStart, isAwait);
+        if (IsTypeScript && TsIsForArrayUsingExpressionStart())
+            return TsParsePreservedForArrayUsingStatement(nodeStart, isAwait);
 
         var isLet = IsLet();
         if (Type is TokenType.Var or TokenType.Const || isLet)
@@ -435,6 +628,28 @@ public sealed partial class Parser
                     throw NewSyntaxError(Start, "Unexpected token");
                 }
 
+                if (IsTypeScript && TsTryParseEnumStatements(out var enumStatements, local: true))
+                {
+                    foreach (var enumStatement in enumStatements)
+                        consequent.Body.Add(enumStatement);
+                    continue;
+                }
+                if (IsTypeScript && TsTryParseNamespaceStatements(out var namespaceStatements, local: true))
+                {
+                    TsAddNamespaceStatements(ref consequent.Body, namespaceStatements);
+                    continue;
+                }
+                if (IsTypeScript && TsIsUsingDeclarationStart())
+                {
+                    consequent.Body.Add(TsParseUsingDeclarationAsPreservedStatement());
+                    continue;
+                }
+                if (IsTypeScript && Type == TokenType.Decorator)
+                {
+                    TsParseDecoratedClassToBody(ref consequent.Body);
+                    continue;
+                }
+
                 consequent.Body.Add(ParseStatement(true));
             }
         }
@@ -473,6 +688,8 @@ public sealed partial class Parser
             if (Eat(TokenType.ParenL))
             {
                 param = ParseBindingAtom();
+                TsTrySkipOptionalOrDefiniteBindingMarker();
+                TsTrySkipTypeAnnotation();
                 EnterLexicalScope();
                 CheckLVal(param, true, VariableKind.Let);
                 param = ToRightDeclarationSymbolKind(param, VariableKind.Catch);
@@ -547,6 +764,35 @@ public sealed partial class Parser
         return new AstEmptyStatement(SourceFile, nodeStart, _lastTokEnd);
     }
 
+    AstStatement TsParseDecoratedClassAsBlockStatement(Position nodeStart)
+    {
+        var body = new StructList<AstNode>();
+        EnterLexicalScope();
+        try
+        {
+            TsParseDecoratedClassToBody(ref body);
+        }
+        finally
+        {
+            ExitLexicalScope();
+        }
+
+        return new AstBlockStatement(SourceFile, nodeStart, _lastTokEnd, ref body);
+    }
+
+    void TsParseDecoratedClassToBody(ref StructList<AstNode> body)
+    {
+        _tsPendingClassDecorators = TsParseDecorators();
+        if (IsContextual("abstract") && TsIsClassFollowing())
+            Next();
+        if (Type != TokenType.Class)
+            Raise(Start, "Unexpected token");
+        var decoratedClass = ParseClass(Start, true, false);
+        var decorators = _tsPendingClassDecorators;
+        _tsPendingClassDecorators = null;
+        TsEmitDecoratedClassToBody(ref body, decorators!, (AstDefClass)decoratedClass);
+    }
+
     AstLabeledStatement ParseLabelledStatement(Position nodeStart, string maybeName, AstSymbol expr)
     {
         foreach (var label in _labels)
@@ -558,7 +804,17 @@ public sealed partial class Parser
         var newlabel = new AstLabel(SourceFile, nodeStart, _lastTokEnd, maybeName);
         newlabel.IsLoop = TokenInformation.Types[Type].IsLoop;
         _labels.Add(newlabel);
-        var body = ParseStatement(true);
+        AstStatement body;
+        var oldTsParsingLabelBody = _tsParsingLabelBody;
+        _tsParsingLabelBody = true;
+        try
+        {
+            body = ParseStatement(true);
+        }
+        finally
+        {
+            _tsParsingLabelBody = oldTsParsingLabelBody;
+        }
         if (body is AstClass or AstLet or AstConst ||
             body is AstFunction functionDeclaration && (_strict || functionDeclaration.IsGenerator))
             RaiseRecoverable(body.Start, "Invalid labelled declaration");
@@ -591,10 +847,51 @@ public sealed partial class Parser
             EnterLexicalScope();
         }
 
-        while (!Eat(TokenType.BraceR))
+        _tsBlockDepth++;
+        var oldRuntimeEnumConstants = IsTypeScript ? TsSnapshotRuntimeEnumConstants() : null;
+        try
         {
-            var stmt = ParseStatement(true);
-            body.Add(stmt);
+            while (!Eat(TokenType.BraceR) && Type != TokenType.Eof)
+            {
+                if (IsTypeScript && Type == TokenType.Decorator)
+                {
+                    TsParseDecoratedClassToBody(ref body);
+                    continue;
+                }
+                if (IsTypeScript && TsTryParseEnumStatements(out var enumStatements, local: true))
+                {
+                    foreach (var enumStatement in enumStatements)
+                        body.Add(enumStatement);
+                    continue;
+                }
+                if (IsTypeScript && TsTryParseNamespaceStatements(out var namespaceStatements, local: true))
+                {
+                    TsAddNamespaceStatements(ref body, namespaceStatements);
+                    continue;
+                }
+                if (IsTypeScript && TsIsUsingDeclarationStart())
+                {
+                    var usingStatements = TsParseUsingScope(topLevel: false, () => Type is TokenType.BraceR or TokenType.Eof);
+                    foreach (var usingStatement in usingStatements)
+                        body.Add(usingStatement);
+                    continue;
+                }
+                var stmt = ParseStatement(true);
+                if (IsTypeScript && _tsPendingClassDecorators != null && stmt is AstDefClass decoratedClass)
+                {
+                    var decorators = _tsPendingClassDecorators;
+                    _tsPendingClassDecorators = null;
+                    TsEmitDecoratedClassToBody(ref body, decorators, decoratedClass);
+                    continue;
+                }
+                body.Add(stmt);
+            }
+        }
+        finally
+        {
+            _tsBlockDepth--;
+            if (IsTypeScript)
+                TsRestoreRuntimeEnumConstants(oldRuntimeEnumConstants);
         }
 
         if (createNewLexicalScope)
@@ -659,17 +956,23 @@ public sealed partial class Parser
         {
             var startLocation = Start;
             var id = ParseVarId(kind);
+            TsTrySkipOptionalOrDefiniteBindingMarker();
+            if (isFor)
+                TsTrySkipForBindingTypeAnnotation();
+            else
+                TsTrySkipTypeAnnotation();
             AstNode? init = null;
             if (Eat(TokenType.Eq))
             {
                 init = ParseMaybeAssign(Start, isFor);
             }
             else if (kind == VariableKind.Const &&
+                     !IsTypeScript &&
                      !(Type == TokenType.In || Options.EcmaVersion >= 6 && IsContextual("of")))
             {
                 Raise(Start, "Unexpected token");
             }
-            else if (!(id is AstSymbol) && !(isFor && (Type == TokenType.In || IsContextual("of"))))
+            else if (!IsTypeScript && !(id is AstSymbol) && !(isFor && (Type == TokenType.In || IsContextual("of"))))
             {
                 Raise(_lastTokEnd, "Complex binding patterns require an initialization value");
             }
@@ -757,40 +1060,61 @@ public sealed partial class Parser
         _inFunction = true;
         EnterFunctionScope();
 
-        if (isStatement == false && isNullableId == false)
-            id = Type == TokenType.Name ? ParseIdent() : null;
-
-        var parameters = new StructList<AstNode>();
-        ParseFunctionParams(ref parameters);
-        MakeSymbolFunArg(ref parameters);
-        var body = new StructList<AstNode>();
-        var useStrict = false;
-        var unused = ParseFunctionBody(parameters, startLoc, id, allowExpressionBody, ref body, ref useStrict);
-
-        _inGenerator = oldInGen;
-        _inAsync = oldInAsync;
-        _yieldPos = oldYieldPos;
-        _awaitPos = oldAwaitPos;
-        _inFunction = oldInFunc;
-
-        if (isStatement || isNullableId)
+        try
         {
-            if (id != null)
-                id = new AstSymbolDefun(id);
-            var astDefun = new AstDefun(SourceFile, startLoc, _lastTokEnd, id != null ? (AstSymbolDefun)id : null,
-                ref parameters, generator,
-                isAsync, ref body);
-            astDefun.SetUseStrict(useStrict);
-            return astDefun;
-        }
+            if (isStatement == false && isNullableId == false)
+                id = Type == TokenType.Name ? ParseIdent() : null;
 
-        if (id != null)
-            id = new AstSymbolLambda(id);
-        var astFunction = new AstFunction(SourceFile, startLoc, _lastTokEnd,
-            id != null ? (AstSymbolLambda)id : null, ref parameters,
-            generator, isAsync, ref body);
-        astFunction.SetUseStrict(useStrict);
-        return astFunction;
+            TsTrySkipTypeParameters();
+            var parameters = new StructList<AstNode>();
+            ParseFunctionParams(ref parameters);
+            TsTrySkipTypeAnnotation();
+            MakeSymbolFunArg(ref parameters);
+            var body = new StructList<AstNode>();
+            var useStrict = false;
+            var oldAutoAccessorTempIndex = _tsAutoAccessorTempIndex;
+            var oldAutoAccessorStorageTempIndex = _tsAutoAccessorStorageTempIndex;
+            _tsVarScopeDepth++;
+            _tsAutoAccessorTempIndex = 0;
+            _tsAutoAccessorStorageTempIndex = 0;
+            try
+            {
+                var unused = ParseFunctionBody(parameters, startLoc, id, allowExpressionBody, ref body, ref useStrict);
+            }
+            finally
+            {
+                _tsVarScopeDepth--;
+                _tsAutoAccessorTempIndex = oldAutoAccessorTempIndex;
+                _tsAutoAccessorStorageTempIndex = oldAutoAccessorStorageTempIndex;
+            }
+
+            if (isStatement || isNullableId)
+            {
+                if (id != null)
+                    id = new AstSymbolDefun(id);
+                var astDefun = new AstDefun(SourceFile, startLoc, _lastTokEnd, id != null ? (AstSymbolDefun)id : null,
+                    ref parameters, generator,
+                    isAsync, ref body);
+                astDefun.SetUseStrict(useStrict);
+                return astDefun;
+            }
+
+            if (id != null)
+                id = new AstSymbolLambda(id);
+            var astFunction = new AstFunction(SourceFile, startLoc, _lastTokEnd,
+                id != null ? (AstSymbolLambda)id : null, ref parameters,
+                generator, isAsync, ref body);
+            astFunction.SetUseStrict(useStrict);
+            return astFunction;
+        }
+        finally
+        {
+            _inGenerator = oldInGen;
+            _inAsync = oldInAsync;
+            _yieldPos = oldYieldPos;
+            _awaitPos = oldAwaitPos;
+            _inFunction = oldInFunc;
+        }
     }
 
     void ParseFunctionParams(ref StructList<AstNode> parameters)
@@ -807,20 +1131,117 @@ public sealed partial class Parser
         Next();
 
         var id = ParseClassId(isStatement);
+        var oldAnonymousClassStaticAccessorName = _tsAnonymousClassStaticAccessorName;
+        _tsAnonymousClassStaticAccessorName = null;
+        TsTrySkipTypeParameters();
         var superClass = ParseClassSuper();
+        if (IsTypeScript && IsContextual("implements"))
+        {
+            TsSkipHeritageClause();
+        }
         var hadConstructor = false;
-        var body = new StructList<AstObjectProperty>();
+        var body = new StructList<AstNode>();
+        var memberDecoratorStatements = new List<AstStatement>();
+        var instanceFieldInitializerStatements = new List<AstStatement>();
         Expect(TokenType.BraceL);
-        while (!Eat(TokenType.BraceR))
+        if (IsTypeScript && id == null &&
+            (_tsDefaultExportClassName == null || _tsForceAnonymousStaticAccessorNameForDefaultExportClass) &&
+            TsClassBodyContainsStaticAutoAccessor())
+            TsEnsureAnonymousClassStaticAccessorName(Start);
+        while (!Eat(TokenType.BraceR) && Type != TokenType.Eof)
         {
             if (Eat(TokenType.Semi)) continue;
+            if (IsTypeScript && IsContextual("declare") && !TsDeclareMemberStartsAccessor())
+            {
+                while (Type != TokenType.Semi && Type != TokenType.Eof) Next();
+                Eat(TokenType.Semi);
+                continue;
+            }
+
+            List<AstNode>? memberDecorators = null;
+            if (IsTypeScript && Type == TokenType.Decorator)
+                memberDecorators = TsParseDecorators();
+
+            var hasTsModifiers = false;
+            var isAbstractMember = false;
+            var isDeclareMember = false;
+            var hasStaticTsModifier = false;
+            if (TsStaticIsFollowedByClassMemberModifier())
+            {
+                hasTsModifiers = true;
+                hasStaticTsModifier = true;
+                Next();
+            }
+            while (TsIsClassMemberModifier())
+            {
+                hasTsModifiers = true;
+                if (IsContextual("abstract")) isAbstractMember = true;
+                if (IsContextual("declare")) isDeclareMember = true;
+                Next();
+            }
+
+            if (isAbstractMember)
+            {
+                if (memberDecorators is { Count: > 0 } &&
+                    TsTryAddAbstractMemberDecorator(id, memberDecorators, memberDecoratorStatements,
+                        false))
+                    continue;
+                while (Type != TokenType.Semi && Type != TokenType.Eof) Next();
+                Eat(TokenType.Semi);
+                continue;
+            }
+            if (isDeclareMember)
+            {
+                if (TsTryParseDeclareAccessorMember(Start, ref body))
+                    continue;
+                if (memberDecorators is { Count: > 0 } &&
+                    TsTryAddAbstractMemberDecorator(id, memberDecorators, memberDecoratorStatements,
+                        false))
+                    continue;
+                while (Type != TokenType.Semi && Type != TokenType.Eof) Next();
+                Eat(TokenType.Semi);
+                continue;
+            }
+
+            if (TsTryParseAutoAccessor(id, ref body, memberDecorators, memberDecoratorStatements, hasStaticTsModifier))
+                continue;
+
             var methodStart = Start;
             var isGenerator = Eat(TokenType.Star);
             var isAsync = false;
-            var isMaybeStatic = Type == TokenType.Name && "static".Equals(Value);
-            var (computed, key) = ParsePropertyName();
-            var @static = isMaybeStatic && Type != TokenType.ParenL;
-            if (@static)
+            var isMaybeStatic = hasStaticTsModifier || Type == TokenType.Name && "static".Equals(Value);
+            bool computed;
+            AstNode key;
+            var staticKeyAlreadyParsed = false;
+            if (!hasStaticTsModifier && isMaybeStatic && TsStaticModifierIsFollowedByClassElementName())
+            {
+                Next();
+                var staticComputed = Type == TokenType.BracketL;
+                var staticKey = ParsePropertyName();
+                computed = staticComputed || staticKey.computed;
+                key = staticKey.key;
+                staticKeyAlreadyParsed = true;
+            }
+            else
+            {
+                (computed, key) = ParsePropertyName();
+            }
+            TsTrySkipTypeParameters();
+            // Optional method/property marker: ?
+            var isOptional = IsTypeScript && Eat(TokenType.Question);
+            // Static initialization block: static { ... }
+            if (isMaybeStatic && Type == TokenType.BraceL)
+            {
+                var staticBlock = ParseBlock();
+                var staticBody = new StructList<AstNode>();
+                staticBody.TransferFrom(ref staticBlock.Body);
+                body.Add(new AstStaticBlock(SourceFile, methodStart, _lastTokEnd, ref staticBody));
+                continue;
+            }
+
+            var @static = hasStaticTsModifier ||
+                          isMaybeStatic && (staticKeyAlreadyParsed || Type != TokenType.ParenL && Type != TokenType.Eq);
+            if (@static && !staticKeyAlreadyParsed && !hasStaticTsModifier)
             {
                 if (isGenerator)
                 {
@@ -829,37 +1250,41 @@ public sealed partial class Parser
 
                 isGenerator = Eat(TokenType.Star);
                 (computed, key) = ParsePropertyName();
+                TsTrySkipTypeParameters();
             }
 
             if (!isGenerator && !computed &&
-                key is AstSymbol { Name: "async" } && Type != TokenType.ParenL && !CanInsertSemicolon())
+                key is AstSymbol { Name: "async" } && Type != TokenType.ParenL && Type != TokenType.Eq && !CanInsertSemicolon())
             {
                 isAsync = true;
                 isGenerator = Eat(TokenType.Star);
                 (computed, key) = ParsePropertyName();
+                TsTrySkipTypeParameters();
             }
 
             var kind = PropertyKind.Method;
             var isGetSet = false;
             if (!computed)
             {
-                if (!isGenerator && !isAsync && key is AstSymbol identifierNode2 && Type != TokenType.ParenL &&
+                if (!isGenerator && !isAsync && key is AstSymbol identifierNode2 &&
+                    Type != TokenType.ParenL && Type != TokenType.Eq &&
                     identifierNode2.Name is "get" or "set")
                 {
                     isGetSet = true;
                     kind = identifierNode2.Name == "get" ? PropertyKind.Get : PropertyKind.Set;
                     (computed, key) = ParsePropertyName();
+                    TsTrySkipTypeParameters();
                 }
 
-                if (!@static && !computed &&
-                    key is AstSymbol { Name: "constructor" } or AstString { Value: "constructor" })
+                if (!@static && !computed && key is AstSymbol { Name: "constructor" } and not AstSymbolPrivate)
                 {
+                    if (hadConstructor && TsTrySkipClassMethodOverloadSignature())
+                        continue;
                     if (hadConstructor) Raise(key.Start, "Duplicate constructor in the same class");
                     if (isGetSet) Raise(key.Start, "Constructor can't have get/set modifier");
                     if (isGenerator) Raise(key.Start, "Constructor can't be a generator");
                     if (isAsync) Raise(key.Start, "Constructor can't be an async method");
                     kind = PropertyKind.Constructor;
-                    hadConstructor = true;
                 }
                 else if (@static && key is AstSymbol keyIdentifier && keyIdentifier.Name == "prototype")
                 {
@@ -867,7 +1292,96 @@ public sealed partial class Parser
                 }
             }
 
-            var methodValue = ParseMethod(isGenerator, isAsync);
+            // Class field: key is not followed by (
+            if (Type != TokenType.ParenL)
+            {
+                if (IsTypeScript && key is AstSymbol { Name: "declare" } && TsStaticModifierIsFollowedByGetSetAccessor())
+                    continue;
+                TsTrySkipOptionalOrDefiniteBindingMarker();
+                TsTrySkipTypeAnnotation();
+                  AstNode? fieldValue = null;
+                if (Eat(TokenType.Eq))
+                {
+                    fieldValue = ParseMaybeAssign(Start);
+                }
+
+                if (memberDecorators is { Count: > 0 })
+                {
+                    var classKey = key;
+                    var decoratorKey = key;
+                    if (computed && key is not AstSymbolPrivate)
+                        (classKey, decoratorKey) = TsPrepareDecoratedComputedClassKey(key);
+                    body.Add(new AstClassField(SourceFile, methodStart, _lastTokEnd, classKey, fieldValue, @static,
+                        computed));
+                    if (key is not AstSymbolPrivate && TsClassDecoratorTargetName(id) is { } decoratorClassName)
+                        memberDecoratorStatements.Add(TsBuildMemberDecorateStatement(memberDecorators,
+                            decoratorClassName, decoratorKey, @static, true, computed));
+                    Eat(TokenType.Semi);
+                    continue;
+                }
+
+                if (hasTsModifiers)
+                {
+                    body.Add(new AstClassField(SourceFile, methodStart, _lastTokEnd, key, fieldValue, @static,
+                        computed));
+                    Eat(TokenType.Semi);
+                    continue;
+                }
+
+                body.Add(new AstClassField(SourceFile, methodStart, _lastTokEnd, key, fieldValue, @static,
+                    computed));
+                Eat(TokenType.Semi);
+                continue;
+            }
+
+            List<AstSymbol>? tsParameterProperties = null;
+            if (kind == PropertyKind.Constructor && IsTypeScript)
+                tsParameterProperties = new List<AstSymbol>();
+            List<(int Index, AstNode Decorator)>? tsParameterDecorators = null;
+            if (IsTypeScript)
+                tsParameterDecorators = new List<(int Index, AstNode Decorator)>();
+
+            if (isGetSet && TsTryParseAccessorOverloadSignature(methodStart, key, kind, @static, ref body))
+                continue;
+            if (TsTrySkipClassMethodOverloadSignature())
+                continue;
+            if (kind == PropertyKind.Constructor)
+                hadConstructor = true;
+
+            // Optional/abstract method with no body: skip params and return type, eat ;
+            if (isOptional && Type == TokenType.ParenL)
+            {
+                Expect(TokenType.ParenL);
+                var pDepth = 1;
+                while (Type != TokenType.Eof && pDepth > 0)
+                {
+                    if (Type == TokenType.ParenL) pDepth++;
+                    else if (Type == TokenType.ParenR) pDepth--;
+                    Next();
+                }
+                TsTrySkipTypeAnnotation();
+                Eat(TokenType.Semi);
+                continue;
+            }
+
+            var methodValue = ParseMethod(isGenerator, isAsync, tsParameterProperties, tsParameterDecorators);
+            if (tsParameterProperties is { Count: > 0 })
+            {
+                var parameterPropertyFieldIndex = 0;
+                foreach (var parameterProperty in tsParameterProperties)
+                    body.Insert(parameterPropertyFieldIndex++) = TsBuildParameterPropertyField(parameterProperty);
+
+                var newBody = new StructList<AstNode>();
+                newBody.Reserve((uint)(methodValue.Body.Count + tsParameterProperties.Count));
+                var insertIndex = superClass != null ? TsConstructorSuperInsertIndex(methodValue.Body) : 0u;
+                for (var i = 0u; i < insertIndex; i++)
+                    newBody.Add(methodValue.Body[i]);
+                foreach (var parameterProperty in tsParameterProperties)
+                    newBody.Add(TsBuildParameterPropertyAssignment(parameterProperty));
+                for (var i = insertIndex; i < methodValue.Body.Count; i++)
+                    newBody.Add(methodValue.Body[i]);
+                methodValue.Body.TransferFrom(ref newBody);
+            }
 
             if (isGetSet)
             {
@@ -887,24 +1401,70 @@ public sealed partial class Parser
                 }
             }
 
+            var methodClassKey = key;
+            var methodDecoratorKey = key;
+            if (computed && key is not AstSymbolPrivate &&
+                (memberDecorators is { Count: > 0 } || tsParameterDecorators is { Count: > 0 }))
+                (methodClassKey, methodDecoratorKey) = TsPrepareDecoratedComputedClassKey(key);
+
             if (kind == PropertyKind.Get)
             {
-                body.Add(new AstObjectGetter(SourceFile, methodStart, _lastTokEnd, key, methodValue, @static));
+                body.Add(new AstObjectGetter(SourceFile, methodStart, _lastTokEnd, methodClassKey, methodValue, @static));
             }
             else if (kind == PropertyKind.Set)
             {
-                body.Add(new AstObjectSetter(SourceFile, methodStart, _lastTokEnd, key, methodValue, @static));
+                body.Add(new AstObjectSetter(SourceFile, methodStart, _lastTokEnd, methodClassKey, methodValue, @static));
             }
             else if (kind is PropertyKind.Method or PropertyKind.Constructor)
             {
-                body.Add(new AstConciseMethod(SourceFile, methodStart, _lastTokEnd, key, methodValue, @static,
+                body.Add(new AstConciseMethod(SourceFile, methodStart, _lastTokEnd, methodClassKey, methodValue, @static,
                     isGenerator, isAsync));
             }
             else
             {
                 throw new InvalidOperationException("parseClass unknown kind " + kind);
             }
+
+            if (memberDecorators is { Count: > 0 })
+            {
+                if (key is not AstSymbolPrivate && TsClassDecoratorTargetName(id) is { } decoratorClassName)
+                {
+                    var decorators = memberDecorators;
+                    if (tsParameterDecorators is { Count: > 0 })
+                    {
+                        decorators = new List<AstNode>(memberDecorators);
+                        decorators.AddRange(TsBuildParameterDecoratorCalls(tsParameterDecorators));
+                    }
+                    memberDecoratorStatements.Add(TsBuildMemberDecorateStatement(decorators, decoratorClassName,
+                        methodDecoratorKey, @static, false, computed));
+                }
+            }
+            if (tsParameterDecorators is { Count: > 0 } && memberDecorators is not { Count: > 0 })
+            {
+                if (kind == PropertyKind.Constructor)
+                    TsAddPendingConstructorParameterDecorators(tsParameterDecorators);
+                else
+                {
+                    if (TsClassDecoratorTargetName(id) is { } decoratorClassName)
+                        memberDecoratorStatements.Add(TsBuildParameterDecorateStatement(tsParameterDecorators,
+                            decoratorClassName, methodDecoratorKey, @static, computed));
+                }
+            }
         }
+
+        if (instanceFieldInitializerStatements.Count > 0)
+            TsInjectInstanceFieldInitializers(ref body, superClass != null, instanceFieldInitializerStatements, nodeStart,
+                _lastTokEnd);
+
+        if (memberDecoratorStatements.Count > 0)
+        {
+            TsOrderMemberDecoratorStatements(memberDecoratorStatements);
+            _tsPendingClassDecoratorStatements ??= new List<AstStatement>();
+            _tsPendingClassDecoratorStatements.AddRange(memberDecoratorStatements);
+        }
+
+        if (id == null && IsTypeScript && _tsDefaultExportClassNameUsed && _tsDefaultExportClassName != null)
+            id = new AstSymbolRef(SourceFile, nodeStart, nodeStart, _tsDefaultExportClassName);
 
         if ((isStatement || isNullableId) && id != null)
         {
@@ -912,8 +1472,15 @@ public sealed partial class Parser
                 superClass, ref body);
         }
 
-        return new AstClassExpression(SourceFile, nodeStart, _lastTokEnd,
-            id != null ? new AstSymbolDefClass(id) : null, superClass, ref body);
+        try
+        {
+            return new AstClassExpression(SourceFile, nodeStart, _lastTokEnd,
+                id != null ? new AstSymbolDefClass(id) : null, superClass, ref body);
+        }
+        finally
+        {
+            _tsAnonymousClassStaticAccessorName = oldAnonymousClassStaticAccessorName;
+        }
     }
 
     AstSymbol? ParseClassId(bool isStatement)
@@ -930,12 +1497,26 @@ public sealed partial class Parser
 
     AstNode? ParseClassSuper()
     {
-        return Eat(TokenType.Extends) ? ParseExpressionSubscripts(Start) : null;
+        if (!Eat(TokenType.Extends)) return null;
+        var result = ParseExpressionSubscripts(Start);
+        if (IsTypeScript && Type == TokenType.Relational && "<".Equals(Value))
+            TsTrySkipTypeParameters();
+        return result;
     }
 
     // Parses module export declaration.
-    AstExport ParseExport(Position nodeStart, IDictionary<string, bool>? exports)
+    AstStatement ParseExport(Position nodeStart, IDictionary<string, bool>? exports)
     {
+        if (IsTypeScript && (IsContextual("type") || IsContextual("interface")))
+            _tsErasedTypeOnlyModuleSyntaxUsed = true;
+
+        if (IsTypeScript && Eat(TokenType.Eq))
+        {
+            TsSkipUntilStatementEnd();
+            _tsErasedTypeOnlyModuleSyntaxUsed = true;
+            return new AstTypeScriptOnly(SourceFile, nodeStart, _lastTokEnd);
+        }
+
         // export * from '...'
         if (Eat(TokenType.Star))
         {
@@ -956,17 +1537,45 @@ public sealed partial class Parser
             if (Type != TokenType.String)
                 Raise(Start, "Unexpected token");
             var source = ParseExpressionAtom(Start) as AstString;
+            var (attributes, attributeKeyword) = ParseImportAttributes();
             Semicolon();
-            return new(SourceFile, nodeStart, _lastTokEnd, source, null, ref specifiers);
+            return new AstExport(SourceFile, nodeStart, _lastTokEnd, source, null, ref specifiers, attributes,
+                attributeKeyword);
         }
 
         if (Eat(TokenType.Default))
         {
             // export default ...
+            if (IsTypeScript && IsContextual("interface"))
+            {
+                _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                return TsParseTypeOnlyStatement(nodeStart);
+            }
             CheckExport(exports, "default", _lastTokStart);
             var isAsync = false;
             AstNode declaration;
-            if (Type == TokenType.Function || (isAsync = IsAsyncFunction()))
+            if (IsTypeScript && Type == TokenType.Decorator)
+            {
+                _tsPendingClassDecorators = TsParseDecorators();
+                if (IsContextual("abstract") && TsIsClassFollowing())
+                    Next();
+                if (Type != TokenType.Class)
+                    Raise(Start, "Unexpected token");
+                var oldDefaultClassName = _tsDefaultExportClassName;
+                var oldDefaultClassNameUsed = _tsDefaultExportClassNameUsed;
+                _tsDefaultExportClassName = "default_1";
+                _tsDefaultExportClassNameUsed = true;
+                try
+                {
+                    declaration = ParseClass(Start, false, true);
+                }
+                finally
+                {
+                    _tsDefaultExportClassName = oldDefaultClassName;
+                    _tsDefaultExportClassNameUsed = oldDefaultClassNameUsed;
+                }
+            }
+            else if (Type == TokenType.Function || (isAsync = IsAsyncFunction()))
             {
                 var startLoc = Start;
                 Next();
@@ -975,7 +1584,32 @@ public sealed partial class Parser
             }
             else if (Type == TokenType.Class)
             {
-                declaration = ParseClass(Start, false, true);
+                if (IsTypeScript)
+                {
+                    var oldDefaultClassName = _tsDefaultExportClassName;
+                    var oldDefaultClassNameUsed = _tsDefaultExportClassNameUsed;
+                    _tsDefaultExportClassName = "default_1";
+                    _tsDefaultExportClassNameUsed = true;
+                    try
+                    {
+                        declaration = ParseClass(Start, false, true);
+                    }
+                    finally
+                    {
+                        _tsDefaultExportClassName = oldDefaultClassName;
+                        _tsDefaultExportClassNameUsed = oldDefaultClassNameUsed;
+                    }
+                }
+                else
+                {
+                    declaration = ParseClass(Start, false, true);
+                }
+            }
+            else if (IsTypeScript && IsContextual("abstract") && TsIsClassFollowing())
+            {
+                var startLoc = Start;
+                Next();
+                declaration = ParseClass(startLoc, false, true);
             }
             else
             {
@@ -983,7 +1617,7 @@ public sealed partial class Parser
                 Semicolon();
             }
 
-            return new(SourceFile, nodeStart, _lastTokEnd, declaration, true);
+            return new AstExport(SourceFile, nodeStart, _lastTokEnd, declaration, true);
         }
         else
         {
@@ -991,10 +1625,90 @@ public sealed partial class Parser
             AstNode? declaration;
             var specifiers = new StructList<AstNameMapping>();
             AstString? source = null;
-            if (ShouldParseExportStatement())
+            AstObject? attributes = null;
+            var attributeKeyword = "with";
+            if (IsTypeScript && IsContextual("as"))
+            {
+                var index = End.Index;
+                while (index < _input.Length && char.IsWhiteSpace(_input[index])) index++;
+                if (TsTextStartsKeyword(index, "namespace"))
+                {
+                    TsSkipUntilStatementEnd();
+                    return new AstTypeScriptOnly(SourceFile, nodeStart, _lastTokEnd);
+                }
+            }
+            if (IsTypeScript && Type == TokenType.Decorator)
+            {
+                _tsPendingClassDecorators = TsParseDecorators();
+                if (Eat(TokenType.Default))
+                {
+                    CheckExport(exports, "default", _lastTokStart);
+                    if (IsContextual("abstract") && TsIsClassFollowing())
+                        Next();
+                    if (Type != TokenType.Class)
+                        Raise(Start, "Unexpected token");
+                    var oldDefaultClassName = _tsDefaultExportClassName;
+                    var oldDefaultClassNameUsed = _tsDefaultExportClassNameUsed;
+                    _tsDefaultExportClassName = "default_1";
+                    _tsDefaultExportClassNameUsed = true;
+                    try
+                    {
+                        declaration = ParseClass(Start, false, true);
+                    }
+                    finally
+                    {
+                        _tsDefaultExportClassName = oldDefaultClassName;
+                        _tsDefaultExportClassNameUsed = oldDefaultClassNameUsed;
+                    }
+                    return new AstExport(SourceFile, nodeStart, _lastTokEnd, declaration, true);
+                }
+                if (IsContextual("abstract") && TsIsClassFollowing())
+                    Next();
+                if (Type != TokenType.Class)
+                    Raise(Start, "Unexpected token");
+                declaration = ParseClass(Start, true, false);
+                if (declaration is AstDefClass defClass)
+                    CheckExport(exports, defClass.Name!.Name, defClass.Name.Start);
+            }
+            else if (IsTypeScript && IsContextual("abstract") && TsIsClassFollowing())
+            {
+                Next();
+                declaration = ParseClass(Start, true, false);
+                if (declaration is AstDefClass defClass)
+                    CheckExport(exports, defClass.Name!.Name, defClass.Name.Start);
+            }
+            else if (IsTypeScript && TsIsTypeOnlyStatementStart())
+            {
+                _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                return TsParseTypeOnlyStatement(nodeStart);
+            }
+            else if (IsTypeScript && TsIsDeclareStatementStart())
+            {
+                _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                return TsParseDeclareStatement(nodeStart);
+            }
+            else if (IsTypeScript && Options.ParseTypeScriptNamespaceBody && TsIsUsingDeclarationStart())
+            {
+                declaration = TsParseNamespaceExportUsingStatement(Start);
+                if (declaration is AstDefinitions variableDeclaration)
+                    CheckVariableExport(exports, in variableDeclaration.Definitions);
+            }
+            else if (IsTypeScript && TsIsImportEqualsStatementStart())
+            {
+                declaration = TsParseImportEqualsStatement(Start);
+                if (declaration is AstTypeScriptOnly)
+                    return (AstStatement)declaration;
+                if (declaration is AstDefinitions variableDeclaration)
+                    CheckVariableExport(exports, in variableDeclaration.Definitions);
+            }
+            else if (ShouldParseExportStatement())
             {
                 declaration = ParseStatement(true);
-                if (declaration is AstDefinitions variableDeclaration)
+                if (declaration is AstTypeScriptOnly)
+                {
+                    return (AstStatement)declaration;
+                }
+                else if (declaration is AstDefinitions variableDeclaration)
                 {
                     CheckVariableExport(exports, in variableDeclaration.Definitions);
                 }
@@ -1010,12 +1724,32 @@ public sealed partial class Parser
             {
                 // export { x, y as z } [from '...']
                 declaration = null;
-                ParseExportSpecifiers(ref specifiers, exports);
+                ParseExportSpecifiers(ref specifiers, exports, out var sawExportSpecifier);
+                if (specifiers.Count == 0)
+                {
+                    if (EatContextual("from"))
+                    {
+                        if (Type != TokenType.String)
+                            Raise(Start, "Unexpected token");
+                        source = ParseExpressionAtom(Start) as AstString;
+                        (attributes, attributeKeyword) = ParseImportAttributes();
+                    }
+
+                    Semicolon();
+                    if (sawExportSpecifier)
+                    {
+                        _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                        return new AstTypeScriptOnly(SourceFile, nodeStart, _lastTokEnd);
+                    }
+                    return new AstExport(SourceFile, nodeStart, _lastTokEnd, source, null, ref specifiers,
+                        attributes, attributeKeyword);
+                }
                 if (EatContextual("from"))
                 {
                     if (Type != TokenType.String)
                         Raise(Start, "Unexpected token");
                     source = ParseExpressionAtom(Start) as AstString;
+                    (attributes, attributeKeyword) = ParseImportAttributes();
                     foreach (var spec in specifiers)
                     {
                         spec.Name = new AstSymbolImportForeign(spec.Name);
@@ -1033,8 +1767,30 @@ public sealed partial class Parser
                 Semicolon();
             }
 
-            return new(SourceFile, nodeStart, _lastTokEnd, source, declaration, ref specifiers);
+            return new AstExport(SourceFile, nodeStart, _lastTokEnd, source, declaration, ref specifiers, attributes,
+                attributeKeyword);
         }
+    }
+
+    (AstObject? Attributes, string Keyword) ParseImportAttributes()
+    {
+        var keyword = "with";
+        if (Eat(TokenType.With))
+        {
+            keyword = "with";
+        }
+        else if (EatContextual("assert"))
+        {
+            keyword = "assert";
+        }
+        else
+        {
+            return (null, keyword);
+        }
+
+        if (Type != TokenType.BraceL)
+            Raise(Start, "Unexpected token");
+        return ((AstObject)ParseExpressionAtom(Start), keyword);
     }
 
     static void CheckExport(IDictionary<string, bool>? exports, string name, Position pos)
@@ -1065,6 +1821,11 @@ public sealed partial class Parser
             case AstDefaultAssign assignmentPattern:
                 CheckPatternExport(exports, assignmentPattern.Left);
                 break;
+            case AstExpansion expansion:
+                CheckPatternExport(exports, expansion.Expression);
+                break;
+            case AstHole:
+                break;
             default:
                 throw new InvalidOperationException("checkPattenExport unhandled " + pattern);
         }
@@ -1091,9 +1852,11 @@ public sealed partial class Parser
     }
 
     // Parses a comma-separated list of module exports.
-    void ParseExportSpecifiers(ref StructList<AstNameMapping> nodes, IDictionary<string, bool>? exports)
+    void ParseExportSpecifiers(ref StructList<AstNameMapping> nodes, IDictionary<string, bool>? exports,
+        out bool sawSpecifier)
     {
         var first = true;
+        sawSpecifier = false;
         // export { x, y as z } [from '...']
         Expect(TokenType.BraceL);
         while (!Eat(TokenType.BraceR))
@@ -1105,33 +1868,62 @@ public sealed partial class Parser
             }
             else first = false;
 
+            sawSpecifier = true;
             var startLoc = Start;
-            var local = ParseIdent(true);
-            var exported = EatContextual("as") ? ParseIdent(true) : local;
+            if (TsTypeSpecifierIsTypeOnly())
+            {
+                Next();
+                _ = ParseModuleSpecifierName(out _);
+                if (EatContextual("as"))
+                    _ = ParseModuleSpecifierName(out _);
+                continue;
+            }
+            var local = ParseModuleSpecifierName(out var localIsStringLiteral);
+            var exportedIsStringLiteral = localIsStringLiteral;
+            var exported = EatContextual("as")
+                ? ParseModuleSpecifierName(out exportedIsStringLiteral)
+                : local;
             CheckExport(exports, exported.Name, exported.Start);
-            nodes.Add(new(SourceFile, startLoc, _lastTokEnd, new AstSymbolExportForeign(exported),
-                new AstSymbolExport(local)));
+            nodes.Add(new AstNameMapping(SourceFile, startLoc, _lastTokEnd, new AstSymbolExportForeign(exported),
+                new AstSymbolExport(local))
+            {
+                ForeignNameIsStringLiteral = exportedIsStringLiteral,
+                NameIsStringLiteral = localIsStringLiteral
+            });
         }
     }
 
     // Parses import declaration.
-    AstImport ParseImport(Position nodeStart)
+    AstStatement ParseImport(Position nodeStart)
     {
         // import '...'
         var importNames = new StructList<AstNameMapping>();
         AstSymbolImport? importName = null;
         AstString? source;
+        AstObject? attributes;
+        var attributeKeyword = "with";
+        var isDefer = IsImportDeferKeyword() && EatContextual("defer");
         if (Type == TokenType.String)
         {
+            if (isDefer)
+                Raise(Start, "Unexpected token");
             source = (AstString)ParseExpressionAtom(Start);
+            (attributes, attributeKeyword) = ParseImportAttributes();
         }
         else
         {
-            ParseImportSpecifiers(ref importNames, ref importName);
+            var hasTypeOnlySpecifier = ParseImportSpecifiers(ref importNames, ref importName);
             ExpectContextual("from");
             if (Type == TokenType.String)
             {
                 source = (AstString)ParseExpressionAtom(Start);
+                (attributes, attributeKeyword) = ParseImportAttributes();
+                if (hasTypeOnlySpecifier && importName == null && importNames.Count == 0)
+                {
+                    Semicolon();
+                    _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                    return new AstTypeScriptOnly(SourceFile, nodeStart, _lastTokEnd);
+                }
             }
             else
             {
@@ -1140,13 +1932,25 @@ public sealed partial class Parser
         }
 
         Semicolon();
-        return new AstImport(SourceFile, nodeStart, _lastTokEnd, source, importName, ref importNames);
+        return new AstImport(SourceFile, nodeStart, _lastTokEnd, source, importName, ref importNames, attributes,
+            isDefer, attributeKeyword);
+    }
+
+    bool IsImportDeferKeyword()
+    {
+        if (!IsContextual("defer"))
+            return false;
+        var index = End.Index;
+        while (index < _input.Length && char.IsWhiteSpace(_input[index]))
+            index++;
+        return !TsTextStartsKeyword(_input, index, "from");
     }
 
     // Parses a comma-separated list of module imports.
-    void ParseImportSpecifiers(ref StructList<AstNameMapping> importNames, ref AstSymbolImport? importName)
+    bool ParseImportSpecifiers(ref StructList<AstNameMapping> importNames, ref AstSymbolImport? importName)
     {
         var first = true;
+        var hadTypeOnlySpecifier = false;
         if (Type == TokenType.Name)
         {
             // import defaultObj, { x, y as z } from '...'
@@ -1154,7 +1958,7 @@ public sealed partial class Parser
             CheckLVal(local, true, VariableKind.Let);
             importName = new(local);
             if (!Eat(TokenType.Comma))
-                return;
+                return false;
         }
 
         if (Type == TokenType.Star)
@@ -1167,7 +1971,7 @@ public sealed partial class Parser
             CheckLVal(local, true, VariableKind.Let);
             importNames.Add(new(SourceFile, startLoc, _lastTokEnd, starSymbol,
                 new AstSymbolImport(local)));
-            return;
+            return false;
         }
 
         Expect(TokenType.BraceL);
@@ -1181,7 +1985,16 @@ public sealed partial class Parser
             else first = false;
 
             var startLoc = Start;
-            var imported = ParseIdent(true);
+            if (TsTypeSpecifierIsTypeOnly())
+            {
+                hadTypeOnlySpecifier = true;
+                Next();
+                _ = ParseModuleSpecifierName(out _);
+                if (EatContextual("as"))
+                    _ = ParseIdent();
+                continue;
+            }
+            var imported = ParseModuleSpecifierName(out var importedIsStringLiteral);
             AstSymbol local;
             if (EatContextual("as"))
             {
@@ -1194,9 +2007,26 @@ public sealed partial class Parser
             }
 
             CheckLVal(local, true, VariableKind.Let);
-            importNames.Add(new(SourceFile, startLoc, _lastTokEnd, new AstSymbolImportForeign(imported),
-                new AstSymbolImport(local)));
+            importNames.Add(new AstNameMapping(SourceFile, startLoc, _lastTokEnd, new AstSymbolImportForeign(imported),
+                new AstSymbolImport(local))
+            {
+                ForeignNameIsStringLiteral = importedIsStringLiteral
+            });
         }
+        return hadTypeOnlySpecifier;
+    }
+
+    AstSymbol ParseModuleSpecifierName(out bool isStringLiteral)
+    {
+        isStringLiteral = false;
+        if (Type == TokenType.String)
+        {
+            var value = (AstString)ParseExpressionAtom(Start);
+            isStringLiteral = true;
+            return new AstSymbolRef(SourceFile, value.Start, value.End, value.Value);
+        }
+
+        return ParseIdent(true);
     }
 
     bool IsUseStrictDirective(AstNode statement)
