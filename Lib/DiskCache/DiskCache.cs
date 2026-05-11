@@ -22,6 +22,7 @@ public class DiskCache : IDiskCache
 
     public IFsAbstraction FsAbstraction { get; }
     public string? IgnoreChangesInPath { get; set; }
+    public IReadOnlyList<string>? IgnoreWatcherChangesInPaths { get; set; }
 
     class DirectoryCache : IDirectoryCache
     {
@@ -231,7 +232,10 @@ public class DiskCache : IDiskCache
 
     void WatcherFileChanged(string path)
     {
-        if (IgnoreChangesInPath != null && path.StartsWith(IgnoreChangesInPath, StringComparison.Ordinal))
+        if (IgnoreChangesInPath != null && IsSamePathOrChild(path, IgnoreChangesInPath))
+            return;
+        if (IgnoreWatcherChangesInPaths != null &&
+            IgnoreWatcherChangesInPaths.Any(ignorePath => IsSamePathOrChild(path, ignorePath)))
             return;
         //Console.WriteLine("Change: " + path);
         lock (_lock)
@@ -244,6 +248,13 @@ public class DiskCache : IDiskCache
                 _changeSubject.OnNext(path);
             }
         }
+    }
+
+    static bool IsSamePathOrChild(string path, string parent)
+    {
+        return path.Length == parent.Length
+            ? path.Equals(parent, StringComparison.Ordinal)
+            : path.StartsWith(parent, StringComparison.Ordinal) && path[parent.Length] == '/';
     }
 
     IDirectoryCache AddDirectoryFromName(string name, IDirectoryCache parent, bool isLink, bool isInvalid)

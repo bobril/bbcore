@@ -21,6 +21,7 @@ public class BobrilBuildOptions
     public IList<string>? files { get; set; }
     public IList<string>? include { get; set; }
     public IList<string>? exclude { get; set; }
+    public IList<string>? excludeWatchers { get; set; }
     public IList<int>? ignoreDiagnostic { get; set; }
     public bool? GenerateSpritesTs { get; set; } // plugins.bb-assets-generator-plugin.generateSpritesFile
     public bool? warningsAsErrors { get; set; }
@@ -73,6 +74,8 @@ public class BobrilBuildOptions
             include = with.include;
         if (with.exclude != null)
             exclude = with.exclude;
+        if (with.excludeWatchers != null)
+            excludeWatchers = with.excludeWatchers;
         if (with.files != null)
             files = with.files;
         if (with.ignoreDiagnostic != null)
@@ -175,6 +178,8 @@ public class BobrilBuildOptions
             .ToArray();
         include = (bobrilSection.GetValue(nameof(include)) as JArray)?.Select(i => i.ToString()).ToArray();
         exclude = (bobrilSection.GetValue(nameof(exclude)) as JArray)?.Select(i => i.ToString()).ToArray();
+        excludeWatchers = (bobrilSection.GetValue(nameof(excludeWatchers)) as JArray)?.Select(i => i.ToString())
+            .ToArray();
         files = (bobrilSection.GetValue(nameof(files)) as JArray)?.Select(i => i.ToString()).ToArray();
         if (bobrilSection.GetValue(nameof(ignoreDiagnostic)) is JArray ignoreDiagnosticJson)
             ignoreDiagnostic = ignoreDiagnosticJson.Select(i => i.Value<int>()).ToArray();

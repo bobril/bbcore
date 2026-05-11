@@ -178,6 +178,14 @@ It checks only for existence of this `interactiveDumpsToDist` key, value does no
         "exclude": [ "node_modules" ]
     }
 
+## Ignore project paths in interactive watcher
+
+    {
+        "excludeWatchers": [ "bin", "generated/file.ts" ]
+    }
+
+Paths are relative to the project root and can point to either directories or files.
+
 ## Add generated tsconfig.json files
 
     {

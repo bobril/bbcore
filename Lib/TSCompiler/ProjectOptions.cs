@@ -51,6 +51,7 @@ public class ProjectOptions
     public bool PreserveProjectRoot;
     public string JasmineVersion;
     public IList<string>? TestDirectories;
+    public IList<string>? ExcludeWatchers;
     public string? PathToTranslations;
     public bool TsconfigUpdate;
     public Dictionary<string, string?>? BrowserResolve;
@@ -557,6 +558,16 @@ public class ProjectOptions
             IgnoreDiagnostic = new(bbOptions.ignoreDiagnostic);
         Include = bbOptions.include;
         Exclude = bbOptions.exclude;
+        ExcludeWatchers = bbOptions.excludeWatchers;
+        if (Owner.IsRootProject)
+        {
+            Owner.DiskCache.IgnoreWatcherChangesInPaths = ExcludeWatchers?
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Select(path => PathUtils.Join(Owner.Owner.FullPath, path))
+                .Select(path => PathUtils.Normalize(path).TrimEnd('/'))
+                .ToArray();
+        }
+
         Files = bbOptions.files;
         GenerateSpritesTs = bbOptions.GenerateSpritesTs ?? false;
         WarningsAsErrors = bbOptions.warningsAsErrors ?? false;
