@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added `excludeWatchers` option in `.bbrc` or `package.json` `bobril` section to ignore project-root-relative files or directories in interactive file watching.
 - When build is started always print reason for build. It is either "Initial build" or path to file which changed.
 
 ## 5.6.0
