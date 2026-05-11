@@ -15,6 +15,8 @@ public class DiskCache : IDiskCache
 {
     readonly Func<IDirectoryWatcher> _directoryWatcherFactory;
     readonly Dictionary<string, IDirectoryWatcher> _watchers = new();
+    readonly HashSet<string> _acceptedWatcherFiles = new();
+    readonly HashSet<string> _acceptedWatcherDirectories = new();
     readonly IDirectoryCache _root;
     readonly object _lock = new();
     readonly bool IsUnixFs;
@@ -240,11 +242,25 @@ public class DiskCache : IDiskCache
         //Console.WriteLine("Change: " + path);
         lock (_lock)
         {
-            var item = TryGetItemNoLock(PathUtils.Parent(path));
-            if (item is IDirectoryCache { IsFake: false } dir)
+            if (!IsAcceptedWatcherPath(path))
+                return;
+
+            if (_acceptedWatcherFiles.Contains(path) && TryGetKnownItemNoLock(path) is FileCache file)
+            {
+                file.IsStale = true;
+                _changeSubject.OnNext(path);
+                return;
+            }
+
+            var parentPath = PathUtils.Parent(path);
+            if (TryGetKnownItemNoLock(parentPath) is not DirectoryCache { IsFake: false } dir)
+                return;
+
+            var item = TryGetItemNoLock(parentPath);
+            if (item is IDirectoryCache { IsFake: false } changedDir)
             {
                 //Console.WriteLine("Setting stale for " + dir.FullPath);
-                dir.IsStale = true;
+                changedDir.IsStale = true;
                 _changeSubject.OnNext(path);
             }
         }
@@ -377,8 +393,26 @@ public class DiskCache : IDiskCache
     {
         lock (_lock)
         {
-            return TryGetItemNoLock(path);
+            var item = TryGetItemNoLock(path);
+            if (item is { IsInvalid: false })
+                AcceptWatcherPath(PathUtils.Normalize(path.ToString()), item);
+            return item;
         }
+    }
+
+    void AcceptWatcherPath(string path, IItemCache item)
+    {
+        if (item.IsDirectory)
+            _acceptedWatcherDirectories.Add(path.TrimEnd('/'));
+        else
+            _acceptedWatcherFiles.Add(path);
+    }
+
+    bool IsAcceptedWatcherPath(string path)
+    {
+        if (_acceptedWatcherFiles.Contains(path))
+            return true;
+        return _acceptedWatcherDirectories.Any(dir => IsSamePathOrChild(path, dir));
     }
 
     IItemCache? TryGetItemNoLock(ReadOnlySpan<char> path)
@@ -449,6 +483,26 @@ public class DiskCache : IDiskCache
         return (directory?.IsInvalid ?? true) ? null : directory;
     }
 
+    IItemCache? TryGetKnownItemNoLock(ReadOnlySpan<char> path)
+    {
+        var item = (IItemCache)_root;
+        var directory = _root;
+        var pos = 0;
+        while (PathUtils.EnumParts(path, ref pos, out var name, out var isDir))
+        {
+            item = directory.TryGetChild(name);
+            if (item == null)
+                return null;
+            if (!isDir)
+                return item;
+            if (!item.IsDirectory)
+                return null;
+            directory = (IDirectoryCache)item;
+        }
+
+        return item;
+    }
+
     bool _ignoringChanges;
 
     public bool UpdateFile(string path, string content)
@@ -506,6 +560,7 @@ public class DiskCache : IDiskCache
         if (item.IsDirectory)
             lock (_lock)
             {
+                _acceptedWatcherDirectories.Add(item.FullPath.TrimEnd('/'));
                 UpdateIfNeededNoLock((IDirectoryCache)item);
             }
     }
