@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.7.0
+
 ### Added
 
 - Added `excludeWatchers` option in `.bbrc` or `package.json` `bobril` section to ignore project-root-relative files or directories in interactive file watching.
