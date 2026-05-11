@@ -4,7 +4,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <PackageId>Bbcore.Lib</PackageId>
-        <Version>5.6.0</Version>
+        <Version>5.7.0</Version>
         <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
         <Authors>Tomáš Zálešák, Boris Letocha</Authors>
         <Nullable>enable</Nullable>
@@ -377,6 +377,9 @@
         <Compile Include="..\Lib\TSCompiler\NjsastBundleBundler.cs">
             <Link>TSCompiler\NjsastBundleBundler.cs</Link>
         </Compile>
+        <Compile Include="..\Lib\TSCompiler\NjsastTsValidator.cs">
+            <Link>TSCompiler\NjsastTsValidator.cs</Link>
+        </Compile>
         <Compile Include="..\Lib\TSCompiler\PragmaParser.cs">
             <Link>TSCompiler\PragmaParser.cs</Link>
         </Compile>
@@ -623,6 +626,9 @@
         <Compile Include="..\Njsast\Ast\AstClassExpression.cs">
             <Link>Ast\AstClassExpression.cs</Link>
         </Compile>
+        <Compile Include="..\Njsast\Ast\AstClassField.cs">
+            <Link>Ast\AstClassField.cs</Link>
+        </Compile>
         <Compile Include="..\Njsast\Ast\AstConciseMethod.cs">
             <Link>Ast\AstConciseMethod.cs</Link>
         </Compile>
@@ -634,6 +640,9 @@
         </Compile>
         <Compile Include="..\Njsast\Ast\AstConstant.cs">
             <Link>Ast\AstConstant.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Ast\AstComputedPropertyKey.cs">
+            <Link>Ast\AstComputedPropertyKey.cs</Link>
         </Compile>
         <Compile Include="..\Njsast\Ast\AstContinue.cs">
             <Link>Ast\AstContinue.cs</Link>
@@ -700,6 +709,21 @@
         </Compile>
         <Compile Include="..\Njsast\Ast\AstHole.cs">
             <Link>Ast\AstHole.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Ast\AstJsxAttribute.cs">
+            <Link>Ast\AstJsxAttribute.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Ast\AstJsxElement.cs">
+            <Link>Ast\AstJsxElement.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Ast\AstJsxExpression.cs">
+            <Link>Ast\AstJsxExpression.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Ast\AstJsxName.cs">
+            <Link>Ast\AstJsxName.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Ast\AstJsxText.cs">
+            <Link>Ast\AstJsxText.cs</Link>
         </Compile>
         <Compile Include="..\Njsast\Ast\AstIf.cs">
             <Link>Ast\AstIf.cs</Link>
@@ -782,6 +806,9 @@
         <Compile Include="..\Njsast\Ast\AstPropAccess.cs">
             <Link>Ast\AstPropAccess.cs</Link>
         </Compile>
+        <Compile Include="..\Njsast\Ast\AstRawStatement.cs">
+            <Link>Ast\AstRawStatement.cs</Link>
+        </Compile>
         <Compile Include="..\Njsast\Ast\AstRegExp.cs">
             <Link>Ast\AstRegExp.cs</Link>
         </Compile>
@@ -802,6 +829,9 @@
         </Compile>
         <Compile Include="..\Njsast\Ast\AstStatementWithBody.cs">
             <Link>Ast\AstStatementWithBody.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Ast\AstStaticBlock.cs">
+            <Link>Ast\AstStaticBlock.cs</Link>
         </Compile>
         <Compile Include="..\Njsast\Ast\AstString.cs">
             <Link>Ast\AstString.cs</Link>
@@ -869,6 +899,9 @@
         <Compile Include="..\Njsast\Ast\AstSymbolMethod.cs">
             <Link>Ast\AstSymbolMethod.cs</Link>
         </Compile>
+        <Compile Include="..\Njsast\Ast\AstSymbolPrivate.cs">
+            <Link>Ast\AstSymbolPrivate.cs</Link>
+        </Compile>
         <Compile Include="..\Njsast\Ast\AstSymbolProperty.cs">
             <Link>Ast\AstSymbolProperty.cs</Link>
         </Compile>
@@ -898,6 +931,9 @@
         </Compile>
         <Compile Include="..\Njsast\Ast\AstTry.cs">
             <Link>Ast\AstTry.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Ast\AstTypeScriptOnly.cs">
+            <Link>Ast\AstTypeScriptOnly.cs</Link>
         </Compile>
         <Compile Include="..\Njsast\Ast\AstUnary.cs">
             <Link>Ast\AstUnary.cs</Link>
@@ -1118,8 +1154,17 @@
         <Compile Include="..\Njsast\DictionaryExtensions.cs">
             <Link>DictionaryExtensions.cs</Link>
         </Compile>
+        <Compile Include="..\Njsast\EsmToCjs\EsmToCjsTreeTransformer.cs">
+            <Link>EsmToCjs\EsmToCjsTreeTransformer.cs</Link>
+        </Compile>
         <Compile Include="..\Njsast\HashHelpers.cs">
             <Link>HashHelpers.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Jsx\JsxToCreateElementOptions.cs">
+            <Link>Jsx\JsxToCreateElementOptions.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Jsx\JsxToCreateElementTreeTransformer.cs">
+            <Link>Jsx\JsxToCreateElementTreeTransformer.cs</Link>
         </Compile>
         <Compile Include="..\Njsast\Output\OutputContext.cs">
             <Link>Output\OutputContext.cs</Link>
@@ -1141,6 +1186,9 @@
         </Compile>
         <Compile Include="..\Njsast\Reader\Identifier.cs">
             <Link>Reader\Identifier.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Reader\Jsx.cs">
+            <Link>Reader\Jsx.cs</Link>
         </Compile>
         <Compile Include="..\Njsast\Reader\Location.cs">
             <Link>Reader\Location.cs</Link>
@@ -1183,6 +1231,15 @@
         </Compile>
         <Compile Include="..\Njsast\Reader\TokContext.cs">
             <Link>Reader\TokContext.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Reader\TypeScript.cs">
+            <Link>Reader\TypeScript.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Reader\TypeScriptDecorators.cs">
+            <Link>Reader\TypeScriptDecorators.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Reader\TypeScriptParser.cs">
+            <Link>Reader\TypeScriptParser.cs</Link>
         </Compile>
         <Compile Include="..\Njsast\Reader\Token.cs">
             <Link>Reader\Token.cs</Link>
