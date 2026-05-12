@@ -96,7 +96,7 @@ var FileWatcher = /** @class */ (function () {
             return;
         bb.trace("Closed watching file: " + this.path);
         this.closed = true;
-        watchDirMap.delete(this.path);
+        watchFileMap.delete(this.path);
     };
     return FileWatcher;
 }());
