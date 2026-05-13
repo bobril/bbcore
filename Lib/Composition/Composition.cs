@@ -1403,10 +1403,10 @@ public class Composition
         if (path.StartsWithSegments("/bb/base", out var src))
         {
             var srcPath = PathUtils.Join(_mainBuildResult.CommonSourceDirectory, src.Value![1..]);
-            if (_dc.TryGetItem(srcPath) is IFileCache srcFileCache)
+            if (_dc.FsAbstraction.GetItemInfo(srcPath) is { Exists: true, IsDirectory: false })
             {
                 context.Response.ContentType = "text/plain";
-                await context.Response.WriteAsync(srcFileCache.Utf8Content);
+                await context.Response.Body.WriteAsync(_dc.FsAbstraction.ReadAllBytes(srcPath));
                 return;
             }
         }
