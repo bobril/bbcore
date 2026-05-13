@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.8.0
+
 ### Changed
 
 - Generated `tsconfig.json` files now default TypeScript `target` to `es2022`.
