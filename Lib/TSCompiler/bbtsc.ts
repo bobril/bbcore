@@ -8,7 +8,7 @@ declare const bb: IBB;
 interface IBB {
     getChangeId(fileName: string): number | undefined;
 
-    readFile(fileName: string): string;
+    readFile(fileName: string): string | null;
 
     writeFile(fileName: string, data: string): boolean;
 
@@ -72,6 +72,13 @@ function fixCompilerOptions() {
 }
 
 let lastSourceMap: string | undefined;
+let lastSourceList = "";
+
+function splitFileNames(fileNames: string): string[] {
+    if (!fileNames)
+        return [];
+    return fileNames.split("|").filter(Boolean);
+}
 
 function bbTranspile(fileName: string, input: string): string {
     //bb.trace(JSON.stringify(compilerOptions));
@@ -228,7 +235,7 @@ const mySys: ts.System = {
             res = new FileWatcher(path);
             watchFileMap.set(path, res);
         }
-        return res.getContent()!;
+        return res.getContent() ?? "";
     },
     fileExists(path: string): boolean {
         let res = watchFileMap.get(path);
@@ -316,30 +323,49 @@ function reportWatchStatusChanged(diagnostic: ts.Diagnostic) {
 let watchProgram: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram> | undefined;
 
 function bbCreateWatchProgram(fileNames: string) {
+    lastSourceList = fileNames;
     fixCompilerOptions();
     compilerOptions.noEmit = true;
-    const host = ts.createWatchCompilerHost(
-        fileNames.split("|"),
-        compilerOptions,
-        mySys,
-        ts.createSemanticDiagnosticsBuilderProgram,
-        reportDiagnostic,
-        reportWatchStatusChanged
-    );
+    const sources = splitFileNames(fileNames);
+    if (sources.length === 0 || !sources.some(fileName => mySys.fileExists(fileName))) {
+        bb.trace("Skipping watch program because no source file exists. Using one-shot typecheck.");
+        watchProgram = undefined;
+        return;
+    }
+    try {
+        const host = ts.createWatchCompilerHost(
+            sources,
+            compilerOptions,
+            mySys,
+            ts.createSemanticDiagnosticsBuilderProgram,
+            reportDiagnostic,
+            reportWatchStatusChanged
+        );
 
-    host.getDefaultLibLocation = () => bbDefaultLibLocation;
-    host.getDefaultLibFileName = options => bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options);
-    host.trace = s => {
-        bb.trace(s);
-    };
-    watchProgram = ts.createWatchProgram(host);
+        host.getDefaultLibLocation = () => bbDefaultLibLocation;
+        host.getDefaultLibFileName = options => bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options);
+        host.trace = s => {
+            bb.trace(s);
+        };
+        watchProgram = ts.createWatchProgram(host);
+    } catch (e: any) {
+        bb.trace("Create watch program failed: " + e);
+        watchProgram = undefined;
+    }
 }
 
 function bbUpdateSourceList(fileNames: string) {
-    watchProgram!.updateRootFileNames(fileNames.split("|"));
+    lastSourceList = fileNames;
+    if (watchProgram === undefined) return;
+    watchProgram!.updateRootFileNames(splitFileNames(fileNames));
 }
 
 function bbTriggerUpdate() {
+    if (watchProgram === undefined) {
+        if (lastSourceList.length !== 0)
+            bbCheckProgram(lastSourceList);
+        return;
+    }
     bb.trace("triggerUpdateStart");
     watchFileMap.forEach(w => w.check());
     watchDirMap.forEach(w => w.check());
@@ -365,7 +391,10 @@ function createCompilerHost(): ts.CompilerHost {
             }
             text = "";
         }
-        return text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, false) : undefined;
+        if (text == null) {
+            return undefined;
+        }
+        return ts.createSourceFile(fileName, text, languageVersion, false);
     }
 
     const compilerHost: ts.CompilerHost = {
@@ -401,7 +430,8 @@ function bbCheckProgram(fileNames: string) {
     fixCompilerOptions();
     compilerOptions.noEmit = true;
     const host = createCompilerHost();
-    let program = ts.createProgram(fileNames.split("|"), compilerOptions, host);
+    const sources = splitFileNames(fileNames);
+    let program = ts.createProgram(sources, compilerOptions, host);
     wasError = false;
     reportDiagnostics(program.getOptionsDiagnostics());
     reportDiagnostics(program.getGlobalDiagnostics());

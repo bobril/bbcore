@@ -70,12 +70,11 @@ public class TsCompiler : ITSCompiler
             return null;
         }
 
-        public string readFile(string fileName)
+        public string? readFile(string fileName)
         {
             //_owner.Logger.Info("readFile " + fileName);
             var fullPath = PathUtils.Join(_owner._currentDirectory, fileName);
-            var file = _owner.DiskCache.TryGetItem(fullPath) as IFileCache;
-            if (file != null && !file.IsInvalid)
+            if (_owner.DiskCache.TryGetItem(fullPath) is IFileCache { IsInvalid: false } file)
             {
                 return file.Utf8Content;
             }

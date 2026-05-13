@@ -654,8 +654,18 @@ public class DiskCache : IDiskCache
         }
 
         directory.IsWatcherRoot =
-            !directory.IsInvalid && (directory.IsLink || NotWatchedByParents(directory.Parent));
+            !directory.IsInvalid && !IsUnwatchableDirectory(directory.FullPath) &&
+            (directory.IsLink || NotWatchedByParents(directory.Parent));
         directory.IsStale = false;
+    }
+
+    static bool IsUnwatchableDirectory(string? fullPath)
+    {
+        if (fullPath == null)
+            return false;
+        var p = fullPath.Replace('\\', '/');
+        return p.EndsWith("/.pnpm", StringComparison.Ordinal) ||
+            p.Contains("/.pnpm/", StringComparison.Ordinal);
     }
 
     bool NotWatchedByParents(IDirectoryCache directory)

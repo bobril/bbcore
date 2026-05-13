@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Changed
+
+- Generated `tsconfig.json` files now default TypeScript `target` to `es2022`.
+
+### Fixed
+
+- Interactive watcher no longer attempts to watch `.pnpm` directories.
+- TypeScript watch mode now falls back to a one-shot typecheck when no source file exists or the watch program cannot be created.
+
 ## 5.7.1
 
 ### Fixed

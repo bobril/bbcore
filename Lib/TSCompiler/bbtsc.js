@@ -46,6 +46,12 @@ function bbGetLastSourceMap() {
     return res;
 }
 var wasError = false;
+var lastSourceList = "";
+function splitFileNames(fileNames) {
+    if (!fileNames)
+        return [];
+    return fileNames.split("|").filter(Boolean);
+}
 function reportDiagnostic(diagnostic) {
     if (diagnostic.category === ts.DiagnosticCategory.Error)
         wasError = true;
@@ -160,7 +166,7 @@ var mySys = {
             res = new FileWatcher(path);
             watchFileMap.set(path, res);
         }
-        return res.getContent();
+        return res.getContent() || "";
     },
     fileExists: function (path) {
         var res = watchFileMap.get(path);
@@ -236,20 +242,40 @@ function reportWatchStatusChanged(diagnostic) {
 }
 var watchProgram;
 function bbCreateWatchProgram(fileNames) {
+    lastSourceList = fileNames;
     fixCompilerOptions();
     compilerOptions.noEmit = true;
-    var host = ts.createWatchCompilerHost(fileNames.split("|"), compilerOptions, mySys, ts.createSemanticDiagnosticsBuilderProgram, reportDiagnostic, reportWatchStatusChanged);
-    host.getDefaultLibLocation = function () { return bbDefaultLibLocation; };
-    host.getDefaultLibFileName = function (options) { return bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options); };
-    host.trace = function (s) {
-        bb.trace(s);
-    };
-    watchProgram = ts.createWatchProgram(host);
+    var sources = splitFileNames(fileNames);
+    if (sources.length === 0 || !sources.some(function (fileName) { return mySys.fileExists(fileName); })) {
+        bb.trace("Skipping watch program because no source file exists. Using one-shot typecheck.");
+        watchProgram = undefined;
+        return;
+    }
+    try {
+        var host = ts.createWatchCompilerHost(sources, compilerOptions, mySys, ts.createSemanticDiagnosticsBuilderProgram, reportDiagnostic, reportWatchStatusChanged);
+        host.getDefaultLibLocation = function () { return bbDefaultLibLocation; };
+        host.getDefaultLibFileName = function (options) { return bbDefaultLibLocation + "/" + ts.getDefaultLibFileName(options); };
+        host.trace = function (s) {
+            bb.trace(s);
+        };
+        watchProgram = ts.createWatchProgram(host);
+    } catch (e) {
+        bb.trace("Create watch program failed: " + e);
+        watchProgram = undefined;
+    }
 }
 function bbUpdateSourceList(fileNames) {
-    watchProgram.updateRootFileNames(fileNames.split("|"));
+    lastSourceList = fileNames;
+    if (watchProgram === undefined)
+        return;
+    watchProgram.updateRootFileNames(splitFileNames(fileNames));
 }
 function bbTriggerUpdate() {
+    if (watchProgram === undefined) {
+        if (lastSourceList.length !== 0)
+            bbCheckProgram(lastSourceList);
+        return;
+    }
     bb.trace("triggerUpdateStart");
     watchFileMap.forEach(function (w) { return w.check(); });
     watchDirMap.forEach(function (w) { return w.check(); });
@@ -272,7 +298,10 @@ function createCompilerHost() {
             }
             text = "";
         }
-        return text !== undefined ? ts.createSourceFile(fileName, text, languageVersion, false) : undefined;
+        if (text == null) {
+            return undefined;
+        }
+        return ts.createSourceFile(fileName, text, languageVersion, false);
     }
     var compilerHost = {
         getSourceFile: getSourceFile,
@@ -306,7 +335,8 @@ function bbCheckProgram(fileNames) {
     fixCompilerOptions();
     compilerOptions.noEmit = true;
     var host = createCompilerHost();
-    var program = ts.createProgram(fileNames.split("|"), compilerOptions, host);
+    var sources = splitFileNames(fileNames);
+    var program = ts.createProgram(sources, compilerOptions, host);
     wasError = false;
     reportDiagnostics(program.getOptionsDiagnostics());
     reportDiagnostics(program.getGlobalDiagnostics());
