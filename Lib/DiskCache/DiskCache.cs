@@ -16,7 +16,10 @@ public class DiskCache : IDiskCache
     readonly Func<IDirectoryWatcher> _directoryWatcherFactory;
     readonly Dictionary<string, IDirectoryWatcher> _watchers = new();
     readonly HashSet<string> _acceptedWatcherFiles = new();
-    readonly HashSet<string> _acceptedWatcherDirectories = new();
+    readonly HashSet<string> _acceptedWatcherParentDirectories = new();
+    readonly Dictionary<string, HashSet<string>> _acceptedWatcherChildExtensions = new();
+    readonly HashSet<string> _acceptedWatcherChildFiles = new();
+    readonly HashSet<string> _acceptedWatcherChildDirectories = new();
     readonly IDirectoryCache _root;
     readonly object _lock = new();
     readonly bool IsUnixFs;
@@ -373,7 +376,14 @@ public class DiskCache : IDiskCache
         public DateTime Modified { get; set; }
         public ulong Length { get; set; }
 
-        public byte[] ByteContent => _contentBytes ??= ((DiskCache)Owner).FsAbstraction.ReadAllBytes(FullPath);
+        public byte[] ByteContent
+        {
+            get
+            {
+                ((DiskCache)Owner).AcceptWatcherFile(FullPath);
+                return _contentBytes ??= ((DiskCache)Owner).FsAbstraction.ReadAllBytes(FullPath);
+            }
+        }
 
         public string Utf8Content => Encoding.UTF8.GetString(ByteContent);
 
@@ -393,26 +403,49 @@ public class DiskCache : IDiskCache
     {
         lock (_lock)
         {
+            var normalizedPath = PathUtils.Normalize(path.ToString());
             var item = TryGetItemNoLock(path);
-            if (item is { IsInvalid: false })
-                AcceptWatcherPath(PathUtils.Normalize(path.ToString()), item);
+            if (item is null or { IsInvalid: true })
+                AcceptWatcherParentDirectory(normalizedPath);
             return item;
         }
     }
 
-    void AcceptWatcherPath(string path, IItemCache item)
+    void AcceptWatcherFile(string path)
     {
-        if (item.IsDirectory)
-            _acceptedWatcherDirectories.Add(path.TrimEnd('/'));
-        else
+        lock (_lock)
+        {
             _acceptedWatcherFiles.Add(path);
+        }
+    }
+
+    void AcceptWatcherParentDirectory(string path)
+    {
+        var parent = PathUtils.Parent(path);
+        if (parent.Length == 0)
+            return;
+        var parentPath = parent.ToString();
+        _acceptedWatcherParentDirectories.Add(parentPath.TrimEnd('/'));
+        if (TryGetKnownItemNoLock(parentPath) is IDirectoryCache { IsInvalid: false } parentDirectory)
+            UpdateIfNeededNoLock(parentDirectory);
     }
 
     bool IsAcceptedWatcherPath(string path)
     {
         if (_acceptedWatcherFiles.Contains(path))
             return true;
-        return _acceptedWatcherDirectories.Any(dir => IsSamePathOrChild(path, dir));
+        if (_acceptedWatcherParentDirectories.Any(dir => PathUtils.IsChildOf(path, dir)))
+            return true;
+        var parent = PathUtils.Parent(path);
+        if (parent.Length == 0)
+            return false;
+        var parentPath = parent.ToString().TrimEnd('/');
+        if (_acceptedWatcherChildFiles.Contains(parentPath))
+            return true;
+        if (_acceptedWatcherChildExtensions.TryGetValue(parentPath, out var extensions) &&
+            extensions.Contains(PathUtils.GetExtension(path).ToString()))
+            return true;
+        return _acceptedWatcherChildDirectories.Contains(parentPath) && FsAbstraction.GetItemInfo(path).IsDirectory;
     }
 
     IItemCache? TryGetItemNoLock(ReadOnlySpan<char> path)
@@ -560,9 +593,35 @@ public class DiskCache : IDiskCache
         if (item.IsDirectory)
             lock (_lock)
             {
-                _acceptedWatcherDirectories.Add(item.FullPath.TrimEnd('/'));
                 UpdateIfNeededNoLock((IDirectoryCache)item);
             }
+    }
+
+    public void WatchDirectChildren(IDirectoryCache dir, string? extension, bool includeFiles, bool includeDirectories)
+    {
+        lock (_lock)
+        {
+            var dirPath = dir.FullPath.TrimEnd('/');
+            if (extension == null)
+            {
+                if (includeFiles)
+                    _acceptedWatcherChildFiles.Add(dirPath);
+            }
+            else
+            {
+                if (!_acceptedWatcherChildExtensions.TryGetValue(dirPath, out var extensions))
+                {
+                    extensions = new();
+                    _acceptedWatcherChildExtensions.Add(dirPath, extensions);
+                }
+
+                extensions.Add(extension);
+            }
+
+            if (includeDirectories)
+                _acceptedWatcherChildDirectories.Add(dirPath);
+            UpdateIfNeededNoLock(dir);
+        }
     }
 
     void UpdateIfNeededNoLock(IDirectoryCache directory)

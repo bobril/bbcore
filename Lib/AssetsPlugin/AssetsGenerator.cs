@@ -25,7 +25,7 @@ public class AssetsGenerator
     {
         var projDir = _cache.TryGetItem(projectDir) as IDirectoryCache;
         if (projDir == null) return false;
-        _cache.UpdateIfNeeded(projDir);
+        _cache.WatchDirectChildren(projDir, null, true, true);
         if (!(projDir.TryGetChild(AssetsDirName) is IDirectoryCache assetsDir)) return false;
         var srcPath = PathUtils.Join(projectDir, SrcDirName);
 
@@ -45,7 +45,7 @@ public class AssetsGenerator
 
     IDictionary<string, object> InspectAssets(IDirectoryCache rootDir, string srcPath)
     {
-        _cache.UpdateIfNeeded(rootDir);
+        _cache.WatchDirectChildren(rootDir, null, true, true);
         var assetsMap = new Dictionary<string, object>();
         var assetsFiles = rootDir.ToList();
         foreach (var assetFile in assetsFiles)

@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Interactive watcher now tracks only files actually read during compilation, plus precise non-recursive directory checks for generated lists, tests, assets, resources, sprites, and TypeScript directory probes.
 - Interactive watcher no longer attempts to watch `.pnpm` directories.
 - TypeScript watch mode now falls back to a one-shot typecheck when no source file exists or the watch program cannot be created.
 

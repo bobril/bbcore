@@ -281,7 +281,7 @@ public class BuildModuleCtx : IImportResolver
                     return res.FileName;
                 }
 
-                Owner.DiskCache.UpdateIfNeeded(dc2);
+                Owner.DiskCache.WatchDirectChildren(dc2, null, true, true);
                 if (dc2.TryGetChild("package.json") is IFileCache { IsInvalid: false })
                 {
                     var mn = PathUtils.Subtract(fn, Owner.Owner.FullPath);
@@ -1045,7 +1045,7 @@ public class BuildModuleCtx : IImportResolver
 
     string BuildMdxbList(IDirectoryCache dir, IDiskCache diskCache)
     {
-        var files = FindAllMdxbs(dir).OrderBy(i => i.FullPath).ToArray();
+        var files = FindAllMdxbs(dir, diskCache).OrderBy(i => i.FullPath).ToArray();
         var sb = new StringBuilder();
         sb.Append("const r = [\n");
         foreach (var fc in files)
@@ -1065,8 +1065,9 @@ public class BuildModuleCtx : IImportResolver
         return sb.ToString();
     }
 
-    static IEnumerable<IFileCache> FindAllMdxbs(IDirectoryCache dir)
+    static IEnumerable<IFileCache> FindAllMdxbs(IDirectoryCache dir, IDiskCache diskCache)
     {
+        diskCache.WatchDirectChildren(dir, "mdxb", true, true);
         foreach (var itemCache in dir)
         {
             if (itemCache is IFileCache { IsInvalid: false } fc && fc.Name.EndsWith(".mdxb"))
@@ -1076,7 +1077,7 @@ public class BuildModuleCtx : IImportResolver
 
             if (itemCache is IDirectoryCache { IsInvalid: false } dc)
             {
-                foreach (var i in FindAllMdxbs(dc))
+                foreach (var i in FindAllMdxbs(dc, diskCache))
                 {
                     yield return i;
                 }

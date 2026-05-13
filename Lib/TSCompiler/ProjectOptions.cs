@@ -124,8 +124,8 @@ public class ProjectOptions
         var res = new List<string>(ExampleSources?.Count ?? 1);
         if (Example == "")
         {
-            if ((Owner.Owner.TryGetChild("example.tsx") ??
-                 Owner.Owner.TryGetChild("example.ts")) is IFileCache item)
+            if ((Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, "example.tsx")) ??
+                 Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, "example.ts"))) is IFileCache item)
             {
                 res.Add(item.FullPath);
             }
@@ -136,6 +136,7 @@ public class ProjectOptions
             var item = Owner.DiskCache.TryGetItem(examplePath);
             if (item is IDirectoryCache directoryCache)
             {
+                Owner.DiskCache.WatchDirectChildren(directoryCache, null, true, false);
                 foreach (var child in directoryCache)
                 {
                     if (!(child is IFileCache))
@@ -208,7 +209,7 @@ public class ProjectOptions
 
     void RecursiveFileSearch(IDirectoryCache owner, IDiskCache diskCache, Regex fileRegex, List<string> res)
     {
-        diskCache.UpdateIfNeeded(owner);
+        diskCache.WatchDirectChildren(owner, null, true, true);
         if (owner.IsInvalid)
             return;
         foreach (var item in owner)
@@ -274,7 +275,7 @@ public class ProjectOptions
     void RecursiveFillOutputByAdditionalResourcesDirectory(MainBuildResult buildResult,
         IDirectoryCache directoryCache, string resourcesPath)
     {
-        Owner.DiskCache.UpdateIfNeeded(directoryCache);
+        Owner.DiskCache.WatchDirectChildren(directoryCache, null, true, true);
         foreach (var child in directoryCache)
         {
             if (child is IDirectoryCache)

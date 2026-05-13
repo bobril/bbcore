@@ -43,7 +43,7 @@ public class TSProject
             return;
         }
 
-        DiskCache.UpdateIfNeeded(Owner);
+        DiskCache.WatchDirectChildren(Owner, null, true, false);
         var packageJsonFile = Owner.TryGetChild("package.json");
         if (packageJsonFile is IFileCache cache)
         {
@@ -379,7 +379,7 @@ public class TSProject
 
     void RecursiveAddFilesContent(IDirectoryCache directory, MainBuildResult buildResult, string destDir)
     {
-        DiskCache.UpdateIfNeeded(directory);
+        DiskCache.WatchDirectChildren(directory, null, true, true);
         foreach (var child in directory)
         {
             if (child.IsInvalid)

@@ -124,6 +124,7 @@ public class TsCompiler : ITSCompiler
             var dc = _owner.DiskCache.TryGetItem(fullPath) as IDirectoryCache;
             if (dc == null || dc.IsInvalid)
                 return "";
+            _owner.DiskCache.WatchDirectChildren(dc, null, false, true);
             var sb = new StringBuilder();
             foreach (var item in dc)
             {

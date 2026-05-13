@@ -13,6 +13,7 @@ public interface IDiskCache
     bool CheckForTrueChange();
     void ResetChange();
     void UpdateIfNeeded(IDirectoryCache dir);
+    void WatchDirectChildren(IDirectoryCache dir, string? extension, bool includeFiles, bool includeDirectories);
     public string? IgnoreChangesInPath { get; set; }
     public IReadOnlyList<string>? IgnoreWatcherChangesInPaths { get; set; }
     bool UpdateFile(string path, string content);

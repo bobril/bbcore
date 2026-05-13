@@ -105,7 +105,7 @@ public class SpriteHolder : ISpritePlace
         var slices = new List<SpriteSlice>();
         if (dirc is IDirectoryCache directoryCache)
         {
-            _dc.UpdateIfNeeded(directoryCache);
+            _dc.WatchDirectChildren(directoryCache, null, true, false);
             foreach (var item in directoryCache)
             {
                 if (!item.IsFile || item.IsInvalid) continue;
