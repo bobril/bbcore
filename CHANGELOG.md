@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.8.1
+
 ## 5.8.0
 
 ### Changed
