@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Added
+
+- Added faster TypeScript 7 native-preview typechecking. Enable it with `npm install -D @typescript/native-preview@beta`; bbcore then detects `@typescript/native-preview` in `devDependencies` and uses project-local `tsgo` for typechecking, including a continuously running `tsgo --watch` process for interactive builds. TypeScript-to-JavaScript transpilation still uses the existing JavaScript compiler path.
+
 ## 5.8.4
 
 ## 5.8.3

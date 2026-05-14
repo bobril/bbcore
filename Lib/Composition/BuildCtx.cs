@@ -147,6 +147,7 @@ public class BuildCtx
     public readonly ICompilerPool CompilerPool;
     readonly DiskCache.DiskCache _diskCache;
     readonly ILogger _logger;
+    string? _nativeTypeScriptDirectory;
 
     string? _lastTsVersion;
     List<Diagnostic>? _lastSemantics;
@@ -170,6 +171,21 @@ public class BuildCtx
     }
 
     TypeCheckChange _cancelledTypeCheckType;
+
+    ITSCompiler CreateTypeChecker()
+    {
+        return _nativeTypeScriptDirectory != null
+            ? new NativeTsCompiler(_nativeTypeScriptDirectory, _logger)
+            : CompilerPool.GetTs(_diskCache, CompilerOptions);
+    }
+
+    void ReleaseTypeChecker(ITSCompiler compiler)
+    {
+        if (ReferenceEquals(compiler, _typeChecker) && _nativeTypeScriptDirectory != null)
+            compiler.Dispose();
+        else
+            CompilerPool.ReleaseTs(compiler);
+    }
 
     void DoTypeCheck(TypeCheckChange type)
     {
@@ -199,26 +215,30 @@ public class BuildCtx
             case TypeCheckChange.Options:
                 if (_typeChecker != null)
                 {
-                    CompilerPool.ReleaseTs(_typeChecker);
+                    ReleaseTypeChecker(_typeChecker);
                     _typeChecker = null;
                 }
 
-                _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
+                _typeChecker = CreateTypeChecker();
+                if (_nativeTypeScriptDirectory != null)
+                    ShowTsVersion(_typeChecker.GetTSVersion());
                 _typeChecker.ClearDiagnostics();
                 _typeChecker.CreateProgram(_currentDirectory, MakeSourceListArray());
                 break;
             case TypeCheckChange.Once:
                 if (_typeChecker != null)
                 {
-                    CompilerPool.ReleaseTs(_typeChecker);
+                    ReleaseTypeChecker(_typeChecker);
                     _typeChecker = null;
                 }
 
-                _typeChecker = CompilerPool.GetTs(_diskCache, CompilerOptions);
+                _typeChecker = CreateTypeChecker();
+                if (_nativeTypeScriptDirectory != null)
+                    ShowTsVersion(_typeChecker.GetTSVersion());
                 _typeChecker.ClearDiagnostics();
                 _typeChecker.CheckProgram(_currentDirectory, MakeSourceListArray());
                 _lastSemantics = _typeChecker.GetDiagnostics().ToList();
-                CompilerPool.ReleaseTs(_typeChecker);
+                ReleaseTypeChecker(_typeChecker);
                 _typeChecker = null;
                 return;
         }
@@ -303,6 +323,23 @@ public class BuildCtx
         TestSources = project.TestSources;
         JasmineDts = project.TestSources != null ? project.JasmineDts : null;
         CompilerOptions = project.FinalCompilerOptions!;
+        var newNativeTypeScriptDirectory = DetectNativeTypeScriptDirectory(project);
+        if (newNativeTypeScriptDirectory != _nativeTypeScriptDirectory)
+        {
+            if (_typeChecker != null)
+            {
+                ReleaseTypeChecker(_typeChecker);
+                _typeChecker = null;
+            }
+
+            _nativeTypeScriptDirectory = newNativeTypeScriptDirectory;
+            _compilerOptionsChanged = true;
+            if (_nativeTypeScriptDirectory != null)
+            {
+                project.UpdateTSConfigJson();
+                _logger.Info("Using TypeScript native preview typecheck from " + _nativeTypeScriptDirectory);
+            }
+        }
 
         var tsProject = project.Owner;
         var tryDetectChanges = !_projectStructureChanged;
@@ -352,6 +389,8 @@ public class BuildCtx
             }
 
             mainBuildResult.MergeCommonSourceDirectory(tsProject.Owner.FullPath);
+            if (_nativeTypeScriptDirectory != null)
+                project.UpdateTSConfigJson();
             buildResult.TaskForSemanticCheck = StartTypeCheck();
             if (_typeCheck == RunTypeCheck.Only)
                 return;
@@ -453,6 +492,21 @@ public class BuildCtx
         {
             BuildCache.EndTransaction();
         }
+    }
+
+    string? DetectNativeTypeScriptDirectory(ProjectOptions project)
+    {
+        var tsProject = project.Owner;
+        if (project.TypeScriptVersionOverride || !(tsProject.DevDependencies?.Contains("@typescript/native-preview") ?? false))
+            return null;
+
+        var typeScriptDir = PathUtils.Join(tsProject.Owner.FullPath, "node_modules/@typescript/native-preview");
+        if (_diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo.js")) ||
+            _diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo")) ||
+            _diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo.exe")))
+            return typeScriptDir;
+
+        return null;
     }
 
     public void BuildSubProjects(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult,

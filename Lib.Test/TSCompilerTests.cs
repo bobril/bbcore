@@ -37,6 +37,38 @@ public class CompilerTests
     }
 
     [Fact]
+    public void NativeTypeScriptCompilerParsesFileDiagnostics()
+    {
+        Assert.True(NativeTsCompiler.TryParseDiagnosticLine(
+            "src/index.ts(3,15): error TS2322: Type 'string' is not assignable to type 'number'.",
+            "/project",
+            out var diagnostic));
+
+        Assert.True(diagnostic.IsError);
+        Assert.True(diagnostic.IsSemantic);
+        Assert.Equal(2322, diagnostic.Code);
+        Assert.Equal("src/index.ts", diagnostic.FileName);
+        Assert.Equal(2, diagnostic.StartLine);
+        Assert.Equal(14, diagnostic.StartCol);
+        Assert.Equal("Type 'string' is not assignable to type 'number'.", diagnostic.Text);
+    }
+
+    [Fact]
+    public void NativeTypeScriptCompilerParsesGlobalDiagnostics()
+    {
+        Assert.True(NativeTsCompiler.TryParseDiagnosticLine(
+            "error TS18003: No inputs were found in config file '/project/tsconfig.json'.",
+            "/project",
+            out var diagnostic));
+
+        Assert.True(diagnostic.IsError);
+        Assert.True(diagnostic.IsSemantic);
+        Assert.Equal(18003, diagnostic.Code);
+        Assert.Null(diagnostic.FileName);
+        Assert.Equal("No inputs were found in config file '/project/tsconfig.json'.", diagnostic.Text);
+    }
+
+    [Fact]
     public void TranspilerWorks()
     {
         var ts = _compilerPool.GetTs(null, new TSCompilerOptions { newLine = NewLineKind.LineFeed });

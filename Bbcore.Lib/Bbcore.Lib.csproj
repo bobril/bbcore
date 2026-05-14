@@ -380,6 +380,9 @@
         <Compile Include="..\Lib\TSCompiler\NjsastTsValidator.cs">
             <Link>TSCompiler\NjsastTsValidator.cs</Link>
         </Compile>
+        <Compile Include="..\Lib\TSCompiler\NativeTsCompiler.cs">
+            <Link>TSCompiler\NativeTsCompiler.cs</Link>
+        </Compile>
         <Compile Include="..\Lib\TSCompiler\PragmaParser.cs">
             <Link>TSCompiler\PragmaParser.cs</Link>
         </Compile>

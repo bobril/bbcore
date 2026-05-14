@@ -136,6 +136,16 @@ Build generates tsconfig.json by default. You can disable this feature by:
         "tsconfigUpdate": false
     }
 
+## Enable faster native TypeScript typechecking
+
+Install the TypeScript native preview package in your project:
+
+    npm install -D @typescript/native-preview@beta
+
+When `@typescript/native-preview` is listed in `devDependencies`, bbcore uses its `tsgo` compiler for typechecking.
+Interactive builds keep `tsgo --watch` running continuously, so typechecking is faster after the first check.
+Transpilation from TypeScript to JavaScript still uses the regular TypeScript JavaScript compiler path.
+
 ## Override localization
 
 By default localization is detected from existence of dependency bobril-g11n. You can override it:
