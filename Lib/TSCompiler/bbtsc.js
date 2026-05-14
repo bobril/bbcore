@@ -19,9 +19,12 @@ function bbGetCurrentCompilerOptions() {
 }
 function addLibPrefixPostfix(names) {
     for (var i = 0; i < names.length; i++) {
-        if (names[i].startsWith("lib."))
+        var name = names[i].toLowerCase();
+        if (name.startsWith("lib.")) {
+            names[i] = name;
             continue;
-        names[i] = "lib." + names[i] + ".d.ts";
+        }
+        names[i] = "lib." + name + ".d.ts";
     }
 }
 function fixCompilerOptions() {

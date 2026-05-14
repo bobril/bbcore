@@ -60,8 +60,12 @@ function bbGetCurrentCompilerOptions(): string {
 
 function addLibPrefixPostfix(names: string[]) {
     for (var i = 0; i < names.length; i++) {
-        if (names[i].startsWith("lib.")) continue;
-        names[i] = "lib." + names[i] + ".d.ts";
+        var name = names[i].toLowerCase();
+        if (name.startsWith("lib.")) {
+            names[i] = name;
+            continue;
+        }
+        names[i] = "lib." + name + ".d.ts";
     }
 }
 

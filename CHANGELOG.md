@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- TypeScript `compilerOptions.lib` entries are now resolved case-insensitively, so uppercase values such as `ES2023` work on case-sensitive file systems.
+
 ## 5.9.0
 
 ### Added

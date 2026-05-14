@@ -117,6 +117,36 @@ public class CompilerTests
     }
 
     [Fact]
+    public void CompilerOptionsLibNamesAreCaseInsensitive()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "bbcore-ts-lib-case-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        File.WriteAllText(Path.Combine(tempDir, "index.ts"), "export const values = [3, 1, 2].toSorted();\n");
+        var diskCache = new Lib.DiskCache.DiskCache(new NativeFsAbstraction(), () => new DummyWatcher());
+        var ts = _compilerPool.GetTs(diskCache, new TSCompilerOptions
+        {
+            module = ModuleKind.Es2022,
+            noEmit = true,
+            target = ScriptTarget.Es2022,
+            lib = new HashSet<string> { "ES2023", "ESNext.Disposable" }
+        });
+        try
+        {
+            Assert.Equal(ProjectOptions.DefaultTypeScriptVersion, ts.GetTSVersion());
+            ts.CheckProgram(tempDir, ["index.ts"]);
+            var diags = ts.GetDiagnostics();
+            Assert.DoesNotContain(diags, d => d.IsError && d.Text.Contains("lib.ES2023.d.ts"));
+            Assert.DoesNotContain(diags, d => d.IsError && d.Text.Contains("lib.ESNext.Disposable.d.ts"));
+            Assert.DoesNotContain(diags, d => d.IsError && d.Text.Contains("not found"));
+        }
+        finally
+        {
+            _compilerPool.ReleaseTs(ts);
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
     public void TypeScript6StillFindsBobrilSpritesInGatheredSourceInfo()
     {
         _tools.SetTypeScriptVersion("6.0.2");
