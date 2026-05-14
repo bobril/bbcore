@@ -87,7 +87,7 @@ public class DiskCacheWatcherTests
     }
 
     [Fact]
-    public void WatcherNegativeCheckOnlyReportsDirectChildren()
+    public void WatcherNegativeCheckOnlyReportsExactPath()
     {
         var fs = new InMemoryFs();
         fs.WriteAllUtf8("/project/package.json", "{}");
@@ -110,7 +110,10 @@ public class DiskCacheWatcherTests
         Assert.Empty(changes);
 
         TriggerWatchers(watchers, "/project/src/new.ts");
-        Assert.Equal(new[] { "/project/src/new.ts" }, changes);
+        Assert.Empty(changes);
+
+        TriggerWatchers(watchers, "/project/src/missing.ts");
+        Assert.Equal(new[] { "/project/src/missing.ts" }, changes);
     }
 
     [Fact]
@@ -192,6 +195,33 @@ public class DiskCacheWatcherTests
 
         TriggerWatchers(watchers, "/project/src/new.spec.ts");
         Assert.Equal(new[] { "/project/src/new.spec.ts" }, changes);
+    }
+
+    [Fact]
+    public void WatcherNamedDirectoryCheckOnlyReportsThatDirectory()
+    {
+        var fs = new InMemoryFs();
+        fs.WriteAllUtf8("/project/package.json", "{}");
+        var watchers = new List<TestWatcher>();
+        var dc = new DiskCache.DiskCache(fs, () =>
+        {
+            var watcher = new TestWatcher();
+            watchers.Add(watcher);
+            return watcher;
+        });
+        var changes = new List<string>();
+        dc.ChangeObservable.Subscribe(change => changes.Add(change));
+
+        var project = (IDirectoryCache)dc.TryGetItem("/project")!;
+        dc.WatchDirectChildNames(project, null, new[] { "assets" });
+
+        fs.WriteAllUtf8("/project/bin/generated.js", "export const value = 1;");
+        TriggerWatchers(watchers, "/project/bin");
+        Assert.Empty(changes);
+
+        fs.WriteAllUtf8("/project/assets/image.png", "");
+        TriggerWatchers(watchers, "/project/assets");
+        Assert.Equal(new[] { "/project/assets" }, changes);
     }
 
     static void TriggerWatchers(IEnumerable<TestWatcher> watchers, string path)

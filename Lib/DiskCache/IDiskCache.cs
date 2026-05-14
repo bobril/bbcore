@@ -14,6 +14,7 @@ public interface IDiskCache
     void ResetChange();
     void UpdateIfNeeded(IDirectoryCache dir);
     void WatchDirectChildren(IDirectoryCache dir, string? extension, bool includeFiles, bool includeDirectories);
+    void WatchDirectChildNames(IDirectoryCache dir, IReadOnlyList<string>? fileNames, IReadOnlyList<string>? directoryNames);
     public string? IgnoreChangesInPath { get; set; }
     public IReadOnlyList<string>? IgnoreWatcherChangesInPaths { get; set; }
     bool UpdateFile(string path, string content);

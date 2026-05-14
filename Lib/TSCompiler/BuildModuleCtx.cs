@@ -281,7 +281,7 @@ public class BuildModuleCtx : IImportResolver
                     return res.FileName;
                 }
 
-                Owner.DiskCache.WatchDirectChildren(dc2, null, true, true);
+                Owner.DiskCache.WatchDirectChildNames(dc2, new[] { "package.json" }, new[] { "index" });
                 if (dc2.TryGetChild("package.json") is IFileCache { IsInvalid: false })
                 {
                     var mn = PathUtils.Subtract(fn, Owner.Owner.FullPath);

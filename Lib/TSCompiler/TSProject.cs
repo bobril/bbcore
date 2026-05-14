@@ -43,7 +43,7 @@ public class TSProject
             return;
         }
 
-        DiskCache.WatchDirectChildren(Owner, null, true, false);
+        DiskCache.WatchDirectChildNames(Owner, new[] { "package.json" }, null);
         var packageJsonFile = Owner.TryGetChild("package.json");
         if (packageJsonFile is IFileCache cache)
         {

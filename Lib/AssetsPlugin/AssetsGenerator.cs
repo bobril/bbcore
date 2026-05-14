@@ -25,7 +25,7 @@ public class AssetsGenerator
     {
         var projDir = _cache.TryGetItem(projectDir) as IDirectoryCache;
         if (projDir == null) return false;
-        _cache.WatchDirectChildren(projDir, null, true, true);
+        _cache.WatchDirectChildNames(projDir, null, new[] { AssetsDirName });
         if (!(projDir.TryGetChild(AssetsDirName) is IDirectoryCache assetsDir)) return false;
         var srcPath = PathUtils.Join(projectDir, SrcDirName);
 

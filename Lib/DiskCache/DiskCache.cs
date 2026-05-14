@@ -16,10 +16,12 @@ public class DiskCache : IDiskCache
     readonly Func<IDirectoryWatcher> _directoryWatcherFactory;
     readonly Dictionary<string, IDirectoryWatcher> _watchers = new();
     readonly HashSet<string> _acceptedWatcherFiles = new();
-    readonly HashSet<string> _acceptedWatcherParentDirectories = new();
+    readonly HashSet<string> _acceptedWatcherMissingPaths = new();
     readonly Dictionary<string, HashSet<string>> _acceptedWatcherChildExtensions = new();
     readonly HashSet<string> _acceptedWatcherChildFiles = new();
     readonly HashSet<string> _acceptedWatcherChildDirectories = new();
+    readonly Dictionary<string, HashSet<string>> _acceptedWatcherChildFileNames = new();
+    readonly Dictionary<string, HashSet<string>> _acceptedWatcherChildDirectoryNames = new();
     readonly IDirectoryCache _root;
     readonly object _lock = new();
     readonly bool IsUnixFs;
@@ -406,7 +408,7 @@ public class DiskCache : IDiskCache
             var normalizedPath = PathUtils.Normalize(path.ToString());
             var item = TryGetItemNoLock(path);
             if (item is null or { IsInvalid: true })
-                AcceptWatcherParentDirectory(normalizedPath);
+                AcceptWatcherMissingPath(normalizedPath);
             return item;
         }
     }
@@ -419,13 +421,13 @@ public class DiskCache : IDiskCache
         }
     }
 
-    void AcceptWatcherParentDirectory(string path)
+    void AcceptWatcherMissingPath(string path)
     {
+        _acceptedWatcherMissingPaths.Add(path);
         var parent = PathUtils.Parent(path);
         if (parent.Length == 0)
             return;
         var parentPath = parent.ToString();
-        _acceptedWatcherParentDirectories.Add(parentPath.TrimEnd('/'));
         if (TryGetKnownItemNoLock(parentPath) is IDirectoryCache { IsInvalid: false } parentDirectory)
             UpdateIfNeededNoLock(parentDirectory);
     }
@@ -434,12 +436,19 @@ public class DiskCache : IDiskCache
     {
         if (_acceptedWatcherFiles.Contains(path))
             return true;
-        if (_acceptedWatcherParentDirectories.Any(dir => PathUtils.IsChildOf(path, dir)))
+        if (_acceptedWatcherMissingPaths.Contains(path))
             return true;
         var parent = PathUtils.Parent(path);
         if (parent.Length == 0)
             return false;
         var parentPath = parent.ToString().TrimEnd('/');
+        var fileName = PathUtils.GetFile(path);
+        if (_acceptedWatcherChildFileNames.TryGetValue(parentPath, out var fileNames) &&
+            fileNames.Contains(fileName))
+            return true;
+        if (_acceptedWatcherChildDirectoryNames.TryGetValue(parentPath, out var directoryNames) &&
+            directoryNames.Contains(fileName) && FsAbstraction.GetItemInfo(path).IsDirectory)
+            return true;
         if (_acceptedWatcherChildFiles.Contains(parentPath))
             return true;
         if (_acceptedWatcherChildExtensions.TryGetValue(parentPath, out var extensions) &&
@@ -621,6 +630,35 @@ public class DiskCache : IDiskCache
             if (includeDirectories)
                 _acceptedWatcherChildDirectories.Add(dirPath);
             UpdateIfNeededNoLock(dir);
+        }
+    }
+
+    public void WatchDirectChildNames(IDirectoryCache dir, IReadOnlyList<string>? fileNames,
+        IReadOnlyList<string>? directoryNames)
+    {
+        lock (_lock)
+        {
+            var dirPath = dir.FullPath.TrimEnd('/');
+            AddAcceptedChildNames(_acceptedWatcherChildFileNames, dirPath, fileNames);
+            AddAcceptedChildNames(_acceptedWatcherChildDirectoryNames, dirPath, directoryNames);
+            UpdateIfNeededNoLock(dir);
+        }
+    }
+
+    static void AddAcceptedChildNames(Dictionary<string, HashSet<string>> target, string dirPath,
+        IReadOnlyList<string>? names)
+    {
+        if (names == null)
+            return;
+        if (!target.TryGetValue(dirPath, out var acceptedNames))
+        {
+            acceptedNames = new();
+            target.Add(dirPath, acceptedNames);
+        }
+
+        foreach (var name in names)
+        {
+            acceptedNames.Add(name);
         }
     }
 
