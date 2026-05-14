@@ -209,7 +209,7 @@ public class ProjectOptions
 
     void RecursiveFileSearch(IDirectoryCache owner, IDiskCache diskCache, Regex fileRegex, List<string> res)
     {
-        diskCache.WatchDirectChildren(owner, null, true, true);
+        diskCache.WatchDirectChildrenExcept(owner, null, true, true, GetExcludedWatcherChildNames(owner));
         if (owner.IsInvalid)
             return;
         foreach (var item in owner)
@@ -217,6 +217,8 @@ public class ProjectOptions
             if (item is IDirectoryCache)
             {
                 if (item.Name == "node_modules")
+                    continue;
+                if (IsIgnoredWatcherPath(item.FullPath))
                     continue;
                 if (item.IsInvalid)
                     continue;
@@ -235,6 +237,39 @@ public class ProjectOptions
                 }
             }
         }
+    }
+
+    List<string>? GetExcludedWatcherChildNames(IDirectoryCache owner)
+    {
+        if (ExcludeWatchers == null)
+            return null;
+        List<string>? result = null;
+        foreach (var path in ExcludeWatchers)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                continue;
+            var fullPath = PathUtils.Normalize(PathUtils.Join(Owner.Owner.FullPath, path)).TrimEnd('/');
+            if (PathUtils.Parent(fullPath).SequenceEqual(owner.FullPath))
+            {
+                result ??= new();
+                result.Add(PathUtils.GetFile(fullPath));
+            }
+        }
+
+        return result;
+    }
+
+    bool IsIgnoredWatcherPath(string path)
+    {
+        return ExcludeWatchers?.Any(ignorePath =>
+        {
+            if (string.IsNullOrWhiteSpace(ignorePath))
+                return false;
+            var fullPath = PathUtils.Normalize(PathUtils.Join(Owner.Owner.FullPath, ignorePath)).TrimEnd('/');
+            return path.Length == fullPath.Length
+                ? path.Equals(fullPath, StringComparison.Ordinal)
+                : path.StartsWith(fullPath, StringComparison.Ordinal) && path[fullPath.Length] == '/';
+        }) ?? false;
     }
 
     public void FillOutputByAdditionalResourcesDirectory(Dictionary<string, TSProject> buildResultModules,
@@ -559,15 +594,7 @@ public class ProjectOptions
             IgnoreDiagnostic = new(bbOptions.ignoreDiagnostic);
         Include = bbOptions.include;
         Exclude = bbOptions.exclude;
-        ExcludeWatchers = bbOptions.excludeWatchers;
-        if (Owner.IsRootProject)
-        {
-            Owner.DiskCache.IgnoreWatcherChangesInPaths = ExcludeWatchers?
-                .Where(path => !string.IsNullOrWhiteSpace(path))
-                .Select(path => PathUtils.Join(Owner.Owner.FullPath, path))
-                .Select(path => PathUtils.Normalize(path).TrimEnd('/'))
-                .ToArray();
-        }
+        SetExcludeWatchers(bbOptions.excludeWatchers);
 
         Files = bbOptions.files;
         GenerateSpritesTs = bbOptions.GenerateSpritesTs ?? false;
@@ -1001,6 +1028,29 @@ public class ProjectOptions
                 Console.WriteLine($"Updated tslint.json from {srcTsLint}");
             }
         }
+    }
+
+    public void SetExcludeWatchers(IList<string>? excludeWatchers)
+    {
+        ExcludeWatchers = excludeWatchers;
+        if (!Owner.IsRootProject)
+            return;
+        Owner.DiskCache.IgnoreWatcherChangesInPaths = ExcludeWatchers?
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(path => PathUtils.Join(Owner.Owner.FullPath, path))
+            .Select(path => PathUtils.Normalize(path).TrimEnd('/'))
+            .ToArray();
+    }
+
+    public void RefreshExcludeWatchers()
+    {
+        JObject? parsed = null;
+        var packageJson = PathUtils.Join(Owner.Owner.FullPath, "package.json");
+        if (Owner.DiskCache.FsAbstraction.FileExists(packageJson))
+            parsed = JObject.Parse(Owner.DiskCache.FsAbstraction.ReadAllUtf8(packageJson));
+        var bbOptions = new BobrilBuildOptions(parsed?.GetValue("bobril") as JObject);
+        bbOptions = LoadBbrc(Owner.Owner, bbOptions);
+        SetExcludeWatchers(bbOptions.excludeWatchers);
     }
 
     public void UpdateFromProjectJson(bool? localizeValue)

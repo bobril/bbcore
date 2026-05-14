@@ -1303,6 +1303,7 @@ public class Composition
         proj.IsRootProject = true;
         proj.ProjectOptions.Tools = _tools;
         proj.ProjectOptions.ForbiddenDependencyUpdate = _forbiddenDependencyUpdate;
+        proj.ProjectOptions.RefreshExcludeWatchers();
         _currentProject = proj.ProjectOptions;
         if (_mainServer != null)
             _mainServer.Project = _currentProject;

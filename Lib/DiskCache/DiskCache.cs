@@ -20,6 +20,7 @@ public class DiskCache : IDiskCache
     readonly Dictionary<string, HashSet<string>> _acceptedWatcherChildExtensions = new();
     readonly HashSet<string> _acceptedWatcherChildFiles = new();
     readonly HashSet<string> _acceptedWatcherChildDirectories = new();
+    readonly Dictionary<string, HashSet<string>> _excludedAcceptedWatcherChildNames = new();
     readonly Dictionary<string, HashSet<string>> _acceptedWatcherChildFileNames = new();
     readonly Dictionary<string, HashSet<string>> _acceptedWatcherChildDirectoryNames = new();
     readonly IDirectoryCache _root;
@@ -443,6 +444,9 @@ public class DiskCache : IDiskCache
             return false;
         var parentPath = parent.ToString().TrimEnd('/');
         var fileName = PathUtils.GetFile(path);
+        if (_excludedAcceptedWatcherChildNames.TryGetValue(parentPath, out var excludedNames) &&
+            excludedNames.Contains(fileName))
+            return false;
         if (_acceptedWatcherChildFileNames.TryGetValue(parentPath, out var fileNames) &&
             fileNames.Contains(fileName))
             return true;
@@ -608,9 +612,16 @@ public class DiskCache : IDiskCache
 
     public void WatchDirectChildren(IDirectoryCache dir, string? extension, bool includeFiles, bool includeDirectories)
     {
+        WatchDirectChildrenExcept(dir, extension, includeFiles, includeDirectories, null);
+    }
+
+    public void WatchDirectChildrenExcept(IDirectoryCache dir, string? extension, bool includeFiles,
+        bool includeDirectories, IReadOnlyList<string>? excludedNames)
+    {
         lock (_lock)
         {
             var dirPath = dir.FullPath.TrimEnd('/');
+            AddAcceptedChildNames(_excludedAcceptedWatcherChildNames, dirPath, excludedNames);
             if (extension == null)
             {
                 if (includeFiles)

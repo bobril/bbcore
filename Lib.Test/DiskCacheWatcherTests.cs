@@ -198,6 +198,33 @@ public class DiskCacheWatcherTests
     }
 
     [Fact]
+    public void WatcherDirectoryContentScanCanExcludeChildNames()
+    {
+        var fs = new InMemoryFs();
+        fs.WriteAllUtf8("/project/package.json", "{}");
+        var watchers = new List<TestWatcher>();
+        var dc = new DiskCache.DiskCache(fs, () =>
+        {
+            var watcher = new TestWatcher();
+            watchers.Add(watcher);
+            return watcher;
+        });
+        var changes = new List<string>();
+        dc.ChangeObservable.Subscribe(change => changes.Add(change));
+
+        var project = (IDirectoryCache)dc.TryGetItem("/project")!;
+        dc.WatchDirectChildrenExcept(project, null, true, true, new[] { "bin" });
+
+        fs.WriteAllUtf8("/project/bin/generated.js", "export const value = 1;");
+        TriggerWatchers(watchers, "/project/bin");
+        Assert.Empty(changes);
+
+        fs.WriteAllUtf8("/project/spec/new.spec.ts", "describe('x', () => {});");
+        TriggerWatchers(watchers, "/project/spec");
+        Assert.Equal(new[] { "/project/spec" }, changes);
+    }
+
+    [Fact]
     public void WatcherNamedDirectoryCheckOnlyReportsThatDirectory()
     {
         var fs = new InMemoryFs();
