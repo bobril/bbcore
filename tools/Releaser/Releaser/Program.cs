@@ -190,9 +190,16 @@ static class Program
         }
         finally
         {
-            if (colimaStartedByReleaser)
+            try
             {
-                StopColima(projDir);
+                CleanupReleaseArtifacts(projDir);
+            }
+            finally
+            {
+                if (colimaStartedByReleaser)
+                {
+                    StopColima(projDir);
+                }
             }
         }
     }
@@ -316,6 +323,18 @@ static class Program
         {
             Console.WriteLine("Failed to stop Colima: " + ex.Message);
         }
+    }
+
+    static void CleanupReleaseArtifacts(string projDir)
+    {
+        var artifactsPath = projDir + "/bb/artifacts";
+        if (!Directory.Exists(artifactsPath))
+        {
+            return;
+        }
+
+        Console.WriteLine("Cleaning release artifacts " + artifactsPath);
+        Directory.Delete(artifactsPath, true);
     }
 
     static void RunCommand(string projDir, string fileName, string arguments)
