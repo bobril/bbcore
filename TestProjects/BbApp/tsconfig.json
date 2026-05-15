@@ -27,7 +27,8 @@
   },
   "files": [
     "src/app.ts",
-    "/Users/borisletocha/Research/bbcore/TestProjects/BbApp/spec/demoSpec.ts"
+    "spec/demoSpec.ts",
+    "spec/jasmine.d.ts"
   ],
   "include": []
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Text.RegularExpressions;
@@ -454,7 +455,7 @@ public class ProjectOptions
 
         if (MainFile != null)
         {
-            newConfigObject.files.Add(PathUtils.Subtract(MainFile, Owner.Owner.FullPath));
+            newConfigObject.files.Add(ToTsConfigFilePath(MainFile));
         }
 
         if (ExampleSources != null)
@@ -474,20 +475,20 @@ public class ProjectOptions
         else
         {
             if ((TestSources?.Count ?? 0) > 0)
-                newConfigObject.files.AddRange(TestSources!);
+                newConfigObject.files.AddRange(TestSources!.Select(ToTsConfigFilePath));
         }
 
         if ((TestSources?.Count ?? 0) > 0)
         {
-            if (Tools.JasmineDtsPath == JasmineDts)
+            if (JasmineDts != null)
             {
-                newConfigObject.files.Add(Tools.JasmineDtsPath);
+                newConfigObject.files.Add(ToTsConfigFilePath(JasmineDts));
             }
         }
 
         if (IncludeSources != null)
         {
-            newConfigObject.files.AddRange(IncludeSources);
+            newConfigObject.files.AddRange(IncludeSources.Select(ToTsConfigFilePath));
         }
 
         if (Include != null)
@@ -498,7 +499,7 @@ public class ProjectOptions
 
         if (Files != null)
         {
-            newConfigObject.files.AddRange(Files);
+            newConfigObject.files.AddRange(Files.Select(ToTsConfigFilePath));
         }
 
         if (Exclude != null)
@@ -528,6 +529,11 @@ public class ProjectOptions
 
             _originalContent = newContent;
         }
+    }
+
+    string ToTsConfigFilePath(string path)
+    {
+        return Path.IsPathRooted(path) ? PathUtils.Subtract(path, Owner.Owner.FullPath) : path;
     }
 
     public void InitializeTranslationDb(string? specificPath = null)

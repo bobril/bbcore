@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Generated `tsconfig.json` files now include project-local Jasmine definitions and keep scanned project file paths relative, so native TypeScript typechecking works for test projects with local `jasmine.d.ts`.
+
 ## 5.9.1
 
 ### Fixed
