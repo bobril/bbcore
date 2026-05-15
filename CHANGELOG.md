@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.9.6
+
 ### Fixed
 
 - Fixed Windows only bug with drive handling.
