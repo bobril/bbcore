@@ -92,7 +92,13 @@ public class BuildModuleCtx : IImportResolver
                 if (dc.FullPath != dir + "/node_modules/" + name)
                 {
                     // Create it with proper casing
-                    return ResolveModule(dc.Name, from);
+                    var diskName = dc.Parent?.Name.StartsWith("@") ?? false
+                        ? dc.Parent.Name + "/" + dc.Name
+                        : dc.Name;
+                    if (diskName != name)
+                    {
+                        return ResolveModule(diskName, from);
+                    }
                 }
 
                 dc = dc.RealPath;

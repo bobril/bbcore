@@ -281,10 +281,16 @@ public class DiskCache : IDiskCache
 
     IDirectoryCache AddDirectoryFromName(string name, IDirectoryCache parent, bool isLink, bool isInvalid)
     {
+        var fullPath = parent.FullPath + (parent != _root && !parent.FullPath.EndsWith("/") ? "/" : "") + name;
+        if (!IsUnixFs && parent == _root && name.EndsWith(":"))
+        {
+            fullPath += "/";
+        }
+
         var subDir = new DirectoryCache(this, isInvalid)
         {
             Name = name,
-            FullPath = parent.FullPath + (parent != _root ? "/" : "") + name,
+            FullPath = fullPath,
             Parent = parent,
             Filter = DefaultFilter,
             IsStale = true,
@@ -300,7 +306,7 @@ public class DiskCache : IDiskCache
         IItemCache subFile = new FileCache
         {
             Name = name,
-            FullPath = directory.FullPath + (directory != _root ? "/" : "") + name,
+            FullPath = directory.FullPath + (directory != _root && !directory.FullPath.EndsWith("/") ? "/" : "") + name,
             Owner = this,
             Parent = directory,
             Modified = fi.LastWriteTimeUtc,
@@ -407,7 +413,7 @@ public class DiskCache : IDiskCache
         lock (_lock)
         {
             var normalizedPath = PathUtils.Normalize(path.ToString());
-            var item = TryGetItemNoLock(path);
+            var item = TryGetItemNoLock(normalizedPath);
             if (item is null or { IsInvalid: true })
                 AcceptWatcherMissingPath(normalizedPath);
             return item;

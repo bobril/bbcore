@@ -11,6 +11,12 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
 {
     private readonly IDictionary<KeyValuePair<string, string>, FakeFile> _content =
         new ConcurrentDictionary<KeyValuePair<string, string>, FakeFile>();
+    private readonly bool _isUnixFs;
+
+    public InMemoryFs(bool isUnixFs = true)
+    {
+        _isUnixFs = isUnixFs;
+    }
 
     public string WatchedDirectory { get; set; }
     public Action<string> OnFileChange { get; set; }
@@ -21,7 +27,7 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
     }
 
     public bool IsMac => false;
-    public bool IsUnixFs => true;
+    public bool IsUnixFs => _isUnixFs;
 
     public IReadOnlyList<FsItemInfo> GetDirectoryContent(string path)
     {
