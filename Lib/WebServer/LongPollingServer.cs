@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Lib.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -99,7 +101,7 @@ public class LongPollingServer : ILongPollingServer
                 else
                 {
                     response.Response
-                        .WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object>
+                        .WriteAsync(JsonSerializer.Serialize(new Dictionary<string, object>
                             { { "id", _id }, { "close", true } })).ContinueWith(_ =>
                         {
                             ender!.TrySetResult(Unit.Default);
@@ -113,7 +115,7 @@ public class LongPollingServer : ILongPollingServer
             if (_closed == 1)
             {
                 await response.Response.WriteAsync(
-                    Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object>
+                    JsonSerializer.Serialize(new Dictionary<string, object>
                         { { "id", _id }, { "close", true } }));
                 return;
             }
@@ -127,7 +129,7 @@ public class LongPollingServer : ILongPollingServer
                         return;
                     if (_toSend.Count > 0)
                     {
-                        toSend = Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object>
+                        toSend = JsonSerializer.Serialize(new Dictionary<string, object>
                         {
                             { "id", _id }, { "m", _toSend.Select(p => new { m = p.Item1, d = p.Item2 }).ToList() }
                         });
@@ -154,7 +156,7 @@ public class LongPollingServer : ILongPollingServer
                 {
                     var resp = _response.Response;
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-                    resp.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object>
+                    resp.WriteAsync(JsonSerializer.Serialize(new Dictionary<string, object>
                             { { "id", _id }, { "old", true } }))
                         .ContinueWith((t) => ender.TrySetResult(Unit.Default));
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
@@ -174,7 +176,7 @@ public class LongPollingServer : ILongPollingServer
                 }
 
                 await response.Response.WriteAsync(
-                    Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object> { { "id", _id } }));
+                    JsonSerializer.Serialize(new Dictionary<string, object> { { "id", _id } }));
             }
         }
 
@@ -197,7 +199,7 @@ public class LongPollingServer : ILongPollingServer
             }
         }
 
-        internal void ReceivedMessage(string message, JToken data)
+        internal void ReceivedMessage(string message, JsonNode data)
         {
             _handler.OnMessage(this, message, data);
         }
@@ -236,10 +238,10 @@ public class LongPollingServer : ILongPollingServer
             context.Response.StatusCode = 400;
             return;
         }
-        JObject data;
+        JsonObject data;
         try
         {
-            data = JObject.Parse(jsonString);
+            data = JsonNode.Parse(jsonString)!.AsObject();
         }
         catch (Exception ex)
         {
@@ -254,7 +256,7 @@ public class LongPollingServer : ILongPollingServer
             _connections.TryGetValue(data["id"]!.ToString(), out c);
             if (c == null)
             {
-                await context.Response.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(
+                await context.Response.WriteAsync(JsonSerializer.Serialize(
                     new Dictionary<string, object> { { "id", data["id"]!.ToString() }, { "close", true } }));
                 return;
             }
@@ -279,14 +281,14 @@ public class LongPollingServer : ILongPollingServer
         }
 
         context.RequestAborted.Register(() => { c.CloseResponse(context); });
-        if (data["m"] is JArray)
+        if (data["m"] is JsonArray)
         {
             waitAllowed = false;
-            var ms = (JArray)data["m"]!;
+            var ms = (JsonArray)data["m"]!;
             for (var i = 0; i < ms.Count; i++)
             {
-                var msi = ms[i] as JObject;
-                c.ReceivedMessage(msi!["m"]!.ToString(), msi!.Value<JToken>("d")!);
+                var msi = ms[i] as JsonObject;
+                c.ReceivedMessage(msi!["m"]!.ToString(), msi!.Value<JsonNode>("d")!);
             }
         }
 

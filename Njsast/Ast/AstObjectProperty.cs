@@ -83,7 +83,10 @@ public abstract class AstObjectProperty : AstObjectItem
                      _ => null
                  } is { } keyString)
         {
-            output.PrintPropertyName(keyString);
+            if (Key is AstSymbolPrivate)
+                Key.Print(output);
+            else
+                output.PrintPropertyName(keyString);
         }
         else
         {

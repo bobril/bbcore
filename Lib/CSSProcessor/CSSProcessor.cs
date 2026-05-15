@@ -2,8 +2,9 @@
 using Lib.ToolsDir;
 using JavaScriptEngineSwitcher.Core;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using System.Text.Json;
+using Lib.Utils;
+
 
 namespace Lib.CSSProcessor;
 
@@ -80,9 +81,7 @@ public class CssProcessor : ICssProcessor
         _urlReplacer = urlReplacer;
         _tcs = new TaskCompletionSource<string>();
         var engine = getJSEnviroment();
-        var serializerSettings = new JsonSerializerSettings();
-        serializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-        engine.CallFunction("bbConcatAndMinify", JsonConvert.SerializeObject(inputs, serializerSettings));
+        engine.CallFunction("bbConcatAndMinify", JsonSerializer.Serialize(inputs, JsonHelpers.CamelCase));
         return _tcs.Task;
     }
 

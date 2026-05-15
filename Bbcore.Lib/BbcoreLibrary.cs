@@ -174,8 +174,9 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         };
         context.ToolsDir.SetTypeScriptVersion(typeScriptVersion);
         context.DiskCache = new DiskCache(context.FileSystemAbstraction, () => new DummyWatcher());
+        context.DiskCache.TryGetItem("/tmp/index.ts");
         context.MainBuildResult = new MainBuildResult(true, null, null);
-        context.DirectoryCache = context.DiskCache.TryGetItem(directory) as IDirectoryCache;
+        context.DirectoryCache = context.DiskCache.TryGetItem(directory == "." ? "/" : directory) as IDirectoryCache;
         context.TsProject = TSProject.Create(context.DirectoryCache, context.DiskCache, Logger, null);
         context.TsProject!.IsRootProject = true;
         context.TsProject.ProjectOptions!.ForbiddenDependencyUpdate = true;

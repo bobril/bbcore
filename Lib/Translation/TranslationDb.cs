@@ -1,6 +1,5 @@
 ﻿using Lib.DiskCache;
 using Lib.ToolsDir;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -13,7 +12,7 @@ using System.Text.RegularExpressions;
 using BTDB.Collections;
 using Lib.Utils;
 using Lib.Utils.Logger;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using Njsast.SourceMap;
 
 namespace Lib.Translation;
@@ -76,19 +75,20 @@ public class TranslationDb
 
     public void LoadLangDb(string fileName)
     {
-        var reader = new JsonTextReader(new StringReader(_fsAbstraction.ReadAllUtf8(fileName)));
+        var jsonBytes = _fsAbstraction.ReadAllBytes(fileName);
+        var reader = new Utf8JsonReader(jsonBytes, true, default);
         var state = LoaderState.Start;
-        string lang = null;
-        List<string> valueList = null;
-        string message = null;
-        string hint = null;
+        string? lang = null;
+        List<string>? valueList = null;
+        string? message = null;
+        string? hint = null;
         var withParams = false;
-        string value = null;
+        string? value = null;
         while (reader.Read())
         {
             switch (reader.TokenType)
             {
-                case JsonToken.StartArray:
+                case JsonTokenType.StartArray:
                     switch (state)
                     {
                         case LoaderState.Start:
@@ -98,52 +98,49 @@ public class TranslationDb
                             state = LoaderState.Message;
                             break;
                         default:
-                            throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
-                                                reader.LineNumber + " Pos:" + reader.LinePosition);
+                            throw UnexpectedToken(reader);
                     }
 
                     break;
-                case JsonToken.String:
+                case JsonTokenType.String:
                     switch (state)
                     {
                         case LoaderState.LangString:
-                            lang = (string)reader.Value;
+                            lang = reader.GetString()!;
                             _loadedLanguages.Add(lang);
                             valueList = AddLanguage(lang);
                             state = LoaderState.BeforeItem;
                             break;
                         case LoaderState.Message:
-                            message = (string)reader.Value;
+                            message = reader.GetString();
                             state = LoaderState.Hint;
                             break;
                         case LoaderState.Hint:
-                            hint = (string)reader.Value;
+                            hint = reader.GetString();
                             state = LoaderState.Flags;
                             break;
                         case LoaderState.Value:
-                            value = (string)reader.Value;
+                            value = reader.GetString();
                             state = LoaderState.AfterValue;
                             break;
                         default:
-                            throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
-                                                reader.LineNumber + " Pos:" + reader.LinePosition);
+                            throw UnexpectedToken(reader);
                     }
 
                     break;
-                case JsonToken.Integer:
+                case JsonTokenType.Number:
                     switch (state)
                     {
                         case LoaderState.Flags:
-                            withParams = ((int)(long)reader.Value & 1) != 0;
+                            withParams = (reader.GetInt32() & 1) != 0;
                             state = LoaderState.Value;
                             break;
                         default:
-                            throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
-                                                reader.LineNumber + " Pos:" + reader.LinePosition);
+                            throw UnexpectedToken(reader);
                     }
 
                     break;
-                case JsonToken.Null:
+                case JsonTokenType.Null:
                     switch (state)
                     {
                         case LoaderState.Hint:
@@ -155,12 +152,11 @@ public class TranslationDb
                             state = LoaderState.AfterValue;
                             break;
                         default:
-                            throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
-                                                reader.LineNumber + " Pos:" + reader.LinePosition);
+                            throw UnexpectedToken(reader);
                     }
 
                     break;
-                case JsonToken.EndArray:
+                case JsonTokenType.EndArray:
                     switch (state)
                     {
                         case LoaderState.BeforeItem:
@@ -171,8 +167,8 @@ public class TranslationDb
                             goto case LoaderState.AfterValue;
                         case LoaderState.AfterValue:
                             state = LoaderState.BeforeItem;
-                            var id = AddToDB(message, hint, withParams);
-                            while (valueList.Count <= id) valueList.Add(null);
+                            var id = AddToDB(message!, hint, withParams);
+                            while (valueList!.Count <= id) valueList.Add(null);
                             if (value != null)
                             {
                                 valueList[(int)id] = value;
@@ -180,14 +176,12 @@ public class TranslationDb
 
                             break;
                         default:
-                            throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
-                                                reader.LineNumber + " Pos:" + reader.LinePosition);
+                            throw UnexpectedToken(reader);
                     }
 
                     break;
                 default:
-                    throw new Exception("Unexpected token " + reader.TokenType + " Line:" + reader.LineNumber +
-                                        " Pos:" + reader.LinePosition);
+                    throw UnexpectedToken(reader);
             }
         }
 
@@ -195,6 +189,11 @@ public class TranslationDb
         {
             throw new Exception("Unexpected end of file when in state " + state);
         }
+    }
+
+    static Exception UnexpectedToken(Utf8JsonReader reader)
+    {
+        return new Exception("Unexpected token " + reader.TokenType + " Pos:" + reader.TokenStartIndex);
     }
 
     public void SaveLangDbs(string dir, bool justUsed)
@@ -344,7 +343,7 @@ public class TranslationDb
     string GetLanguageFromSpecificPath(string specificPath)
     {
         var content = _fsAbstraction.ReadAllUtf8(specificPath);
-        return JArray.Parse(content).First.ToString();
+        return JsonNode.Parse(content)!.AsArray().First()!.ToString();
     }
 
     string ExportLanguageItem(string source, string? hint)
@@ -353,12 +352,12 @@ public class TranslationDb
         var stringifyHint = hint;
         if (stringifyHint != null)
         {
-            stringifyHint = JsonConvert.SerializeObject(hint);
+            stringifyHint = JsonSerializer.Serialize(hint);
             stringifyHint = stringifyHint.Substring(1, stringifyHint.Length - 2).Replace(@"\\n", @"\n");
         }
 
         source = NormalizeMessageForExport(source);
-        var stringifySource = JsonConvert.SerializeObject(source);
+        var stringifySource = JsonSerializer.Serialize(source);
         stringifySource = stringifySource.Substring(1, stringifySource.Length - 2).Replace(@"\\n", @"\n");
 
         content += $"S:{stringifySource}\n";
@@ -412,15 +411,14 @@ public class TranslationDb
                 var posLoc2 = langInit.IndexOf(",", posLoc1, StringComparison.Ordinal);
                 langInit = langInit.Substring(0, posLoc1) + "\'" + p.Key + "\'" + langInit.Substring(posLoc2);
                 sw.Write(langInit);
-                var jw = new JsonTextWriter(sw);
-                jw.WriteStartArray();
+                var values = new List<string>();
                 for (var i = 0; i < UsedIds.Count; i++)
                 {
                     var idx = (int)UsedIds[i];
-                    jw.WriteValue(((idx < p.Value.Count) ? p.Value[idx] : null) ?? Id2Key[idx].Message);
+                    values.Add(((idx < p.Value.Count) ? p.Value[idx] : null) ?? Id2Key[idx].Message);
                 }
 
-                jw.WriteEndArray();
+                sw.Write(JsonSerializer.Serialize(values, JsonHelpers.IgnoreNull));
                 sw.Write(")");
                 _outputJsCache[p.Key.ToLowerInvariant() + ".js"] = sw.ToString();
             }
@@ -429,17 +427,16 @@ public class TranslationDb
             {
                 var sw = new StringWriter();
                 sw.Write("bobrilRegisterTranslations(\"\",[],");
-                var jw = new JsonTextWriter(sw);
-                jw.WriteStartArray();
+                var values = new List<string>();
                 for (var i = 0; i < UsedIds.Count; i++)
                 {
                     var idx = (int)UsedIds[i];
                     var key = Id2Key[idx];
                     var val = key.Message + "\x9" + (key.WithParams ? "1" : "0") + (key.Hint ?? "");
-                    jw.WriteValue(val);
+                    values.Add(val);
                 }
 
-                jw.WriteEndArray();
+                sw.Write(JsonSerializer.Serialize(values, JsonHelpers.IgnoreNull));
                 sw.Write(")");
                 _outputJsCache["l10nkeys.js"] = sw.ToString();
             }
@@ -662,8 +659,8 @@ public class TranslationDb
     public string GetLanguageFromSpecificFile(string specificPath)
     {
         var content = _fsAbstraction.ReadAllUtf8(specificPath);
-        var parsed = JArray.Parse(content);
-        return parsed.First!.ToString();
+        var parsed = JsonNode.Parse(content)!.AsArray();
+        return parsed.First()!.ToString();
     }
 
     public bool UnionExportedLanguage(IList<string> files)

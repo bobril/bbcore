@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Njsast.Ast;
 using Njsast.Utils;
 
@@ -12,6 +14,11 @@ namespace Njsast.SourceMap;
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class SourceMap
 {
+    static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+    };
+
     public SourceMap()
     {
         sources = new();
@@ -55,8 +62,8 @@ public class SourceMap
 
     public override string ToString()
     {
-        return JsonConvert.SerializeObject(this,
-            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+        return JsonSerializer.Serialize(this,
+            JsonHelpers.IgnoreNull);
     }
 
     public static SourceMap Empty()
@@ -86,7 +93,7 @@ public class SourceMap
 
     public static SourceMap Parse(string content, string? dir)
     {
-        var res = JsonConvert.DeserializeObject<SourceMap>(content)!;
+        var res = JsonSerializer.Deserialize<SourceMap>(content, SerializerOptions)!;
         if (res.version != 3)
             throw new("Invalid Source Map version " + res.version);
         if (dir != null)

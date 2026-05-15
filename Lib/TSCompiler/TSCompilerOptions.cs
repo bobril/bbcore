@@ -1,7 +1,10 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Collections.Generic;
-using Newtonsoft.Json.Serialization;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using Lib.Utils;
+
 
 namespace Lib.TSCompiler;
 
@@ -81,23 +84,31 @@ public class TSCompilerOptions : ITSCompilerOptions
     public bool? resolveJsonModule { get; set; }
     public bool? useUnknownInCatchVariables { get; set; }
 
-    public static TSCompilerOptions Parse(JToken? jToken)
+    public static TSCompilerOptions Parse(JsonNode? jToken)
     {
         if (jToken == null) return new();
-        return jToken.ToObject<TSCompilerOptions>()!;
+        return jToken.Deserialize<TSCompilerOptions>(ParseSerializerSettings)!;
     }
 
-    static readonly JsonSerializerSettings CachedSerializerSettings;
+    static readonly JsonSerializerOptions CachedSerializerSettings;
+    static readonly JsonSerializerOptions ParseSerializerSettings;
 
     static TSCompilerOptions()
     {
-        var res = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-        res.Converters.Add(
-            new Newtonsoft.Json.Converters.StringEnumConverter(new CamelCaseNamingStrategy(true, false), false));
+        var res = new JsonSerializerOptions(JsonHelpers.IgnoreNull)
+        {
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+        };
         CachedSerializerSettings = res;
+        var parse = new JsonSerializerOptions(JsonHelpers.IgnoreNull)
+        {
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+        };
+        parse.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        ParseSerializerSettings = parse;
     }
 
-    public static JsonSerializerSettings GetSerializerSettings()
+    public static JsonSerializerOptions GetSerializerSettings()
     {
         return CachedSerializerSettings;
     }

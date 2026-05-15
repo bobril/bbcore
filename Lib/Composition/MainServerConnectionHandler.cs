@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System;
 using Lib.Utils;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 namespace Lib.Composition;
 
@@ -38,7 +38,7 @@ class MainServerConnectionHandler : ILongPollingConnectionHandler
         _connection.Send(message, data);
     }
 
-    public void OnMessage(ILongPollingConnection connection, string message, JToken data)
+    public void OnMessage(ILongPollingConnection connection, string message, JsonNode data)
     {
         switch (message)
         {
@@ -47,7 +47,7 @@ class MainServerConnectionHandler : ILongPollingConnectionHandler
                 var position = new Dictionary<string, object>
                 {
                     {"fn", PathUtils.RealPath(PathUtils.Join(_mainServer.ProjectDir, data.Value<string>("fn")))},
-                    {"pos", data.Value<JArray>("pos")}
+                    {"pos", data.Value<JsonArray>("pos")}
                 };
                 _mainServer.SendToAll(message, position);
                 break;

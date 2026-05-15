@@ -1,8 +1,9 @@
 ﻿using Lib.WebServer;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Lib.Utils;
 using Lib.Utils.Logger;
 
 namespace Lib.Composition;
@@ -44,7 +45,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
         _testServer.NotifySomeChange();
     }
 
-    public void OnMessage(ILongPollingConnection connection, string message, JToken data)
+    public void OnMessage(ILongPollingConnection connection, string message, JsonNode data)
     {
         try
         {
@@ -181,7 +182,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                         suite.Duration = data.Value<double>("duration");
                         if (_verbose)
                             _logger.Info($"suiteDone {suite.Name} {suite.Duration:f2}");
-                        suite.Failures.AddRange(ConvertFailures(data.Value<JArray>("failures")));
+                        suite.Failures.AddRange(ConvertFailures(data.Value<JsonArray>("failures")));
                         if (suite.Failures.Count > 0)
                         {
                             _curResults.SuitesFailed += suite.Failures.Count;
@@ -242,7 +243,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                             break;
                         var test = _suiteStack.Pop();
                         test.Duration = data.Value<double>("duration");
-                        test.Failures.AddRange(ConvertFailures(data.Value<JArray>("failures")));
+                        test.Failures.AddRange(ConvertFailures(data.Value<JsonArray>("failures")));
                         _curResults.TestsFinished++;
                         var status = data.Value<string>("status");
                         if (_verbose)
@@ -313,7 +314,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                 case "coverageReport":
                 {
                     _coverageData = new uint[data.Value<int>("length")];
-                    var dataPart = data.Value<JArray>("data").Select(t => t.Value<int>()).ToList();
+                    var dataPart = data.Value<JsonArray>("data").Select(t => t.Value<int>()).ToList();
                     if (_verbose) _logger.Info("coverageReport " + data.Value<int>("length") + " " + dataPart.Count);
                     var pos = 0;
                     foreach (var v in dataPart)
@@ -339,7 +340,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                 {
                     var start = data.Value<int>("start");
                     if (_verbose) _logger.Info("coverageReportPart " + start);
-                    var dataPart = data.Value<JArray>("data").Select(t => t.Value<uint>()).ToList();
+                    var dataPart = data.Value<JsonArray>("data").Select(t => t.Value<uint>()).ToList();
                     dataPart.CopyTo(_coverageData, start);
                     break;
                 }
@@ -402,7 +403,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
         };
     }
 
-    IEnumerable<MessageAndStack> ConvertFailures(JArray failures)
+    IEnumerable<MessageAndStack> ConvertFailures(JsonArray failures)
     {
         foreach (var messageAndStack in failures)
         {

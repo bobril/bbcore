@@ -362,15 +362,11 @@ static class Program
 
     static void Build(string projDir, string newVersion, string rid)
     {
-        var start = new ProcessStartInfo("dotnet",
-            $"publish -c Release -r {rid} --self-contained true -p:DebugType=None -p:DebugSymbols=false -p:Version=" +
-            newVersion + ".0")
-        {
-            UseShellExecute = true,
-            WorkingDirectory = projDir + "/bb"
-        };
-        var process = Process.Start(start);
-        process!.WaitForExit();
+        var bbDir = projDir + "/bb";
+        RunCommand(bbDir, "dotnet", $"restore -r {rid}");
+        RunCommand(bbDir, "dotnet",
+            $"publish -c Release -r {rid} --self-contained true --no-restore -p:DebugType=None -p:DebugSymbols=false -p:Version=" +
+            newVersion + ".0");
         if (Directory.Exists(projDir + $"/bb/bin/Release/net10.0/{rid}/publish/ru-ru"))
         {
             Directory.Delete(projDir + $"/bb/bin/Release/net10.0/{rid}/publish/ru-ru", true);

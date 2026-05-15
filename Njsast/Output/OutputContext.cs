@@ -626,7 +626,7 @@ public class OutputContext
         {
             Print(name);
         }
-        else if (name.StartsWith('#') || IsIdentifierString(name))
+        else if (IsIdentifierString(name))
         {
             Print(name);
         }

@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Lib.Utils;
 
 namespace Lib.Registry;
 
@@ -131,7 +133,7 @@ public static class SimpleYamlTokenizer
 
                 chop = val.Length;
 
-                var valS = JToken.Parse(val).Value<string>();
+                var valS = JsonSerializer.Deserialize<string>(val);
 
                 if (valS != null)
                     yield return BuildToken(TokenTypes.String, valS);
@@ -157,7 +159,7 @@ public static class SimpleYamlTokenizer
 
                 chop = val.Length;
 
-                var valS = JToken.Parse(val).Value<string>();
+                var valS = UnquoteSingleQuotedString(val);
 
                 if (valS != null)
                     yield return BuildToken(TokenTypes.String, valS);
@@ -233,5 +235,12 @@ public static class SimpleYamlTokenizer
         }
 
         yield return BuildToken(TokenTypes.Eof);
+    }
+
+    static string? UnquoteSingleQuotedString(string value)
+    {
+        if (value.Length < 2 || value[0] != '\'' || value[^1] != '\'')
+            return null;
+        return value[1..^1].Replace("\\'", "'");
     }
 }

@@ -8,7 +8,7 @@ using Lib.DiskCache;
 using Lib.TSCompiler;
 using Lib.Utils;
 using Lib.Utils.Logger;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 
 namespace Lib.Registry;
 
@@ -80,8 +80,8 @@ public class BunNodePackageManager : INodePackageManager
 
     public static IEnumerable<PackagePathVersion> ParseBunLock(IDirectoryCache projectDirectory, string content)
     {
-        var parsed = JObject.Parse(content);
-        var packages = parsed["packages"] as JObject;
+        var parsed = JsonNode.Parse(content)!.AsObject();
+        var packages = parsed["packages"] as JsonObject;
         if (packages == null)
         {
             yield break;
@@ -89,7 +89,7 @@ public class BunNodePackageManager : INodePackageManager
 
         foreach (var prop in packages.Properties())
         {
-            if (prop.Value is not JArray packageInfo || packageInfo.Count == 0)
+            if (prop.Value is not JsonArray packageInfo || packageInfo.Count == 0)
             {
                 continue;
             }

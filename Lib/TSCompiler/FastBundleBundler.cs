@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using Lib.ToolsDir;
 using System.Linq;
 using Njsast.SourceMap;
@@ -521,7 +522,7 @@ public class FastBundleBundler
             }
         }
 
-        return $"R.map = {Newtonsoft.Json.JsonConvert.SerializeObject(res)};";
+        return $"R.map = {JsonSerializer.Serialize(res, JsonHelpers.CamelCase)};";
     }
 
     // Bobril must be first because it contains polyfills

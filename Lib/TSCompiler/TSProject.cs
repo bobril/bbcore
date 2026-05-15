@@ -1,6 +1,6 @@
 using Lib.DiskCache;
 using Lib.Utils;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using System;
 using System.Collections.Generic;
 using Lib.Registry;
@@ -63,17 +63,17 @@ public class TSProject
             }
 
             ProjectOptions.FinalCompilerOptions = null;
-            JObject parsed;
+            JsonObject parsed;
             try
             {
-                parsed = JObject.Parse(cache.Utf8Content);
+                parsed = JsonHelpers.ParseObject(cache.Utf8Content);
             }
             catch (Exception)
             {
                 parsed = new();
             }
 
-            if (parsed.GetValue("name") is JValue nameV)
+            if (parsed.GetValue("name") is JsonValue nameV)
             {
                 Name = nameV.ToString();
             }
@@ -81,9 +81,9 @@ public class TSProject
             var deps = new HashSet<string>();
             var devdeps = new HashSet<string>();
             var hasMain = false;
-            if (parsed.GetValue("typescript") is JObject parsedT)
+            if (parsed.GetValue("typescript") is JsonObject parsedT)
             {
-                if (parsedT.GetValue("main") is JValue mainV)
+                if (parsedT.GetValue("main") is JsonValue mainV)
                 {
                     MainFile = PathUtils.Normalize(mainV.ToString());
                     if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
@@ -94,9 +94,9 @@ public class TSProject
                 }
             }
 
-            var name = parsed.GetValue("name") is JValue vname ? vname.ToString() : "";
+            var name = parsed.GetValue("name") is JsonValue vname ? vname.ToString() : "";
 
-            if (!hasMain && parsed.GetValue("browser") is JValue browserMain)
+            if (!hasMain && parsed.GetValue("browser") is JsonValue browserMain)
             {
                 MainFile = PathUtils.Normalize(browserMain.ToString());
                 if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
@@ -105,7 +105,7 @@ public class TSProject
                 }
             }
 
-            if ((!hasMain || name == "marked") && parsed.GetValue("module") is JValue moduleV)
+            if ((!hasMain || name == "marked") && parsed.GetValue("module") is JsonValue moduleV)
             {
                 if (name != "moment")
                 {
@@ -117,16 +117,16 @@ public class TSProject
                 }
             }
 
-            if (parsed.GetValue("typings") is JValue typingsV)
+            if (parsed.GetValue("typings") is JsonValue typingsV)
             {
                 TypesMainFile = PathUtils.Normalize(typingsV.ToString());
             }
 
-            if (parsed.GetValue("exports") is JObject exports)
+            if (parsed.GetValue("exports") is JsonObject exports)
             {
-                if (exports.GetValue(".") is JObject exportMain)
+                if (exports.GetValue(".") is JsonObject exportMain)
                 {
-                    if (exportMain.GetValue("import") is JValue exportMainImport)
+                    if (exportMain.GetValue("import") is JsonValue exportMainImport)
                     {
                         MainFile = PathUtils.Normalize(exportMainImport.ToString());
                         if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
@@ -135,7 +135,7 @@ public class TSProject
                             hasMain = true;
                         }
                     }
-                    else if (exportMain.GetValue("default") is JValue exportMainDefault)
+                    else if (exportMain.GetValue("default") is JsonValue exportMainDefault)
                     {
                         MainFile = PathUtils.Normalize(exportMainDefault.ToString());
                         if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, MainFile)) is IFileCache)
@@ -149,7 +149,7 @@ public class TSProject
 
             if (!hasMain)
             {
-                if (parsed.GetValue("main") is JValue mainV2)
+                if (parsed.GetValue("main") is JsonValue mainV2)
                 {
                     MainFile = PathUtils.Normalize(mainV2.ToString());
                     if (PathUtils.GetExtension(MainFile).IsEmpty)
@@ -189,7 +189,7 @@ public class TSProject
 
                 if (!hasMain)
                 {
-                    if (parsed.GetValue("types") is JValue mainV)
+                    if (parsed.GetValue("types") is JsonValue mainV)
                     {
                         TypesMainFile = PathUtils.Normalize(mainV.ToString());
                         hasMain = true;
@@ -211,7 +211,7 @@ public class TSProject
                 }
             }
 
-            if (parsed.GetValue("dependencies") is JObject parsedV)
+            if (parsed.GetValue("dependencies") is JsonObject parsedV)
             {
                 foreach (var i in parsedV.Properties())
                 {
@@ -219,7 +219,7 @@ public class TSProject
                 }
             }
 
-            if (parsed.GetValue("devDependencies") is JObject parsedV2)
+            if (parsed.GetValue("devDependencies") is JsonObject parsedV2)
             {
                 foreach (var i in parsedV2.Properties())
                 {
@@ -227,7 +227,7 @@ public class TSProject
                 }
             }
 
-            if (parsed.GetValue("imports") is JObject imports)
+            if (parsed.GetValue("imports") is JsonObject imports)
             {
                 Imports = new Dictionary<string, string>();
                 foreach (var i in imports.Properties())
@@ -283,9 +283,9 @@ public class TSProject
         }
     }
 
-    Dictionary<string, string>? ParseBobrilAssets(JObject parsed, IDirectoryCache? dir)
+    Dictionary<string, string>? ParseBobrilAssets(JsonObject parsed, IDirectoryCache? dir)
     {
-        if (parsed?.GetValue("bobril") is not JObject bobrilSection)
+        if (parsed?.GetValue("bobril") is not JsonObject bobrilSection)
             return null;
         var bbOptions = new BobrilBuildOptions(bobrilSection);
         bbOptions = ProjectOptions.LoadBbrc(dir, bbOptions);

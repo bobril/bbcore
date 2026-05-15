@@ -207,7 +207,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
             return ("module.exports = {};", null);
         }
 
-        if (!_buildResult.Path2FileInfo.TryGetValue(name, out var fileInfo))
+        if (!_buildResult.Path2FileInfo.TryGetValue(name, out var fileInfo) &&
+            (!name.StartsWith('/') || !_buildResult.Path2FileInfo.TryGetValue(name[1..], out fileInfo)))
         {
             throw new InvalidOperationException("Bundler ReadContent does not exists:" + name);
         }

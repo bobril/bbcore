@@ -9,7 +9,8 @@ using BTDB.Collections;
 using Lib.BuildCache;
 using Lib.DiskCache;
 using Lib.Utils;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Lib.Composition;
 
@@ -379,8 +380,7 @@ public class BuildCtx
                 var trueTsVersion = compiler.GetTSVersion();
                 ShowTsVersion(trueTsVersion);
                 project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(trueTsVersion,
-                    JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
-                        TSCompilerOptions.GetSerializerSettings()));
+                    JsonSerializer.Serialize(CompilerOptions, TSCompilerOptions.GetSerializerSettings()));
             }
             finally
             {
@@ -497,16 +497,48 @@ public class BuildCtx
     string? DetectNativeTypeScriptDirectory(ProjectOptions project)
     {
         var tsProject = project.Owner;
-        if (project.TypeScriptVersionOverride || !(tsProject.DevDependencies?.Contains("@typescript/native-preview") ?? false))
+        if (!HasNativeTypeScriptDependency(tsProject))
             return null;
 
-        var typeScriptDir = PathUtils.Join(tsProject.Owner.FullPath, "node_modules/@typescript/native-preview");
-        if (_diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo.js")) ||
-            _diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo")) ||
-            _diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo.exe")))
-            return typeScriptDir;
+        var dir = tsProject.Owner;
+        while (dir != null)
+        {
+            var typeScriptDir = PathUtils.Join(dir.FullPath, "node_modules/@typescript/native-preview");
+            if (_diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo.js")) ||
+                _diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo")) ||
+                _diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo.exe")))
+                return typeScriptDir;
+            dir = dir.Parent;
+        }
 
         return null;
+    }
+
+    bool HasNativeTypeScriptDependency(TSProject tsProject)
+    {
+        if (tsProject.DevDependencies?.Contains("@typescript/native-preview") ?? false)
+            return true;
+        var dir = tsProject.Owner;
+        while (dir != null)
+        {
+            var packageJsonPath = PathUtils.Join(dir.FullPath, "package.json");
+            if (_diskCache.FsAbstraction.FileExists(packageJsonPath))
+            {
+                try
+                {
+                    var parsed = JsonHelpers.ParseObject(_diskCache.FsAbstraction.ReadAllUtf8(packageJsonPath));
+                    if ((parsed.GetValue("devDependencies") as JsonObject)?.GetValue("@typescript/native-preview") != null)
+                        return true;
+                }
+                catch
+                {
+                }
+            }
+
+            dir = dir.Parent;
+        }
+
+        return false;
     }
 
     public void BuildSubProjects(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult,

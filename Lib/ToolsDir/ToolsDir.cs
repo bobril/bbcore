@@ -10,8 +10,8 @@ using Lib.DiskCache;
 using Lib.Registry;
 using Lib.Utils;
 using Lib.Utils.Logger;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Lib.ToolsDir;
 
@@ -80,7 +80,7 @@ public class ToolsDir : IToolsDir
             WebZip = ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.web.zip");
             CoverageDetailsVisualizerZip =
                 ResourceUtils.GetZip($"{assemblyNamePrefix}.ToolsDir.CoverageDetailsVisualizer.zip");
-            _localeDefs = JObject.Parse(ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.localeDefs.json"));
+            _localeDefs = JsonNode.Parse(ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.localeDefs.json"))!.AsObject();
             LiveReloadJs = ResourceUtils.GetText($"{assemblyNamePrefix}.ToolsDir.liveReload.js");
         }
     }
@@ -233,7 +233,7 @@ public class ToolsDir : IToolsDir
         _ => JasmineDtsPath330
     };
     
-    readonly JObject _localeDefs;
+    readonly JsonObject _localeDefs;
     string _proxyWeb;
     string _proxyWebt;
 
@@ -383,9 +383,10 @@ public class ToolsDir : IToolsDir
         locale = locale.ToLowerInvariant();
         while (true)
         {
-            if (_localeDefs.TryGetValue(locale, StringComparison.InvariantCultureIgnoreCase, out var val))
+            var pair = _localeDefs.FirstOrDefault(i => string.Equals(i.Key, locale, StringComparison.InvariantCultureIgnoreCase));
+            if (pair.Value != null)
             {
-                return AppendLocaleQuotes(val.ToString(), locale);
+                return AppendLocaleQuotes(pair.Value.ToString(), locale);
             }
 
             var dashIndex = locale.IndexOf('-');
@@ -404,8 +405,8 @@ public class ToolsDir : IToolsDir
         if (insertPos < 0)
             return langInit;
 
-        return langInit.Substring(0, insertPos) + "," + JsonConvert.ToString(openQuote) + "," +
-               JsonConvert.ToString(closeQuote) + langInit.Substring(insertPos);
+        return langInit.Substring(0, insertPos) + "," + JsonSerializer.Serialize(openQuote, JsonHelpers.IgnoreNull) + "," +
+               JsonSerializer.Serialize(closeQuote, JsonHelpers.IgnoreNull) + langInit.Substring(insertPos);
     }
 
     static bool TryGetLocaleQuotes(string locale, out string openQuote, out string closeQuote)

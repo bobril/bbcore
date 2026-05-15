@@ -4,7 +4,7 @@ using Lib.DiskCache;
 using Lib.ToolsDir;
 using Lib.Utils;
 using JavaScriptEngineSwitcher.Core;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Lib.Utils.Logger;
 using System.Collections.Generic;
 using Njsast;
@@ -35,7 +35,7 @@ public class TsCompiler : ITSCompiler
         get
         {
             var engine = getJSEnviroment();
-            return JsonConvert.DeserializeObject<TSCompilerOptions>(
+            return JsonSerializer.Deserialize<TSCompilerOptions>(
                 engine.CallFunction<string>("bbGetCurrentCompilerOptions"));
         }
         set
@@ -44,8 +44,7 @@ public class TsCompiler : ITSCompiler
             _lastCompilerOptions = value;
             var engine = getJSEnviroment();
             engine.CallFunction("bbSetCurrentCompilerOptions",
-                JsonConvert.SerializeObject(value, Formatting.None,
-                    new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                JsonSerializer.Serialize((TSCompilerOptions)value, TSCompilerOptions.GetSerializerSettings()));
         }
     }
 
