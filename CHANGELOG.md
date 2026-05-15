@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.9.5
+
 ### Fixed
 
 - Reverted the broken `System.Text.Json` migration back to the previous `Newtonsoft.Json` based implementation while
