@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.9.3
+
 ### Fixed
 
 - Regression in js bundler with object having key starting with "#".
