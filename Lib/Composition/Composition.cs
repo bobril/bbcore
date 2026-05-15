@@ -926,10 +926,27 @@ public class Composition
 
                         _testServer.StartTest("/test.html", fastBundle.SourceMaps, testCommand.SpecFilter.Value);
                         StartHeadlessBrowserTest();
-                        waitForTestResults.WaitOne();
-                        if (proj.CoverageEnabled)
+                        var testTimeout = GetTestTimeout();
+                        if (!waitForTestResults.WaitOne(testTimeout))
                         {
-                            waitForCoverage.WaitOne();
+                            _logger.Error(
+                                $"Timeout while waiting for bb test results ({testTimeout.TotalMinutes:F1} min).");
+                            testResults.Failure = true;
+                            testResults.Incomplete = true;
+                            testResults.Failures =
+                            [
+                                new MessageAndStack
+                                {
+                                    Message = "bb test did not finish before timeout",
+                                    Stack = []
+                                }
+                            ];
+                            testFailures = Math.Max(1, testFailures);
+                            incompleteTest = true;
+                        }
+                        else if (proj.CoverageEnabled && !waitForCoverage.WaitOne(testTimeout))
+                        {
+                            _logger.Warn("Timeout while waiting for coverage report from bb test run.");
                         }
 
                         StopBrowserTest();
@@ -1974,6 +1991,17 @@ public class Composition
         return res;
     }
 
+    static TimeSpan GetTestTimeout()
+    {
+        var timeoutFromEnv = Environment.GetEnvironmentVariable("BB_TEST_TIMEOUT");
+        if (int.TryParse(timeoutFromEnv, out var timeoutInSeconds) && timeoutInSeconds > 0)
+        {
+            return TimeSpan.FromSeconds(timeoutInSeconds);
+        }
+
+        return TimeSpan.FromMinutes(30);
+    }
+
     public void StartHeadlessBrowserTest()
     {
         if (_browserProcessFactory == null)
@@ -1982,6 +2010,7 @@ public class Composition
             {
                 _logger.Info("Initializing headless browser process factory.");
             }
+
             _browserProcessFactory = new StrategyEnhancedBrowserProcessFactory(_inDocker,
                 _currentProject.HeadlessBrowserStrategy, new NativeFsAbstraction(), _logger.Verbose);
         }
@@ -1993,6 +2022,7 @@ public class Composition
             {
                 _logger.Info("Starting headless browser for " + testUrl);
             }
+
             try
             {
                 _browserProcess = _browserProcessFactory.Create(testUrl);
@@ -2021,6 +2051,7 @@ public class Composition
             {
                 _logger.Info("Stopping headless browser process.");
             }
+
             _browserProcess.Dispose();
             _browserProcess = null;
             if (_logger.Verbose)

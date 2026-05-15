@@ -363,37 +363,48 @@ static class Program
     static void Build(string projDir, string newVersion, string rid)
     {
         var bbDir = projDir + "/bb";
-        RunCommand(bbDir, "dotnet", $"restore -r {rid}");
+        var releaseArtifactsPath = projDir + "/bb/artifacts/releaser";
+        var publishDir = releaseArtifactsPath + $"/publish/bb/release_{rid}";
+        if (Directory.Exists(publishDir))
+            Directory.Delete(publishDir, true);
+        RunCommand(bbDir, "dotnet", $"restore -r {rid} --artifacts-path {Quote(releaseArtifactsPath)}");
         RunCommand(bbDir, "dotnet",
-            $"publish -c Release -r {rid} --self-contained true --no-restore -p:DebugType=None -p:DebugSymbols=false -p:Version=" +
+            $"publish -c Release -r {rid} --self-contained true --no-restore --artifacts-path {Quote(releaseArtifactsPath)} -p:DebugType=None -p:DebugSymbols=false -p:Version=" +
             newVersion + ".0");
-        if (Directory.Exists(projDir + $"/bb/bin/Release/net10.0/{rid}/publish/ru-ru"))
+        if (Directory.Exists(publishDir + "/ru-ru"))
         {
-            Directory.Delete(projDir + $"/bb/bin/Release/net10.0/{rid}/publish/ru-ru", true);
+            Directory.Delete(publishDir + "/ru-ru", true);
         }
 
         if (!rid.StartsWith("win"))
         {
-            if (Directory.Exists(projDir + $"/bb/bin/Release/net10.0/{rid}/publish/Resources"))
+            if (Directory.Exists(publishDir + "/Resources"))
             {
-                Directory.Delete(projDir + $"/bb/bin/Release/net10.0/{rid}/publish/Resources", true);
+                Directory.Delete(publishDir + "/Resources", true);
             }
         }
 
         if (rid == "osx-arm64")
         {
             File.Copy(projDir + "/tools/Releaser/Releaser/OsxArm64/bb",
-                projDir + $"/bb/bin/Release/net10.0/{rid}/publish/bb", true);
+                publishDir + "/bb", true);
             Console.WriteLine("Overwritten Osx Arm64 bb to be signed");
         }
 
-        System.IO.Compression.ZipFile.CreateFromDirectory(projDir + $"/bb/bin/Release/net10.0/{rid}/publish",
-            projDir + $"/bb/bin/Release/net10.0/{ToZipName(rid)}.zip", System.IO.Compression.CompressionLevel.Optimal,
-            false);
+        var zipFile = projDir + $"/bb/bin/Release/net10.0/{ToZipName(rid)}.zip";
+        Directory.CreateDirectory(Path.GetDirectoryName(zipFile)!);
+        File.Delete(zipFile);
+        System.IO.Compression.ZipFile.CreateFromDirectory(publishDir, zipFile,
+            System.IO.Compression.CompressionLevel.Optimal, false);
     }
 
     static string ToZipName(string rid)
     {
         return rid;
+    }
+
+    static string Quote(string value)
+    {
+        return "\"" + value.Replace("\"", "\\\"") + "\"";
     }
 }
