@@ -2,23 +2,33 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Regression in js bundler with object having key starting with "#".
+
 ## 5.9.2
 
 ### Fixed
 
-- Generated `tsconfig.json` files now include project-local Jasmine definitions and keep scanned project file paths relative, so native TypeScript typechecking works for test projects with local `jasmine.d.ts`.
+- Generated `tsconfig.json` files now include project-local Jasmine definitions and keep scanned project file paths
+  relative, so native TypeScript typechecking works for test projects with local `jasmine.d.ts`.
 
 ## 5.9.1
 
 ### Fixed
 
-- TypeScript `compilerOptions.lib` entries are now resolved case-insensitively, so uppercase values such as `ES2023` work on case-sensitive file systems.
+- TypeScript `compilerOptions.lib` entries are now resolved case-insensitively, so uppercase values such as `ES2023`
+  work on case-sensitive file systems.
 
 ## 5.9.0
 
 ### Added
 
-- Added faster TypeScript 7 native-preview typechecking. Enable it with `npm install -D @typescript/native-preview@beta`; bbcore then detects `@typescript/native-preview` in `devDependencies` and uses project-local `tsgo` for typechecking, including a continuously running `tsgo --watch` process for interactive builds. TypeScript-to-JavaScript transpilation still uses the existing JavaScript compiler path.
+- Added faster TypeScript 7 native-preview typechecking. Enable it with
+  `npm install -D @typescript/native-preview@beta`; bbcore then detects `@typescript/native-preview` in
+  `devDependencies` and uses project-local `tsgo` for typechecking, including a continuously running `tsgo --watch`
+  process for interactive builds. TypeScript-to-JavaScript transpilation still uses the existing JavaScript compiler
+  path.
 
 ## 5.8.4
 
@@ -36,29 +46,35 @@
 
 ### Fixed
 
-- Interactive watcher now tracks only files actually read during compilation, plus precise non-recursive directory checks for generated lists, tests, assets, resources, sprites, and TypeScript directory probes.
+- Interactive watcher now tracks only files actually read during compilation, plus precise non-recursive directory
+  checks for generated lists, tests, assets, resources, sprites, and TypeScript directory probes.
 - Interactive watcher no longer attempts to watch `.pnpm` directories.
-- TypeScript watch mode now falls back to a one-shot typecheck when no source file exists or the watch program cannot be created.
+- TypeScript watch mode now falls back to a one-shot typecheck when no source file exists or the watch program cannot be
+  created.
 
 ## 5.7.1
 
 ### Fixed
 
-- Interactive watcher now ignores events from sibling files that are only visible because a broader parent directory is used as watcher root.
+- Interactive watcher now ignores events from sibling files that are only visible because a broader parent directory is
+  used as watcher root.
 
 ## 5.7.0
 
 ### Added
 
-- Added `excludeWatchers` option in `.bbrc` or `package.json` `bobril` section to ignore project-root-relative files or directories in interactive file watching.
+- Added `excludeWatchers` option in `.bbrc` or `package.json` `bobril` section to ignore project-root-relative files or
+  directories in interactive file watching.
 - When build is started always print reason for build. It is either "Initial build" or path to file which changed.
 
 ## 5.6.0
 
 ### Changed
 
-- Export now strips non-standard ICU custom formatters (like `quoted`) from translation messages and adds a trailing space.
-- Import does a normalized fallback lookup when the exported source key (without custom formatters) doesn't match the original stored key. Custom formatters are restored back into the target translation on import.
+- Export now strips non-standard ICU custom formatters (like `quoted`) from translation messages and adds a trailing
+  space.
+- Import does a normalized fallback lookup when the exported source key (without custom formatters) doesn't match the
+  original stored key. Custom formatters are restored back into the target translation on import.
 
 ## 5.5.1
 
@@ -83,26 +99,30 @@
 
 ### Added
 
-- Generated compact locale quote metadata (`openQuote`/`closeQuote`) for translations and appended it to `bobrilRegisterTranslations(...)` locale data.
+- Generated compact locale quote metadata (`openQuote`/`closeQuote`) for translations and appended it to
+  `bobrilRegisterTranslations(...)` locale data.
 
 ## 5.3.2
 
 ### Fixed
 
 - Adjusted bundled TypeScript helper interop for current `__importStar`/`__importDefault` behavior.
-- Bumped the TypeScript file build cache table version so older cached transpilation results are not reused after the helper change.
+- Bumped the TypeScript file build cache table version so older cached transpilation results are not reused after the
+  helper change.
 
 ## 5.3.1
 
 ### Fixed
 
-- Restored `b.sprite(...svg...)` processing with TypeScript 6.0.2 namespace imports emitted through `__importStar(require(...))`.
+- Restored `b.sprite(...svg...)` processing with TypeScript 6.0.2 namespace imports emitted through
+  `__importStar(require(...))`.
 
 ## 5.3.0
 
 ### Added
 
-- `Lib.Translation.MessageParser` now accepts generic custom message formatters without parameters, matching `bobril-g11n` support for `registerCustomFormatter` and the default `space` formatter.
+- `Lib.Translation.MessageParser` now accepts generic custom message formatters without parameters, matching
+  `bobril-g11n` support for `registerCustomFormatter` and the default `space` formatter.
 
 ## 5.2.1
 
@@ -1740,8 +1760,8 @@ Don't crash on syntax errors (for these TS compiles invalid code, without report
 
 - All module \*.js imports are now compiled and detected for dependencies.
 - Support for `browser` in `package.json` by [spec](https://github.com/defunctzombie/package-browser-field-spec)
-  - Additionally if you define `"browser" : { "module_name": "module_name/dist/bundle.js" }` it override main js file
-    for module imported by its name.
+    - Additionally if you define `"browser" : { "module_name": "module_name/dist/bundle.js" }` it override main js file
+      for module imported by its name.
 - Njsast based bundler supports bundling of `module.exports =` commonjs pattern. For example it is capable of bundling
   `sockjs-client` as is.
 - `process.env.X` replacement works in js files too.
@@ -1761,11 +1781,11 @@ Don't crash on syntax errors (for these TS compiles invalid code, without report
 ### Added
 
 - Support for ServiceWorkers/PWA and WebWorkers
-  - `b.asset` support new `project:` prefix which needs to be followed by relative directory path with `project.json`
-  - target project must have defined `"bobril": { "variant": "worker" }` or `"bobril": { "variant": "serviceworker" }`
-  - service worker automatically defines `swBuildDate` (contains date of build in string), `swBuildId` (contains
-    obfuscated date of build in string), `swFiles` (array with all files in compilation)
-  - example in `TestProjects/PWA/main`
+    - `b.asset` support new `project:` prefix which needs to be followed by relative directory path with `project.json`
+    - target project must have defined `"bobril": { "variant": "worker" }` or `"bobril": { "variant": "serviceworker" }`
+    - service worker automatically defines `swBuildDate` (contains date of build in string), `swBuildId` (contains
+      obfuscated date of build in string), `swFiles` (array with all files in compilation)
+    - example in `TestProjects/PWA/main`
 
 ```ts
 import * as b from "bobril";
