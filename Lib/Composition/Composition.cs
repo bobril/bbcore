@@ -15,11 +15,13 @@ using Lib.Utils.CommandLineParser.Parser;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
-using System.Text.Json;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System.Reflection;
 using System.Text;
 using System.Reactive;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 using BTDB.Collections;
@@ -79,6 +81,10 @@ public class Composition
         _inDocker = inDocker;
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+        {
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        };
         _bbdir = Environment.GetEnvironmentVariable("BBCACHEDIR") ?? "";
         var settingsDir = _bbdir;
         if (_bbdir == "")
@@ -2010,7 +2016,6 @@ public class Composition
             {
                 _logger.Info("Initializing headless browser process factory.");
             }
-
             _browserProcessFactory = new StrategyEnhancedBrowserProcessFactory(_inDocker,
                 _currentProject.HeadlessBrowserStrategy, new NativeFsAbstraction(), _logger.Verbose);
         }
@@ -2022,7 +2027,6 @@ public class Composition
             {
                 _logger.Info("Starting headless browser for " + testUrl);
             }
-
             try
             {
                 _browserProcess = _browserProcessFactory.Create(testUrl);
@@ -2051,7 +2055,6 @@ public class Composition
             {
                 _logger.Info("Stopping headless browser process.");
             }
-
             _browserProcess.Dispose();
             _browserProcess = null;
             if (_logger.Verbose)

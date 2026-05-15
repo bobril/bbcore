@@ -12,8 +12,8 @@ using Lib.ToolsDir;
 using Lib.Translation;
 using Lib.Utils;
 using Lib.Utils.Logger;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Njsast.Ast;
 using Njsast.Bobril;
 using Njsast.Coverage;
@@ -478,12 +478,11 @@ public class ProjectOptions
                 newConfigObject.files.AddRange(TestSources!.Select(ToTsConfigFilePath));
         }
 
-        if (ShouldIncludeJasmineDts())
+        if ((TestSources?.Count ?? 0) > 0)
         {
-            var jasmineDts = FindJasmineDtsPath();
-            if (jasmineDts != null)
+            if (JasmineDts != null)
             {
-                newConfigObject.files.Add(ToTsConfigFilePath(jasmineDts));
+                newConfigObject.files.Add(ToTsConfigFilePath(JasmineDts));
             }
         }
 
@@ -513,7 +512,8 @@ public class ProjectOptions
             newConfigObject.files = null!;
         }
 
-        var newContent = JsonSerializer.Serialize(newConfigObject, JsonHelpers.IndentedIgnoreNull);
+        var newContent = JsonConvert.SerializeObject(newConfigObject, Formatting.Indented,
+            TSCompilerOptions.GetSerializerSettings());
         if (newContent != _originalContent)
         {
             try
@@ -536,36 +536,6 @@ public class ProjectOptions
         return Path.IsPathRooted(path) ? PathUtils.Subtract(path, Owner.Owner.FullPath) : path;
     }
 
-    bool ShouldIncludeJasmineDts()
-    {
-        if ((TestSources?.Count ?? 0) > 0)
-            return true;
-        return Include?.Any(i => i.Contains("spec/", StringComparison.Ordinal) ||
-                                i.Contains("spec*", StringComparison.Ordinal) ||
-                                i.Contains("*.spec", StringComparison.Ordinal) ||
-                                i.Contains("*Spec", StringComparison.Ordinal)) ?? false;
-    }
-
-    string? FindJasmineDtsPath()
-    {
-        if (JasmineDts != null)
-            return JasmineDts;
-        var helpersJasmineDts = PathUtils.Join(Owner.Owner.FullPath, "node_modules/helpers--jasmine/jasmine.d.ts");
-        if (File.Exists(helpersJasmineDts))
-            return helpersJasmineDts;
-        var dir = Owner.Owner;
-        while (dir != null)
-        {
-            var path = PathUtils.Join(dir.FullPath, "jasmine.d.ts");
-            if (File.Exists(path))
-                return path;
-            dir = dir.Parent;
-        }
-
-        Tools.SetJasmineVersion(JasmineVersion);
-        return Tools.JasmineDtsPath;
-    }
-
     public void InitializeTranslationDb(string? specificPath = null)
     {
         if (TranslationDb != null)
@@ -583,24 +553,24 @@ public class ProjectOptions
         else TranslationDb.LoadLangDb(specificPath);
     }
 
-    public void FillProjectOptionsFromPackageJson(JsonObject? parsed, IDirectoryCache? dir)
+    public void FillProjectOptionsFromPackageJson(JObject? parsed, IDirectoryCache? dir)
     {
         var browserValue = parsed?.GetValue("browser");
         BrowserResolve = null;
-        if (browserValue is JsonObject)
+        if (browserValue is { Type: JTokenType.Object })
         {
-            BrowserResolve = browserValue.Deserialize<Dictionary<string, object>>()!
+            BrowserResolve = browserValue.ToObject<Dictionary<string, object>>()!
                 .ToDictionary(p => p.Key, p => p.Value as string);
         }
 
         Localize = Owner.Dependencies?.Contains("bobril-g11n") ?? false;
         TestSourcesRegExp = DefaultTestRegex;
-        if (parsed?.GetValue("publishConfig") is JsonObject publishConfigSection)
+        if (parsed?.GetValue("publishConfig") is JObject publishConfigSection)
         {
             NpmRegistry = publishConfigSection.Value<string>("registry");
         }
 
-        var bobrilSection = parsed?.GetValue("bobril") as JsonObject;
+        var bobrilSection = parsed?.GetValue("bobril") as JObject;
         var bbOptions = new BobrilBuildOptions(bobrilSection);
         bbOptions = LoadBbrc(dir, bbOptions);
         TypeScriptVersion = bbOptions.tsVersion ?? "";
@@ -676,7 +646,7 @@ public class ProjectOptions
                 {
                     if (Owner.DiskCache.FsAbstraction.FileExists(dir.FullPath + "/.bbrc"))
                     {
-                        var parsed = JsonHelpers.ParseObject(Owner.DiskCache.FsAbstraction.ReadAllUtf8(dir.FullPath + "/.bbrc"));
+                        var parsed = JObject.Parse(Owner.DiskCache.FsAbstraction.ReadAllUtf8(dir.FullPath + "/.bbrc"));
                         var n = new BobrilBuildOptions(parsed);
                         n.Merge(bbOptions);
                         bbOptions = n;
@@ -692,7 +662,7 @@ public class ProjectOptions
             {
                 try
                 {
-                    var parsed = JsonHelpers.ParseObject(f.Utf8Content);
+                    var parsed = JObject.Parse(f.Utf8Content);
                     var n = new BobrilBuildOptions(parsed);
                     n.Merge(bbOptions);
                     bbOptions = n;
@@ -1080,11 +1050,11 @@ public class ProjectOptions
 
     public void RefreshExcludeWatchers()
     {
-        JsonObject? parsed = null;
+        JObject? parsed = null;
         var packageJson = PathUtils.Join(Owner.Owner.FullPath, "package.json");
         if (Owner.DiskCache.FsAbstraction.FileExists(packageJson))
-            parsed = JsonHelpers.ParseObject(Owner.DiskCache.FsAbstraction.ReadAllUtf8(packageJson));
-        var bbOptions = new BobrilBuildOptions(parsed?.GetValue("bobril") as JsonObject);
+            parsed = JObject.Parse(Owner.DiskCache.FsAbstraction.ReadAllUtf8(packageJson));
+        var bbOptions = new BobrilBuildOptions(parsed?.GetValue("bobril") as JObject);
         bbOptions = LoadBbrc(Owner.Owner, bbOptions);
         SetExcludeWatchers(bbOptions.excludeWatchers);
     }

@@ -8,7 +8,7 @@ using Lib.DiskCache;
 using Lib.TSCompiler;
 using Lib.Utils;
 using Lib.Utils.Logger;
-using System.Text.Json.Nodes;
+using Newtonsoft.Json.Linq;
 
 namespace Lib.Registry;
 
@@ -55,8 +55,8 @@ public class NpmNodePackageManager : INodePackageManager
             yield break;
         }
 
-        var parsed = JsonNode.Parse(lockFile.Utf8Content)!.AsObject();
-        foreach (var prop in parsed["packages"]!.AsObject().Properties())
+        var parsed = JObject.Parse(lockFile.Utf8Content);
+        foreach (var prop in parsed["packages"]!.Children<JProperty>())
         {
             if (!prop.Name.StartsWith("node_modules/"))
             {
@@ -65,7 +65,7 @@ public class NpmNodePackageManager : INodePackageManager
             yield return new PackagePathVersion
             {
                 Name = prop.Name["node_modules/".Length..],
-                Version = ((JsonObject) prop.Value)["version"]!.Value<string>()!,
+                Version = ((JObject) prop.Value)["version"]!.Value<string>()!,
                 Path = PathUtils.Join(projectDirectory.FullPath, prop.Name)
             };
         }

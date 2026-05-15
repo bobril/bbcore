@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
-using Lib.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Lib.TSCompiler;
 
@@ -145,16 +144,16 @@ public class BobrilBuildOptions
         return this;
     }
 
-    static string? GetStringProperty(JsonObject? obj, string name)
+    static string? GetStringProperty(JObject? obj, string name)
     {
-        if (obj != null && obj.TryGetPropertyValue(name, out var value) && value is JsonValue)
-            return value.Value<string>();
+        if (obj != null && obj.TryGetValue(name, out var value) && value.Type == JTokenType.String)
+            return (string)value!;
         return null;
     }
 
-    public BobrilBuildOptions(JsonNode? jToken)
+    public BobrilBuildOptions(JToken? jToken)
     {
-        if (jToken is not JsonObject bobrilSection) return;
+        if (jToken is not JObject bobrilSection) return;
         tsVersion = GetStringProperty(bobrilSection, "tsVersion");
         variant = GetStringProperty(bobrilSection, "variant");
         jasmineVersion = GetStringProperty(bobrilSection, "jasmineVersion");
@@ -173,18 +172,18 @@ public class BobrilBuildOptions
         example = GetStringProperty(bobrilSection, "example");
         additionalResourcesDirectory =
             GetStringProperty(bobrilSection, "additionalResourcesDirectory");
-        compilerOptions = TSCompilerOptions.Parse(bobrilSection!.GetValue("compilerOptions") as JsonObject);
+        compilerOptions = TSCompilerOptions.Parse(bobrilSection!.GetValue("compilerOptions") as JObject);
         dependencies = GetStringProperty(bobrilSection, "dependencies");
-        includeSources = (bobrilSection.GetValue(nameof(includeSources)) as JsonArray)?.Select(i => i.ToString())
+        includeSources = (bobrilSection.GetValue(nameof(includeSources)) as JArray)?.Select(i => i.ToString())
             .ToArray();
-        include = (bobrilSection.GetValue(nameof(include)) as JsonArray)?.Select(i => i.ToString()).ToArray();
-        exclude = (bobrilSection.GetValue(nameof(exclude)) as JsonArray)?.Select(i => i.ToString()).ToArray();
-        excludeWatchers = (bobrilSection.GetValue(nameof(excludeWatchers)) as JsonArray)?.Select(i => i.ToString())
+        include = (bobrilSection.GetValue(nameof(include)) as JArray)?.Select(i => i.ToString()).ToArray();
+        exclude = (bobrilSection.GetValue(nameof(exclude)) as JArray)?.Select(i => i.ToString()).ToArray();
+        excludeWatchers = (bobrilSection.GetValue(nameof(excludeWatchers)) as JArray)?.Select(i => i.ToString())
             .ToArray();
-        files = (bobrilSection.GetValue(nameof(files)) as JsonArray)?.Select(i => i.ToString()).ToArray();
-        if (bobrilSection.GetValue(nameof(ignoreDiagnostic)) is JsonArray ignoreDiagnosticJson)
+        files = (bobrilSection.GetValue(nameof(files)) as JArray)?.Select(i => i.ToString()).ToArray();
+        if (bobrilSection.GetValue(nameof(ignoreDiagnostic)) is JArray ignoreDiagnosticJson)
             ignoreDiagnostic = ignoreDiagnosticJson.Select(i => i.Value<int>()).ToArray();
-        var pluginsSection = bobrilSection.GetValue("plugins") as JsonObject;
+        var pluginsSection = bobrilSection.GetValue("plugins") as JObject;
         GenerateSpritesTs =
             pluginsSection?["bb-assets-generator-plugin"]?["generateSpritesFile"]?.Value<bool>();
         try
@@ -245,12 +244,12 @@ public class BobrilBuildOptions
         }
 
         buildOutputDir = GetStringProperty(bobrilSection, "buildOutputDir");
-        defines = (bobrilSection.GetValue("defines") as JsonObject)?
-            .Select<KeyValuePair<string, JsonNode?>, KeyValuePair<string, string>>(kv =>
+        defines = (bobrilSection.GetValue("defines") as JObject)?
+            .Select<KeyValuePair<string, JToken?>, KeyValuePair<string, string>>(kv =>
                 KeyValuePair.Create(kv.Key, kv.Value?.ToString() ?? ""))?
             .ToDictionary(kv => kv.Key, kv => kv.Value);
-        envs = (bobrilSection.GetValue("envs") as JsonObject)?
-            .Select<KeyValuePair<string, JsonNode?>, KeyValuePair<string, string>>(kv =>
+        envs = (bobrilSection.GetValue("envs") as JObject)?
+            .Select<KeyValuePair<string, JToken?>, KeyValuePair<string, string>>(kv =>
                 KeyValuePair.Create(kv.Key, kv.Value?.ToString() ?? ""))?
             .ToDictionary(kv => kv.Key, kv => kv.Value);
         try
@@ -273,21 +272,21 @@ public class BobrilBuildOptions
             // ignored
         }
 
-        if (bobrilSection.GetValue("assets") is JsonObject assetsJson)
+        if (bobrilSection.GetValue("assets") is JObject assetsJson)
         {
             foreach (var (key, value) in assetsJson)
             {
-                if (value is not JsonValue) continue;
+                if (value?.Type != JTokenType.String) continue;
                 assets ??= new();
                 assets.Add(key, value.Value<string>()!);
             }
         }
 
-        if (bobrilSection.GetValue("imports") is JsonObject importsJson)
+        if (bobrilSection.GetValue("imports") is JObject importsJson)
         {
             foreach (var (key, value) in importsJson)
             {
-                if (value is not (JsonValue or null)) continue;
+                if (value?.Type is not (JTokenType.String or JTokenType.Null)) continue;
                 imports ??= new();
                 imports.Add(key, value.Value<string>()!);
             }

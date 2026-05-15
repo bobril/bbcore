@@ -8,7 +8,7 @@ using Lib.DiskCache;
 using Lib.TSCompiler;
 using Lib.Utils;
 using Lib.Utils.Logger;
-using System.Text.Json.Nodes;
+using Newtonsoft.Json.Linq;
 
 namespace Lib.Registry;
 

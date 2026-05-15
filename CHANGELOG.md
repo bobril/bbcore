@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Reverted the broken `System.Text.Json` migration back to the previous `Newtonsoft.Json` based implementation while
+  keeping the targeted fixes for `#` object keys, native TypeScript `tsconfig.json` test definitions, `bb test`
+  timeout handling, and releaser artifact cleanup.
+
 ## 5.9.4
 
 ## 5.9.3

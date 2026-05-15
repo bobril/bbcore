@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using BTDB.Collections;
 using Lib.DiskCache;
-using System.Text.Json.Nodes;
+using Newtonsoft.Json.Linq;
 
 namespace Lib.Registry;
 

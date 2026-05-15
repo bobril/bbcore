@@ -4,7 +4,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <PackageId>Bbcore.Lib</PackageId>
-        <Version>5.9.4</Version>
+        <Version>5.9.1</Version>
         <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
         <Authors>Tomáš Zálešák, Boris Letocha</Authors>
         <Nullable>enable</Nullable>
@@ -19,7 +19,8 @@
         <PackageReference Include="Markdig" Version="0.44.0" />
         <PackageReference Include="Microsoft.ClearScript.V8.Native.win-arm64" Version="7.5.0"/>
         <PackageReference Include="Microsoft.DotNet.PlatformAbstractions" Version="3.1.6"/>
-                <PackageReference Include="ProxyKit" Version="2.3.4"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+        <PackageReference Include="ProxyKit" Version="2.3.4"/>
         <PackageReference Include="SemanticVersioning" Version="3.0.0"/>
         <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
         <PackageReference Include="System.Reactive" Version="6.1.0" />

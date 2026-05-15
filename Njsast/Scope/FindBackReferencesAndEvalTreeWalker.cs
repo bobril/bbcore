@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using Newtonsoft.Json.Serialization;
 using Njsast.Ast;
 using Njsast.Reader;
 
