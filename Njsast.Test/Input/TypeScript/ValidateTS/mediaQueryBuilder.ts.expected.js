@@ -1,5 +1,7 @@
 class MediaRuleBuilder {
-    tokens = [];
+    constructor() {
+        this.tokens = [];
+    }
     pushOptionalTokens(behaviour, mediaType) {
         !!behaviour && this.tokens.push({
             type: behaviour

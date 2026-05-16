@@ -1,8 +1,6 @@
 function field(target, key) {}
 
-class Service {
-    name;
-}
+class Service {}
 
 __decorate([ field ], Service.prototype, "name", void 0);
 

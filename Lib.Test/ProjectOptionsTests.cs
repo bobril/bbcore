@@ -7,6 +7,15 @@ namespace Lib.Test;
 public class ProjectOptionsTests
 {
     [Fact]
+    public void DefaultTSCompilerOptionsUseES2022WithoutDefineClassFields()
+    {
+        var options = new ProjectOptions().GetDefaultTSCompilerOptions();
+
+        Assert.Equal(ScriptTarget.Es2022, options.target);
+        Assert.False(options.useDefineForClassFields);
+    }
+
+    [Fact]
     public void Imports1()
     {
         var fs = new InMemoryFs();

@@ -80,6 +80,7 @@ public class TSCompilerOptions : ITSCompilerOptions
     public IList<string>? typeRoots { get; set; }
     public bool? resolveJsonModule { get; set; }
     public bool? useUnknownInCatchVariables { get; set; }
+    public bool? useDefineForClassFields { get; set; }
 
     public static TSCompilerOptions Parse(JToken? jToken)
     {
@@ -178,7 +179,8 @@ public class TSCompilerOptions : ITSCompilerOptions
             typeRoots = typeRoots,
             types = types,
             resolveJsonModule = resolveJsonModule,
-            useUnknownInCatchVariables = useUnknownInCatchVariables
+            useUnknownInCatchVariables = useUnknownInCatchVariables,
+            useDefineForClassFields = useDefineForClassFields
         };
     }
 
@@ -332,6 +334,8 @@ public class TSCompilerOptions : ITSCompilerOptions
             resolveJsonModule = with.resolveJsonModule;
         if (with.useUnknownInCatchVariables != null)
             useUnknownInCatchVariables = with.useUnknownInCatchVariables;
+        if (with.useDefineForClassFields != null)
+            useDefineForClassFields = with.useDefineForClassFields;
         return this;
     }
 }

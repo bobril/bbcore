@@ -1,7 +1,6 @@
 class Base {}
 
 class Worker extends Base {
-    name;
     run(value) {
         console.log(value);
     }

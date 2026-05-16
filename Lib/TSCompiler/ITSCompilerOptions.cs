@@ -133,6 +133,7 @@ public interface ITSCompilerOptions
     IList<string>? typeRoots { get; set; }
 
     bool? useUnknownInCatchVariables { get; set; }
+    bool? useDefineForClassFields { get; set; }
     bool? resolveJsonModule { get; set; }
 
     ITSCompilerOptions Clone();

@@ -1,8 +1,10 @@
 export class RuntimeFunctionGenerator {
-    constants = [];
-    body = [];
-    argCount = 0;
-    localCount = 0;
+    constructor() {
+        this.constants = [];
+        this.body = [];
+        this.argCount = 0;
+        this.localCount = 0;
+    }
     addConstant(value) {
         let cc = this.constants;
         for (let i = 0; i < cc.length; i++) {

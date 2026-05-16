@@ -5125,7 +5125,8 @@ public sealed partial class Parser
     }
 
     bool TsTryParseAutoAccessor(AstSymbol? className, ref StructList<AstNode> classBody,
-        List<AstNode>? decorators, List<AstStatement> memberDecoratorStatements, bool hasStaticTsModifier = false)
+        List<AstNode>? decorators, List<AstStatement> memberDecoratorStatements,
+        List<AstStatement> instanceFieldInitializerStatements, bool hasStaticTsModifier = false)
     {
         if (!IsTypeScript)
             return false;
@@ -5192,7 +5193,13 @@ public sealed partial class Parser
 
         var storageName = TsAutoAccessorStorageName(storageKey);
         var privateStorageKey = new AstSymbolPrivate(SourceFile, key.Start, key.End, storageName);
-        classBody.Add(new AstClassField(SourceFile, startLocation, _lastTokEnd, privateStorageKey, fieldValue, isStatic));
+        var lowerDecoratedInstanceInitializer = !isStatic && decorators is { Count: > 0 } &&
+                                                decoratorKey is not AstSymbolPrivate && fieldValue != null;
+        classBody.Add(new AstClassField(SourceFile, startLocation, _lastTokEnd, privateStorageKey,
+            lowerDecoratedInstanceInitializer ? null : fieldValue, isStatic));
+        if (lowerDecoratedInstanceInitializer)
+            instanceFieldInitializerStatements.Add(TsBuildClassFieldInitializerStatement(
+                new AstThis(SourceFile, key.Start, key.End), privateStorageKey, fieldValue!, false));
         classBody.Add(TsBuildAutoAccessorGetter(startLocation, getterKey, storageName, isStatic, className));
         classBody.Add(TsBuildAutoAccessorSetter(startLocation, setterKey, storageName, isStatic, className));
         if (decorators is { Count: > 0 } && decoratorKey is not AstSymbolPrivate)
@@ -5286,7 +5293,16 @@ public sealed partial class Parser
         var temp = TsNewAutoAccessorTemp();
         TsAddAutoAccessorTempDeclaration(key.Start, temp);
         var tempRef = new AstSymbolRef(SourceFile, key.Start, key.End, temp);
-        var classKey = new AstAssign(SourceFile, key.Start, key.End, tempRef, key, Operator.Assignment);
+        AstNode classKey = new AstAssign(SourceFile, key.Start, key.End, tempRef, key, Operator.Assignment);
+        if (_tsPendingDecoratedComputedClassKeyAssignments is { Count: > 0 })
+        {
+            var expressions = new StructList<AstNode>();
+            foreach (var assignment in _tsPendingDecoratedComputedClassKeyAssignments)
+                expressions.Add(assignment);
+            expressions.Add(classKey);
+            classKey = new AstSequence(SourceFile, key.Start, key.End, ref expressions);
+            _tsPendingDecoratedComputedClassKeyAssignments = null;
+        }
         var decoratorKey = new AstSymbolRef(SourceFile, key.Start, key.End, temp);
         return (classKey, decoratorKey);
     }

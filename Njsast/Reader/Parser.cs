@@ -44,6 +44,7 @@ public sealed partial class Parser
     int _tsVarScopeDepth;
     List<AstStatement>? _tsPendingClassDecoratorStatements;
     List<AstNode>? _tsPendingClassDecorators;
+    List<AstNode>? _tsPendingDecoratedComputedClassKeyAssignments;
     List<(AstStatement Statement, int TargetBlockDepth, int VarScopeDepth)>? _tsPendingClassComputedKeyStatements;
     string? _tsDefaultExportClassName;
     bool _tsDefaultExportClassNameUsed;

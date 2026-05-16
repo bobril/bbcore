@@ -1203,7 +1203,8 @@ public sealed partial class Parser
                 continue;
             }
 
-            if (TsTryParseAutoAccessor(id, ref body, memberDecorators, memberDecoratorStatements, hasStaticTsModifier))
+            if (TsTryParseAutoAccessor(id, ref body, memberDecorators, memberDecoratorStatements,
+                    instanceFieldInitializerStatements, hasStaticTsModifier))
                 continue;
 
             var methodStart = Start;
@@ -1305,6 +1306,66 @@ public sealed partial class Parser
                     fieldValue = ParseMaybeAssign(Start);
                 }
 
+                if (IsTypeScript && key is not AstSymbolPrivate)
+                {
+                    var initializerKey = key;
+                    var decoratorKey = key;
+                    if (memberDecorators is { Count: > 0 } && computed)
+                    {
+                        var classKey = TsPrepareDecoratedComputedClassKey(key);
+                        initializerKey = classKey.DecoratorKey;
+                        decoratorKey = classKey.DecoratorKey;
+                        _tsPendingDecoratedComputedClassKeyAssignments ??= new List<AstNode>();
+                        _tsPendingDecoratedComputedClassKeyAssignments.Add(classKey.ClassKey);
+                    }
+
+                    if (fieldValue != null)
+                    {
+                        if (@static)
+                        {
+                            var staticBody = new StructList<AstNode>();
+                            staticBody.Add(TsBuildClassFieldInitializerStatement(
+                                new AstThis(SourceFile, key.Start, key.End), initializerKey, fieldValue, computed));
+                            body.Add(new AstStaticBlock(SourceFile, methodStart, _lastTokEnd, ref staticBody));
+                        }
+                        else
+                        {
+                            instanceFieldInitializerStatements.Add(TsBuildClassFieldInitializerStatement(
+                                new AstThis(SourceFile, key.Start, key.End), initializerKey, fieldValue, computed));
+                        }
+                    }
+
+                    if (memberDecorators is { Count: > 0 } &&
+                        TsClassDecoratorTargetName(id) is { } decoratorClassName)
+                    {
+                        memberDecoratorStatements.Add(TsBuildMemberDecorateStatement(memberDecorators,
+                            decoratorClassName, decoratorKey, @static, true, computed));
+                    }
+
+                    Eat(TokenType.Semi);
+                    continue;
+                }
+
+                if (IsTypeScript && key is AstSymbolPrivate && memberDecorators is { Count: > 0 } && fieldValue != null &&
+                    memberDecoratorStatements.Count > 0)
+                {
+                    body.Add(new AstClassField(SourceFile, methodStart, _lastTokEnd, key, null, @static, computed));
+                    if (@static)
+                    {
+                        var staticBody = new StructList<AstNode>();
+                        staticBody.Add(TsBuildClassFieldInitializerStatement(
+                            new AstThis(SourceFile, key.Start, key.End), key, fieldValue, computed));
+                        body.Add(new AstStaticBlock(SourceFile, methodStart, _lastTokEnd, ref staticBody));
+                    }
+                    else
+                    {
+                        instanceFieldInitializerStatements.Add(TsBuildClassFieldInitializerStatement(
+                            new AstThis(SourceFile, key.Start, key.End), key, fieldValue, computed));
+                    }
+                    Eat(TokenType.Semi);
+                    continue;
+                }
+
                 if (memberDecorators is { Count: > 0 })
                 {
                     var classKey = key;
@@ -1367,10 +1428,6 @@ public sealed partial class Parser
             var methodValue = ParseMethod(isGenerator, isAsync, tsParameterProperties, tsParameterDecorators);
             if (tsParameterProperties is { Count: > 0 })
             {
-                var parameterPropertyFieldIndex = 0;
-                foreach (var parameterProperty in tsParameterProperties)
-                    body.Insert(parameterPropertyFieldIndex++) = TsBuildParameterPropertyField(parameterProperty);
-
                 var newBody = new StructList<AstNode>();
                 newBody.Reserve((uint)(methodValue.Body.Count + tsParameterProperties.Count));
                 var insertIndex = superClass != null ? TsConstructorSuperInsertIndex(methodValue.Body) : 0u;
@@ -1455,6 +1512,15 @@ public sealed partial class Parser
         if (instanceFieldInitializerStatements.Count > 0)
             TsInjectInstanceFieldInitializers(ref body, superClass != null, instanceFieldInitializerStatements, nodeStart,
                 _lastTokEnd);
+
+        if (_tsPendingDecoratedComputedClassKeyAssignments is { Count: > 0 })
+        {
+            var staticBody = new StructList<AstNode>();
+            foreach (var assignment in _tsPendingDecoratedComputedClassKeyAssignments)
+                staticBody.Add(new AstSimpleStatement(SourceFile, assignment.Start, assignment.End, assignment));
+            body.Add(new AstStaticBlock(SourceFile, nodeStart, _lastTokEnd, ref staticBody));
+            _tsPendingDecoratedComputedClassKeyAssignments = null;
+        }
 
         if (memberDecoratorStatements.Count > 0)
         {

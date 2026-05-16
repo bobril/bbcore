@@ -1,2 +1,2 @@
-class Base{}class Worker extends Base{name;run(value){console.log(value)}}
+class Base{}class Worker extends Base{run(value){console.log(value)}}
 //# sourceMappingURL=classes.minjs.map

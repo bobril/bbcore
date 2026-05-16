@@ -119,7 +119,7 @@ public sealed class TypeScriptParserTest
         var output = PrintTypeScript(input);
 
         Assert.Contains("static #privateValue = 1;", output);
-        Assert.Contains("static [key] = 2;", output);
+        Assert.Contains("static {\n        this[key] = 2;\n    }", output);
         Assert.DoesNotContain("static readonly;", output);
     }
 
@@ -139,9 +139,9 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("accessor = 1;", output);
-        Assert.Contains("static accessor = 2;", output);
-        Assert.Contains("static accessor = 3;", output);
+        Assert.Contains("this.accessor = 1;", output);
+        Assert.Contains("this.accessor = 2;", output);
+        Assert.Contains("this.accessor = 3;", output);
         Assert.Contains("accessor()", output);
         Assert.DoesNotContain("_accessor_storage", output);
     }
@@ -2757,9 +2757,9 @@ public sealed class TypeScriptParserTest
         Assert.Contains("__decorate([ field ], Service.prototype, \"value\", void 0);", output);
         Assert.Contains("__decorate([ field ], Service, \"ready\", void 0);", output);
         Assert.Contains("var _a, _b, _c;", output);
-        Assert.Contains("[_a = key()] = 2;", output);
-        Assert.Contains("static [_b = key()] = 3;", output);
-        Assert.Contains("[_c = methodKey()]() {}", output);
+        Assert.Contains("this[_a] = 2;", output);
+        Assert.Contains("this[_b] = 3;", output);
+        Assert.Contains("methodKey()", output);
         Assert.Contains("__decorate([ field ], Service.prototype, _a, void 0);", output);
         Assert.Contains("__decorate([ field ], Service, _b, void 0);", output);
         Assert.Contains("__decorate([ field ], Service.prototype, _c, null);", output);
@@ -3049,7 +3049,7 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("static value = 1;", output);
+        Assert.Contains("static {\n        this.value = 1;\n    }", output);
         Assert.Contains("__decorate([ field ], Service, \"value\", void 0);", output);
     }
 
@@ -3066,7 +3066,7 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("value = 1;", output);
+        Assert.Contains("this.value = 1;", output);
         Assert.Contains("__decorate([ field ], Service.prototype, \"value\", void 0);", output);
     }
 
@@ -3115,10 +3115,11 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("value = 1;", output);
+        Assert.Contains("this.value = 1;", output);
         Assert.Contains("""
             constructor() {
                     super();
+                    this.value = 1;
                     this.ready = true;
                 }
             """, output);
@@ -3139,8 +3140,8 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("value = 1;", output);
-        Assert.DoesNotContain("constructor(...args)", output);
+        Assert.Contains("this.value = 1;", output);
+        Assert.Contains("constructor(...args)", output);
         Assert.Contains("__decorate([ field ], Service.prototype, \"value\", void 0);", output);
     }
 
@@ -3158,14 +3159,10 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("""
-            constructor(name, id = 1, ...tags) {
-                    this.name = name;
-                    this.id = id;
-                    this.tags = tags;
-                }
-            """, output);
-        Assert.Contains("value = 1;", output);
+        Assert.Contains("this.name = name;", output);
+        Assert.Contains("this.id = id;", output);
+        Assert.Contains("this.tags = tags;", output);
+        Assert.Contains("this.value = 1;", output);
     }
 
     [Fact]
@@ -3190,10 +3187,8 @@ public sealed class TypeScriptParserTest
 
         Assert.Equal(DumpJavaScriptAstWithoutPositions(oracleJs),
             DumpJavaScriptAstWithoutPositions(actualJs));
-        Assert.True(actualJs.IndexOf("name;", StringComparison.Ordinal) <
-                    actualJs.IndexOf("static {", StringComparison.Ordinal));
-        Assert.True(actualJs.IndexOf("name;", StringComparison.Ordinal) <
-                    actualJs.IndexOf("field = read(this.name);", StringComparison.Ordinal));
+        Assert.True(actualJs.IndexOf("this.name = name;", StringComparison.Ordinal) <
+                    actualJs.IndexOf("this.field = read(this.name);", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -3258,13 +3253,8 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("""
-            constructor(name) {
-                    super();
-                    this.name = name;
-                }
-            """, output);
-        Assert.Contains("value = 1;", output);
+        Assert.Contains("this.name = name;", output);
+        Assert.Contains("this.value = 1;", output);
     }
 
     [Fact]
@@ -3280,9 +3270,9 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("value = 1;", output);
-        Assert.Contains("hidden = 2;", output);
-        Assert.Contains("name = \"x\";", output);
+        Assert.Contains("this.value = 1;", output);
+        Assert.Contains("this.hidden = 2;", output);
+        Assert.Contains("this.name = \"x\";", output);
     }
 
     [Fact]
@@ -3306,11 +3296,11 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("value = 1;", output);
-        Assert.Contains("empty;", output);
-        Assert.Contains("static cache = createCache();", output);
-        Assert.Contains("static declared;", output);
-        Assert.Contains("derived = 2;", output);
+        Assert.Contains("this.value = 1;", output);
+        Assert.DoesNotContain("empty;", output);
+        Assert.Contains("this.cache = createCache();", output);
+        Assert.DoesNotContain("static declared;", output);
+        Assert.Contains("this.derived = 2;", output);
         Assert.Contains("super();", output);
     }
 
@@ -3352,14 +3342,14 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("static first = log(\"first\");", output);
+        Assert.Contains("this.first = log(\"first\");", output);
         Assert.Contains("static {", output);
         Assert.Contains("log(\"block\");", output);
-        Assert.Contains("static second = log(\"second\");", output);
-        Assert.True(output.IndexOf("static first = log(\"first\");", System.StringComparison.Ordinal) <
+        Assert.Contains("this.second = log(\"second\");", output);
+        Assert.True(output.IndexOf("this.first = log(\"first\");", System.StringComparison.Ordinal) <
                     output.IndexOf("log(\"block\");", System.StringComparison.Ordinal));
         Assert.True(output.IndexOf("log(\"block\");", System.StringComparison.Ordinal) <
-                    output.IndexOf("static second = log(\"second\");", System.StringComparison.Ordinal));
+                    output.IndexOf("this.second = log(\"second\");", System.StringComparison.Ordinal));
     }
 
     [Fact]
@@ -3486,8 +3476,8 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("static value = 1;", output);
-        Assert.Contains("static hidden = 2;", output);
+        Assert.Contains("this.value = 1;", output);
+        Assert.Contains("this.hidden = 2;", output);
     }
 
     [Fact]
@@ -3506,14 +3496,9 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("""
-            constructor(name) {
-                    super();
-                    this.name = name;
-                    this.ready = true;
-                }
-            """, output);
-        Assert.Contains("value = 1;", output);
+        Assert.Contains("this.name = name;", output);
+        Assert.Contains("this.value = 1;", output);
+        Assert.Contains("this.ready = true;", output);
     }
 
     [Fact]
@@ -3529,8 +3514,8 @@ public sealed class TypeScriptParserTest
 
         var output = PrintTypeScript(input);
 
-        Assert.Contains("[key] = 1;", output);
-        Assert.Contains("static [key] = 2;", output);
+        Assert.Contains("this[key] = 1;", output);
+        Assert.Contains("this[key] = 2;", output);
     }
 
     [Fact]
@@ -3550,8 +3535,8 @@ public sealed class TypeScriptParserTest
         var output = PrintTypeScript(input);
 
         Assert.Contains("var _a, _b;", output);
-        Assert.Contains("[_a = key] = 1;", output);
-        Assert.Contains("static [_b = key] = 2;", output);
+        Assert.Contains("this[_a] = 1;", output);
+        Assert.Contains("this[_b] = 2;", output);
         Assert.Contains("__decorate([ field ], Service.prototype, _a, void 0);", output);
         Assert.Contains("__decorate([ field ], Service, _b, void 0);", output);
     }
@@ -6009,7 +5994,7 @@ public sealed class TypeScriptParserTest
                 module: ts.ModuleKind.ESNext,
                 jsx: ts.JsxEmit.Preserve,
                 experimentalDecorators: true,
-                useDefineForClassFields: true
+                useDefineForClassFields: false
               },
               fileName: process.argv[2]
             });

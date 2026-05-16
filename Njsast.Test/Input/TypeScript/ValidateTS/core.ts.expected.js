@@ -29,14 +29,6 @@ export class BobrilCtx {
         this.$hooks = undefined;
         this.$bobxCtx = undefined;
     }
-    data;
-    me;
-    cfg;
-    refs;
-    disposables;
-    $hookFlags;
-    $hooks;
-    $bobxCtx;
 }
 
 const emptyObject = {};
@@ -2643,7 +2635,6 @@ export function nodePagePos(node) {
 }
 
 class CSSMatrix {
-    data;
     constructor(data) {
         this.data = data;
     }
@@ -3377,7 +3368,6 @@ export function useState(initValue) {
 export function useReducer(reducer, initializerArg, initializer) {}
 
 class DepsChangeDetector {
-    deps;
     detectChange(deps) {
         let changed = false;
         if (deps != undefined) {
@@ -3402,7 +3392,6 @@ class DepsChangeDetector {
 }
 
 class MemoHook extends DepsChangeDetector {
-    current;
     memoize(factory, deps) {
         if (this.detectChange(deps)) {
             this.current = factory();
@@ -3427,9 +3416,10 @@ export function useCallback(callback, deps) {
 }
 
 class CommonEffectHook extends DepsChangeDetector {
-    callback;
-    lastDisposer;
-    shouldRun = false;
+    constructor(...args) {
+        super(...args);
+        this.shouldRun = false;
+    }
     update(callback, deps) {
         this.callback = callback;
         if (this.detectChange(deps)) {
@@ -3503,9 +3493,7 @@ export function useLayoutEffect(callback, deps) {
     hook.update(callback, deps);
 }
 
-class EventsHook {
-    events;
-}
+class EventsHook {}
 
 export function useEvents(events) {
     const myHookId = hookId++;
@@ -3521,9 +3509,7 @@ export function useEvents(events) {
     hook.events = events;
 }
 
-class CaptureEventsHook {
-    events;
-}
+class CaptureEventsHook {}
 
 export function useCaptureEvents(events) {
     const myHookId = hookId++;
@@ -3540,9 +3526,6 @@ export function useCaptureEvents(events) {
 }
 
 export class CommonUseIsHook {
-    Value;
-    _owner;
-    _ctx;
     constructor(owner, ctx) {
         this.Value = false;
         this._owner = owner;

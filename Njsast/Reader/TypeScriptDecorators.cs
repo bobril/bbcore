@@ -267,16 +267,14 @@ public sealed partial class Parser
         return new AstSimpleStatement(SourceFile, positionHint.Start, positionHint.End, assign);
     }
 
-    AstSimpleStatement TsBuildClassFieldInitializerStatement(string className, AstNode key, AstNode value,
-        bool @static, bool computed)
+    AstSimpleStatement TsBuildClassFieldInitializerStatement(AstNode target, AstNode key, AstNode value,
+        bool computed)
     {
-        AstNode target = @static
-            ? new AstSymbolRef(SourceFile, key.Start, key.End, className)
-            : new AstThis(SourceFile, key.Start, key.End);
         AstNode left = computed
             ? new AstSub(SourceFile, key.Start, key.End, target, key)
             : key switch
             {
+                AstSymbolPrivate symbol => new AstDot(SourceFile, key.Start, key.End, target, "#" + symbol.Name),
                 AstSymbol symbol => new AstDot(SourceFile, key.Start, key.End, target, symbol.Name),
                 AstString str => new AstDot(SourceFile, key.Start, key.End, target, str.Value),
                 AstNumber num => new AstSub(SourceFile, key.Start, key.End, target,
@@ -331,7 +329,7 @@ public sealed partial class Parser
             body.Add(initializer);
         var constructor = new AstFunction(SourceFile, start, end, null, ref parameters, false, false, ref body);
         var key = new AstSymbolProperty(SourceFile, start, end, "constructor");
-        classBody.Add(new AstConciseMethod(SourceFile, start, end, key, constructor, false, false, false));
+        classBody.Insert(0) = new AstConciseMethod(SourceFile, start, end, key, constructor, false, false, false);
     }
 
     static uint TsConstructorSuperInsertIndex(StructList<AstNode> body)
