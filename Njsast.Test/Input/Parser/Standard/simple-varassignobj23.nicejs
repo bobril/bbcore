@@ -1,0 +1,7 @@
+x = {
+    set null(w) {
+        m_null = w;
+    }
+};
+
+//# sourceMappingURL=simple-varassignobj23.nicejs.map

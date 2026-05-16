@@ -1,0 +1,2 @@
+class Foo{x=1+2;}
+//# sourceMappingURL=simple-classfield-expression.minjs.map

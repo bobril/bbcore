@@ -1,0 +1,2 @@
+var Literals;(function(Literals){Literals.value=1;Literals.text="value"})(Literals||(Literals={}));console.log(Literals.text)
+//# sourceMappingURL=namespace-string-literal.minjs.map

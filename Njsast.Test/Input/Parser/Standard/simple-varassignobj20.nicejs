@@ -1,0 +1,7 @@
+x = {
+    set true(w) {
+        m_true = w;
+    }
+};
+
+//# sourceMappingURL=simple-varassignobj20.nicejs.map

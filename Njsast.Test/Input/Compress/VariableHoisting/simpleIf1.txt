@@ -1,0 +1,15 @@
+Toplevel 1:1 - 2:14
+  Var 1:1 - 1:1
+    VarDef 1:1 - 1:1
+      SymbolVar 2:5 - 2:6 [Write]
+        Name: a
+  If 1:1 - 1:10
+    SymbolRef 1:5 - 1:6 [Read]
+      Name: a
+    BlockStatement 1:8 - 1:10
+  SimpleStatement 2:5 - 2:13
+    Assign 2:5 - 2:13
+      Operator: Assignment
+      SymbolRef 2:5 - 2:6
+        Name: a
+      True 2:9 - 2:13

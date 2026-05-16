@@ -1,0 +1,1 @@
+'with' in strict mode (1:18)

@@ -1,0 +1,1 @@
+class Foo{#x=1;bar(){return this.#x}}(new Foo).bar()

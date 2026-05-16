@@ -1,0 +1,20 @@
+Toplevel 1:1 - 14:1
+  DefClass 1:1 - 5:2
+    SymbolDefClass 1:7 - 1:11
+      Name: Used
+    ConciseMethod 2:5 - 4:6
+      SymbolProperty 2:5 - 2:16
+        Name: constructor
+      Function 2:16 - 4:6
+        SimpleStatement 3:9 - 3:27
+          Call 3:9 - 3:26
+            Dot 3:9 - 3:20
+              Property: log
+              SymbolRef 3:9 - 3:16 [Read]
+                Name: console
+            String 3:21 - 3:25
+              Value: Ok
+  SimpleStatement 13:1 - 13:12
+    New 13:1 - 13:11
+      SymbolRef 13:5 - 13:9 [Read]
+        Name: Used

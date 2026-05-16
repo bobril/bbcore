@@ -1,0 +1,12 @@
+Toplevel 1:1 - 2:1
+  Defun 1:1 - 1:50 [Async]
+    SymbolDefun 1:16 - 1:20 [Write]
+      Name: test
+    ForOf 1:25 - 1:48 [await]
+      Let 1:36 - 1:41
+        VarDef 1:40 - 1:41
+          SymbolLet 1:40 - 1:41 [Write]
+            Name: x
+      SymbolRef 1:45 - 1:46 [Read]
+        Name: y
+      EmptyStatement 1:47 - 1:48

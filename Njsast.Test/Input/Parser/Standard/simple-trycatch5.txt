@@ -1,0 +1,15 @@
+Toplevel 1:1 - 1:39
+  Try 1:1 - 1:39
+    SimpleStatement 1:7 - 1:16
+      Call 1:7 - 1:15
+        SymbolRef 1:7 - 1:13 [Read]
+          Name: doThat
+    Catch 1:19 - 1:39
+      SymbolCatch 1:26 - 1:27
+        Name: e
+      SimpleStatement 1:31 - 1:37
+        Call 1:31 - 1:37
+          SymbolRef 1:31 - 1:34 [Read]
+            Name: say
+          SymbolRef 1:35 - 1:36 [Read] [PropWrite]
+            Name: e

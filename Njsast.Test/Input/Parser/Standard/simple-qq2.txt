@@ -1,0 +1,57 @@
+Toplevel 1:1 - 5:1
+  SimpleStatement 1:1 - 1:13
+    Binary 1:1 - 1:12
+      Operator: NullishCoalescing
+      Binary 1:1 - 1:7
+        Operator: LogicalOr
+        Number 1:1 - 1:2
+          Value: 1
+          Literal: 1
+        Number 1:6 - 1:7
+          Value: 2
+          Literal: 2
+      Number 1:11 - 1:12
+        Value: 3
+        Literal: 3
+  SimpleStatement 2:1 - 2:15
+    Binary 2:1 - 2:14
+      Operator: LogicalOr
+      Number 2:1 - 2:2
+        Value: 1
+        Literal: 1
+      Binary 2:7 - 2:13
+        Operator: NullishCoalescing
+        Number 2:7 - 2:8
+          Value: 2
+          Literal: 2
+        Number 2:12 - 2:13
+          Value: 3
+          Literal: 3
+  SimpleStatement 3:1 - 3:13
+    Binary 3:1 - 3:12
+      Operator: NullishCoalescing
+      Binary 3:1 - 3:7
+        Operator: LogicalAnd
+        Number 3:1 - 3:2
+          Value: 1
+          Literal: 1
+        Number 3:6 - 3:7
+          Value: 2
+          Literal: 2
+      Number 3:11 - 3:12
+        Value: 3
+        Literal: 3
+  SimpleStatement 4:1 - 4:15
+    Binary 4:1 - 4:14
+      Operator: LogicalAnd
+      Number 4:1 - 4:2
+        Value: 1
+        Literal: 1
+      Binary 4:7 - 4:13
+        Operator: NullishCoalescing
+        Number 4:7 - 4:8
+          Value: 2
+          Literal: 2
+        Number 4:12 - 4:13
+          Value: 3
+          Literal: 3

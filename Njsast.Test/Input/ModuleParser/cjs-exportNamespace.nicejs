@@ -1,0 +1,19 @@
+"use strict";
+var __export_ns;
+
+var a = require("./lib");
+
+var ns;
+
+(function(ns) {
+    function fun() {
+        a.fun();
+    }
+    ns.fun = fun;
+})(ns = __export_ns || (__export_ns = {}));
+
+Requires:
+Input/ModuleParser/lib
+Self exports:
+ns: __export_ns
+Uses Input/ModuleParser/lib fun

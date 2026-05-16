@@ -1,0 +1,8 @@
+Toplevel 1:1 - 6:2
+  Defun 1:1 - 6:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    If 2:5 - 4:6
+      SymbolRef 2:9 - 2:10 [Read]
+        Name: a
+      BlockStatement 2:12 - 4:6

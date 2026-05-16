@@ -1,0 +1,42 @@
+Toplevel 1:1 - 11:2
+  Defun 1:1 - 11:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    Var 2:5 - 2:20
+      VarDef 2:9 - 2:19
+        SymbolVar 2:9 - 2:10 [Write]
+          Name: a
+        Call 2:13 - 2:19
+          SymbolRef 2:13 - 2:17 [Read]
+            Name: call
+    If 3:5 - 8:6
+      SymbolRef 3:9 - 3:10 [Read]
+        Name: a
+      BlockStatement 3:12 - 8:6
+        Var 4:9 - 4:25
+          VarDef 4:13 - 4:24
+            SymbolVar 4:13 - 4:14 [Write]
+              Name: b
+            Call 4:17 - 4:24
+              SymbolRef 4:17 - 4:22 [Read]
+                Name: call2
+        If 5:9 - 7:33
+          SymbolRef 5:13 - 5:14 [Read]
+            Name: b
+          BlockStatement 5:16 - 7:10
+            If 6:13 - 6:41
+              Binary 6:17 - 6:22
+                Operator: Addition
+                SymbolRef 6:17 - 6:18 [Read]
+                  Name: a
+                SymbolRef 6:21 - 6:22 [Read]
+                  Name: b
+              Return 6:24 - 6:41
+          Return 7:16 - 7:33
+    SimpleStatement 9:5 - 9:13
+      Call 9:5 - 9:12
+        SymbolRef 9:5 - 9:10 [Read]
+          Name: call3
+    Return 10:5 - 10:14
+      SymbolRef 10:12 - 10:13 [Read]
+        Name: a

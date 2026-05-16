@@ -1,0 +1,12 @@
+Toplevel 1:1 - 1:34
+  Defun 1:1 - 1:34
+    SymbolDefun 1:10 - 1:15 [Write]
+      Name: hello
+    SymbolFunarg 1:16 - 1:17
+      Name: a
+    SymbolFunarg 1:19 - 1:20
+      Name: b
+    SimpleStatement 1:24 - 1:32
+      Call 1:24 - 1:31
+        SymbolRef 1:24 - 1:29 [Read]
+          Name: sayHi

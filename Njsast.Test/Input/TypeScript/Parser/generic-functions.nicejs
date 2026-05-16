@@ -1,0 +1,7 @@
+function first(items) {
+    return items[0];
+}
+
+const value = first([ "a" ]);
+
+//# sourceMappingURL=generic-functions.nicejs.map

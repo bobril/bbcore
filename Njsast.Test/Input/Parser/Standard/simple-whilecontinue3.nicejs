@@ -1,0 +1,5 @@
+done: while (true) {
+    continue done;
+}
+
+//# sourceMappingURL=simple-whilecontinue3.nicejs.map

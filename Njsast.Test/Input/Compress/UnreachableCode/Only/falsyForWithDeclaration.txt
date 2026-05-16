@@ -1,0 +1,15 @@
+Toplevel 1:1 - 6:2
+  Var 1:5 - 1:14
+    VarDef 1:9 - 1:14
+      SymbolVar 1:9 - 1:10 [Write]
+        Name: b
+      Number 1:13 - 1:14
+        Value: 1
+        Literal: 1
+  Var 1:1 - 1:1
+    VarDef 1:1 - 1:1
+      SymbolVar 2:9 - 2:10
+        Name: a
+    VarDef 1:1 - 1:1
+      SymbolVar 3:14 - 3:18
+        Name: func

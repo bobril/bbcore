@@ -1,0 +1,5 @@
+Toplevel 1:1 - 1:15
+  SimpleStatement 1:1 - 1:15
+    Number 1:1 - 1:15
+      Value: 6.02214179E+23
+      Literal: 6.02214179e+23

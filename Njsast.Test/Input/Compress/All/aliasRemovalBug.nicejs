@@ -1,0 +1,10 @@
+(function() {
+    var a, b;
+    a = console.log;
+    b = a;
+    (function() {
+        var a = window.location;
+        b(a);
+    })();
+})();
+

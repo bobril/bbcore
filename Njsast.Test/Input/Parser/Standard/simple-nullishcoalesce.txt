@@ -1,0 +1,11 @@
+Toplevel 1:1 - 2:1
+  Const 1:1 - 1:18
+    VarDef 1:7 - 1:17
+      SymbolConst 1:7 - 1:8 [Write]
+        Name: a
+      Binary 1:11 - 1:17
+        Operator: NullishCoalescing
+        SymbolRef 1:11 - 1:12 [Read]
+          Name: b
+        SymbolRef 1:16 - 1:17 [Read]
+          Name: c

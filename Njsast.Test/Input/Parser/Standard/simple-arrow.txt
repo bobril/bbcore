@@ -1,0 +1,12 @@
+Toplevel 1:1 - 2:1
+  Let 1:1 - 1:29
+    VarDef 1:5 - 1:28
+      SymbolLet 1:5 - 1:7 [Write]
+        Name: fn
+      Arrow 1:10 - 1:28
+        Object 1:17 - 1:27
+          ObjectKeyVal 1:19 - 1:25
+            SymbolProperty 1:19 - 1:20
+              Name: a
+            String 1:22 - 1:25
+              Value: b

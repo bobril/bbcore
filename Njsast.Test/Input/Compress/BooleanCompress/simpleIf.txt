@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:13
+  If 1:1 - 1:13
+    UnaryPrefix 1:1 - 1:1
+      Operator: LogicalNot
+      Number 1:1 - 1:1
+        Value: 0
+        Literal: 
+    BlockStatement 1:11 - 1:13

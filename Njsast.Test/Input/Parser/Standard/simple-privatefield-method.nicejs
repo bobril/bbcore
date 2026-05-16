@@ -1,0 +1,7 @@
+class Foo {
+    #method() {
+        return 1;
+    }
+}
+
+//# sourceMappingURL=simple-privatefield-method.nicejs.map

@@ -1,0 +1,7 @@
+class Foo {
+    get #x() {
+        return 1;
+    }
+}
+
+//# sourceMappingURL=simple-privatefield-getter.nicejs.map

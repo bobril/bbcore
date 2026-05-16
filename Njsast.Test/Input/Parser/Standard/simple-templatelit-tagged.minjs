@@ -1,0 +1,2 @@
+const a=tag`hello ${world}`
+//# sourceMappingURL=simple-templatelit-tagged.minjs.map

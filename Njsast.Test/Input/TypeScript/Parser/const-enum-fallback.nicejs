@@ -1,0 +1,13 @@
+function value() {
+    return 2;
+}
+
+var Dynamic;
+
+(function(Dynamic) {
+    Dynamic[Dynamic["A"] = value()] = "A";
+})(Dynamic || (Dynamic = {}));
+
+console.log(Dynamic.A);
+
+//# sourceMappingURL=const-enum-fallback.nicejs.map

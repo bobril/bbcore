@@ -1,0 +1,14 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:28
+    Call 1:1 - 1:27
+      Dot 1:1 - 1:8
+        Property: map
+        SymbolRef 1:1 - 1:4 [Read]
+          Name: arr
+      Arrow 1:9 - 1:26
+        SymbolFunarg 1:10 - 1:11
+          Name: v
+        Dot 1:16 - 1:26
+          Property: callback
+          SymbolRef 1:16 - 1:17 [Read] [PropWrite!]
+            Name: v

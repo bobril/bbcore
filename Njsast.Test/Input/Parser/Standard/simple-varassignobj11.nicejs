@@ -1,0 +1,5 @@
+x = {
+    get undef() {}
+};
+
+//# sourceMappingURL=simple-varassignobj11.nicejs.map

@@ -1,0 +1,75 @@
+Toplevel 1:1 - 6:1
+  Var 1:1 - 1:32
+    VarDef 1:5 - 1:31
+      SymbolVar 1:5 - 1:13 [Write]
+        Name: customer
+      Object 1:16 - 1:31
+        ObjectKeyVal 1:18 - 1:29
+          SymbolProperty 1:18 - 1:22
+            Name: name
+          String 1:24 - 1:29
+            Value: Foo
+  Var 2:1 - 2:57
+    VarDef 2:5 - 2:56
+      SymbolVar 2:5 - 2:9 [Write]
+        Name: card
+      Object 2:12 - 2:56
+        ObjectKeyVal 2:14 - 2:23
+          SymbolProperty 2:14 - 2:20
+            Name: amount
+          Number 2:22 - 2:23
+            Value: 7
+            Literal: 7
+        ObjectKeyVal 2:25 - 2:39
+          SymbolProperty 2:25 - 2:32
+            Name: product
+          String 2:34 - 2:39
+            Value: Bar
+        ObjectKeyVal 2:41 - 2:54
+          SymbolProperty 2:41 - 2:50
+            Name: unitprice
+          Number 2:52 - 2:54
+            Value: 42
+            Literal: 42
+  Var 3:1 - 5:52
+    VarDef 3:5 - 5:51
+      SymbolVar 3:5 - 3:12 [Write]
+        Name: message
+      TemplateString 3:15 - 5:51
+        TemplateSegment 3:16 - 3:22
+          Value: Hello 
+          Raw: Hello 
+        Dot 3:24 - 3:37
+          Property: name
+          SymbolRef 3:24 - 3:32 [Read] [PropWrite!]
+            Name: customer
+        TemplateSegment 3:38 - 4:13
+          Value: ,\nwant to buy 
+          Raw: ,\nwant to buy 
+        Dot 4:15 - 4:26
+          Property: amount
+          SymbolRef 4:15 - 4:19 [Read] [PropWrite!]
+            Name: card
+        TemplateSegment 4:27 - 4:28
+          Value:  
+          Raw:  
+        Dot 4:30 - 4:42
+          Property: product
+          SymbolRef 4:30 - 4:34 [Read] [PropWrite!]
+            Name: card
+        TemplateSegment 4:43 - 5:12
+          Value:  for\na total of 
+          Raw:  for\na total of 
+        Binary 5:14 - 5:42
+          Operator: Multiplication
+          Dot 5:14 - 5:25
+            Property: amount
+            SymbolRef 5:14 - 5:18 [Read]
+              Name: card
+          Dot 5:28 - 5:42
+            Property: unitprice
+            SymbolRef 5:28 - 5:32 [Read]
+              Name: card
+        TemplateSegment 5:43 - 5:50
+          Value:  bucks?
+          Raw:  bucks?

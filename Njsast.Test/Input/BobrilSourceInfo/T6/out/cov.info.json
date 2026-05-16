@@ -1,0 +1,37 @@
+{
+  "./index.tsx": {
+    "fileName": "./index.tsx",
+    "infos": [
+      {
+        "type": "Statement",
+        "index": 0,
+        "start": "3:0",
+        "end": "3:7"
+      },
+      {
+        "type": "Function",
+        "index": 1,
+        "start": "3:7",
+        "end": "3:14"
+      },
+      {
+        "type": "Statement",
+        "index": 1,
+        "start": "4:2",
+        "end": "6:4"
+      },
+      {
+        "type": "Statement",
+        "index": 2,
+        "start": "7:2",
+        "end": "9:4"
+      },
+      {
+        "type": "Statement",
+        "index": 3,
+        "start": "10:2",
+        "end": "15:4"
+      }
+    ]
+  }
+}

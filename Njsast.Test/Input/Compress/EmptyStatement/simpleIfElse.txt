@@ -1,0 +1,6 @@
+Toplevel 1:1 - 1:16
+  If 1:1 - 1:16
+    SymbolRef 1:5 - 1:6 [Read]
+      Name: a
+    EmptyStatement 1:8 - 1:9
+    EmptyStatement 1:15 - 1:16

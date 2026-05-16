@@ -1,0 +1,7 @@
+Toplevel 1:1 - 2:1
+  Const 1:1 - 1:15
+    VarDef 1:7 - 1:14
+      SymbolConst 1:7 - 1:8 [Write]
+        Name: a
+      BigInt 1:11 - 1:14
+        Value: 42

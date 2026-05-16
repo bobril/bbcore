@@ -1,0 +1,6 @@
+var key;
+
+for (key in obj) {}
+
+for (key in obj2) {}
+

@@ -1,0 +1,14 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:21
+    Call 1:1 - 1:20
+      Dot 1:1 - 1:12
+        Property: log
+        SymbolRef 1:1 - 1:8 [Read]
+          Name: console
+      Sequence 1:13 - 1:19
+        Number 1:14 - 1:15
+          Value: 1
+          Literal: 1
+        Number 1:17 - 1:18
+          Value: 2
+          Literal: 2

@@ -1,0 +1,10 @@
+Toplevel 1:1 - 1:39
+  SimpleStatement 1:1 - 1:39
+    Sub 1:1 - 1:39
+      Sequence 1:10 - 1:38
+        SymbolRef 1:10 - 1:20 [Read]
+          Name: galaxyName
+        SymbolRef 1:22 - 1:38 [Read]
+          Name: otherUselessName
+      SymbolRef 1:1 - 1:9 [Read]
+        Name: universe

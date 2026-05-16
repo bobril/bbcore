@@ -1,0 +1,7 @@
+Toplevel 1:1 - 2:17 [HasUseStrictDirective]
+  SimpleStatement 2:1 - 2:17
+    Call 2:1 - 2:16
+      Dot 2:1 - 2:14
+        Property: static
+        SymbolRef 2:1 - 2:7 [Read]
+          Name: object

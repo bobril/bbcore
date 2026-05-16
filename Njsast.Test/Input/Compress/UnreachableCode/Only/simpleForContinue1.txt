@@ -1,0 +1,18 @@
+Toplevel 1:1 - 8:2
+  For 1:1 - 8:2
+    BlockStatement 1:10 - 8:2
+      SimpleStatement 2:5 - 2:9
+        UnaryPostfix 2:5 - 2:8
+          Operator: IncrementPostfix
+          SymbolRef 2:5 - 2:6 [Read] [Write]
+            Name: a
+      If 3:5 - 6:6
+        SymbolRef 3:9 - 3:10 [Read]
+          Name: a
+        BlockStatement 3:12 - 6:6
+          Continue 4:9 - 4:18
+      SimpleStatement 7:5 - 7:9
+        UnaryPostfix 7:5 - 7:8
+          Operator: DecrementPostfix
+          SymbolRef 7:5 - 7:6 [Read] [Write]
+            Name: a

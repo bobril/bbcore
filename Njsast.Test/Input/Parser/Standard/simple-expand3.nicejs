@@ -1,0 +1,5 @@
+(function(a, ...b) {});
+
+(function(...args) {});
+
+//# sourceMappingURL=simple-expand3.nicejs.map

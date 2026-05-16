@@ -1,0 +1,9 @@
+Toplevel 1:1 - 8:1
+  SimpleStatement 4:3 - 4:21
+    Call 4:3 - 4:20
+      Dot 4:3 - 4:14
+        Property: log
+        SymbolRef 4:3 - 4:10 [Read]
+          Name: console
+      String 4:15 - 4:19
+        Value: OK

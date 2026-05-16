@@ -1,0 +1,2 @@
+var x=/=([^=\s])+/g
+//# sourceMappingURL=simple-vardecassignregex4.minjs.map

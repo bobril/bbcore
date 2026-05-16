@@ -1,0 +1,3 @@
+var x = /[a-z]/i;
+
+//# sourceMappingURL=simple-vardecassignregex.nicejs.map

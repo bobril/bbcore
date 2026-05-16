@@ -1,0 +1,19 @@
+Toplevel 1:1 - 3:1
+  SimpleStatement 1:1 - 1:21
+    Binary 1:1 - 1:20
+      Operator: StrictEquals
+      Number 1:1 - 1:12
+        Value: 503
+        Literal: 0b111110111
+      Number 1:17 - 1:20
+        Value: 503
+        Literal: 503
+  SimpleStatement 2:1 - 2:15
+    Binary 2:1 - 2:14
+      Operator: StrictEquals
+      Number 2:1 - 2:6
+        Value: 503
+        Literal: 0o767
+      Number 2:11 - 2:14
+        Value: 503
+        Literal: 503

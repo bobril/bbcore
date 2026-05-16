@@ -1,0 +1,5 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:7
+    Call 1:1 - 1:6 [Optional]
+      SymbolRef 1:1 - 1:2 [Read]
+        Name: a

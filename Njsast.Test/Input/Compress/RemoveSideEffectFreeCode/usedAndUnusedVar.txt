@@ -1,0 +1,16 @@
+Toplevel 1:1 - 5:1
+  Var 1:1 - 2:11
+    VarDef 1:5 - 1:11
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: a
+      Number 1:9 - 1:11
+        Value: 42
+        Literal: 42
+  SimpleStatement 4:1 - 4:16
+    Call 4:1 - 4:15
+      Dot 4:1 - 4:12
+        Property: log
+        SymbolRef 4:1 - 4:8 [Read]
+          Name: console
+      SymbolRef 4:13 - 4:14 [Read] [PropWrite]
+        Name: a

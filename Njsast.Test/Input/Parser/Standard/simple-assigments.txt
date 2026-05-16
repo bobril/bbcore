@@ -1,0 +1,113 @@
+Toplevel 1:1 - 17:1
+  SimpleStatement 1:1 - 1:7
+    Assign 1:1 - 1:6
+      Operator: Assignment
+      SymbolRef 1:1 - 1:2 [Write]
+        Name: a
+      SymbolRef 1:5 - 1:6 [Read]
+        Name: b
+  SimpleStatement 2:1 - 2:8
+    Assign 2:1 - 2:7
+      Operator: AdditionAssignment
+      SymbolRef 2:1 - 2:2 [Read] [Write]
+        Name: a
+      SymbolRef 2:6 - 2:7 [Read]
+        Name: b
+  SimpleStatement 3:1 - 3:8
+    Assign 3:1 - 3:7
+      Operator: SubtractionAssignment
+      SymbolRef 3:1 - 3:2 [Read] [Write]
+        Name: a
+      SymbolRef 3:6 - 3:7 [Read]
+        Name: b
+  SimpleStatement 4:1 - 4:9
+    Assign 4:1 - 4:8
+      Operator: PowerAssignment
+      SymbolRef 4:1 - 4:2 [Read] [Write]
+        Name: a
+      SymbolRef 4:7 - 4:8 [Read]
+        Name: b
+  SimpleStatement 5:1 - 5:8
+    Assign 5:1 - 5:7
+      Operator: MultiplicationAssignment
+      SymbolRef 5:1 - 5:2 [Read] [Write]
+        Name: a
+      SymbolRef 5:6 - 5:7 [Read]
+        Name: b
+  SimpleStatement 6:1 - 6:8
+    Assign 6:1 - 6:7
+      Operator: DivisionAssignment
+      SymbolRef 6:1 - 6:2 [Read] [Write]
+        Name: a
+      SymbolRef 6:6 - 6:7 [Read]
+        Name: b
+  SimpleStatement 7:1 - 7:8
+    Assign 7:1 - 7:7
+      Operator: ModulusAssignment
+      SymbolRef 7:1 - 7:2 [Read] [Write]
+        Name: a
+      SymbolRef 7:6 - 7:7 [Read]
+        Name: b
+  SimpleStatement 8:1 - 8:9
+    Assign 8:1 - 8:8
+      Operator: LeftShiftAssignment
+      SymbolRef 8:1 - 8:2 [Read] [Write]
+        Name: a
+      SymbolRef 8:7 - 8:8 [Read]
+        Name: b
+  SimpleStatement 9:1 - 9:9
+    Assign 9:1 - 9:8
+      Operator: RightShiftAssignment
+      SymbolRef 9:1 - 9:2 [Read] [Write]
+        Name: a
+      SymbolRef 9:7 - 9:8 [Read]
+        Name: b
+  SimpleStatement 10:1 - 10:10
+    Assign 10:1 - 10:9
+      Operator: RightShiftUnsignedAssignment
+      SymbolRef 10:1 - 10:2 [Read] [Write]
+        Name: a
+      SymbolRef 10:8 - 10:9 [Read]
+        Name: b
+  SimpleStatement 11:1 - 11:8
+    Assign 11:1 - 11:7
+      Operator: BitwiseAndAssignment
+      SymbolRef 11:1 - 11:2 [Read] [Write]
+        Name: a
+      SymbolRef 11:6 - 11:7 [Read]
+        Name: b
+  SimpleStatement 12:1 - 12:8
+    Assign 12:1 - 12:7
+      Operator: BitwiseXOrAssignment
+      SymbolRef 12:1 - 12:2 [Read] [Write]
+        Name: a
+      SymbolRef 12:6 - 12:7 [Read]
+        Name: b
+  SimpleStatement 13:1 - 13:8
+    Assign 13:1 - 13:7
+      Operator: BitwiseOrAssignment
+      SymbolRef 13:1 - 13:2 [Read] [Write]
+        Name: a
+      SymbolRef 13:6 - 13:7 [Read]
+        Name: b
+  SimpleStatement 14:1 - 14:9
+    Assign 14:1 - 14:8
+      Operator: LogicalAndAssignment
+      SymbolRef 14:1 - 14:2 [Read] [Write]
+        Name: a
+      SymbolRef 14:7 - 14:8 [Read]
+        Name: b
+  SimpleStatement 15:1 - 15:9
+    Assign 15:1 - 15:8
+      Operator: LogicalOrAssignment
+      SymbolRef 15:1 - 15:2 [Read] [Write]
+        Name: a
+      SymbolRef 15:7 - 15:8 [Read]
+        Name: b
+  SimpleStatement 16:1 - 16:9
+    Assign 16:1 - 16:8
+      Operator: NullishCoalescingAssignment
+      SymbolRef 16:1 - 16:2 [Read] [Write]
+        Name: a
+      SymbolRef 16:7 - 16:8 [Read]
+        Name: b

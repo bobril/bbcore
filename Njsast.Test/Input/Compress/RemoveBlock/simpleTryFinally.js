@@ -1,0 +1,5 @@
+try {
+    func();
+} finally  {
+    log();
+} 

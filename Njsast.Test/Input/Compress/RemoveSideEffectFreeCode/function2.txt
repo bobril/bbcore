@@ -1,0 +1,12 @@
+Toplevel 1:1 - 10:1
+  Defun 5:1 - 7:2
+    SymbolDefun 5:10 - 5:23 [Write]
+      Name: recursiveUsed
+    SimpleStatement 6:3 - 6:19
+      Call 6:3 - 6:18
+        SymbolRef 6:3 - 6:16 [Read]
+          Name: recursiveUsed
+  SimpleStatement 9:1 - 9:17
+    Call 9:1 - 9:16
+      SymbolRef 9:1 - 9:14 [Read]
+        Name: recursiveUsed

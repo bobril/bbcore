@@ -1,0 +1,2 @@
+const a={...b,c:1}
+//# sourceMappingURL=simple-objspread.minjs.map

@@ -1,0 +1,3 @@
+class Rectangle extends(aggregation(Shape, Colored, ZCoord)){}
+
+//# sourceMappingURL=simple-class3.nicejs.map

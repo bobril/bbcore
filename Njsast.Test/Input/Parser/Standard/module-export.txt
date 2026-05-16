@@ -1,0 +1,56 @@
+Toplevel 1:1 - 6:1
+  Export 1:1 - 1:19
+    String 1:15 - 1:18
+      Value: a
+    NameMapping 1:8 - 1:9
+      SymbolImportForeign 1:8 - 1:9
+        Name: *
+      SymbolExportForeign 1:8 - 1:9
+        Name: *
+  Export 2:1 - 2:28
+    String 2:24 - 2:27
+      Value: b
+    NameMapping 2:10 - 2:12
+      SymbolImportForeign 2:8 - 2:9
+        Name: *
+      SymbolExportForeign 2:13 - 2:18
+        Name: name1
+  Export 3:1 - 3:34
+    String 3:30 - 3:33
+      Value: c
+    NameMapping 3:10 - 3:15
+      SymbolImportForeign 3:10 - 3:15
+        Name: name2
+      SymbolExportForeign 3:10 - 3:15
+        Name: name2
+    NameMapping 3:17 - 3:22
+      SymbolImportForeign 3:17 - 3:22
+        Name: name3
+      SymbolExportForeign 3:17 - 3:22
+        Name: name3
+  Export 4:1 - 4:56
+    String 4:52 - 4:55
+      Value: d
+    NameMapping 4:10 - 4:26
+      SymbolImportForeign 4:10 - 4:17
+        Name: import4
+      SymbolExportForeign 4:21 - 4:26
+        Name: name4
+    NameMapping 4:28 - 4:44
+      SymbolImportForeign 4:28 - 4:35
+        Name: import5
+      SymbolExportForeign 4:39 - 4:44
+        Name: name5
+  Export 5:1 - 5:47
+    String 5:43 - 5:46
+      Value: e
+    NameMapping 5:10 - 5:17
+      SymbolImportForeign 5:10 - 5:17
+        Name: default
+      SymbolExportForeign 5:10 - 5:17
+        Name: default
+    NameMapping 5:19 - 5:35
+      SymbolImportForeign 5:19 - 5:26
+        Name: import6
+      SymbolExportForeign 5:30 - 5:35
+        Name: name6

@@ -1,0 +1,28 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:29
+    Assign 1:2 - 1:27
+      Operator: Assignment
+      Destructuring 1:2 - 1:10
+        ObjectKeyVal 1:4 - 1:5
+          SymbolProperty 1:4 - 1:5
+            Name: a
+          SymbolRef 1:4 - 1:5 [Write]
+            Name: a
+        ObjectKeyVal 1:7 - 1:8
+          SymbolProperty 1:7 - 1:8
+            Name: b
+          SymbolRef 1:7 - 1:8 [Write]
+            Name: b
+      Object 1:13 - 1:27
+        ObjectKeyVal 1:15 - 1:19
+          SymbolProperty 1:15 - 1:16
+            Name: a
+          Number 1:18 - 1:19
+            Value: 1
+            Literal: 1
+        ObjectKeyVal 1:21 - 1:25
+          SymbolProperty 1:21 - 1:22
+            Name: b
+          Number 1:24 - 1:25
+            Value: 2
+            Literal: 2

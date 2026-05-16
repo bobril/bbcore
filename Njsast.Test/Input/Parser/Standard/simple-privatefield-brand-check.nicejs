@@ -1,0 +1,8 @@
+class Foo {
+    #x;
+    check(o) {
+        return #x in o;
+    }
+}
+
+//# sourceMappingURL=simple-privatefield-brand-check.nicejs.map

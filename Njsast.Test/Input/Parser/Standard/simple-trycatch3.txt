@@ -1,0 +1,5 @@
+Toplevel 1:1 - 1:30
+  Try 1:1 - 1:30
+    Catch 1:9 - 1:30
+      SymbolCatch 1:16 - 1:25
+        Name: arguments

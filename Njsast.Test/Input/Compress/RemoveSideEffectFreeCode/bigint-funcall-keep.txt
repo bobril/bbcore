@@ -1,0 +1,9 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:18
+    Call 1:1 - 1:17
+      Dot 1:1 - 1:12
+        Property: log
+        SymbolRef 1:1 - 1:8 [Read]
+          Name: console
+      BigInt 1:13 - 1:16
+        Value: 42

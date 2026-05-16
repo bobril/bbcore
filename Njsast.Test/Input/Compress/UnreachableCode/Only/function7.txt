@@ -1,0 +1,11 @@
+Toplevel 1:1 - 6:2
+  Defun 1:1 - 6:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    If 2:5 - 5:6
+      SymbolRef 2:9 - 2:10 [Read]
+        Name: a
+      BlockStatement 2:12 - 5:6
+        Throw 3:9 - 3:23
+          String 3:15 - 3:22
+            Value: error

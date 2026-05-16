@@ -1,0 +1,6 @@
+Toplevel 1:1 - 1:12
+  SimpleStatement 1:1 - 1:12
+    Dot 1:1 - 1:12
+      Property: if
+      SymbolRef 1:1 - 1:9 [Read]
+        Name: universe

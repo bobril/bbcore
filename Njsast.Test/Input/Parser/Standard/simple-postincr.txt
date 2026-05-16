@@ -1,0 +1,6 @@
+Toplevel 1:1 - 1:4
+  SimpleStatement 1:1 - 1:4
+    UnaryPostfix 1:1 - 1:4
+      Operator: IncrementPostfix
+      SymbolRef 1:1 - 1:2 [Read] [Write]
+        Name: x

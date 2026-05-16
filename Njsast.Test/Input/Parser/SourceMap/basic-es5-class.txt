@@ -1,0 +1,46 @@
+Toplevel 1:1 - 12:44 [HasUseStrictDirective]
+  Var 1:1 - 5:2
+    VarDef 1:5 - 1:4
+      SymbolVar 1:5 - 1:10 [Write]
+        Name: Hello
+      Call 1:28 - 1:3
+        Function 1:28 - 1:1 [Pure]
+          Defun 1:1 - 5:2
+            SymbolDefun 1:10 - 1:15 [Write]
+              Name: Hello
+          SimpleStatement 2:3 - 4:5
+            Assign 2:3 - 4:4
+              Operator: Assignment
+              Dot 2:3 - 2:8
+                Property: world
+                Dot 2:3 - 2:18
+                  Property: prototype
+                  SymbolRef 2:3 - 2:8 [Read] [PropWrite!]
+                    Name: Hello
+              Function 2:3 - 4:4
+                SimpleStatement 3:5 - 3:32
+                  Call 3:5 - 3:31
+                    Dot 3:5 - 3:16
+                      Property: log
+                      SymbolRef 3:5 - 3:12 [Read]
+                        Name: console
+                    String 3:17 - 3:30
+                      Value: Hello world
+          Return 5:1 - 5:3
+            SymbolRef 5:8 - 5:2 [Read]
+              Name: Hello
+  Var 7:1 - 7:23
+    VarDef 7:7 - 7:22
+      SymbolVar 7:7 - 7:8 [Write]
+        Name: h
+      New 7:11 - 7:22
+        SymbolRef 7:15 - 7:20 [Read]
+          Name: Hello
+  SimpleStatement 9:1 - 9:11
+    Call 9:1 - 9:10
+      Dot 9:1 - 9:8
+        Property: world
+        SymbolRef 9:1 - 9:2 [Read]
+          Name: h
+Block Comment (2:13-2:26): * @class 
+Line Comment (12:1-12:44): # sourceMappingURL=basic-es5-class.js.map

@@ -1,0 +1,11 @@
+f(...a.b);
+
+f(...a.b());
+
+f(...a);
+
+f(...a.b);
+
+f(...a[i]);
+
+//# sourceMappingURL=simple-expand2.nicejs.map

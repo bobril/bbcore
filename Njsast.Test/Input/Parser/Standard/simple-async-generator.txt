@@ -1,0 +1,9 @@
+Toplevel 1:1 - 2:1
+  Defun 1:1 - 1:35 [IsGenerator] [Async]
+    SymbolDefun 1:17 - 1:20 [Write]
+      Name: gen
+    SimpleStatement 1:25 - 1:33
+      Yield 1:25 - 1:32
+        Number 1:31 - 1:32
+          Value: 1
+          Literal: 1

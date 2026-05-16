@@ -1,0 +1,5 @@
+Toplevel 1:1 - 4:1
+  SimpleStatement 2:5 - 2:7
+    Number 2:5 - 2:7
+      Value: 42
+      Literal: 42

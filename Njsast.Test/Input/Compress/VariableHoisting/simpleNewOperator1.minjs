@@ -1,0 +1,1 @@
+var a=10,b,c;b=new object;c=b.prop

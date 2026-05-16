@@ -1,0 +1,11 @@
+Toplevel 1:1 - 1:41
+  LabeledStatement 1:1 - 1:41
+    Label 1:1 - 1:6
+      Name: done
+    Switch 1:7 - 1:41
+      SymbolRef 1:15 - 1:16 [Read]
+        Name: a
+      Default 1:20 - 1:39
+        Break 1:29 - 1:39
+          LabelRef 1:35 - 1:39
+            Name: done

@@ -1,0 +1,6 @@
+let obj = {
+    foo: "bar",
+    ["baz" + quux()]: 42
+};
+
+//# sourceMappingURL=simple-computedProp.nicejs.map

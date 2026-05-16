@@ -1,0 +1,1 @@
+for(;;){a++;if(a){continue}a--}

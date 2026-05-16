@@ -1,0 +1,11 @@
+Toplevel 1:1 - 2:1
+  Let 1:1 - 1:23
+    VarDef 1:5 - 1:22
+      SymbolLet 1:5 - 1:7 [Write]
+        Name: fn
+      Arrow 1:10 - 1:22
+        UnaryPrefix 1:16 - 1:22
+          Operator: Void
+          Number 1:21 - 1:22
+            Value: 0
+            Literal: 0

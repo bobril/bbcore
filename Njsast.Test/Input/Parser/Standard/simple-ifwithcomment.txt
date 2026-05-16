@@ -1,0 +1,10 @@
+Toplevel 1:1 - 2:12
+  If 1:1 - 2:12
+    SymbolRef 1:5 - 1:6 [Read]
+      Name: x
+    BlockStatement 1:8 - 2:12
+      SimpleStatement 2:1 - 2:10
+        Call 2:1 - 2:9
+          SymbolRef 2:1 - 2:7 [Read]
+            Name: doThat
+Line Comment (1:10-1:25):  Some comment

@@ -1,0 +1,13 @@
+Toplevel 1:1 - 1:16
+  SimpleStatement 1:1 - 1:16
+    Assign 1:1 - 1:16
+      Operator: Assignment
+      SymbolRef 1:1 - 1:2 [Write]
+        Name: x
+      Object 1:5 - 1:16
+        ObjectKeyVal 1:7 - 1:14
+          SymbolProperty 1:7 - 1:10
+            Name: set
+          Number 1:12 - 1:14
+            Value: 43
+            Literal: 43

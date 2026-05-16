@@ -1,0 +1,2 @@
+function sealed(target){}function logged(target,key,descriptor){}let Service=class Service{run(){}};__decorate([logged],Service.prototype,"run",null);Service=__decorate([sealed],Service)
+//# sourceMappingURL=decorator-class-and-method.minjs.map

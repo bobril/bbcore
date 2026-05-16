@@ -1,0 +1,10 @@
+Toplevel 1:1 - 1:14
+  For 1:1 - 1:14
+    Assign 1:5 - 1:10
+      Operator: Assignment
+      SymbolRef 1:5 - 1:6 [Write]
+        Name: x
+      Number 1:9 - 1:10
+        Value: 0
+        Literal: 0
+    EmptyStatement 1:13 - 1:14

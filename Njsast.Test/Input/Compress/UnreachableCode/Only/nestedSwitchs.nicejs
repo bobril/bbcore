@@ -1,0 +1,17 @@
+switch (a) {
+  case 1:
+    switch (b) {
+      case 2:
+        call();
+        break;
+
+      default:
+        call1();
+    }
+    call2();
+    break;
+
+  default:
+    a++;
+}
+

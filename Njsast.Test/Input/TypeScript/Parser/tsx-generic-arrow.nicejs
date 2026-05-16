@@ -1,0 +1,5 @@
+const id = value => value;
+
+const element = <div>{id(1)}</div>;
+
+//# sourceMappingURL=tsx-generic-arrow.nicejs.map

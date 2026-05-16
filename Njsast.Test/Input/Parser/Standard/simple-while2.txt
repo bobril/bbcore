@@ -1,0 +1,20 @@
+Toplevel 1:1 - 1:29
+  While 1:1 - 1:29
+    Binary 1:8 - 1:14
+      Operator: LessThan
+      SymbolRef 1:8 - 1:9 [Read]
+        Name: x
+      Number 1:12 - 1:14
+        Value: 10
+        Literal: 10
+    BlockStatement 1:16 - 1:29
+      SimpleStatement 1:18 - 1:22
+        UnaryPostfix 1:18 - 1:21
+          Operator: IncrementPostfix
+          SymbolRef 1:18 - 1:19 [Read] [Write]
+            Name: x
+      SimpleStatement 1:23 - 1:27
+        UnaryPostfix 1:23 - 1:26
+          Operator: DecrementPostfix
+          SymbolRef 1:23 - 1:24 [Read] [Write]
+            Name: y

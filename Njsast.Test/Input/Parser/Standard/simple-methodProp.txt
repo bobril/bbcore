@@ -1,0 +1,31 @@
+Toplevel 1:1 - 6:1
+  SimpleStatement 1:1 - 5:3
+    Assign 1:1 - 5:2
+      Operator: Assignment
+      SymbolRef 1:1 - 1:4 [Write]
+        Name: obj
+      Object 1:7 - 5:2
+        ConciseMethod 2:5 - 2:17
+          SymbolProperty 2:5 - 2:8
+            Name: foo
+          Function 2:8 - 2:17
+            SymbolFunarg 2:9 - 2:10
+              Name: a
+            SymbolFunarg 2:12 - 2:13
+              Name: b
+        ConciseMethod 3:5 - 3:17
+          SymbolProperty 3:5 - 3:8
+            Name: bar
+          Function 3:8 - 3:17
+            SymbolFunarg 3:9 - 3:10
+              Name: x
+            SymbolFunarg 3:12 - 3:13
+              Name: y
+        ConciseMethod 4:5 - 4:19 [IsGenerator]
+          SymbolProperty 4:6 - 4:10
+            Name: quux
+          Function 4:10 - 4:19 [IsGenerator]
+            SymbolFunarg 4:11 - 4:12
+              Name: x
+            SymbolFunarg 4:14 - 4:15
+              Name: y

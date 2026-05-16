@@ -1,0 +1,20 @@
+Toplevel 1:1 - 7:2
+  Defun 1:1 - 7:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    If 2:5 - 5:6
+      SymbolRef 2:9 - 2:10 [Read]
+        Name: a
+      BlockStatement 2:12 - 5:6
+        Return 3:9 - 3:23
+          Call 3:16 - 3:22
+            SymbolRef 3:16 - 3:20 [Read]
+              Name: call
+        Let 4:9 - 4:18
+          VarDef 4:13 - 4:17
+            SymbolLet 4:13 - 4:17
+              Name: call
+    Return 6:5 - 6:19
+      Call 6:12 - 6:18
+        SymbolRef 6:12 - 6:16 [Read]
+          Name: call

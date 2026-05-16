@@ -1,0 +1,3 @@
+const element = <List value="x" />;
+
+//# sourceMappingURL=tsx-generic-component-args.nicejs.map

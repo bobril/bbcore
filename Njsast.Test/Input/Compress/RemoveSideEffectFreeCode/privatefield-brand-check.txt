@@ -1,0 +1,25 @@
+Toplevel 1:1 - 2:1
+  DefClass 1:1 - 1:47
+    SymbolDefClass 1:7 - 1:10
+      Name: Foo
+    ClassField 1:13 - 1:15
+      SymbolPrivate 1:13 - 1:15 [Write]
+        Name: x
+      Undefined 1:13 - 1:15
+    ConciseMethod 1:17 - 1:45
+      SymbolProperty 1:17 - 1:22
+        Name: check
+      Function 1:22 - 1:45
+        SymbolFunarg 1:23 - 1:24
+          Name: o
+        Return 1:28 - 1:43
+          Binary 1:35 - 1:42
+            Operator: In
+            SymbolPrivate 1:35 - 1:37 [Read]
+              Name: x
+            SymbolRef 1:41 - 1:42 [Read]
+              Name: o
+  SimpleStatement 1:48 - 1:58
+    New 1:48 - 1:57
+      SymbolRef 1:52 - 1:55 [Read]
+        Name: Foo

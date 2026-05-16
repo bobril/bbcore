@@ -1,0 +1,3 @@
+const a = tag`hello ${world}`;
+
+//# sourceMappingURL=simple-templatelit-tagged.nicejs.map

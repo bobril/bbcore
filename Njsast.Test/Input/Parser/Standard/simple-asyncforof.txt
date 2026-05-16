@@ -1,0 +1,54 @@
+Toplevel 1:1 - 9:1
+  Defun 1:1 - 8:2 [Async]
+    SymbolDefun 1:16 - 1:29 [Write]
+      Name: asyncFunction
+    SimpleStatement 2:5 - 2:35
+      Call 2:5 - 2:34
+        Dot 2:5 - 2:16
+          Property: log
+          SymbolRef 2:5 - 2:12 [Read]
+            Name: console
+        Await 2:17 - 2:33
+          Call 2:23 - 2:33
+            SymbolRef 2:23 - 2:28 [Read]
+              Name: fetch
+            String 2:29 - 2:32
+              Value: a
+    SimpleStatement 3:5 - 3:22
+      Await 3:5 - 3:21
+        Call 3:11 - 3:21
+          SymbolRef 3:11 - 3:16 [Read]
+            Name: fetch
+          String 3:17 - 3:20
+            Value: b
+    Const 4:5 - 4:47
+      VarDef 4:11 - 4:46
+        SymbolConst 4:11 - 4:19 [Write]
+          Name: promises
+        Array 4:22 - 4:46
+          Call 4:23 - 4:33
+            SymbolRef 4:23 - 4:28 [Read]
+              Name: fetch
+            String 4:29 - 4:32
+              Value: c
+          Call 4:35 - 4:45
+            SymbolRef 4:35 - 4:40 [Read]
+              Name: fetch
+            String 4:41 - 4:44
+              Value: d
+    ForOf 5:5 - 7:6 [await]
+      Const 5:16 - 5:26
+        VarDef 5:22 - 5:26
+          SymbolConst 5:22 - 5:26 [Write]
+            Name: item
+      SymbolRef 5:30 - 5:38 [Read]
+        Name: promises
+      BlockStatement 5:40 - 7:6
+        SimpleStatement 6:9 - 6:27
+          Call 6:9 - 6:26
+            Dot 6:9 - 6:20
+              Property: log
+              SymbolRef 6:9 - 6:16 [Read]
+                Name: console
+            SymbolRef 6:21 - 6:25 [Read] [PropWrite]
+              Name: item

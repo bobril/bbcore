@@ -1,0 +1,14 @@
+Toplevel 1:1 - 3:2
+  Var 1:1 - 1:1
+    VarDef 1:1 - 1:1
+      SymbolVar 1:10 - 1:11 [Write]
+        Name: i
+  For 1:1 - 3:2
+    Assign 1:10 - 1:15
+      Operator: Assignment
+      SymbolRef 1:10 - 1:11
+        Name: i
+      Number 1:14 - 1:15
+        Value: 1
+        Literal: 1
+    BlockStatement 1:19 - 3:2

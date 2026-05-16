@@ -1,0 +1,96 @@
+Toplevel 1:1 - 9:1
+  BlockStatement 1:1 - 1:23
+    Const 1:2 - 1:22
+      VarDef 1:8 - 1:21
+        Destructuring 1:8 - 1:16 [IsArray]
+          SymbolConst 1:9 - 1:11 [Write]
+            Name: aa
+          SymbolConst 1:13 - 1:15 [Write]
+            Name: bb
+        SymbolRef 1:19 - 1:21 [Read]
+          Name: cc
+  BlockStatement 2:1 - 2:29
+    Const 2:2 - 2:28
+      VarDef 2:8 - 2:27
+        Destructuring 2:8 - 2:22 [IsArray]
+          SymbolConst 2:9 - 2:11 [Write]
+            Name: aa
+          Destructuring 2:13 - 2:21 [IsArray]
+            SymbolConst 2:14 - 2:16 [Write]
+              Name: bb
+            SymbolConst 2:18 - 2:20 [Write]
+              Name: cc
+        SymbolRef 2:25 - 2:27 [Read]
+          Name: dd
+  BlockStatement 3:1 - 3:21
+    Let 3:2 - 3:20
+      VarDef 3:6 - 3:19
+        Destructuring 3:6 - 3:14 [IsArray]
+          SymbolLet 3:7 - 3:9 [Write]
+            Name: aa
+          SymbolLet 3:11 - 3:13 [Write]
+            Name: bb
+        SymbolRef 3:17 - 3:19 [Read]
+          Name: cc
+  BlockStatement 4:1 - 4:27
+    Let 4:2 - 4:26
+      VarDef 4:6 - 4:25
+        Destructuring 4:6 - 4:20 [IsArray]
+          SymbolLet 4:7 - 4:9 [Write]
+            Name: aa
+          Destructuring 4:11 - 4:19 [IsArray]
+            SymbolLet 4:12 - 4:14 [Write]
+              Name: bb
+            SymbolLet 4:16 - 4:18 [Write]
+              Name: cc
+        SymbolRef 4:23 - 4:25 [Read]
+          Name: dd
+  Var 5:1 - 5:19
+    VarDef 5:5 - 5:18
+      Destructuring 5:5 - 5:13 [IsArray]
+        SymbolVar 5:6 - 5:8 [Write]
+          Name: aa
+        SymbolVar 5:10 - 5:12 [Write]
+          Name: bb
+      SymbolRef 5:16 - 5:18 [Read]
+        Name: cc
+  Var 6:1 - 6:25
+    VarDef 6:5 - 6:24
+      Destructuring 6:5 - 6:19 [IsArray]
+        SymbolVar 6:6 - 6:8 [Write]
+          Name: aa
+        Destructuring 6:10 - 6:18 [IsArray]
+          SymbolVar 6:11 - 6:13 [Write]
+            Name: bb
+          SymbolVar 6:15 - 6:17 [Write]
+            Name: cc
+      SymbolRef 6:22 - 6:24 [Read]
+        Name: dd
+  Var 7:1 - 7:27
+    VarDef 7:5 - 7:26
+      Destructuring 7:5 - 7:21 [IsArray]
+        Hole 7:5 - 7:6
+        Destructuring 7:7 - 7:14 [IsArray]
+          Hole 7:7 - 7:8
+          Hole 7:8 - 7:9
+          Hole 7:9 - 7:10
+          Hole 7:10 - 7:11
+          Hole 7:11 - 7:12
+        Hole 7:14 - 7:15
+        Hole 7:15 - 7:16
+        SymbolVar 7:17 - 7:19 [Write]
+          Name: zz
+      SymbolRef 7:24 - 7:26 [Read]
+        Name: xx
+  Var 8:1 - 8:21
+    VarDef 8:5 - 8:20
+      Destructuring 8:5 - 8:14 [IsArray]
+        Hole 8:5 - 8:6
+        Hole 8:6 - 8:7
+        SymbolVar 8:8 - 8:11 [Write]
+          Name: zzz
+        Hole 8:11 - 8:12
+      SymbolRef 8:17 - 8:20 [Read]
+        Name: xxx
+Line Comment (7:28-7:45):  Trailing comma
+Line Comment (8:22-8:50):  Trailing comma after hole

@@ -1,0 +1,16 @@
+"use strict";
+var ClientsPageStore = function() {
+    function ClientsPageStore() {}
+    ClientsPageStore.prototype.clear = function() {
+        __export_clientsPageStore = new ClientsPageStore();
+    };
+    return ClientsPageStore;
+}();
+
+__export_clientsPageStore = new ClientsPageStore();
+
+var __export_clientsPageStore;
+
+Self exports:
+clientsPageStore: __export_clientsPageStore
+ClientsPageStore: ClientsPageStore

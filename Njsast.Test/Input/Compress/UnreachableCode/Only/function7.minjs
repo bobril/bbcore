@@ -1,0 +1,1 @@
+function func(){if(a){throw"error"}}

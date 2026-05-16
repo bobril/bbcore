@@ -1,0 +1,56 @@
+Toplevel 1:1 - 11:1
+  Defun 1:1 - 6:2 [IsGenerator]
+    SymbolDefun 1:11 - 1:16 [Write]
+      Name: range
+    SymbolFunarg 1:18 - 1:23
+      Name: start
+    SymbolFunarg 1:25 - 1:28
+      Name: end
+    SymbolFunarg 1:30 - 1:34
+      Name: step
+    While 2:5 - 5:6
+      Binary 2:12 - 2:23
+        Operator: LessThan
+        SymbolRef 2:12 - 2:17 [Read]
+          Name: start
+        SymbolRef 2:20 - 2:23 [Read]
+          Name: end
+      BlockStatement 2:25 - 5:6
+        SimpleStatement 3:9 - 3:21
+          Yield 3:9 - 3:20
+            SymbolRef 3:15 - 3:20 [Read]
+              Name: start
+        SimpleStatement 4:9 - 4:23
+          Assign 4:9 - 4:22
+            Operator: AdditionAssignment
+            SymbolRef 4:9 - 4:14 [Read] [Write]
+              Name: start
+            SymbolRef 4:18 - 4:22 [Read]
+              Name: step
+  ForOf 8:1 - 10:2
+    Let 8:6 - 8:11
+      VarDef 8:10 - 8:11
+        SymbolLet 8:10 - 8:11 [Write]
+          Name: i
+    Call 8:15 - 8:30
+      SymbolRef 8:15 - 8:20 [Read]
+        Name: range
+      Number 8:21 - 8:22
+        Value: 0
+        Literal: 0
+      Number 8:24 - 8:26
+        Value: 10
+        Literal: 10
+      Number 8:28 - 8:29
+        Value: 2
+        Literal: 2
+    BlockStatement 8:32 - 10:2
+      SimpleStatement 9:5 - 9:20
+        Call 9:5 - 9:19
+          Dot 9:5 - 9:16
+            Property: log
+            SymbolRef 9:5 - 9:12 [Read]
+              Name: console
+          SymbolRef 9:17 - 9:18 [Read] [PropWrite]
+            Name: i
+Line Comment (9:21-9:37):  0, 2, 4, 6, 8

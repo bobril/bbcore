@@ -1,0 +1,11 @@
+Toplevel 1:1 - 1:20
+  SimpleStatement 1:1 - 1:20
+    Assign 1:1 - 1:20
+      Operator: Assignment
+      SymbolRef 1:1 - 1:2 [Write]
+        Name: x
+      Object 1:5 - 1:20
+        ObjectGetter 1:7 - 1:18
+          SymbolMethod 1:11 - 1:13
+            Name: if
+          Accessor 1:13 - 1:18

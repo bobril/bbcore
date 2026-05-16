@@ -1,0 +1,2 @@
+export const Button=props=><button onClick={event=>props.onClick(event.type)}>Save</button>
+//# sourceMappingURL=tsx-callback-types.minjs.map

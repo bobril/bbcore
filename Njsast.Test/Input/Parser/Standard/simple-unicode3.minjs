@@ -1,0 +1,2 @@
+"𠮷".length===2;"𠮷".match(/./u)[0].length===2;"𠮷"==="𠮷";"𠮷"==="𠮷";"𠮷".codePointAt(0)==134071;for(let codepoint of"𠮷")console.log(codepoint)
+//# sourceMappingURL=simple-unicode3.minjs.map

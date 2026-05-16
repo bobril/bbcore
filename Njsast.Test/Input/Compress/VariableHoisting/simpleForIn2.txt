@@ -1,0 +1,17 @@
+Toplevel 1:1 - 3:25
+  Var 1:1 - 1:1
+    VarDef 1:10 - 1:13
+      SymbolVar 1:10 - 1:13 [Write]
+        Name: key
+  ForIn 1:1 - 1:24
+    SymbolRef 1:10 - 1:13
+      Name: key
+    SymbolRef 1:17 - 1:20 [Read]
+      Name: obj
+    BlockStatement 1:22 - 1:24
+  ForIn 3:1 - 3:25
+    SymbolRef 3:10 - 3:13
+      Name: key
+    SymbolRef 3:17 - 3:21 [Read]
+      Name: obj2
+    BlockStatement 3:23 - 3:25

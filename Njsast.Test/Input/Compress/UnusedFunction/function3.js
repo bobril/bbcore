@@ -1,0 +1,3 @@
+function recurse() {
+    return recurse();
+}

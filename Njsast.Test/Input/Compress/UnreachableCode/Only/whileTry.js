@@ -1,0 +1,8 @@
+while(_) {
+    try {
+        if (a < 1) throw "err";
+    } catch (e) {
+        continue;
+    }
+    call();
+} 

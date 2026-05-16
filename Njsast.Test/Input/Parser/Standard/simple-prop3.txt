@@ -1,0 +1,10 @@
+Toplevel 1:1 - 1:36
+  SimpleStatement 1:1 - 1:36
+    Dot 1:1 - 1:36
+      Property: Earth
+      Dot 1:1 - 1:30
+        Property: solarsystem
+        Dot 1:1 - 1:18
+          Property: milkyway
+          SymbolRef 1:1 - 1:9 [Read]
+            Name: universe

@@ -1,0 +1,13 @@
+"use strict";
+var a = require("./lib");
+
+var c = new a.ClientsPageStore();
+
+c.clear();
+
+a.clientsPageStore.clear();
+
+Requires:
+Input/ModuleParser/lib
+Uses Input/ModuleParser/lib ClientsPageStore
+Uses Input/ModuleParser/lib clientsPageStore.clear

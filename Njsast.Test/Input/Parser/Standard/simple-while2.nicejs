@@ -1,0 +1,6 @@
+while (x < 10) {
+    x++;
+    y--;
+}
+
+//# sourceMappingURL=simple-while2.nicejs.map

@@ -1,0 +1,7 @@
+function* foo(index) {
+    while (index < 2) {
+        yield index++;
+    }
+}
+
+//# sourceMappingURL=simple-yield-generator.nicejs.map

@@ -1,0 +1,2 @@
+class Foo{get#x(){return 1}}
+//# sourceMappingURL=simple-privatefield-getter.minjs.map

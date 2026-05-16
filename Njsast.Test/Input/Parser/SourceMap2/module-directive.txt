@@ -1,0 +1,176 @@
+Toplevel 1:1 - 8:1
+  Const 6:1 - 6:124
+    VarDef 42:14 - 48:14
+      SymbolConst 42:14 - 42:15 [Write]
+        Name: t
+      Object 42:25 - 48:14
+        ObjectKeyVal 43:3 - 43:15
+          SymbolProperty 43:3 - 43:12
+            Name: ATTRIBUTE
+          Number 43:14 - 43:15
+            Value: 1
+            Literal: 1
+        ObjectKeyVal 44:3 - 44:11
+          SymbolProperty 44:3 - 44:8
+            Name: CHILD
+          Number 44:10 - 44:11
+            Value: 2
+            Literal: 2
+        ObjectKeyVal 45:3 - 45:14
+          SymbolProperty 45:3 - 45:11
+            Name: PROPERTY
+          Number 45:13 - 45:14
+            Value: 3
+            Literal: 3
+        ObjectKeyVal 46:3 - 46:23
+          SymbolProperty 46:3 - 46:20
+            Name: BOOLEAN_ATTRIBUTE
+          Number 46:22 - 46:23
+            Value: 4
+            Literal: 4
+        ObjectKeyVal 47:3 - 47:11
+          SymbolProperty 47:3 - 47:8
+            Name: EVENT
+          Number 47:10 - 47:11
+            Value: 5
+            Literal: 5
+        ObjectKeyVal 48:3 - 48:13
+          SymbolProperty 48:3 - 48:10
+            Name: ELEMENT
+          Number 48:12 - 48:13
+            Value: 6
+            Literal: 6
+    VarDef 84:14 - 89:8
+      SymbolConst 84:14 - 84:15 [Write]
+        Name: e
+      Arrow 85:30 - 89:8
+        SymbolFunarg 85:30 - 85:31
+          Name: t
+        Arrow 86:3 - 89:8
+          Expansion 86:4 - 86:8
+            SymbolFunarg 86:7 - 86:8
+              Name: e
+          Object 86:12 - 89:7
+            ObjectKeyVal 88:5 - 88:27
+              SymbolProperty 88:5 - 88:20
+                Name: _$litDirective$
+              SymbolRef 88:26 - 88:27 [Read]
+                Name: t
+            ObjectKeyVal 89:5 - 89:6
+              SymbolProperty 89:5 - 89:11
+                Name: values
+              SymbolRef 89:5 - 89:6 [Read]
+                Name: e
+  DefClass 89:9 - 140:27
+    SymbolDefClass 97:23 - 97:24
+      Name: i
+    ConciseMethod 115:3 - 118:7
+      SymbolProperty 115:3 - 115:14
+        Name: constructor
+      Function 115:14 - 118:7
+        SymbolFunarg 115:15 - 115:16
+          Name: t
+    ObjectGetter 118:7 - 123:3
+      SymbolProperty 118:11 - 118:15
+        Name: _$AU
+      Function 118:15 - 123:3
+        Return 119:5 - 119:30
+          Dot 119:12 - 119:30
+            Property: _$AU
+            Dot 119:12 - 119:21
+              Property: _$AM
+              This 119:12 - 119:16 [Read] [PropWrite!]
+                Name: this
+    ConciseMethod 123:3 - 133:3
+      SymbolProperty 123:3 - 123:7
+        Name: _$AT
+      Function 123:7 - 133:3
+        SymbolFunarg 124:5 - 124:6
+          Name: t
+        SymbolFunarg 125:5 - 125:6
+          Name: e
+        SymbolFunarg 126:5 - 126:6
+          Name: i
+        SimpleStatement 128:5 - 130:30
+          Sequence 128:5 - 130:30
+            Assign 128:5 - 128:20
+              Operator: Assignment
+              Dot 128:5 - 128:14
+                Property: _$Ct
+                This 128:5 - 128:9 [Read] [PropWrite!]
+                  Name: this
+              SymbolRef 128:19 - 128:20 [Read]
+                Name: t
+            Assign 129:5 - 129:22
+              Operator: Assignment
+              Dot 129:5 - 129:14
+                Property: _$AM
+                This 129:5 - 129:9 [Read] [PropWrite!]
+                  Name: this
+              SymbolRef 129:21 - 129:22 [Read]
+                Name: e
+            Assign 130:5 - 130:30
+              Operator: Assignment
+              Dot 130:5 - 130:14
+                Property: _$Ci
+                This 130:5 - 130:9 [Read] [PropWrite!]
+                  Name: this
+              SymbolRef 130:29 - 130:30 [Read]
+                Name: i
+    ConciseMethod 133:3 - 139:3
+      SymbolProperty 133:3 - 133:7
+        Name: _$AS
+      Function 133:7 - 139:3
+        SymbolFunarg 133:13 - 133:14
+          Name: t
+        SymbolFunarg 133:25 - 133:26
+          Name: e
+        Return 134:5 - 134:32
+          Call 134:12 - 134:32
+            Dot 134:12 - 134:23
+              Property: update
+              This 134:12 - 134:16 [Read]
+                Name: this
+            SymbolRef 134:24 - 134:25 [Read] [PropWrite]
+              Name: t
+            SymbolRef 134:30 - 134:31 [Read] [PropWrite]
+              Name: e
+    ConciseMethod 139:3 - 140:27
+      SymbolProperty 139:3 - 139:9
+        Name: update
+      Function 139:9 - 140:27
+        SymbolFunarg 139:10 - 139:11
+          Name: t
+        SymbolFunarg 139:23 - 139:24
+          Name: e
+        Return 140:5 - 140:27
+          Call 140:12 - 140:27
+            Dot 140:12 - 140:23
+              Property: render
+              This 140:12 - 140:16 [Read]
+                Name: this
+            Expansion 140:24 - 140:27
+              SymbolRef 140:27 - 140:27 [Read]
+                Name: e
+  Export 140:27 - 140:27
+    NameMapping 140:27 - 140:27
+      SymbolExport 140:27 - 140:27 [Read]
+        Name: i
+      SymbolExportForeign 140:27 - 140:27
+        Name: Directive
+    NameMapping 140:27 - 140:27
+      SymbolExport 140:27 - 140:27 [Read]
+        Name: t
+      SymbolExportForeign 140:27 - 140:27
+        Name: PartType
+    NameMapping 140:27 - 140:27
+      SymbolExport 140:27 - 140:27 [Read]
+        Name: e
+      SymbolExportForeign 140:27 - 140:27
+        Name: directive
+Block Comment (1:1-5:4): *
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ 
+Line Comment (7:1-7:45): # sourceMappingURL=module-directive.js.map

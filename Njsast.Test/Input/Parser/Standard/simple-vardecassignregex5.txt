@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:23
+  Var 1:1 - 1:23
+    VarDef 1:5 - 1:23
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: x
+      RegExp 1:9 - 1:23
+        Pattern: [P QR]
+        Flags: GlobalMatch

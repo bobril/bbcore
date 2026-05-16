@@ -1,0 +1,5 @@
+Toplevel 1:1 - 1:4
+  SimpleStatement 1:1 - 1:4
+    Number 1:1 - 1:4
+      Value: 0.14
+      Literal: .14

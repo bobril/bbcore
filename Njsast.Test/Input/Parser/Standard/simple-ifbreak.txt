@@ -1,0 +1,9 @@
+Toplevel 1:1 - 1:26
+  LabeledStatement 1:1 - 1:26
+    Label 1:1 - 1:5
+      Name: foo
+    If 1:6 - 1:26
+      True 1:10 - 1:14
+      Break 1:16 - 1:26
+        LabelRef 1:22 - 1:25
+          Name: foo

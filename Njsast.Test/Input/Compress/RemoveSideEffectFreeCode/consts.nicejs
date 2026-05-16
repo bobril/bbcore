@@ -1,0 +1,6 @@
+let a = 1, b = 2, c = 3, b2 = 4;
+
+console.log(c, b2);
+
+console.log(a, b);
+

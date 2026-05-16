@@ -1,0 +1,11 @@
+var Status;
+
+(function(Status) {
+    Status[Status["Pending"] = 0] = "Pending";
+    Status[Status["Running"] = 4] = "Running";
+    Status[Status["Done"] = 5] = "Done";
+})(Status || (Status = {}));
+
+console.log(Status.Pending, Status[4], Status.Done);
+
+//# sourceMappingURL=numeric-enum.nicejs.map

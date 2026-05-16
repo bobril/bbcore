@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:18
+  Var 1:1 - 1:18
+    VarDef 1:5 - 1:18
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: x
+      RegExp 1:9 - 1:18
+        Pattern: [P QR]
+        Flags: IgnoreCase

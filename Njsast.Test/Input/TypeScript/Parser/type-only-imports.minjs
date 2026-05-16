@@ -1,0 +1,2 @@
+import{createUser}from"./factory";export function build(id,options){return createUser(id,options)}
+//# sourceMappingURL=type-only-imports.minjs.map

@@ -1,0 +1,74 @@
+Toplevel 1:1 - 7:3
+  Var 1:1 - 1:1
+    VarDef 1:1 - 1:1
+      SymbolVar 3:9 - 3:10 [Write]
+        Name: n
+    VarDef 1:5 - 1:6
+      SymbolVar 1:5 - 1:6
+        Name: k
+    VarDef 1:1 - 1:1
+      SymbolVar 5:40 - 5:41 [Write]
+        Name: r
+  If 2:1 - 7:2
+    SymbolRef 2:5 - 2:6 [Read]
+      Name: k
+    BlockStatement 2:8 - 7:2
+      SimpleStatement 3:9 - 3:19
+        Assign 3:9 - 3:19
+          Operator: Assignment
+          SymbolRef 3:9 - 3:10
+            Name: n
+          Call 3:13 - 3:19
+            SymbolRef 3:13 - 3:17 [Read]
+              Name: call
+      If 4:5 - 6:6
+        Binary 4:9 - 4:18
+          Operator: Equals
+          Null 4:9 - 4:13
+          SymbolRef 4:17 - 4:18 [Read]
+            Name: n
+        SimpleStatement 4:20 - 4:27
+          Assign 4:20 - 4:26
+            Operator: Assignment
+            SymbolRef 4:20 - 4:21 [Write]
+              Name: k
+            String 4:24 - 4:26
+              Value: 
+        BlockStatement 4:33 - 6:6
+          If 5:9 - 5:61
+            Binary 5:13 - 5:22
+              Operator: Equals
+              Null 5:13 - 5:17
+              SymbolRef 5:21 - 5:22 [Read]
+                Name: n
+            SimpleStatement 5:24 - 5:30
+              Assign 5:24 - 5:29
+                Operator: Assignment
+                SymbolRef 5:24 - 5:25 [Write]
+                  Name: n
+                Number 5:28 - 5:29
+                  Value: 4
+                  Literal: 4
+            Block 5:36 - 5:61
+              SimpleStatement 5:40 - 5:45
+                Assign 5:40 - 5:45
+                  Operator: Assignment
+                  SymbolRef 5:40 - 5:41
+                    Name: r
+                  Number 5:44 - 5:45
+                    Value: 1
+                    Literal: 1
+              SimpleStatement 5:47 - 5:60
+                Assign 5:47 - 5:60
+                  Operator: Assignment
+                  SymbolRef 5:47 - 5:48
+                    Name: n
+                  Conditional 5:51 - 5:60
+                    SymbolRef 5:51 - 5:52 [Read]
+                      Name: r
+                    Number 5:55 - 5:56
+                      Value: 2
+                      Literal: 2
+                    Number 5:59 - 5:60
+                      Value: 3
+                      Literal: 3

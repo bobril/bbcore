@@ -1,0 +1,52 @@
+Toplevel 1:1 - 3:2
+  Var 1:1 - 1:1
+    VarDef 1:1 - 1:1
+      SymbolVar 1:9 - 1:10 [Write]
+        Name: i
+    VarDef 1:1 - 1:1
+      SymbolVar 1:16 - 1:17 [Write]
+        Name: j
+    VarDef 1:1 - 1:1
+      SymbolVar 1:26 - 1:27 [Write]
+        Name: k
+    VarDef 1:23 - 1:24
+      SymbolVar 1:23 - 1:24
+        Name: l
+    VarDef 1:33 - 1:34
+      SymbolVar 1:33 - 1:34
+        Name: m
+  For 1:1 - 3:2
+    Sequence 1:5 - 1:34
+      Assign 1:9 - 1:14
+        Operator: Assignment
+        SymbolRef 1:9 - 1:10
+          Name: i
+        Number 1:13 - 1:14
+          Value: 0
+          Literal: 0
+      Assign 1:16 - 1:21
+        Operator: Assignment
+        SymbolRef 1:16 - 1:17
+          Name: j
+        Number 1:20 - 1:21
+          Value: 1
+          Literal: 1
+      Assign 1:26 - 1:31
+        Operator: Assignment
+        SymbolRef 1:26 - 1:27
+          Name: k
+        Number 1:30 - 1:31
+          Value: 0
+          Literal: 0
+    Binary 1:36 - 1:42
+      Operator: LessThan
+      SymbolRef 1:36 - 1:37 [Read]
+        Name: j
+      Number 1:40 - 1:42
+        Value: 10
+        Literal: 10
+    UnaryPostfix 1:44 - 1:47
+      Operator: IncrementPostfix
+      SymbolRef 1:44 - 1:45 [Read] [Write]
+        Name: j
+    BlockStatement 1:49 - 3:2

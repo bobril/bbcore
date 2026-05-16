@@ -1,0 +1,109 @@
+Toplevel 1:1 - 13:1
+  Defun 1:1 - 3:2
+    SymbolDefun 1:10 - 1:11 [Write]
+      Name: f
+    Destructuring 1:13 - 1:26 [IsArray]
+      SymbolFunarg 1:15 - 1:19
+        Name: name
+      SymbolFunarg 1:21 - 1:24
+        Name: val
+    SimpleStatement 2:5 - 2:28
+      Call 2:5 - 2:27
+        Dot 2:5 - 2:16
+          Property: log
+          SymbolRef 2:5 - 2:12 [Read]
+            Name: console
+        SymbolRef 2:17 - 2:21 [Read] [PropWrite]
+          Name: name
+        SymbolRef 2:23 - 2:26 [Read] [PropWrite]
+          Name: val
+  Defun 4:1 - 6:2
+    SymbolDefun 4:10 - 4:11 [Write]
+      Name: g
+    Destructuring 4:13 - 4:32
+      ObjectKeyVal 4:15 - 4:22
+        SymbolProperty 4:15 - 4:19
+          Name: name
+        SymbolFunarg 4:21 - 4:22
+          Name: n
+      ObjectKeyVal 4:24 - 4:30
+        SymbolProperty 4:24 - 4:27
+          Name: val
+        SymbolFunarg 4:29 - 4:30
+          Name: v
+    SimpleStatement 5:5 - 5:23
+      Call 5:5 - 5:22
+        Dot 5:5 - 5:16
+          Property: log
+          SymbolRef 5:5 - 5:12 [Read]
+            Name: console
+        SymbolRef 5:17 - 5:18 [Read] [PropWrite]
+          Name: n
+        SymbolRef 5:20 - 5:21 [Read] [PropWrite]
+          Name: v
+  Defun 7:1 - 9:2
+    SymbolDefun 7:10 - 7:11 [Write]
+      Name: h
+    Destructuring 7:13 - 7:26
+      ObjectKeyVal 7:15 - 7:19
+        SymbolProperty 7:15 - 7:19
+          Name: name
+        SymbolFunarg 7:15 - 7:19
+          Name: name
+      ObjectKeyVal 7:21 - 7:24
+        SymbolProperty 7:21 - 7:24
+          Name: val
+        SymbolFunarg 7:21 - 7:24
+          Name: val
+    SimpleStatement 8:5 - 8:28
+      Call 8:5 - 8:27
+        Dot 8:5 - 8:16
+          Property: log
+          SymbolRef 8:5 - 8:12 [Read]
+            Name: console
+        SymbolRef 8:17 - 8:21 [Read] [PropWrite]
+          Name: name
+        SymbolRef 8:23 - 8:26 [Read] [PropWrite]
+          Name: val
+  SimpleStatement 10:1 - 10:18
+    Call 10:1 - 10:17
+      SymbolRef 10:1 - 10:2 [Read]
+        Name: f
+      Array 10:3 - 10:16
+        String 10:5 - 10:10
+          Value: bar
+        Number 10:12 - 10:14
+          Value: 42
+          Literal: 42
+  SimpleStatement 11:1 - 11:29
+    Call 11:1 - 11:28
+      SymbolRef 11:1 - 11:2 [Read]
+        Name: g
+      Object 11:3 - 11:27
+        ObjectKeyVal 11:5 - 11:16
+          SymbolProperty 11:5 - 11:9
+            Name: name
+          String 11:11 - 11:16
+            Value: foo
+        ObjectKeyVal 11:18 - 11:25
+          SymbolProperty 11:18 - 11:21
+            Name: val
+          Number 11:24 - 11:25
+            Value: 7
+            Literal: 7
+  SimpleStatement 12:1 - 12:29
+    Call 12:1 - 12:28
+      SymbolRef 12:1 - 12:2 [Read]
+        Name: h
+      Object 12:3 - 12:27
+        ObjectKeyVal 12:5 - 12:16
+          SymbolProperty 12:5 - 12:9
+            Name: name
+          String 12:11 - 12:16
+            Value: bar
+        ObjectKeyVal 12:18 - 12:25
+          SymbolProperty 12:18 - 12:21
+            Name: val
+          Number 12:23 - 12:25
+            Value: 42
+            Literal: 42

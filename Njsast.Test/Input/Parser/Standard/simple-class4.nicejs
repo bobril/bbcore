@@ -1,0 +1,7 @@
+class Rectangle extends Shape {
+    toString() {
+        return "Rectangle > " + super.toString();
+    }
+}
+
+//# sourceMappingURL=simple-class4.nicejs.map

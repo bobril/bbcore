@@ -1,0 +1,9 @@
+Toplevel 1:1 - 5:2
+  For 1:1 - 5:2
+    BlockStatement 1:10 - 5:2
+      SimpleStatement 2:5 - 2:9
+        UnaryPostfix 2:5 - 2:8
+          Operator: IncrementPostfix
+          SymbolRef 2:5 - 2:6 [Read] [Write]
+            Name: a
+      Continue 3:5 - 3:14

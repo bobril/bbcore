@@ -1,0 +1,32 @@
+Toplevel 1:1 - 2:45
+  Var 1:1 - 1:1
+    VarDef 1:5 - 1:6
+      SymbolVar 1:5 - 1:6
+        Name: a
+      Binary 2:6 - 2:29
+        Operator: LogicalAnd
+        Binary 2:6 - 2:16
+          Operator: NotEquals
+          Number 2:6 - 2:7
+            Value: 0
+            Literal: 0
+          False 2:11 - 2:16
+        Binary 2:20 - 2:29
+          Operator: NotEquals
+          Number 2:20 - 2:21
+            Value: 1
+            Literal: 1
+          True 2:25 - 2:29
+    VarDef 1:7 - 1:8
+      SymbolVar 1:7 - 1:8
+        Name: b
+  SimpleStatement 2:1 - 2:45
+    Binary 2:1 - 2:44
+      Operator: LogicalOr
+      SymbolRef 2:2 - 2:3 [Write]
+        Name: a
+      Assign 2:35 - 2:43
+        Operator: Assignment
+        SymbolRef 2:35 - 2:36 [Write]
+          Name: a
+        True 2:39 - 2:43

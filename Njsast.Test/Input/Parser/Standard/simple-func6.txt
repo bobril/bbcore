@@ -1,0 +1,7 @@
+Toplevel 1:1 - 1:54
+  Defun 1:1 - 1:54
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: eval
+    Defun 1:19 - 1:52 [HasUseStrictDirective]
+      SymbolDefun 1:28 - 1:33 [Write]
+        Name: inner

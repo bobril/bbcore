@@ -1,0 +1,20 @@
+var Mode;
+
+(function(Mode) {
+    Mode[Mode["A"] = 1] = "A";
+    Mode[Mode["B"] = 3] = "B";
+    Mode[Mode["C"] = 4] = "C";
+    Mode["Template"] = "value";
+    Mode[Mode["AfterTemplate"] = void 0] = "AfterTemplate";
+    Mode[1] = "one";
+    Mode["StringValue"] = "text";
+    Mode["StringAlias"] = "text";
+    Mode[Mode["computed-name"] = 5] = "computed-name";
+    Mode[Mode["AfterComputed"] = 6] = "AfterComputed";
+    Mode[Mode['a"b'] = 7] = 'a"b';
+    Mode[Mode["escaped\\name"] = 8] = "escaped\\name";
+})(Mode || (Mode = {}));
+
+console.log(Mode.B, Mode.C, Mode.Template, Mode[0]);
+
+//# sourceMappingURL=enum-runtime.nicejs.map

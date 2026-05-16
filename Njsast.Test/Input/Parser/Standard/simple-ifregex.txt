@@ -1,0 +1,9 @@
+Toplevel 1:1 - 1:13
+  If 1:1 - 1:13
+    Number 1:4 - 1:5
+      Value: 1
+      Literal: 1
+    SimpleStatement 1:6 - 1:13
+      RegExp 1:6 - 1:13
+        Pattern:   foo
+        Flags: 0

@@ -1,0 +1,2 @@
+const fn=({a,...rest})=>{console.log(a,rest)}
+//# sourceMappingURL=simple-destructuring8.minjs.map

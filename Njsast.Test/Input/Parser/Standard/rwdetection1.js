@@ -1,0 +1,10 @@
+function a() {
+  var b = 10;
+  var c;
+  c = 3;
+  if (b > 11) {
+    c++;
+  }
+}
+
+a();

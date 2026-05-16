@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:28
+  LabeledStatement 1:1 - 1:28
+    Label 1:1 - 1:7 [IsLoop]
+      Name: start
+    For 1:8 - 1:28
+      Break 1:17 - 1:28
+        LabelRef 1:23 - 1:28
+          Name: start

@@ -1,0 +1,61 @@
+Toplevel 1:1 - 8:1
+  Let 1:1 - 1:15
+    VarDef 1:5 - 1:14
+      SymbolLet 1:5 - 1:8 [Write]
+        Name: key
+      String 1:11 - 1:14
+        Value: a
+  Let 2:1 - 2:17
+    VarDef 2:5 - 2:16
+      SymbolLet 2:5 - 2:10 [Write]
+        Name: value
+      String 2:13 - 2:16
+        Value: b
+  SimpleStatement 4:1 - 4:31
+    Call 4:1 - 4:30
+      Dot 4:1 - 4:12
+        Property: log
+        SymbolRef 4:1 - 4:8 [Read]
+          Name: console
+      Object 4:13 - 4:29
+        ObjectKeyVal 4:15 - 4:27
+          SymbolRef 4:16 - 4:19 [Read]
+            Name: key
+          SymbolRef 4:22 - 4:27 [Read]
+            Name: value
+  SimpleStatement 5:1 - 5:29
+    Call 5:1 - 5:28
+      Dot 5:1 - 5:12
+        Property: log
+        SymbolRef 5:1 - 5:8 [Read]
+          Name: console
+      Object 5:13 - 5:27
+        ObjectKeyVal 5:15 - 5:25
+          SymbolRef 5:16 - 5:19 [Read]
+            Name: key
+          SymbolRef 5:22 - 5:25 [Read]
+            Name: key
+  SimpleStatement 6:1 - 6:29
+    Call 6:1 - 6:28
+      Dot 6:1 - 6:12
+        Property: log
+        SymbolRef 6:1 - 6:8 [Read]
+          Name: console
+      Object 6:13 - 6:27
+        ObjectKeyVal 6:15 - 6:25
+          SymbolProperty 6:15 - 6:18
+            Name: key
+          SymbolRef 6:20 - 6:25 [Read]
+            Name: value
+  SimpleStatement 7:1 - 7:27
+    Call 7:1 - 7:26
+      Dot 7:1 - 7:12
+        Property: log
+        SymbolRef 7:1 - 7:8 [Read]
+          Name: console
+      Object 7:13 - 7:25
+        ObjectKeyVal 7:15 - 7:23
+          SymbolProperty 7:15 - 7:18
+            Name: key
+          SymbolRef 7:20 - 7:23 [Read]
+            Name: key

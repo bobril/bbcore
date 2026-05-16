@@ -1,0 +1,2 @@
+arr.map(v=>v.callback)
+//# sourceMappingURL=simple-lambda.minjs.map

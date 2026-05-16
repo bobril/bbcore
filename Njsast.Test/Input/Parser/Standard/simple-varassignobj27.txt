@@ -1,0 +1,19 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:28
+    Assign 1:1 - 1:27
+      Operator: Assignment
+      SymbolRef 1:1 - 1:2 [Write]
+        Name: x
+      Object 1:5 - 1:27
+        ObjectKeyVal 1:7 - 1:13
+          Number 1:7 - 1:8
+            Value: 1
+            Literal: 1
+          String 1:10 - 1:13
+            Value: a
+        ObjectKeyVal 1:15 - 1:25
+          Number 1:15 - 1:20
+            Value: 11.11
+            Literal: 11.11
+          String 1:22 - 1:25
+            Value: b

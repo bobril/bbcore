@@ -1,0 +1,16 @@
+Toplevel 1:1 - 2:12
+  SimpleStatement 1:1 - 1:12
+    Assign 1:1 - 1:11
+      Operator: Assignment
+      SymbolRef 1:1 - 1:2 [Write]
+        Name: x
+      Binary 1:5 - 1:11
+        Operator: GreaterThan
+        UnaryPostfix 1:5 - 1:8
+          Operator: DecrementPostfix
+          SymbolRef 1:5 - 1:6 [Read] [Write]
+            Name: y
+        Number 1:9 - 1:11
+          Value: 10
+          Literal: 10
+Line Comment (2:1-2:12):  nothing

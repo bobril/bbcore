@@ -1,0 +1,1 @@
+A numeric separator is only allowed between two digits (1:3)

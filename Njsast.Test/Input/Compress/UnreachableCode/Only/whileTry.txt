@@ -1,0 +1,25 @@
+Toplevel 1:1 - 8:3
+  While 1:1 - 8:2
+    SymbolRef 1:7 - 1:8 [Read]
+      Name: _
+    BlockStatement 1:10 - 8:2
+      Try 2:5 - 6:6
+        If 3:9 - 3:32
+          Binary 3:13 - 3:18
+            Operator: LessThan
+            SymbolRef 3:13 - 3:14 [Read]
+              Name: a
+            Number 3:17 - 3:18
+              Value: 1
+              Literal: 1
+          Throw 3:20 - 3:32
+            String 3:26 - 3:31
+              Value: err
+        Catch 4:7 - 6:6
+          SymbolCatch 4:14 - 4:15
+            Name: e
+          Continue 5:9 - 5:18
+      SimpleStatement 7:5 - 7:12
+        Call 7:5 - 7:11
+          SymbolRef 7:5 - 7:9 [Read]
+            Name: call

@@ -1,0 +1,9 @@
+Toplevel 1:1 - 2:5
+  SimpleStatement 1:1 - 2:5
+    Binary 1:1 - 2:5
+      Operator: Addition
+      SymbolRef 1:1 - 1:4 [Read]
+        Name: foo
+      SymbolRef 2:2 - 2:5 [Read]
+        Name: baz
+Line Comment (1:5-1:12): bar

@@ -1,0 +1,14 @@
+switch (a) {
+    case 1:
+        while (b) {
+            if (c)
+                break;
+            a++;
+            call();
+        }
+        b = a;
+        break;
+    default:
+        call();
+        break;
+}

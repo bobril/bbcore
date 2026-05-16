@@ -1,0 +1,5 @@
+do {
+    a++;
+    break;
+} while (a);
+

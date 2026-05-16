@@ -1,0 +1,10 @@
+Toplevel 1:1 - 1:7
+  SimpleStatement 1:1 - 1:7
+    Binary 1:1 - 1:7
+      Operator: Addition
+      Number 1:1 - 1:5
+        Value: 123
+        Literal: 123.
+      Number 1:6 - 1:7
+        Value: 2
+        Literal: 2

@@ -1,0 +1,7 @@
+x = {
+    set if(w) {
+        m_if = w;
+    }
+};
+
+//# sourceMappingURL=simple-varassignobj19.nicejs.map

@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:10
+  SimpleStatement 1:1 - 1:10
+    UnaryPostfix 1:1 - 1:10
+      Operator: IncrementPostfix
+      Dot 1:1 - 1:8
+        Property: class
+        SymbolRef 1:1 - 1:2 [Read] [PropWrite!]
+          Name: x

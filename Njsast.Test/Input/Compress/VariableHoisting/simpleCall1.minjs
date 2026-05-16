@@ -1,0 +1,1 @@
+var a;function call(){}call();a=10

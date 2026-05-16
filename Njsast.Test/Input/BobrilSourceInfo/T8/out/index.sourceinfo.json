@@ -1,0 +1,30 @@
+{
+  "BobrilG11NImport": "g",
+  "Imports": [
+    {
+      "StartCol": 16,
+      "StartLine": 0,
+      "EndCol": 29,
+      "EndLine": 0,
+      "Name": "bobril-g11n"
+    }
+  ],
+  "Translations": [
+    {
+      "StartCol": 16,
+      "StartLine": 1,
+      "EndCol": 28,
+      "EndLine": 1,
+      "StartHintCol": 0,
+      "StartHintLine": 0,
+      "EndHintCol": 0,
+      "EndHintLine": 0,
+      "Message": "Hello {p1}",
+      "JustFormat": false,
+      "WithParams": true,
+      "KnownParams": [
+        "p1"
+      ]
+    }
+  ]
+}

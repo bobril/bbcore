@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "bobril": "^9.9.0",
+    "bobril-g11n": "^4.4.1"
+  }
+}

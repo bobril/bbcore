@@ -1,0 +1,5 @@
+async function test() {
+    for await (let x of y) ;
+}
+
+//# sourceMappingURL=simple-asyncforof-let.nicejs.map

@@ -1,0 +1,83 @@
+Toplevel 1:1 - 17:1
+  Var 1:1 - 1:20
+    VarDef 1:5 - 1:19
+      SymbolVar 1:5 - 1:14 [Write]
+        Name: allStyles
+      Object 1:17 - 1:19
+  Var 2:1 - 2:23
+    VarDef 2:5 - 2:22
+      SymbolVar 2:5 - 2:18 [Write]
+        Name: globalCounter
+      Number 2:21 - 2:22
+        Value: 0
+        Literal: 0
+  Var 3:1 - 3:27
+    VarDef 3:5 - 3:26
+      SymbolVar 3:5 - 3:18 [Write]
+        Name: rebuildStyles
+      False 3:21 - 3:26
+  Defun 5:1 - 14:2
+    SymbolDefun 5:10 - 5:26 [Write]
+      Name: selectorStyleDef
+    SymbolFunarg 5:27 - 5:35
+      Name: selector
+    SymbolFunarg 5:37 - 5:42
+      Name: style
+    SymbolFunarg 5:44 - 5:56
+      Name: pseudoOrAttr
+    SimpleStatement 6:5 - 12:7
+      Assign 6:5 - 12:6
+        Operator: Assignment
+        Sub 6:5 - 6:38
+          Binary 6:15 - 6:37
+            Operator: Addition
+            String 6:15 - 6:19
+              Value: b-
+            UnaryPostfix 6:22 - 6:37
+              Operator: IncrementPostfix
+              SymbolRef 6:22 - 6:35 [Read] [Write]
+                Name: globalCounter
+          SymbolRef 6:5 - 6:14 [Read] [PropWrite!]
+            Name: allStyles
+        Object 6:41 - 12:6
+          ObjectKeyVal 7:9 - 7:19
+            SymbolProperty 7:9 - 7:13
+              Name: name
+            Null 7:15 - 7:19
+          ObjectKeyVal 8:9 - 8:23
+            SymbolProperty 8:9 - 8:17
+              Name: realName
+            Null 8:19 - 8:23
+          ObjectKeyVal 9:9 - 9:25
+            SymbolProperty 9:9 - 9:15
+              Name: parent
+            SymbolRef 9:17 - 9:25 [Read]
+              Name: selector
+          ObjectKeyVal 10:9 - 10:14
+            SymbolProperty 10:9 - 10:14
+              Name: style
+            SymbolRef 10:9 - 10:14 [Read]
+              Name: style
+          ObjectKeyVal 11:9 - 11:29
+            SymbolProperty 11:9 - 11:15
+              Name: pseudo
+            SymbolRef 11:17 - 11:29 [Read]
+              Name: pseudoOrAttr
+    SimpleStatement 13:5 - 13:26
+      Assign 13:5 - 13:25
+        Operator: Assignment
+        SymbolRef 13:5 - 13:18 [Write]
+          Name: rebuildStyles
+        True 13:21 - 13:25
+  SimpleStatement 16:1 - 16:42
+    Call 16:1 - 16:41
+      SymbolRef 16:1 - 16:17 [Read]
+        Name: selectorStyleDef
+      String 16:18 - 16:21
+        Value: *
+      Object 16:23 - 16:40
+        ObjectKeyVal 16:25 - 16:38
+          SymbolProperty 16:25 - 16:30
+            Name: color
+          String 16:32 - 16:38
+            Value: blue

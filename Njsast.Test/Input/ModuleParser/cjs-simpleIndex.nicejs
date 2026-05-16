@@ -1,0 +1,10 @@
+"use strict";
+var b = require("./bobril");
+
+b.init(function() {
+    return "hello";
+});
+
+Requires:
+Input/ModuleParser/bobril
+Uses Input/ModuleParser/bobril init

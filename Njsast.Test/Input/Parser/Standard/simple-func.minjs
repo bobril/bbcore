@@ -1,0 +1,2 @@
+function hello(){sayHi()}
+//# sourceMappingURL=simple-func.minjs.map

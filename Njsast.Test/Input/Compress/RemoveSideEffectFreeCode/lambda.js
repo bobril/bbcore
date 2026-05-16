@@ -1,0 +1,5 @@
+function fn(p) {
+    console.log(p());
+}
+
+fn(() => Math.sin(1));

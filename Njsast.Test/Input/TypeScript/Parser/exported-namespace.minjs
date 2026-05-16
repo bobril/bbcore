@@ -1,0 +1,2 @@
+export var Api;(function(Api){function call(){return"ok"}Api.call=call})(Api||(Api={}))
+//# sourceMappingURL=exported-namespace.minjs.map

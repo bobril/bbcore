@@ -1,0 +1,11 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:28
+    Call 1:1 - 1:27
+      SymbolRef 1:1 - 1:5 [Read]
+        Name: some
+      Arrow 1:6 - 1:26 [Async]
+        SymbolFunarg 1:13 - 1:14
+          Name: v
+        Await 1:19 - 1:26
+          SymbolRef 1:25 - 1:26 [Read]
+            Name: v

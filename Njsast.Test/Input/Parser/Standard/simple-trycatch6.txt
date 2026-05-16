@@ -1,0 +1,13 @@
+Toplevel 1:1 - 6:1
+  Try 1:1 - 5:2
+    SimpleStatement 2:5 - 2:14
+      Call 2:5 - 2:13
+        SymbolRef 2:5 - 2:11 [Read]
+          Name: doThat
+    Catch 3:3 - 5:2
+      SimpleStatement 4:5 - 4:14
+        Call 4:5 - 4:13
+          SymbolRef 4:5 - 4:8 [Read]
+            Name: say
+          String 4:9 - 4:12
+            Value: e

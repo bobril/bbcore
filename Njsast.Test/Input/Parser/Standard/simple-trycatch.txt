@@ -1,0 +1,5 @@
+Toplevel 1:1 - 1:22
+  Try 1:1 - 1:22
+    Catch 1:9 - 1:22
+      SymbolCatch 1:16 - 1:17
+        Name: e

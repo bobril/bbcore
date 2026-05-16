@@ -1,0 +1,3 @@
+for (x in list) process(x);
+
+//# sourceMappingURL=simple-forin.nicejs.map

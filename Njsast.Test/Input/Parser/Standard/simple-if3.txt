@@ -1,0 +1,11 @@
+Toplevel 1:1 - 1:24
+  If 1:1 - 1:24
+    SymbolRef 1:5 - 1:12 [Read]
+      Name: morning
+    Var 1:14 - 1:24
+      VarDef 1:18 - 1:23
+        SymbolVar 1:18 - 1:19 [Write]
+          Name: x
+        Number 1:22 - 1:23
+          Value: 0
+          Literal: 0

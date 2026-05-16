@@ -1,0 +1,6 @@
+Toplevel 1:1 - 1:28
+  If 1:1 - 1:28
+    SymbolRef 1:5 - 1:12 [Read]
+      Name: morning
+    SimpleStatement 1:14 - 1:28
+      Function 1:15 - 1:27

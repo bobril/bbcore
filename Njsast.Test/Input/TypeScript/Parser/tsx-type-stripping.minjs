@@ -1,0 +1,2 @@
+export const View=props=><h1 data-count={props.count}>{props.title}</h1>
+//# sourceMappingURL=tsx-type-stripping.minjs.map

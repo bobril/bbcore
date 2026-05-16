@@ -1,0 +1,6 @@
+{
+    do {} while (false);
+    false;
+}
+
+//# sourceMappingURL=simple-dowhile4.nicejs.map

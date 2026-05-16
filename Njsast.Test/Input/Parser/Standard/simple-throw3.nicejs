@@ -1,0 +1,5 @@
+throw {
+    message: "Error"
+};
+
+//# sourceMappingURL=simple-throw3.nicejs.map

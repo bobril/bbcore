@@ -1,0 +1,1 @@
+var b,a;for(b=1,a=b?2:3;false;);

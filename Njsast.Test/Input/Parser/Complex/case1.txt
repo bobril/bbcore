@@ -1,0 +1,208 @@
+Toplevel 1:1 - 38:1 [HasUseStrictDirective]
+  Const 7:1 - 28:13
+    VarDef 7:7 - 28:12
+      SymbolConst 7:7 - 7:8 [Write]
+        Name: i
+      Arrow 7:11 - 28:12
+        SymbolFunarg 7:12 - 7:13
+          Name: i
+        SymbolFunarg 7:15 - 7:16
+          Name: e
+        Conditional 8:5 - 28:12
+          Binary 8:5 - 8:70
+            Operator: LogicalAnd
+            Binary 8:5 - 8:40
+              Operator: LogicalAnd
+              Binary 8:5 - 8:24
+                Operator: StrictEquals
+                String 8:5 - 8:13
+                  Value: method
+                Dot 8:18 - 8:24
+                  Property: kind
+                  SymbolRef 8:18 - 8:19 [Read]
+                    Name: e
+              Dot 8:28 - 8:40
+                Property: descriptor
+                SymbolRef 8:28 - 8:29 [Read]
+                  Name: e
+            UnaryPrefix 8:44 - 8:70
+              Operator: LogicalNot
+              Binary 8:46 - 8:69
+                Operator: In
+                String 8:46 - 8:53
+                  Value: value
+                Dot 8:57 - 8:69
+                  Property: descriptor
+                  SymbolRef 8:57 - 8:58 [Read]
+                    Name: e
+          Object 9:11 - 14:12
+            Expansion 10:15 - 10:19
+              SymbolRef 10:18 - 10:19 [Read]
+                Name: e
+            ConciseMethod 11:15 - 13:16
+              SymbolProperty 11:15 - 11:23
+                Name: finisher
+              Function 11:23 - 13:16
+                SymbolFunarg 11:24 - 11:25
+                  Name: n
+                SimpleStatement 12:19 - 12:46
+                  Call 12:19 - 12:45
+                    Dot 12:19 - 12:35
+                      Property: createProperty
+                      SymbolRef 12:19 - 12:20 [Read]
+                        Name: n
+                    Dot 12:36 - 12:41
+                      Property: key
+                      SymbolRef 12:36 - 12:37 [Read] [PropWrite!]
+                        Name: e
+                    SymbolRef 12:43 - 12:44 [Read] [PropWrite]
+                      Name: i
+          Object 15:11 - 28:12
+            ObjectKeyVal 16:15 - 16:28
+              SymbolProperty 16:15 - 16:19
+                Name: kind
+              String 16:21 - 16:28
+                Value: field
+            ObjectKeyVal 17:15 - 17:28
+              SymbolProperty 17:15 - 17:18
+                Name: key
+              Call 17:20 - 17:28
+                SymbolRef 17:20 - 17:26 [Read]
+                  Name: Symbol
+            ObjectKeyVal 18:15 - 18:31
+              SymbolProperty 18:15 - 18:24
+                Name: placement
+              String 18:26 - 18:31
+                Value: own
+            ObjectKeyVal 19:15 - 19:29
+              SymbolProperty 19:15 - 19:25
+                Name: descriptor
+              Object 19:27 - 19:29
+            ObjectKeyVal 20:15 - 20:33
+              SymbolProperty 20:15 - 20:26
+                Name: originalKey
+              Dot 20:28 - 20:33
+                Property: key
+                SymbolRef 20:28 - 20:29 [Read] [PropWrite!]
+                  Name: e
+            ConciseMethod 21:15 - 24:16
+              SymbolProperty 21:15 - 21:26
+                Name: initializer
+              Function 21:26 - 24:16
+                SimpleStatement 22:19 - 23:64
+                  Binary 22:19 - 23:63
+                    Operator: LogicalAnd
+                    Binary 22:19 - 22:53
+                      Operator: Equals
+                      String 22:19 - 22:29
+                        Value: function
+                      UnaryPrefix 22:33 - 22:53
+                        Operator: TypeOf
+                        Dot 22:40 - 22:53
+                          Property: initializer
+                          SymbolRef 22:40 - 22:41 [Read]
+                            Name: e
+                    Assign 23:24 - 23:62
+                      Operator: Assignment
+                      Sub 23:24 - 23:35
+                        Dot 23:29 - 23:34
+                          Property: key
+                          SymbolRef 23:29 - 23:30 [Read]
+                            Name: e
+                        This 23:24 - 23:28 [Read] [PropWrite!]
+                          Name: this
+                      Call 23:38 - 23:62
+                        Dot 23:38 - 23:56
+                          Property: call
+                          Dot 23:38 - 23:51
+                            Property: initializer
+                            SymbolRef 23:38 - 23:39 [Read]
+                              Name: e
+                        This 23:57 - 23:61 [Read] [PropWrite]
+                          Name: this
+            ConciseMethod 25:15 - 27:16
+              SymbolProperty 25:15 - 25:23
+                Name: finisher
+              Function 25:23 - 27:16
+                SymbolFunarg 25:24 - 25:25
+                  Name: n
+                SimpleStatement 26:19 - 26:46
+                  Call 26:19 - 26:45
+                    Dot 26:19 - 26:35
+                      Property: createProperty
+                      SymbolRef 26:19 - 26:20 [Read]
+                        Name: n
+                    Dot 26:36 - 26:41
+                      Property: key
+                      SymbolRef 26:36 - 26:37 [Read] [PropWrite!]
+                        Name: e
+                    SymbolRef 26:43 - 26:44 [Read] [PropWrite]
+                      Name: i
+  Defun 29:1 - 36:2
+    SymbolDefun 29:10 - 29:11 [Write]
+      Name: e
+    SymbolFunarg 29:12 - 29:13
+      Name: e
+    Return 30:5 - 35:23
+      Arrow 30:12 - 35:22
+        SymbolFunarg 30:13 - 30:14
+          Name: n
+        SymbolFunarg 30:16 - 30:17
+          Name: t
+        Conditional 31:9 - 35:22
+          Binary 31:9 - 31:21
+            Operator: StrictNotEquals
+            UnaryPrefix 31:9 - 31:15
+              Operator: Void
+              Number 31:14 - 31:15
+                Value: 0
+                Literal: 0
+            SymbolRef 31:20 - 31:21 [Read]
+              Name: t
+          Call 32:15 - 34:26
+            Arrow 32:16 - 34:16
+              SymbolFunarg 32:17 - 32:18
+                Name: i
+              SymbolFunarg 32:20 - 32:21
+                Name: e
+              SymbolFunarg 32:23 - 32:24
+                Name: n
+              SimpleStatement 33:19 - 33:54
+                Call 33:19 - 33:53
+                  Dot 33:19 - 33:47
+                    Property: createProperty
+                    Dot 33:19 - 33:32
+                      Property: constructor
+                      SymbolRef 33:19 - 33:20 [Read]
+                        Name: e
+                  SymbolRef 33:48 - 33:49 [Read] [PropWrite]
+                    Name: n
+                  SymbolRef 33:51 - 33:52 [Read] [PropWrite]
+                    Name: i
+            SymbolRef 34:18 - 34:19 [Read] [PropWrite]
+              Name: e
+            SymbolRef 34:21 - 34:22 [Read] [PropWrite]
+              Name: n
+            SymbolRef 34:24 - 34:25 [Read] [PropWrite]
+              Name: t
+          Call 35:15 - 35:22
+            SymbolRef 35:15 - 35:16 [Read]
+              Name: i
+            SymbolRef 35:17 - 35:18 [Read] [PropWrite]
+              Name: e
+            SymbolRef 35:20 - 35:21 [Read] [PropWrite]
+              Name: n
+  SimpleStatement 37:1 - 37:22
+    Assign 37:1 - 37:21
+      Operator: Assignment
+      Dot 37:1 - 37:17
+        Property: property
+        SymbolRef 37:1 - 37:8 [Read] [PropWrite!]
+          Name: exports
+      SymbolRef 37:20 - 37:21 [Read]
+        Name: e
+Block Comment (2:1-6:4): *
+ * @license
+ * Copyright 2017 Google LLC
+ * SPDX-License-Identifier: BSD-3-Clause
+ 

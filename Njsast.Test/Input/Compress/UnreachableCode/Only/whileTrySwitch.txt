@@ -1,0 +1,81 @@
+Toplevel 1:1 - 27:2
+  Defun 1:1 - 27:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    While 2:5 - 24:6
+      SymbolRef 2:11 - 2:12 [Read]
+        Name: _
+      Try 2:14 - 24:6
+        If 3:9 - 3:25
+          SymbolRef 3:13 - 3:14 [Read]
+            Name: a
+          Return 3:16 - 3:25
+            SymbolRef 3:23 - 3:24 [Read]
+              Name: a
+        Switch 4:9 - 18:10
+          SymbolRef 4:17 - 4:18 [Read]
+            Name: c
+          Case 5:13 - 7:23
+            SimpleStatement 6:17 - 6:23
+              Assign 6:17 - 6:22
+                Operator: Assignment
+                SymbolRef 6:17 - 6:18 [Write]
+                  Name: b
+                SymbolRef 6:21 - 6:22 [Read]
+                  Name: c
+            Break 7:17 - 7:23
+            Number 5:18 - 5:19
+              Value: 0
+              Literal: 0
+          Case 8:13 - 9:30
+            Return 9:17 - 9:30
+              False 9:24 - 9:29
+            Number 8:18 - 8:19
+              Value: 1
+              Literal: 1
+          Case 10:13 - 12:26
+            SimpleStatement 11:17 - 11:24
+              Call 11:17 - 11:23
+                SymbolRef 11:17 - 11:21 [Read]
+                  Name: call
+            Continue 12:17 - 12:26
+            Number 10:18 - 10:19
+              Value: 2
+              Literal: 2
+          Case 13:13 - 14:25
+            SimpleStatement 14:17 - 14:25
+              Call 14:17 - 14:24
+                SymbolRef 14:17 - 14:22 [Read]
+                  Name: call1
+            Number 13:18 - 13:19
+              Value: 3
+              Literal: 3
+          Default 15:13 - 17:26
+            SimpleStatement 16:17 - 16:24
+              Call 16:17 - 16:23
+                SymbolRef 16:17 - 16:21 [Read]
+                  Name: next
+            Continue 17:17 - 17:26
+        SimpleStatement 19:9 - 19:17
+          Call 19:9 - 19:16
+            SymbolRef 19:9 - 19:14 [Read]
+              Name: case0
+        Catch 20:7 - 22:6
+          SymbolCatch 20:14 - 20:15
+            Name: e
+          Throw 21:9 - 21:17
+            SymbolRef 21:15 - 21:16 [Read]
+              Name: e
+        Finally 22:14 - 24:6
+          SimpleStatement 23:9 - 23:18
+            Call 23:9 - 23:17
+              SymbolRef 23:9 - 23:15 [Read]
+                Name: finish
+    If 25:5 - 25:20
+      SymbolRef 25:9 - 25:10 [Read]
+        Name: b
+      Throw 25:12 - 25:20
+        SymbolRef 25:18 - 25:19 [Read]
+          Name: b
+    Return 26:5 - 26:17
+      True 26:12 - 26:16

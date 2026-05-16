@@ -1,0 +1,1 @@
+let obj={b:!1};setB(obj);obj.b&&console.log("Ok");function setB(obj){obj.b=!0}

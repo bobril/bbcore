@@ -1,0 +1,2 @@
+const element=<div>{a+b}{obj.fn?.(value)}{import("x")}</div>;const list=<UI.List value="x" />
+//# sourceMappingURL=tsx-expression-type-arguments.minjs.map

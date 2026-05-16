@@ -1,0 +1,3 @@
+const a = `x${1 + 2}y`;
+
+//# sourceMappingURL=simple-template-expr.nicejs.map

@@ -1,0 +1,1 @@
+label:{while(true){func();function func(){label:do{break label}while(false)}}}

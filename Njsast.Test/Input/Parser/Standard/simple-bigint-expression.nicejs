@@ -1,0 +1,3 @@
+const a = 1n + 2n;
+
+//# sourceMappingURL=simple-bigint-expression.nicejs.map

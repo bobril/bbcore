@@ -1,0 +1,9 @@
+function invokeMouseOwner(handlerName) {
+    var c, handler;
+    if (ownerCtx == null) {
+        return false;
+    }
+    c = ownerCtx.me.component;
+    handler = c[handlerName];
+}
+

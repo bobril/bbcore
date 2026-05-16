@@ -1,0 +1,6 @@
+({a, b} = {
+    a: 1,
+    b: 2
+});
+
+//# sourceMappingURL=simple-destructuring3.nicejs.map

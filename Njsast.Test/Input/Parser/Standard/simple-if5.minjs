@@ -1,0 +1,2 @@
+if(morning)goodMorning();else goodDay()
+//# sourceMappingURL=simple-if5.minjs.map

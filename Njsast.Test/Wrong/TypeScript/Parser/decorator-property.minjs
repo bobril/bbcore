@@ -1,0 +1,2 @@
+function field(target,key){}class Service{name;}__decorate([field],Service.prototype,"name",void 0)
+//# sourceMappingURL=decorator-property.minjs.map

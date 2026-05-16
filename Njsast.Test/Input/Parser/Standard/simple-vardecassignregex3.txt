@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:19
+  Var 1:1 - 1:19
+    VarDef 1:5 - 1:19
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: x
+      RegExp 1:9 - 1:19
+        Pattern: foo\\/bar
+        Flags: 0

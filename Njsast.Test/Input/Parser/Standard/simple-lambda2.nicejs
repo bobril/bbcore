@@ -1,0 +1,5 @@
+arr.map(v => {
+    v.callback;
+});
+
+//# sourceMappingURL=simple-lambda2.nicejs.map

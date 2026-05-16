@@ -1,0 +1,9 @@
+Toplevel 1:1 - 1:31
+  SimpleStatement 1:1 - 1:31
+    Assign 1:1 - 1:30
+      Operator: Assignment
+      SymbolRef 1:1 - 1:5 [Write]
+        Name: func
+      Function 1:8 - 1:30
+        SymbolLambda 1:17 - 1:25 [Write]
+          Name: funcName

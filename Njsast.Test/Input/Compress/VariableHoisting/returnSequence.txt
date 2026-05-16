@@ -1,0 +1,25 @@
+Toplevel 1:1 - 5:2
+  Defun 1:1 - 5:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    Var 1:1 - 1:1
+      VarDef 2:9 - 2:10
+        SymbolVar 2:9 - 2:10
+          Name: a
+        Number 4:16 - 4:18
+          Value: 10
+          Literal: 10
+      VarDef 3:9 - 3:10
+        SymbolVar 3:9 - 3:10
+          Name: b
+        Number 4:24 - 4:26
+          Value: 20
+          Literal: 20
+    Return 4:5 - 4:34
+      Sequence 4:12 - 4:33
+        Binary 4:28 - 4:33
+          Operator: Addition
+          SymbolRef 4:28 - 4:29 [Read]
+            Name: a
+          SymbolRef 4:32 - 4:33 [Read]
+            Name: b

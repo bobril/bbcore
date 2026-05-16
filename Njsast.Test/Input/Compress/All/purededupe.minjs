@@ -1,0 +1,1 @@
+let map=new Map,lastStyle=0;function styleDef(s){let res=lastStyle++;map[res]=s;return res}let s1=styleDef({color:"red"}),s2=styleDef({color:"blue"}),s4=styleDef({height:Math.random()}),s5=styleDef({height:Math.random()});log(s1);log(s2);log(s1);log(s4);log(s5)

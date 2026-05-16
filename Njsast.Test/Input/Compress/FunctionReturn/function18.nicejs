@@ -1,0 +1,9 @@
+function func() {
+    if (a) {
+        function call() {
+            return a;
+        }
+    }
+    return call();
+}
+

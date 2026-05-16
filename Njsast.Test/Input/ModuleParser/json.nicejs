@@ -1,0 +1,5 @@
+var content = {
+    hello: "world"
+};
+
+Whole Export: content

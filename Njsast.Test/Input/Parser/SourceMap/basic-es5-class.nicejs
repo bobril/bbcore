@@ -1,0 +1,14 @@
+"use strict";
+var Hello = function() {
+    function Hello() {}
+    Hello.prototype.world = function() {
+        console.log("Hello world");
+    };
+    return Hello;
+}();
+
+var h = new Hello();
+
+h.world();
+
+//# sourceMappingURL=basic-es5-class.nicejs.map

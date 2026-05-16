@@ -1,0 +1,9 @@
+function func() {
+    if (a) {
+        a++;
+        return;
+    }
+    a++;
+    return;
+    a++;
+}

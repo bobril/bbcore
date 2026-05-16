@@ -1,0 +1,2 @@
+let fn=()=>({a:"b"})
+//# sourceMappingURL=simple-arrow.minjs.map

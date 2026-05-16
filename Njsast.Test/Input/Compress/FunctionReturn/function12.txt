@@ -1,0 +1,28 @@
+Toplevel 1:1 - 8:2
+  Defun 1:1 - 8:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    Let 2:5 - 2:15
+      VarDef 2:9 - 2:14
+        SymbolLet 2:9 - 2:10 [Write]
+          Name: a
+        Number 2:13 - 2:14
+          Value: 1
+          Literal: 1
+    If 3:5 - 6:6
+      SymbolRef 3:9 - 3:10 [Read]
+        Name: b
+      BlockStatement 3:12 - 6:6
+        Let 4:9 - 4:19
+          VarDef 4:13 - 4:18
+            SymbolLet 4:13 - 4:14 [Write]
+              Name: a
+            Number 4:17 - 4:18
+              Value: 2
+              Literal: 2
+        Return 5:9 - 5:18
+          SymbolRef 5:16 - 5:17 [Read]
+            Name: a
+    Return 7:5 - 7:14
+      SymbolRef 7:12 - 7:13 [Read]
+        Name: a

@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:27
+  Throw 1:1 - 1:27
+    Object 1:7 - 1:27
+      ObjectKeyVal 1:9 - 1:25
+        SymbolProperty 1:9 - 1:16
+          Name: message
+        String 1:18 - 1:25
+          Value: Error

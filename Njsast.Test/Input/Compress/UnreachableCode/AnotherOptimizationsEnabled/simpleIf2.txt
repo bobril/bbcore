@@ -1,0 +1,9 @@
+Toplevel 1:1 - 5:2
+  SimpleStatement 4:5 - 4:11
+    Assign 4:5 - 4:10
+      Operator: Assignment
+      SymbolRef 4:5 - 4:6 [Write]
+        Name: a
+      Number 4:9 - 4:10
+        Value: 2
+        Literal: 2

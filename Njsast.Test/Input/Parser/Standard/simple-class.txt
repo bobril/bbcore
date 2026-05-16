@@ -1,0 +1,59 @@
+Toplevel 1:1 - 11:1
+  DefClass 1:1 - 10:2
+    SymbolDefClass 1:7 - 1:12
+      Name: Shape
+    ConciseMethod 2:5 - 5:6
+      SymbolProperty 2:5 - 2:16
+        Name: constructor
+      Function 2:17 - 5:6
+        SymbolFunarg 2:18 - 2:20
+          Name: id
+        SymbolFunarg 2:22 - 2:23
+          Name: x
+        SymbolFunarg 2:25 - 2:26
+          Name: y
+        SimpleStatement 3:9 - 3:22
+          Assign 3:9 - 3:21
+            Operator: Assignment
+            Dot 3:9 - 3:16
+              Property: id
+              This 3:9 - 3:13 [Read] [PropWrite!]
+                Name: this
+            SymbolRef 3:19 - 3:21 [Read]
+              Name: id
+        SimpleStatement 4:9 - 4:25
+          Call 4:9 - 4:24
+            Dot 4:9 - 4:18
+              Property: move
+              This 4:9 - 4:13 [Read]
+                Name: this
+            SymbolRef 4:19 - 4:20 [Read] [PropWrite]
+              Name: x
+            SymbolRef 4:22 - 4:23 [Read] [PropWrite]
+              Name: y
+    ConciseMethod 6:5 - 9:6
+      SymbolProperty 6:5 - 6:9
+        Name: move
+      Function 6:10 - 9:6
+        SymbolFunarg 6:11 - 6:12
+          Name: x
+        SymbolFunarg 6:14 - 6:15
+          Name: y
+        SimpleStatement 7:9 - 7:20
+          Assign 7:9 - 7:19
+            Operator: Assignment
+            Dot 7:9 - 7:15
+              Property: x
+              This 7:9 - 7:13 [Read] [PropWrite!]
+                Name: this
+            SymbolRef 7:18 - 7:19 [Read]
+              Name: x
+        SimpleStatement 8:9 - 8:20
+          Assign 8:9 - 8:19
+            Operator: Assignment
+            Dot 8:9 - 8:15
+              Property: y
+              This 8:9 - 8:13 [Read] [PropWrite!]
+                Name: this
+            SymbolRef 8:18 - 8:19 [Read]
+              Name: y

@@ -1,0 +1,27 @@
+Toplevel 1:1 - 2:53
+  Var 1:1 - 1:12
+    VarDef 1:5 - 1:11
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: a
+      String 1:9 - 1:11
+        Value: 
+  SimpleStatement 2:1 - 2:53
+    Conditional 2:1 - 2:52
+      Binary 2:1 - 2:15
+        Operator: NotEquals
+        SymbolRef 2:1 - 2:2 [Read]
+          Name: b
+        SymbolRef 2:6 - 2:15 [Read]
+          Name: undefined
+      Assign 2:18 - 2:29
+        Operator: Assignment
+        SymbolRef 2:18 - 2:19 [Write]
+          Name: a
+        String 2:22 - 2:29
+          Value: empty
+      Assign 2:33 - 2:52
+        Operator: Assignment
+        SymbolRef 2:33 - 2:34 [Write]
+          Name: a
+        String 2:37 - 2:52
+          Value: uninitialized

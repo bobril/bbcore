@@ -1,0 +1,66 @@
+Toplevel 1:1 - 302:1
+  SimpleStatement 1:1 - 300:5
+    UnaryPrefix 1:1 - 300:4
+      Operator: LogicalNot
+      Call 1:2 - 300:4
+        Function 1:2 - 300:2 [HasUseStrictDirective]
+          SymbolFunarg 1:11 - 1:20
+            Name: undefined
+          Var 1:1 - 1:1
+            VarDef 1:1 - 1:1
+              SymbolVar 289:9 - 289:18
+                Name: ___shared
+            VarDef 1:1 - 1:1
+              SymbolVar 291:9 - 291:18
+                Name: allshared
+            VarDef 1:1 - 1:1
+              SymbolVar 296:9 - 296:19
+                Name: __export_$
+          SimpleStatement 289:9 - 289:28
+            Assign 289:9 - 289:28
+              Operator: Assignment
+              SymbolRef 289:9 - 289:18 [Write]
+                Name: ___shared
+              Dot 289:21 - 289:28
+                Property: b
+                SymbolRef 289:21 - 289:26 [Read]
+                  Name: __bbb
+          SimpleStatement 291:9 - 291:30
+            Assign 291:9 - 291:30
+              Operator: Assignment
+              SymbolRef 291:9 - 291:18 [Write]
+                Name: allshared
+              SymbolRef 291:21 - 291:30 [Read]
+                Name: ___shared
+          SimpleStatement 292:5 - 292:24
+            Call 292:5 - 292:23
+              Dot 292:5 - 292:21
+                Property: shared
+                SymbolRef 292:5 - 292:14 [Read]
+                  Name: allshared
+          Defun 293:5 - 295:6
+            SymbolDefun 293:14 - 293:19 [Write]
+              Name: hello
+            Return 294:9 - 294:24
+              String 294:16 - 294:23
+                Value: Hello
+          SimpleStatement 296:9 - 298:6
+            Assign 296:9 - 298:6
+              Operator: Assignment
+              SymbolRef 296:9 - 296:19 [Write]
+                Name: __export_$
+              Object 296:22 - 298:6
+                ObjectKeyVal 297:9 - 297:21
+                  SymbolProperty 297:9 - 297:14
+                    Name: hello
+                  SymbolRef 297:16 - 297:21 [Read]
+                    Name: hello
+          SimpleStatement 299:5 - 299:26
+            Assign 299:5 - 299:25
+              Operator: Assignment
+              Dot 299:5 - 299:12
+                Property: a
+                SymbolRef 299:5 - 299:10 [Read] [PropWrite!]
+                  Name: __bbb
+              SymbolRef 299:15 - 299:25 [Read]
+                Name: __export_$

@@ -1,0 +1,12 @@
+let a = 1, b = 2, c = 3;
+
+c++;
+
+console.log(c);
+
+a++;
+
+b++;
+
+console.log(a, b);
+

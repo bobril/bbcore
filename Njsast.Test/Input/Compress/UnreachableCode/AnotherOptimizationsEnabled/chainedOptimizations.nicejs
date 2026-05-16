@@ -1,0 +1,10 @@
+var a = false;
+
+var b = false;
+
+var c = false;
+
+var d = false;
+
+if (a) {}
+

@@ -1,0 +1,20 @@
+Toplevel 1:1 - 6:1
+  DefClass 1:1 - 5:2
+    SymbolDefClass 1:7 - 1:16
+      Name: Rectangle
+    SymbolRef 1:25 - 1:30 [Read]
+      Name: Shape
+    ConciseMethod 2:5 - 4:6
+      SymbolProperty 2:5 - 2:13
+        Name: toString
+      Function 2:13 - 4:6
+        Return 3:9 - 3:50
+          Binary 3:16 - 3:49
+            Operator: Addition
+            String 3:16 - 3:30
+              Value: Rectangle \u003e 
+            Call 3:33 - 3:49
+              Dot 3:33 - 3:47
+                Property: toString
+                Super 3:33 - 3:38 [Read]
+                  Name: super

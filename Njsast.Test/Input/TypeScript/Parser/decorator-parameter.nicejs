@@ -1,0 +1,9 @@
+function param(target, key, index) {}
+
+class Service {
+    run(value) {}
+}
+
+__decorate([ __param(0, param) ], Service.prototype, "run", null);
+
+//# sourceMappingURL=decorator-parameter.nicejs.map

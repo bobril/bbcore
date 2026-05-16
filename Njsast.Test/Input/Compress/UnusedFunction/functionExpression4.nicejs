@@ -1,0 +1,4 @@
+func = function funcName() {};
+
+func();
+

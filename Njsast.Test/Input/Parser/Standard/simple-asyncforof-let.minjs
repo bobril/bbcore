@@ -1,0 +1,2 @@
+async function test(){for await(let x of y);}
+//# sourceMappingURL=simple-asyncforof-let.minjs.map

@@ -1,0 +1,13 @@
+Toplevel 1:1 - 4:2
+  SimpleStatement 1:1 - 4:2
+    Arrow 1:1 - 4:2
+      SimpleStatement 2:5 - 2:9
+        UnaryPostfix 2:5 - 2:8
+          Operator: IncrementPostfix
+          SymbolRef 2:5 - 2:6 [Read] [Write]
+            Name: a
+      SimpleStatement 3:5 - 3:9
+        UnaryPostfix 3:5 - 3:8
+          Operator: DecrementPostfix
+          SymbolRef 3:5 - 3:6 [Read] [Write]
+            Name: a

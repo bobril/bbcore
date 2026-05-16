@@ -1,0 +1,96 @@
+Toplevel 1:1 - 16:1
+  Var 1:1 - 1:1
+    VarDef 4:5 - 4:15
+      SymbolVar 4:5 - 4:6 [Write]
+        Name: a
+      Array 4:9 - 4:15
+        Number 4:10 - 4:11
+          Value: 1
+          Literal: 1
+        Number 4:13 - 4:14
+          Value: 2
+          Literal: 2
+    VarDef 5:3 - 5:13
+      SymbolVar 5:3 - 5:4 [Write]
+        Name: b
+      Array 5:7 - 5:13
+        Number 5:8 - 5:9
+          Value: 3
+          Literal: 3
+        Number 5:11 - 5:12
+          Value: 4
+          Literal: 4
+    VarDef 1:1 - 1:1
+      SymbolVar 6:3 - 6:4
+        Name: m
+  Defun 1:1 - 3:2
+    SymbolDefun 1:10 - 1:15 [Write]
+      Name: print
+    Expansion 1:16 - 1:20
+      SymbolFunarg 1:19 - 1:20
+        Name: x
+    SimpleStatement 2:3 - 2:21
+      Call 2:3 - 2:20
+        Dot 2:3 - 2:14
+          Property: log
+          SymbolRef 2:3 - 2:10 [Read]
+            Name: console
+        Expansion 2:15 - 2:19
+          SymbolRef 2:18 - 2:19 [Read]
+            Name: x
+  SimpleStatement 6:3 - 6:11
+    Assign 6:3 - 6:11
+      Operator: Assignment
+      SymbolRef 6:3 - 6:4 [Write]
+        Name: m
+      SymbolRef 6:7 - 6:11 [Read]
+        Name: Math
+  If 8:1 - 9:15
+    SymbolRef 8:5 - 8:6 [Read]
+      Name: m
+    SimpleStatement 8:8 - 8:17
+      Call 8:8 - 8:16
+        SymbolRef 8:8 - 8:13 [Read]
+          Name: print
+        SymbolRef 8:14 - 8:15 [Read] [PropWrite]
+          Name: a
+    SimpleStatement 9:6 - 9:15
+      Call 9:6 - 9:14
+        SymbolRef 9:6 - 9:11 [Read]
+          Name: print
+        SymbolRef 9:12 - 9:13 [Read] [PropWrite]
+          Name: b
+  If 11:1 - 12:15
+    SymbolRef 11:5 - 11:6 [Read]
+      Name: m
+    SimpleStatement 11:8 - 11:20
+      Call 11:8 - 11:19
+        SymbolRef 11:8 - 11:13 [Read]
+          Name: print
+        Expansion 11:14 - 11:18
+          SymbolRef 11:17 - 11:18 [Read]
+            Name: a
+    SimpleStatement 12:6 - 12:15
+      Call 12:6 - 12:14
+        SymbolRef 12:6 - 12:11 [Read]
+          Name: print
+        SymbolRef 12:12 - 12:13 [Read] [PropWrite]
+          Name: b
+  If 14:1 - 15:18
+    Dot 14:5 - 14:23
+      Property: no_such_property
+      SymbolRef 14:5 - 14:6 [Read]
+        Name: m
+    SimpleStatement 14:25 - 14:34
+      Call 14:25 - 14:33
+        SymbolRef 14:25 - 14:30 [Read]
+          Name: print
+        SymbolRef 14:31 - 14:32 [Read] [PropWrite]
+          Name: a
+    SimpleStatement 15:6 - 15:18
+      Call 15:6 - 15:17
+        SymbolRef 15:6 - 15:11 [Read]
+          Name: print
+        Expansion 15:12 - 15:16
+          SymbolRef 15:15 - 15:16 [Read]
+            Name: b

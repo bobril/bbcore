@@ -1,0 +1,2 @@
+class Foo{static[x]=2;}
+//# sourceMappingURL=simple-classfield-static-computed.minjs.map

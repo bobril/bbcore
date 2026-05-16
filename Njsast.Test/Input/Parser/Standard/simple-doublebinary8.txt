@@ -1,0 +1,12 @@
+Toplevel 1:1 - 1:10
+  SimpleStatement 1:1 - 1:10
+    Binary 1:1 - 1:10
+      Operator: Subtraction
+      SymbolRef 1:1 - 1:2 [Read]
+        Name: x
+      Binary 1:5 - 1:10
+        Operator: Modulus
+        SymbolRef 1:5 - 1:6 [Read]
+          Name: y
+        SymbolRef 1:9 - 1:10 [Read]
+          Name: z

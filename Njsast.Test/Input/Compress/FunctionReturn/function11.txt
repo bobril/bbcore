@@ -1,0 +1,8 @@
+Toplevel 1:1 - 6:2
+  Defun 1:1 - 6:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    While 2:5 - 4:6
+      True 2:11 - 2:15
+      BlockStatement 2:17 - 4:6
+        Return 3:9 - 3:16

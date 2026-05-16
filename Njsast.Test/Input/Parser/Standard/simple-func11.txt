@@ -1,0 +1,43 @@
+Toplevel 1:1 - 5:1
+  Defun 1:1 - 3:2
+    SymbolDefun 1:10 - 1:11 [Write]
+      Name: f
+    SymbolFunarg 1:12 - 1:13
+      Name: x
+    DefaultAssign 1:15 - 1:20
+      Operator: Assignment
+      SymbolFunarg 1:15 - 1:16
+        Name: y
+      Number 1:19 - 1:20
+        Value: 7
+        Literal: 7
+    DefaultAssign 1:22 - 1:28
+      Operator: Assignment
+      SymbolFunarg 1:22 - 1:23
+        Name: z
+      Number 1:26 - 1:28
+        Value: 42
+        Literal: 42
+    Return 2:5 - 2:22
+      Binary 2:12 - 2:21
+        Operator: Addition
+        Binary 2:12 - 2:17
+          Operator: Addition
+          SymbolRef 2:12 - 2:13 [Read]
+            Name: x
+          SymbolRef 2:16 - 2:17 [Read]
+            Name: y
+        SymbolRef 2:20 - 2:21 [Read]
+          Name: z
+  SimpleStatement 4:1 - 4:13
+    Binary 4:1 - 4:12
+      Operator: StrictEquals
+      Call 4:1 - 4:5
+        SymbolRef 4:1 - 4:2 [Read]
+          Name: f
+        Number 4:3 - 4:4
+          Value: 1
+          Literal: 1
+      Number 4:10 - 4:12
+        Value: 50
+        Literal: 50

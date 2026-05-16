@@ -1,0 +1,7 @@
+Toplevel 1:1 - 2:1
+  Let 1:1 - 1:21
+    VarDef 1:5 - 1:20
+      SymbolLet 1:5 - 1:7 [Write]
+        Name: fn
+      Arrow 1:10 - 1:20
+        Object 1:17 - 1:19

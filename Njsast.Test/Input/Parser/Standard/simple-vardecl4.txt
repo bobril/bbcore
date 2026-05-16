@@ -1,0 +1,14 @@
+Toplevel 1:1 - 1:30
+  Var 1:1 - 1:30
+    VarDef 1:5 - 1:14
+      SymbolVar 1:5 - 1:9 [Write]
+        Name: eval
+      Number 1:12 - 1:14
+        Value: 42
+        Literal: 42
+    VarDef 1:16 - 1:30
+      SymbolVar 1:16 - 1:25 [Write]
+        Name: arguments
+      Number 1:28 - 1:30
+        Value: 42
+        Literal: 42

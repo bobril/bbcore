@@ -1,0 +1,38 @@
+Toplevel 1:1 - 1:59
+  While 1:1 - 1:59
+    Binary 1:8 - 1:55
+      Operator: LogicalOr
+      Binary 1:8 - 1:20
+        Operator: StrictEquals
+        SymbolRef 1:8 - 1:9 [Read]
+          Name: n
+        UnaryPrefix 1:14 - 1:20
+          Operator: Void
+          Number 1:19 - 1:20
+            Value: 0
+            Literal: 0
+      Binary 1:24 - 1:55
+        Operator: LogicalAnd
+        Binary 1:24 - 1:31
+          Operator: GreaterThan
+          UnaryPostfix 1:24 - 1:27
+            Operator: DecrementPostfix
+            SymbolRef 1:24 - 1:25 [Read] [Write]
+              Name: n
+          Number 1:30 - 1:31
+            Value: 0
+            Literal: 0
+        UnaryPrefix 1:35 - 1:55
+          Operator: LogicalNot
+          Dot 1:36 - 1:55
+            Property: done
+            Assign 1:37 - 1:49
+              Operator: Assignment
+              SymbolRef 1:37 - 1:38 [Write]
+                Name: r
+              Call 1:41 - 1:49
+                Dot 1:41 - 1:47
+                  Property: next
+                  SymbolRef 1:41 - 1:42 [Read]
+                    Name: i
+    BlockStatement 1:57 - 1:59

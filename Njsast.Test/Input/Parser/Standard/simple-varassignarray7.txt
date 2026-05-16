@@ -1,0 +1,17 @@
+Toplevel 1:1 - 1:18
+  SimpleStatement 1:1 - 1:18
+    Assign 1:1 - 1:18
+      Operator: Assignment
+      SymbolRef 1:1 - 1:2 [Write]
+        Name: x
+      Array 1:5 - 1:18
+        Number 1:7 - 1:8
+          Value: 1
+          Literal: 1
+        Number 1:10 - 1:11
+          Value: 2
+          Literal: 2
+        Hole 1:12 - 1:12
+        Number 1:14 - 1:15
+          Value: 3
+          Literal: 3

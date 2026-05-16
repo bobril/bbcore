@@ -1,0 +1,20 @@
+Toplevel 1:1 - 2:1
+  Var 1:1 - 1:36
+    VarDef 1:5 - 1:35
+      Destructuring 1:5 - 1:16
+        ObjectKeyVal 1:7 - 1:8
+          SymbolProperty 1:7 - 1:8
+            Name: b
+          SymbolVar 1:7 - 1:8 [Write]
+            Name: b
+        Expansion 1:10 - 1:14
+          SymbolVar 1:13 - 1:14 [Write]
+            Name: f
+      Object 1:19 - 1:35
+        Expansion 1:21 - 1:25
+          SymbolRef 1:24 - 1:25 [Read]
+            Name: e
+        ConciseMethod 1:27 - 1:33
+          SymbolProperty 1:27 - 1:28
+            Name: a
+          Function 1:28 - 1:33

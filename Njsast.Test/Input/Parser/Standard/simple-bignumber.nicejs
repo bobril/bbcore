@@ -1,0 +1,5 @@
+var a = {
+    MIN_SAFE_INTEGER: -9007199254740991
+};
+
+//# sourceMappingURL=simple-bignumber.nicejs.map

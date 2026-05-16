@@ -1,0 +1,16 @@
+var allStyles = {};
+var globalCounter = 0;
+var rebuildStyles = false;
+
+function selectorStyleDef(selector, style, pseudoOrAttr) {
+    allStyles["b-" + globalCounter++] = {
+        name: null,
+        realName: null,
+        parent: selector,
+        style,
+        pseudo: pseudoOrAttr,
+    };
+    rebuildStyles = true;
+}
+
+selectorStyleDef("*", { color: "blue" });

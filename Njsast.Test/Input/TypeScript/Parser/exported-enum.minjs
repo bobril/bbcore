@@ -1,0 +1,2 @@
+export var Mode;(function(Mode){Mode["Read"]="read";Mode["Write"]="write"})(Mode||(Mode={}))
+//# sourceMappingURL=exported-enum.minjs.map

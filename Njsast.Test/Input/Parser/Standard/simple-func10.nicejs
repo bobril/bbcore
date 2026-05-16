@@ -1,0 +1,3 @@
+function hello(a, ...rest) {}
+
+//# sourceMappingURL=simple-func10.nicejs.map

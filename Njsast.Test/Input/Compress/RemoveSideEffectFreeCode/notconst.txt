@@ -1,0 +1,44 @@
+Toplevel 1:1 - 12:1
+  Var 1:1 - 1:32
+    VarDef 1:5 - 1:31
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: a
+      Object 1:9 - 1:31
+        ObjectKeyVal 1:11 - 1:19
+          SymbolProperty 1:11 - 1:12
+            Name: b
+          False 1:14 - 1:19
+        ObjectKeyVal 1:21 - 1:29
+          SymbolProperty 1:21 - 1:22
+            Name: c
+          False 1:24 - 1:29
+  Defun 3:1 - 5:2
+    SymbolDefun 3:10 - 3:12 [Write]
+      Name: fn
+    SimpleStatement 4:3 - 4:17
+      Assign 4:3 - 4:16
+        Operator: Assignment
+        Sub 4:3 - 4:9
+          String 4:5 - 4:8
+            Value: b
+          SymbolRef 4:3 - 4:4 [Read] [PropWrite!]
+            Name: a
+        True 4:12 - 4:16
+  SimpleStatement 7:1 - 9:2
+    Binary 7:1 - 9:2
+      Operator: LogicalAnd
+      Dot 7:5 - 7:8
+        Property: b
+        SymbolRef 7:5 - 7:6 [Read]
+          Name: a
+      Call 8:3 - 8:20
+        Dot 8:3 - 8:14
+          Property: log
+          SymbolRef 8:3 - 8:10 [Read]
+            Name: console
+        String 8:15 - 8:19
+          Value: Ok
+  SimpleStatement 11:1 - 11:6
+    Call 11:1 - 11:5
+      SymbolRef 11:1 - 11:3 [Read]
+        Name: fn

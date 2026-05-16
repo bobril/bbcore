@@ -1,0 +1,7 @@
+Toplevel 1:1 - 1:5
+  SimpleStatement 1:1 - 1:5
+    UnaryPrefix 1:1 - 1:1
+      Operator: LogicalNot
+      Number 1:1 - 1:1
+        Value: 0
+        Literal: 

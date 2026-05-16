@@ -1,0 +1,7 @@
+try {
+    JSON.parse("{ bad json");
+} catch (error) {
+    console.error(error);
+}
+
+//# sourceMappingURL=catch-binding-types.nicejs.map

@@ -1,0 +1,5 @@
+x = {
+    get false() {}
+};
+
+//# sourceMappingURL=simple-varassignobj14.nicejs.map

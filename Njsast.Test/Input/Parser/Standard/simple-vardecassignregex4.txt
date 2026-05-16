@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:22
+  Var 1:1 - 1:22
+    VarDef 1:5 - 1:22
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: x
+      RegExp 1:9 - 1:22
+        Pattern: =([^=\\s])+
+        Flags: GlobalMatch

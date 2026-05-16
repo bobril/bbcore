@@ -1,0 +1,131 @@
+Toplevel 1:1 - 16:1 [HasUseStrictDirective]
+  Var 2:1 - 2:26
+    VarDef 2:5 - 2:10
+      SymbolVar 2:5 - 2:10
+        Name: First
+    VarDef 2:12 - 2:18
+      SymbolVar 2:12 - 2:18
+        Name: Second
+    VarDef 2:20 - 2:25
+      SymbolVar 2:20 - 2:25
+        Name: Third
+  SimpleStatement 3:1 - 6:27
+    Call 3:1 - 6:26
+      Function 3:2 - 6:2
+        SymbolFunarg 3:11 - 3:16
+          Name: First
+        SimpleStatement 4:3 - 4:20
+          Assign 4:3 - 4:19
+            Operator: Assignment
+            Sub 4:3 - 4:13
+              String 4:9 - 4:12
+                Value: A
+              SymbolRef 4:3 - 4:8 [Read] [PropWrite!]
+                Name: First
+            String 4:16 - 4:19
+              Value: a
+        SimpleStatement 5:3 - 5:20
+          Assign 5:3 - 5:19
+            Operator: Assignment
+            Sub 5:3 - 5:13
+              String 5:9 - 5:12
+                Value: B
+              SymbolRef 5:3 - 5:8 [Read] [PropWrite!]
+                Name: First
+            String 5:16 - 5:19
+              Value: b
+      Binary 6:4 - 6:25
+        Operator: LogicalOr
+        SymbolRef 6:4 - 6:9 [Read]
+          Name: First
+        Assign 6:14 - 6:24
+          Operator: Assignment
+          SymbolRef 6:14 - 6:19 [Write]
+            Name: First
+          Object 6:22 - 6:24
+  SimpleStatement 7:1 - 10:29
+    Call 7:1 - 10:28
+      Function 7:2 - 10:2
+        SymbolFunarg 7:11 - 7:17
+          Name: Second
+        SimpleStatement 8:3 - 8:23
+          Assign 8:3 - 8:22
+            Operator: Assignment
+            Sub 8:3 - 8:15
+              String 8:10 - 8:14
+                Value: AA
+              SymbolRef 8:3 - 8:9 [Read] [PropWrite!]
+                Name: Second
+            String 8:18 - 8:22
+              Value: aa
+        SimpleStatement 9:3 - 9:23
+          Assign 9:3 - 9:22
+            Operator: Assignment
+            Sub 9:3 - 9:15
+              String 9:10 - 9:14
+                Value: BB
+              SymbolRef 9:3 - 9:9 [Read] [PropWrite!]
+                Name: Second
+            String 9:18 - 9:22
+              Value: bb
+      Binary 10:4 - 10:27
+        Operator: LogicalOr
+        SymbolRef 10:4 - 10:10 [Read]
+          Name: Second
+        Assign 10:15 - 10:26
+          Operator: Assignment
+          SymbolRef 10:15 - 10:21 [Write]
+            Name: Second
+          Object 10:24 - 10:26
+  SimpleStatement 11:1 - 14:27
+    Call 11:1 - 14:26
+      Function 11:2 - 14:2
+        SymbolFunarg 11:11 - 11:16
+          Name: Third
+        SimpleStatement 12:3 - 12:24
+          Assign 12:3 - 12:23
+            Operator: Assignment
+            Sub 12:3 - 12:15
+              String 12:9 - 12:14
+                Value: AAA
+              SymbolRef 12:3 - 12:8 [Read] [PropWrite!]
+                Name: Third
+            String 12:18 - 12:23
+              Value: aaa
+        SimpleStatement 13:3 - 13:24
+          Assign 13:3 - 13:23
+            Operator: Assignment
+            Sub 13:3 - 13:15
+              String 13:9 - 13:14
+                Value: BBB
+              SymbolRef 13:3 - 13:8 [Read] [PropWrite!]
+                Name: Third
+            String 13:18 - 13:23
+              Value: bbb
+      Binary 14:4 - 14:25
+        Operator: LogicalOr
+        SymbolRef 14:4 - 14:9 [Read]
+          Name: Third
+        Assign 14:14 - 14:24
+          Operator: Assignment
+          SymbolRef 14:14 - 14:19 [Write]
+            Name: Third
+          Object 14:22 - 14:24
+  SimpleStatement 15:1 - 15:44
+    Call 15:1 - 15:43
+      Dot 15:1 - 15:12
+        Property: log
+        SymbolRef 15:1 - 15:8 [Read]
+          Name: console
+      Dot 15:13 - 15:20
+        Property: A
+        SymbolRef 15:13 - 15:18 [Read] [PropWrite!]
+          Name: First
+      Dot 15:22 - 15:31
+        Property: AA
+        SymbolRef 15:22 - 15:28 [Read] [PropWrite!]
+          Name: Second
+      Dot 15:33 - 15:42
+        Property: AAA
+        SymbolRef 15:33 - 15:38 [Read] [PropWrite!]
+          Name: Third

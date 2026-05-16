@@ -1,0 +1,10 @@
+Toplevel 1:1 - 10:1
+  Defun 1:1 - 9:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    BlockStatement 5:12 - 8:6
+      SimpleStatement 6:9 - 6:16
+        Call 6:9 - 6:15
+          SymbolRef 6:9 - 6:13 [Read]
+            Name: call
+      Return 7:9 - 7:16

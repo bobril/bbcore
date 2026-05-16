@@ -1,0 +1,2 @@
+class Foo{static#x=1;}
+//# sourceMappingURL=simple-privatefield-static.minjs.map

@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:7
+  SimpleStatement 1:1 - 1:7
+    Binary 1:1 - 1:7
+      Operator: LogicalOr
+      SymbolRef 1:1 - 1:2 [Read]
+        Name: x
+      SymbolRef 1:6 - 1:7 [Read]
+        Name: y

@@ -1,0 +1,14 @@
+Toplevel 1:1 - 2:1
+  Var 1:1 - 1:49
+    VarDef 1:5 - 1:48
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: a
+      Object 1:9 - 1:48
+        ObjectKeyVal 1:11 - 1:46
+          SymbolProperty 1:11 - 1:27
+            Name: MIN_SAFE_INTEGER
+          UnaryPrefix 1:29 - 1:46
+            Operator: Subtraction
+            Number 1:30 - 1:46
+              Value: 9007199254740991
+              Literal: 0x1fffffffffffff

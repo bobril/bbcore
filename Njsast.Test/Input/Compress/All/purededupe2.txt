@@ -1,0 +1,84 @@
+Toplevel 1:1 - 17:1
+  Defun 2:1 - 5:2 [Pure]
+    SymbolDefun 2:10 - 2:19 [Write]
+      Name: styledDiv
+    SymbolFunarg 2:20 - 2:21
+      Name: s
+    Return 4:5 - 4:40
+      Object 4:12 - 4:39
+        ObjectKeyVal 4:14 - 4:24
+          SymbolProperty 4:14 - 4:17
+            Name: tag
+          String 4:19 - 4:24
+            Value: div
+        ObjectKeyVal 4:26 - 4:37
+          SymbolProperty 4:26 - 4:34
+            Name: children
+          SymbolRef 4:36 - 4:37 [Read]
+            Name: s
+  Defun 7:1 - 14:2
+    SymbolDefun 7:10 - 7:14 [Write]
+      Name: doIt
+    Let 9:5 - 9:29
+      VarDef 9:9 - 9:28
+        SymbolLet 9:9 - 9:11 [Write]
+          Name: d1
+        Call 9:14 - 9:28
+          SymbolRef 9:14 - 9:23 [Read]
+            Name: styledDiv
+          String 9:24 - 9:27
+            Value:  
+    Let 10:5 - 10:29
+      VarDef 10:9 - 10:28
+        SymbolLet 10:9 - 10:11 [Write]
+          Name: d2
+        Call 10:14 - 10:28
+          SymbolRef 10:14 - 10:23 [Read]
+            Name: styledDiv
+          String 10:24 - 10:27
+            Value:  
+    SimpleStatement 11:5 - 11:33
+      Assign 11:5 - 11:32
+        Operator: Assignment
+        Dot 11:5 - 11:13
+          Property: attrs
+          SymbolRef 11:5 - 11:7 [Read] [PropWrite!]
+            Name: d1
+        Object 11:16 - 11:32
+          ObjectKeyVal 11:18 - 11:30
+            SymbolProperty 11:18 - 11:24
+              Name: active
+            UnaryPrefix 1:1 - 1:1
+              Operator: LogicalNot
+              Number 1:1 - 1:1
+                Value: 0
+                Literal: 
+    SimpleStatement 12:5 - 12:34
+      Assign 12:5 - 12:33
+        Operator: Assignment
+        Dot 12:5 - 12:13
+          Property: attrs
+          SymbolRef 12:5 - 12:7 [Read] [PropWrite!]
+            Name: d2
+        Object 12:16 - 12:33
+          ObjectKeyVal 12:18 - 12:31
+            SymbolProperty 12:18 - 12:24
+              Name: active
+            UnaryPrefix 1:1 - 1:1
+              Operator: LogicalNot
+              Number 1:1 - 1:1
+                Value: 1
+                Literal: 
+    Return 13:5 - 13:21
+      Array 13:12 - 13:20
+        SymbolRef 13:13 - 13:15 [Read]
+          Name: d1
+        SymbolRef 13:17 - 13:19 [Read]
+          Name: d2
+  SimpleStatement 16:1 - 16:13
+    Call 16:1 - 16:12
+      SymbolRef 16:1 - 16:4 [Read]
+        Name: log
+      Call 16:5 - 16:11
+        SymbolRef 16:5 - 16:9 [Read]
+          Name: doIt

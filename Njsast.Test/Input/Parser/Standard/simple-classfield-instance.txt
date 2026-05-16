@@ -1,0 +1,10 @@
+Toplevel 1:1 - 2:1
+  DefClass 1:1 - 1:21
+    SymbolDefClass 1:7 - 1:10
+      Name: Foo
+    ClassField 1:13 - 1:18
+      SymbolProperty 1:13 - 1:14
+        Name: x
+      Number 1:17 - 1:18
+        Value: 1
+        Literal: 1

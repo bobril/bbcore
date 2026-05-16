@@ -1,0 +1,5 @@
+Toplevel 1:1 - 1:6
+  SimpleStatement 1:1 - 1:6
+    Number 1:1 - 1:6
+      Value: 2748
+      Literal: 0xabc

@@ -1,0 +1,7 @@
+for (var [x, y] in pairs) ;
+
+for (var [a] = 0; ;) ;
+
+for (var {c} of cees) ;
+
+//# sourceMappingURL=simple-destructuring6.nicejs.map

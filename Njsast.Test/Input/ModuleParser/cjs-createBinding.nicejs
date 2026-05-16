@@ -1,0 +1,10 @@
+"use strict";
+var lib3_1 = require("./lib3");
+
+var lib3_2 = require("./lib3");
+
+Requires:
+Input/ModuleParser/lib3
+Self exports:
+Hello as Hello from Input/ModuleParser/lib3
+Hello as Hello2 from Input/ModuleParser/lib3

@@ -1,0 +1,10 @@
+Toplevel 1:1 - 1:22
+  SimpleStatement 1:1 - 1:22
+    Dot 1:1 - 1:22
+      Property: galaxies
+      Sub 1:1 - 1:13
+        Number 1:10 - 1:12
+          Value: 42
+          Literal: 42
+        SymbolRef 1:1 - 1:9 [Read]
+          Name: universe

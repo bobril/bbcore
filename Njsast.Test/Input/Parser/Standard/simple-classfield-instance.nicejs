@@ -1,0 +1,5 @@
+class Foo {
+    x = 1;
+}
+
+//# sourceMappingURL=simple-classfield-instance.nicejs.map

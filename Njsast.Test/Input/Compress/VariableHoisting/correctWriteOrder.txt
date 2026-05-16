@@ -1,0 +1,43 @@
+Toplevel 1:1 - 7:2
+  Defun 1:1 - 7:2
+    SymbolDefun 1:10 - 1:26 [Write]
+      Name: invokeMouseOwner
+    SymbolFunarg 1:27 - 1:38
+      Name: handlerName
+    Var 1:1 - 1:1
+      VarDef 1:1 - 1:1
+        SymbolVar 5:9 - 5:10 [Write]
+          Name: c
+      VarDef 1:1 - 1:1
+        SymbolVar 6:9 - 6:16 [Write]
+          Name: handler
+    If 2:5 - 4:6
+      Binary 2:9 - 2:25
+        Operator: Equals
+        SymbolRef 2:9 - 2:17 [Read]
+          Name: ownerCtx
+        Null 2:21 - 2:25
+      BlockStatement 2:27 - 4:6
+        Return 3:9 - 3:22
+          False 3:16 - 3:21
+    SimpleStatement 5:9 - 5:34
+      Assign 5:9 - 5:34
+        Operator: Assignment
+        SymbolRef 5:9 - 5:10
+          Name: c
+        Dot 5:13 - 5:34
+          Property: component
+          Dot 5:13 - 5:24
+            Property: me
+            SymbolRef 5:13 - 5:21 [Read] [PropWrite!]
+              Name: ownerCtx
+    SimpleStatement 6:9 - 6:33
+      Assign 6:9 - 6:33
+        Operator: Assignment
+        SymbolRef 6:9 - 6:16
+          Name: handler
+        Sub 6:19 - 6:33
+          SymbolRef 6:21 - 6:32 [Read]
+            Name: handlerName
+          SymbolRef 6:19 - 6:20 [Read] [PropWrite!]
+            Name: c

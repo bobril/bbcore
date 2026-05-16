@@ -1,0 +1,23 @@
+Toplevel 1:1 - 7:1
+  DefClass 1:1 - 5:2
+    SymbolDefClass 1:7 - 1:13
+      Name: Circle
+    SymbolRef 1:22 - 1:27 [Read]
+      Name: Shape
+    ConciseMethod 2:5 - 4:6 [Static]
+      SymbolProperty 2:12 - 2:25
+        Name: defaultCircle
+      Function 2:25 - 4:6
+        Return 3:9 - 3:29
+          New 3:16 - 3:28
+            SymbolRef 3:20 - 3:26 [Read]
+              Name: Circle
+  Var 6:1 - 6:40
+    VarDef 6:5 - 6:39
+      SymbolVar 6:5 - 6:14 [Write]
+        Name: defCircle
+      Call 6:17 - 6:39
+        Dot 6:17 - 6:37
+          Property: defaultCircle
+          SymbolRef 6:17 - 6:23 [Read]
+            Name: Circle

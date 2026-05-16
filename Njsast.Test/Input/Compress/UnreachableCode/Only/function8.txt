@@ -1,0 +1,14 @@
+Toplevel 1:1 - 6:2
+  Defun 1:1 - 6:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    If 2:5 - 4:6
+      SymbolRef 2:9 - 2:10 [Read]
+        Name: a
+      BlockStatement 2:12 - 4:6
+        Return 3:9 - 3:16
+    SimpleStatement 5:5 - 5:9
+      UnaryPostfix 5:5 - 5:8
+        Operator: IncrementPostfix
+        SymbolRef 5:5 - 5:6 [Read] [Write]
+          Name: a

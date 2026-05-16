@@ -1,0 +1,18 @@
+Toplevel 1:1 - 5:1
+  Var 1:1 - 1:11
+    VarDef 1:5 - 1:10
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: a
+      Number 1:9 - 1:10
+        Value: 1
+        Literal: 1
+  Let 2:1 - 4:3
+    VarDef 2:5 - 4:2
+      SymbolLet 2:5 - 2:7 [Write]
+        Name: fn
+      Arrow 2:10 - 4:2
+        SimpleStatement 3:3 - 3:7
+          UnaryPostfix 3:3 - 3:6
+            Operator: IncrementPostfix
+            SymbolRef 3:3 - 3:4 [Read] [Write]
+              Name: a

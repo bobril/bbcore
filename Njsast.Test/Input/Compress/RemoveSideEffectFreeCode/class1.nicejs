@@ -1,0 +1,8 @@
+class Used {
+    constructor() {
+        console.log("Ok");
+    }
+}
+
+new Used();
+

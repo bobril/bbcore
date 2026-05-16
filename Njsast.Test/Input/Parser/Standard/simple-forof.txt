@@ -1,0 +1,84 @@
+Toplevel 1:1 - 18:1
+  Let 1:1 - 12:3
+    VarDef 1:5 - 12:2
+      SymbolLet 1:5 - 1:14 [Write]
+        Name: fibonacci
+      Object 1:17 - 12:2
+        ConciseMethod 2:5 - 11:6
+          Dot 2:6 - 2:21
+            Property: iterator
+            SymbolRef 2:6 - 2:12 [Read] [PropWrite!]
+              Name: Symbol
+          Function 2:22 - 11:6
+            Let 3:9 - 4:21
+              VarDef 3:13 - 3:20
+                SymbolLet 3:13 - 3:16 [Write]
+                  Name: pre
+                Number 3:19 - 3:20
+                  Value: 0
+                  Literal: 0
+              VarDef 4:13 - 4:20
+                SymbolLet 4:13 - 4:16 [Write]
+                  Name: cur
+                Number 4:19 - 4:20
+                  Value: 1
+                  Literal: 1
+            Return 5:9 - 10:11
+              Object 5:16 - 10:10
+                ConciseMethod 6:13 - 9:14
+                  SymbolProperty 6:13 - 6:17
+                    Name: next
+                  Function 6:17 - 9:14
+                    SimpleStatement 7:17 - 7:47
+                      Assign 7:17 - 7:46
+                        Operator: Assignment
+                        Destructuring 7:17 - 7:27 [IsArray]
+                          SymbolRef 7:18 - 7:21 [Write]
+                            Name: pre
+                          SymbolRef 7:23 - 7:26 [Write]
+                            Name: cur
+                        Array 7:30 - 7:46
+                          SymbolRef 7:31 - 7:34 [Read]
+                            Name: cur
+                          Binary 7:36 - 7:45
+                            Operator: Addition
+                            SymbolRef 7:36 - 7:39 [Read]
+                              Name: pre
+                            SymbolRef 7:42 - 7:45 [Read]
+                              Name: cur
+                    Return 8:17 - 8:52
+                      Object 8:24 - 8:51
+                        ObjectKeyVal 8:26 - 8:37
+                          SymbolProperty 8:26 - 8:30
+                            Name: done
+                          False 8:32 - 8:37
+                        ObjectKeyVal 8:39 - 8:49
+                          SymbolProperty 8:39 - 8:44
+                            Name: value
+                          SymbolRef 8:46 - 8:49 [Read]
+                            Name: cur
+  ForOf 14:1 - 17:2
+    Let 14:6 - 14:11
+      VarDef 14:10 - 14:11
+        SymbolLet 14:10 - 14:11 [Write]
+          Name: n
+    SymbolRef 14:15 - 14:24 [Read]
+      Name: fibonacci
+    BlockStatement 14:26 - 17:2
+      If 15:5 - 15:25
+        Binary 15:9 - 15:17
+          Operator: GreaterThan
+          SymbolRef 15:9 - 15:10 [Read]
+            Name: n
+          Number 15:13 - 15:17
+            Value: 1000
+            Literal: 1000
+        Break 15:19 - 15:25
+      SimpleStatement 16:5 - 16:20
+        Call 16:5 - 16:19
+          Dot 16:5 - 16:16
+            Property: log
+            SymbolRef 16:5 - 16:12 [Read]
+              Name: console
+          SymbolRef 16:17 - 16:18 [Read] [PropWrite]
+            Name: n

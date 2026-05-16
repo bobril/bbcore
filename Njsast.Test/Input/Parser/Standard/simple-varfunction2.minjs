@@ -1,0 +1,2 @@
+var hi=function(...r){sayHi()}
+//# sourceMappingURL=simple-varfunction2.minjs.map

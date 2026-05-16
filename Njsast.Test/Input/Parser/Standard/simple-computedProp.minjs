@@ -1,0 +1,2 @@
+let obj={foo:"bar",["baz"+quux()]:42}
+//# sourceMappingURL=simple-computedProp.minjs.map

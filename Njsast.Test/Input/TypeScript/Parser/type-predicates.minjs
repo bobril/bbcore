@@ -1,0 +1,2 @@
+function isString(value){return typeof value==="string"}function isNumber(value){return typeof value==="number"}if(isString(input)){console.log(input.toUpperCase())}
+//# sourceMappingURL=type-predicates.minjs.map

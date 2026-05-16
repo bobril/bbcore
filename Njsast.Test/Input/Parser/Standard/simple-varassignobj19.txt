@@ -1,0 +1,20 @@
+Toplevel 1:1 - 1:31
+  SimpleStatement 1:1 - 1:31
+    Assign 1:1 - 1:31
+      Operator: Assignment
+      SymbolRef 1:1 - 1:2 [Write]
+        Name: x
+      Object 1:5 - 1:31
+        ObjectSetter 1:7 - 1:29
+          SymbolMethod 1:11 - 1:13
+            Name: if
+          Accessor 1:13 - 1:29
+            SymbolFunarg 1:14 - 1:15
+              Name: w
+            SimpleStatement 1:19 - 1:27
+              Assign 1:19 - 1:27
+                Operator: Assignment
+                SymbolRef 1:19 - 1:23 [Write]
+                  Name: m_if
+                SymbolRef 1:26 - 1:27 [Read]
+                  Name: w

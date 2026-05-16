@@ -1,0 +1,5 @@
+var hi = function(...r) {
+    sayHi();
+};
+
+//# sourceMappingURL=simple-varfunction2.nicejs.map

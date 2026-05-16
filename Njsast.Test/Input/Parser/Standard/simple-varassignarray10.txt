@@ -1,0 +1,7 @@
+Toplevel 1:1 - 1:8
+  SimpleStatement 1:1 - 1:8
+    Assign 1:1 - 1:8
+      Operator: Assignment
+      SymbolRef 1:1 - 1:3 [Write]
+        Name: ⅣⅡ
+      Array 1:6 - 1:8

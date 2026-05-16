@@ -1,0 +1,2 @@
+foo:if(true)break foo
+//# sourceMappingURL=simple-ifbreak.minjs.map

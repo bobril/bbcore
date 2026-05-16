@@ -1,0 +1,36 @@
+Toplevel 1:1 - 17:2
+  Switch 1:1 - 17:2
+    SymbolRef 1:9 - 1:10 [Read]
+      Name: a
+    Case 2:5 - 14:15
+      Switch 3:9 - 12:10
+        SymbolRef 3:17 - 3:18 [Read]
+          Name: b
+        Case 4:13 - 7:29
+          SimpleStatement 5:17 - 5:24
+            Call 5:17 - 5:23
+              SymbolRef 5:17 - 5:21 [Read]
+                Name: call
+          Break 6:17 - 6:23
+          Number 4:18 - 4:19
+            Value: 2
+            Literal: 2
+        Default 8:13 - 11:29
+          SimpleStatement 9:17 - 9:25
+            Call 9:17 - 9:24
+              SymbolRef 9:17 - 9:22 [Read]
+                Name: call1
+      SimpleStatement 13:9 - 13:17
+        Call 13:9 - 13:16
+          SymbolRef 13:9 - 13:14 [Read]
+            Name: call2
+      Break 14:9 - 14:15
+      Number 2:10 - 2:11
+        Value: 1
+        Literal: 1
+    Default 15:5 - 16:13
+      SimpleStatement 16:9 - 16:13
+        UnaryPostfix 16:9 - 16:12
+          Operator: IncrementPostfix
+          SymbolRef 16:9 - 16:10 [Read] [Write]
+            Name: a

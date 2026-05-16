@@ -1,0 +1,5 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:7
+    Number 1:1 - 1:6
+      Value: 123
+      Literal: 1_2_3

@@ -1,0 +1,17 @@
+Toplevel 1:1 - 2:1
+  Const 1:1 - 1:31
+    VarDef 1:7 - 1:30
+      SymbolConst 1:7 - 1:8 [Write]
+        Name: a
+      PrefixedTemplateString 1:11 - 1:30
+        SymbolRef 1:11 - 1:14 [Read]
+          Name: tag
+        TemplateString 1:14 - 1:30
+          TemplateSegment 1:15 - 1:21
+            Value: hello 
+            Raw: hello 
+          SymbolRef 1:23 - 1:28 [Read]
+            Name: world
+          TemplateSegment 1:29 - 1:29
+            Value: 
+            Raw: 

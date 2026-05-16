@@ -1,0 +1,12 @@
+Toplevel 1:1 - 1:23
+  With 1:1 - 1:23
+    SymbolRef 1:7 - 1:8 [Read]
+      Name: x
+    BlockStatement 1:10 - 1:23
+      SimpleStatement 1:12 - 1:21
+        Assign 1:12 - 1:21
+          Operator: Assignment
+          SymbolRef 1:12 - 1:15 [Write]
+            Name: foo
+          SymbolRef 1:18 - 1:21 [Read]
+            Name: bar

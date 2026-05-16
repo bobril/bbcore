@@ -1,0 +1,11 @@
+Toplevel 1:1 - 1:35
+  Var 1:1 - 1:35
+    VarDef 1:5 - 1:15
+      SymbolVar 1:5 - 1:15
+        Name: implements
+    VarDef 1:17 - 1:26
+      SymbolVar 1:17 - 1:26
+        Name: interface
+    VarDef 1:28 - 1:35
+      SymbolVar 1:28 - 1:35
+        Name: package

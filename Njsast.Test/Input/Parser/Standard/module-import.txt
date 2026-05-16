@@ -1,0 +1,47 @@
+Toplevel 1:1 - 6:1
+  Import 1:1 - 1:26
+    String 1:22 - 1:25
+      Value: c
+    NameMapping 1:10 - 1:11
+      SymbolImport 1:10 - 1:11
+        Name: a
+      SymbolImportForeign 1:10 - 1:11
+        Name: a
+    NameMapping 1:13 - 1:14
+      SymbolImport 1:13 - 1:14
+        Name: b
+      SymbolImportForeign 1:13 - 1:14
+        Name: b
+  Import 2:1 - 2:19
+    String 2:15 - 2:18
+      Value: b
+    SymbolImport 2:8 - 2:9
+      Name: c
+  Import 3:1 - 3:34
+    String 3:30 - 3:33
+      Value: d
+    SymbolImport 3:8 - 3:9
+      Name: d
+    NameMapping 3:13 - 3:14
+      SymbolImport 3:13 - 3:14
+        Name: e
+      SymbolImportForeign 3:13 - 3:14
+        Name: e
+    NameMapping 3:16 - 3:22
+      SymbolImport 3:21 - 3:22
+        Name: f
+      SymbolImportForeign 3:16 - 3:17
+        Name: F
+  Import 4:1 - 4:27
+    String 4:23 - 4:26
+      Value: e
+    SymbolImport 4:8 - 4:9
+      Name: g
+    NameMapping 4:11 - 4:17
+      SymbolImport 4:16 - 4:17
+        Name: h
+      SymbolImportForeign 4:11 - 4:12
+        Name: *
+  Import 5:1 - 5:12
+    String 5:8 - 5:11
+      Value: f

@@ -1,0 +1,2 @@
+try{}finally{cleanup(stuff)}
+//# sourceMappingURL=simple-tryfinally.minjs.map

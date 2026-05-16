@@ -1,0 +1,2 @@
+export { name1, name2 };
+export { variable1 as name3, variable2 as name4, variable3 as default };

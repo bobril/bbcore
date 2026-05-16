@@ -1,0 +1,26 @@
+Toplevel 1:1 - 2:1
+  DefClass 1:1 - 1:48
+    SymbolDefClass 1:7 - 1:10
+      Name: Foo
+    ClassField 1:13 - 1:19
+      SymbolPrivate 1:13 - 1:15 [Write]
+        Name: x
+      Number 1:18 - 1:19
+        Value: 1
+        Literal: 1
+    ConciseMethod 1:21 - 1:46
+      SymbolProperty 1:21 - 1:24
+        Name: bar
+      Function 1:24 - 1:46
+        Return 1:29 - 1:44
+          Dot 1:36 - 1:43
+            Property: #x
+            This 1:36 - 1:40 [Read] [PropWrite!]
+              Name: this
+  SimpleStatement 1:49 - 1:65
+    Call 1:49 - 1:64
+      Dot 1:49 - 1:62
+        Property: bar
+        New 1:49 - 1:58
+          SymbolRef 1:53 - 1:56 [Read]
+            Name: Foo

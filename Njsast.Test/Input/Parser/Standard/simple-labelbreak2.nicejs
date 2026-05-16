@@ -1,0 +1,3 @@
+start: while (true) break start;
+
+//# sourceMappingURL=simple-labelbreak2.nicejs.map

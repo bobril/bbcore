@@ -1,0 +1,9 @@
+Toplevel 1:1 - 5:2
+  If 1:1 - 5:2
+    SymbolRef 1:5 - 1:13 [Read]
+      Name: notConst
+    BlockStatement 1:15 - 3:2
+      SimpleStatement 2:5 - 2:12
+        Call 2:5 - 2:11
+          SymbolRef 2:5 - 2:9 [Read]
+            Name: call

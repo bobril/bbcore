@@ -1,0 +1,46 @@
+Toplevel 1:1 - 6:1
+  SimpleStatement 1:1 - 1:11
+    Call 1:1 - 1:10
+      SymbolRef 1:1 - 1:2 [Read]
+        Name: f
+      Expansion 1:3 - 1:9
+        Dot 1:6 - 1:9
+          Property: b
+          SymbolRef 1:6 - 1:7 [Read] [PropWrite!]
+            Name: a
+  SimpleStatement 2:1 - 2:13
+    Call 2:1 - 2:12
+      SymbolRef 2:1 - 2:2 [Read]
+        Name: f
+      Expansion 2:3 - 2:11
+        Call 2:6 - 2:11
+          Dot 2:6 - 2:9
+            Property: b
+            SymbolRef 2:6 - 2:7 [Read]
+              Name: a
+  SimpleStatement 3:1 - 3:11
+    Call 3:1 - 3:10
+      SymbolRef 3:1 - 3:2 [Read]
+        Name: f
+      Expansion 3:3 - 3:9
+        SymbolRef 3:7 - 3:8 [Read]
+          Name: a
+  SimpleStatement 4:1 - 4:13
+    Call 4:1 - 4:12
+      SymbolRef 4:1 - 4:2 [Read]
+        Name: f
+      Expansion 4:3 - 4:11
+        Dot 4:7 - 4:10
+          Property: b
+          SymbolRef 4:7 - 4:8 [Read] [PropWrite!]
+            Name: a
+  SimpleStatement 5:1 - 5:12
+    Call 5:1 - 5:11
+      SymbolRef 5:1 - 5:2 [Read]
+        Name: f
+      Expansion 5:3 - 5:10
+        Sub 5:6 - 5:10
+          SymbolRef 5:8 - 5:9 [Read]
+            Name: i
+          SymbolRef 5:6 - 5:7 [Read] [PropWrite!]
+            Name: a

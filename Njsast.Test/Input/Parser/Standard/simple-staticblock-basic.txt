@@ -1,0 +1,13 @@
+Toplevel 1:1 - 2:1
+  DefClass 1:1 - 1:32
+    SymbolDefClass 1:7 - 1:10
+      Name: Foo
+    StaticBlock 1:13 - 1:30
+      SimpleStatement 1:22 - 1:28
+        Assign 1:22 - 1:27
+          Operator: Assignment
+          SymbolRef 1:22 - 1:23 [Write]
+            Name: x
+          Number 1:26 - 1:27
+            Value: 1
+            Literal: 1

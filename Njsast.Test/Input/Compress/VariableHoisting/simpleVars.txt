@@ -1,0 +1,17 @@
+Toplevel 1:1 - 5:7
+  Var 1:1 - 1:1
+    VarDef 1:5 - 1:6
+      SymbolVar 1:5 - 1:6
+        Name: a
+    VarDef 2:5 - 2:6
+      SymbolVar 2:5 - 2:6
+        Name: b
+    VarDef 3:5 - 3:6
+      SymbolVar 3:5 - 3:6
+        Name: c
+    VarDef 4:5 - 4:6
+      SymbolVar 4:5 - 4:6
+        Name: d
+    VarDef 5:5 - 5:6
+      SymbolVar 5:5 - 5:6
+        Name: e

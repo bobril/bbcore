@@ -1,0 +1,2 @@
+const a=b??c??d
+//# sourceMappingURL=simple-nullishcoalesce-chain.minjs.map

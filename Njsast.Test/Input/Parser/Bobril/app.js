@@ -1,0 +1,96 @@
+"use strict";
+exports.__esModule = true;
+var b = require("bobril");
+var g = require("bobril-g11n");
+var lightSwitch_1 = require("./lightSwitch");
+b.asset("bootstrap/css/bootstrap.css");
+var headerStyle = b.styleDef({ backgroundColor: "green", padding: 10 }, undefined, "header");
+var semitransparentLight = b.sprite("light.png", "rgba(200,100,0,0.5)");
+var undefinedLight = b.sprite("light.png", undefined);
+function dontDoThis(cn) {
+    b.styleDef({}, undefined, cn);
+}
+dontDoThis("try");
+var switchValue = false;
+var page = b.createVirtualComponent({
+    init: function (ctx) {
+        ctx.counter = 0;
+        setInterval(function () {
+            ctx.counter++;
+            b.invalidate();
+        }, 1000);
+    },
+    render: function (ctx, me, _oldMe) {
+        var m = g.getMoment();
+        g.loadSerializationKeys();
+        me.children = [
+            b.style({
+                tag: "h1",
+                children: g.t("Hello World! {c, number}", { c: ctx.counter })
+            }, headerStyle),
+            {
+                tag: "p",
+                children: [
+                    "See examples on ",
+                    {
+                        tag: "a",
+                        attrs: { href: "https://github.com/Bobris/Bobril" },
+                        children: g.t("Bobril GitHub pages")
+                    }
+                ]
+            },
+            {
+                tag: "p",
+                children: [
+                    g.serializationKeysLoaded()
+                        ? g.formatSerializedMessage(g.serializeMessage(g.dt("Delayed translation message")))
+                        : "Loading ..."
+                ]
+            },
+            {
+                tag: "img",
+                style: { display: "inline-block", verticalAlign: "unset" },
+                attrs: { src: b.asset("light.png") }
+            },
+            b.styledDiv(" ", { backgroundColor: "blue", display: "inline-block" }, semitransparentLight),
+            b.styledDiv(" ", { backgroundColor: "green", display: "inline-block" }, semitransparentLight),
+            b.styledDiv(" ", { display: "inline-block" }, undefinedLight),
+            lightSwitch_1["default"]({
+                value: switchValue,
+                onChange: function () {
+                    switchValue = !switchValue;
+                }
+            }),
+            {
+                tag: "span",
+                className: "glyphicon glyphicon-star",
+                attrs: { ariaHidden: true }
+            },
+            {
+                tag: "p",
+                children: "Current locale: " + g.getLocale()
+            },
+            {
+                tag: "p",
+                children: "Moment long date format L: " +
+                    m.localeData().longDateFormat("L")
+            },
+            {
+                tag: "p",
+                children: "Number 123456.789 in format 0,0.00: " +
+                    g.f("{arg, number, custom, format:{0,0.00}}", { arg: 123456.789 })
+            },
+            {
+                tag: "p",
+                children: "cs-CZ",
+                component: {
+                    onClick: function () {
+                        g.setLocale("cs-CZ");
+                        return true;
+                    }
+                }
+            }
+        ];
+    }
+});
+b.init(function () { return page({}); });

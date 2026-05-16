@@ -1,0 +1,41 @@
+Toplevel 1:1 - 11:1
+  Defun 1:1 - 8:2
+    SymbolDefun 1:10 - 1:11 [Write]
+      Name: a
+    Var 2:3 - 2:14
+      VarDef 2:7 - 2:13
+        SymbolVar 2:7 - 2:8 [Write]
+          Name: b
+        Number 2:11 - 2:13
+          Value: 10
+          Literal: 10
+    Var 3:3 - 3:9
+      VarDef 3:7 - 3:8
+        SymbolVar 3:7 - 3:8
+          Name: c
+    SimpleStatement 4:3 - 4:9
+      Assign 4:3 - 4:8
+        Operator: Assignment
+        SymbolRef 4:3 - 4:4 [Write]
+          Name: c
+        Number 4:7 - 4:8
+          Value: 3
+          Literal: 3
+    If 5:3 - 7:4
+      Binary 5:7 - 5:13
+        Operator: GreaterThan
+        SymbolRef 5:7 - 5:8 [Read]
+          Name: b
+        Number 5:11 - 5:13
+          Value: 11
+          Literal: 11
+      BlockStatement 5:15 - 7:4
+        SimpleStatement 6:5 - 6:9
+          UnaryPostfix 6:5 - 6:8
+            Operator: IncrementPostfix
+            SymbolRef 6:5 - 6:6 [Read] [Write]
+              Name: c
+  SimpleStatement 10:1 - 10:5
+    Call 10:1 - 10:4
+      SymbolRef 10:1 - 10:2 [Read]
+        Name: a

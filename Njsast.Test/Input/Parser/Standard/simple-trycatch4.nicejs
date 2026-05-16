@@ -1,0 +1,5 @@
+try {} catch (e) {
+    say(e);
+}
+
+//# sourceMappingURL=simple-trycatch4.nicejs.map

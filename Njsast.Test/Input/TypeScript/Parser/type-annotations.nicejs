@@ -1,0 +1,10 @@
+export function add(left, right) {
+    const total = left + right;
+    return total;
+}
+
+let value = "ready";
+
+value = undefined;
+
+//# sourceMappingURL=type-annotations.nicejs.map

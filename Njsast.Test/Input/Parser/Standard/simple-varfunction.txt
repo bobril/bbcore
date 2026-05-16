@@ -1,0 +1,10 @@
+Toplevel 1:1 - 1:33
+  Var 1:1 - 1:33
+    VarDef 1:5 - 1:32
+      SymbolVar 1:5 - 1:7 [Write]
+        Name: hi
+      Function 1:10 - 1:32
+        SimpleStatement 1:23 - 1:30
+          Call 1:23 - 1:30
+            SymbolRef 1:23 - 1:28 [Read]
+              Name: sayHi

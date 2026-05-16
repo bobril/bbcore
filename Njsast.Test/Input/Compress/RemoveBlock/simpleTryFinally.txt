@@ -1,0 +1,11 @@
+Toplevel 1:1 - 5:3
+  Try 1:1 - 5:2
+    SimpleStatement 2:5 - 2:12
+      Call 2:5 - 2:11
+        SymbolRef 2:5 - 2:9 [Read]
+          Name: func
+    Finally 3:10 - 5:2
+      SimpleStatement 4:5 - 4:11
+        Call 4:5 - 4:10
+          SymbolRef 4:5 - 4:8 [Read]
+            Name: log

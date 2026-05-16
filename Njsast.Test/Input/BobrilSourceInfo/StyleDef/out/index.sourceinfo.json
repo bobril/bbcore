@@ -1,0 +1,26 @@
+{
+  "BobrilImport": "b",
+  "Imports": [
+    {
+      "StartCol": 16,
+      "StartLine": 3,
+      "EndCol": 24,
+      "EndLine": 3,
+      "Name": "bobril"
+    }
+  ],
+  "StyleDefs": [
+    {
+      "BeforeNameLine": 5,
+      "BeforeNameCol": 93,
+      "StartCol": 95,
+      "StartLine": 5,
+      "EndCol": 101,
+      "EndLine": 5,
+      "ArgCount": 3,
+      "Name": "name",
+      "UserNamed": true,
+      "IsEx": false
+    }
+  ]
+}

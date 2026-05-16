@@ -1,0 +1,28 @@
+Toplevel 1:1 - 8:2
+  Var 1:1 - 1:11
+    VarDef 1:5 - 1:10
+      SymbolVar 1:5 - 1:6 [Write]
+        Name: a
+      Number 1:9 - 1:10
+        Value: 1
+        Literal: 1
+  Var 2:1 - 2:11
+    VarDef 2:5 - 2:10
+      SymbolVar 2:5 - 2:6 [Write]
+        Name: b
+      Number 2:9 - 2:10
+        Value: 1
+        Literal: 1
+  Defun 3:1 - 8:2
+    SymbolDefun 3:10 - 3:14 [Write]
+      Name: func
+    If 4:5 - 6:6
+      SymbolRef 4:9 - 4:10 [Read]
+        Name: c
+      BlockStatement 4:12 - 6:6
+        Return 5:9 - 5:18
+          SymbolRef 5:16 - 5:17 [Read]
+            Name: a
+    Return 7:5 - 7:14
+      SymbolRef 7:12 - 7:13 [Read]
+        Name: b

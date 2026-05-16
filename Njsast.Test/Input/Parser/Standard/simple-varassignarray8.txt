@@ -1,0 +1,7 @@
+Toplevel 1:1 - 1:9
+  SimpleStatement 1:1 - 1:9
+    Assign 1:1 - 1:9
+      Operator: Assignment
+      SymbolRef 1:1 - 1:4 [Write]
+        Name: 日本語
+      Array 1:7 - 1:9

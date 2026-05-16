@@ -1,0 +1,51 @@
+Toplevel 1:1 - 9:1
+  Let 1:1 - 1:26
+    VarDef 1:7 - 1:25
+      SymbolConst 1:7 - 1:10 [Write]
+        Name: obj
+      Object 1:13 - 1:25
+        ObjectKeyVal 1:15 - 1:23
+          SymbolProperty 1:15 - 1:16
+            Name: b
+          UnaryPrefix 1:1 - 1:1
+            Operator: LogicalNot
+            Number 1:1 - 1:1
+              Value: 1
+              Literal: 
+  SimpleStatement 2:1 - 2:11
+    Call 2:1 - 2:10
+      SymbolRef 2:1 - 2:5 [Read]
+        Name: setB
+      SymbolRef 2:6 - 2:9 [Read] [PropWrite]
+        Name: obj
+  SimpleStatement 3:1 - 5:2
+    Binary 3:1 - 5:2
+      Operator: LogicalAnd
+      Dot 3:5 - 3:10
+        Property: b
+        SymbolRef 3:5 - 3:8 [Read]
+          Name: obj
+      Call 4:5 - 4:22
+        Dot 4:5 - 4:16
+          Property: log
+          SymbolRef 4:5 - 4:12 [Read]
+            Name: console
+        String 4:17 - 4:21
+          Value: Ok
+  Defun 6:1 - 8:2
+    SymbolDefun 6:10 - 6:14 [Write]
+      Name: setB
+    SymbolFunarg 6:15 - 6:18
+      Name: obj
+    SimpleStatement 7:5 - 7:18
+      Assign 7:5 - 7:17
+        Operator: Assignment
+        Dot 7:5 - 7:10
+          Property: b
+          SymbolRef 7:5 - 7:8 [Read] [PropWrite!]
+            Name: obj
+        UnaryPrefix 1:1 - 1:1
+          Operator: LogicalNot
+          Number 1:1 - 1:1
+            Value: 0
+            Literal: 

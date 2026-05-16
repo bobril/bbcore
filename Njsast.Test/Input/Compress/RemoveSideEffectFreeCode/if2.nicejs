@@ -1,0 +1,4 @@
+var canUse;
+
+console.log("OK" + canUse);
+

@@ -1,0 +1,21 @@
+Toplevel 1:1 - 5:2
+  Defun 1:1 - 5:2 [IsGenerator]
+    SymbolDefun 1:11 - 1:14 [Write]
+      Name: foo
+    SymbolFunarg 1:15 - 1:20
+      Name: index
+    While 2:5 - 4:6
+      Binary 2:12 - 2:21
+        Operator: LessThan
+        SymbolRef 2:12 - 2:17 [Read]
+          Name: index
+        Number 2:20 - 2:21
+          Value: 2
+          Literal: 2
+      BlockStatement 2:23 - 4:6
+        SimpleStatement 3:9 - 3:23
+          Yield 3:9 - 3:22
+            UnaryPostfix 3:15 - 3:22
+              Operator: IncrementPostfix
+              SymbolRef 3:15 - 3:20 [Read] [Write]
+                Name: index

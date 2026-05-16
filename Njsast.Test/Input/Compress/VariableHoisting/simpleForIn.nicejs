@@ -1,0 +1,4 @@
+var d;
+
+for (d in obj) {}
+

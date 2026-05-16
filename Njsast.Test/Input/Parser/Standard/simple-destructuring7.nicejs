@@ -1,0 +1,3 @@
+const {selectedIds = []} = settings;
+
+//# sourceMappingURL=simple-destructuring7.nicejs.map

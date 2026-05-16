@@ -1,0 +1,547 @@
+Toplevel 1:1 - 97:1 [HasUseStrictDirective]
+  SimpleStatement 2:1 - 2:27
+    Assign 2:1 - 2:26
+      Operator: Assignment
+      Dot 2:1 - 2:19
+        Property: __esModule
+        SymbolRef 2:1 - 2:8 [Read] [PropWrite!]
+          Name: exports
+      True 2:22 - 2:26
+  Var 3:1 - 3:27
+    VarDef 3:5 - 3:26
+      SymbolVar 3:5 - 3:6 [Write]
+        Name: b
+      Call 3:9 - 3:26
+        SymbolRef 3:9 - 3:16 [Read]
+          Name: require
+        String 3:17 - 3:25
+          Value: bobril
+  Var 4:1 - 4:32
+    VarDef 4:5 - 4:31
+      SymbolVar 4:5 - 4:6 [Write]
+        Name: g
+      Call 4:9 - 4:31
+        SymbolRef 4:9 - 4:16 [Read]
+          Name: require
+        String 4:17 - 4:30
+          Value: bobril-g11n
+  Var 5:1 - 5:46
+    VarDef 5:5 - 5:45
+      SymbolVar 5:5 - 5:18 [Write]
+        Name: lightSwitch_1
+      Call 5:21 - 5:45
+        SymbolRef 5:21 - 5:28 [Read]
+          Name: require
+        String 5:29 - 5:44
+          Value: ./lightSwitch
+  SimpleStatement 6:1 - 6:40
+    Call 6:1 - 6:39
+      Dot 6:1 - 6:8
+        Property: asset
+        SymbolRef 6:1 - 6:2 [Read]
+          Name: b
+      String 6:9 - 6:38
+        Value: bootstrap/css/bootstrap.css
+  Var 7:1 - 7:94
+    VarDef 7:5 - 7:93
+      SymbolVar 7:5 - 7:16 [Write]
+        Name: headerStyle
+      Call 7:19 - 7:93
+        Dot 7:19 - 7:29
+          Property: styleDef
+          SymbolRef 7:19 - 7:20 [Read]
+            Name: b
+        Object 7:30 - 7:71
+          ObjectKeyVal 7:32 - 7:56
+            SymbolProperty 7:32 - 7:47
+              Name: backgroundColor
+            String 7:49 - 7:56
+              Value: green
+          ObjectKeyVal 7:58 - 7:69
+            SymbolProperty 7:58 - 7:65
+              Name: padding
+            Number 7:67 - 7:69
+              Value: 10
+              Literal: 10
+        SymbolRef 7:73 - 7:82 [Read] [PropWrite]
+          Name: undefined
+        String 7:84 - 7:92
+          Value: header
+  Var 8:1 - 8:73
+    VarDef 8:5 - 8:72
+      SymbolVar 8:5 - 8:25 [Write]
+        Name: semitransparentLight
+      Call 8:28 - 8:72
+        Dot 8:28 - 8:36
+          Property: sprite
+          SymbolRef 8:28 - 8:29 [Read]
+            Name: b
+        String 8:37 - 8:48
+          Value: light.png
+        String 8:50 - 8:71
+          Value: rgba(200,100,0,0.5)
+  Var 9:1 - 9:55
+    VarDef 9:5 - 9:54
+      SymbolVar 9:5 - 9:19 [Write]
+        Name: undefinedLight
+      Call 9:22 - 9:54
+        Dot 9:22 - 9:30
+          Property: sprite
+          SymbolRef 9:22 - 9:23 [Read]
+            Name: b
+        String 9:31 - 9:42
+          Value: light.png
+        SymbolRef 9:44 - 9:53 [Read] [PropWrite]
+          Name: undefined
+  Defun 10:1 - 12:2
+    SymbolDefun 10:10 - 10:20 [Write]
+      Name: dontDoThis
+    SymbolFunarg 10:21 - 10:23
+      Name: cn
+    SimpleStatement 11:5 - 11:35
+      Call 11:5 - 11:34
+        Dot 11:5 - 11:15
+          Property: styleDef
+          SymbolRef 11:5 - 11:6 [Read]
+            Name: b
+        Object 11:16 - 11:18
+        SymbolRef 11:20 - 11:29 [Read] [PropWrite]
+          Name: undefined
+        SymbolRef 11:31 - 11:33 [Read] [PropWrite]
+          Name: cn
+  SimpleStatement 13:1 - 13:19
+    Call 13:1 - 13:18
+      SymbolRef 13:1 - 13:11 [Read]
+        Name: dontDoThis
+      String 13:12 - 13:17
+        Value: try
+  Var 14:1 - 14:25
+    VarDef 14:5 - 14:24
+      SymbolVar 14:5 - 14:16 [Write]
+        Name: switchValue
+      False 14:19 - 14:24
+  Var 15:1 - 95:4
+    VarDef 15:5 - 95:3
+      SymbolVar 15:5 - 15:9 [Write]
+        Name: page
+      Call 15:12 - 95:3
+        Dot 15:12 - 15:36
+          Property: createVirtualComponent
+          SymbolRef 15:12 - 15:13 [Read]
+            Name: b
+        Object 15:37 - 95:2
+          ObjectKeyVal 16:5 - 22:6
+            SymbolProperty 16:5 - 16:9
+              Name: init
+            Function 16:11 - 22:6
+              SymbolFunarg 16:21 - 16:24
+                Name: ctx
+              SimpleStatement 17:9 - 17:25
+                Assign 17:9 - 17:24
+                  Operator: Assignment
+                  Dot 17:9 - 17:20
+                    Property: counter
+                    SymbolRef 17:9 - 17:12 [Read] [PropWrite!]
+                      Name: ctx
+                  Number 17:23 - 17:24
+                    Value: 0
+                    Literal: 0
+              SimpleStatement 18:9 - 21:18
+                Call 18:9 - 21:17
+                  SymbolRef 18:9 - 18:20 [Read]
+                    Name: setInterval
+                  Function 18:21 - 21:10
+                    SimpleStatement 19:13 - 19:27
+                      UnaryPostfix 19:13 - 19:26
+                        Operator: IncrementPostfix
+                        Dot 19:13 - 19:24
+                          Property: counter
+                          SymbolRef 19:13 - 19:16 [Read] [PropWrite!]
+                            Name: ctx
+                    SimpleStatement 20:13 - 20:28
+                      Call 20:13 - 20:27
+                        Dot 20:13 - 20:25
+                          Property: invalidate
+                          SymbolRef 20:13 - 20:14 [Read]
+                            Name: b
+                  Number 21:12 - 21:16
+                    Value: 1000
+                    Literal: 1000
+          ObjectKeyVal 23:5 - 94:6
+            SymbolProperty 23:5 - 23:11
+              Name: render
+            Function 23:13 - 94:6
+              SymbolFunarg 23:23 - 23:26
+                Name: ctx
+              SymbolFunarg 23:28 - 23:30
+                Name: me
+              SymbolFunarg 23:32 - 23:38
+                Name: _oldMe
+              Var 24:9 - 24:31
+                VarDef 24:13 - 24:30
+                  SymbolVar 24:13 - 24:14 [Write]
+                    Name: m
+                  Call 24:17 - 24:30
+                    Dot 24:17 - 24:28
+                      Property: getMoment
+                      SymbolRef 24:17 - 24:18 [Read]
+                        Name: g
+              SimpleStatement 25:9 - 25:35
+                Call 25:9 - 25:34
+                  Dot 25:9 - 25:32
+                    Property: loadSerializationKeys
+                    SymbolRef 25:9 - 25:10 [Read]
+                      Name: g
+              SimpleStatement 26:9 - 93:11
+                Assign 26:9 - 93:10
+                  Operator: Assignment
+                  Dot 26:9 - 26:20
+                    Property: children
+                    SymbolRef 26:9 - 26:11 [Read] [PropWrite!]
+                      Name: me
+                  Array 26:23 - 93:10
+                    Call 27:13 - 30:28
+                      Dot 27:13 - 27:20
+                        Property: style
+                        SymbolRef 27:13 - 27:14 [Read]
+                          Name: b
+                      Object 27:21 - 30:14
+                        ObjectKeyVal 28:17 - 28:26
+                          SymbolProperty 28:17 - 28:20
+                            Name: tag
+                          String 28:22 - 28:26
+                            Value: h1
+                        ObjectKeyVal 29:17 - 29:78
+                          SymbolProperty 29:17 - 29:25
+                            Name: children
+                          Call 29:27 - 29:78
+                            Dot 29:27 - 29:30
+                              Property: t
+                              SymbolRef 29:27 - 29:28 [Read]
+                                Name: g
+                            String 29:31 - 29:57
+                              Value: Hello World! {c, number}
+                            Object 29:59 - 29:77
+                              ObjectKeyVal 29:61 - 29:75
+                                SymbolProperty 29:61 - 29:62
+                                  Name: c
+                                Dot 29:64 - 29:75
+                                  Property: counter
+                                  SymbolRef 29:64 - 29:67 [Read] [PropWrite!]
+                                    Name: ctx
+                      SymbolRef 30:16 - 30:27 [Read] [PropWrite]
+                        Name: headerStyle
+                    Object 31:13 - 41:14
+                      ObjectKeyVal 32:17 - 32:25
+                        SymbolProperty 32:17 - 32:20
+                          Name: tag
+                        String 32:22 - 32:25
+                          Value: p
+                      ObjectKeyVal 33:17 - 40:18
+                        SymbolProperty 33:17 - 33:25
+                          Name: children
+                        Array 33:27 - 40:18
+                          String 34:21 - 34:39
+                            Value: See examples on 
+                          Object 35:21 - 39:22
+                            ObjectKeyVal 36:25 - 36:33
+                              SymbolProperty 36:25 - 36:28
+                                Name: tag
+                              String 36:30 - 36:33
+                                Value: a
+                            ObjectKeyVal 37:25 - 37:76
+                              SymbolProperty 37:25 - 37:30
+                                Name: attrs
+                              Object 37:32 - 37:76
+                                ObjectKeyVal 37:34 - 37:74
+                                  SymbolProperty 37:34 - 37:38
+                                    Name: href
+                                  String 37:40 - 37:74
+                                    Value: https://github.com/Bobris/Bobril
+                            ObjectKeyVal 38:25 - 38:61
+                              SymbolProperty 38:25 - 38:33
+                                Name: children
+                              Call 38:35 - 38:61
+                                Dot 38:35 - 38:38
+                                  Property: t
+                                  SymbolRef 38:35 - 38:36 [Read]
+                                    Name: g
+                                String 38:39 - 38:60
+                                  Value: Bobril GitHub pages
+                    Object 42:13 - 49:14
+                      ObjectKeyVal 43:17 - 43:25
+                        SymbolProperty 43:17 - 43:20
+                          Name: tag
+                        String 43:22 - 43:25
+                          Value: p
+                      ObjectKeyVal 44:17 - 48:18
+                        SymbolProperty 44:17 - 44:25
+                          Name: children
+                        Array 44:27 - 48:18
+                          Conditional 45:21 - 47:40
+                            Call 45:21 - 45:48
+                              Dot 45:21 - 45:46
+                                Property: serializationKeysLoaded
+                                SymbolRef 45:21 - 45:22 [Read]
+                                  Name: g
+                            Call 46:27 - 46:109
+                              Dot 46:27 - 46:52
+                                Property: formatSerializedMessage
+                                SymbolRef 46:27 - 46:28 [Read]
+                                  Name: g
+                              Call 46:53 - 46:108
+                                Dot 46:53 - 46:71
+                                  Property: serializeMessage
+                                  SymbolRef 46:53 - 46:54 [Read]
+                                    Name: g
+                                Call 46:72 - 46:107
+                                  Dot 46:72 - 46:76
+                                    Property: dt
+                                    SymbolRef 46:72 - 46:73 [Read]
+                                      Name: g
+                                  String 46:77 - 46:106
+                                    Value: Delayed translation message
+                            String 47:27 - 47:40
+                              Value: Loading ...
+                    Object 50:13 - 54:14
+                      ObjectKeyVal 51:17 - 51:27
+                        SymbolProperty 51:17 - 51:20
+                          Name: tag
+                        String 51:22 - 51:27
+                          Value: img
+                      ObjectKeyVal 52:17 - 52:75
+                        SymbolProperty 52:17 - 52:22
+                          Name: style
+                        Object 52:24 - 52:75
+                          ObjectKeyVal 52:26 - 52:49
+                            SymbolProperty 52:26 - 52:33
+                              Name: display
+                            String 52:35 - 52:49
+                              Value: inline-block
+                          ObjectKeyVal 52:51 - 52:73
+                            SymbolProperty 52:51 - 52:64
+                              Name: verticalAlign
+                            String 52:66 - 52:73
+                              Value: unset
+                      ObjectKeyVal 53:17 - 53:53
+                        SymbolProperty 53:17 - 53:22
+                          Name: attrs
+                        Object 53:24 - 53:53
+                          ObjectKeyVal 53:26 - 53:51
+                            SymbolProperty 53:26 - 53:29
+                              Name: src
+                            Call 53:31 - 53:51
+                              Dot 53:31 - 53:38
+                                Property: asset
+                                SymbolRef 53:31 - 53:32 [Read]
+                                  Name: b
+                              String 53:39 - 53:50
+                                Value: light.png
+                    Call 55:13 - 55:105
+                      Dot 55:13 - 55:24
+                        Property: styledDiv
+                        SymbolRef 55:13 - 55:14 [Read]
+                          Name: b
+                      String 55:25 - 55:28
+                        Value:  
+                      Object 55:30 - 55:82
+                        ObjectKeyVal 55:32 - 55:55
+                          SymbolProperty 55:32 - 55:47
+                            Name: backgroundColor
+                          String 55:49 - 55:55
+                            Value: blue
+                        ObjectKeyVal 55:57 - 55:80
+                          SymbolProperty 55:57 - 55:64
+                            Name: display
+                          String 55:66 - 55:80
+                            Value: inline-block
+                      SymbolRef 55:84 - 55:104 [Read] [PropWrite]
+                        Name: semitransparentLight
+                    Call 56:13 - 56:106
+                      Dot 56:13 - 56:24
+                        Property: styledDiv
+                        SymbolRef 56:13 - 56:14 [Read]
+                          Name: b
+                      String 56:25 - 56:28
+                        Value:  
+                      Object 56:30 - 56:83
+                        ObjectKeyVal 56:32 - 56:56
+                          SymbolProperty 56:32 - 56:47
+                            Name: backgroundColor
+                          String 56:49 - 56:56
+                            Value: green
+                        ObjectKeyVal 56:58 - 56:81
+                          SymbolProperty 56:58 - 56:65
+                            Name: display
+                          String 56:67 - 56:81
+                            Value: inline-block
+                      SymbolRef 56:85 - 56:105 [Read] [PropWrite]
+                        Name: semitransparentLight
+                    Call 57:13 - 57:74
+                      Dot 57:13 - 57:24
+                        Property: styledDiv
+                        SymbolRef 57:13 - 57:14 [Read]
+                          Name: b
+                      String 57:25 - 57:28
+                        Value:  
+                      Object 57:30 - 57:57
+                        ObjectKeyVal 57:32 - 57:55
+                          SymbolProperty 57:32 - 57:39
+                            Name: display
+                          String 57:41 - 57:55
+                            Value: inline-block
+                      SymbolRef 57:59 - 57:73 [Read] [PropWrite]
+                        Name: undefinedLight
+                    Call 58:13 - 63:15
+                      Sub 58:13 - 58:37
+                        String 58:27 - 58:36
+                          Value: default
+                        SymbolRef 58:13 - 58:26 [Read]
+                          Name: lightSwitch_1
+                      Object 58:38 - 63:14
+                        ObjectKeyVal 59:17 - 59:35
+                          SymbolProperty 59:17 - 59:22
+                            Name: value
+                          SymbolRef 59:24 - 59:35 [Read]
+                            Name: switchValue
+                        ObjectKeyVal 60:17 - 62:18
+                          SymbolProperty 60:17 - 60:25
+                            Name: onChange
+                          Function 60:27 - 62:18
+                            SimpleStatement 61:21 - 61:48
+                              Assign 61:21 - 61:47
+                                Operator: Assignment
+                                SymbolRef 61:21 - 61:32 [Write]
+                                  Name: switchValue
+                                UnaryPrefix 61:35 - 61:47
+                                  Operator: LogicalNot
+                                  SymbolRef 61:36 - 61:47 [Read]
+                                    Name: switchValue
+                    Object 64:13 - 68:14
+                      ObjectKeyVal 65:17 - 65:28
+                        SymbolProperty 65:17 - 65:20
+                          Name: tag
+                        String 65:22 - 65:28
+                          Value: span
+                      ObjectKeyVal 66:17 - 66:54
+                        SymbolProperty 66:17 - 66:26
+                          Name: className
+                        String 66:28 - 66:54
+                          Value: glyphicon glyphicon-star
+                      ObjectKeyVal 67:17 - 67:44
+                        SymbolProperty 67:17 - 67:22
+                          Name: attrs
+                        Object 67:24 - 67:44
+                          ObjectKeyVal 67:26 - 67:42
+                            SymbolProperty 67:26 - 67:36
+                              Name: ariaHidden
+                            True 67:38 - 67:42
+                    Object 69:13 - 72:14
+                      ObjectKeyVal 70:17 - 70:25
+                        SymbolProperty 70:17 - 70:20
+                          Name: tag
+                        String 70:22 - 70:25
+                          Value: p
+                      ObjectKeyVal 71:17 - 71:61
+                        SymbolProperty 71:17 - 71:25
+                          Name: children
+                        Binary 71:27 - 71:61
+                          Operator: Addition
+                          String 71:27 - 71:45
+                            Value: Current locale: 
+                          Call 71:48 - 71:61
+                            Dot 71:48 - 71:59
+                              Property: getLocale
+                              SymbolRef 71:48 - 71:49 [Read]
+                                Name: g
+                    Object 73:13 - 77:14
+                      ObjectKeyVal 74:17 - 74:25
+                        SymbolProperty 74:17 - 74:20
+                          Name: tag
+                        String 74:22 - 74:25
+                          Value: p
+                      ObjectKeyVal 75:17 - 76:55
+                        SymbolProperty 75:17 - 75:25
+                          Name: children
+                        Binary 75:27 - 76:55
+                          Operator: Addition
+                          String 75:27 - 75:56
+                            Value: Moment long date format L: 
+                          Call 76:21 - 76:55
+                            Dot 76:21 - 76:50
+                              Property: longDateFormat
+                              Call 76:21 - 76:35
+                                Dot 76:21 - 76:33
+                                  Property: localeData
+                                  SymbolRef 76:21 - 76:22 [Read]
+                                    Name: m
+                            String 76:51 - 76:54
+                              Value: L
+                    Object 78:13 - 82:14
+                      ObjectKeyVal 79:17 - 79:25
+                        SymbolProperty 79:17 - 79:20
+                          Name: tag
+                        String 79:22 - 79:25
+                          Value: p
+                      ObjectKeyVal 80:17 - 81:87
+                        SymbolProperty 80:17 - 80:25
+                          Name: children
+                        Binary 80:27 - 81:87
+                          Operator: Addition
+                          String 80:27 - 80:65
+                            Value: Number 123456.789 in format 0,0.00: 
+                          Call 81:21 - 81:87
+                            Dot 81:21 - 81:24
+                              Property: f
+                              SymbolRef 81:21 - 81:22 [Read]
+                                Name: g
+                            String 81:25 - 81:65
+                              Value: {arg, number, custom, format:{0,0.00}}
+                            Object 81:67 - 81:86
+                              ObjectKeyVal 81:69 - 81:84
+                                SymbolProperty 81:69 - 81:72
+                                  Name: arg
+                                Number 81:74 - 81:84
+                                  Value: 123456.789
+                                  Literal: 123456.789
+                    Object 83:13 - 92:14
+                      ObjectKeyVal 84:17 - 84:25
+                        SymbolProperty 84:17 - 84:20
+                          Name: tag
+                        String 84:22 - 84:25
+                          Value: p
+                      ObjectKeyVal 85:17 - 85:34
+                        SymbolProperty 85:17 - 85:25
+                          Name: children
+                        String 85:27 - 85:34
+                          Value: cs-CZ
+                      ObjectKeyVal 86:17 - 91:18
+                        SymbolProperty 86:17 - 86:26
+                          Name: component
+                        Object 86:28 - 91:18
+                          ObjectKeyVal 87:21 - 90:22
+                            SymbolProperty 87:21 - 87:28
+                              Name: onClick
+                            Function 87:30 - 90:22
+                              SimpleStatement 88:25 - 88:46
+                                Call 88:25 - 88:45
+                                  Dot 88:25 - 88:36
+                                    Property: setLocale
+                                    SymbolRef 88:25 - 88:26 [Read]
+                                      Name: g
+                                  String 88:37 - 88:44
+                                    Value: cs-CZ
+                              Return 89:25 - 89:37
+                                True 89:32 - 89:36
+  SimpleStatement 96:1 - 96:42
+    Call 96:1 - 96:41
+      Dot 96:1 - 96:7
+        Property: init
+        SymbolRef 96:1 - 96:2 [Read]
+          Name: b
+      Function 96:8 - 96:40
+        Return 96:22 - 96:38
+          Call 96:29 - 96:37
+            SymbolRef 96:29 - 96:33 [Read]
+              Name: page
+            Object 96:34 - 96:36

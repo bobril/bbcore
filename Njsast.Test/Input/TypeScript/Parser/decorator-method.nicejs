@@ -1,0 +1,11 @@
+function logged(target, key, descriptor) {}
+
+class Service {
+    run(value) {
+        console.log(value);
+    }
+}
+
+__decorate([ logged ], Service.prototype, "run", null);
+
+//# sourceMappingURL=decorator-method.nicejs.map

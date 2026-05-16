@@ -1,0 +1,2 @@
+do{x++;y--}while(x<10)
+//# sourceMappingURL=simple-dowhile3.minjs.map

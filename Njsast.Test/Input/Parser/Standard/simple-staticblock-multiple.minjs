@@ -1,0 +1,2 @@
+class Foo{static{x=1}static{y=2}}
+//# sourceMappingURL=simple-staticblock-multiple.minjs.map

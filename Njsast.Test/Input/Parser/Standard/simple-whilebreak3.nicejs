@@ -1,0 +1,5 @@
+done: while (true) {
+    break done;
+}
+
+//# sourceMappingURL=simple-whilebreak3.nicejs.map

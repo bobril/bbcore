@@ -1,0 +1,2 @@
+const runtimeValue=1;export{runtimeValue};export{otherValue as renamedRuntime}from"./mod"
+//# sourceMappingURL=mixed-type-exports.minjs.map

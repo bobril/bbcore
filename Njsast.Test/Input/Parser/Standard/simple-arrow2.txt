@@ -1,0 +1,12 @@
+Toplevel 1:1 - 2:1
+  Let 1:1 - 1:25
+    VarDef 1:5 - 1:24
+      SymbolLet 1:5 - 1:7 [Write]
+        Name: fn
+      Arrow 1:10 - 1:24
+        Array 1:16 - 1:24
+          Number 1:17 - 1:18
+            Value: 1
+            Literal: 1
+          String 1:20 - 1:23
+            Value: a

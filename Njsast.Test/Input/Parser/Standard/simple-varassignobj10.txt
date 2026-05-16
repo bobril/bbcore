@@ -1,0 +1,14 @@
+Toplevel 1:1 - 1:39
+  SimpleStatement 1:1 - 1:39
+    Assign 1:1 - 1:39
+      Operator: Assignment
+      SymbolRef 1:1 - 1:2 [Write]
+        Name: x
+      Object 1:5 - 1:39
+        ObjectGetter 1:7 - 1:37
+          SymbolMethod 1:11 - 1:16
+            Name: width
+          Accessor 1:16 - 1:37
+            Return 1:21 - 1:35
+              SymbolRef 1:28 - 1:35 [Read]
+                Name: m_width

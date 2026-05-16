@@ -1,0 +1,44 @@
+Toplevel 1:1 - 14:1
+  BlockStatement 1:1 - 13:2
+    Defun 2:5 - 4:6
+      SymbolDefun 2:14 - 2:17 [Write]
+        Name: foo
+      Return 3:9 - 3:18
+        Number 3:16 - 3:17
+          Value: 1
+          Literal: 1
+    SimpleStatement 5:5 - 5:17
+      Binary 5:5 - 5:16
+        Operator: StrictEquals
+        Call 5:5 - 5:10
+          SymbolRef 5:5 - 5:8 [Read]
+            Name: foo
+        Number 5:15 - 5:16
+          Value: 1
+          Literal: 1
+    BlockStatement 6:5 - 11:6
+      Defun 7:9 - 9:10
+        SymbolDefun 7:18 - 7:21 [Write]
+          Name: foo
+        Return 8:13 - 8:22
+          Number 8:20 - 8:21
+            Value: 2
+            Literal: 2
+      SimpleStatement 10:9 - 10:21
+        Binary 10:9 - 10:20
+          Operator: StrictEquals
+          Call 10:9 - 10:14
+            SymbolRef 10:9 - 10:12 [Read]
+              Name: foo
+          Number 10:19 - 10:20
+            Value: 2
+            Literal: 2
+    SimpleStatement 12:5 - 12:17
+      Binary 12:5 - 12:16
+        Operator: StrictEquals
+        Call 12:5 - 12:10
+          SymbolRef 12:5 - 12:8 [Read]
+            Name: foo
+        Number 12:15 - 12:16
+          Value: 1
+          Literal: 1

@@ -1,0 +1,7 @@
+Toplevel 1:1 - 3:1
+  SimpleStatement 2:9 - 2:22
+    Call 2:9 - 2:22
+      Dot 2:9 - 2:20
+        Property: random
+        SymbolRef 2:9 - 2:13 [Read]
+          Name: Math

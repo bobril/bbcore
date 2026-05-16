@@ -1,0 +1,6 @@
+var a;
+
+function b() {}
+
+a = b;
+

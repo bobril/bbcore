@@ -1,0 +1,2 @@
+const{name,age}=person;const[first,second]=tuple;function log({title,body}){console.log(title,body)}
+//# sourceMappingURL=destructuring-types.minjs.map

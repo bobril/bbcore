@@ -1,0 +1,15 @@
+{
+  "name": "t1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bobril": "^14.0.1",
+    "bobril-g11n": "^5.0.0"
+  }
+}

@@ -1,0 +1,6 @@
+switch (answer) {
+  case 42:
+    bingo();
+}
+
+//# sourceMappingURL=simple-switchwithcomment.nicejs.map

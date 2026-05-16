@@ -1,0 +1,4 @@
+var __export_hello = "world";
+
+Self exports:
+hello: __export_hello

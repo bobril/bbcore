@@ -1,0 +1,17 @@
+Toplevel 1:1 - 2:12
+  Var 1:1 - 1:1
+    VarDef 1:1 - 1:1
+      SymbolVar 2:5 - 2:6 [Write]
+        Name: a
+  SimpleStatement 1:1 - 1:8
+    Call 1:1 - 1:7
+      SymbolRef 1:1 - 1:5 [Read]
+        Name: call
+  SimpleStatement 2:5 - 2:11
+    Assign 2:5 - 2:11
+      Operator: Assignment
+      SymbolRef 2:5 - 2:6
+        Name: a
+      Number 2:9 - 2:11
+        Value: 10
+        Literal: 10

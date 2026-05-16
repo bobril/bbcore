@@ -1,0 +1,274 @@
+{
+  "BobrilImport": "b",
+  "BobrilG11NImport": "g",
+  "Imports": [
+    {
+      "StartCol": 16,
+      "StartLine": 1,
+      "EndCol": 24,
+      "EndLine": 1,
+      "Name": "bobril"
+    },
+    {
+      "StartCol": 16,
+      "StartLine": 2,
+      "EndCol": 29,
+      "EndLine": 2,
+      "Name": "bobril-g11n"
+    }
+  ],
+  "VdomTranslations": [
+    {
+      "StartCol": 29,
+      "StartLine": 3,
+      "EndCol": 16,
+      "EndLine": 14,
+      "Message": "Normal {1}Bold {p1, time, relativepast} {2}and italic{/2} and back to just bold{/1} backslash \\\\ and number {p2}",
+      "Hint": "Leave things like \u0027{1}\u0027 on appropriate places",
+      "KnownParams": [],
+      "Replacements": [
+        {
+          "Type": 0,
+          "StartCol": 29,
+          "StartLine": 3,
+          "EndCol": 44,
+          "EndLine": 3,
+          "PlaceCol": 0,
+          "PlaceLine": 0,
+          "Text": "g.t"
+        },
+        {
+          "Type": 1,
+          "StartCol": 45,
+          "StartLine": 3,
+          "EndCol": 48,
+          "EndLine": 3,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 52,
+          "StartLine": 3,
+          "EndCol": 107,
+          "EndLine": 3,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 137,
+          "StartLine": 3,
+          "EndCol": 4,
+          "EndLine": 4,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 4,
+          "StartLine": 4,
+          "EndCol": 4,
+          "EndLine": 5,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 4,
+          "StartLine": 5,
+          "EndCol": 4,
+          "EndLine": 6,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 135,
+          "StartLine": 3,
+          "EndCol": 135,
+          "EndLine": 3,
+          "PlaceCol": 0,
+          "PlaceLine": 0,
+          "Text": ", 1:function(__ch__){return "
+        },
+        {
+          "Type": 2,
+          "StartCol": 4,
+          "StartLine": 6,
+          "EndCol": 8,
+          "EndLine": 7,
+          "PlaceCol": 135,
+          "PlaceLine": 3
+        },
+        {
+          "Type": 0,
+          "StartCol": 135,
+          "StartLine": 3,
+          "EndCol": 135,
+          "EndLine": 3,
+          "PlaceCol": 0,
+          "PlaceLine": 0,
+          "Text": "__ch__"
+        },
+        {
+          "Type": 2,
+          "StartCol": 32,
+          "StartLine": 11,
+          "EndCol": 33,
+          "EndLine": 11,
+          "PlaceCol": 135,
+          "PlaceLine": 3
+        },
+        {
+          "Type": 0,
+          "StartCol": 135,
+          "StartLine": 3,
+          "EndCol": 135,
+          "EndLine": 3,
+          "PlaceCol": 0,
+          "PlaceLine": 0,
+          "Text": "}"
+        },
+        {
+          "Type": 0,
+          "StartCol": 33,
+          "StartLine": 11,
+          "EndCol": 4,
+          "EndLine": 12,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 8,
+          "StartLine": 7,
+          "EndCol": 8,
+          "EndLine": 8,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 8,
+          "StartLine": 8,
+          "EndCol": 8,
+          "EndLine": 9,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 8,
+          "StartLine": 9,
+          "EndCol": 8,
+          "EndLine": 10,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 135,
+          "StartLine": 3,
+          "EndCol": 135,
+          "EndLine": 3,
+          "PlaceCol": 0,
+          "PlaceLine": 0,
+          "Text": ", 2:function(__ch__){return "
+        },
+        {
+          "Type": 2,
+          "StartCol": 8,
+          "StartLine": 10,
+          "EndCol": 35,
+          "EndLine": 10,
+          "PlaceCol": 135,
+          "PlaceLine": 3
+        },
+        {
+          "Type": 0,
+          "StartCol": 135,
+          "StartLine": 3,
+          "EndCol": 135,
+          "EndLine": 3,
+          "PlaceCol": 0,
+          "PlaceLine": 0,
+          "Text": "__ch__"
+        },
+        {
+          "Type": 2,
+          "StartCol": 47,
+          "StartLine": 10,
+          "EndCol": 48,
+          "EndLine": 10,
+          "PlaceCol": 135,
+          "PlaceLine": 3
+        },
+        {
+          "Type": 0,
+          "StartCol": 135,
+          "StartLine": 3,
+          "EndCol": 135,
+          "EndLine": 3,
+          "PlaceCol": 0,
+          "PlaceLine": 0,
+          "Text": "}"
+        },
+        {
+          "Type": 0,
+          "StartCol": 48,
+          "StartLine": 10,
+          "EndCol": 8,
+          "EndLine": 11,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 35,
+          "StartLine": 10,
+          "EndCol": 47,
+          "EndLine": 10,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 8,
+          "StartLine": 11,
+          "EndCol": 32,
+          "EndLine": 11,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 4,
+          "StartLine": 12,
+          "EndCol": 4,
+          "EndLine": 13,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 4,
+          "StartLine": 13,
+          "EndCol": 4,
+          "EndLine": 14,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        },
+        {
+          "Type": 0,
+          "StartCol": 4,
+          "StartLine": 14,
+          "EndCol": 15,
+          "EndLine": 14,
+          "PlaceCol": 0,
+          "PlaceLine": 0
+        }
+      ]
+    }
+  ]
+}

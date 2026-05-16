@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:10
+  Var 1:1 - 1:10
+    VarDef 1:5 - 1:6
+      SymbolVar 1:5 - 1:6
+        Name: x
+    VarDef 1:8 - 1:9
+      SymbolVar 1:8 - 1:9
+        Name: y

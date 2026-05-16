@@ -1,0 +1,2 @@
+class Service{get value(){}get"x-y"(){}get[dynamicName](){}get#secret(){}static set cached(value){}ready=true;}
+//# sourceMappingURL=class-declare-accessors.minjs.map

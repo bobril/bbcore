@@ -1,0 +1,18 @@
+Toplevel 1:1 - 2:5
+  BlockStatement 1:1 - 2:5
+    Var 1:3 - 1:20
+      VarDef 1:7 - 1:13
+        SymbolVar 1:7 - 1:8 [Write]
+          Name: x
+        Number 1:11 - 1:13
+          Value: 14
+          Literal: 14
+      VarDef 1:15 - 1:20
+        SymbolVar 1:15 - 1:16 [Write]
+          Name: y
+        Number 1:19 - 1:20
+          Value: 3
+          Literal: 3
+    SimpleStatement 2:1 - 2:3
+      SymbolRef 2:1 - 2:2 [Read]
+        Name: z

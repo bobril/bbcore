@@ -1,0 +1,22 @@
+Toplevel 1:1 - 1:65
+  ForIn 1:1 - 1:65
+    Var 1:6 - 1:44
+      VarDef 1:10 - 1:44
+        SymbolVar 1:10 - 1:11 [Write]
+          Name: i
+        Function 1:14 - 1:44
+          Return 1:27 - 1:42
+            Binary 1:34 - 1:42
+              Operator: In
+              Number 1:34 - 1:36
+                Value: 10
+                Literal: 10
+              Array 1:40 - 1:42
+    SymbolRef 1:48 - 1:52 [Read]
+      Name: list
+    SimpleStatement 1:54 - 1:65
+      Call 1:54 - 1:64
+        SymbolRef 1:54 - 1:61 [Read]
+          Name: process
+        SymbolRef 1:62 - 1:63 [Read] [PropWrite]
+          Name: x

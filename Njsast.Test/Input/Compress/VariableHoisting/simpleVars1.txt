@@ -1,0 +1,20 @@
+Toplevel 1:1 - 7:2
+  Defun 1:1 - 7:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: main
+    Var 1:1 - 1:1
+      VarDef 2:9 - 2:10
+        SymbolVar 2:9 - 2:10
+          Name: a
+      VarDef 3:9 - 3:10
+        SymbolVar 3:9 - 3:10
+          Name: b
+      VarDef 4:9 - 4:10
+        SymbolVar 4:9 - 4:10
+          Name: c
+      VarDef 5:9 - 5:10
+        SymbolVar 5:9 - 5:10
+          Name: d
+      VarDef 6:9 - 6:10
+        SymbolVar 6:9 - 6:10
+          Name: e

@@ -1,0 +1,43 @@
+Toplevel 1:1 - 16:1
+  Var 2:1 - 2:17
+    VarDef 2:5 - 2:16
+      SymbolVar 2:5 - 2:12 [Write]
+        Name: counter
+      Number 2:15 - 2:16
+        Value: 0
+        Literal: 0
+  Defun 4:1 - 6:2 [Pure]
+    SymbolDefun 4:10 - 4:14 [Write]
+      Name: pure
+    Return 5:3 - 5:20
+      UnaryPostfix 5:10 - 5:19
+        Operator: IncrementPostfix
+        SymbolRef 5:10 - 5:17 [Read] [Write]
+          Name: counter
+  Defun 8:1 - 11:2
+    SymbolDefun 8:10 - 8:16 [Write]
+      Name: impure
+    SimpleStatement 9:3 - 9:29
+      Call 9:3 - 9:28
+        Dot 9:3 - 9:14
+          Property: log
+          SymbolRef 9:3 - 9:10 [Read]
+            Name: console
+        String 9:15 - 9:27
+          Value: sideeffect
+    Return 10:3 - 10:13
+      Number 10:10 - 10:12
+        Value: 42
+        Literal: 42
+  Defun 13:1 - 15:2 [Pure]
+    SymbolDefun 13:10 - 13:16 [Write]
+      Name: second
+    SimpleStatement 14:3 - 14:40
+      Call 14:3 - 14:39
+        Dot 14:3 - 14:14
+          Property: log
+          SymbolRef 14:3 - 14:10 [Read]
+            Name: console
+        String 14:15 - 14:38
+          Value: trust me this is pure
+Line Comment (1:1-1:27):  PureFuncs: pure, second

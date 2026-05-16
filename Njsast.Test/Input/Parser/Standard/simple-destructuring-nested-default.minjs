@@ -1,0 +1,2 @@
+const{a:{b=1}}=obj
+//# sourceMappingURL=simple-destructuring-nested-default.minjs.map

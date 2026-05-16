@@ -1,0 +1,2 @@
+export const Label=props=><span>{props.value}</span>
+//# sourceMappingURL=tsx-as-expression.minjs.map

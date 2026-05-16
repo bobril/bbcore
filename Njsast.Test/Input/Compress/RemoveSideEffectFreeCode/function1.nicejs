@@ -1,0 +1,6 @@
+function used() {
+    console.log("Ok");
+}
+
+used();
+

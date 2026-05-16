@@ -1,0 +1,12 @@
+Toplevel 1:1 - 6:2
+  Defun 1:1 - 6:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: func
+    Var 2:5 - 2:16
+      VarDef 2:9 - 2:15
+        SymbolVar 2:9 - 2:10 [Write]
+          Name: a
+        Number 2:13 - 2:15
+          Value: 10
+          Literal: 10
+    Return 3:5 - 3:12

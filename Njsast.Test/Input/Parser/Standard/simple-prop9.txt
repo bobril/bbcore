@@ -1,0 +1,14 @@
+Toplevel 1:1 - 1:46
+  SimpleStatement 1:1 - 1:46
+    Call 1:1 - 1:46
+      Dot 1:1 - 1:40
+        Property: prepareForElection
+        Dot 1:1 - 1:21
+          Property: Indonesia
+          Dot 1:1 - 1:11
+            Property: asia
+            SymbolRef 1:1 - 1:6 [Read]
+              Name: earth
+      Number 1:41 - 1:45
+        Value: 2014
+        Literal: 2014

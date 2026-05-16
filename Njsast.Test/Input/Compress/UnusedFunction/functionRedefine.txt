@@ -1,0 +1,15 @@
+Toplevel 1:1 - 9:7
+  Var 1:1 - 1:1
+    VarDef 1:1 - 1:1
+      SymbolVar 1:1 - 1:1
+        Name: a
+  Defun 5:1 - 7:2
+    SymbolDefun 5:10 - 5:11 [Write]
+      Name: b
+  SimpleStatement 9:1 - 9:7
+    Assign 9:1 - 9:6
+      Operator: Assignment
+      SymbolRef 9:1 - 9:2 [Write]
+        Name: a
+      SymbolRef 9:5 - 9:6 [Read]
+        Name: b

@@ -1,0 +1,12 @@
+function func() {
+    try {
+        call();
+        return;
+    } catch (e) {
+        console.error(e);
+        return;
+    } finally {
+        call2();
+        return;
+    }
+}

@@ -1,0 +1,2 @@
+class Circle extends Shape{static defaultCircle(){return new Circle}}var defCircle=Circle.defaultCircle()
+//# sourceMappingURL=simple-class5.minjs.map

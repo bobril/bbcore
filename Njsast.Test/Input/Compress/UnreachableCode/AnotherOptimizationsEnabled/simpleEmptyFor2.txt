@@ -1,0 +1,10 @@
+Toplevel 1:1 - 1:15
+  For 1:1 - 1:15
+    SimpleStatement 1:9 - 1:15
+      Assign 1:9 - 1:14
+        Operator: Assignment
+        SymbolRef 1:9 - 1:10 [Write]
+          Name: a
+        Number 1:13 - 1:14
+          Value: 1
+          Literal: 1

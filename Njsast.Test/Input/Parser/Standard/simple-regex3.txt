@@ -1,0 +1,5 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:7
+    RegExp 1:1 - 1:6
+      Pattern: .
+      Flags: GlobalMatch, DotAll

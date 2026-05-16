@@ -1,0 +1,2 @@
+for(x in list)process(x)
+//# sourceMappingURL=simple-forin.minjs.map

@@ -1,0 +1,2 @@
+function format(value){return String(value)}export const result=format(1)
+//# sourceMappingURL=declare-and-overloads.minjs.map

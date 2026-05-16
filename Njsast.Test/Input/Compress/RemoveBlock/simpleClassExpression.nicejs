@@ -1,0 +1,4 @@
+var classExpression = class {
+    method() {}
+};
+

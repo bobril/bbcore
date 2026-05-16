@@ -1,0 +1,37 @@
+Toplevel 1:1 - 7:1
+  DefClass 1:1 - 6:2
+    SymbolDefClass 1:7 - 1:13
+      Name: Circle
+    SymbolRef 1:22 - 1:27 [Read]
+      Name: Shape
+    ConciseMethod 2:5 - 5:6
+      SymbolProperty 2:5 - 2:16
+        Name: constructor
+      Function 2:17 - 5:6
+        SymbolFunarg 2:18 - 2:20
+          Name: id
+        SymbolFunarg 2:22 - 2:23
+          Name: x
+        SymbolFunarg 2:25 - 2:26
+          Name: y
+        SymbolFunarg 2:28 - 2:34
+          Name: radius
+        SimpleStatement 3:9 - 3:24
+          Call 3:9 - 3:24
+            Super 3:9 - 3:14 [Read]
+              Name: super
+            SymbolRef 3:15 - 3:17 [Read] [PropWrite]
+              Name: id
+            SymbolRef 3:19 - 3:20 [Read] [PropWrite]
+              Name: x
+            SymbolRef 3:22 - 3:23 [Read] [PropWrite]
+              Name: y
+        SimpleStatement 4:9 - 4:29
+          Assign 4:9 - 4:29
+            Operator: Assignment
+            Dot 4:9 - 4:20
+              Property: radius
+              This 4:9 - 4:13 [Read] [PropWrite!]
+                Name: this
+            SymbolRef 4:23 - 4:29 [Read]
+              Name: radius

@@ -1,0 +1,3 @@
+let fn = () => [ 1, "a" ];
+
+//# sourceMappingURL=simple-arrow2.nicejs.map

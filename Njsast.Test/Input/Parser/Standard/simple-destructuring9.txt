@@ -1,0 +1,38 @@
+Toplevel 1:1 - 9:1
+  Defun 1:1 - 6:2
+    SymbolDefun 1:10 - 1:14 [Write]
+      Name: test
+    SymbolFunarg 1:15 - 1:19
+      Name: info
+    Const 2:5 - 2:38
+      VarDef 2:11 - 2:37
+        Destructuring 2:11 - 2:30
+          ObjectKeyVal 2:13 - 2:28
+            SymbolProperty 2:13 - 2:21
+              Name: isActive
+            DefaultAssign 2:13 - 2:28
+              Operator: Assignment
+              SymbolConst 2:13 - 2:21 [Write]
+                Name: isActive
+              True 2:24 - 2:28
+        SymbolRef 2:33 - 2:37 [Read]
+          Name: info
+    If 3:5 - 5:6
+      UnaryPrefix 3:9 - 3:18
+        Operator: LogicalNot
+        SymbolRef 3:10 - 3:18 [Read]
+          Name: isActive
+      BlockStatement 3:20 - 5:6
+        SimpleStatement 4:9 - 4:46
+          Call 4:9 - 4:45
+            Dot 4:9 - 4:20
+              Property: log
+              SymbolRef 4:9 - 4:16 [Read]
+                Name: console
+            String 4:21 - 4:44
+              Value: Should not be printed
+  SimpleStatement 8:1 - 8:10
+    Call 8:1 - 8:9
+      SymbolRef 8:1 - 8:5 [Read]
+        Name: test
+      Object 8:6 - 8:8

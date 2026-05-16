@@ -1,0 +1,93 @@
+Toplevel 1:1 - 22:1
+  DefClass 1:1 - 21:2
+    SymbolDefClass 1:7 - 1:16
+      Name: Rectangle
+    ConciseMethod 2:5 - 5:6
+      SymbolProperty 2:5 - 2:16
+        Name: constructor
+      Function 2:16 - 5:6
+        SymbolFunarg 2:17 - 2:22
+          Name: width
+        SymbolFunarg 2:24 - 2:30
+          Name: height
+        SimpleStatement 3:9 - 3:29
+          Assign 3:9 - 3:28
+            Operator: Assignment
+            Dot 3:9 - 3:20
+              Property: _width
+              This 3:9 - 3:13 [Read] [PropWrite!]
+                Name: this
+            SymbolRef 3:23 - 3:28 [Read]
+              Name: width
+        SimpleStatement 4:9 - 4:31
+          Assign 4:9 - 4:30
+            Operator: Assignment
+            Dot 4:9 - 4:21
+              Property: _height
+              This 4:9 - 4:13 [Read] [PropWrite!]
+                Name: this
+            SymbolRef 4:24 - 4:30 [Read]
+              Name: height
+    ObjectSetter 6:5 - 8:6
+      SymbolProperty 6:9 - 6:14
+        Name: width
+      Function 6:14 - 8:6
+        SymbolFunarg 6:15 - 6:20
+          Name: width
+        SimpleStatement 7:9 - 7:29
+          Assign 7:9 - 7:28
+            Operator: Assignment
+            Dot 7:9 - 7:20
+              Property: _width
+              This 7:9 - 7:13 [Read] [PropWrite!]
+                Name: this
+            SymbolRef 7:23 - 7:28 [Read]
+              Name: width
+    ObjectGetter 9:5 - 11:6
+      SymbolProperty 9:9 - 9:14
+        Name: width
+      Function 9:14 - 11:6
+        Return 10:9 - 10:28
+          Dot 10:16 - 10:27
+            Property: _width
+            This 10:16 - 10:20 [Read] [PropWrite!]
+              Name: this
+    ObjectSetter 12:5 - 14:6
+      SymbolProperty 12:9 - 12:15
+        Name: height
+      Function 12:15 - 14:6
+        SymbolFunarg 12:16 - 12:22
+          Name: height
+        SimpleStatement 13:9 - 13:31
+          Assign 13:9 - 13:30
+            Operator: Assignment
+            Dot 13:9 - 13:21
+              Property: _height
+              This 13:9 - 13:13 [Read] [PropWrite!]
+                Name: this
+            SymbolRef 13:24 - 13:30 [Read]
+              Name: height
+    ObjectGetter 15:5 - 17:6
+      SymbolProperty 15:9 - 15:15
+        Name: height
+      Function 15:15 - 17:6
+        Return 16:9 - 16:29
+          Dot 16:16 - 16:28
+            Property: _height
+            This 16:16 - 16:20 [Read] [PropWrite!]
+              Name: this
+    ObjectGetter 18:5 - 20:6
+      SymbolProperty 18:9 - 18:13
+        Name: area
+      Function 18:13 - 20:6
+        Return 19:9 - 19:43
+          Binary 19:16 - 19:42
+            Operator: Multiplication
+            Dot 19:16 - 19:27
+              Property: _width
+              This 19:16 - 19:20 [Read]
+                Name: this
+            Dot 19:30 - 19:42
+              Property: _height
+              This 19:30 - 19:34 [Read]
+                Name: this

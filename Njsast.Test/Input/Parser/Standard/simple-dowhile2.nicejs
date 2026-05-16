@@ -1,0 +1,5 @@
+do {
+    keep();
+} while (true);
+
+//# sourceMappingURL=simple-dowhile2.nicejs.map

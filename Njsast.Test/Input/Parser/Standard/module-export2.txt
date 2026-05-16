@@ -1,0 +1,54 @@
+Toplevel 1:1 - 11:1
+  Export 1:1 - 2:15
+    Let 1:8 - 2:15
+      VarDef 1:12 - 1:17
+        SymbolLet 1:12 - 1:17
+          Name: name1
+      VarDef 2:5 - 2:14
+        SymbolLet 2:5 - 2:10 [Write]
+          Name: name2
+        Number 2:13 - 2:14
+          Value: 1
+          Literal: 1
+  Export 3:1 - 4:15
+    Var 3:8 - 4:15
+      VarDef 3:12 - 3:17
+        SymbolVar 3:12 - 3:17
+          Name: name3
+      VarDef 4:5 - 4:14
+        SymbolVar 4:5 - 4:10 [Write]
+          Name: name4
+        Number 4:13 - 4:14
+          Value: 2
+          Literal: 2
+  Export 5:1 - 6:15
+    Const 5:8 - 6:15
+      VarDef 5:14 - 5:23
+        SymbolConst 5:14 - 5:19 [Write]
+          Name: name5
+        Number 5:22 - 5:23
+          Value: 3
+          Literal: 3
+      VarDef 6:5 - 6:14
+        SymbolConst 6:5 - 6:10 [Write]
+          Name: name6
+        Number 6:13 - 6:14
+          Value: 4
+          Literal: 4
+  Export 8:1 - 8:34
+    Defun 8:8 - 8:34
+      SymbolDefun 8:17 - 8:29 [Write]
+        Name: functionName
+  Export 9:1 - 9:26
+    DefClass 9:8 - 9:26
+      SymbolDefClass 9:14 - 9:23
+        Name: ClassName
+  Export 10:1 - 10:22 [IsDefault]
+    Binary 10:16 - 10:21
+      Operator: Addition
+      Number 10:16 - 10:17
+        Value: 1
+        Literal: 1
+      Number 10:20 - 10:21
+        Value: 2
+        Literal: 2

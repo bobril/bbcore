@@ -1,0 +1,73 @@
+Toplevel 1:1 - 16:1
+  Let 1:1 - 10:3
+    VarDef 1:5 - 10:2
+      SymbolLet 1:5 - 1:14 [Write]
+        Name: fibonacci
+      Object 1:17 - 10:2
+        ConciseMethod 2:5 - 9:6 [IsGenerator]
+          Dot 2:7 - 2:22
+            Property: iterator
+            SymbolRef 2:7 - 2:13 [Read] [PropWrite!]
+              Name: Symbol
+          Function 2:23 - 9:6 [IsGenerator]
+            Let 3:9 - 4:21
+              VarDef 3:13 - 3:20
+                SymbolLet 3:13 - 3:16 [Write]
+                  Name: pre
+                Number 3:19 - 3:20
+                  Value: 0
+                  Literal: 0
+              VarDef 4:13 - 4:20
+                SymbolLet 4:13 - 4:16 [Write]
+                  Name: cur
+                Number 4:19 - 4:20
+                  Value: 1
+                  Literal: 1
+            For 5:9 - 8:10
+              BlockStatement 5:18 - 8:10
+                SimpleStatement 6:13 - 6:43
+                  Assign 6:13 - 6:42
+                    Operator: Assignment
+                    Destructuring 6:13 - 6:23 [IsArray]
+                      SymbolRef 6:14 - 6:17 [Write]
+                        Name: pre
+                      SymbolRef 6:19 - 6:22 [Write]
+                        Name: cur
+                    Array 6:26 - 6:42
+                      SymbolRef 6:27 - 6:30 [Read]
+                        Name: cur
+                      Binary 6:32 - 6:41
+                        Operator: Addition
+                        SymbolRef 6:32 - 6:35 [Read]
+                          Name: pre
+                        SymbolRef 6:38 - 6:41 [Read]
+                          Name: cur
+                SimpleStatement 7:13 - 7:23
+                  Yield 7:13 - 7:22
+                    SymbolRef 7:19 - 7:22 [Read]
+                      Name: cur
+  ForOf 12:1 - 15:2
+    Let 12:6 - 12:11
+      VarDef 12:10 - 12:11
+        SymbolLet 12:10 - 12:11 [Write]
+          Name: n
+    SymbolRef 12:15 - 12:24 [Read]
+      Name: fibonacci
+    BlockStatement 12:26 - 15:2
+      If 13:5 - 13:25
+        Binary 13:9 - 13:17
+          Operator: GreaterThan
+          SymbolRef 13:9 - 13:10 [Read]
+            Name: n
+          Number 13:13 - 13:17
+            Value: 1000
+            Literal: 1000
+        Break 13:19 - 13:25
+      SimpleStatement 14:5 - 14:20
+        Call 14:5 - 14:19
+          Dot 14:5 - 14:16
+            Property: log
+            SymbolRef 14:5 - 14:12 [Read]
+              Name: console
+          SymbolRef 14:17 - 14:18 [Read] [PropWrite]
+            Name: n

@@ -1,0 +1,4 @@
+var a = "";
+
+b != undefined ? a = "empty" : a = "uninitialized";
+

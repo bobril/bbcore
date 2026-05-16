@@ -1,0 +1,9 @@
+Toplevel 1:1 - 1:31
+  Defun 1:1 - 1:31
+    SymbolDefun 1:10 - 1:15 [Write]
+      Name: hello
+    SymbolFunarg 1:16 - 1:17
+      Name: a
+    Expansion 1:19 - 1:26
+      SymbolFunarg 1:22 - 1:26
+        Name: rest

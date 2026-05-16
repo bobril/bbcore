@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:15
+  SimpleStatement 1:1 - 1:15
+    Binary 1:1 - 1:15
+      Operator: InstanceOf
+      SymbolRef 1:1 - 1:2 [Read]
+        Name: x
+      SymbolRef 1:14 - 1:15 [Read]
+        Name: y

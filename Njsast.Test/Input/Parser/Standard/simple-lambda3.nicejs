@@ -1,0 +1,3 @@
+some(async v => await v);
+
+//# sourceMappingURL=simple-lambda3.nicejs.map

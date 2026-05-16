@@ -1,0 +1,31 @@
+Toplevel 1:1 - 9:16
+  Var 1:1 - 1:1
+    VarDef 1:5 - 1:6
+      SymbolVar 1:5 - 1:6
+        Name: a
+      Number 3:5 - 3:7
+        Value: 10
+        Literal: 10
+    VarDef 5:5 - 5:6
+      SymbolVar 5:5 - 5:6
+        Name: b
+    VarDef 1:1 - 1:1
+      SymbolVar 9:5 - 9:6 [Write]
+        Name: c
+  SimpleStatement 7:1 - 7:18
+    Assign 7:1 - 7:17
+      Operator: Assignment
+      SymbolRef 7:1 - 7:2 [Write]
+        Name: b
+      New 7:5 - 7:17
+        SymbolRef 7:9 - 7:15 [Read]
+          Name: object
+  SimpleStatement 9:5 - 9:15
+    Assign 9:5 - 9:15
+      Operator: Assignment
+      SymbolRef 9:5 - 9:6
+        Name: c
+      Dot 9:9 - 9:15
+        Property: prop
+        SymbolRef 9:9 - 9:10 [Read] [PropWrite!]
+          Name: b

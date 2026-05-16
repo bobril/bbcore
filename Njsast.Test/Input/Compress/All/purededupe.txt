@@ -1,0 +1,125 @@
+Toplevel 1:1 - 22:1
+  Let 1:1 - 1:21
+    VarDef 1:5 - 1:20
+      SymbolLet 1:5 - 1:8 [Write]
+        Name: map
+      New 1:11 - 1:20
+        SymbolRef 1:15 - 1:18 [Read]
+          Name: Map
+    VarDef 2:5 - 2:18
+      SymbolLet 2:5 - 2:14 [Write]
+        Name: lastStyle
+      Number 2:17 - 2:18
+        Value: 0
+        Literal: 0
+  Defun 5:1 - 10:2 [Pure]
+    SymbolDefun 5:10 - 5:18 [Write]
+      Name: styleDef
+    SymbolFunarg 5:19 - 5:20
+      Name: s
+    Let 7:5 - 7:27
+      VarDef 7:9 - 7:26
+        SymbolLet 7:9 - 7:12 [Write]
+          Name: res
+        UnaryPostfix 7:15 - 7:26
+          Operator: IncrementPostfix
+          SymbolRef 7:15 - 7:24 [Read] [Write]
+            Name: lastStyle
+    SimpleStatement 8:5 - 8:18
+      Assign 8:5 - 8:17
+        Operator: Assignment
+        Sub 8:5 - 8:13
+          SymbolRef 8:9 - 8:12 [Read]
+            Name: res
+          SymbolRef 8:5 - 8:8 [Read] [PropWrite!]
+            Name: map
+        SymbolRef 8:16 - 8:17 [Read]
+          Name: s
+    Return 9:5 - 9:16
+      SymbolRef 9:12 - 9:15 [Read]
+        Name: res
+  Let 12:1 - 12:37
+    VarDef 12:5 - 12:36
+      SymbolLet 12:5 - 12:7 [Write]
+        Name: s1
+      Call 12:10 - 12:36
+        SymbolRef 12:10 - 12:18 [Read]
+          Name: styleDef
+        Object 12:19 - 12:35
+          ObjectKeyVal 12:21 - 12:33
+            SymbolProperty 12:21 - 12:26
+              Name: color
+            String 12:28 - 12:33
+              Value: red
+    VarDef 13:5 - 13:37
+      SymbolLet 13:5 - 13:7 [Write]
+        Name: s2
+      Call 13:10 - 13:37
+        SymbolRef 13:10 - 13:18 [Read]
+          Name: styleDef
+        Object 13:19 - 13:36
+          ObjectKeyVal 13:21 - 13:34
+            SymbolProperty 13:21 - 13:26
+              Name: color
+            String 13:28 - 13:34
+              Value: blue
+    VarDef 15:5 - 15:45
+      SymbolLet 15:5 - 15:7 [Write]
+        Name: s4
+      Call 15:10 - 15:45
+        SymbolRef 15:10 - 15:18 [Read]
+          Name: styleDef
+        Object 15:19 - 15:44
+          ObjectKeyVal 15:21 - 15:42
+            SymbolProperty 15:21 - 15:27
+              Name: height
+            Call 15:29 - 15:42
+              Dot 15:29 - 15:40
+                Property: random
+                SymbolRef 15:29 - 15:33 [Read]
+                  Name: Math
+    VarDef 16:5 - 16:45
+      SymbolLet 16:5 - 16:7 [Write]
+        Name: s5
+      Call 16:10 - 16:45
+        SymbolRef 16:10 - 16:18 [Read]
+          Name: styleDef
+        Object 16:19 - 16:44
+          ObjectKeyVal 16:21 - 16:42
+            SymbolProperty 16:21 - 16:27
+              Name: height
+            Call 16:29 - 16:42
+              Dot 16:29 - 16:40
+                Property: random
+                SymbolRef 16:29 - 16:33 [Read]
+                  Name: Math
+  SimpleStatement 17:1 - 17:9
+    Call 17:1 - 17:8
+      SymbolRef 17:1 - 17:4 [Read]
+        Name: log
+      SymbolRef 17:5 - 17:7 [Read] [PropWrite]
+        Name: s1
+  SimpleStatement 18:1 - 18:9
+    Call 18:1 - 18:8
+      SymbolRef 18:1 - 18:4 [Read]
+        Name: log
+      SymbolRef 18:5 - 18:7 [Read] [PropWrite]
+        Name: s2
+  SimpleStatement 19:1 - 19:9
+    Call 19:1 - 19:8
+      SymbolRef 19:1 - 19:4 [Read]
+        Name: log
+      SymbolRef 19:5 - 19:7 [Read] [PropWrite]
+        Name: s1
+  SimpleStatement 20:1 - 20:9
+    Call 20:1 - 20:8
+      SymbolRef 20:1 - 20:4 [Read]
+        Name: log
+      SymbolRef 20:5 - 20:7 [Read] [PropWrite]
+        Name: s4
+  SimpleStatement 21:1 - 21:9
+    Call 21:1 - 21:8
+      SymbolRef 21:1 - 21:4 [Read]
+        Name: log
+      SymbolRef 21:5 - 21:7 [Read] [PropWrite]
+        Name: s5

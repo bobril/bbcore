@@ -1,0 +1,6 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:6
+    Dot 1:1 - 1:5 [Optional]
+      Property: b
+      SymbolRef 1:1 - 1:2 [Read]
+        Name: a

@@ -1,0 +1,15 @@
+Toplevel 1:1 - 1:18
+  LabeledStatement 1:1 - 1:9
+    Label 1:1 - 1:5
+      Name: foo
+    SimpleStatement 1:6 - 1:9
+      Number 1:6 - 1:8
+        Value: 10
+        Literal: 10
+  LabeledStatement 1:10 - 1:18
+    Label 1:10 - 1:14
+      Name: foo
+    SimpleStatement 1:15 - 1:18
+      Number 1:15 - 1:17
+        Value: 20
+        Literal: 20

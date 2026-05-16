@@ -1,0 +1,10 @@
+Toplevel 1:1 - 1:37
+  LabeledStatement 1:1 - 1:37
+    Label 1:1 - 1:6 [IsLoop]
+      Name: done
+    While 1:7 - 1:37
+      True 1:14 - 1:18
+      BlockStatement 1:20 - 1:37
+        Continue 1:22 - 1:35
+          LabelRef 1:31 - 1:35
+            Name: done

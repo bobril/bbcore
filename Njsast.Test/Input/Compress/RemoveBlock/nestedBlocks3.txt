@@ -1,0 +1,25 @@
+Toplevel 1:1 - 9:2
+  SimpleStatement 2:5 - 2:11
+    Assign 2:5 - 2:10
+      Operator: Assignment
+      SymbolRef 2:5 - 2:6 [Write]
+        Name: a
+      Number 2:9 - 2:10
+        Value: 1
+        Literal: 1
+  SimpleStatement 5:13 - 5:19
+    Assign 5:13 - 5:18
+      Operator: Assignment
+      SymbolRef 5:13 - 5:14 [Write]
+        Name: a
+      Number 5:17 - 5:18
+        Value: 2
+        Literal: 2
+  SimpleStatement 6:13 - 6:19
+    Assign 6:13 - 6:18
+      Operator: Assignment
+      SymbolRef 6:13 - 6:14 [Write]
+        Name: b
+      Number 6:17 - 6:18
+        Value: 1
+        Literal: 1

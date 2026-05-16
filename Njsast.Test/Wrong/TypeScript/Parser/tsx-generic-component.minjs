@@ -1,0 +1,2 @@
+export function Select(props){return<select value={props.value}>{props.options.map(option=><option>{option}</option>)}</select>}
+//# sourceMappingURL=tsx-generic-component.minjs.map

@@ -1,0 +1,11 @@
+Toplevel 1:1 - 2:1
+  Const 1:1 - 1:19
+    VarDef 1:7 - 1:18
+      SymbolConst 1:7 - 1:8 [Write]
+        Name: a
+      Binary 1:11 - 1:18
+        Operator: Addition
+        BigInt 1:11 - 1:13
+          Value: 1
+        BigInt 1:16 - 1:18
+          Value: 2

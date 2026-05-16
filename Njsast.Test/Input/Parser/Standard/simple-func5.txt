@@ -1,0 +1,9 @@
+Toplevel 1:1 - 1:26
+  SimpleStatement 1:1 - 1:26
+    Function 1:2 - 1:25
+      SymbolLambda 1:11 - 1:15 [Write]
+        Name: test
+      SymbolFunarg 1:16 - 1:17
+        Name: t
+      SymbolFunarg 1:19 - 1:20
+        Name: t

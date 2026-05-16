@@ -1,0 +1,2 @@
+async function*gen(){yield 1}
+//# sourceMappingURL=simple-async-generator.minjs.map

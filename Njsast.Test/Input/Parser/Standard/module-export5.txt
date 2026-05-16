@@ -1,0 +1,17 @@
+Toplevel 1:1 - 2:1
+  Export 1:1 - 1:40
+    Const 1:8 - 1:40
+      VarDef 1:14 - 1:39
+        Destructuring 1:14 - 1:35
+          ObjectKeyVal 1:16 - 1:21
+            SymbolProperty 1:16 - 1:21
+              Name: name1
+            SymbolConst 1:16 - 1:21 [Write]
+              Name: name1
+          ObjectKeyVal 1:23 - 1:33
+            SymbolProperty 1:23 - 1:28
+              Name: name2
+            SymbolConst 1:30 - 1:33 [Write]
+              Name: bar
+        SymbolRef 1:38 - 1:39 [Read]
+          Name: o

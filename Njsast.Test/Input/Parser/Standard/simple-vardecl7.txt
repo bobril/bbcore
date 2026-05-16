@@ -1,0 +1,14 @@
+Toplevel 1:1 - 1:39
+  Var 1:1 - 1:39
+    VarDef 1:5 - 1:12
+      SymbolVar 1:5 - 1:12
+        Name: private
+    VarDef 1:14 - 1:23
+      SymbolVar 1:14 - 1:23
+        Name: protected
+    VarDef 1:25 - 1:31
+      SymbolVar 1:25 - 1:31
+        Name: public
+    VarDef 1:33 - 1:39
+      SymbolVar 1:33 - 1:39
+        Name: static

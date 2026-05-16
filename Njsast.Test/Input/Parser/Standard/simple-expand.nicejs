@@ -1,0 +1,5 @@
+func(a, ...rest);
+
+func(...all);
+
+//# sourceMappingURL=simple-expand.nicejs.map

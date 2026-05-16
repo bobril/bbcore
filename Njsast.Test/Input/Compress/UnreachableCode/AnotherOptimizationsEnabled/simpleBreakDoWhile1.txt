@@ -1,0 +1,24 @@
+Toplevel 1:1 - 11:1
+  LabeledStatement 1:1 - 10:17
+    Label 1:1 - 1:7 [IsLoop]
+      Name: label
+    BlockStatement 1:11 - 10:2
+      While 2:3 - 9:4
+        True 2:10 - 2:14
+        BlockStatement 2:16 - 9:4
+          SimpleStatement 3:5 - 3:12
+            Call 3:5 - 3:11
+              SymbolRef 3:5 - 3:9 [Read]
+                Name: func
+          Defun 4:5 - 8:6
+            SymbolDefun 4:14 - 4:18 [Write]
+              Name: func
+            LabeledStatement 5:7 - 7:23
+              Label 5:7 - 5:13 [IsLoop]
+                Name: label
+              Do 5:14 - 7:23
+                False 7:16 - 7:21
+                BlockStatement 5:17 - 7:8
+                  Break 6:9 - 6:21
+                    LabelRef 6:15 - 6:20
+                      Name: label

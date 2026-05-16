@@ -1,0 +1,2 @@
+var Runtime;(function(Runtime){Runtime.value=1;const hidden=2;function get(){return Runtime.value+hidden}Runtime.get=get;class Box{read(){return Runtime.value}}Runtime.Box=Box;let Kind;(function(Kind){Kind[Kind["First"]=0]="First";Kind[Kind["Second"]=4]="Second"})(Kind=Runtime.Kind||(Runtime.Kind={}))})(Runtime||(Runtime={}));console.log(Runtime.value,Runtime.get(),Runtime.Kind.Second)
+//# sourceMappingURL=namespace-runtime.minjs.map

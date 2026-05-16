@@ -1,0 +1,10 @@
+"use strict";
+var __export_ddd = undefined;
+
+function setDdd(addd) {
+    __export_ddd = addd;
+}
+
+Self exports:
+ddd: __export_ddd
+setDdd: setDdd

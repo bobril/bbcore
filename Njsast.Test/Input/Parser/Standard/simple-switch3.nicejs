@@ -1,0 +1,10 @@
+switch (answer) {
+  case 42:
+    hi();
+    break;
+
+  default:
+    break;
+}
+
+//# sourceMappingURL=simple-switch3.nicejs.map

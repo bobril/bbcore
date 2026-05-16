@@ -1,0 +1,97 @@
+{
+  "./index.tsx": {
+    "fileName": "./index.tsx",
+    "infos": [
+      {
+        "type": "Function",
+        "index": 0,
+        "start": "0:0",
+        "end": "0:16"
+      },
+      {
+        "type": "Statement",
+        "index": 0,
+        "start": "1:2",
+        "end": "1:22"
+      },
+      {
+        "type": "Function",
+        "index": 1,
+        "start": "4:0",
+        "end": "4:28"
+      },
+      {
+        "type": "Statement",
+        "index": 1,
+        "start": "5:2",
+        "end": "5:21"
+      },
+      {
+        "type": "Statement",
+        "index": 2,
+        "start": "8:0",
+        "end": "8:10"
+      },
+      {
+        "type": "Condition",
+        "index": 3,
+        "start": "8:11",
+        "end": "8:30"
+      },
+      {
+        "type": "Statement",
+        "index": 5,
+        "start": "8:40",
+        "end": "8:45"
+      },
+      {
+        "type": "Statement",
+        "index": 6,
+        "start": "8:47",
+        "end": "8:50"
+      },
+      {
+        "type": "Statement",
+        "index": 7,
+        "start": "10:0",
+        "end": "10:14"
+      },
+      {
+        "type": "Statement",
+        "index": 8,
+        "start": "11:2",
+        "end": "11:8"
+      },
+      {
+        "type": "Statement",
+        "index": 9,
+        "start": "14:0",
+        "end": "14:4"
+      },
+      {
+        "type": "Condition",
+        "index": 13,
+        "start": "14:4",
+        "end": "14:23"
+      },
+      {
+        "type": "Condition",
+        "index": 11,
+        "start": "14:24",
+        "end": "14:46"
+      },
+      {
+        "type": "Statement",
+        "index": 10,
+        "start": "15:2",
+        "end": "15:37"
+      },
+      {
+        "type": "Statement",
+        "index": 15,
+        "start": "18:0",
+        "end": "18:18"
+      }
+    ]
+  }
+}

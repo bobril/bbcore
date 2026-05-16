@@ -1,0 +1,15 @@
+Toplevel 1:1 - 1:57
+  Switch 1:1 - 1:57
+    SymbolRef 1:9 - 1:15 [Read]
+      Name: answer
+    Case 1:19 - 1:40
+      SimpleStatement 1:28 - 1:33
+        Call 1:28 - 1:32
+          SymbolRef 1:28 - 1:30 [Read]
+            Name: hi
+      Break 1:34 - 1:40
+      Number 1:24 - 1:26
+        Value: 42
+        Literal: 42
+    Default 1:41 - 1:55
+      Break 1:50 - 1:55

@@ -1,0 +1,8 @@
+Toplevel 1:1 - 1:16
+  SimpleStatement 1:1 - 1:16
+    Call 1:1 - 1:16
+      Dot 1:1 - 1:14
+        Property: bar
+        New 1:1 - 1:10
+          SymbolRef 1:5 - 1:8 [Read]
+            Name: foo

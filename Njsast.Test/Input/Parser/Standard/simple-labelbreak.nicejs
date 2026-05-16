@@ -1,0 +1,3 @@
+start: for (;;) break start;
+
+//# sourceMappingURL=simple-labelbreak.nicejs.map

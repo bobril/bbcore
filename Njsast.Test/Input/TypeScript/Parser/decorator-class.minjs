@@ -1,0 +1,2 @@
+function sealed(target){}let Service=class Service{};Service=__decorate([sealed],Service);console.log(Service)
+//# sourceMappingURL=decorator-class.minjs.map

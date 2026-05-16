@@ -1,0 +1,1 @@
+done: switch (a) { default: break done }

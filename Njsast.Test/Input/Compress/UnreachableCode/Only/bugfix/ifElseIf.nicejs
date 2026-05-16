@@ -1,0 +1,4 @@
+if (notConst) {
+    call();
+}
+

@@ -1,0 +1,6 @@
+var {b, ...f} = {
+    ...e,
+    a() {}
+};
+
+//# sourceMappingURL=simple-objectRest.nicejs.map

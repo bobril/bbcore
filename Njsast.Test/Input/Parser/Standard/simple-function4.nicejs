@@ -1,0 +1,5 @@
+(function() {
+    return x * y;
+});
+
+//# sourceMappingURL=simple-function4.nicejs.map

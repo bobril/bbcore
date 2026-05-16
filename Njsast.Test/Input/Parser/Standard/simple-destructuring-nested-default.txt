@@ -1,0 +1,20 @@
+Toplevel 1:1 - 2:1
+  Const 1:1 - 1:30
+    VarDef 1:7 - 1:29
+      Destructuring 1:7 - 1:23
+        ObjectKeyVal 1:9 - 1:21
+          SymbolProperty 1:9 - 1:10
+            Name: a
+          Destructuring 1:12 - 1:21
+            ObjectKeyVal 1:14 - 1:19
+              SymbolProperty 1:14 - 1:15
+                Name: b
+              DefaultAssign 1:14 - 1:19
+                Operator: Assignment
+                SymbolConst 1:14 - 1:15 [Write]
+                  Name: b
+                Number 1:18 - 1:19
+                  Value: 1
+                  Literal: 1
+      SymbolRef 1:26 - 1:29 [Read]
+        Name: obj

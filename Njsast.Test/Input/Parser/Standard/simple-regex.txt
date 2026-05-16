@@ -1,0 +1,5 @@
+Toplevel 1:1 - 1:9
+  SimpleStatement 1:1 - 1:9
+    RegExp 1:1 - 1:9
+      Pattern: foobar
+      Flags: 0

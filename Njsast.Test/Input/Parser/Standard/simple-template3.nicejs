@@ -1,0 +1,3 @@
+quux`foo\n${42}bar`;
+
+//# sourceMappingURL=simple-template3.nicejs.map

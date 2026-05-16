@@ -1,0 +1,17 @@
+Toplevel 1:1 - 3:1
+  SimpleStatement 1:1 - 1:12
+    Binary 1:1 - 1:12
+      Operator: LogicalAnd
+      SymbolRef 1:5 - 1:6 [Read]
+        Name: a
+      Call 1:8 - 1:11
+        SymbolRef 1:8 - 1:9 [Read]
+          Name: b
+  SimpleStatement 2:1 - 2:13
+    Binary 2:1 - 2:13
+      Operator: LogicalOr
+      SymbolRef 2:6 - 2:7 [Read]
+        Name: c
+      Call 2:9 - 2:12
+        SymbolRef 2:9 - 2:10 [Read]
+          Name: d

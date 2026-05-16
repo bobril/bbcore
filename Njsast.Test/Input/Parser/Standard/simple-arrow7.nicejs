@@ -1,0 +1,5 @@
+var a = 1;
+
+let fn = () => a++;
+
+//# sourceMappingURL=simple-arrow7.nicejs.map

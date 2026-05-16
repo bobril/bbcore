@@ -1,0 +1,9 @@
+var registryEvents;
+
+function addEvent(name_index) {
+    var list;
+    if (registryEvents == null) registryEvents = {};
+    list = registryEvents[name_index] || [];
+    registryEvents[name_index] = list;
+}
+

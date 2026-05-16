@@ -1,0 +1,5 @@
+"use strict";
+Requires:
+Input/ModuleParser/exp
+Self exports:
+* from Input/ModuleParser/exp

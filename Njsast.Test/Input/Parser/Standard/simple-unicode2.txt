@@ -1,0 +1,4 @@
+Toplevel 1:1 - 1:14
+  SimpleStatement 1:1 - 1:14
+    SymbolRef 1:1 - 1:14 [Read]
+      Name: price_9̶9̶_89

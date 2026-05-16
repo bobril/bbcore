@@ -1,0 +1,39 @@
+Toplevel 1:1 - 55:1
+  SimpleStatement 1:1 - 54:6
+    UnaryPrefix 1:1 - 54:5
+      Operator: LogicalNot
+      Call 1:2 - 54:5
+        Function 1:3 - 54:2 [HasUseStrictDirective]
+          SymbolFunarg 1:12 - 1:21
+            Name: undefined
+          LabeledStatement 49:3 - 53:4
+            Label 49:3 - 49:7 [IsLoop]
+              Name: out
+            While 49:8 - 53:4
+              UnaryPrefix 49:15 - 49:17
+                Operator: LogicalNot
+                Number 49:16 - 49:17
+                  Value: 0
+                  Literal: 0
+              BlockStatement 49:19 - 53:4
+                While 50:5 - 52:6
+                  UnaryPrefix 50:12 - 50:14
+                    Operator: LogicalNot
+                    Number 50:13 - 50:14
+                      Value: 0
+                      Literal: 0
+                  BlockStatement 50:16 - 52:6
+                    If 51:7 - 51:42
+                      Binary 51:11 - 51:30
+                        Operator: GreaterThan
+                        Call 51:11 - 51:24
+                          Dot 51:11 - 51:22
+                            Property: random
+                            SymbolRef 51:11 - 51:15 [Read]
+                              Name: Math
+                        Number 51:27 - 51:30
+                          Value: 0.5
+                          Literal: 0.5
+                      Break 51:32 - 51:42
+                        LabelRef 51:38 - 51:41
+                          Name: out

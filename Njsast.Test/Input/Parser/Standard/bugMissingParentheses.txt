@@ -1,0 +1,21 @@
+Toplevel 1:1 - 1:85
+  SimpleStatement 1:1 - 1:85
+    Call 1:1 - 1:84
+      SymbolRef 1:1 - 1:5 [Read]
+        Name: call
+      Call 1:6 - 1:83
+        Dot 1:6 - 1:50
+          Property: replace
+          Binary 1:7 - 1:41
+            Operator: LogicalOr
+            Dot 1:7 - 1:30
+              Property: transform
+              SymbolRef 1:7 - 1:20 [Read]
+                Name: computedStyle
+            String 1:35 - 1:41
+              Value: none
+        RegExp 1:51 - 1:59
+          Pattern: ^none$
+          Flags: 0
+        String 1:61 - 1:82
+          Value: matrix(1,0,0,1,0,0)

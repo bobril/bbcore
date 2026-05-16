@@ -1,0 +1,5 @@
+Toplevel 1:1 - 1:5
+  SimpleStatement 1:1 - 1:5
+    Number 1:1 - 1:5
+      Value: 10
+      Literal: 0012

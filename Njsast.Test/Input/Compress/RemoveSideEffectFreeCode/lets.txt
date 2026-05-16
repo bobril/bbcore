@@ -1,0 +1,53 @@
+Toplevel 1:1 - 12:1
+  Let 1:1 - 1:11
+    VarDef 1:5 - 1:10
+      SymbolLet 1:5 - 1:6 [Write]
+        Name: a
+      Number 1:9 - 1:10
+        Value: 1
+        Literal: 1
+    VarDef 2:5 - 2:10
+      SymbolLet 2:5 - 2:6 [Write]
+        Name: b
+      Number 2:9 - 2:10
+        Value: 2
+        Literal: 2
+    VarDef 4:7 - 4:12
+      SymbolLet 4:7 - 4:8 [Write]
+        Name: c
+      Number 4:11 - 4:12
+        Value: 3
+        Literal: 3
+  SimpleStatement 5:3 - 5:7
+    UnaryPostfix 5:3 - 5:6
+      Operator: IncrementPostfix
+      SymbolRef 5:3 - 5:4 [Read] [Write]
+        Name: c
+  SimpleStatement 6:3 - 6:18
+    Call 6:3 - 6:17
+      Dot 6:3 - 6:14
+        Property: log
+        SymbolRef 6:3 - 6:10 [Read]
+          Name: console
+      SymbolRef 6:15 - 6:16 [Read] [PropWrite]
+        Name: c
+  SimpleStatement 9:1 - 9:5
+    UnaryPostfix 9:1 - 9:4
+      Operator: IncrementPostfix
+      SymbolRef 9:1 - 9:2 [Read] [Write]
+        Name: a
+  SimpleStatement 10:1 - 10:5
+    UnaryPostfix 10:1 - 10:4
+      Operator: IncrementPostfix
+      SymbolRef 10:1 - 10:2 [Read] [Write]
+        Name: b
+  SimpleStatement 11:1 - 11:19
+    Call 11:1 - 11:18
+      Dot 11:1 - 11:12
+        Property: log
+        SymbolRef 11:1 - 11:8 [Read]
+          Name: console
+      SymbolRef 11:13 - 11:14 [Read] [PropWrite]
+        Name: a
+      SymbolRef 11:16 - 11:17 [Read] [PropWrite]
+        Name: b

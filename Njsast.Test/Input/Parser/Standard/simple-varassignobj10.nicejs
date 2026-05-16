@@ -1,0 +1,7 @@
+x = {
+    get width() {
+        return m_width;
+    }
+};
+
+//# sourceMappingURL=simple-varassignobj10.nicejs.map

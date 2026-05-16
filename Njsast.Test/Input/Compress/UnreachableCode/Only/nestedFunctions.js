@@ -1,0 +1,6 @@
+!(function() {
+  function hello() {
+    return "Hello";
+  }
+  console.log("I am not dead code");
+})();

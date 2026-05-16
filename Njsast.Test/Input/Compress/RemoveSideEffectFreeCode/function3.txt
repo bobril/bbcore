@@ -1,0 +1,32 @@
+Toplevel 1:1 - 15:1 [HasUseStrictDirective]
+  Defun 3:1 - 5:2
+    SymbolDefun 3:10 - 3:14 [Write]
+      Name: used
+    SimpleStatement 4:5 - 4:23
+      Call 4:5 - 4:22
+        Dot 4:5 - 4:16
+          Property: log
+          SymbolRef 4:5 - 4:12 [Read]
+            Name: console
+        String 4:17 - 4:21
+          Value: Ok
+  BlockStatement 7:1 - 12:2
+    Defun 8:5 - 10:6
+      SymbolDefun 8:14 - 8:18 [Write]
+        Name: used
+      SimpleStatement 9:9 - 9:31
+        Call 9:9 - 9:30
+          Dot 9:9 - 9:20
+            Property: log
+            SymbolRef 9:9 - 9:16 [Read]
+              Name: console
+          String 9:21 - 9:29
+            Value: Nested
+    SimpleStatement 11:5 - 11:12
+      Call 11:5 - 11:11
+        SymbolRef 11:5 - 11:9 [Read]
+          Name: used
+  SimpleStatement 14:1 - 14:8
+    Call 14:1 - 14:7
+      SymbolRef 14:1 - 14:5 [Read]
+        Name: used

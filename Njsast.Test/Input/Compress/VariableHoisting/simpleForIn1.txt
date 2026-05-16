@@ -1,0 +1,71 @@
+Toplevel 1:1 - 4:2
+  Defun 1:1 - 4:2
+    SymbolDefun 1:10 - 1:12 [Write]
+      Name: la
+    SymbolFunarg 1:13 - 1:14
+      Name: a
+    SymbolFunarg 1:16 - 1:17
+      Name: b
+    SymbolFunarg 1:19 - 1:20
+      Name: c
+    Var 1:1 - 1:1
+      VarDef 2:14 - 2:15
+        SymbolVar 2:14 - 2:15 [Write]
+          Name: d
+    ForIn 2:5 - 2:95
+      SymbolRef 2:14 - 2:15
+        Name: d
+      SymbolRef 2:19 - 2:20 [Read]
+        Name: R
+      If 2:22 - 2:95
+        Binary 2:26 - 2:83
+          Operator: LogicalAnd
+          Binary 2:26 - 2:64
+            Operator: LogicalAnd
+            Call 2:26 - 2:45
+              Dot 2:26 - 2:42
+                Property: hasOwnProperty
+                SymbolRef 2:26 - 2:27 [Read]
+                  Name: R
+              SymbolRef 2:43 - 2:44 [Read] [PropWrite]
+                Name: d
+            Binary 2:49 - 2:64
+              Operator: StrictEquals
+              SymbolRef 2:49 - 2:50 [Read]
+                Name: b
+              Sub 2:55 - 2:64
+                Sub 2:59 - 2:63
+                  SymbolRef 2:61 - 2:62 [Read]
+                    Name: d
+                  SymbolRef 2:59 - 2:60 [Read]
+                    Name: R
+                Dot 2:55 - 2:58
+                  Property: f
+                  SymbolRef 2:55 - 2:56 [Read]
+                    Name: a
+          Binary 2:68 - 2:83
+            Operator: StrictEquals
+            SymbolRef 2:68 - 2:69 [Read]
+              Name: c
+            Sub 2:74 - 2:83
+              Sub 2:78 - 2:82
+                SymbolRef 2:80 - 2:81 [Read]
+                  Name: d
+                SymbolRef 2:78 - 2:79 [Read]
+                  Name: R
+              Dot 2:74 - 2:77
+                Property: f
+                SymbolRef 2:74 - 2:75 [Read]
+                  Name: a
+        Return 2:85 - 2:95
+          UnaryPrefix 2:92 - 2:94
+            Operator: LogicalNot
+            Number 2:93 - 2:94
+              Value: 0
+              Literal: 0
+    Return 3:5 - 3:15
+      UnaryPrefix 3:12 - 3:14
+        Operator: LogicalNot
+        Number 3:13 - 3:14
+          Value: 1
+          Literal: 1

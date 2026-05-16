@@ -1,0 +1,23 @@
+Toplevel 1:1 - 2:1
+  SimpleStatement 1:1 - 1:59
+    PrefixedTemplateString 1:1 - 1:58
+      SymbolRef 1:1 - 1:4 [Read]
+        Name: get
+      TemplateString 1:4 - 1:58
+        TemplateSegment 1:5 - 1:32
+          Value: http://example.com/foo?bar=
+          Raw: http://example.com/foo?bar=
+        Binary 1:34 - 1:43
+          Operator: Addition
+          SymbolRef 1:34 - 1:37 [Read]
+            Name: bar
+          SymbolRef 1:40 - 1:43 [Read]
+            Name: baz
+        TemplateSegment 1:44 - 1:50
+          Value: \u0026quux=
+          Raw: \u0026quux=
+        SymbolRef 1:52 - 1:56 [Read]
+          Name: quux
+        TemplateSegment 1:57 - 1:57
+          Value: 
+          Raw: 

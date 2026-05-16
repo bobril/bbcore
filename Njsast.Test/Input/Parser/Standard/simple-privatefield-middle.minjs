@@ -1,0 +1,2 @@
+var x=1;class Foo{#x=1;}
+//# sourceMappingURL=simple-privatefield-middle.minjs.map

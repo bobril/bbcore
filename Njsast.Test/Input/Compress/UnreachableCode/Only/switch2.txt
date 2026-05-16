@@ -1,0 +1,30 @@
+Toplevel 1:1 - 11:2
+  Switch 1:1 - 11:2
+    SymbolRef 1:9 - 1:10 [Read]
+      Name: a
+    Case 2:5 - 4:15
+      SimpleStatement 3:9 - 3:13
+        UnaryPostfix 3:9 - 3:12
+          Operator: IncrementPostfix
+          SymbolRef 3:9 - 3:10 [Read] [Write]
+            Name: a
+      Break 4:9 - 4:15
+      Number 2:10 - 2:11
+        Value: 1
+        Literal: 1
+    Case 5:5 - 8:13
+      SimpleStatement 6:9 - 6:13
+        UnaryPostfix 6:9 - 6:12
+          Operator: IncrementPostfix
+          SymbolRef 6:9 - 6:10 [Read] [Write]
+            Name: a
+      Break 7:9 - 7:15
+      Number 5:10 - 5:11
+        Value: 2
+        Literal: 2
+    Default 9:5 - 10:13
+      SimpleStatement 10:9 - 10:13
+        UnaryPostfix 10:9 - 10:12
+          Operator: IncrementPostfix
+          SymbolRef 10:9 - 10:10 [Read] [Write]
+            Name: a
