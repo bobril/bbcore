@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Njsast.Ast;
 using Njsast.Output;
 using Njsast.Reader;
@@ -10,7 +11,6 @@ public class EsmToCjsTreeTransformer : TreeTransformer
 {
     uint _moduleVarCounter;
     uint _defaultExportCounter;
-    bool _needsExportStarHelper;
     readonly Dictionary<SymbolDef, Func<AstNode, AstNode>> _importReferenceReplacements = new();
     readonly HashSet<SymbolDef> _liveImportBindings = new();
     readonly Dictionary<string, uint> _moduleNameCounters = new();
@@ -47,12 +47,6 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     void FinalizeToplevel(AstToplevel toplevel)
     {
         var prepend = new StructList<AstNode>();
-        if (_needsExportStarHelper)
-        {
-            foreach (var helper in ParseStatements(toplevel, TsExportStarHelpers))
-                prepend.Add(helper);
-        }
-
         if (_exportPreinitNames.Count > 0)
             prepend.Add(MakeExportsPreinitStatement(toplevel));
 
@@ -122,7 +116,8 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         if (importedNames.Count == 1 && importedNames[0].ForeignName.Name == "*" && importName == null)
         {
             var nsName = importedNames[0].Name.Name;
-            return MakeConst(import, nsName, MakeRequireCall(import, moduleExpr));
+            return MakeConst(import, nsName,
+                MakeImportStarCall(import, MakeRequireCall(import, moduleExpr)));
         }
 
         // import def, * as ns from "mod"
@@ -131,7 +126,9 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             var nsName = importedNames[0].Name.Name;
             var modVarName = MakeModuleVarName(moduleExpr);
             RegisterImportReplacement(importName, from => MakeDot(MakeSymbolRef(from, modVarName), "default"));
-            return MakeConst(import, modVarName, MakeRequireCall(import, moduleExpr), nsName, MakeSymbolRef(import, modVarName));
+            return MakeConst(import, modVarName,
+                    MakeImportStarCall(import, MakeRequireCall(import, moduleExpr)),
+                nsName, MakeSymbolRef(import, modVarName));
         }
 
         // import def from "mod"  (no named imports)
@@ -139,7 +136,8 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         {
             var modVarName = MakeModuleVarName(moduleExpr);
             RegisterImportReplacement(importName, from => MakeDot(MakeSymbolRef(from, modVarName), "default"));
-            return MakeConst(import, modVarName, MakeRequireCall(import, moduleExpr));
+            return MakeConst(import, modVarName,
+                MakeImportDefaultCall(import, MakeRequireCall(import, moduleExpr)));
         }
 
         // import def, { a, b as c } from "mod"  (default + named)
@@ -147,7 +145,8 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         {
             var statements = new StructList<AstNode>();
             var modVarName = MakeModuleVarName(moduleExpr);
-            statements.Add(MakeConst(import, modVarName, MakeRequireCall(import, moduleExpr)));
+            statements.Add(MakeConst(import, modVarName,
+                MakeImportStarCall(import, MakeRequireCall(import, moduleExpr))));
 
             RegisterImportReplacement(importName, from => MakeDot(MakeSymbolRef(from, modVarName), "default"));
 
@@ -187,7 +186,6 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             export.ExportedNames[0].Name.Name == "*" &&
             export.ModuleName != null)
         {
-            _needsExportStarHelper = true;
             var statements = new StructList<AstNode>();
             statements.Add(MakeSimpleStatement(export,
                 MakeExportStarCall(export, MakeRequireCall(export, export.ModuleName))));
@@ -204,7 +202,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             AddExportPreinit(nsName);
             var statements = new StructList<AstNode>();
             statements.Add(MakeExportsAssignStatement(export, nsName,
-                MakeRequireCall(export, export.ModuleName)));
+                MakeImportStarCall(export, MakeRequireCall(export, export.ModuleName))));
             return SpreadStructList(ref statements);
         }
 
@@ -221,8 +219,11 @@ public class EsmToCjsTreeTransformer : TreeTransformer
                 var importedName = mapping.Name.Name;
                 var exportedName = mapping.ForeignName.Name;
                 AddExportPreinit(exportedName);
+                AstNode value = MakeDot(MakeSymbolRef(export, modVarName), importedName);
+                if (mapping.Name.Name == "default")
+                    value = MakeDot(MakeImportDefaultCall(export, MakeSymbolRef(export, modVarName)), "default");
                 statements.Add(MakeSimpleStatement(export,
-                    MakeDefineExportGetterCall(export, exportedName, MakeDot(MakeSymbolRef(export, modVarName), importedName))));
+                    MakeDefineExportGetterCall(export, exportedName, value)));
             }
 
             return SpreadStructList(ref statements);
@@ -391,9 +392,9 @@ public class EsmToCjsTreeTransformer : TreeTransformer
 
     AstNode TransformDynamicImport(AstImportExpression importExpr)
     {
-        // import(modExpr) → Promise.resolve().then(function() { return require(modExpr); })
+        // import(modExpr) → Promise.resolve().then(function() { return __importStar(require(modExpr)); })
         var bodyList = new StructList<AstNode>();
-        bodyList.Add(MakeRequireCall(importExpr, importExpr.ModuleName));
+        bodyList.Add(MakeImportStarCall(importExpr, MakeRequireCall(importExpr, importExpr.ModuleName)));
 
         var argNames = new StructList<AstNode>();
         var func = new AstArrow(importExpr.Source, importExpr.Start, importExpr.End,
@@ -454,7 +455,18 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         var dot = name.LastIndexOf('.');
         if (dot > 0)
             name = name[..dot];
-        if (name.Length == 0 || !OutputContext.IsIdentifierString(name) || !OutputContext.IsIdentifier(name))
+        var sanitized = new string(name.Select((ch, i) =>
+        {
+            if (char.IsLetterOrDigit(ch) || ch == '_' || ch == '$')
+                return ch;
+            return '_';
+        }).ToArray());
+        if (sanitized.Length > 0 && char.IsDigit(sanitized[0]))
+            sanitized = "_" + sanitized;
+        if (sanitized.Length == 0)
+            sanitized = "mod";
+        name = sanitized;
+        if (!OutputContext.IsIdentifier(name))
             name = "mod";
 
         _moduleNameCounters.TryGetValue(name, out var counter);
@@ -533,6 +545,14 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         return MakeCall(from, importDefaultRef, ref args);
     }
 
+    static AstCall MakeImportStarCall(AstNode from, AstNode arg)
+    {
+        var importStarRef = new AstSymbolRef(from, "__importStar");
+        var args = new StructList<AstNode>();
+        args.Add(arg);
+        return MakeCall(from, importStarRef, ref args);
+    }
+
     static AstDot MakeDot(AstNode expr, string propName)
     {
         return new AstDot(expr, propName);
@@ -582,22 +602,5 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         }, source);
         return parser.Parse().Body;
     }
-
-    const string TsExportStarHelpers = """
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-""";
 
 }

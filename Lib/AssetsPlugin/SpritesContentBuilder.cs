@@ -11,7 +11,7 @@ public class SpritesContentBuilder : ContentBuilder
 
     protected override bool ShouldSkip(string value)
     {
-        return !PathUtils.GetExtension(value).SequenceEqual("png") && !PathUtils.GetExtension(value).SequenceEqual("svg");
+        return PathUtils.GetExtension(value) is not "png" && PathUtils.GetExtension(value) is not "svg";
     }
 
     protected override void AddPropertyValue(string value)
