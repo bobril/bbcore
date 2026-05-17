@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Added
+
+- Added `BBMODE=Buildin` to transpile TypeScript through the built-in Njsast path, log `Using Build in transpiler`
+  instead of a TypeScript version, and use a dedicated cache key that can be bumped when built-in transpiler fixes need
+  cache invalidation.
+
 ## 5.9.6
 
 ### Fixed
