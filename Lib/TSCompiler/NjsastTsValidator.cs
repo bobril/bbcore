@@ -59,7 +59,9 @@ public static class NjsastTsValidator
             ast = (AstToplevel)new JsxToCreateElementTreeTransformer().Transform(ast);
         }
 
+        ast.FigureOutScope();
         ast = (AstToplevel)new EsmToCjsTreeTransformer().Transform(ast);
+        ast.FigureOutScope();
         return ast.PrintToString(new OutputOptions { Beautify = true });
     }
 

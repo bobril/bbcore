@@ -1,13 +1,20 @@
-import { addEvent, invalidate } from "./core";
+"use strict";
+exports.BobrilDeviceCategory = void 0;
 
-export var BobrilDeviceCategory;
+exports.accDeviceBreaks = accDeviceBreaks;
+
+exports.getMedia = getMedia;
+
+const core_1 = require("./core");
+
+var BobrilDeviceCategory;
 
 (function(BobrilDeviceCategory) {
     BobrilDeviceCategory[BobrilDeviceCategory["Mobile"] = 0] = "Mobile";
     BobrilDeviceCategory[BobrilDeviceCategory["Tablet"] = 1] = "Tablet";
     BobrilDeviceCategory[BobrilDeviceCategory["Desktop"] = 2] = "Desktop";
     BobrilDeviceCategory[BobrilDeviceCategory["LargeDesktop"] = 3] = "LargeDesktop";
-})(BobrilDeviceCategory || (BobrilDeviceCategory = {}));
+})(BobrilDeviceCategory || (exports.BobrilDeviceCategory = BobrilDeviceCategory = {}));
 
 var media = null;
 
@@ -15,15 +22,15 @@ var breaks = [ [ 414, 800, 900 ], [ 736, 1280, 1440 ] ];
 
 function emitOnMediaChange() {
     media = null;
-    invalidate();
+    core_1.invalidate();
     return false;
 }
 
 var events = [ "resize", "orientationchange" ];
 
-for (var i = 0; i < events.length; i++) addEvent(events[i], 10, emitOnMediaChange);
+for (var i = 0; i < events.length; i++) core_1.addEvent(events[i], 10, emitOnMediaChange);
 
-export function accDeviceBreaks(newBreaks) {
+function accDeviceBreaks(newBreaks) {
     if (newBreaks != null) {
         breaks = newBreaks;
         emitOnMediaChange();
@@ -37,7 +44,7 @@ var isAndroid = /Android/i.test(navigator.userAgent);
 
 var weirdPortrait;
 
-export function getMedia() {
+function getMedia() {
     if (media == undefined) {
         var w = viewport.clientWidth;
         var h = viewport.clientHeight;

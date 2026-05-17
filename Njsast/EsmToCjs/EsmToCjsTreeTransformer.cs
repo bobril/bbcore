@@ -20,6 +20,9 @@ public class EsmToCjsTreeTransformer : TreeTransformer
 
     protected override AstNode? Before(AstNode node, bool inList)
     {
+        if (node is AstToplevel toplevel)
+            RegisterLiveExportedArrowConsts(toplevel);
+
         if (node is AstSymbolRef symbolRef && symbolRef.Thedef != null &&
             _importReferenceReplacements.TryGetValue(symbolRef.Thedef, out var replacement))
             return replacement(symbolRef);
@@ -40,7 +43,6 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             toplevel.HasUseStrictDirective = true;
             FinalizeToplevel(toplevel);
         }
-
         return null;
     }
 
@@ -53,6 +55,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         foreach (var assignment in _hoistedExportAssignments)
             prepend.Add(assignment);
 
+        PatchExportedEnumIifes(toplevel);
         InsertDeferredLocalExports(toplevel);
 
         if (prepend.Count == 0)
@@ -60,6 +63,56 @@ public class EsmToCjsTreeTransformer : TreeTransformer
 
         for (var i = (int)prepend.Count - 1; i >= 0; i--)
             toplevel.Body.Insert(0) = prepend[(uint)i];
+    }
+
+    void RegisterLiveExportedArrowConsts(AstToplevel toplevel)
+    {
+        foreach (var statement in toplevel.Body.AsReadOnlySpan())
+        {
+            if (statement is not AstExport { ExportedDefinition: AstDefinitions definitions })
+                continue;
+            foreach (var definition in definitions.Definitions.AsReadOnlySpan())
+            {
+                if (definition.Name is AstSymbol symbol && definition.Value is AstArrow)
+                    RegisterExportReplacement(symbol);
+            }
+        }
+    }
+
+    void PatchExportedEnumIifes(AstToplevel toplevel)
+    {
+        foreach (var statement in toplevel.Body.AsReadOnlySpan())
+        {
+            if (statement is not AstSimpleStatement
+                {
+                    Body: AstCall
+                    {
+                        Args.Count: 1,
+                        Args: var args
+                    }
+                })
+                continue;
+
+            if (args[0] is not AstBinary
+                {
+                    Operator: Operator.LogicalOr,
+                    Left: AstSymbolRef enumRef,
+                    Right: AstAssign
+                    {
+                        Operator: Operator.Assignment,
+                        Left: AstSymbolRef enumAssignRef
+                    } enumAssign
+                })
+                continue;
+
+            if (enumRef.Name != enumAssignRef.Name || !_exportPreinitNames.Contains(enumRef.Name))
+                continue;
+
+            args[0] = new AstBinary(enumRef.Source, enumRef.Start, enumAssign.End,
+                enumRef,
+                MakeExportsAssign(enumAssign, enumRef.Name, enumAssign),
+                Operator.LogicalOr);
+        }
     }
 
     void InsertDeferredLocalExports(AstToplevel toplevel)
@@ -103,14 +156,17 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     AstNode TransformImport(AstImport import)
     {
         var moduleExpr = import.ModuleName;
-        var importName = import.ImportedName;
-        var importedNames = import.ImportedNames;
+        var importName = HasRuntimeReferences(import.ImportedName) ? import.ImportedName : null;
+        var importedNames = FilterRuntimeImportMappings(import.ImportedNames);
 
         // import "mod" — side effect only
-        if (importName == null && importedNames.Count == 0)
+        if (import.ImportedName == null && import.ImportedNames.Count == 0)
         {
             return MakeSimpleStatement(import, MakeRequireCall(import, moduleExpr));
         }
+
+        if (importName == null && importedNames.Count == 0)
+            return Remove;
 
         // import * as ns from "mod"
         if (importedNames.Count == 1 && importedNames[0].ForeignName.Name == "*" && importName == null)
@@ -178,8 +234,29 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         return import;
     }
 
+    static StructList<AstNameMapping> FilterRuntimeImportMappings(StructList<AstNameMapping> importedNames)
+    {
+        var result = new StructList<AstNameMapping>();
+        foreach (var mapping in importedNames.AsReadOnlySpan())
+        {
+            if (HasRuntimeReferences(mapping.Name))
+                result.Add(mapping);
+        }
+
+        return result;
+    }
+
+    static bool HasRuntimeReferences(AstSymbol? symbol)
+    {
+        return symbol?.Thedef?.References.Count > 0;
+    }
+
     AstNode? TransformExport(AstExport export)
     {
+        if (export.ExportedNames.Count == 0 && export.ModuleName == null &&
+            export.ExportedDefinition == null && export.ExportedValue == null)
+            return Remove;
+
         // export * from "mod"
         if (export.ExportedNames.Count == 1 &&
             export.ExportedNames[0].ForeignName.Name == "*" &&
@@ -292,7 +369,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             var name = GetDefinitionName(export.ExportedDefinition);
             if (export.ExportedDefinition is AstDefun)
                 statements.Add(MakeExportsAssignStatement(export, "default", MakeSymbolRef(export, name)));
-            statements.Add(export.ExportedDefinition);
+            statements.Add(Transform(export.ExportedDefinition));
             if (export.ExportedDefinition is not AstDefun)
                 statements.Add(MakeExportsAssignStatement(export, "default",
                     MakeSymbolRef(export, name)));
@@ -311,7 +388,19 @@ public class EsmToCjsTreeTransformer : TreeTransformer
                     AddExportPreinit(symbol.Name);
                     if (def.Value != null)
                     {
-                        statements.Add(MakeExportsAssignStatement(export, symbol.Name, Transform(def.Value)));
+                        if (def.Value is AstArrow)
+                        {
+                            RegisterExportReplacement(symbol);
+                            def.Value = Transform(def.Value);
+                            keepDefinitions = true;
+                            statements.Add(MakeExportsAssignStatement(export, symbol.Name,
+                                MakeSymbolRef(export, symbol.Name)));
+                        }
+                        else
+                        {
+                            RegisterExportReplacement(symbol);
+                            statements.Add(MakeExportsAssignStatement(export, symbol.Name, Transform(def.Value)));
+                        }
                     }
                     else
                     {
@@ -337,7 +426,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             var statements = new StructList<AstNode>();
             _hoistedExportAssignments.Add(MakeExportsAssignStatement(export, defun.Name.Name,
                 MakeSymbolRef(export, defun.Name.Name)));
-            statements.Add(defun);
+            statements.Add(Transform(defun));
             return SpreadStructList(ref statements);
         }
 
@@ -346,7 +435,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         {
             var statements = new StructList<AstNode>();
             AddExportPreinit(defClass.Name.Name);
-            statements.Add(defClass);
+            statements.Add(Transform(defClass));
             statements.Add(MakeExportsAssignStatement(export, defClass.Name.Name,
                 MakeSymbolRef(export, defClass.Name.Name)));
             return SpreadStructList(ref statements);
@@ -494,6 +583,12 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             if (liveBinding)
                 _liveImportBindings.Add(symbol.Thedef);
         }
+    }
+
+    void RegisterExportReplacement(AstSymbol symbol)
+    {
+        if (symbol.Thedef != null)
+            _importReferenceReplacements[symbol.Thedef] = from => MakeDot(new AstSymbolRef(from, "exports"), symbol.Name);
     }
 
     AstNode MakeImportedOrLocalRef(AstNode from, AstSymbol symbol)

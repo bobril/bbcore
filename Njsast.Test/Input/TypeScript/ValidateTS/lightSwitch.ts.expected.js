@@ -1,8 +1,9 @@
-import * as b from "bobril";
+"use strict";
+const b = __importStar(require("bobril"));
 
 const iconLight = b.sprite("light.png");
 
-export default b.createComponent({
+exports.default = b.createComponent({
     render(ctx, me) {
         const color = ctx.data.value ? "#80ff80" : "#e03030";
         b.style(me, b.spriteWithColor(iconLight, color));

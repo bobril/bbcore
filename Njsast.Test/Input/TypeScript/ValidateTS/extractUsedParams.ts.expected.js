@@ -1,18 +1,19 @@
-import { MsgAst } from "./msgFormatParser";
+"use strict";
+exports.extractUsedParams = extractUsedParams;
 
-import { isString, isArray } from "bobril";
+const bobril_1 = require("bobril");
 
-export function extractUsedParams(msgAst) {
+function extractUsedParams(msgAst) {
     let params = Object.create(null);
     extractUsedParamsRec(params, msgAst);
     return Object.keys(params).sort();
 }
 
 function extractUsedParamsRec(usedParams, msgAst) {
-    if (isString(msgAst)) {
+    if (bobril_1.isString(msgAst)) {
         return;
     }
-    if (isArray(msgAst)) {
+    if (bobril_1.isArray(msgAst)) {
         for (let i = 0; i < msgAst.length; i++) {
             let item = msgAst[i];
             extractUsedParamsRec(usedParams, item);

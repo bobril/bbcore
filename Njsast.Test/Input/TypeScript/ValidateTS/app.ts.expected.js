@@ -1,16 +1,17 @@
-import * as b from "bobril";
+"use strict";
+const b = __importStar(require("bobril"));
 
-import * as g from "bobril-g11n";
+const g = __importStar(require("bobril-g11n"));
 
-import * as deep from "bobril-g11n/src/jsonp";
+const deep = __importStar(require("bobril-g11n/src/jsonp"));
 
-import lightSwitch from "./lightSwitch";
+const lightSwitch_1 = __importDefault(require("./lightSwitch"));
 
-import * as json from "./json.json";
+const json = __importStar(require("./json.json"));
 
-import "./polyfills";
+require("./polyfills");
 
-import * as styles from "./styles";
+const styles = __importStar(require("./styles"));
 
 b.asset("bootstrap/css/bootstrap.css");
 
@@ -98,7 +99,7 @@ let page = b.createVirtualComponent({
             display: "inline-block"
         }, svgGradient2Base), b.styledDiv(" ", {
             display: "inline-block"
-        }, svgGradient2), lightSwitch({
+        }, svgGradient2), lightSwitch_1.default({
             value: switchValue,
             onChange: () => {
                 switchValue = !switchValue;

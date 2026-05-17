@@ -1,31 +1,84 @@
-import { Component, IBobrilCtx, IBobrilComponent, IBobrilChildren, invalidate, addEvent, IBobrilCacheNode, IBobrilNode, assign, init, IBobrilStyles, postEnhance, IDataWithChildren, getCurrentCtx, getDomNode } from "./core";
+"use strict";
+exports.transitionRunCount = exports.activeStyleDef = exports.RouteTransitionType = void 0;
 
-import { style, styleDef } from "./cssInJs";
+exports.encodeUrl = encodeUrl;
 
-import { isArray, isFunction, isObject } from "./isFunc";
+exports.decodeUrl = decodeUrl;
 
-import { newHashObj, noop } from "./localHelpers";
+exports.encodeUrlPath = encodeUrlPath;
 
-import { preventClickingSpree } from "./mouseEvents";
+exports.extractParams = extractParams;
 
-export var RouteTransitionType;
+exports.injectParams = injectParams;
+
+exports.routes = routes;
+
+exports.route = route;
+
+exports.routeDefault = routeDefault;
+
+exports.routeNotFound = routeNotFound;
+
+exports.isActive = isActive;
+
+exports.urlOfRoute = urlOfRoute;
+
+exports.Link = Link;
+
+exports.link = link;
+
+exports.createRedirectPush = createRedirectPush;
+
+exports.createRedirectReplace = createRedirectReplace;
+
+exports.createBackTransition = createBackTransition;
+
+exports.runTransition = runTransition;
+
+exports.Anchor = Anchor;
+
+exports.anchor = anchor;
+
+exports.getRoutes = getRoutes;
+
+exports.getActiveRoutes = getActiveRoutes;
+
+exports.getActiveParams = getActiveParams;
+
+exports.getActiveState = getActiveState;
+
+exports.setActiveState = setActiveState;
+
+exports.useCanDeactivate = useCanDeactivate;
+
+const core_1 = require("./core");
+
+const cssInJs_1 = require("./cssInJs");
+
+const isFunc_1 = require("./isFunc");
+
+const localHelpers_1 = require("./localHelpers");
+
+const mouseEvents_1 = require("./mouseEvents");
+
+var RouteTransitionType;
 
 (function(RouteTransitionType) {
     RouteTransitionType[RouteTransitionType["Push"] = 0] = "Push";
     RouteTransitionType[RouteTransitionType["Replace"] = 1] = "Replace";
     RouteTransitionType[RouteTransitionType["Pop"] = 2] = "Pop";
-})(RouteTransitionType || (RouteTransitionType = {}));
+})(RouteTransitionType || (exports.RouteTransitionType = RouteTransitionType = {}));
 
 var waitingForPopHashChange = -1;
 
 function emitOnHashChange() {
     if (waitingForPopHashChange >= 0) clearTimeout(waitingForPopHashChange);
     waitingForPopHashChange = -1;
-    invalidate();
+    core_1.invalidate();
     return false;
 }
 
-addEvent("hashchange", 10, emitOnHashChange);
+core_1.addEvent("hashchange", 10, emitOnHashChange);
 
 let historyDeepness = 0;
 
@@ -45,7 +98,7 @@ function push(path, inApp, state) {
             historyDeepness,
             state
         }, "", path);
-        invalidate();
+        core_1.invalidate();
     } else {
         l.href = path;
     }
@@ -60,7 +113,7 @@ function replace(path, inApp, state) {
             historyDeepness,
             state
         }, "", path);
-        invalidate();
+        core_1.invalidate();
     } else {
         l.replace(path);
     }
@@ -75,11 +128,11 @@ let rootRoutes;
 
 let nameRouteMap = {};
 
-export function encodeUrl(url) {
+function encodeUrl(url) {
     return encodeURIComponent(url).replace(/%20/g, "+");
 }
 
-export function decodeUrl(url) {
+function decodeUrl(url) {
     try {
         return decodeURIComponent(url.replace(/\+/g, " "));
     } catch {
@@ -87,7 +140,7 @@ export function decodeUrl(url) {
     }
 }
 
-export function encodeUrlPath(path) {
+function encodeUrlPath(path) {
     return String(path).split("/").map(encodeUrl).join("/");
 }
 
@@ -119,7 +172,7 @@ function compilePattern(pattern) {
     return compiledPatterns[pattern];
 }
 
-export function extractParams(pattern, path) {
+function extractParams(pattern, path) {
     var object = compilePattern(pattern);
     var match = decodeUrl(path).match(object.matcher);
     if (!match) return undefined;
@@ -132,7 +185,7 @@ export function extractParams(pattern, path) {
     return params;
 }
 
-export function injectParams(pattern, params) {
+function injectParams(pattern, params) {
     params = params || {};
     var splatIndex = 0;
     return pattern.replace(paramInjectMatcher, (_match, leadingSlash = "", paramName) => {
@@ -207,7 +260,7 @@ let activeRoutes = [];
 
 let futureRoutes;
 
-let activeParams = newHashObj();
+let activeParams = localHelpers_1.newHashObj();
 
 let activeState = undefined;
 
@@ -246,11 +299,11 @@ function getSetterOfNodesArray(idx) {
     return setterOfNodesArray[idx];
 }
 
-addEvent("popstate", 5, ev => {
+core_1.addEvent("popstate", 5, ev => {
     let newHistoryDeepness = ev.state?.historyDeepness;
     if (newHistoryDeepness != undefined) {
         activeState = ev.state.state;
-        if (newHistoryDeepness != historyDeepness) invalidate();
+        if (newHistoryDeepness != historyDeepness) core_1.invalidate();
         historyDeepness = newHistoryDeepness;
     }
     return false;
@@ -306,17 +359,17 @@ function rootNodeFactory() {
         while (nodesArray.length < activeRoutes.length) nodesArray.unshift(undefined);
         activeParams = out.p;
     }
-    var fn = noop;
+    var fn = localHelpers_1.noop;
     for (var i = 0; i < activeRoutes.length; i++) {
         ((fnInner, r, routeParams, i) => {
             fn = (otherData => {
                 var data = r.data || {};
-                assign(data, otherData);
+                core_1.assign(data, otherData);
                 data.activeRouteHandler = fnInner;
                 data.routeParams = routeParams;
                 var handler = r.handler;
                 var res;
-                if (isFunction(handler)) {
+                if (isFunc_1.isFunction(handler)) {
                     res = {
                         key: undefined,
                         ref: undefined,
@@ -371,16 +424,16 @@ function registerRoutes(url, rs) {
     }
 }
 
-export function routes(root) {
-    if (!isArray(root)) {
+function routes(root) {
+    if (!isFunc_1.isArray(root)) {
         root = [ root ];
     }
     registerRoutes("/", root);
     rootRoutes = root;
-    init(rootNodeFactory);
+    core_1.init(rootNodeFactory);
 }
 
-export function route(config, nestedRoutes) {
+function route(config, nestedRoutes) {
     return {
         name: config.name,
         url: config.url,
@@ -391,7 +444,7 @@ export function route(config, nestedRoutes) {
     };
 }
 
-export function routeDefault(config) {
+function routeDefault(config) {
     return {
         name: config.name,
         data: config.data,
@@ -401,7 +454,7 @@ export function routeDefault(config) {
     };
 }
 
-export function routeNotFound(config) {
+function routeNotFound(config) {
     return {
         name: config.name,
         data: config.data,
@@ -411,7 +464,7 @@ export function routeNotFound(config) {
     };
 }
 
-export function isActive(name, params) {
+function isActive(name, params) {
     if (params) {
         for (var prop in params) {
             if (params.hasOwnProperty(prop)) {
@@ -427,7 +480,7 @@ export function isActive(name, params) {
     return false;
 }
 
-export function urlOfRoute(name, params) {
+function urlOfRoute(name, params) {
     if (isInApp(name)) {
         var r = nameRouteMap[name];
         if (DEBUG) {
@@ -439,10 +492,10 @@ export function urlOfRoute(name, params) {
     return name;
 }
 
-export const activeStyleDef = styleDef("active");
+exports.activeStyleDef = cssInJs_1.styleDef("active");
 
-export function Link(data) {
-    return style({
+function Link(data) {
+    return cssInJs_1.style({
         tag: "a",
         component: {
             id: "link",
@@ -455,15 +508,15 @@ export function Link(data) {
         attrs: {
             href: urlOfRoute(data.name, data.params)
         }
-    }, isActive(data.name, data.params) ? data.activeStyle != undefined ? data.activeStyle : [ data.style, activeStyleDef ] : data.style);
+    }, isActive(data.name, data.params) ? data.activeStyle != undefined ? data.activeStyle : [ data.style, exports.activeStyleDef ] : data.style);
 }
 
-export function link(node, name, params, state) {
+function link(node, name, params, state) {
     node.data = node.data || {};
     node.data.routeName = name;
     node.data.routeParams = params;
     node.data.routeState = state;
-    postEnhance(node, {
+    core_1.postEnhance(node, {
         render(ctx, me) {
             let data = ctx.data;
             if (me.tag === "a") {
@@ -484,7 +537,7 @@ export function link(node, name, params, state) {
     return node;
 }
 
-export function createRedirectPush(name, params, state) {
+function createRedirectPush(name, params, state) {
     return {
         inApp: isInApp(name),
         type: RouteTransitionType.Push,
@@ -494,7 +547,7 @@ export function createRedirectPush(name, params, state) {
     };
 }
 
-export function createRedirectReplace(name, params, state) {
+function createRedirectReplace(name, params, state) {
     return {
         inApp: isInApp(name),
         type: RouteTransitionType.Replace,
@@ -504,7 +557,7 @@ export function createRedirectReplace(name, params, state) {
     };
 }
 
-export function createBackTransition(distance) {
+function createBackTransition(distance) {
     distance = distance || 1;
     return {
         inApp: historyDeepness - distance >= 0,
@@ -545,7 +598,7 @@ function nextIteration() {
             transitionState++;
             if (!node) continue;
             let comp = node.component;
-            if (!comp && isArray(node.children)) {
+            if (!comp && isFunc_1.isArray(node.children)) {
                 node = node.children[0];
                 if (!node) continue;
                 comp = node.component;
@@ -604,7 +657,7 @@ function nextIteration() {
                 currentTransition = null;
                 doAction(tr);
             } else {
-                invalidate();
+                core_1.invalidate();
             }
             currentTransition = null;
             return;
@@ -617,12 +670,12 @@ function nextIteration() {
             transitionState--;
             let handler = rr.handler;
             let comp = undefined;
-            if (isFunction(handler)) {
+            if (isFunc_1.isFunction(handler)) {
                 let node = handler({
                     activeRouteHandler: () => undefined,
                     routeParams: currentTransition.params
                 });
-                if (!node || !isObject(node) || isArray(node)) continue;
+                if (!node || !isFunc_1.isObject(node) || isFunc_1.isArray(node)) continue;
                 comp = node.component;
             } else {
                 comp = handler;
@@ -649,11 +702,11 @@ function nextIteration() {
     }
 }
 
-export let transitionRunCount = 1;
+exports.transitionRunCount = 1;
 
-export function runTransition(transition) {
-    transitionRunCount++;
-    preventClickingSpree();
+function runTransition(transition) {
+    exports.transitionRunCount++;
+    mouseEvents_1.preventClickingSpree();
     if (currentTransition != null) {
         nextTransition = transition;
         return;
@@ -664,11 +717,11 @@ export function runTransition(transition) {
     nextIteration();
 }
 
-export function Anchor({children, name, params, onAnchor}) {
+function Anchor({children, name, params, onAnchor}) {
     return anchor(children, name, params, onAnchor);
 }
 
-export function anchor(children, name, params, onAnchor) {
+function anchor(children, name, params, onAnchor) {
     return {
         children,
         component: {
@@ -695,31 +748,31 @@ function handleAnchorRoute(ctx, me, name, params, onAnchor) {
         ctx.l = 0;
         return;
     }
-    if (ctx.l === transitionRunCount) {
+    if (ctx.l === exports.transitionRunCount) {
         return;
     }
-    const element = getDomNode(me);
+    const element = core_1.getDomNode(me);
     onAnchor && onAnchor(element) || element.scrollIntoView();
-    ctx.l = transitionRunCount;
+    ctx.l = exports.transitionRunCount;
 }
 
-export function getRoutes() {
+function getRoutes() {
     return rootRoutes;
 }
 
-export function getActiveRoutes() {
+function getActiveRoutes() {
     return activeRoutes;
 }
 
-export function getActiveParams() {
+function getActiveParams() {
     return activeParams;
 }
 
-export function getActiveState() {
+function getActiveState() {
     return activeState;
 }
 
-export function setActiveState(state) {
+function setActiveState(state) {
     history().replaceState({
         historyDeepness,
         state
@@ -727,8 +780,8 @@ export function setActiveState(state) {
     activeState = state;
 }
 
-export function useCanDeactivate(handler) {
-    const ctx = getCurrentCtx();
+function useCanDeactivate(handler) {
+    const ctx = core_1.getCurrentCtx();
     if (ctx) {
         ctx.me.component.canDeactivate = function(ctx, transition) {
             return handler.call(ctx, transition);

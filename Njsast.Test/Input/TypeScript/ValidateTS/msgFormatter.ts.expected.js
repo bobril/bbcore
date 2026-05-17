@@ -1,18 +1,21 @@
-import moment from "moment";
+"use strict";
+exports.registerCustomFormatter = registerCustomFormatter;
 
-import { RuntimeFunctionGenerator } from "./RuntimeFunctionGenerator";
+exports.compile = compile;
 
-import * as localeDataStorage from "./localeDataStorage";
+const moment_1 = __importDefault(require("moment"));
 
-import * as numberFormatter from "./numberFormatter";
+const RuntimeFunctionGenerator_1 = require("./RuntimeFunctionGenerator");
 
-import { MsgAst } from "./msgFormatParser";
+const localeDataStorage = __importStar(require("./localeDataStorage"));
 
-import { f } from "./translate";
+const numberFormatter = __importStar(require("./numberFormatter"));
 
-import { isString, isArray, isNumber } from "bobril";
+const translate_1 = require("./translate");
 
-window.moment = moment;
+const bobril_1 = require("bobril");
+
+window.moment = moment_1.default;
 
 var numberFormatterCache = Object.create(null);
 
@@ -28,7 +31,7 @@ function getFormatter(locale, format, interpret) {
 }
 
 function noFuture(m) {
-    if (m.toDate() > new Date()) return moment(new Date());
+    if (m.toDate() > new Date()) return moment_1.default(new Date());
     return m;
 }
 
@@ -43,7 +46,7 @@ function formatWithQuotedValue(value, locale) {
     return rules.oq + String(value) + rules.cq + " ";
 }
 
-export function registerCustomFormatter(name, fn) {
+function registerCustomFormatter(name, fn) {
     customFormatters.set(name, fn);
 }
 
@@ -85,63 +88,63 @@ function AnyFormatter(locale, type, style, options, interpret) {
             if (style === "relative") {
                 if (options["noago"] === true) {
                     return (val, _opt) => {
-                        return moment(val).locale(locale).fromNow(true);
+                        return moment_1.default(val).locale(locale).fromNow(true);
                     };
                 }
                 if (options["noago"] === null) {
                     return (val, opt) => {
-                        return moment(val).locale(locale).fromNow(opt["noago"]);
+                        return moment_1.default(val).locale(locale).fromNow(opt["noago"]);
                     };
                 }
                 return (val, _opt) => {
-                    return moment(val).locale(locale).fromNow(false);
+                    return moment_1.default(val).locale(locale).fromNow(false);
                 };
             }
             if (style === "relativepast") {
                 if (options["noago"] === true) {
                     return (val, _opt) => {
-                        return noFuture(moment(val)).locale(locale).fromNow(true);
+                        return noFuture(moment_1.default(val)).locale(locale).fromNow(true);
                     };
                 }
                 if (options["noago"] === null) {
                     return (val, opt) => {
-                        return noFuture(moment(val)).locale(locale).fromNow(opt["noago"]);
+                        return noFuture(moment_1.default(val)).locale(locale).fromNow(opt["noago"]);
                     };
                 }
                 return (val, _opt) => {
-                    return noFuture(moment(val)).locale(locale).fromNow(false);
+                    return noFuture(moment_1.default(val)).locale(locale).fromNow(false);
                 };
             }
             if (style === "calendar") {
                 return (val, _opt) => {
-                    return moment(val).locale(locale).calendar();
+                    return moment_1.default(val).locale(locale).calendar();
                 };
             }
             if (style === "custom" && "format" in options) {
                 return (val, opt) => {
-                    return moment(val).locale(locale).format(opt.format);
+                    return moment_1.default(val).locale(locale).format(opt.format);
                 };
             }
             return (val, _opt) => {
-                return moment(val).locale(locale).format(style);
+                return moment_1.default(val).locale(locale).format(style);
             };
         }
     }
     throw new Error("bad type in AnyFormatter");
 }
 
-export function compile(locale, msgAst, interpret = false) {
+function compile(locale, msgAst, interpret = false) {
     if (interpret) {
         return (params, hashArg) => {
-            if (isString(msgAst)) {
+            if (bobril_1.isString(msgAst)) {
                 return msgAst;
             }
-            if (isArray(msgAst)) {
+            if (bobril_1.isArray(msgAst)) {
                 if (msgAst.length === 0) return "";
                 let res = "";
                 for (let i = 0; i < msgAst.length; i++) {
                     let item = msgAst[i];
-                    if (isString(item)) {
+                    if (bobril_1.isString(item)) {
                         res += item;
                     } else {
                         res += compile(locale, item, true)(params, hashArg);
@@ -151,7 +154,7 @@ export function compile(locale, msgAst, interpret = false) {
             }
             switch (msgAst.type) {
               case "arg":
-                return f(params[msgAst.id]);
+                return translate_1.f(params[msgAst.id]);
 
               case "hash":
                 if (hashArg === undefined) return "#";
@@ -164,7 +167,7 @@ export function compile(locale, msgAst, interpret = false) {
                     let res = [];
                     for (let i = 0; i < vals.length; i++) {
                         let item = vals[i];
-                        if (isString(item)) {
+                        if (bobril_1.isString(item)) {
                             res.push(item);
                         } else {
                             res.push(compile(locale, item, true)(params, hashArg));
@@ -189,7 +192,7 @@ export function compile(locale, msgAst, interpret = false) {
                         let options = msgAst.format.options;
                         for (let i = 0; i < options.length; i++) {
                             let opt = options[i];
-                            if (!isNumber(opt.selector)) continue;
+                            if (!bobril_1.isNumber(opt.selector)) continue;
                             if (opt.selector === localArgOffset) {
                                 return compile(locale, opt.value, true)(params, "" + localArgOffset);
                             }
@@ -214,7 +217,7 @@ export function compile(locale, msgAst, interpret = false) {
                         let options = msgAst.format.options;
                         for (let i = 0; i < options.length; i++) {
                             let opt = options[i];
-                            if (!isString(opt.selector)) continue;
+                            if (!bobril_1.isString(opt.selector)) continue;
                             if (opt.selector === "other") continue;
                             if (opt.selector === local) {
                                 return compile(locale, opt.value, true)(params, local);
@@ -272,12 +275,12 @@ export function compile(locale, msgAst, interpret = false) {
             throw new Error("invalid AST in compile");
         };
     }
-    if (isString(msgAst)) {
+    if (bobril_1.isString(msgAst)) {
         return () => msgAst;
     }
-    if (isArray(msgAst)) {
+    if (bobril_1.isArray(msgAst)) {
         if (msgAst.length === 0) return () => "";
-        let comp = new RuntimeFunctionGenerator();
+        let comp = new RuntimeFunctionGenerator_1.RuntimeFunctionGenerator();
         let argParams = comp.addArg(0);
         let argHash = comp.addArg(1);
         comp.addBody("return ");
@@ -295,7 +298,7 @@ export function compile(locale, msgAst, interpret = false) {
     }
     switch (msgAst.type) {
       case "arg":
-        return (name => params => f(params[name]))(msgAst.id);
+        return (name => params => translate_1.f(params[name]))(msgAst.id);
 
       case "hash":
         return (_params, hashArg) => {
@@ -307,14 +310,14 @@ export function compile(locale, msgAst, interpret = false) {
         {
             const vals = msgAst.values;
             if (vals.length === 0) return () => "";
-            let comp = new RuntimeFunctionGenerator();
+            let comp = new RuntimeFunctionGenerator_1.RuntimeFunctionGenerator();
             let argParams = comp.addArg(0);
             let argHash = comp.addArg(1);
             comp.addBody("return [");
             for (let i = 0; i < vals.length; i++) {
                 if (i > 0) comp.addBody(",");
                 let item = vals[i];
-                if (isString(item)) {
+                if (bobril_1.isString(item)) {
                     comp.addBody(comp.addConstant(item));
                 } else {
                     comp.addBody(comp.addConstant(compile(locale, item)), `(${argParams},${argHash})`);
@@ -331,7 +334,7 @@ export function compile(locale, msgAst, interpret = false) {
         return (id => params => params[id]())(msgAst.id);
 
       case "format":
-        let comp = new RuntimeFunctionGenerator();
+        let comp = new RuntimeFunctionGenerator_1.RuntimeFunctionGenerator();
         let argParams = comp.addArg(0);
         let localArg = comp.addLocal();
         comp.addBody(`var ${localArg}=${argParams}[${comp.addConstant(msgAst.id)}];`);
@@ -344,7 +347,7 @@ export function compile(locale, msgAst, interpret = false) {
                 let options = msgAst.format.options;
                 for (let i = 0; i < options.length; i++) {
                     let opt = options[i];
-                    if (!isNumber(opt.selector)) continue;
+                    if (!bobril_1.isNumber(opt.selector)) continue;
                     let fn = comp.addConstant(compile(locale, opt.value));
                     comp.addBody(`if (${localArgOffset}===${opt.selector}) return ${fn}(${argParams},''+${localArgOffset});`);
                 }
@@ -353,7 +356,7 @@ export function compile(locale, msgAst, interpret = false) {
                 comp.addBody(`var ${localCase}=${pluralFn}(${localArgOffset},${msgAst.format.ordinal ? "!0" : "!1"});`);
                 for (let i = 0; i < options.length; i++) {
                     let opt = options[i];
-                    if (!isString(opt.selector)) continue;
+                    if (!bobril_1.isString(opt.selector)) continue;
                     if (opt.selector === "other") continue;
                     let fn = comp.addConstant(compile(locale, opt.value));
                     comp.addBody(`if (${localCase}===${comp.addConstant(opt.selector)}) return ${fn}(${argParams},''+${localArgOffset});`);

@@ -1,3 +1,10 @@
+"use strict";
+exports.setRules = setRules;
+
+exports.getLanguageFromLocale = getLanguageFromLocale;
+
+exports.getRules = getRules;
+
 let defs = Object.create(null);
 
 defs["en"] = {
@@ -12,7 +19,7 @@ defs["en"] = {
     cq: '"'
 };
 
-export function setRules(locale, params) {
+function setRules(locale, params) {
     defs[locale] = {
         pluralFn: params[0],
         td: params[1],
@@ -22,13 +29,13 @@ export function setRules(locale, params) {
     };
 }
 
-export function getLanguageFromLocale(locale) {
+function getLanguageFromLocale(locale) {
     let idx = locale.indexOf("-");
     if (idx >= 0) return locale.substr(0, idx);
     return locale;
 }
 
-export function getRules(locale) {
+function getRules(locale) {
     let d = defs[locale];
     if (!d) {
         d = defs[getLanguageFromLocale(locale)];

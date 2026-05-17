@@ -1,3 +1,6 @@
+"use strict";
+exports.createMediaQuery = createMediaQuery;
+
 class MediaRuleBuilder {
     constructor() {
         this.tokens = [];
@@ -79,7 +82,7 @@ function emptyQuery(_token) {
     return "";
 }
 
-export function createMediaQuery() {
+function createMediaQuery() {
     return new MediaRuleBuilder();
 }
 

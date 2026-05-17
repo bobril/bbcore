@@ -1,27 +1,32 @@
-import { addEvent, addRoot, broadcast, bubble, getDomNode, IBobrilCacheNode, IBobrilChildren, IBobrilComponent, IBobrilCtx, IBobrilNode, invalidate, preventDefault, removeRoot } from "./core";
+"use strict";
+exports.getDnds = exports.DndEnabledOps = exports.DndOp = void 0;
 
-import { selectorStyleDef } from "./cssInJs";
+exports.anyActiveDnd = anyActiveDnd;
 
-import { isString } from "./isFunc";
+const core_1 = require("./core");
 
-import { newHashObj } from "./localHelpers";
+const cssInJs_1 = require("./cssInJs");
 
-import { getMedia } from "./media";
+const isFunc_1 = require("./isFunc");
 
-import { IBobrilPointerEvent, ignoreClick, nodeOnPoint, pointerRevalidateEventName } from "./mouseEvents";
+const localHelpers_1 = require("./localHelpers");
 
-export var DndOp;
+const media_1 = require("./media");
+
+const mouseEvents_1 = require("./mouseEvents");
+
+var DndOp;
 
 (function(DndOp) {
     DndOp[DndOp["None"] = 0] = "None";
     DndOp[DndOp["Link"] = 1] = "Link";
     DndOp[DndOp["Copy"] = 2] = "Copy";
     DndOp[DndOp["Move"] = 3] = "Move";
-})(DndOp || (DndOp = {}));
+})(DndOp || (exports.DndOp = DndOp = {}));
 
 const dropEffectsAllowedTable = [ "none", "link", "copy", "move" ];
 
-export var DndEnabledOps;
+var DndEnabledOps;
 
 (function(DndEnabledOps) {
     DndEnabledOps[DndEnabledOps["None"] = 0] = "None";
@@ -32,7 +37,7 @@ export var DndEnabledOps;
     DndEnabledOps[DndEnabledOps["MoveLink"] = 5] = "MoveLink";
     DndEnabledOps[DndEnabledOps["MoveCopy"] = 6] = "MoveCopy";
     DndEnabledOps[DndEnabledOps["MoveCopyLink"] = 7] = "MoveCopyLink";
-})(DndEnabledOps || (DndEnabledOps = {}));
+})(DndEnabledOps || (exports.DndEnabledOps = DndEnabledOps = {}));
 
 var effectAllowedTable = [ "none", "link", "copy", "copyLink", "move", "linkMove", "copyMove", "all" ];
 
@@ -73,7 +78,7 @@ var DndCtx = function(pointerId) {
     this.ctrl = false;
     this.alt = false;
     this.meta = false;
-    this.data = newHashObj();
+    this.data = localHelpers_1.newHashObj();
     if (pointerId >= 0) pointer2Dnd[pointerId] = this;
     dnds.push(this);
 };
@@ -85,7 +90,7 @@ let lazyDefineStyle = true;
 function lazyCreateRoot() {
     if (rootId == undefined) {
         if (lazyDefineStyle) {
-            selectorStyleDef("html." + draggingStyle + " *", {
+            cssInJs_1.selectorStyleDef("html." + draggingStyle + " *", {
                 cursor: "inherit !important",
                 userSelect: "none !important"
             });
@@ -93,7 +98,7 @@ function lazyCreateRoot() {
         }
         var dd = document.documentElement;
         dd.classList.add(draggingStyle);
-        rootId = addRoot(dndRootFactory);
+        rootId = core_1.addRoot(dndRootFactory);
     }
 }
 
@@ -169,7 +174,7 @@ var DndRootComp = {
         me.children = res;
     },
     onDrag(ctx) {
-        invalidate(ctx);
+        core_1.invalidate(ctx);
         return false;
     }
 };
@@ -218,7 +223,7 @@ dndProto.cancelDnd = function() {
 
 dndProto.destroy = function() {
     this.ended = true;
-    if (this.started) broadcast("onDragEnd", this);
+    if (this.started) core_1.broadcast("onDragEnd", this);
     delete pointer2Dnd[this.pointerid];
     for (var i = 0; i < dnds.length; i++) {
         if (dnds[i] === this) {
@@ -230,7 +235,7 @@ dndProto.destroy = function() {
         systemDnd = null;
     }
     if (dnds.length === 0 && rootId != null) {
-        removeRoot(rootId);
+        core_1.removeRoot(rootId);
         rootId = null;
         var dd = document.documentElement;
         dd.classList.remove(draggingStyle);
@@ -238,7 +243,7 @@ dndProto.destroy = function() {
     }
 };
 
-var pointer2Dnd = newHashObj();
+var pointer2Dnd = localHelpers_1.newHashObj();
 
 function handlePointerDown(ev, _target, node) {
     var dnd = pointer2Dnd[ev.id];
@@ -253,9 +258,9 @@ function handlePointerDown(ev, _target, node) {
         dnd.lastY = ev.y;
         dnd.overNode = node;
         updateDndFromPointerEvent(dnd, ev);
-        var sourceCtx = bubble(node, "onDragStart", dnd);
+        var sourceCtx = core_1.bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
-            var htmlNode = getDomNode(sourceCtx.me);
+            var htmlNode = core_1.getDomNode(sourceCtx.me);
             if (htmlNode == undefined) {
                 dnd.destroy();
                 return false;
@@ -281,11 +286,11 @@ function handlePointerDown(ev, _target, node) {
 
 function dndMoved(node, dnd) {
     dnd.overNode = node;
-    dnd.targetCtx = bubble(node, "onDragOver", dnd);
+    dnd.targetCtx = core_1.bubble(node, "onDragOver", dnd);
     if (dnd.targetCtx == undefined) {
         dnd.operation = DndOp.None;
     }
-    broadcast("onDrag", dnd);
+    core_1.broadcast("onDrag", dnd);
 }
 
 function updateDndFromPointerEvent(dnd, ev) {
@@ -324,12 +329,12 @@ function handlePointerUp(ev, _target, node) {
         updateDndFromPointerEvent(dnd, ev);
         dndMoved(node, dnd);
         var t = dnd.targetCtx;
-        if (t && bubble(t.me, "onDrop", dnd)) {
+        if (t && core_1.bubble(t.me, "onDrop", dnd)) {
             dnd.destroy();
         } else {
             dnd.cancelDnd();
         }
-        ignoreClick(ev.x, ev.y);
+        mouseEvents_1.ignoreClick(ev.x, ev.y);
         return true;
     }
     dnd.destroy();
@@ -357,7 +362,7 @@ function updateFromNative(dnd, ev) {
     dnd.y = ev.clientY;
     dnd.totalX += Math.abs(dnd.x - dnd.lastX);
     dnd.totalY += Math.abs(dnd.y - dnd.lastY);
-    var node = nodeOnPoint(dnd.x, dnd.y);
+    var node = mouseEvents_1.nodeOnPoint(dnd.x, dnd.y);
     dndMoved(node, dnd);
     dnd.lastX = dnd.x;
     dnd.lastY = dnd.y;
@@ -384,9 +389,9 @@ function handleDragStart(ev, _target, node) {
         dnd.lastY = startY;
         dnd.startX = startX;
         dnd.startY = startY;
-        var sourceCtx = bubble(node, "onDragStart", dnd);
+        var sourceCtx = core_1.bubble(node, "onDragStart", dnd);
         if (sourceCtx) {
-            var htmlNode = getDomNode(sourceCtx.me);
+            var htmlNode = core_1.getDomNode(sourceCtx.me);
             if (htmlNode == undefined) {
                 dnd.destroy();
                 return false;
@@ -435,7 +440,7 @@ function handleDragStart(ev, _target, node) {
         try {
             var k = dataKeys[i];
             var d = data[k];
-            if (!isString(d)) d = JSON.stringify(d);
+            if (!isFunc_1.isString(d)) d = JSON.stringify(d);
             ev.dataTransfer.setData(k, d);
         } catch (e) {
             if (DEBUG) if (window.console) console.log("Cannot set dnd data to " + dataKeys[i]);
@@ -484,7 +489,7 @@ function handleDragOver(ev, _target, _node) {
     updateFromNative(dnd, ev);
     setDropEffect(ev, dnd.operation);
     if (dnd.operation != DndOp.None) {
-        preventDefault(ev);
+        core_1.preventDefault(ev);
         return true;
     }
     return false;
@@ -493,12 +498,12 @@ function handleDragOver(ev, _target, _node) {
 function handleDrag(ev, _target, _node) {
     var x = ev.clientX;
     var y = ev.clientY;
-    var m = getMedia();
+    var m = media_1.getMedia();
     if (systemDnd != null && (x === 0 && y === 0 || x < 0 || y < 0 || x >= m.width || y >= m.height)) {
         systemDnd.x = 0;
         systemDnd.y = 0;
         systemDnd.operation = DndOp.None;
-        broadcast("onDrag", systemDnd);
+        core_1.broadcast("onDrag", systemDnd);
     }
     return true;
 }
@@ -531,10 +536,10 @@ function handleDrop(ev, _target, _node) {
     }
     updateFromNative(dnd, ev);
     var t = dnd.targetCtx;
-    if (t && bubble(t.me, "onDrop", dnd)) {
+    if (t && core_1.bubble(t.me, "onDrop", dnd)) {
         setDropEffect(ev, dnd.operation);
         dnd.destroy();
-        preventDefault(ev);
+        core_1.preventDefault(ev);
     } else {
         dnd.cancelDnd();
     }
@@ -542,17 +547,17 @@ function handleDrop(ev, _target, _node) {
 }
 
 function justPreventDefault(ev, _target, _node) {
-    preventDefault(ev);
+    core_1.preventDefault(ev);
     return true;
 }
 
 function handleDndSelectStart(ev, _target, _node) {
     if (dnds.length === 0) return false;
-    preventDefault(ev);
+    core_1.preventDefault(ev);
     return true;
 }
 
-export function anyActiveDnd() {
+function anyActiveDnd() {
     for (let i = 0; i < dnds.length; i++) {
         let dnd = dnds[i];
         if (dnd.beforeDrag) continue;
@@ -561,31 +566,33 @@ export function anyActiveDnd() {
     return undefined;
 }
 
-addEvent("!PointerDown", 4, handlePointerDown);
+core_1.addEvent("!PointerDown", 4, handlePointerDown);
 
-addEvent("!PointerMove", 4, handlePointerMove);
+core_1.addEvent("!PointerMove", 4, handlePointerMove);
 
-addEvent(pointerRevalidateEventName, 4, handlePointerMove);
+core_1.addEvent(mouseEvents_1.pointerRevalidateEventName, 4, handlePointerMove);
 
-addEvent("!PointerUp", 4, handlePointerUp);
+core_1.addEvent("!PointerUp", 4, handlePointerUp);
 
-addEvent("!PointerCancel", 4, handlePointerCancel);
+core_1.addEvent("!PointerCancel", 4, handlePointerCancel);
 
-addEvent("selectstart", 4, handleDndSelectStart);
+core_1.addEvent("selectstart", 4, handleDndSelectStart);
 
-addEvent("dragstart", 5, handleDragStart);
+core_1.addEvent("dragstart", 5, handleDragStart);
 
-addEvent("dragover", 5, handleDragOver);
+core_1.addEvent("dragover", 5, handleDragOver);
 
-addEvent("dragend", 5, handleDragEnd);
+core_1.addEvent("dragend", 5, handleDragEnd);
 
-addEvent("drag", 5, handleDrag);
+core_1.addEvent("drag", 5, handleDrag);
 
-addEvent("drop", 5, handleDrop);
+core_1.addEvent("drop", 5, handleDrop);
 
-addEvent("dragenter", 5, justPreventDefault);
+core_1.addEvent("dragenter", 5, justPreventDefault);
 
-addEvent("dragleave", 5, justPreventDefault);
+core_1.addEvent("dragleave", 5, justPreventDefault);
 
-export const getDnds = () => dnds;
+const getDnds = () => dnds;
+
+exports.getDnds = getDnds;
 

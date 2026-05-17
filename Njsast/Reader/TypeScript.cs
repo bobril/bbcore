@@ -662,6 +662,12 @@ public sealed partial class Parser
 
             if (Type == TokenType.Relational && "<".Equals(Value)) angle++;
             else if (Type == TokenType.Relational && ">".Equals(Value) && angle > 0) angle--;
+            else if (Type == TokenType.BitShift && angle > 0)
+            {
+                var value = Value?.ToString();
+                if (value == ">>") angle = Math.Max(0, angle - 2);
+                else if (value == ">>>") angle = Math.Max(0, angle - 3);
+            }
             else if (Type == TokenType.BraceL) brace++;
             else if (Type == TokenType.BraceR)
             {
@@ -4673,10 +4679,28 @@ public sealed partial class Parser
     {
         typeOnlyStatement = null!;
         if (!IsTypeScript) return false;
-        var index = Start.Index;
-        var brace = _input.IndexOf('{', index);
-        var semi = _input.IndexOf(';', index);
-        if (semi < 0 || brace >= 0 && brace < semi) return false;
+        var index = End.Index;
+        while (index < _input.Length && char.IsWhiteSpace(_input[index])) index++;
+        if (index < _input.Length && _input[index] == '*')
+            index++;
+        while (index < _input.Length && char.IsWhiteSpace(_input[index])) index++;
+        if (index >= _input.Length || !IsIdentifierStart(_input[index], true)) return false;
+        while (index < _input.Length && IsIdentifierChar(_input[index], true)) index++;
+        index = TsSkipWhitespaceAndComments(index);
+        if (index < _input.Length && _input[index] == '<')
+        {
+            var typeEnd = TsFindTypeArgumentListEnd(index);
+            if (typeEnd < 0) return false;
+            index = TsSkipWhitespaceAndComments(typeEnd + 1);
+        }
+
+        if (index >= _input.Length || _input[index] != '(') return false;
+        var close = TsFindMatchingSkippingLiterals(index, '(', ')');
+        if (close < 0) return false;
+        var after = TsSkipWhitespaceAndComments(close + 1);
+        if (after < _input.Length && _input[after] == ':')
+            after = TsSkipWhitespaceAndComments(TsSkipTypeInText(after + 1));
+        if (after >= _input.Length || _input[after] != ';') return false;
 
         TsSkipUntilStatementEnd();
         typeOnlyStatement = new AstTypeScriptOnly(SourceFile, startLocation, _lastTokEnd);
@@ -5608,12 +5632,18 @@ public sealed partial class Parser
         var lastWasTypePredicateIs = false;
         var lastWasPipeOrAmp = false;
         var justClosedParen = false;
+        var justClosedBracket = false;
         var justHadArrowAfterParen = false;
         var sawTopLevelExtends = false;
         var conditionalTypeDepth = 0;
         while (Type != TokenType.Eof)
         {
+            if (stopAtExpressionOperators && Type == TokenType.Semi && angle > 0)
+                return;
             var allowTypeLiteral = Type == TokenType.BraceL && (!startedType || lastWasTypePredicateIs || lastWasPipeOrAmp || justHadArrowAfterParen);
+            if (startedType && Type == TokenType.BraceL && !allowTypeLiteral && justClosedBracket &&
+                angle > 0 && brace == 0 && paren == 0 && bracket == 0)
+                return;
             if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 &&
                 (Type == TokenType.Comma || Type == TokenType.ParenR ||
                  (Type == TokenType.BraceL && startedType && !allowTypeLiteral) ||
@@ -5634,6 +5664,7 @@ public sealed partial class Parser
             else
                 justHadArrowAfterParen = false;
             justClosedParen = false;
+            justClosedBracket = false;
             startedType = true;
             lastWasTypePredicateIs = IsContextual("is");
             lastWasPipeOrAmp = Type is TokenType.BitwiseOr or TokenType.BitwiseAnd;
@@ -5671,6 +5702,7 @@ public sealed partial class Parser
             {
                 if (bracket == 0) return;
                 bracket--;
+                if (bracket == 0) justClosedBracket = true;
             }
 
             Next();

@@ -1,22 +1,35 @@
-export function isNumber(val) {
+"use strict";
+exports.isArray = void 0;
+
+exports.isNumber = isNumber;
+
+exports.isString = isString;
+
+exports.isBoolean = isBoolean;
+
+exports.isFunction = isFunction;
+
+exports.isObject = isObject;
+
+function isNumber(val) {
     return typeof val == "number";
 }
 
-export function isString(val) {
+function isString(val) {
     return typeof val == "string";
 }
 
-export function isBoolean(val) {
+function isBoolean(val) {
     return typeof val == "boolean";
 }
 
-export function isFunction(val) {
+function isFunction(val) {
     return typeof val == "function";
 }
 
-export function isObject(val) {
+function isObject(val) {
     return typeof val === "object";
 }
 
-export const isArray = Array.isArray;
+exports.isArray = Array.isArray;
 

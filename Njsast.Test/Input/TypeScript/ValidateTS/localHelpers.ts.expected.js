@@ -1,24 +1,37 @@
-export function noop() {
+"use strict";
+exports.hOP = exports.is = void 0;
+
+exports.noop = noop;
+
+exports.newHashObj = newHashObj;
+
+exports.assert = assert;
+
+exports.newMap = newMap;
+
+exports.createTextNode = createTextNode;
+
+function noop() {
     return undefined;
 }
 
-export function newHashObj() {
+function newHashObj() {
     return Object.create(null);
 }
 
-export const is = Object.is;
+exports.is = Object.is;
 
-export const hOP = Object.prototype.hasOwnProperty;
+exports.hOP = Object.prototype.hasOwnProperty;
 
-export function assert(shouldBeTrue, messageIfFalse) {
+function assert(shouldBeTrue, messageIfFalse) {
     if (DEBUG && !shouldBeTrue) throw Error(messageIfFalse || "assertion failed");
 }
 
-export function newMap() {
+function newMap() {
     return new Map();
 }
 
-export function createTextNode(content) {
+function createTextNode(content) {
     return document.createTextNode(content);
 }
 

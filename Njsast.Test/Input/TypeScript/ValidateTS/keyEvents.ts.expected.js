@@ -1,4 +1,5 @@
-import { addEvent, bubble, IBobrilCacheNode, IEventParam, preventDefault } from "./core";
+"use strict";
+const core_1 = require("./core");
 
 const NormalizerKeyMap = {
     Up: "ArrowUp",
@@ -48,8 +49,8 @@ function buildParam(ev) {
 function emitOnKeyDown(ev, _target, node) {
     if (!node) return false;
     var param = buildParam(ev);
-    if (bubble(node, "onKeyDown", param)) {
-        preventDefault(ev);
+    if (core_1.bubble(node, "onKeyDown", param)) {
+        core_1.preventDefault(ev);
         return true;
     }
     return false;
@@ -58,8 +59,8 @@ function emitOnKeyDown(ev, _target, node) {
 function emitOnKeyUp(ev, _target, node) {
     if (!node) return false;
     var param = buildParam(ev);
-    if (bubble(node, "onKeyUp", param)) {
-        preventDefault(ev);
+    if (core_1.bubble(node, "onKeyUp", param)) {
+        core_1.preventDefault(ev);
         return true;
     }
     return false;
@@ -71,16 +72,16 @@ function emitOnKeyPress(ev, _target, node) {
     var param = {
         charCode: ev.which || ev.keyCode
     };
-    if (bubble(node, "onKeyPress", param)) {
-        preventDefault(ev);
+    if (core_1.bubble(node, "onKeyPress", param)) {
+        core_1.preventDefault(ev);
         return true;
     }
     return false;
 }
 
-addEvent("keydown", 50, emitOnKeyDown);
+core_1.addEvent("keydown", 50, emitOnKeyDown);
 
-addEvent("keyup", 50, emitOnKeyUp);
+core_1.addEvent("keyup", 50, emitOnKeyUp);
 
-addEvent("keypress", 50, emitOnKeyPress);
+core_1.addEvent("keypress", 50, emitOnKeyPress);
 

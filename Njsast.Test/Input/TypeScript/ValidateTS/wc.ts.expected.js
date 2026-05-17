@@ -1,10 +1,11 @@
-import { IBubblingAndBroadcastEvents, IBobrilStyles, IBobrilChildren, IBobrilNode, IBobrilCtx, IBobrilComponent, GenericEventResult } from "./core";
+"use strict";
+exports.wrapWebComponent = wrapWebComponent;
 
-import { isFunction } from "./isFunc";
+const isFunc_1 = require("./isFunc");
 
-import { style } from "./cssInJs";
+const cssInJs_1 = require("./cssInJs");
 
-export function wrapWebComponent(name, props = [], events) {
+function wrapWebComponent(name, props = [], events) {
     props = [ "id", "slot", ...props ];
     const component = {
         id: name,
@@ -17,14 +18,54 @@ export function wrapWebComponent(name, props = [], events) {
             }
             me.attrs = attrs;
             me.children = d.children;
-            if (d.style != undefined) style(me, d.style);
+            if (d.style != undefined) cssInJs_1.style(me, d.style);
         },
         handleGenericEvent(ctx, name, param) {
             let handler = ctx.data[name];
-            if (isFunction(handler)) {
+            if (isFunc_1.isFunction(handler)) {
                 return handler(param);
             }
         }
     };
+    if (events != undefined) {
+        const eventProps = Object.keys(events);
+        component.init = (ctx => {
+            ctx.evMap = undefined;
+        });
+        component.postInitDom = component.postUpdateDom = (ctx => {
+            let d = ctx.data;
+            for (const n of eventProps) {
+                let e = d[n];
+                if (e == undefined) continue;
+                let es = ctx.evMap;
+                if (es == undefined) {
+                    es = new Map();
+                    ctx.evMap = es;
+                }
+                let en = events[n];
+                if (!es.has(en)) {
+                    let el = {
+                        handleEvent(event) {
+                            e(event);
+                        }
+                    };
+                    ctx.me.element.addEventListener(en, el);
+                    es.set(en, el);
+                }
+            }
+        });
+        component.destroy = (ctx => {
+            let es = ctx.evMap;
+            if (es != undefined) {
+                es.forEach(function(value, key) {
+                    this.removeEventListener(key, value);
+                }, ctx.me.element);
+            }
+        });
+    }
+    return data => ({
+        data: data ?? {},
+        component
+    });
 }
 

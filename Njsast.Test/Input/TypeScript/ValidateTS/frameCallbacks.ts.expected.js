@@ -1,45 +1,54 @@
-import { IBobrilCacheChildren, IBobrilNode } from "./core";
+"use strict";
+exports.afterFrameCallback = exports.reallyBeforeFrameCallback = exports.beforeFrameCallback = exports.beforeRenderCallback = exports.RenderPhase = void 0;
 
-import { noop } from "./localHelpers";
+exports.setBeforeRender = setBeforeRender;
 
-export var RenderPhase;
+exports.setBeforeFrame = setBeforeFrame;
+
+exports.setReallyBeforeFrame = setReallyBeforeFrame;
+
+exports.setAfterFrame = setAfterFrame;
+
+const localHelpers_1 = require("./localHelpers");
+
+var RenderPhase;
 
 (function(RenderPhase) {
     RenderPhase[RenderPhase["Create"] = 0] = "Create";
     RenderPhase[RenderPhase["Update"] = 1] = "Update";
     RenderPhase[RenderPhase["LocalUpdate"] = 2] = "LocalUpdate";
     RenderPhase[RenderPhase["Destroy"] = 3] = "Destroy";
-})(RenderPhase || (RenderPhase = {}));
+})(RenderPhase || (exports.RenderPhase = RenderPhase = {}));
 
-export var beforeRenderCallback = noop;
+exports.beforeRenderCallback = localHelpers_1.noop;
 
-export var beforeFrameCallback = noop;
+exports.beforeFrameCallback = localHelpers_1.noop;
 
-export var reallyBeforeFrameCallback = noop;
+exports.reallyBeforeFrameCallback = localHelpers_1.noop;
 
-export var afterFrameCallback = noop;
+exports.afterFrameCallback = localHelpers_1.noop;
 
-export function setBeforeRender(callback) {
-    var res = beforeRenderCallback;
-    beforeRenderCallback = callback;
+function setBeforeRender(callback) {
+    var res = exports.beforeRenderCallback;
+    exports.beforeRenderCallback = callback;
     return res;
 }
 
-export function setBeforeFrame(callback) {
-    var res = beforeFrameCallback;
-    beforeFrameCallback = callback;
+function setBeforeFrame(callback) {
+    var res = exports.beforeFrameCallback;
+    exports.beforeFrameCallback = callback;
     return res;
 }
 
-export function setReallyBeforeFrame(callback) {
-    var res = reallyBeforeFrameCallback;
-    reallyBeforeFrameCallback = callback;
+function setReallyBeforeFrame(callback) {
+    var res = exports.reallyBeforeFrameCallback;
+    exports.reallyBeforeFrameCallback = callback;
     return res;
 }
 
-export function setAfterFrame(callback) {
-    var res = afterFrameCallback;
-    afterFrameCallback = callback;
+function setAfterFrame(callback) {
+    var res = exports.afterFrameCallback;
+    exports.afterFrameCallback = callback;
     return res;
 }
 

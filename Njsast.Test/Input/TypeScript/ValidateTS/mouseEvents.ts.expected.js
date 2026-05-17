@@ -1,16 +1,35 @@
-import { addEvent, bubble, callWithCurrentCtxWithEvents, deref, emitEvent, EventNames, IBobrilCacheNode, IBobrilComponent, IEventParam, ieVersion, now, preventDefault, CommonUseIsHook, buildUseIsHook } from "./core";
+"use strict";
+exports.ignoreClick = exports.firstPointerDownId = exports.pointersDownCount = exports.useIsMouseOver = exports.pointerRevalidateEventName = exports.BobrilPointerType = void 0;
 
-import { isBoolean } from "./isFunc";
+exports.isMouseOwner = isMouseOwner;
 
-import { newHashObj } from "./localHelpers";
+exports.isMouseOwnerEvent = isMouseOwnerEvent;
 
-export var BobrilPointerType;
+exports.registerMouseOwner = registerMouseOwner;
+
+exports.releaseMouseOwner = releaseMouseOwner;
+
+exports.revalidateMouseIn = revalidateMouseIn;
+
+exports.preventClickingSpree = preventClickingSpree;
+
+exports.nodeOnPoint = nodeOnPoint;
+
+exports.shouldBeFocusVisible = shouldBeFocusVisible;
+
+const core_1 = require("./core");
+
+const isFunc_1 = require("./isFunc");
+
+const localHelpers_1 = require("./localHelpers");
+
+var BobrilPointerType;
 
 (function(BobrilPointerType) {
     BobrilPointerType[BobrilPointerType["Mouse"] = 0] = "Mouse";
     BobrilPointerType[BobrilPointerType["Touch"] = 1] = "Touch";
     BobrilPointerType[BobrilPointerType["Pen"] = 2] = "Pen";
-})(BobrilPointerType || (BobrilPointerType = {}));
+})(BobrilPointerType || (exports.BobrilPointerType = BobrilPointerType = {}));
 
 const MoveOverIsNotTap = 13;
 
@@ -30,19 +49,19 @@ const onClickText = "onClick";
 
 const onDoubleClickText = "onDoubleClick";
 
-export function isMouseOwner(ctx) {
+function isMouseOwner(ctx) {
     return ownerCtx === ctx;
 }
 
-export function isMouseOwnerEvent() {
+function isMouseOwnerEvent() {
     return invokingOwner;
 }
 
-export function registerMouseOwner(ctx) {
+function registerMouseOwner(ctx) {
     ownerCtx = ctx;
 }
 
-export function releaseMouseOwner() {
+function releaseMouseOwner() {
     ownerCtx = null;
 }
 
@@ -56,13 +75,13 @@ function invokeMouseOwner(handlerName, param) {
         return false;
     }
     invokingOwner = true;
-    var stop = callWithCurrentCtxWithEvents(() => handler.call(c, ownerCtx, param), ownerCtx);
+    var stop = core_1.callWithCurrentCtxWithEvents(() => handler.call(c, ownerCtx, param), ownerCtx);
     invokingOwner = false;
     return stop;
 }
 
 function addEvent5(name, callback) {
-    addEvent(name, 5, callback);
+    core_1.addEvent(name, 5, callback);
 }
 
 var pointersEventNames = [ "PointerDown", "PointerMove", "PointerUp", "PointerCancel" ];
@@ -78,7 +97,7 @@ function type2Bobril(t) {
 function buildHandlerPointer(name) {
     return function handlePointerDown(ev, target, node) {
         target = ev.target;
-        node = deref(target);
+        node = core_1.deref(target);
         let button = ev.button + 1;
         let type = type2Bobril(ev.pointerType);
         let buttons = ev.buttons;
@@ -103,8 +122,8 @@ function buildHandlerPointer(name) {
             meta: ev.metaKey || false,
             count: ev.detail
         };
-        if (emitEvent("!" + name, param, target, node)) {
-            preventDefault(ev);
+        if (core_1.emitEvent("!" + name, param, target, node)) {
+            core_1.preventDefault(ev);
             return true;
         }
         return false;
@@ -117,7 +136,7 @@ function buildHandlerTouch(name) {
         for (var i = 0; i < ev.changedTouches.length; i++) {
             var t = ev.changedTouches[i];
             target = t.target;
-            node = deref(target);
+            node = core_1.deref(target);
             var param = {
                 target: node,
                 id: t.identifier + 2,
@@ -132,10 +151,10 @@ function buildHandlerTouch(name) {
                 meta: ev.metaKey || false,
                 count: ev.detail
             };
-            if (emitEvent("!" + name, param, target, node)) preventDef = true;
+            if (core_1.emitEvent("!" + name, param, target, node)) preventDef = true;
         }
         if (preventDef) {
-            preventDefault(ev);
+            core_1.preventDefault(ev);
             return true;
         }
         return false;
@@ -145,7 +164,7 @@ function buildHandlerTouch(name) {
 function buildHandlerMouse(name) {
     return function handlePointer(ev, target, node) {
         target = ev.target;
-        node = deref(target);
+        node = core_1.deref(target);
         var param = {
             target: node,
             id: 1,
@@ -160,8 +179,8 @@ function buildHandlerMouse(name) {
             meta: ev.metaKey || false,
             count: ev.detail
         };
-        if (emitEvent("!" + name, param, target, node)) {
-            preventDefault(ev);
+        if (core_1.emitEvent("!" + name, param, target, node)) {
+            core_1.preventDefault(ev);
             return true;
         }
         return false;
@@ -192,13 +211,13 @@ if (window.ontouchstart !== undefined) {
 for (var j = 0; j < 4; j++) {
     (name => {
         var onName = "on" + name;
-        addEvent("!" + name, 50, (ev, _target, node) => {
-            return invokeMouseOwner(onName, ev) || bubble(node, onName, ev) != undefined;
+        core_1.addEvent("!" + name, 50, (ev, _target, node) => {
+            return invokeMouseOwner(onName, ev) || core_1.bubble(node, onName, ev) != undefined;
         });
     })(pointersEventNames[j]);
 }
 
-var pointersDown = newHashObj();
+var pointersDown = localHelpers_1.newHashObj();
 
 var toBust = [];
 
@@ -220,15 +239,15 @@ function diffLess(n1, n2, diff) {
 
 var prevMousePath = [];
 
-export const pointerRevalidateEventName = "!PointerRevalidate";
+exports.pointerRevalidateEventName = "!PointerRevalidate";
 
-export function revalidateMouseIn() {
+function revalidateMouseIn() {
     if (lastMouseEv) {
-        emitEvent(pointerRevalidateEventName, lastMouseEv, undefined, lastMouseEv.target);
+        core_1.emitEvent(exports.pointerRevalidateEventName, lastMouseEv, undefined, lastMouseEv.target);
     }
 }
 
-addEvent(pointerRevalidateEventName, 3, mouseEnterAndLeave);
+core_1.addEvent(exports.pointerRevalidateEventName, 3, mouseEnterAndLeave);
 
 function vdomPathFromCacheNode(n) {
     var res = [];
@@ -241,14 +260,14 @@ function vdomPathFromCacheNode(n) {
 
 const mouseOverHookSet = new Set();
 
-export let useIsMouseOver = buildUseIsHook(mouseOverHookSet);
+exports.useIsMouseOver = core_1.buildUseIsHook(mouseOverHookSet);
 
 function mouseEnterAndLeave(ev) {
     lastMouseEv = ev;
     var node = ev.target;
     var toPath = vdomPathFromCacheNode(node);
     mouseOverHookSet.forEach(v => v.update(toPath));
-    bubble(node, "onMouseOver", ev);
+    core_1.bubble(node, "onMouseOver", ev);
     var common = 0;
     while (common < prevMousePath.length && common < toPath.length && prevMousePath[common] === toPath[common]) common++;
     var n;
@@ -295,7 +314,7 @@ function noPointersDown() {
 function bustingPointerDown(ev, _target, _node) {
     if (firstPointerDown === -1 && noPointersDown()) {
         firstPointerDown = ev.id;
-        firstPointerDownTime = now();
+        firstPointerDownTime = core_1.now();
         firstPointerDownX = ev.x;
         firstPointerDownY = ev.y;
         tapCanceled = false;
@@ -311,7 +330,7 @@ function bustingPointerDown(ev, _target, _node) {
 function bustingPointerMove(ev, target, node) {
     if (ev.type === BobrilPointerType.Mouse && ev.button === 0 && pointersDown[ev.id] != null) {
         ev.button = 1;
-        emitEvent("!PointerUp", ev, target, node);
+        core_1.emitEvent("!PointerUp", ev, target, node);
         ev.button = 0;
     }
     if (firstPointerDown === ev.id) {
@@ -329,7 +348,7 @@ let clickingSpreeCount = 0;
 
 function shouldPreventClickingSpree(clickCount) {
     if (clickingSpreeCount == 0) return false;
-    let n = now();
+    let n = core_1.now();
     if (n < clickingSpreeStart + 1e3 && clickCount >= clickingSpreeCount) {
         clickingSpreeStart = n;
         clickingSpreeCount = clickCount;
@@ -339,9 +358,9 @@ function shouldPreventClickingSpree(clickCount) {
     return false;
 }
 
-export function preventClickingSpree() {
+function preventClickingSpree() {
     clickingSpreeCount = 2;
-    clickingSpreeStart = now();
+    clickingSpreeStart = core_1.now();
 }
 
 function bustingPointerUp(ev, target, node) {
@@ -350,16 +369,16 @@ function bustingPointerUp(ev, target, node) {
         mouseEnterAndLeave(ev);
         firstPointerDown = -1;
         if (ev.type == BobrilPointerType.Touch && !tapCanceled) {
-            if (now() - firstPointerDownTime < TapShouldBeShorterThanMs) {
-                emitEvent("!PointerCancel", ev, target, node);
+            if (core_1.now() - firstPointerDownTime < TapShouldBeShorterThanMs) {
+                core_1.emitEvent("!PointerCancel", ev, target, node);
                 shouldPreventClickingSpree(1);
-                var handled = invokeMouseOwner(onClickText, ev) || bubble(node, onClickText, ev) != null;
-                var delay = ieVersion() ? MaxBustDelayForIE : MaxBustDelay;
-                toBust.push([ ev.x, ev.y, now() + delay, handled ? 1 : 0 ]);
+                var handled = invokeMouseOwner(onClickText, ev) || core_1.bubble(node, onClickText, ev) != null;
+                var delay = core_1.ieVersion() ? MaxBustDelayForIE : MaxBustDelay;
+                toBust.push([ ev.x, ev.y, core_1.now() + delay, handled ? 1 : 0 ]);
                 return handled;
             }
         } else if (tapCanceled) {
-            ignoreClick(ev.x, ev.y);
+            exports.ignoreClick(ev.x, ev.y);
         }
     }
     return false;
@@ -374,7 +393,7 @@ function bustingPointerCancel(ev, _target, _node) {
 }
 
 function bustingClick(ev, _target, _node) {
-    var n = now();
+    var n = core_1.now();
     for (var i = 0; i < toBust.length; i++) {
         var j = toBust[i];
         if (j[2] < n) {
@@ -384,7 +403,7 @@ function bustingClick(ev, _target, _node) {
         }
         if (diffLess(j[0], ev.clientX, BustDistance) && diffLess(j[1], ev.clientY, BustDistance)) {
             toBust.splice(i, 1);
-            if (j[3]) preventDefault(ev);
+            if (j[3]) core_1.preventDefault(ev);
             return true;
         }
     }
@@ -396,13 +415,13 @@ var bustingEventNames = [ "!PointerDown", "!PointerMove", "!PointerUp", "!Pointe
 var bustingEventHandlers = [ bustingPointerDown, bustingPointerMove, bustingPointerUp, bustingPointerCancel, bustingClick ];
 
 for (var i = 0; i < 5; i++) {
-    addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
+    core_1.addEvent(bustingEventNames[i], 3, bustingEventHandlers[i]);
 }
 
 function createHandlerMouse(handlerName) {
     return (ev, _target, node) => {
         if (firstPointerDown != ev.id && !noPointersDown()) return false;
-        if (invokeMouseOwner(handlerName, ev) || bubble(node, handlerName, ev)) {
+        if (invokeMouseOwner(handlerName, ev) || core_1.bubble(node, handlerName, ev)) {
             return true;
         }
         return false;
@@ -412,7 +431,7 @@ function createHandlerMouse(handlerName) {
 var mouseHandlerNames = [ "Down", "Move", "Up", "Up" ];
 
 for (var i = 0; i < 4; i++) {
-    addEvent(bustingEventNames[i], 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
+    core_1.addEvent(bustingEventNames[i], 80, createHandlerMouse("onMouse" + mouseHandlerNames[i]));
 }
 
 function decodeButton(ev) {
@@ -421,7 +440,7 @@ function decodeButton(ev) {
 
 function normalizeCancelable(ev) {
     var c = ev.cancelable;
-    return !isBoolean(c) || c;
+    return !isFunc_1.isBoolean(c) || c;
 }
 
 function createHandler(handlerName, allButtons) {
@@ -441,16 +460,16 @@ function createHandler(handlerName, allButtons) {
             count: ev.detail || 1
         };
         if (handlerName == onDoubleClickText) param.count = 2;
-        if (shouldPreventClickingSpree(param.count) || invokeMouseOwner(handlerName, param) || bubble(node, handlerName, param)) {
-            preventDefault(ev);
+        if (shouldPreventClickingSpree(param.count) || invokeMouseOwner(handlerName, param) || core_1.bubble(node, handlerName, param)) {
+            core_1.preventDefault(ev);
             return true;
         }
         return false;
     };
 }
 
-export function nodeOnPoint(x, y) {
-    return deref(document.elementFromPoint(x, y));
+function nodeOnPoint(x, y) {
+    return core_1.deref(document.elementFromPoint(x, y));
 }
 
 addEvent5("click", createHandler(onClickText));
@@ -485,8 +504,8 @@ function handleMouseWheel(ev, _target, node) {
         meta: ev.metaKey || false,
         count: ev.detail
     };
-    if (invokeMouseOwner("onMouseWheel", param) || bubble(node, "onMouseWheel", param)) {
-        preventDefault(ev);
+    if (invokeMouseOwner("onMouseWheel", param) || core_1.bubble(node, "onMouseWheel", param)) {
+        core_1.preventDefault(ev);
         return true;
     }
     return false;
@@ -494,14 +513,20 @@ function handleMouseWheel(ev, _target, node) {
 
 addEvent5("wheel", handleMouseWheel);
 
-export const pointersDownCount = () => Object.keys(pointersDown).length;
+const pointersDownCount = () => Object.keys(pointersDown).length;
 
-export const firstPointerDownId = () => firstPointerDown;
+exports.pointersDownCount = pointersDownCount;
 
-export const ignoreClick = (x, y) => {
-    var delay = ieVersion() ? MaxBustDelayForIE : MaxBustDelay;
-    toBust.push([ x, y, now() + delay, 1 ]);
+const firstPointerDownId = () => firstPointerDown;
+
+exports.firstPointerDownId = firstPointerDownId;
+
+const ignoreClick = (x, y) => {
+    var delay = core_1.ieVersion() ? MaxBustDelayForIE : MaxBustDelay;
+    toBust.push([ x, y, core_1.now() + delay, 1 ]);
 };
+
+exports.ignoreClick = ignoreClick;
 
 let lastInteractionWasKeyboard = false;
 
@@ -520,19 +545,19 @@ function hasAlwaysFocusVisible(element) {
     return element.isContentEditable;
 }
 
-addEvent(bustingEventNames[0], 2, () => {
+core_1.addEvent(bustingEventNames[0], 2, () => {
     lastInteractionWasKeyboard = false;
     return false;
 });
 
-addEvent("keydown", 2, ev => {
+core_1.addEvent("keydown", 2, ev => {
     if (!ev.metaKey && !ev.altKey && !ev.ctrlKey) {
         lastInteractionWasKeyboard = true;
     }
     return false;
 });
 
-export function shouldBeFocusVisible() {
+function shouldBeFocusVisible() {
     return lastInteractionWasKeyboard || hasAlwaysFocusVisible(document.activeElement);
 }
 

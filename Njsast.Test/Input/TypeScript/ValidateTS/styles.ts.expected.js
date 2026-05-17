@@ -1,10 +1,13 @@
-import * as b from "bobril";
+"use strict";
+exports.style2 = exports.style1 = void 0;
 
-export const style1 = b.styleDef({
+const b = __importStar(require("bobril"));
+
+exports.style1 = b.styleDef({
     color: "blue"
 });
 
-export const style2 = b.styleDefEx(style1, {
+exports.style2 = b.styleDefEx(exports.style1, {
     background: "red"
 });
 

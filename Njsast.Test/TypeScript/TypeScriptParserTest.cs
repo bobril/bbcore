@@ -7,6 +7,7 @@ using Njsast;
 using Njsast.Ast;
 using Njsast.AstDump;
 using Njsast.Bobril;
+using Njsast.EsmToCjs;
 using Njsast.Output;
 using Njsast.Reader;
 using Njsast.SourceMap;
@@ -6164,6 +6165,9 @@ public sealed class TypeScriptParserTest
                 SourceFile = testData.SourceName,
                 SourceType = SourceType.Module
             });
+        toplevel.FigureOutScope();
+        toplevel = (AstToplevel)new EsmToCjsTreeTransformer().Transform(toplevel);
+        toplevel.FigureOutScope();
         var builder = new SourceMapBuilder();
         toplevel.PrintToBuilder(builder, new OutputOptions { Beautify = true });
         var expected = NormalizeValidateTsJavaScript(testData.ExpectedJs);

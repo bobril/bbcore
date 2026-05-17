@@ -1,4 +1,15 @@
-export function count(children) {
+"use strict";
+exports.count = count;
+
+exports.only = only;
+
+exports.toArray = toArray;
+
+exports.map = map;
+
+exports.forEach = forEach;
+
+function count(children) {
     if (Array.isArray(children)) {
         let res = 0;
         for (let i = 0; i < children.length; i++) {
@@ -10,7 +21,7 @@ export function count(children) {
     return 1;
 }
 
-export function only(children) {
+function only(children) {
     if (count(children) != 1) {
         throw new Error("Children.only() accepts only single child");
     }
@@ -30,7 +41,7 @@ export function only(children) {
     return children;
 }
 
-export function toArray(children) {
+function toArray(children) {
     if (children == undefined || children === false || children === true) return [];
     if (Array.isArray(children)) {
         let res = [];
@@ -42,7 +53,7 @@ export function toArray(children) {
     return [ children ];
 }
 
-export function map(children, fn) {
+function map(children, fn) {
     if (children == undefined || children === false || children === true) return [];
     if (Array.isArray(children)) {
         let res = [];
@@ -65,7 +76,7 @@ function mapRecursive(res, children, fn) {
     res.push(fn(children, res.length));
 }
 
-export function forEach(children, fn) {
+function forEach(children, fn) {
     if (children == undefined || children === false || children === true) return;
     if (Array.isArray(children)) {
         let idx = 0;

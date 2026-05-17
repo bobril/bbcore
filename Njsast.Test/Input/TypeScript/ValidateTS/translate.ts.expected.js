@@ -1,20 +1,57 @@
-import * as b from "bobril";
+"use strict";
+exports.getMoment = exports.registeredTranslations = void 0;
 
-import moment from "moment";
+exports.setNoEval = setNoEval;
 
-import * as msgFormatParser from "./msgFormatParser";
+exports.t = t;
 
-import * as msgFormatter from "./msgFormatter";
+exports.dt = dt;
 
-import { jsonp } from "./jsonp";
+exports.loadSerializationKeys = loadSerializationKeys;
 
-import * as localeDataStorage from "./localeDataStorage";
+exports.serializationKeysLoaded = serializationKeysLoaded;
 
-import * as numberFormatter from "./numberFormatter";
+exports.serializeMessage = serializeMessage;
+
+exports.formatDelayedMessage = formatDelayedMessage;
+
+exports.deserializeMessage = deserializeMessage;
+
+exports.formatSerializedMessage = formatSerializedMessage;
+
+exports.f = f;
+
+exports.initGlobalization = initGlobalization;
+
+exports.setLocale = setLocale;
+
+exports.getLocale = getLocale;
+
+exports.unformatNumber = unformatNumber;
+
+exports.registerTranslations = registerTranslations;
+
+exports.spyTranslation = spyTranslation;
+
+exports.T = T;
+
+const b = __importStar(require("bobril"));
+
+const moment_1 = __importDefault(require("moment"));
+
+const msgFormatParser = __importStar(require("./msgFormatParser"));
+
+const msgFormatter = __importStar(require("./msgFormatter"));
+
+const jsonp_1 = require("./jsonp");
+
+const localeDataStorage = __importStar(require("./localeDataStorage"));
+
+const numberFormatter = __importStar(require("./numberFormatter"));
 
 let noEval = false;
 
-export function setNoEval(value = true) {
+function setNoEval(value = true) {
     noEval = value;
 }
 
@@ -23,14 +60,14 @@ let spyTranslationFunc;
 let cfg = {
     defaultLocale: "en-US",
     pathToTranslation: () => undefined,
-    runScriptAsync: jsonp
+    runScriptAsync: jsonp_1.jsonp
 };
 
 let failedToLoadLocales = new Set();
 
 let loadedLocales = new Set();
 
-export let registeredTranslations = Object.create(null);
+exports.registeredTranslations = Object.create(null);
 
 let currentLocale = "";
 
@@ -69,7 +106,7 @@ function spyTranslatedString(translated) {
     return spyTranslationFunc(translated);
 }
 
-export function t(message, params, _translationHelp) {
+function t(message, params, _translationHelp) {
     if (currentLocale.length === 0) {
         throw new Error("before using t you need to wait for initialization of g11n");
     }
@@ -108,21 +145,21 @@ export function t(message, params, _translationHelp) {
     return spyTranslatedString(format(params));
 }
 
-export function dt(message, params, _translationHelp) {
+function dt(message, params, _translationHelp) {
     if (params == undefined) return [ message ];
     return [ message, params ];
 }
 
 let lazyLoadKeys = undefined;
 
-export function loadSerializationKeys() {
+function loadSerializationKeys() {
     if (lazyLoadKeys === undefined) {
         lazyLoadKeys = cfg.runScriptAsync(cfg.pathToTranslation("l10nkeys")).then(b.ignoreShouldChange);
     }
     return lazyLoadKeys;
 }
 
-export function serializationKeysLoaded() {
+function serializationKeysLoaded() {
     return keysByTranslationId != undefined;
 }
 
@@ -154,7 +191,7 @@ function serializeParams(params) {
     return res;
 }
 
-export function serializeMessage(message) {
+function serializeMessage(message) {
     if (keysByTranslationId === undefined) throw new Error("Make sure to await loadSerializationKeys");
     let m = message[0];
     if (typeof m == "string") {
@@ -170,11 +207,11 @@ export function serializeMessage(message) {
     return [ key, serializeParams(message[1]) ];
 }
 
-export function formatDelayedMessage(message) {
+function formatDelayedMessage(message) {
     return t(message[0], message[1]);
 }
 
-export function deserializeMessage(message) {
+function deserializeMessage(message) {
     let id = undefined;
     if (!serializationKeysLoaded()) {
         loadSerializationKeys();
@@ -191,11 +228,11 @@ export function deserializeMessage(message) {
     return [ id, message[1] ];
 }
 
-export function formatSerializedMessage(message) {
+function formatSerializedMessage(message) {
     return formatDelayedMessage(deserializeMessage(message));
 }
 
-export function f(message, params) {
+function f(message, params) {
     if (typeof message !== "object" && params === undefined) return message;
     return t(message, params);
 }
@@ -206,7 +243,7 @@ b.setBeforeInit(cb => {
     initPromise.then(cb, cb);
 });
 
-export function initGlobalization(config) {
+function initGlobalization(config) {
     Object.assign(cfg, config);
     if (currentLocale.length !== 0) {
         if (!loadedLocales.has(currentLocale)) {
@@ -217,7 +254,7 @@ export function initGlobalization(config) {
     return initPromise;
 }
 
-export async function setLocale(locale) {
+async function setLocale(locale) {
     if (currentLocale === locale) return;
     var lcLocale = locale.toLowerCase();
     if (!loadedLocales.has(lcLocale)) {
@@ -243,29 +280,29 @@ export async function setLocale(locale) {
     }
     currentLocale = locale;
     currentRules = localeDataStorage.getRules(lcLocale);
-    currentTranslations = registeredTranslations[lcLocale] || [];
+    currentTranslations = exports.registeredTranslations[lcLocale] || [];
     currentUnformatter = undefined;
     currentCachedFormat = [];
     currentCachedFormat.length = currentTranslations.length;
     stringCachedFormats = new Map();
-    moment.locale(currentLocale);
+    moment_1.default.locale(currentLocale);
     b.ignoreShouldChange();
 }
 
-export function getLocale() {
+function getLocale() {
     return currentLocale;
 }
 
-export const getMoment = moment;
+exports.getMoment = moment_1.default;
 
-export function unformatNumber(str) {
+function unformatNumber(str) {
     if (currentUnformatter === undefined) {
         currentUnformatter = numberFormatter.buildUnformat(currentRules);
     }
     return currentUnformatter(str);
 }
 
-export function registerTranslations(locale, localeDefs, msgs) {
+function registerTranslations(locale, localeDefs, msgs) {
     if (locale == "") {
         keysByTranslationId = msgs;
         key2TranslationId = new Map();
@@ -278,11 +315,11 @@ export function registerTranslations(locale, localeDefs, msgs) {
     if (Array.isArray(localeDefs)) {
         localeDataStorage.setRules(locale, localeDefs);
     }
-    if (Array.isArray(msgs)) registeredTranslations[locale] = msgs;
+    if (Array.isArray(msgs)) exports.registeredTranslations[locale] = msgs;
     loadedLocales.add(locale);
 }
 
-export function spyTranslation(spyFn) {
+function spyTranslation(spyFn) {
     if (spyFn === undefined) return spyTranslationFunc;
     if (spyFn === null) {
         spyTranslationFunc = undefined;
@@ -297,7 +334,7 @@ if (window) {
     if (window["b"] != null) window["b"].spyTr = spyTranslation;
 }
 
-export function T(data) {
+function T(data) {
     return data;
 }
 

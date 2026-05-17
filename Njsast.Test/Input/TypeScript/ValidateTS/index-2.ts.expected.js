@@ -1,12 +1,13 @@
-export * from "./src/msgFormatParser";
+"use strict";
+__exportStar(require("./src/msgFormatParser"), exports);
 
-export * from "./src/msgFormatter";
+__exportStar(require("./src/msgFormatter"), exports);
 
-export * from "./src/extractUsedParams";
+__exportStar(require("./src/extractUsedParams"), exports);
 
-export * from "./src/jsonp";
+__exportStar(require("./src/jsonp"), exports);
 
-export * from "./src/localeDataStorage";
+__exportStar(require("./src/localeDataStorage"), exports);
 
-export * from "./src/translate";
+__exportStar(require("./src/translate"), exports);
 

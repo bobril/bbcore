@@ -1,4 +1,7 @@
-export class RuntimeFunctionGenerator {
+"use strict";
+exports.RuntimeFunctionGenerator = void 0;
+
+class RuntimeFunctionGenerator {
     constructor() {
         this.constants = [];
         this.body = [];
@@ -42,4 +45,6 @@ export class RuntimeFunctionGenerator {
         return Function.apply(null, innerParams);
     }
 }
+
+exports.RuntimeFunctionGenerator = RuntimeFunctionGenerator;
 

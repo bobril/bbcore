@@ -1,4 +1,9 @@
-import { isObject, isArray } from "bobril";
+"use strict";
+exports.isParserError = isParserError;
+
+exports.parse = parse;
+
+const bobril_1 = require("bobril");
 
 let sourceText;
 
@@ -86,8 +91,8 @@ function advanceNextToken() {
     }
 }
 
-export function isParserError(val) {
-    return isObject(val) && !isArray(val) && val.type === "error";
+function isParserError(val) {
+    return bobril_1.isObject(val) && !bobril_1.isArray(val) && val.type === "error";
 }
 
 function buildError(msg) {
@@ -375,7 +380,7 @@ function parseMsg(endWithEOF) {
     let wrapByConcat = false;
     function normalize(res) {
         if (res === null) return "";
-        if (!isArray(res) || !wrapByConcat) return res;
+        if (!bobril_1.isArray(res) || !wrapByConcat) return res;
         return {
             type: "concat",
             values: res
@@ -396,7 +401,7 @@ function parseMsg(endWithEOF) {
         if (curToken === OpenBracketToken) {
             advanceNextToken();
             let format = parseFormat();
-            if (isObject(format) && !isArray(format)) {
+            if (bobril_1.isObject(format) && !bobril_1.isArray(format)) {
                 if (format.type == "open") {
                     const nested = parseMsg(format.id);
                     if (isParserError(nested)) return nested;
@@ -445,7 +450,7 @@ function parseMsg(endWithEOF) {
     }
 }
 
-export function parse(text) {
+function parse(text) {
     pos = 0;
     sourceText = text;
     length = text.length;

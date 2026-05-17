@@ -7,6 +7,26 @@ export function escapeRegExp(str: string): string {
     return str.replace(escapeRegExpMatcher, "\\$&");
 }
 
+function hasOnlyDigits(value: string): boolean {
+    for (let i = 0; i < value.length; i++) {
+        const ch = value.charCodeAt(i);
+        if (ch < 48 || ch > 57) return false;
+    }
+    return true;
+}
+
+function addThousandsSeparator(value: string, separator: string): string {
+    if (value.length <= 3 || !hasOnlyDigits(value)) return value;
+    let result = "";
+    let firstGroupLength = value.length % 3;
+    if (firstGroupLength === 0) firstGroupLength = 3;
+    for (let i = 0; i < value.length; i++) {
+        if (i > 0 && (i - firstGroupLength) % 3 === 0) result += separator;
+        result += value.charAt(i);
+    }
+    return result;
+}
+
 export function buildFormatter(rules: ILocaleRules, format: string, interpret = false): (val: number) => string {
     if (format == "0b" || format == "0 b") {
         const suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
@@ -90,7 +110,7 @@ export function buildFormatter(rules: ILocaleRules, format: string, interpret = 
                 if (locDec != "") locDec = rules.dd + locDec;
             }
             if (hasThousands) {
-                locBefore = locBefore.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1" + rules.td);
+                locBefore = addThousandsSeparator(locBefore, rules.td);
             }
             loc = locBefore + locDec;
             if (negPar) {
@@ -123,7 +143,7 @@ export function buildFormatter(rules: ILocaleRules, format: string, interpret = 
         g.addBody(`if (${locDec}!='') ${locDec}='${rules.dd}'+${locDec};`);
     }
     if (hasThousands) {
-        g.addBody(`${locBefore}=${locBefore}.replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'$1${rules.td}');`);
+        g.addBody(`${locBefore}=${g.addConstant(addThousandsSeparator)}(${locBefore},${g.addConstant(rules.td)});`);
     }
     g.addBody(`${loc}=${locBefore}+${locDec};`);
     if (negPar) {

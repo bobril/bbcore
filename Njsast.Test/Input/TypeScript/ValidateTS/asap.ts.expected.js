@@ -1,4 +1,7 @@
-export const asap = (() => {
+"use strict";
+exports.asap = void 0;
+
+exports.asap = (() => {
     var callbacks = [];
     function executeCallbacks() {
         var cbList = callbacks;

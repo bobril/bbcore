@@ -1,3 +1,10 @@
+"use strict";
+exports.svgPie = svgPie;
+
+exports.svgCircle = svgCircle;
+
+exports.svgRect = svgRect;
+
 function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
     var angleInRadians = angleInDegrees * Math.PI / 180;
     return {
@@ -27,7 +34,7 @@ function svgDescribeArc(x, y, radius, startAngle, endAngle, startWithLine) {
     return d;
 }
 
-export function svgPie(x, y, radiusBig, radiusSmall, startAngle, endAngle) {
+function svgPie(x, y, radiusBig, radiusSmall, startAngle, endAngle) {
     var p = svgDescribeArc(x, y, radiusBig, startAngle, endAngle, false);
     var nextWithLine = true;
     if (p[p.length - 1] === "Z") nextWithLine = false;
@@ -37,11 +44,11 @@ export function svgPie(x, y, radiusBig, radiusSmall, startAngle, endAngle) {
     return p + svgDescribeArc(x, y, radiusSmall, endAngle, startAngle, nextWithLine) + "Z";
 }
 
-export function svgCircle(x, y, radius) {
+function svgCircle(x, y, radius) {
     return svgDescribeArc(x, y, radius, 0, 360, false);
 }
 
-export function svgRect(x, y, width, height) {
+function svgRect(x, y, width, height) {
     return "M" + x + " " + y + "h" + width + "v" + height + "h" + -width + "Z";
 }
 

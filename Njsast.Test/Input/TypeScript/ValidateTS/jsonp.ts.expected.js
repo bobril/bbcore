@@ -1,4 +1,7 @@
-export function jsonp(url) {
+"use strict";
+exports.jsonp = jsonp;
+
+function jsonp(url) {
     return new Promise((r, e) => {
         let script = document.createElement("script");
         script.type = "text/javascript";

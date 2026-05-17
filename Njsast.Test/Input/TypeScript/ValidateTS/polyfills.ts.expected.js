@@ -1,4 +1,5 @@
-import "./polyfills/array-find-polyfill";
+"use strict";
+require("./polyfills/array-find-polyfill");
 
-import "./polyfills/array-findIndex-polyfill";
+require("./polyfills/array-findIndex-polyfill");
 

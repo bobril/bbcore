@@ -1,53 +1,56 @@
-export * from "./src/isFunc";
+"use strict";
+exports.Children = void 0;
 
-export * from "./src/asap";
+__exportStar(require("./src/isFunc"), exports);
 
-export * from "./src/cssTypes";
+__exportStar(require("./src/asap"), exports);
 
-export * from "./src/frameCallbacks";
+__exportStar(require("./src/cssTypes"), exports);
 
-export * from "./src/core";
+__exportStar(require("./src/frameCallbacks"), exports);
 
-export * from "./src/keyEvents";
+__exportStar(require("./src/core"), exports);
 
-export * from "./src/mouseEvents";
+__exportStar(require("./src/keyEvents"), exports);
 
-export * from "./src/media";
+__exportStar(require("./src/mouseEvents"), exports);
 
-export * from "./src/router";
+__exportStar(require("./src/media"), exports);
 
-export * from "./src/dnd";
+__exportStar(require("./src/router"), exports);
 
-export * from "./src/mediaQueryBuilder";
+__exportStar(require("./src/dnd"), exports);
 
-export * from "./src/svgExtensions";
+__exportStar(require("./src/mediaQueryBuilder"), exports);
 
-export * from "./src/cssInJs";
+__exportStar(require("./src/svgExtensions"), exports);
 
-export * from "./src/wc";
+__exportStar(require("./src/cssInJs"), exports);
 
-export * from "./src/cva";
+__exportStar(require("./src/wc"), exports);
 
-export * as Children from "./src/children";
+__exportStar(require("./src/cva"), exports);
 
-import { setAfterFrame, setBeforeFrame } from "./src/frameCallbacks";
+exports.Children = __importStar(require("./src/children"));
 
-import { deref, getRoots, setInvalidate, ignoreShouldChange, setBeforeInit, setKeysInClassNames } from "./src/core";
+const frameCallbacks_1 = require("./src/frameCallbacks");
 
-import { getDnds } from "./src/dnd";
+const core_1 = require("./src/core");
 
-import { invalidateStyles } from "./src/cssInJs";
+const dnd_1 = require("./src/dnd");
+
+const cssInJs_1 = require("./src/cssInJs");
 
 if (!window.b) window.b = {
-    deref,
-    getRoots,
-    setInvalidate,
-    invalidateStyles,
-    ignoreShouldChange,
-    setAfterFrame,
-    setBeforeFrame,
-    getDnds,
-    setBeforeInit,
-    setKeysInClassNames
+    deref: core_1.deref,
+    getRoots: core_1.getRoots,
+    setInvalidate: core_1.setInvalidate,
+    invalidateStyles: cssInJs_1.invalidateStyles,
+    ignoreShouldChange: core_1.ignoreShouldChange,
+    setAfterFrame: frameCallbacks_1.setAfterFrame,
+    setBeforeFrame: frameCallbacks_1.setBeforeFrame,
+    getDnds: dnd_1.getDnds,
+    setBeforeInit: core_1.setBeforeInit,
+    setKeysInClassNames: core_1.setKeysInClassNames
 };
 

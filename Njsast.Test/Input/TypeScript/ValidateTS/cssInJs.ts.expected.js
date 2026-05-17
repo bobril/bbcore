@@ -1,21 +1,74 @@
-import { CSSStyles, CSSPseudoStyles, CSSStylesItem, CSSInlineStyles } from "./cssTypes";
+"use strict";
+exports.updateElementStyle = updateElementStyle;
 
-import { applyDynamicStyle, ColorlessSprite, destroyDynamicStyle, IBobrilCacheChildren, IBobrilCacheNode, IBobrilCacheNodeUnsafe, IBobrilChildren, IBobrilNode, IBobrilStyleDef, IBobrilStyles, internalSetCssInJsCallbacks, invalidate } from "./core";
+exports.style = style;
 
-import { assert, createTextNode, hOP, newHashObj, noop } from "./localHelpers";
+exports.inlineStyleToCssDeclaration = inlineStyleToCssDeclaration;
 
-import { isArray, isFunction, isNumber, isObject, isString } from "./isFunc";
+exports.styleDef = styleDef;
 
-import { setAfterFrame } from "./frameCallbacks";
+exports.keyframesDef = keyframesDef;
 
-import { getMedia } from "./media";
+exports.mediaQueryDef = mediaQueryDef;
+
+exports.namedStyleDefEx = namedStyleDefEx;
+
+exports.namedStyleDef = namedStyleDef;
+
+exports.styleDefEx = styleDefEx;
+
+exports.selectorStyleDef = selectorStyleDef;
+
+exports.setAllowInvalidateStyles = setAllowInvalidateStyles;
+
+exports.invalidateStyles = invalidateStyles;
+
+exports.setImagesWithCredentials = setImagesWithCredentials;
+
+exports.sprite = sprite;
+
+exports.svg = svg;
+
+exports.isSvgSprite = isSvgSprite;
+
+exports.svgWithColor = svgWithColor;
+
+exports.extractSvgDataUri = extractSvgDataUri;
+
+exports.setBundlePngPath = setBundlePngPath;
+
+exports.getSpritePaths = getSpritePaths;
+
+exports.setSpritePaths = setSpritePaths;
+
+exports.spriteb = spriteb;
+
+exports.spritebc = spritebc;
+
+exports.spriteWithColor = spriteWithColor;
+
+exports.injectCss = injectCss;
+
+exports.styledDiv = styledDiv;
+
+exports.setStyleShim = setStyleShim;
+
+const core_1 = require("./core");
+
+const localHelpers_1 = require("./localHelpers");
+
+const isFunc_1 = require("./isFunc");
+
+const frameCallbacks_1 = require("./frameCallbacks");
+
+const media_1 = require("./media");
 
 const vendors = [ "Webkit", "Moz", "O" ];
 
 const testingDivStyle = document.createElement("div").style;
 
 function testPropExistence(name) {
-    return isString(testingDivStyle[name]);
+    return isFunc_1.isString(testingDivStyle[name]);
 }
 
 var mapping = new Map();
@@ -31,7 +84,7 @@ function renamer(newName) {
 
 function renamerPx(newName) {
     return (style, value, oldName) => {
-        if (isNumber(value)) {
+        if (isFunc_1.isNumber(value)) {
             style[newName] = value + "px";
         } else {
             style[newName] = value;
@@ -41,7 +94,7 @@ function renamerPx(newName) {
 }
 
 function pxAdder(style, value, name) {
-    if (isNumber(value)) style[name] = value + "px";
+    if (isFunc_1.isNumber(value)) style[name] = value + "px";
 }
 
 function shimStyle(newValue) {
@@ -56,7 +109,7 @@ function shimStyle(newValue) {
                 if (/-/.test(ki)) console.warn("Style property " + ki + " contains dash (must use JS props instead of css names)");
             }
             if (testPropExistence(ki)) {
-                mi = isUnitlessNumber.has(ki) ? noop : pxAdder;
+                mi = isUnitlessNumber.has(ki) ? localHelpers_1.noop : pxAdder;
             } else {
                 var titleCaseKi = ki.replace(/^\w/, match => match.toUpperCase());
                 for (var j = 0; j < vendors.length; j++) {
@@ -66,7 +119,7 @@ function shimStyle(newValue) {
                     }
                 }
                 if (mi === undefined) {
-                    mi = isUnitlessNumber.has(ki) ? noop : pxAdder;
+                    mi = isUnitlessNumber.has(ki) ? localHelpers_1.noop : pxAdder;
                     if (DEBUG && [ "overflowScrolling", "touchCallout" ].indexOf(ki) < 0) console.warn("Style property " + ki + " is not supported in this browser");
                 }
             }
@@ -93,7 +146,7 @@ function setClassName(el, className, inSvg) {
     if (inSvg) el.setAttribute("class", className); else el.className = className;
 }
 
-export function updateElementStyle(el, newStyle, oldStyle) {
+function updateElementStyle(el, newStyle, oldStyle) {
     var s = el.style;
     if (newStyle !== undefined) {
         shimStyle(newStyle);
@@ -123,9 +176,9 @@ export function updateElementStyle(el, newStyle, oldStyle) {
 }
 
 function createNodeStyle(el, newStyle, newClass, c, inSvg) {
-    if (isFunction(newStyle)) {
-        assert(newClass === undefined);
-        var appliedStyle = applyDynamicStyle(newStyle, c);
+    if (isFunc_1.isFunction(newStyle)) {
+        localHelpers_1.assert(newClass === undefined);
+        var appliedStyle = core_1.applyDynamicStyle(newStyle, c);
         newStyle = appliedStyle.style;
         newClass = appliedStyle.className;
     }
@@ -134,13 +187,13 @@ function createNodeStyle(el, newStyle, newClass, c, inSvg) {
 }
 
 function updateNodeStyle(el, newStyle, newClass, c, inSvg) {
-    if (isFunction(newStyle)) {
-        assert(newClass === undefined);
-        var appliedStyle = applyDynamicStyle(newStyle, c);
+    if (isFunc_1.isFunction(newStyle)) {
+        localHelpers_1.assert(newClass === undefined);
+        var appliedStyle = core_1.applyDynamicStyle(newStyle, c);
         newStyle = appliedStyle.style;
         newClass = appliedStyle.className;
     } else {
-        destroyDynamicStyle(c);
+        core_1.destroyDynamicStyle(c);
     }
     updateElementStyle(el, newStyle, c.style);
     c.style = newStyle;
@@ -150,17 +203,17 @@ function updateNodeStyle(el, newStyle, newClass, c, inSvg) {
     }
 }
 
-var allStyles = newHashObj();
+var allStyles = localHelpers_1.newHashObj();
 
-var allAnimations = newHashObj();
+var allAnimations = localHelpers_1.newHashObj();
 
-var allMediaQueries = newHashObj();
+var allMediaQueries = localHelpers_1.newHashObj();
 
-var allSprites = newHashObj();
+var allSprites = localHelpers_1.newHashObj();
 
-var bundledSprites = newHashObj();
+var bundledSprites = localHelpers_1.newHashObj();
 
-var allNameHints = newHashObj();
+var allNameHints = localHelpers_1.newHashObj();
 
 var dynamicSprites = [];
 
@@ -170,7 +223,7 @@ var unusedBundled = new Map();
 
 var bundledDynamicSprites = [];
 
-var imageCache = newHashObj();
+var imageCache = localHelpers_1.newHashObj();
 
 var injectedCss = "";
 
@@ -180,7 +233,7 @@ var htmlStyle = null;
 
 var globalCounter = 0;
 
-var chainedAfterFrame = setAfterFrame(afterFrame);
+var chainedAfterFrame = frameCallbacks_1.setAfterFrame(afterFrame);
 
 const cssSubRuleDelimiter = /\:|\ |\>/;
 
@@ -194,7 +247,7 @@ function buildCssSubRule(parent) {
 function buildCssRule(parent, name) {
     let result = "";
     if (parent) {
-        if (isArray(parent)) {
+        if (isFunc_1.isArray(parent)) {
             for (let i = 0; i < parent.length; i++) {
                 if (i > 0) {
                     result += ",";
@@ -211,7 +264,7 @@ function buildCssRule(parent, name) {
 }
 
 function flattenStyle(cur, curPseudo, style, stylePseudo) {
-    if (isString(style)) {
+    if (isFunc_1.isString(style)) {
         if (unusedBundled.has(style)) {
             unusedBundled.get(style).used = true;
             unusedBundled.delete(style);
@@ -222,17 +275,17 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
             throw new Error("Unknown style " + style);
         }
         flattenStyle(cur, curPseudo, externalStyle.style, externalStyle.pseudo);
-    } else if (isFunction(style)) {
+    } else if (isFunc_1.isFunction(style)) {
         style(cur, curPseudo);
-    } else if (isArray(style)) {
+    } else if (isFunc_1.isArray(style)) {
         for (let i = 0; i < style.length; i++) {
             flattenStyle(cur, curPseudo, style[i], undefined);
         }
-    } else if (isObject(style)) {
+    } else if (isFunc_1.isObject(style)) {
         for (let key in style) {
-            if (!hOP.call(style, key)) continue;
+            if (!localHelpers_1.hOP.call(style, key)) continue;
             let val = style[key];
-            if (isFunction(val)) {
+            if (isFunc_1.isFunction(val)) {
                 val = val(cur, key);
             }
             cur[key] = val;
@@ -242,7 +295,7 @@ function flattenStyle(cur, curPseudo, style, stylePseudo) {
         for (let pseudoKey in stylePseudo) {
             let curPseudoVal = curPseudo[pseudoKey];
             if (curPseudoVal === undefined) {
-                curPseudoVal = newHashObj();
+                curPseudoVal = localHelpers_1.newHashObj();
                 curPseudo[pseudoKey] = curPseudoVal;
             }
             flattenStyle(curPseudoVal, undefined, stylePseudo[pseudoKey], undefined);
@@ -261,7 +314,7 @@ let hasBundledSprites = false;
 let wasSpriteUrlChanged = true;
 
 function afterFrame(root) {
-    var currentDppx = getMedia().dppx;
+    var currentDppx = media_1.getMedia().dppx;
     if (hasBundledSprites && lastDppx != currentDppx) {
         lastDppx = currentDppx;
         let newSpriteUrl = bundlePath;
@@ -296,7 +349,7 @@ function afterFrame(root) {
                     let dynSprite = bundledDynamicSprites[i];
                     if (!dynSprite.used) continue;
                     let colorStr = dynSprite.color;
-                    if (!isString(colorStr)) colorStr = colorStr();
+                    if (!isFunc_1.isString(colorStr)) colorStr = colorStr();
                     if (wasSpriteUrlChanged || colorStr !== dynSprite.lastColor) {
                         dynSprite.lastColor = colorStr;
                         let mulWidth = dynSprite.width * lastSpriteDppx | 0;
@@ -360,7 +413,7 @@ function afterFrame(root) {
             styleStr += "@keyframes " + anim.name + " {";
             for (var key2 in anim.def) {
                 let item = anim.def[key2];
-                let style = newHashObj();
+                let style = localHelpers_1.newHashObj();
                 flattenStyle(style, undefined, item, undefined);
                 shimStyle(style);
                 styleStr += key2 + (key2 == "from" || key2 == "to" ? "" : "%") + " {" + inlineStyleToCssDeclaration(style) + "}\n";
@@ -373,17 +426,17 @@ function afterFrame(root) {
             let name = ss.name;
             let ssPseudo = ss.pseudo;
             let ssStyle = ss.style;
-            if (isFunction(ssStyle) && ssStyle.length === 0) {
+            if (isFunc_1.isFunction(ssStyle) && ssStyle.length === 0) {
                 [ssStyle, ssPseudo] = ssStyle();
             }
-            if (isString(ssStyle) && ssPseudo == undefined) {
+            if (isFunc_1.isString(ssStyle) && ssPseudo == undefined) {
                 ss.realName = ssStyle;
-                assert(name != undefined, "Cannot link existing class to selector");
+                localHelpers_1.assert(name != undefined, "Cannot link existing class to selector");
                 continue;
             }
             ss.realName = name;
-            let style = newHashObj();
-            let flattenPseudo = newHashObj();
+            let style = localHelpers_1.newHashObj();
+            let flattenPseudo = localHelpers_1.newHashObj();
             flattenStyle(undefined, flattenPseudo, undefined, ssPseudo);
             flattenStyle(style, flattenPseudo, ssStyle, undefined);
             shimStyle(style);
@@ -401,7 +454,7 @@ function afterFrame(root) {
             for (var definition of mediaQuery) {
                 for (var key2 in definition) {
                     let item = definition[key2];
-                    let style = newHashObj();
+                    let style = localHelpers_1.newHashObj();
                     flattenStyle(style, undefined, item, undefined);
                     shimStyle(style);
                     styleStr += "." + key2 + " {" + inlineStyleToCssDeclaration(style) + "}\n";
@@ -411,7 +464,7 @@ function afterFrame(root) {
         }
         if (styleStr.length > 0) {
             var styleElement = document.createElement("style");
-            styleElement.appendChild(createTextNode(styleStr));
+            styleElement.appendChild(localHelpers_1.createTextNode(styleStr));
             var head = document.head || document.getElementsByTagName("head")[0];
             if (htmlStyle != null) {
                 head.replaceChild(styleElement, htmlStyle);
@@ -430,7 +483,7 @@ function addDoubleDot(pseudoOrElse) {
     return ":" + pseudoOrElse;
 }
 
-export function style(node, ...styles) {
+function style(node, ...styles) {
     let className = node.className;
     let inlineStyle = node.style;
     let stack = null;
@@ -444,7 +497,7 @@ export function style(node, ...styles) {
             continue;
         }
         let s = ca[i];
-        if (s == undefined || s === true || s === false || s === "" || s === 0) {} else if (isString(s)) {
+        if (s == undefined || s === true || s === false || s === "" || s === 0) {} else if (isFunc_1.isString(s)) {
             if (unusedBundled.has(s)) {
                 unusedBundled.get(s).used = true;
                 unusedBundled.delete(s);
@@ -455,7 +508,7 @@ export function style(node, ...styles) {
                 s = sd.realName;
             }
             if (className == undefined) className = s; else className += " " + s;
-        } else if (isArray(s)) {
+        } else if (isFunc_1.isArray(s)) {
             if (ca.length > i + 1) {
                 if (stack == undefined) stack = [];
                 stack.push(i);
@@ -465,11 +518,11 @@ export function style(node, ...styles) {
             i = 0;
             continue;
         } else {
-            if (inlineStyle == undefined) inlineStyle = newHashObj();
+            if (inlineStyle == undefined) inlineStyle = localHelpers_1.newHashObj();
             for (let key in s) {
-                if (hOP.call(s, key)) {
+                if (localHelpers_1.hOP.call(s, key)) {
                     let val = s[key];
-                    if (isFunction(val)) val = val();
+                    if (isFunc_1.isFunction(val)) val = val();
                     inlineStyle[key] = val;
                 }
             }
@@ -494,7 +547,7 @@ function hyphenateStyle(s) {
     return res;
 }
 
-export function inlineStyleToCssDeclaration(style) {
+function inlineStyleToCssDeclaration(style) {
     var res = "";
     for (var key in style) {
         var v = style[key];
@@ -505,7 +558,7 @@ export function inlineStyleToCssDeclaration(style) {
     return res;
 }
 
-export function styleDef(style, pseudoOrAttr, nameHint) {
+function styleDef(style, pseudoOrAttr, nameHint) {
     return styleDefEx(undefined, style, pseudoOrAttr, nameHint);
 }
 
@@ -524,7 +577,7 @@ function makeName(nameHint) {
     return nameHint;
 }
 
-export function keyframesDef(def, nameHint) {
+function keyframesDef(def, nameHint) {
     nameHint = makeName(nameHint);
     allAnimations[nameHint] = {
         name: nameHint,
@@ -532,14 +585,14 @@ export function keyframesDef(def, nameHint) {
     };
     rebuildStyles = true;
     const res = params => {
-        if (isString(params)) return params + " " + nameHint;
+        if (isFunc_1.isString(params)) return params + " " + nameHint;
         return nameHint;
     };
     res.toString = res;
     return res;
 }
 
-export function mediaQueryDef(def, mediaQueryDefinition) {
+function mediaQueryDef(def, mediaQueryDefinition) {
     let mediaQuery = allMediaQueries[def];
     if (!mediaQuery) {
         mediaQuery = [];
@@ -549,17 +602,17 @@ export function mediaQueryDef(def, mediaQueryDefinition) {
     rebuildStyles = true;
 }
 
-export function namedStyleDefEx(name, parent, style, pseudoOrAttr) {
+function namedStyleDefEx(name, parent, style, pseudoOrAttr) {
     var res = styleDefEx(parent, style, pseudoOrAttr, name);
     if (res != name) throw new Error("named style " + name + " is not unique");
     return res;
 }
 
-export function namedStyleDef(name, style, pseudoOrAttr) {
+function namedStyleDef(name, style, pseudoOrAttr) {
     return namedStyleDefEx(name, undefined, style, pseudoOrAttr);
 }
 
-export function styleDefEx(parent, style, pseudoOrAttr, nameHint) {
+function styleDefEx(parent, style, pseudoOrAttr, nameHint) {
     nameHint = makeName(nameHint);
     allStyles[nameHint] = {
         name: nameHint,
@@ -568,13 +621,13 @@ export function styleDefEx(parent, style, pseudoOrAttr, nameHint) {
         style,
         pseudo: pseudoOrAttr
     };
-    if (isString(style) && pseudoOrAttr == undefined) {
+    if (isFunc_1.isString(style) && pseudoOrAttr == undefined) {
         allStyles[nameHint].realName = style;
     } else rebuildStyles = true;
     return nameHint;
 }
 
-export function selectorStyleDef(selector, style, pseudoOrAttr) {
+function selectorStyleDef(selector, style, pseudoOrAttr) {
     allStyles["b-" + globalCounter++] = {
         name: null,
         realName: null,
@@ -587,14 +640,14 @@ export function selectorStyleDef(selector, style, pseudoOrAttr) {
 
 let allowInvalidateStyles = true;
 
-export function setAllowInvalidateStyles(value) {
+function setAllowInvalidateStyles(value) {
     allowInvalidateStyles = value;
 }
 
-export function invalidateStyles() {
+function invalidateStyles() {
     if (!allowInvalidateStyles) return;
     rebuildStyles = true;
-    invalidate();
+    core_1.invalidate();
 }
 
 function getSafeCssUrl(url) {
@@ -714,17 +767,17 @@ function loadImage(url, onload) {
     image.src = url;
 }
 
-export function setImagesWithCredentials(value) {
+function setImagesWithCredentials(value) {
     imagesWithCredentials = value;
 }
 
-export function sprite(url, color, width, height, left, top) {
-    assert(allStyles[url] === undefined, "Wrong sprite url");
+function sprite(url, color, width, height, left, top) {
+    localHelpers_1.assert(allStyles[url] === undefined, "Wrong sprite url");
     left = left || 0;
     top = top || 0;
     let colorId = color || "";
     let isVarColor = false;
-    if (isFunction(color)) {
+    if (isFunc_1.isFunction(color)) {
         isVarColor = true;
         colorId = color[funcIdName];
         if (colorId == undefined) {
@@ -778,7 +831,7 @@ export function sprite(url, color, width, height, left, top) {
     return styleId;
 }
 
-export function svg(content) {
+function svg(content) {
     var key = content + ":1";
     var styleId = svgSprites.get(key);
     if (styleId !== undefined) return styleId;
@@ -792,37 +845,37 @@ export function svg(content) {
     return styleId;
 }
 
-export function isSvgSprite(id) {
+function isSvgSprite(id) {
     let orig = colorLessSpriteMap.get(id);
     if (orig == undefined) throw new Error(id + " is not colorless sprite");
     return "svg" in orig;
 }
 
-export function svgWithColor(id, colors, size = 1) {
+function svgWithColor(id, colors, size = 1) {
     var original = colorLessSpriteMap.get(id);
     if (DEBUG && (original == undefined || !("svg" in original))) throw new Error(id + " is not colorless svg");
     var key = original.svg + ":" + size;
-    if (isFunction(colors)) {
+    if (isFunc_1.isFunction(colors)) {
         colors = colors();
         key += ":gray:" + colors;
-    } else if (isString(colors)) {
+    } else if (isFunc_1.isString(colors)) {
         key += ":gray:" + colors;
     } else for (let ckey in colors) {
-        if (hOP.call(colors, ckey)) {
+        if (localHelpers_1.hOP.call(colors, ckey)) {
             let val = colors[ckey];
-            if (isFunction(val)) val = val();
+            if (isFunc_1.isFunction(val)) val = val();
             key += ":" + ckey + ":" + val;
         }
     }
     var styleId = svgSprites.get(key);
     if (styleId !== undefined) return styleId;
     var colorsMap = new Map();
-    if (isString(colors)) {
+    if (isFunc_1.isString(colors)) {
         colorsMap.set("gray", colors);
     } else for (let ckey in colors) {
-        if (hOP.call(colors, ckey)) {
+        if (localHelpers_1.hOP.call(colors, ckey)) {
             let val = colors[ckey];
-            if (isFunction(val)) val = val();
+            if (isFunc_1.isFunction(val)) val = val();
             colorsMap.set(ckey, val);
         }
     }
@@ -834,7 +887,7 @@ export function svgWithColor(id, colors, size = 1) {
     return styleId;
 }
 
-export function extractSvgDataUri(styleId) {
+function extractSvgDataUri(styleId) {
     let sd = allStyles[styleId];
     if (sd == undefined) throw new Error("Unknown styleId " + styleId);
     let backgroundImage = sd.style?.backgroundImage;
@@ -857,20 +910,20 @@ var bundlePath = window["bobrilBPath"] || "bundle.png";
 
 var bundlePath2 = window["bobrilBPath2"] || [];
 
-export function setBundlePngPath(path) {
+function setBundlePngPath(path) {
     bundlePath = path;
 }
 
-export function getSpritePaths() {
+function getSpritePaths() {
     return [ bundlePath, bundlePath2 ];
 }
 
-export function setSpritePaths(main, others) {
+function setSpritePaths(main, others) {
     bundlePath = main;
     bundlePath2 = others;
 }
 
-export function spriteb(width, height, left, top) {
+function spriteb(width, height, left, top) {
     var key = ":" + width + ":" + height + ":" + left + ":" + top;
     var spDef = bundledSprites[key];
     if (spDef) return spDef.styleId;
@@ -892,12 +945,12 @@ export function spriteb(width, height, left, top) {
     return styleId;
 }
 
-export function spritebc(color, width, height, left, top) {
+function spritebc(color, width, height, left, top) {
     if (color == undefined) {
         return spriteb(width, height, left, top);
     }
     var colorId;
-    if (isString(color)) {
+    if (isFunc_1.isString(color)) {
         colorId = color;
     } else {
         colorId = color[funcIdName];
@@ -931,7 +984,7 @@ export function spritebc(color, width, height, left, top) {
     return styleId;
 }
 
-export function spriteWithColor(colorLessSprite, color) {
+function spriteWithColor(colorLessSprite, color) {
     const original = colorLessSpriteMap.get(colorLessSprite);
     if (DEBUG && original == undefined) throw new Error(colorLessSprite + " is not colorless sprite");
     if ("svg" in original) {
@@ -945,23 +998,23 @@ export function spriteWithColor(colorLessSprite, color) {
     }
 }
 
-export function injectCss(css) {
+function injectCss(css) {
     injectedCss += css;
     invalidateStyles();
 }
 
-export function styledDiv(children, ...styles) {
+function styledDiv(children, ...styles) {
     return style({
         tag: "div",
         children
     }, styles);
 }
 
-export function setStyleShim(name, action) {
+function setStyleShim(name, action) {
     mapping.set(name, action);
 }
 
 setStyleShim("float", renamer("cssFloat"));
 
-internalSetCssInJsCallbacks(createNodeStyle, updateNodeStyle, style);
+core_1.internalSetCssInJsCallbacks(createNodeStyle, updateNodeStyle, style);
 

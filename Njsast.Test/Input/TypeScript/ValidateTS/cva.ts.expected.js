@@ -1,6 +1,7 @@
-import { IBobrilStyles } from "./core";
+"use strict";
+exports.cva = void 0;
 
-export const cva = config => {
+const cva = config => {
     const {variants, defaultVariants} = config;
     if (variants == undefined) {
         return props => [ config.base, props?.style ];
@@ -41,4 +42,6 @@ export const cva = config => {
         return res;
     };
 };
+
+exports.cva = cva;
 

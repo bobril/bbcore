@@ -1,14 +1,39 @@
-import { ILocaleRules } from "./localeDataStorage";
+"use strict";
+exports.escapeRegExp = escapeRegExp;
 
-import { RuntimeFunctionGenerator } from "./RuntimeFunctionGenerator";
+exports.buildFormatter = buildFormatter;
+
+exports.buildUnformat = buildUnformat;
+
+const RuntimeFunctionGenerator_1 = require("./RuntimeFunctionGenerator");
 
 const escapeRegExpMatcher = /[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g;
 
-export function escapeRegExp(str) {
+function escapeRegExp(str) {
     return str.replace(escapeRegExpMatcher, "\\$&");
 }
 
-export function buildFormatter(rules, format, interpret = false) {
+function hasOnlyDigits(value) {
+    for (let i = 0; i < value.length; i++) {
+        const ch = value.charCodeAt(i);
+        if (ch < 48 || ch > 57) return false;
+    }
+    return true;
+}
+
+function addThousandsSeparator(value, separator) {
+    if (value.length <= 3 || !hasOnlyDigits(value)) return value;
+    let result = "";
+    let firstGroupLength = value.length % 3;
+    if (firstGroupLength === 0) firstGroupLength = 3;
+    for (let i = 0; i < value.length; i++) {
+        if (i > 0 && (i - firstGroupLength) % 3 === 0) result += separator;
+        result += value.charAt(i);
+    }
+    return result;
+}
+
+function buildFormatter(rules, format, interpret = false) {
     if (format == "0b" || format == "0 b") {
         const suffixes = [ "B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB" ];
         const space = format == "0 b" ? " " : "";
@@ -88,7 +113,7 @@ export function buildFormatter(rules, format, interpret = false) {
                 if (locDec != "") locDec = rules.dd + locDec;
             }
             if (hasThousands) {
-                locBefore = locBefore.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1" + rules.td);
+                locBefore = addThousandsSeparator(locBefore, rules.td);
             }
             loc = locBefore + locDec;
             if (negPar) {
@@ -99,7 +124,7 @@ export function buildFormatter(rules, format, interpret = false) {
             return loc;
         };
     }
-    let g = new RuntimeFunctionGenerator();
+    let g = new RuntimeFunctionGenerator_1.RuntimeFunctionGenerator();
     const arg = g.addArg(0);
     const loc = g.addLocal();
     const locBefore = g.addLocal();
@@ -121,7 +146,7 @@ export function buildFormatter(rules, format, interpret = false) {
         g.addBody(`if (${locDec}!='') ${locDec}='${rules.dd}'+${locDec};`);
     }
     if (hasThousands) {
-        g.addBody(`${locBefore}=${locBefore}.replace(/(\\d)(?=(\\d{3})+(?!\\d))/g,'\$1${rules.td}');`);
+        g.addBody(`${locBefore}=${g.addConstant(addThousandsSeparator)}(${locBefore},${g.addConstant(rules.td)});`);
     }
     g.addBody(`${loc}=${locBefore}+${locDec};`);
     if (negPar) {
@@ -133,7 +158,7 @@ export function buildFormatter(rules, format, interpret = false) {
     return g.build();
 }
 
-export function buildUnformat(rules) {
+function buildUnformat(rules) {
     const tdMatcher = new RegExp(escapeRegExp(rules.td), "g");
     const dd = rules.dd;
     return val => {
