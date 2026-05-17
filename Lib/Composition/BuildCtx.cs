@@ -161,6 +161,16 @@ public class BuildCtx
         }
     }
 
+    void ShowBuildinTranspiler()
+    {
+        const string version = "Buildin";
+        if (_lastTsVersion != version)
+        {
+            _logger.Info("Using Build in transpiler");
+            _lastTsVersion = version;
+        }
+    }
+
     enum TypeCheckChange
     {
         None = 0,
@@ -375,12 +385,22 @@ public class BuildCtx
                     project.ExpandEnv();
                 }
 
-                compiler = CompilerPool.GetTs(tsProject.DiskCache, CompilerOptions!);
-                var trueTsVersion = compiler.GetTSVersion();
-                ShowTsVersion(trueTsVersion);
-                project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(trueTsVersion,
-                    JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
-                        TSCompilerOptions.GetSerializerSettings()));
+                if (NjsastTsValidator.BuildinEnabled)
+                {
+                    ShowBuildinTranspiler();
+                    project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(NjsastTsValidator.BuildinTranspilerCacheKey,
+                        JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
+                            TSCompilerOptions.GetSerializerSettings()));
+                }
+                else
+                {
+                    compiler = CompilerPool.GetTs(tsProject.DiskCache, CompilerOptions!);
+                    var trueTsVersion = compiler.GetTSVersion();
+                    ShowTsVersion(trueTsVersion);
+                    project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(trueTsVersion,
+                        JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
+                            TSCompilerOptions.GetSerializerSettings()));
+                }
             }
             finally
             {

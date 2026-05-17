@@ -1166,6 +1166,7 @@ public class BuildModuleCtx : IImportResolver
     void Transpile(TsFileAdditionalInfo info)
     {
         ITSCompiler compiler = null;
+        AstToplevel? builtinToplevel = null;
         try
         {
             if (info.Owner.IsInvalid)
@@ -1185,7 +1186,6 @@ public class BuildModuleCtx : IImportResolver
             if (transpileOptions.moduleResolution == ModuleResolutionKind.Bundler)
                 transpileOptions.moduleResolution = null;
             transpileOptions.sourceMap = true;
-            compiler = BuildCtx.CompilerPool.GetTs(Owner!.DiskCache, transpileOptions);
             //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);
             var newFileName = fileName switch
             {
@@ -1195,10 +1195,49 @@ public class BuildModuleCtx : IImportResolver
                 _ => fileName // Preserve all other extensions
             };
 
-            var njsastTask = NjsastTsValidator.Enabled
-                ? NjsastTsValidator.StartTranspile(newFileName, source)
-                : null;
-            var result = compiler.Transpile(newFileName, source);
+            TranspileResult result;
+            if (NjsastTsValidator.BuildinEnabled)
+            {
+                try
+                {
+                    var builtInResult = NjsastTsValidator.TranspileToCommonJsAst(newFileName, source);
+                    builtinToplevel = builtInResult.Ast;
+                    result = new()
+                    {
+                        JavaScript = builtInResult.JavaScript,
+                        SourceMap = null
+                    };
+                }
+                catch (SyntaxError error)
+                {
+                    info.ReportDiag(true, -16, error.Message, error.Position.Line, error.Position.Column,
+                        error.Position.Line, error.Position.Column);
+                    info.HasError = true;
+                    info.Output = null;
+                    info.MapLink = null;
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    info.ReportDiag(true, -16, ex.Message, 0, 0, 0, 0);
+                    info.HasError = true;
+                    info.Output = null;
+                    info.MapLink = null;
+                    return;
+                }
+            }
+            else
+            {
+                compiler = BuildCtx.CompilerPool.GetTs(Owner!.DiskCache, transpileOptions);
+                var njsastTask = NjsastTsValidator.Enabled
+                    ? NjsastTsValidator.StartTranspile(newFileName, source)
+                    : null;
+                result = compiler.Transpile(newFileName, source);
+                if (NjsastTsValidator.Enabled && (result.Diagnostics == null || result.Diagnostics.All(d => !d.IsError)))
+                    NjsastTsValidator.Validate(Owner!.Owner.FullPath, newFileName, source, result.JavaScript,
+                        njsastTask, Owner.Logger.Info);
+            }
+
             if (result.Diagnostics != null)
             {
                 info.ReportDiag(result.Diagnostics);
@@ -1216,11 +1255,10 @@ public class BuildModuleCtx : IImportResolver
             }
             else
             {
-                if (NjsastTsValidator.Enabled)
-                    NjsastTsValidator.Validate(Owner!.Owner.FullPath, newFileName, source, result.JavaScript,
-                        njsastTask, Owner.Logger.Info);
                 info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
-                info.MapLink = SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath);
+                info.MapLink = result.SourceMap != null
+                    ? SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath)
+                    : SourceMap.Identity(info.Output, fileName);
                 info.MapLink.sources = [fileName];
             }
         }
@@ -1244,9 +1282,13 @@ public class BuildModuleCtx : IImportResolver
                 _currentlyTranspiling = info;
             }
 
-            var parser = new Parser(new(), info.Output);
-            var toplevel = parser.Parse();
-            toplevel.FigureOutScope();
+            var toplevel = builtinToplevel;
+            if (toplevel == null)
+            {
+                var parser = new Parser(new(), info.Output);
+                toplevel = parser.Parse();
+                toplevel.FigureOutScope();
+            }
             var ctx = new ResolvingConstEvalCtx(info.Owner.FullPath, this);
 
             string Resolver(IConstEvalCtx myctx, string text)

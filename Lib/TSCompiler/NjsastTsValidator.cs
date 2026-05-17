@@ -12,8 +12,15 @@ namespace Lib.TSCompiler;
 
 public static class NjsastTsValidator
 {
+    const string BuildinMode = "Buildin";
+    const string ValidateTsMode = "ValidateTS";
+    public const string BuildinTranspilerCacheKey = "NjsastBuildinTranspiler-v1";
+
+    public static bool BuildinEnabled =>
+        string.Equals(Environment.GetEnvironmentVariable("BBMODE"), BuildinMode, StringComparison.Ordinal);
+
     public static bool Enabled =>
-        string.Equals(Environment.GetEnvironmentVariable("BBMODE"), "ValidateTS", StringComparison.Ordinal);
+        string.Equals(Environment.GetEnvironmentVariable("BBMODE"), ValidateTsMode, StringComparison.Ordinal);
 
     public static Task<string>? StartTranspile(string fileName, string source)
     {
@@ -64,6 +71,11 @@ public static class NjsastTsValidator
 
     public static string TranspileToCommonJs(string fileName, string source)
     {
+        return TranspileToCommonJsAst(fileName, source).JavaScript;
+    }
+
+    public static (string JavaScript, AstToplevel Ast) TranspileToCommonJsAst(string fileName, string source)
+    {
         var options = new Options
         {
             SourceType = SourceType.Module,
@@ -83,7 +95,7 @@ public static class NjsastTsValidator
         ast.FigureOutScope();
         ast = (AstToplevel)new EsmToCjsTreeTransformer(includeExportSetters: true).Transform(ast);
         ast.FigureOutScope();
-        return ast.PrintToString(new OutputOptions { Beautify = true });
+        return (ast.PrintToString(new OutputOptions { Beautify = true }), ast);
     }
 
     public static string FormatJavaScript(string javascript, bool removeEsModuleTagging = false)
