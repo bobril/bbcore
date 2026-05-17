@@ -22,6 +22,7 @@ public static class TypeScriptParser
 
     static AstToplevel EraseTypeScriptOnly(AstToplevel ast)
     {
+        ast.FigureOutScope();
         return (AstToplevel)new TypeScriptEraseTransformer().Transform(ast);
     }
 
@@ -31,12 +32,22 @@ public static class TypeScriptParser
         {
             return node is AstTypeScriptOnly
                 ? inList ? Remove : new AstEmptyStatement(node.Source, node.Start, node.End)
+                : node is AstTypeScriptImportEquals importEquals && IsUnusedImportEquals(importEquals)
+                    ? inList ? Remove : new AstEmptyStatement(node.Source, node.Start, node.End)
                 : null;
         }
 
         protected override AstNode? After(AstNode node, bool inList)
         {
             return null;
+        }
+
+        static bool IsUnusedImportEquals(AstTypeScriptImportEquals importEquals)
+        {
+            foreach (var definition in importEquals.Definitions.AsReadOnlySpan())
+                if (definition.Name is AstSymbol { Thedef.References.Count: > 0 })
+                    return false;
+            return true;
         }
     }
 }

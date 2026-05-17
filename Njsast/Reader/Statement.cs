@@ -39,7 +39,8 @@ public sealed partial class Parser
                 break;
             }
 
-            if (IsTypeScript && TsTryParseNamespaceStatements(out var namespaceStatements))
+            if (IsTypeScript && TsTryParseNamespaceStatements(out var namespaceStatements,
+                    local: Options.ParseTypeScriptNamespaceBody))
             {
                 TsAddNamespaceStatements(ref node.Body, namespaceStatements);
                 continue;
@@ -1166,14 +1167,19 @@ public sealed partial class Parser
             var isAbstractMember = false;
             var isDeclareMember = false;
             var hasStaticTsModifier = false;
-            if (TsStaticIsFollowedByClassMemberModifier())
+            while (true)
             {
-                hasTsModifiers = true;
-                hasStaticTsModifier = true;
-                Next();
-            }
-            while (TsIsClassMemberModifier())
-            {
+                if (TsStaticIsFollowedByClassMemberModifier())
+                {
+                    hasTsModifiers = true;
+                    hasStaticTsModifier = true;
+                    Next();
+                    continue;
+                }
+
+                if (!TsIsClassMemberModifier())
+                    break;
+
                 hasTsModifiers = true;
                 if (IsContextual("abstract")) isAbstractMember = true;
                 if (IsContextual("declare")) isDeclareMember = true;
@@ -1186,8 +1192,7 @@ public sealed partial class Parser
                     TsTryAddAbstractMemberDecorator(id, memberDecorators, memberDecoratorStatements,
                         false))
                     continue;
-                while (Type != TokenType.Semi && Type != TokenType.Eof) Next();
-                Eat(TokenType.Semi);
+                TsSkipAbstractClassMemberSignature();
                 continue;
             }
             if (isDeclareMember)
@@ -1299,7 +1304,7 @@ public sealed partial class Parser
                 if (IsTypeScript && key is AstSymbol { Name: "declare" } && TsStaticModifierIsFollowedByGetSetAccessor())
                     continue;
                 TsTrySkipOptionalOrDefiniteBindingMarker();
-                TsTrySkipTypeAnnotation();
+                TsTrySkipClassFieldTypeAnnotation();
                   AstNode? fieldValue = null;
                 if (Eat(TokenType.Eq))
                 {
@@ -1679,6 +1684,13 @@ public sealed partial class Parser
             }
             else
             {
+                if (IsTypeScript && Type == TokenType.Name && Value is { } exportDefaultName &&
+                    TsIsErasedTypeOnlyName(exportDefaultName.ToString()!))
+                {
+                    TsSkipUntilStatementEnd();
+                    _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                    return new AstTypeScriptOnly(SourceFile, nodeStart, _lastTokEnd);
+                }
                 declaration = ParseMaybeAssign(Start);
                 Semicolon();
             }
@@ -1949,6 +1961,11 @@ public sealed partial class Parser
             var exported = EatContextual("as")
                 ? ParseModuleSpecifierName(out exportedIsStringLiteral)
                 : local;
+            if (IsTypeScript && TsIsErasedTypeOnlyName(local.Name))
+            {
+                _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                continue;
+            }
             CheckExport(exports, exported.Name, exported.Start);
             nodes.Add(new AstNameMapping(SourceFile, startLoc, _lastTokEnd, new AstSymbolExportForeign(exported),
                 new AstSymbolExport(local))
@@ -1985,6 +2002,12 @@ public sealed partial class Parser
                 source = (AstString)ParseExpressionAtom(Start);
                 (attributes, attributeKeyword) = ParseImportAttributes();
                 if (hasTypeOnlySpecifier && importName == null && importNames.Count == 0)
+                {
+                    Semicolon();
+                    _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                    return new AstTypeScriptOnly(SourceFile, nodeStart, _lastTokEnd);
+                }
+                if (IsTypeScript && importName == null && importNames.Count == 0)
                 {
                     Semicolon();
                     _tsErasedTypeOnlyModuleSyntaxUsed = true;

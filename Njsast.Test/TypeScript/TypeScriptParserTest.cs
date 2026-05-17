@@ -8,6 +8,7 @@ using Njsast.Ast;
 using Njsast.AstDump;
 using Njsast.Bobril;
 using Njsast.EsmToCjs;
+using Njsast.Jsx;
 using Njsast.Output;
 using Njsast.Reader;
 using Njsast.SourceMap;
@@ -6154,19 +6155,21 @@ public sealed class TypeScriptParserTest
     public void ValidateTSParserShouldProduceExpectedJs(ValidateTSTestData testData)
     {
         var isTsx = testData.SourceName.EndsWith(".tsx");
+        var options = new Options
+        {
+            SourceFile = testData.SourceName,
+            SourceType = SourceType.Module,
+            JsxFactory = "b.createElement",
+            JsxFragmentFactory = "b.Fragment",
+            PreserveConstEnums = true
+        };
         var toplevel = isTsx
-            ? TypeScriptParser.ParseTsx(testData.Input, new Options
-            {
-                SourceFile = testData.SourceName,
-                SourceType = SourceType.Module
-            })
-            : TypeScriptParser.Parse(testData.Input, new Options
-            {
-                SourceFile = testData.SourceName,
-                SourceType = SourceType.Module
-            });
+            ? TypeScriptParser.ParseTsx(testData.Input, options)
+            : TypeScriptParser.Parse(testData.Input, options);
+        if (isTsx)
+            toplevel = (AstToplevel)new JsxToCreateElementTreeTransformer(options).Transform(toplevel);
         toplevel.FigureOutScope();
-        toplevel = (AstToplevel)new EsmToCjsTreeTransformer().Transform(toplevel);
+        toplevel = (AstToplevel)new EsmToCjsTreeTransformer(includeExportSetters: true).Transform(toplevel);
         toplevel.FigureOutScope();
         var builder = new SourceMapBuilder();
         toplevel.PrintToBuilder(builder, new OutputOptions { Beautify = true });

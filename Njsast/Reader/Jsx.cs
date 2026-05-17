@@ -16,7 +16,9 @@ public sealed partial class Parser
             next >= 'a' && next <= 'z' || next >= 'A' && next <= 'Z')
         {
             if (Options.ParseTypeScript && TsLooksLikeGenericOrTypeAssertion() &&
-                !TsLooksLikeJsxOpeningWithTypeArguments())
+                !TsLooksLikeJsxOpeningWithTypeArguments() &&
+                !TsLooksLikeJsxOpeningWithAttributes() &&
+                !TsLooksLikeJsxOpeningWithClosingTag())
                 return false;
             return true;
         }
@@ -35,7 +37,72 @@ public sealed partial class Parser
         if (next >= _input.Length)
             return false;
         var ch = _input[next];
-        return ch == '(' || ch == '=' || ch == '<' || ch == '?' || ch == ',';
+        return ch == '(' || ch == '=' || ch == '?' || ch == ',';
+    }
+
+    bool TsLooksLikeJsxOpeningWithAttributes()
+    {
+        var index = End.Index;
+        while (index < _input.Length)
+        {
+            var ch = _input.Get(index);
+            if (!(ch == '_' || ch == '$' || ch == '-' || ch == ':' || ch == '.' ||
+                  ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9'))
+                break;
+            index++;
+        }
+
+        if (index >= _input.Length || !char.IsWhiteSpace(_input[index]))
+            return false;
+        while (index < _input.Length && char.IsWhiteSpace(_input[index]))
+            index++;
+        if (index >= _input.Length)
+            return false;
+        var next = _input.Get(index);
+        if (next == '>' || next == '/' || next == '{')
+            return true;
+        if (!(next == '_' || next == '$' || next == ':' ||
+              next >= 'a' && next <= 'z' || next >= 'A' && next <= 'Z'))
+            return false;
+        var attrStart = index;
+        index++;
+        while (index < _input.Length)
+        {
+            var ch = _input.Get(index);
+            if (!(ch == '_' || ch == '$' || ch == '-' || ch == ':' ||
+                  ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9'))
+                break;
+            index++;
+        }
+        if (_input.AsSpan(attrStart, index - attrStart).SequenceEqual("extends".AsSpan()))
+            return false;
+        while (index < _input.Length && char.IsWhiteSpace(_input[index]))
+            index++;
+        if (index >= _input.Length)
+            return false;
+        next = _input.Get(index);
+        return next == '=' || next == '>' || next == '/' || next == '{' ||
+               next == '_' || next == '$' || next == ':' ||
+               next >= 'a' && next <= 'z' || next >= 'A' && next <= 'Z';
+    }
+
+    bool TsLooksLikeJsxOpeningWithClosingTag()
+    {
+        var index = End.Index;
+        while (index < _input.Length)
+        {
+            var ch = _input.Get(index);
+            if (!(ch == '_' || ch == '$' || ch == '-' || ch == ':' || ch == '.' ||
+                  ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9'))
+                break;
+            index++;
+        }
+
+        if (index >= _input.Length || _input.Get(index) != '>')
+            return false;
+        var tagName = _input.Substring(End.Index, index - End.Index);
+        return tagName.Length > 0 &&
+               _input.IndexOf("</" + tagName + ">", index + 1, StringComparison.Ordinal) >= 0;
     }
 
     bool TsLooksLikeJsxOpeningWithTypeArguments()
@@ -126,8 +193,9 @@ public sealed partial class Parser
             Expect(TokenType.Ellipsis);
             var expression = ParseExpression(Start);
             var closeEnd = End;
-            Expect(TokenType.BraceR);
-            _pos = Start;
+            if (Type != TokenType.BraceR)
+                Raise(Start, "Unexpected token");
+            _pos = End;
             return new AstJsxSpreadAttribute(SourceFile, start, closeEnd, expression);
         }
 
@@ -170,15 +238,15 @@ public sealed partial class Parser
         if (Type == TokenType.BraceR)
         {
             var end = End;
-            Next();
-            _pos = Start;
+            _pos = end;
             return new AstJsxExpression(SourceFile, start, end, null);
         }
 
         var expression = ParseExpression(Start);
         var closeEnd = End;
-        Expect(TokenType.BraceR);
-        _pos = Start;
+        if (Type != TokenType.BraceR)
+            Raise(Start, "Unexpected token");
+        _pos = End;
         return new AstJsxExpression(SourceFile, start, closeEnd, expression);
     }
 
@@ -228,6 +296,14 @@ public sealed partial class Parser
 
             if (_input.Get(_pos.Index) == '<')
             {
+                if (_input.Get(_pos.Index + 1) == '>')
+                {
+                    _pos = _pos.Increment(2);
+                    var fragmentChildren = ParseJsxChildren(null);
+                    children.Add(new AstJsxFragment(SourceFile, start, CurPosition(), ref fragmentChildren));
+                    continue;
+                }
+
                 _pos = _pos.Increment(1);
                 children.Add(ParseJsxElement(start, false));
                 continue;
@@ -261,9 +337,10 @@ public sealed partial class Parser
         }
 
         var expression = ParseExpression(Start);
+        if (Type != TokenType.BraceR)
+            Raise(Start, "Unexpected token");
         var closeEnd = End;
-        Expect(TokenType.BraceR);
-        _pos = Start;
+        _pos = closeEnd;
         return isSpread
             ? new AstJsxSpreadChild(SourceFile, start, closeEnd, expression)
             : new AstJsxExpression(SourceFile, start, closeEnd, expression);

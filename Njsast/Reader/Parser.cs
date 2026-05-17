@@ -69,6 +69,7 @@ public sealed partial class Parser
     Dictionary<string, Dictionary<string, string>>? _tsConstEnums;
     Dictionary<string, Dictionary<string, string>>? _tsRuntimeEnumConstants;
     HashSet<string>? _tsErasedTypeOnlyNamespaces;
+    HashSet<string>? _tsErasedTypeOnlyNames;
 
     public static AstToplevel Parse(string input, Options? options = null)
     {

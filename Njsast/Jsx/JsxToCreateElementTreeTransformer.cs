@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using Njsast.Ast;
 using Njsast.Output;
 using Njsast.Reader;
@@ -14,6 +15,15 @@ public class JsxToCreateElementTreeTransformer : TreeTransformer
         _options = options ?? new JsxToCreateElementOptions();
     }
 
+    public JsxToCreateElementTreeTransformer(Options options)
+    {
+        _options = new JsxToCreateElementOptions
+        {
+            Factory = options.JsxFactory ?? JsxToCreateElementOptions.DefaultFactory,
+            Fragment = options.JsxFragmentFactory ?? JsxToCreateElementOptions.DefaultFragment
+        };
+    }
+
     protected override AstNode? Before(AstNode node, bool inList)
     {
         return null;
@@ -25,7 +35,7 @@ public class JsxToCreateElementTreeTransformer : TreeTransformer
         {
             AstJsxElement element => LowerElement(element),
             AstJsxFragment fragment => LowerFragment(fragment),
-            AstJsxText text => new AstString(text.Source, text.Start, text.End, text.Raw),
+            AstJsxText text => LowerText(text),
             AstJsxExpression { Expression: null } => Remove,
             AstJsxExpression expression => expression.Expression,
             AstJsxSpreadChild spreadChild => new AstExpansion(spreadChild.Source, spreadChild.Start, spreadChild.End,
@@ -60,6 +70,39 @@ public class JsxToCreateElementTreeTransformer : TreeTransformer
         }
     }
 
+    static AstNode LowerText(AstJsxText text)
+    {
+        var value = NormalizeJsxText(text.Raw);
+        return value.Length == 0 ? Remove : new AstString(text.Source, text.Start, text.End, value);
+    }
+
+    static string NormalizeJsxText(string raw)
+    {
+        if (raw.IndexOfAny(new[] { '\r', '\n' }) < 0)
+            return raw;
+
+        var lines = raw.Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n');
+        var result = new StringBuilder(raw.Length);
+
+        for (var i = 0; i < lines.Length; i++)
+        {
+            var line = lines[i].Replace('\t', ' ');
+            if (i > 0)
+                line = line.TrimStart(' ');
+            if (i < lines.Length - 1)
+                line = line.TrimEnd(' ');
+            if (line.Length == 0)
+                continue;
+            if (result.Length > 0)
+                result.Append(' ');
+            result.Append(line);
+        }
+
+        return result.ToString();
+    }
+
     AstNode LowerProps(AstJsxElement element)
     {
         if (element.Attributes.Count == 0)
@@ -72,6 +115,10 @@ public class JsxToCreateElementTreeTransformer : TreeTransformer
             {
                 case AstJsxAttribute attr:
                     properties.Add(LowerAttribute(attr));
+                    break;
+                case AstJsxSpreadAttribute { Expression: AstObject objectExpression }:
+                    foreach (var property in objectExpression.Properties.AsReadOnlySpan())
+                        properties.Add(property);
                     break;
                 case AstJsxSpreadAttribute spread:
                     properties.Add(new AstExpansion(spread.Source, spread.Start, spread.End, spread.Expression));

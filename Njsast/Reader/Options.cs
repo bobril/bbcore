@@ -44,6 +44,9 @@ public sealed class Options
     public OnCommentAction? OnComment;
     public bool ParseTypeScript;
     public bool ParseJSX;
+    public string? JsxFactory;
+    public string? JsxFragmentFactory;
+    public bool PreserveConstEnums;
     internal bool ParseTypeScriptNamespaceBody;
     internal int TypeScriptUsingEnvIndex;
     internal int TypeScriptUsingErrorIndex;

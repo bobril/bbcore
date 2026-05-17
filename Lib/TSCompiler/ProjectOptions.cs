@@ -217,7 +217,7 @@ public class ProjectOptions
         {
             if (item is IDirectoryCache)
             {
-                if (item.Name == "node_modules")
+                if (item.Name is "node_modules" or ".bbcore")
                     continue;
                 if (IsIgnoredWatcherPath(item.FullPath))
                     continue;

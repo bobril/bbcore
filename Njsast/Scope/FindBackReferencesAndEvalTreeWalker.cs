@@ -232,6 +232,7 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
             case AstObjectGetter _:
             case AstObjectSetter _:
             case AstClass _: // extends
+            case AstExport _:
                 usage |= SymbolUsage.Read;
                 break;
             case AstExpansion _:

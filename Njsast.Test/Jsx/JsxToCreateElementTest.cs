@@ -45,12 +45,55 @@ public class JsxToCreateElementTest
     }
 
     [Fact]
+    public void IgnoresIndentationOnlyText()
+    {
+        AssertLowered(
+            "const view=<div>\n  <span />\n</div>;",
+            "const view=b.createElement(\"div\",null,b.createElement(\"span\",null))",
+            BobrilOptions());
+    }
+
+    [Fact]
+    public void PreservesTextImmediatelyAfterExpressionChild()
+    {
+        AssertLowered(
+            "const view=<b>{p}\u200b\u200b</b>;",
+            "const view=b.createElement(\"b\",null,p,\"\u200b\u200b\")",
+            BobrilOptions());
+    }
+
+    [Fact]
+    public void PreservesParenthesizedTextAroundExpressionChild()
+    {
+        AssertLowered(
+            "const view=<Label>({text})</Label>;",
+            "const view=b.createElement(Label,null,\"(\",text,\")\")",
+            BobrilOptions());
+    }
+
+    [Fact]
     public void UsesReactDefaults()
     {
         AssertLowered(
             "const view=<Component attr={<b />} />;",
             "const view=React.createElement(Component,{attr:React.createElement(\"b\",null)})",
             new JsxToCreateElementOptions());
+    }
+
+    [Fact]
+    public void UsesParserOptionsFactory()
+    {
+        var toplevel = new Parser(new Options { EcmaVersion = 2022, ParseJSX = true }, "const view=<><span /></>;").Parse();
+        var options = new Options
+        {
+            JsxFactory = "b.createElement",
+            JsxFragmentFactory = "b.Fragment"
+        };
+
+        var transformed = (AstToplevel)new JsxToCreateElementTreeTransformer(options).Transform(toplevel);
+
+        Assert.Equal("const view=b.createElement(b.Fragment,null,b.createElement(\"span\",null))",
+            transformed.PrintToString(new OutputOptions { Ecma = 2022 }));
     }
 
     static JsxToCreateElementOptions BobrilOptions()

@@ -39,8 +39,22 @@ public static class NjsastTsValidator
             return;
         }
 
-        var formattedV8 = FormatJavaScript(v8JavaScript, removeEsModuleTagging: true);
-        var formattedNjsast = FormatJavaScript(njsastJavaScript, removeEsModuleTagging: true);
+        string formattedV8;
+        string formattedNjsast;
+        try
+        {
+            formattedV8 = FormatJavaScript(v8JavaScript, removeEsModuleTagging: true);
+            formattedNjsast = FormatJavaScript(njsastJavaScript, removeEsModuleTagging: true);
+        }
+        catch (Exception ex)
+        {
+            log("Njsast ValidateTS normalization failed for " + fileName + ": " + ex.Message);
+            var failedTestCase = WriteRegressionTestCase(projectDir, fileName, source, v8JavaScript,
+                "// Njsast normalization failed: " + ex + "\n\n" + njsastJavaScript);
+            log("Njsast ValidateTS wrote repro " + failedTestCase);
+            return;
+        }
+
         if (formattedV8 == formattedNjsast) return;
 
         var testCase = WriteRegressionTestCase(projectDir, fileName, source, formattedV8,
@@ -50,17 +64,24 @@ public static class NjsastTsValidator
 
     public static string TranspileToCommonJs(string fileName, string source)
     {
+        var options = new Options
+        {
+            SourceType = SourceType.Module,
+            JsxFactory = "b.createElement",
+            JsxFragmentFactory = "b.Fragment",
+            PreserveConstEnums = true
+        };
         var ast = IsTsxLike(fileName)
-            ? TypeScriptParser.ParseTsx(source, new Options { SourceType = SourceType.Module })
-            : TypeScriptParser.Parse(source, new Options { SourceType = SourceType.Module });
+            ? TypeScriptParser.ParseTsx(source, options)
+            : TypeScriptParser.Parse(source, options);
 
         if (IsTsxLike(fileName))
         {
-            ast = (AstToplevel)new JsxToCreateElementTreeTransformer().Transform(ast);
+            ast = (AstToplevel)new JsxToCreateElementTreeTransformer(options).Transform(ast);
         }
 
         ast.FigureOutScope();
-        ast = (AstToplevel)new EsmToCjsTreeTransformer().Transform(ast);
+        ast = (AstToplevel)new EsmToCjsTreeTransformer(includeExportSetters: true).Transform(ast);
         ast.FigureOutScope();
         return ast.PrintToString(new OutputOptions { Beautify = true });
     }

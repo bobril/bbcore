@@ -2,7 +2,11 @@ namespace Njsast.Jsx;
 
 public class JsxToCreateElementOptions
 {
-    public string Factory { get; set; } = "React.createElement";
+    public const string DefaultFactory = "React.createElement";
 
-    public string Fragment { get; set; } = "React.Fragment";
+    public const string DefaultFragment = "React.Fragment";
+
+    public string Factory { get; set; } = DefaultFactory;
+
+    public string Fragment { get; set; } = DefaultFragment;
 }

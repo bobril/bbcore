@@ -25,6 +25,8 @@ namespace Njsast.Reader;
 
 public sealed partial class Parser
 {
+    bool _inConditionalConsequent;
+
     sealed class Property
     {
         public bool Init;
@@ -268,9 +270,21 @@ public sealed partial class Parser
             Next();
             TsSkipType(true);
         }
+        if (IsTypeScript && Type == TokenType.Question && TsCanSkipOptionalOrDefiniteMarker())
+            return expr;
         if (Eat(TokenType.Question))
         {
-            var consequent = ParseMaybeAssign(Start);
+            var wasInConditionalConsequent = _inConditionalConsequent;
+            _inConditionalConsequent = true;
+            AstNode consequent;
+            try
+            {
+                consequent = ParseMaybeAssign(Start);
+            }
+            finally
+            {
+                _inConditionalConsequent = wasInConditionalConsequent;
+            }
             Expect(TokenType.Colon);
             var alternate = ParseMaybeAssign(Start, noIn);
             return new AstConditional(SourceFile, startLocation, _lastTokEnd, expr, consequent, alternate);
@@ -476,23 +490,28 @@ public sealed partial class Parser
             if (IsTypeScript && !noCalls && Type == TokenType.Relational && "<".Equals(Value))
             {
                 var end = TsFindTypeArgumentListEnd(Start.Index);
-                if (end >= 0 && (@base.End.Index == Start.Index || optional || skippedTypeScriptNonNull ||
-                                 @base is AstPropAccess { Optional: true }))
+                if (end >= 0)
                 {
-                    skippedTypeScriptNonNull = false;
                     var next = end + 1;
                     while (next < _input.Length && char.IsWhiteSpace(_input[next])) next++;
+                    if (next < _input.Length && _input[next] == '(')
+                    {
+                        skippedTypeScriptNonNull = false;
+                        TsTrySkipTypeParameters();
+                        Next();
+                        @base = BuildCallExpression(startLoc, @base, maybeAsyncArrow, optional);
+                        continue;
+                    }
+
+                    if (@base.End.Index != Start.Index && !optional && !skippedTypeScriptNonNull &&
+                        @base is not AstPropAccess { Optional: true })
+                        return @base;
+
+                    skippedTypeScriptNonNull = false;
                     if (optional && next < _input.Length && _input[next] == '`')
                     {
                         TsTrySkipTypeParameters();
                         optional = false;
-                        continue;
-                    }
-                    if (next < _input.Length && _input[next] == '(')
-                    {
-                        TsTrySkipTypeParameters();
-                        Next();
-                        @base = BuildCallExpression(startLoc, @base, maybeAsyncArrow, optional);
                         continue;
                     }
                     if (!optional && next + 2 < _input.Length && _input[next] == '?' && _input[next + 1] == '.' &&
@@ -590,6 +609,8 @@ public sealed partial class Parser
         if (IsTypeScript && Type == TokenType.Relational && "<".Equals(Value))
         {
             TsTrySkipTypeParameters();
+            if (Type == TokenType.ParenL)
+                return ParseParenAndDistinguishExpression(true);
             return ParseExpressionSubscripts(Start, refDestructuringErrors);
         }
 
@@ -638,15 +659,16 @@ public sealed partial class Parser
                         TsTrySkipTypeParameters();
                         var parameters = new StructList<AstNode>();
                         ParseFunctionParams(ref parameters);
-                        TsTrySkipTypeAnnotation();
+                        TsTrySkipArrowReturnTypeAnnotation();
                         Expect(TokenType.Arrow);
                         return ParseArrowExpression(startLocation, ref parameters, true);
                     }
 
-                    if (TsShouldProbeSingleParameterArrow())
+                    if ((!IsTypeScript || !_inConditionalConsequent) && TsShouldProbeSingleParameterArrow())
                     {
                         TsTrySkipOptionalOrDefiniteBindingMarker();
-                        TsTrySkipTypeAnnotation();
+                        if (TsTypeAnnotationIsFollowedByArrow())
+                            TsTrySkipTypeAnnotation();
                         if (Eat(TokenType.Arrow))
                         {
                             var arg = new StructList<AstNode>();
@@ -797,7 +819,8 @@ public sealed partial class Parser
                     (parser, item, position, location) => item);
                 TsTrySkipOptionalOrDefiniteBindingMarker();
                 TsTrySkipTypeAnnotation();
-                if (IsTypeScript && canBeArrow && exprList.Count == 0 && item is AstThis)
+                if (IsTypeScript && canBeArrow && exprList.Count == 0 && item is AstThis &&
+                    (Type != TokenType.ParenR || TsParenRIsFollowedByArrow()))
                 {
                     if (Type == TokenType.Eq)
                         Raise(Start, "Unexpected token");
@@ -809,9 +832,12 @@ public sealed partial class Parser
             }
 
             Expect(TokenType.ParenR);
-            TsTrySkipTypeAnnotation();
+            if (canBeArrow &&
+                (!_inConditionalConsequent || !TsTypeAnnotationStartsWithConditionalAlternate()) &&
+                TsTypeAnnotationIsFollowedByArrow())
+                TsTrySkipArrowReturnTypeAnnotation();
 
-            if (canBeArrow && !CanInsertSemicolon() && Eat(TokenType.Arrow))
+            if (canBeArrow && (Type == TokenType.Arrow || !CanInsertSemicolon()) && Eat(TokenType.Arrow))
             {
                 CheckPatternErrors(refDestructuringErrors, false);
                 CheckYieldAwaitInDefaultParams();
@@ -850,6 +876,12 @@ public sealed partial class Parser
         }
 
         return node;
+    }
+
+    bool TsParenRIsFollowedByArrow()
+    {
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        return index + 1 < _input.Length && _input[index] == '=' && _input[index + 1] == '>';
     }
 
     // New's precedence is slightly tricky. It must allow its argument to

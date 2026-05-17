@@ -3806,8 +3806,8 @@ function useCallback(callback, deps) {
 }
 
 class CommonEffectHook extends DepsChangeDetector {
-    constructor(...args) {
-        super(...args);
+    constructor() {
+        super(...arguments);
         this.shouldRun = false;
     }
     update(callback, deps) {
@@ -3948,4 +3948,3 @@ function buildUseIsHook(owner) {
         return hook.Value;
     };
 }
-

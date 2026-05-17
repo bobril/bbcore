@@ -53,6 +53,12 @@ public sealed partial class Parser
         var classNameSym = omitClassExpressionName ? null : new AstSymbolDefClass(name);
         var classBody = new StructList<AstNode>();
         classBody.TransferFrom(ref classDecl.Properties);
+        var classSelfAlias = TsDecoratedClassSelfReferenceAlias(classBody, name.Name);
+        if (classSelfAlias != null)
+        {
+            classBody = TsRewriteDecoratedClassSelfReferences(classBody, name.Name, classSelfAlias);
+            classBody.Insert(0) = TsBuildDecoratedClassSelfReferenceStaticBlock(name, classSelfAlias);
+        }
 
         var classExpr = new AstClassExpression(SourceFile, classDecl.Start, classDecl.End,
             classNameSym, classDecl.Extends, ref classBody);
@@ -72,9 +78,17 @@ public sealed partial class Parser
 
         var decoratorArray = BuildDecoratorArray(decorators, name);
         var decoratorCall = BuildDecorateCall(decoratorArray, nameRef);
-        var assign = new AstAssign(SourceFile, classDecl.Start, classDecl.End, nameRef, decoratorCall, Operator.Assignment);
+        AstNode decoratedValue = decoratorCall;
+        if (classSelfAlias != null)
+            decoratedValue = new AstAssign(SourceFile, classDecl.Start, classDecl.End,
+                new AstSymbolRef(SourceFile, name.Start, name.End, classSelfAlias), decoratorCall,
+                Operator.Assignment);
+        var assign = new AstAssign(SourceFile, classDecl.Start, classDecl.End, nameRef, decoratedValue,
+            Operator.Assignment);
         var assignStmt = new AstSimpleStatement(SourceFile, classDecl.Start, classDecl.End, assign);
 
+        if (classSelfAlias != null)
+            targetBody.Add(TsBuildDecoratedClassSelfReferenceVar(classDecl, classSelfAlias));
         targetBody.Add(varStmt);
         if (_tsPendingClassDecoratorStatements != null)
         {
@@ -83,6 +97,43 @@ public sealed partial class Parser
             _tsPendingClassDecoratorStatements = null;
         }
         targetBody.Add(assignStmt);
+    }
+
+    string? TsDecoratedClassSelfReferenceAlias(StructList<AstNode> classBody, string className)
+    {
+        foreach (var property in classBody.AsReadOnlySpan())
+            if (new ContainsSymbolRefTreeWalker(className).HasReference(property))
+                return className + "_1";
+        return null;
+    }
+
+    StructList<AstNode> TsRewriteDecoratedClassSelfReferences(StructList<AstNode> classBody, string className,
+        string alias)
+    {
+        var rewritten = new StructList<AstNode>();
+        var transformer = new DecoratedClassSelfReferenceTransformer(SourceFile, className, alias);
+        foreach (var property in classBody.AsReadOnlySpan())
+            rewritten.Add(transformer.Transform(property));
+        return rewritten;
+    }
+
+    AstVar TsBuildDecoratedClassSelfReferenceVar(AstDefClass classDecl, string alias)
+    {
+        var definitions = new StructList<AstVarDef>();
+        definitions.Add(new AstVarDef(SourceFile, classDecl.Start, classDecl.End,
+            new AstSymbolVar(SourceFile, classDecl.Start, classDecl.End, alias, null), null));
+        return new AstVar(SourceFile, classDecl.Start, classDecl.End, ref definitions);
+    }
+
+    AstStaticBlock TsBuildDecoratedClassSelfReferenceStaticBlock(AstSymbol className, string alias)
+    {
+        var aliasRef = new AstSymbolRef(SourceFile, className.Start, className.End, alias);
+        var thisRef = new AstThis(SourceFile, className.Start, className.End);
+        var assign = new AstAssign(SourceFile, className.Start, className.End, aliasRef, thisRef,
+            Operator.Assignment);
+        var statements = new StructList<AstNode>();
+        statements.Add(new AstSimpleStatement(SourceFile, className.Start, className.End, assign));
+        return new AstStaticBlock(SourceFile, className.Start, className.End, ref statements);
     }
 
     void TsEmitDecoratedExportedClass(AstToplevel topLevel, List<AstNode> decorators, AstExport export,
@@ -141,6 +192,55 @@ public sealed partial class Parser
 
         var decorateSym = new AstSymbolRef(SourceFile, target.Start, target.End, "__decorate");
         return new AstCall(SourceFile, target.Start, target.End, decorateSym, ref args, false);
+    }
+
+    sealed class ContainsSymbolRefTreeWalker : TreeWalker
+    {
+        readonly string _name;
+        bool _found;
+
+        public ContainsSymbolRefTreeWalker(string name)
+        {
+            _name = name;
+        }
+
+        public bool HasReference(AstNode node)
+        {
+            _found = false;
+            Walk(node);
+            return _found;
+        }
+
+        protected override void Visit(AstNode node)
+        {
+            if (node is AstSymbolRef { Name: var name } && name == _name)
+                _found = true;
+            if (!_found)
+                Descend();
+        }
+    }
+
+    sealed class DecoratedClassSelfReferenceTransformer : TreeTransformer
+    {
+        readonly string? _sourceFile;
+        readonly string _className;
+        readonly string _alias;
+
+        public DecoratedClassSelfReferenceTransformer(string? sourceFile, string className, string alias)
+        {
+            _sourceFile = sourceFile;
+            _className = className;
+            _alias = alias;
+        }
+
+        protected override AstNode? Before(AstNode node, bool inList)
+        {
+            return node is AstSymbolRef symbolRef && symbolRef.Name == _className
+                ? new AstSymbolRef(_sourceFile, symbolRef.Start, symbolRef.End, _alias)
+                : null;
+        }
+
+        protected override AstNode? After(AstNode node, bool inList) => null;
     }
 
     AstSimpleStatement TsBuildMemberDecorateStatement(List<AstNode> decorators, string className, AstNode key,
@@ -299,9 +399,7 @@ public sealed partial class Parser
                 continue;
 
             var newBody = new StructList<AstNode>();
-            var insertIndex = hasSuperClass ? TsConstructorSuperInsertIndex(constructorFunction.Body) : 0u;
-            while (insertIndex < constructorFunction.Body.Count && TsLooksLikeThisAssignment(constructorFunction.Body[insertIndex]))
-                insertIndex++;
+            var insertIndex = TsConstructorFieldInitializerInsertIndex(constructorFunction.Body, hasSuperClass);
             newBody.Reserve((uint)(constructorFunction.Body.Count + initializers.Count));
             for (var j = 0u; j < insertIndex; j++)
                 newBody.Add(constructorFunction.Body[j]);
@@ -317,11 +415,9 @@ public sealed partial class Parser
         var body = new StructList<AstNode>();
         if (hasSuperClass)
         {
-            var argsSymbol = new AstSymbolFunarg("args");
-            parameters.Add(new AstExpansion(SourceFile, start, end, argsSymbol));
             var superArgs = new StructList<AstNode>();
             superArgs.Add(new AstExpansion(SourceFile, start, end,
-                new AstSymbolRef(SourceFile, start, end, "args")));
+                new AstSymbolRef(SourceFile, start, end, "arguments")));
             body.Add(new AstSimpleStatement(SourceFile, start, end,
                 new AstCall(SourceFile, start, end, new AstSuper(SourceFile, start, end), ref superArgs)));
         }
@@ -338,6 +434,28 @@ public sealed partial class Parser
             if (body[i] is AstSimpleStatement { Body: AstCall { Expression: AstSuper } })
                 return i + 1;
         return 0;
+    }
+
+    static uint TsConstructorParameterPropertyInsertIndex(StructList<AstNode> body)
+    {
+        var i = 0u;
+        for (; i < body.Count; i++)
+        {
+            if (body[i] is not AstTypeScriptParameterPropertyAssignment)
+                break;
+        }
+        return i;
+    }
+
+    static uint TsConstructorFieldInitializerInsertIndex(StructList<AstNode> body, bool hasSuperClass)
+    {
+        var i = hasSuperClass ? TsConstructorSuperInsertIndex(body) : 0u;
+        for (; i < body.Count; i++)
+        {
+            if (body[i] is not AstTypeScriptParameterPropertyAssignment)
+                break;
+        }
+        return i;
     }
 
     static bool TsLooksLikeThisAssignment(AstNode node)
