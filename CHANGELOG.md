@@ -8,6 +8,11 @@
   instead of a TypeScript version, and use a dedicated cache key that can be bumped when built-in transpiler fixes need
   cache invalidation.
 
+### Fixed
+
+- Fixed `BbcoreLibrary.RunBuild` with explicit in-memory project directories such as `/tmp`, preventing a null
+  reference when callers build an already prepared TypeScript workspace.
+
 ## 5.9.6
 
 ### Fixed
