@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.11.0
+
 ### Added
 
 - Added `.bbrc` `future: true` option to enable the built-in Njsast transpiler and C# CSS/SCSS processing paths.
