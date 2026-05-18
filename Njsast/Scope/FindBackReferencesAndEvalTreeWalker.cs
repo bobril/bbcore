@@ -23,7 +23,7 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
     {
         if (node is AstLoopControl { Label: { } } loopControl)
         {
-            loopControl.Label.Thedef!.References.Add(loopControl);
+            loopControl.Label.Thedef?.References.Add(loopControl);
             StopDescending();
             return;
         }
@@ -241,6 +241,7 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
                 break;
 
             case AstArrow _:
+            case AstImportExpression _:
                 usage |= SymbolUsage.Read;
                 break;
 

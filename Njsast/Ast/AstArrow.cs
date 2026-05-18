@@ -33,7 +33,8 @@ public class AstArrow : AstLambda
     public override void DoPrint(OutputContext output, bool noKeyword = false)
     {
         var parent = output.Parent();
-        var needsParens = parent is AstBinary or AstUnary || parent is AstCall call && this == call.Expression;
+        var needsParens = parent is AstBinary or AstUnary ||
+                          parent is AstCall call && this == call.Expression;
         if (needsParens)
             output.Print("(");
         if (Async)
@@ -42,7 +43,8 @@ public class AstArrow : AstLambda
             output.Space();
         }
 
-        if (ArgNames.Count == 1 && ArgNames[0] is AstSymbol)
+        var needsArgParens = parent is AstConditional;
+        if (!needsArgParens && ArgNames.Count == 1 && ArgNames[0] is AstSymbol)
         {
             ArgNames[0].Print(output);
         }

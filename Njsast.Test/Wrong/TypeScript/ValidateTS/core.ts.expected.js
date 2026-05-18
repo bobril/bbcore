@@ -1,10 +1,227 @@
-import { CSSInlineStyles } from "./cssTypes";
+"use strict";
+exports.CommonUseIsHook = exports.PureComponent = exports.Component = exports.EventResult = exports.skipRender = exports.asset = exports.useIsFocused = exports.invalidate = exports.now = exports.assign = exports.BobrilCtx = void 0;
 
-import { afterFrameCallback, beforeFrameCallback, beforeRenderCallback, reallyBeforeFrameCallback, RenderPhase } from "./frameCallbacks";
+exports.assertNever = assertNever;
 
-import { isString, isNumber, isObject, isFunction, isArray } from "./isFunc";
+exports.flatten = flatten;
 
-import { assert, createTextNode, hOP, is, newHashObj, noop } from "./localHelpers";
+exports.swallowPromise = swallowPromise;
+
+exports.ieVersion = ieVersion;
+
+exports.registerFocusRoot = registerFocusRoot;
+
+exports.unregisterFocusRoot = unregisterFocusRoot;
+
+exports.internalSetCssInJsCallbacks = internalSetCssInJsCallbacks;
+
+exports.getCurrentCtx = getCurrentCtx;
+
+exports.setCurrentCtx = setCurrentCtx;
+
+exports.setMeasureConfiguration = setMeasureConfiguration;
+
+exports.createNode = createNode;
+
+exports.applyDynamicStyle = applyDynamicStyle;
+
+exports.destroyDynamicStyle = destroyDynamicStyle;
+
+exports.setKeysInClassNames = setKeysInClassNames;
+
+exports.addDisposable = addDisposable;
+
+exports.isDisposable = isDisposable;
+
+exports.vdomPath = vdomPath;
+
+exports.deref = deref;
+
+exports.updateNode = updateNode;
+
+exports.getDomNode = getDomNode;
+
+exports.getLastDomNode = getLastDomNode;
+
+exports.callPostCallbacks = callPostCallbacks;
+
+exports.callEffects = callEffects;
+
+exports.updateChildren = updateChildren;
+
+exports.addEvent = addEvent;
+
+exports.emitEvent = emitEvent;
+
+exports.addEventListeners = addEventListeners;
+
+exports.syncUpdate = syncUpdate;
+
+exports.deferSyncUpdate = deferSyncUpdate;
+
+exports.ignoreShouldChange = ignoreShouldChange;
+
+exports.setInvalidate = setInvalidate;
+
+exports.setDefaultElementRoot = setDefaultElementRoot;
+
+exports.addRoot = addRoot;
+
+exports.removeRoot = removeRoot;
+
+exports.updateRoot = updateRoot;
+
+exports.getRoots = getRoots;
+
+exports.init = init;
+
+exports.setBeforeInit = setBeforeInit;
+
+exports.callWithCurrentCtxWithEvents = callWithCurrentCtxWithEvents;
+
+exports.bubble = bubble;
+
+exports.captureBroadcast = captureBroadcast;
+
+exports.broadcast = broadcast;
+
+exports.runMethodFrom = runMethodFrom;
+
+exports.getCurrentCtxWithEvents = getCurrentCtxWithEvents;
+
+exports.tryRunMethod = tryRunMethod;
+
+exports.runMethod = runMethod;
+
+exports.allocateMethodId = allocateMethodId;
+
+exports.preEnhance = preEnhance;
+
+exports.postEnhance = postEnhance;
+
+exports.preventDefault = preventDefault;
+
+exports.cloneNode = cloneNode;
+
+exports.uptime = uptime;
+
+exports.lastFrameDuration = lastFrameDuration;
+
+exports.frame = frame;
+
+exports.invalidated = invalidated;
+
+exports.select = select;
+
+exports.focused = focused;
+
+exports.focus = focus;
+
+exports.addOnScroll = addOnScroll;
+
+exports.removeOnScroll = removeOnScroll;
+
+exports.isScrollable = isScrollable;
+
+exports.getWindowScroll = getWindowScroll;
+
+exports.nodePagePos = nodePagePos;
+
+exports.convertPointFromClientToNode = convertPointFromClientToNode;
+
+exports.setAsset = setAsset;
+
+exports.withKey = withKey;
+
+exports.withRef = withRef;
+
+exports.extendCfg = extendCfg;
+
+exports.createVirtualComponent = createVirtualComponent;
+
+exports.createOverridingComponent = createOverridingComponent;
+
+exports.createComponent = createComponent;
+
+exports.createDerivedComponent = createDerivedComponent;
+
+exports.prop = prop;
+
+exports.propi = propi;
+
+exports.propa = propa;
+
+exports.propim = propim;
+
+exports.debounceProp = debounceProp;
+
+exports.getValue = getValue;
+
+exports.emitChange = emitChange;
+
+exports.shallowEqual = shallowEqual;
+
+exports.getChildrenOfElement = getChildrenOfElement;
+
+exports.getPropsOfElement = getPropsOfElement;
+
+exports.isValidElement = isValidElement;
+
+exports.isComponent = isComponent;
+
+exports.createElement = createElement;
+
+exports.cloneElement = cloneElement;
+
+exports.Fragment = Fragment;
+
+exports.FragmentWithEvents = FragmentWithEvents;
+
+exports.Portal = Portal;
+
+exports.component = component;
+
+exports._getHooks = _getHooks;
+
+exports._allocHook = _allocHook;
+
+exports.useState = useState;
+
+exports.useReducer = useReducer;
+
+exports.createContext = createContext;
+
+exports.context = context;
+
+exports.useContext = useContext;
+
+exports.useProvideContext = useProvideContext;
+
+exports.useRef = useRef;
+
+exports.useStore = useStore;
+
+exports.bind = bind;
+
+exports.useMemo = useMemo;
+
+exports.useCallback = useCallback;
+
+exports.useEffect = useEffect;
+
+exports.useLayoutEffect = useLayoutEffect;
+
+exports.useEvents = useEvents;
+
+exports.useCaptureEvents = useCaptureEvents;
+
+exports.buildUseIsHook = buildUseIsHook;
+
+const frameCallbacks_1 = require("./frameCallbacks");
+
+const isFunc_1 = require("./isFunc");
+
+const localHelpers_1 = require("./localHelpers");
 
 const hasPostInitDom = 1;
 
@@ -18,7 +235,7 @@ const hasCaptureEvents = 16;
 
 const hasUseEffect = 32;
 
-export class BobrilCtx {
+class BobrilCtx {
     constructor(data, me) {
         this.data = data;
         this.me = me;
@@ -29,15 +246,9 @@ export class BobrilCtx {
         this.$hooks = undefined;
         this.$bobxCtx = undefined;
     }
-    data;
-    me;
-    cfg;
-    refs;
-    disposables;
-    $hookFlags;
-    $hooks;
-    $bobxCtx;
 }
+
+exports.BobrilCtx = BobrilCtx;
 
 const emptyObject = {};
 
@@ -47,14 +258,14 @@ function createEl(name) {
     return document.createElement(name);
 }
 
-export function assertNever(switchValue) {
+function assertNever(switchValue) {
     throw new Error("Switch is not exhaustive for value: " + JSON.stringify(switchValue));
 }
 
-export let assign = Object.assign;
+exports.assign = Object.assign;
 
-export function flatten(a) {
-    if (!isArray(a)) {
+function flatten(a) {
+    if (!isFunc_1.isArray(a)) {
         if (a == undefined || a === false || a === true) return [];
         return [ a ];
     }
@@ -62,7 +273,7 @@ export function flatten(a) {
     let aLen = a.length;
     for (let i = 0; i < aLen; ) {
         let item = a[i];
-        if (isArray(item)) {
+        if (isFunc_1.isArray(item)) {
             a.splice.apply(a, [ i, 1 ].concat(item));
             aLen = a.length;
             continue;
@@ -77,7 +288,7 @@ export function flatten(a) {
     return a;
 }
 
-export function swallowPromise(promise) {
+function swallowPromise(promise) {
     promise.catch(reason => {
         console.error("Uncaught exception from swallowPromise", reason);
     });
@@ -93,7 +304,7 @@ var updateInstance = [];
 
 var effectInstance = [];
 
-export function ieVersion() {
+function ieVersion() {
     return document.documentMode;
 }
 
@@ -119,7 +330,7 @@ function updateElement(n, el, newAttrs, oldAttrs, notFocusable) {
             newAttr = -1;
             wasTabindex = true;
         } else if (attrName === tValue && !inSvg) {
-            if (isFunction(newAttr)) {
+            if (isFunc_1.isFunction(newAttr)) {
                 oldAttrs[bValue] = newAttr;
                 newAttr = newAttr();
             }
@@ -365,13 +576,13 @@ function setRef(ref, value) {
     if (ref === undefined) return;
     if ("current" in ref) {
         ref.current = value;
-    } else if (isFunction(ref)) {
+    } else if (isFunc_1.isFunction(ref)) {
         ref(value);
-    } else if (isArray(ref)) {
+    } else if (isFunc_1.isArray(ref)) {
         const ctx = ref[0];
         let refs = ctx.refs;
         if (refs === undefined) {
-            refs = newHashObj();
+            refs = localHelpers_1.newHashObj();
             ctx.refs = refs;
         }
         refs[ref[1]] = value;
@@ -382,13 +593,13 @@ function unsetRef(ref, value) {
     if (ref === undefined) return;
     if ("current" in ref) {
         if (ref.current == value) ref.current = undefined;
-    } else if (isFunction(ref)) {
+    } else if (isFunc_1.isFunction(ref)) {
         ref(undefined, value);
-    } else if (isArray(ref)) {
+    } else if (isFunc_1.isArray(ref)) {
         const ctx = ref[0];
         let refs = ctx.refs;
         if (refs === undefined) {
-            refs = newHashObj();
+            refs = localHelpers_1.newHashObj();
             ctx.refs = refs;
         }
         if (refs[ref[1]] == value) refs[ref[1]] = undefined;
@@ -399,13 +610,13 @@ let focusRootStack = [];
 
 let focusRootTop = null;
 
-export function registerFocusRoot(ctx) {
+function registerFocusRoot(ctx) {
     focusRootStack.push(ctx.me);
     addDisposable(ctx, unregisterFocusRoot);
     ignoreShouldChange();
 }
 
-export function unregisterFocusRoot(ctx) {
+function unregisterFocusRoot(ctx) {
     let idx = focusRootStack.indexOf(ctx.me);
     if (idx !== -1) {
         focusRootStack.splice(idx, 1);
@@ -419,7 +630,7 @@ let updateNodeStyle;
 
 let style;
 
-export function internalSetCssInJsCallbacks(create, update, s) {
+function internalSetCssInJsCallbacks(create, update, s) {
     createNodeStyle = create;
     updateNodeStyle = update;
     style = s;
@@ -429,11 +640,11 @@ let currentCtx;
 
 let hookId = -1;
 
-export function getCurrentCtx() {
+function getCurrentCtx() {
     return currentCtx;
 }
 
-export function setCurrentCtx(ctx) {
+function setCurrentCtx(ctx) {
     currentCtx = ctx;
 }
 
@@ -441,12 +652,12 @@ let measureFullComponentDuration = false;
 
 let measureComponentMethods = false;
 
-export function setMeasureConfiguration(conf) {
+function setMeasureConfiguration(conf) {
     measureFullComponentDuration = conf.measureFullComponentDuration;
     measureComponentMethods = conf.measureComponentMethods;
 }
 
-export function createNode(n, parentNode, createInto, createBefore) {
+function createNode(n, parentNode, createInto, createBefore) {
     var c = {
         tag: n.tag,
         key: n.key,
@@ -490,7 +701,7 @@ export function createNode(n, parentNode, createInto, createBefore) {
             component.init(ctx, c);
             if (DEBUG && measureComponentMethods) endMeasure(startMark);
         }
-        if (beforeRenderCallback !== noop) beforeRenderCallback(n, RenderPhase.Create);
+        if (frameCallbacks_1.beforeRenderCallback !== localHelpers_1.noop) frameCallbacks_1.beforeRenderCallback(n, frameCallbacks_1.RenderPhase.Create);
         if (component.render) {
             hookId = 0;
             if (DEBUG && measureComponentMethods) {
@@ -517,13 +728,13 @@ export function createNode(n, parentNode, createInto, createBefore) {
     }
     var children = c.children;
     var inSvgForeignObject = false;
-    if (isNumber(children)) {
+    if (isFunc_1.isNumber(children)) {
         children = "" + children;
         c.children = children;
     }
     if (tag === undefined) {
-        if (isString(children)) {
-            el = createTextNode(children);
+        if (isFunc_1.isString(children)) {
+            el = localHelpers_1.createTextNode(children);
             c.element = el;
             domNode2node.set(el, c);
             createInto.insertBefore(el, createBefore);
@@ -630,17 +841,17 @@ export function createNode(n, parentNode, createInto, createBefore) {
     return c;
 }
 
-export function applyDynamicStyle(factory, c) {
+function applyDynamicStyle(factory, c) {
     var ctxStyle = c.ctxStyle;
     var backupCtx = currentCtx;
     if (ctxStyle === undefined) {
         ctxStyle = new BobrilCtx(factory, c);
         c.ctxStyle = ctxStyle;
         currentCtx = ctxStyle;
-        if (beforeRenderCallback !== noop) beforeRenderCallback(ctxStyle, RenderPhase.Create);
+        if (frameCallbacks_1.beforeRenderCallback !== localHelpers_1.noop) frameCallbacks_1.beforeRenderCallback(ctxStyle, frameCallbacks_1.RenderPhase.Create);
     } else {
         currentCtx = ctxStyle;
-        if (beforeRenderCallback !== noop) beforeRenderCallback(ctxStyle, RenderPhase.Update);
+        if (frameCallbacks_1.beforeRenderCallback !== localHelpers_1.noop) frameCallbacks_1.beforeRenderCallback(ctxStyle, frameCallbacks_1.RenderPhase.Update);
     }
     hookId = 0;
     var s = factory();
@@ -649,24 +860,24 @@ export function applyDynamicStyle(factory, c) {
     return style({}, s);
 }
 
-export function destroyDynamicStyle(c) {
+function destroyDynamicStyle(c) {
     let ctxStyle = c.ctxStyle;
     if (ctxStyle !== undefined) {
         currentCtx = ctxStyle;
-        if (beforeRenderCallback !== noop) beforeRenderCallback(ctxStyle, RenderPhase.Destroy);
+        if (frameCallbacks_1.beforeRenderCallback !== localHelpers_1.noop) frameCallbacks_1.beforeRenderCallback(ctxStyle, frameCallbacks_1.RenderPhase.Destroy);
         let disposables = ctxStyle.disposables;
-        if (isArray(disposables)) {
+        if (isFunc_1.isArray(disposables)) {
             for (let i = disposables.length; i-- > 0; ) {
                 let d = disposables[i];
-                if (isFunction(d)) d(ctxStyle); else d.dispose();
+                if (isFunc_1.isFunction(d)) d(ctxStyle); else d.dispose();
             }
         }
         currentCtx = undefined;
     }
 }
 
-export function setKeysInClassNames(value) {
-    if (isFunction(value)) {
+function setKeysInClassNames(value) {
+    if (isFunc_1.isFunction(value)) {
         enrichNode = value;
     } else if (value) {
         enrichNode = ((c, n) => {
@@ -694,12 +905,12 @@ setKeysInClassNames();
 
 function normalizeNode(n) {
     if (n === false || n === true || n === null) return undefined;
-    if (isString(n)) {
+    if (isFunc_1.isString(n)) {
         return {
             children: n
         };
     }
-    if (isNumber(n)) {
+    if (isFunc_1.isNumber(n)) {
         return {
             children: "" + n
         };
@@ -709,7 +920,7 @@ function normalizeNode(n) {
 
 function createChildren(c, createInto, createBefore) {
     var ch = c.children;
-    if (isString(ch)) {
+    if (isFunc_1.isString(ch)) {
         createInto.textContent = ch;
         return;
     }
@@ -724,7 +935,7 @@ function createChildren(c, createInto, createBefore) {
 function destroyNode(c) {
     unsetRef(c.ref, c);
     let ch = c.children;
-    if (isArray(ch)) {
+    if (isFunc_1.isArray(ch)) {
         for (let i = 0, l = ch.length; i < l; i++) {
             destroyNode(ch[i]);
         }
@@ -733,13 +944,13 @@ function destroyNode(c) {
     if (component) {
         let ctx = c.ctx;
         currentCtx = ctx;
-        if (beforeRenderCallback !== noop) beforeRenderCallback(c, RenderPhase.Destroy);
+        if (frameCallbacks_1.beforeRenderCallback !== localHelpers_1.noop) frameCallbacks_1.beforeRenderCallback(c, frameCallbacks_1.RenderPhase.Destroy);
         if (component.destroy) component.destroy(ctx, c, c.element);
         let disposables = ctx.disposables;
-        if (isArray(disposables)) {
+        if (isFunc_1.isArray(disposables)) {
             for (let i = disposables.length; i-- > 0; ) {
                 let d = disposables[i];
-                if (isFunction(d)) d(ctx); else d.dispose();
+                if (isFunc_1.isFunction(d)) d(ctx); else d.dispose();
             }
         }
         currentCtx = undefined;
@@ -750,7 +961,7 @@ function destroyNode(c) {
     }
 }
 
-export function addDisposable(ctx, disposable) {
+function addDisposable(ctx, disposable) {
     let disposables = ctx.disposables;
     if (disposables == undefined) {
         disposables = [];
@@ -759,13 +970,13 @@ export function addDisposable(ctx, disposable) {
     disposables.push(disposable);
 }
 
-export function isDisposable(val) {
-    return isObject(val) && val["dispose"];
+function isDisposable(val) {
+    return isFunc_1.isObject(val) && val["dispose"];
 }
 
 function removeNodeRecursive(c) {
     var el = c.element;
-    if (isArray(el)) {
+    if (isFunc_1.isArray(el)) {
         var pa = el[0].parentNode;
         if (pa) {
             for (let i = 0; i < el.length; i++) {
@@ -777,7 +988,7 @@ function removeNodeRecursive(c) {
         if (p) p.removeChild(el);
     } else {
         var ch = c.children;
-        if (isArray(ch)) {
+        if (isFunc_1.isArray(ch)) {
             for (var i = 0, l = ch.length; i < l; i++) {
                 removeNodeRecursive(ch[i]);
             }
@@ -790,11 +1001,11 @@ function removeNode(c) {
     removeNodeRecursive(c);
 }
 
-var roots = newHashObj();
+var roots = localHelpers_1.newHashObj();
 
 var domNode2node = new WeakMap();
 
-export function vdomPath(n) {
+function vdomPath(n) {
     var res = [];
     while (n != undefined) {
         var bn = domNode2node.get(n);
@@ -811,7 +1022,7 @@ export function vdomPath(n) {
     return res;
 }
 
-export function deref(n) {
+function deref(n) {
     while (n != undefined) {
         var bn = domNode2node.get(n);
         if (bn !== undefined) {
@@ -836,7 +1047,7 @@ function finishUpdateNode(n, c, component) {
 
 function finishUpdateNodeWithoutChange(c, createInto, createBefore) {
     currentCtx = undefined;
-    if (isArray(c.children)) {
+    if (isFunc_1.isArray(c.children)) {
         const backupInSvg = inSvg;
         const backupInNotFocusable = inNotFocusable;
         if (c.tag === "svg") {
@@ -850,7 +1061,7 @@ function finishUpdateNodeWithoutChange(c, createInto, createBefore) {
     pushUpdateEverytimeCallback(c);
 }
 
-export function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) {
+function updateNode(n, c, createInto, createBefore, deepness, inSelectedUpdate) {
     var component = n.component;
     var bigChange = false;
     var ctx = c.ctx;
@@ -882,10 +1093,10 @@ export function updateNode(n, c, createInto, createBefore, deepness, inSelectedU
             }
             ctx.data = n.data || {};
             c.component = component;
-            if (beforeRenderCallback !== noop) beforeRenderCallback(n, inSelectedUpdate ? RenderPhase.LocalUpdate : RenderPhase.Update);
+            if (frameCallbacks_1.beforeRenderCallback !== localHelpers_1.noop) frameCallbacks_1.beforeRenderCallback(n, inSelectedUpdate ? frameCallbacks_1.RenderPhase.LocalUpdate : frameCallbacks_1.RenderPhase.Update);
             if (component.render) {
                 c.orig = n;
-                n = assign({}, n);
+                n = exports.assign({}, n);
                 c.cfg = undefined;
                 if (n.cfg !== undefined) n.cfg = undefined;
                 hookId = 0;
@@ -896,7 +1107,7 @@ export function updateNode(n, c, createInto, createBefore, deepness, inSelectedU
                 if (DEBUG && measureComponentMethods) endMeasure(startMark);
                 hookId = -1;
                 if (n.cfg !== undefined) {
-                    if (c.cfg === undefined) c.cfg = n.cfg; else assign(c.cfg, n.cfg);
+                    if (c.cfg === undefined) c.cfg = n.cfg; else exports.assign(c.cfg, n.cfg);
                 }
             }
             currentCtx = undefined;
@@ -920,7 +1131,7 @@ export function updateNode(n, c, createInto, createBefore, deepness, inSelectedU
     }
     const backupInSvg = inSvg;
     const backupInNotFocusable = inNotFocusable;
-    if (isNumber(newChildren)) {
+    if (isFunc_1.isNumber(newChildren)) {
         newChildren = "" + newChildren;
     }
     if (bigChange || component != undefined && ctx == undefined || component == undefined && ctx != undefined && ctx.me.component !== emptyObject) {} else if (tag === "/") {
@@ -943,7 +1154,7 @@ export function updateNode(n, c, createInto, createBefore, deepness, inSelectedU
             tag = undefined;
         }
         if (tag === undefined) {
-            if (isString(newChildren) && isString(cachedChildren)) {
+            if (isFunc_1.isString(newChildren) && isFunc_1.isString(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
                     var el = c.element;
                     el.textContent = newChildren;
@@ -952,7 +1163,7 @@ export function updateNode(n, c, createInto, createBefore, deepness, inSelectedU
             } else {
                 if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
                 if (deepness <= 0) {
-                    if (isArray(cachedChildren)) selectedUpdate(c.children, createInto, createBefore);
+                    if (isFunc_1.isArray(cachedChildren)) selectedUpdate(c.children, createInto, createBefore);
                 } else {
                     c.children = updateChildren(createInto, newChildren, cachedChildren, c, createBefore, deepness - 1);
                 }
@@ -972,14 +1183,14 @@ export function updateNode(n, c, createInto, createBefore, deepness, inSelectedU
             }
             if (inNotFocusable && focusRootTop === c) inNotFocusable = false;
             var el = c.element;
-            if (isString(newChildren) && !isArray(cachedChildren)) {
+            if (isFunc_1.isString(newChildren) && !isFunc_1.isArray(cachedChildren)) {
                 if (newChildren !== cachedChildren) {
                     el.textContent = newChildren;
                     cachedChildren = newChildren;
                 }
             } else {
                 if (deepness <= 0) {
-                    if (isArray(cachedChildren)) selectedUpdate(c.children, el, null);
+                    if (isFunc_1.isArray(cachedChildren)) selectedUpdate(c.children, el, null);
                 } else {
                     cachedChildren = updateChildren(el, newChildren, cachedChildren, c, null, deepness - 1);
                 }
@@ -998,7 +1209,7 @@ export function updateNode(n, c, createInto, createBefore, deepness, inSelectedU
     }
     var insertBefore = getDomNode(c);
     var parEl = c.element;
-    if (isArray(parEl)) parEl = parEl[0];
+    if (isFunc_1.isArray(parEl)) parEl = parEl[0];
     if (parEl != undefined) parEl = parEl.parentNode;
     if (parEl == undefined) {
         parEl = createInto;
@@ -1011,15 +1222,15 @@ export function updateNode(n, c, createInto, createBefore, deepness, inSelectedU
     return r;
 }
 
-export function getDomNode(c) {
+function getDomNode(c) {
     if (c === undefined || c.tag == "@") return null;
     var el = c.element;
     if (el != null) {
-        if (isArray(el)) return el[0];
+        if (isFunc_1.isArray(el)) return el[0];
         return el;
     }
     var ch = c.children;
-    if (!isArray(ch)) return null;
+    if (!isFunc_1.isArray(ch)) return null;
     for (var i = 0; i < ch.length; i++) {
         el = getDomNode(ch[i]);
         if (el) return el;
@@ -1027,15 +1238,15 @@ export function getDomNode(c) {
     return null;
 }
 
-export function getLastDomNode(c) {
+function getLastDomNode(c) {
     if (c === undefined) return null;
     var el = c.element;
     if (el != null) {
-        if (isArray(el)) return el[el.length - 1];
+        if (isFunc_1.isArray(el)) return el[el.length - 1];
         return el;
     }
     var ch = c.children;
-    if (!isArray(ch)) return null;
+    if (!isFunc_1.isArray(ch)) return null;
     for (var i = ch.length; i-- > 0; ) {
         el = getLastDomNode(ch[i]);
         if (el) return el;
@@ -1053,7 +1264,7 @@ function findNextNode(a, i, len, def) {
     return def;
 }
 
-export function callPostCallbacks() {
+function callPostCallbacks() {
     var count = updateInstance.length;
     for (var i = 0; i < count; i++) {
         var n = updateInstance[i];
@@ -1079,7 +1290,7 @@ export function callPostCallbacks() {
     updateInstance = [];
 }
 
-export function callEffects() {
+function callEffects() {
     var count = effectInstance.length;
     for (var i = 0; i < count; i++) {
         var n = effectInstance[i];
@@ -1127,7 +1338,7 @@ function updateNodeInUpdateChildren(newNode, cachedChildren, cachedIndex, cached
 function reorderInUpdateChildrenRec(c, element, before) {
     var el = c.element;
     if (el != null) {
-        if (isArray(el)) {
+        if (isFunc_1.isArray(el)) {
             for (var i = 0; i < el.length; i++) {
                 element.insertBefore(el[i], before);
             }
@@ -1135,7 +1346,7 @@ function reorderInUpdateChildrenRec(c, element, before) {
         return;
     }
     var ch = c.children;
-    if (!isArray(ch)) return;
+    if (!isFunc_1.isArray(ch)) return;
     for (var i = 0; i < ch.length; i++) {
         reorderInUpdateChildrenRec(ch[i], element, before);
     }
@@ -1162,7 +1373,7 @@ function reorderAndUpdateNodeInUpdateChildren(newNode, cachedChildren, cachedInd
 
 function recursiveFlattenVdomChildren(res, children) {
     if (children == undefined) return;
-    if (isArray(children)) {
+    if (isFunc_1.isArray(children)) {
         for (let i = 0; i < children.length; i++) {
             recursiveFlattenVdomChildren(res, children[i]);
         }
@@ -1187,9 +1398,9 @@ function flattenVdomChildren(res, children) {
     }
 }
 
-export function updateChildren(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
+function updateChildren(element, newChildren, cachedChildren, parentNode, createBefore, deepness) {
     if (cachedChildren == undefined) cachedChildren = [];
-    if (!isArray(cachedChildren)) {
+    if (!isFunc_1.isArray(cachedChildren)) {
         if (element.firstChild) element.removeChild(element.firstChild);
         cachedChildren = [];
     }
@@ -1257,8 +1468,8 @@ function updateChildrenCore(element, newChildren, cachedChildren, parentNode, cr
         }
         return cachedChildren;
     }
-    var cachedKeys = newHashObj();
-    var newKeys = newHashObj();
+    var cachedKeys = localHelpers_1.newHashObj();
+    var newKeys = localHelpers_1.newHashObj();
     var key;
     var node;
     var backupNewIndex = newIndex;
@@ -1268,7 +1479,7 @@ function updateChildrenCore(element, newChildren, cachedChildren, parentNode, cr
         node = cachedChildren[cachedIndex];
         key = node.key;
         if (key != null) {
-            assert(!(key in cachedKeys));
+            localHelpers_1.assert(!(key in cachedKeys));
             cachedKeys[key] = cachedIndex;
         } else deltaKeyless--;
     }
@@ -1277,7 +1488,7 @@ function updateChildrenCore(element, newChildren, cachedChildren, parentNode, cr
         node = newChildren[newIndex];
         key = node.key;
         if (key != null) {
-            assert(!(key in newKeys));
+            localHelpers_1.assert(!(key in newKeys));
             newKeys[key] = newIndex;
         } else deltaKeyless++;
     }
@@ -1394,7 +1605,7 @@ function updateChildrenCore(element, newChildren, cachedChildren, parentNode, cr
             continue;
         }
         if (key != null) {
-            assert(newIndex === cachedIndex);
+            localHelpers_1.assert(newIndex === cachedIndex);
             if (keyLess === 0 && deltaKeyless < 0) {
                 while (true) {
                     removeNode(cachedChildren[cachedIndex]);
@@ -1402,13 +1613,13 @@ function updateChildrenCore(element, newChildren, cachedChildren, parentNode, cr
                     cachedEnd--;
                     cachedLength--;
                     deltaKeyless++;
-                    assert(cachedIndex !== cachedEnd, "there still need to exist key node");
+                    localHelpers_1.assert(cachedIndex !== cachedEnd, "there still need to exist key node");
                     if (cachedChildren[cachedIndex].key != null) break;
                 }
                 continue;
             }
             while (cachedChildren[cachedIndex].key == undefined) cachedIndex++;
-            assert(key === cachedChildren[cachedIndex].key);
+            localHelpers_1.assert(key === cachedChildren[cachedIndex].key);
             cachedChildren.splice(newIndex, 0, cachedChildren[cachedIndex]);
             cachedChildren.splice(cachedIndex + 1, 1);
             reorderInUpdateChildren(cachedChildren, newIndex, cachedLength, createBefore, element);
@@ -1451,9 +1662,9 @@ if (nativeRaf) {
 
 const setTimeout = window.setTimeout;
 
-export const now = Date.now || (() => new Date().getTime());
+exports.now = Date.now || (() => new Date().getTime());
 
-var startTime = now();
+var startTime = exports.now();
 
 var lastTickTime = 0;
 
@@ -1461,10 +1672,10 @@ function requestAnimationFrame(callback) {
     if (hasNativeRaf) {
         nativeRaf(callback);
     } else {
-        var delay = 50 / 3 + lastTickTime - now();
+        var delay = 50 / 3 + lastTickTime - exports.now();
         if (delay < 0) delay = 0;
         setTimeout(() => {
-            lastTickTime = now();
+            lastTickTime = exports.now();
             callback(lastTickTime - startTime);
         }, delay);
     }
@@ -1490,12 +1701,12 @@ var lastFrameDurationMs = 0;
 
 var renderFrameBegin = 0;
 
-var regEvents = newHashObj();
+var regEvents = localHelpers_1.newHashObj();
 
 var registryEvents;
 
-export function addEvent(name, priority, callback) {
-    if (registryEvents == undefined) registryEvents = newHashObj();
+function addEvent(name, priority, callback) {
+    if (registryEvents == undefined) registryEvents = localHelpers_1.newHashObj();
     var list = registryEvents[name] || [];
     list.push({
         priority,
@@ -1504,7 +1715,7 @@ export function addEvent(name, priority, callback) {
     registryEvents[name] = list;
 }
 
-export function emitEvent(name, ev, target, node) {
+function emitEvent(name, ev, target, node) {
     var events = regEvents[name];
     if (events) for (var i = 0; i < events.length; i++) {
         if (events[i](ev, target, node)) return true;
@@ -1574,7 +1785,7 @@ function initEvents() {
     }
 }
 
-export function addEventListeners(el) {
+function addEventListeners(el) {
     var eventNames = Object.keys(regEvents);
     for (var i = 0; i < eventNames.length; i++) {
         addListener(el, eventNames[i], true);
@@ -1593,7 +1804,7 @@ function selectedUpdate(cache, element, createBefore) {
             if (ctx != null && ctx[ctxInvalidated] >= frameCounter) {
                 updateNodeStyle(node.element, ctx.data, undefined, node, inSvg);
             }
-            if (isArray(node.children)) {
+            if (isFunc_1.isArray(node.children)) {
                 var backupInSvg = inSvg;
                 var backupInNotFocusable = inNotFocusable;
                 if (inNotFocusable && focusRootTop === node) inNotFocusable = false;
@@ -1633,12 +1844,12 @@ function isLogicalParent(parent, child, rootIds) {
 
 var deferSyncUpdateRequested = false;
 
-export function syncUpdate() {
+function syncUpdate() {
     deferSyncUpdateRequested = false;
-    internalUpdate(now() - startTime);
+    internalUpdate(exports.now() - startTime);
 }
 
-export function deferSyncUpdate() {
+function deferSyncUpdate() {
     if (listeningEventDeepness > 0) {
         deferSyncUpdateRequested = true;
         return;
@@ -1670,14 +1881,14 @@ let visitedComponentCounter = 0;
 function internalUpdate(time) {
     visitedComponentCounter = 0;
     isInvalidated = false;
-    renderFrameBegin = now();
+    renderFrameBegin = exports.now();
     initEvents();
-    reallyBeforeFrameCallback();
+    frameCallbacks_1.reallyBeforeFrameCallback();
     frameCounter++;
     ignoringShouldChange = nextIgnoreShouldChange;
     nextIgnoreShouldChange = false;
     uptimeMs = time;
-    beforeFrameCallback();
+    frameCallbacks_1.beforeFrameCallback();
     var fullRefresh = false;
     if (fullRecreateRequested) {
         fullRecreateRequested = false;
@@ -1709,7 +1920,7 @@ function internalUpdate(time) {
                     let node = RootComponent(r);
                     updateNode(node, rc, r.e, insertBefore, fullRefresh ? 1e6 : rc.ctx[ctxDeepness]);
                 } else {
-                    if (isArray(r.c)) selectedUpdate(r.c, r.e, insertBefore);
+                    if (isFunc_1.isArray(r.c)) selectedUpdate(r.c, r.e, insertBefore);
                 }
             } else {
                 let node = RootComponent(r);
@@ -1726,9 +1937,9 @@ function internalUpdate(time) {
     deferSyncUpdateRequested = false;
     listeningEventDeepness--;
     let r0 = roots["0"];
-    afterFrameCallback(r0 ? r0.c : null);
+    frameCallbacks_1.afterFrameCallback(r0 ? r0.c : null);
     if (DEBUG && (measureComponentMethods || measureFullComponentDuration)) endMeasure(renderStartMark, "render");
-    lastFrameDurationMs = now() - renderFrameBegin;
+    lastFrameDurationMs = exports.now() - renderFrameBegin;
 }
 
 function endMeasure(startMark, measureName) {
@@ -1742,18 +1953,18 @@ var nextIgnoreShouldChange = false;
 
 var ignoringShouldChange = false;
 
-export function ignoreShouldChange() {
+function ignoreShouldChange() {
     nextIgnoreShouldChange = true;
-    invalidate();
+    exports.invalidate();
 }
 
-export function setInvalidate(inv) {
-    let prev = invalidate;
-    invalidate = inv;
+function setInvalidate(inv) {
+    let prev = exports.invalidate;
+    exports.invalidate = inv;
     return prev;
 }
 
-export var invalidate = (ctx, deepness) => {
+var invalidate = (ctx, deepness) => {
     if (ctx != null) {
         if (deepness == undefined) deepness = 1e6;
         if (ctx[ctxInvalidated] !== frameCounter + 1) {
@@ -1771,15 +1982,17 @@ export var invalidate = (ctx, deepness) => {
     requestAnimationFrame(update);
 };
 
+exports.invalidate = invalidate;
+
 var defaultElementRoot;
 
-export function setDefaultElementRoot(element) {
+function setDefaultElementRoot(element) {
     defaultElementRoot = element;
 }
 
 var lastRootId = 0;
 
-export function addRoot(factory, element, parent) {
+function addRoot(factory, element, parent) {
     lastRootId++;
     var rootId = "" + lastRootId;
     roots[rootId] = {
@@ -1797,17 +2010,17 @@ export function addRoot(factory, element, parent) {
     return rootId;
 }
 
-export function removeRoot(id) {
+function removeRoot(id) {
     var root = roots[id];
     if (!root) return;
     if (root.n) removeNode(root.n);
     delete roots[id];
 }
 
-export function updateRoot(id, factory) {
-    assert(rootIds != null, "updateRoot could be called only from render");
+function updateRoot(id, factory) {
+    localHelpers_1.assert(rootIds != null, "updateRoot could be called only from render");
     var root = roots[id];
-    assert(root != null);
+    localHelpers_1.assert(root != null);
     if (factory != null) root.f = factory;
     let rootNode = root.n;
     if (rootNode == undefined) return;
@@ -1816,13 +2029,13 @@ export function updateRoot(id, factory) {
     ctx[ctxDeepness] = 1e6;
 }
 
-export function getRoots() {
+function getRoots() {
     return roots;
 }
 
 function finishInitialize() {
     initializing = false;
-    invalidate();
+    exports.invalidate();
 }
 
 var beforeInit = finishInitialize;
@@ -1833,8 +2046,8 @@ function firstInvalidate() {
     beforeInit = finishInitialize;
 }
 
-export function init(factory, element) {
-    assert(rootIds == undefined, "init should not be called from render");
+function init(factory, element) {
+    localHelpers_1.assert(rootIds == undefined, "init should not be called from render");
     removeRoot("0");
     isInvalidated = true;
     roots["0"] = {
@@ -1847,7 +2060,7 @@ export function init(factory, element) {
     firstInvalidate();
 }
 
-export function setBeforeInit(callback) {
+function setBeforeInit(callback) {
     let prevBeforeInit = beforeInit;
     beforeInit = (() => {
         callback(prevBeforeInit);
@@ -1857,7 +2070,7 @@ export function setBeforeInit(callback) {
 let afterDomLoaded;
 
 document.addEventListener("DOMContentLoaded", () => {
-    if (isFunction(afterDomLoaded)) {
+    if (isFunc_1.isFunction(afterDomLoaded)) {
         afterDomLoaded();
     }
     afterDomLoaded = true;
@@ -1873,7 +2086,7 @@ setBeforeInit(cb => {
 
 let currentCtxWithEvents;
 
-export function callWithCurrentCtxWithEvents(call, ctx) {
+function callWithCurrentCtxWithEvents(call, ctx) {
     var backup = currentCtxWithEvents;
     currentCtxWithEvents = ctx;
     try {
@@ -1883,12 +2096,12 @@ export function callWithCurrentCtxWithEvents(call, ctx) {
     }
 }
 
-export function bubble(node, name, param) {
+function bubble(node, name, param) {
     if (param == undefined) {
         param = {
             target: node
         };
-    } else if (isObject(param) && param.target == undefined) {
+    } else if (isFunc_1.isObject(param) && param.target == undefined) {
         param.target = node;
     }
     let res = captureBroadcast(name, param);
@@ -2046,7 +2259,7 @@ function broadcastEventToNode(node, name, param) {
         currentCtxWithEvents = prevCtx;
     }
     var ch = node.children;
-    if (isArray(ch)) {
+    if (isFunc_1.isArray(ch)) {
         for (var i = 0; i < ch.length; i++) {
             var res2 = broadcastEventToNode(ch[i], name, param);
             if (res2 != undefined) return res2;
@@ -2118,7 +2331,7 @@ function broadcastCapturedEventToNode(node, name, param) {
         }
     }
     var ch = node.children;
-    if (isArray(ch)) {
+    if (isFunc_1.isArray(ch)) {
         for (var i = 0, l = ch.length; i < l; i++) {
             var res2 = broadcastCapturedEventToNode(ch[i], name, param);
             if (res2 != undefined) return res2;
@@ -2127,7 +2340,7 @@ function broadcastCapturedEventToNode(node, name, param) {
     return res;
 }
 
-export function captureBroadcast(name, param) {
+function captureBroadcast(name, param) {
     var k = Object.keys(roots);
     for (var i = 0; i < k.length; i++) {
         var ch = roots[k[i]].n;
@@ -2139,7 +2352,7 @@ export function captureBroadcast(name, param) {
     return undefined;
 }
 
-export function broadcast(name, param) {
+function broadcast(name, param) {
     var res = captureBroadcast(name, param);
     if (res != null) return res;
     var k = Object.keys(roots);
@@ -2153,14 +2366,14 @@ export function broadcast(name, param) {
     return undefined;
 }
 
-export function runMethodFrom(ctx, methodId, param) {
+function runMethodFrom(ctx, methodId, param) {
     var done = false;
     if (DEBUG && ctx == undefined) throw new Error("runMethodFrom ctx is undefined");
     var currentRoot = ctx.me;
     var previousRoot;
     while (currentRoot != undefined) {
         var children = currentRoot.children;
-        if (isArray(children)) loopChildNodes(children);
+        if (isFunc_1.isArray(children)) loopChildNodes(children);
         if (done) return true;
         var comp = currentRoot.component;
         if (comp && comp.runMethod) {
@@ -2173,7 +2386,7 @@ export function runMethodFrom(ctx, methodId, param) {
         for (var i = children.length - 1; i >= 0; i--) {
             var child = children[i];
             if (child === previousRoot) continue;
-            isArray(child.children) && loopChildNodes(child.children);
+            isFunc_1.isArray(child.children) && loopChildNodes(child.children);
             if (done) return;
             var comp = child.component;
             if (comp && comp.runMethod) {
@@ -2187,22 +2400,22 @@ export function runMethodFrom(ctx, methodId, param) {
     return done;
 }
 
-export function getCurrentCtxWithEvents() {
+function getCurrentCtxWithEvents() {
     if (currentCtxWithEvents != undefined) return currentCtxWithEvents;
     return currentCtx;
 }
 
-export function tryRunMethod(methodId, param) {
+function tryRunMethod(methodId, param) {
     return runMethodFrom(getCurrentCtxWithEvents(), methodId, param);
 }
 
-export function runMethod(methodId, param) {
+function runMethod(methodId, param) {
     if (!runMethodFrom(getCurrentCtxWithEvents(), methodId, param)) throw Error("runMethod didn't found " + methodId);
 }
 
 let lastMethodId = 0;
 
-export function allocateMethodId() {
+function allocateMethodId() {
     return lastMethodId++;
 }
 
@@ -2223,7 +2436,7 @@ function mergeComponents(c1, c2) {
             var origM = c1[i];
             if (i === "id") {
                 res[i] = (origM != null ? origM : "") + "/" + m;
-            } else if (isFunction(m) && origM != null && isFunction(origM)) {
+            } else if (isFunc_1.isFunction(m) && origM != null && isFunc_1.isFunction(origM)) {
                 res[i] = merge(origM, m);
             } else {
                 res[i] = m;
@@ -2250,7 +2463,7 @@ function overrideComponents(originalComponent, overridingComponent) {
     return res;
 }
 
-export function preEnhance(node, methods) {
+function preEnhance(node, methods) {
     var comp = node.component;
     if (!comp) {
         node.component = methods;
@@ -2260,7 +2473,7 @@ export function preEnhance(node, methods) {
     return node;
 }
 
-export function postEnhance(node, methods) {
+function postEnhance(node, methods) {
     var comp = node.component;
     if (!comp) {
         node.component = methods;
@@ -2270,7 +2483,7 @@ export function postEnhance(node, methods) {
     return node;
 }
 
-export function preventDefault(event) {
+function preventDefault(event) {
     event.preventDefault();
     event.stopPropagation();
 }
@@ -2279,48 +2492,48 @@ function cloneNodeArray(a) {
     a = a.slice(0);
     for (var i = 0; i < a.length; i++) {
         var n = a[i];
-        if (isArray(n)) {
+        if (isFunc_1.isArray(n)) {
             a[i] = cloneNodeArray(n);
-        } else if (isObject(n)) {
+        } else if (isFunc_1.isObject(n)) {
             a[i] = cloneNode(n);
         }
     }
     return a;
 }
 
-export function cloneNode(node) {
-    var r = assign({}, node);
+function cloneNode(node) {
+    var r = exports.assign({}, node);
     if (r.attrs) {
-        r.attrs = assign({}, r.attrs);
+        r.attrs = exports.assign({}, r.attrs);
     }
     var style = r.style;
-    if (isObject(style) && !isFunction(style)) {
-        r.style = assign({}, style);
+    if (isFunc_1.isObject(style) && !isFunc_1.isFunction(style)) {
+        r.style = exports.assign({}, style);
     }
     var ch = r.children;
     if (ch) {
-        if (isArray(ch)) {
+        if (isFunc_1.isArray(ch)) {
             r.children = cloneNodeArray(ch);
-        } else if (isObject(ch)) {
+        } else if (isFunc_1.isObject(ch)) {
             r.children = cloneNode(ch);
         }
     }
     return r;
 }
 
-export function uptime() {
+function uptime() {
     return uptimeMs;
 }
 
-export function lastFrameDuration() {
+function lastFrameDuration() {
     return lastFrameDurationMs;
 }
 
-export function frame() {
+function frame() {
     return frameCounter;
 }
 
-export function invalidated() {
+function invalidated() {
     return isInvalidated;
 }
 
@@ -2445,9 +2658,9 @@ function emitOnInput(node, value) {
     var component = node.component;
     currentCtxWithEvents = ctx;
     const hasProp = node.attrs && node.attrs[bValue];
-    if (isFunction(hasProp)) hasProp(value);
+    if (isFunc_1.isFunction(hasProp)) hasProp(value);
     const hasOnChange = component && component.onChange;
-    if (isFunction(hasOnChange)) hasOnChange(ctx, value);
+    if (isFunc_1.isFunction(hasOnChange)) hasOnChange(ctx, value);
     currentCtxWithEvents = prevCtx;
     bubble(node, "onInput", {
         target: node,
@@ -2469,7 +2682,7 @@ function emitOnSelectionChange(node, start, end) {
     }
 }
 
-export function select(node, start, end = start) {
+function select(node, start, end = start) {
     node.element.setSelectionRange(Math.min(start, end), Math.max(start, end), start > end ? "backward" : "forward");
     emitOnSelectionChange(node, start, end);
 }
@@ -2498,7 +2711,7 @@ let focusChangeRunning = false;
 
 const focusedHookSet = new Set();
 
-export let useIsFocused = buildUseIsHook(focusedHookSet);
+exports.useIsFocused = buildUseIsHook(focusedHookSet);
 
 function emitOnFocusChange(inFocus) {
     if (focusChangeRunning) return false;
@@ -2552,13 +2765,13 @@ addEvent("^focus", 50, () => emitOnFocusChange(true));
 
 addEvent("^blur", 50, emitOnFocusChangeDelayed);
 
-export function focused() {
+function focused() {
     return currentFocusedNode;
 }
 
-export function focus(node, backwards) {
+function focus(node, backwards) {
     if (node == undefined) return false;
-    if (isString(node)) return false;
+    if (isFunc_1.isString(node)) return false;
     var style = node.style;
     if (style != undefined) {
         if (style.visibility === "hidden") return false;
@@ -2575,7 +2788,7 @@ export function focus(node, backwards) {
         }
     }
     var children = node.children;
-    if (isArray(children)) {
+    if (isFunc_1.isArray(children)) {
         for (var i = 0; i < children.length; i++) {
             if (focus(children[backwards ? children.length - 1 - i : i], backwards)) return true;
         }
@@ -2599,11 +2812,11 @@ function emitOnScroll(_ev, _target, node) {
 
 addEvent("^scroll", 10, emitOnScroll);
 
-export function addOnScroll(callback) {
+function addOnScroll(callback) {
     callbacks.push(callback);
 }
 
-export function removeOnScroll(callback) {
+function removeOnScroll(callback) {
     for (var i = 0; i < callbacks.length; i++) {
         if (callbacks[i] === callback) {
             callbacks.splice(i, 1);
@@ -2616,7 +2829,7 @@ const isHtml = /^(?:html)$/i;
 
 const isScrollOrAuto = /^(?:auto)$|^(?:scroll)$/i;
 
-export function isScrollable(el) {
+function isScrollable(el) {
     var styles = window.getComputedStyle(el);
     var res = [ true, true ];
     if (!isHtml.test(el.nodeName)) {
@@ -2628,13 +2841,13 @@ export function isScrollable(el) {
     return res;
 }
 
-export function getWindowScroll() {
+function getWindowScroll() {
     var left = window.pageXOffset;
     var top = window.pageYOffset;
     return [ left, top ];
 }
 
-export function nodePagePos(node) {
+function nodePagePos(node) {
     let rect = getDomNode(node).getBoundingClientRect();
     let res = getWindowScroll();
     res[0] += rect.left;
@@ -2643,7 +2856,6 @@ export function nodePagePos(node) {
 }
 
 class CSSMatrix {
-    data;
     constructor(data) {
         this.data = data;
     }
@@ -2736,22 +2948,22 @@ function getTransformationMatrix(element) {
     return transformationMatrix;
 }
 
-export function convertPointFromClientToNode(node, pageX, pageY) {
+function convertPointFromClientToNode(node, pageX, pageY) {
     let element = getDomNode(node);
     if (element == undefined) element = document.body;
     return getTransformationMatrix(element).inverse().transformPoint(pageX, pageY);
 }
 
-export let asset = window["bobrilBAsset"] || function(path) {
+exports.asset = window["bobrilBAsset"] || function(path) {
     return path;
 };
 
-export function setAsset(fn) {
-    asset = fn;
+function setAsset(fn) {
+    exports.asset = fn;
 }
 
-export function withKey(content, key) {
-    if (isObject(content) && !isArray(content)) {
+function withKey(content, key) {
+    if (isFunc_1.isObject(content) && !isFunc_1.isArray(content)) {
         content.key = key;
         return content;
     }
@@ -2761,12 +2973,12 @@ export function withKey(content, key) {
     };
 }
 
-export function withRef(node, ctx, name) {
+function withRef(node, ctx, name) {
     node.ref = [ ctx, name ];
     return node;
 }
 
-export function extendCfg(ctx, propertyName, value) {
+function extendCfg(ctx, propertyName, value) {
     var c = ctx.me.cfg;
     if (c !== undefined) {
         c[propertyName] = value;
@@ -2777,7 +2989,7 @@ export function extendCfg(ctx, propertyName, value) {
     }
 }
 
-export function createVirtualComponent(component) {
+function createVirtualComponent(component) {
     return (data, children) => {
         if (children !== undefined) {
             if (data == undefined) data = {};
@@ -2790,13 +3002,13 @@ export function createVirtualComponent(component) {
     };
 }
 
-export function createOverridingComponent(original, after) {
+function createOverridingComponent(original, after) {
     const originalComponent = original().component;
     const overriding = overrideComponents(originalComponent, after);
     return createVirtualComponent(overriding);
 }
 
-export function createComponent(component) {
+function createComponent(component) {
     const originalRender = component.render;
     if (originalRender) {
         component.render = function(ctx, me, oldMe) {
@@ -2811,13 +3023,13 @@ export function createComponent(component) {
     return createVirtualComponent(component);
 }
 
-export function createDerivedComponent(original, after) {
+function createDerivedComponent(original, after) {
     const originalComponent = original().component;
     const merged = mergeComponents(originalComponent, after);
     return createVirtualComponent(merged);
 }
 
-export function prop(value, onChange) {
+function prop(value, onChange) {
     return val => {
         if (val !== undefined) {
             if (onChange !== undefined) onChange(val, value);
@@ -2827,20 +3039,20 @@ export function prop(value, onChange) {
     };
 }
 
-export function propi(value) {
+function propi(value) {
     return val => {
         if (val !== undefined) {
             value = val;
-            invalidate();
+            exports.invalidate();
         }
         return value;
     };
 }
 
-export function propa(prop) {
+function propa(prop) {
     return val => {
         if (val !== undefined) {
-            if (typeof val === "object" && isFunction(val.then)) {
+            if (typeof val === "object" && isFunc_1.isFunction(val.then)) {
                 val.then(v => {
                     prop(v);
                 }, err => {
@@ -2854,19 +3066,19 @@ export function propa(prop) {
     };
 }
 
-export function propim(value, ctx, onChange) {
+function propim(value, ctx, onChange) {
     return val => {
-        if (val !== undefined && !is(val, value)) {
+        if (val !== undefined && !localHelpers_1.is(val, value)) {
             const oldVal = val;
             value = val;
             if (onChange !== undefined) onChange(val, oldVal);
-            invalidate(ctx);
+            exports.invalidate(ctx);
         }
         return value;
     };
 }
 
-export function debounceProp(from, delay = 500) {
+function debounceProp(from, delay = 500) {
     let current = from();
     let lastSet = current;
     let timer;
@@ -2902,15 +3114,15 @@ export function debounceProp(from, delay = 500) {
     };
 }
 
-export function getValue(value) {
-    if (isFunction(value)) {
+function getValue(value) {
+    if (isFunc_1.isFunction(value)) {
         return value();
     }
     return value;
 }
 
-export function emitChange(data, value) {
-    if (isFunction(data.value)) {
+function emitChange(data, value) {
+    if (isFunc_1.isFunction(data.value)) {
         data.value(value);
     }
     if (data.onChange !== undefined) {
@@ -2918,11 +3130,11 @@ export function emitChange(data, value) {
     }
 }
 
-export function shallowEqual(a, b) {
-    if (is(a, b)) {
+function shallowEqual(a, b) {
+    if (localHelpers_1.is(a, b)) {
         return true;
     }
-    if (!isObject(a) || !isObject(b)) {
+    if (!isFunc_1.isObject(a) || !isFunc_1.isObject(b)) {
         return false;
     }
     const kA = Object.keys(a);
@@ -2931,7 +3143,7 @@ export function shallowEqual(a, b) {
         return false;
     }
     for (let i = 0; i < kA.length; i++) {
-        if (!hOP.call(b, kA[i]) || !is(a[kA[i]], b[kA[i]])) {
+        if (!localHelpers_1.hOP.call(b, kA[i]) || !localHelpers_1.is(a[kA[i]], b[kA[i]])) {
             return false;
         }
     }
@@ -2950,12 +3162,12 @@ function getStringPropertyDescriptors(obj) {
     return props;
 }
 
-export function getChildrenOfElement(node) {
+function getChildrenOfElement(node) {
     if (node.children != undefined) return node.children;
     return node.data?.children;
 }
 
-export function getPropsOfElement(node) {
+function getPropsOfElement(node) {
     if (node.tag != undefined) {
         let res = Object.assign({}, node.attrs);
         if (node.style != undefined) res["style"] = node.style;
@@ -2975,14 +3187,14 @@ export function getPropsOfElement(node) {
     return {};
 }
 
-export function isValidElement(value) {
-    if (!isObject(value)) return false;
-    return isString(value["tag"]) || isObject(value["component"]);
+function isValidElement(value) {
+    if (!isFunc_1.isObject(value)) return false;
+    return isFunc_1.isString(value["tag"]) || isFunc_1.isObject(value["component"]);
 }
 
-export function isComponent(what, component) {
-    if (!isObject(what)) return false;
-    if (isString(component)) {
+function isComponent(what, component) {
+    if (!isFunc_1.isObject(what)) return false;
+    if (isFunc_1.isString(component)) {
         return what.tag === component;
     }
     return what.component?.src === component;
@@ -2990,7 +3202,7 @@ export function isComponent(what, component) {
 
 const jsxSimpleProps = new Set("key className component data children".split(" "));
 
-export function createElement(name, props) {
+function createElement(name, props) {
     let children;
     const argumentsCount = arguments.length - 2;
     if (argumentsCount === 0) {} else if (argumentsCount === 1) {
@@ -3001,7 +3213,7 @@ export function createElement(name, props) {
             children[i] = arguments[i + 2];
         }
     }
-    if (isString(name)) {
+    if (isFunc_1.isString(name)) {
         var res = argumentsCount === 0 ? {
             tag: name
         } : {
@@ -3014,31 +3226,31 @@ export function createElement(name, props) {
         var attrs;
         var component;
         for (var n in props) {
-            if (!hOP.call(props, n)) continue;
+            if (!localHelpers_1.hOP.call(props, n)) continue;
             var propValue = props[n];
             if (jsxSimpleProps.has(n)) {
                 res[n] = propValue;
             } else if (n === "style") {
-                if (isFunction(propValue)) {
+                if (isFunc_1.isFunction(propValue)) {
                     res[n] = propValue;
                 } else {
                     style(res, propValue);
                 }
             } else if (n === "ref") {
-                if (isString(propValue)) {
-                    assert(getCurrentCtx() != undefined);
+                if (isFunc_1.isString(propValue)) {
+                    localHelpers_1.assert(getCurrentCtx() != undefined);
                     res.ref = [ getCurrentCtx(), propValue ];
                 } else res.ref = propValue;
-            } else if (n.startsWith("on") && isFunction(propValue)) {
+            } else if (n.startsWith("on") && isFunc_1.isFunction(propValue)) {
                 if (component == undefined) {
-                    component = newHashObj();
+                    component = localHelpers_1.newHashObj();
                     res.component = component;
                 }
                 component[n] = propValue.call.bind(propValue);
                 continue;
             } else {
                 if (attrs == undefined) {
-                    attrs = newHashObj();
+                    attrs = localHelpers_1.newHashObj();
                     res.attrs = attrs;
                 }
                 attrs[n] = propValue;
@@ -3079,7 +3291,7 @@ export function createElement(name, props) {
     }
 }
 
-export function cloneElement(element, props) {
+function cloneElement(element, props) {
     if (element == undefined) return element;
     let res = Object.assign({}, element);
     if (element.tag != undefined) {
@@ -3094,34 +3306,34 @@ export function cloneElement(element, props) {
             res.component = component;
         }
         for (var n in props) {
-            if (!hOP.call(props, n)) continue;
+            if (!localHelpers_1.hOP.call(props, n)) continue;
             var propValue = props[n];
             if (jsxSimpleProps.has(n)) {
                 res[n] = propValue;
             } else if (n === "style") {
-                if (isFunction(propValue)) {
+                if (isFunc_1.isFunction(propValue)) {
                     res[n] = propValue;
                 } else {
-                    if (isObject(res.style)) {
+                    if (isFunc_1.isObject(res.style)) {
                         res.style = Object.assign({}, res.style);
                     }
                     style(res, propValue);
                 }
             } else if (n === "ref") {
-                if (isString(propValue)) {
-                    assert(getCurrentCtx() != undefined);
+                if (isFunc_1.isString(propValue)) {
+                    localHelpers_1.assert(getCurrentCtx() != undefined);
                     res.ref = [ getCurrentCtx(), propValue ];
                 } else res.ref = propValue;
-            } else if (n.startsWith("on") && isFunction(propValue)) {
+            } else if (n.startsWith("on") && isFunc_1.isFunction(propValue)) {
                 if (component == undefined) {
-                    component = newHashObj();
+                    component = localHelpers_1.newHashObj();
                     res.component = component;
                 }
                 component[n] = propValue.call.bind(propValue);
                 continue;
             } else {
                 if (attrs == undefined) {
-                    attrs = newHashObj();
+                    attrs = localHelpers_1.newHashObj();
                     res.attrs = attrs;
                 }
                 attrs[n] = propValue;
@@ -3143,26 +3355,26 @@ export function cloneElement(element, props) {
     return res;
 }
 
-export const skipRender = {
+exports.skipRender = {
     tag: "-"
 };
 
-export function Fragment(data) {
+function Fragment(data) {
     return {
         children: data.children
     };
 }
 
-export function FragmentWithEvents(data) {
+function FragmentWithEvents(data) {
     var res = {
         children: data.children
     };
     var component;
     for (var n in data) {
-        if (!hOP.call(data, n)) continue;
+        if (!localHelpers_1.hOP.call(data, n)) continue;
         var propValue = data[n];
-        if (n.startsWith("on") && isFunction(propValue)) {
-            component ??= newHashObj();
+        if (n.startsWith("on") && isFunc_1.isFunction(propValue)) {
+            component ??= localHelpers_1.newHashObj();
             res.component = component;
             component[n] = propValue.call.bind(propValue);
         }
@@ -3170,7 +3382,7 @@ export function FragmentWithEvents(data) {
     return res;
 }
 
-export function Portal(data) {
+function Portal(data) {
     return {
         tag: "@",
         data: data.element ?? defaultElementRoot ?? document.body,
@@ -3178,31 +3390,35 @@ export function Portal(data) {
     };
 }
 
-export var EventResult;
+var EventResult;
 
 (function(EventResult) {
     EventResult[EventResult["NotHandled"] = 0] = "NotHandled";
     EventResult[EventResult["HandledPreventDefault"] = 1] = "HandledPreventDefault";
     EventResult[EventResult["HandledButRunDefault"] = 2] = "HandledButRunDefault";
     EventResult[EventResult["NotHandledPreventDefault"] = 3] = "NotHandledPreventDefault";
-})(EventResult || (EventResult = {}));
+})(EventResult || (exports.EventResult = EventResult = {}));
 
-export class Component extends BobrilCtx {
+class Component extends BobrilCtx {
     constructor(data, me) {
         super(data, me);
     }
 }
 
-export class PureComponent extends Component {
+exports.Component = Component;
+
+class PureComponent extends Component {
     shouldChange(newData, oldData) {
         return !shallowEqual(newData, oldData);
     }
 }
 
+exports.PureComponent = PureComponent;
+
 function forwardRender(m) {
     return (ctx, me, _oldMe) => {
         var res = m.call(ctx, ctx.data);
-        if (res === skipRender) {
+        if (res === exports.skipRender) {
             me.tag = "-";
             return;
         }
@@ -3250,7 +3466,7 @@ const postUpdateDomEverytime = "postUpdateDomEverytime";
 
 const methodsWithMeParam = [ "destroy", postInitDom, postUpdateDom, postUpdateDomEverytime ];
 
-export function component(component, name) {
+function component(component, name) {
     const bobrilComponent = {};
     if (component.prototype instanceof Component) {
         const proto = component.prototype;
@@ -3272,7 +3488,7 @@ export function component(component, name) {
             } else if (key === "postRenderDom") {
                 combineWithForwardMe(bobrilComponent, methodsWithMeParam[1], value);
                 combineWithForwardMe(bobrilComponent, methodsWithMeParam[2], value);
-            } else if (isFunction(value) && /^(?:canDeactivate$|on[A-Z])/.test(key)) {
+            } else if (isFunc_1.isFunction(value) && /^(?:canDeactivate$|on[A-Z])/.test(key)) {
                 set = forwardMe(value);
             }
             if (set !== undefined) {
@@ -3309,10 +3525,10 @@ function createFactory(comp) {
 }
 
 function checkCurrentRenderCtx() {
-    assert(currentCtx != undefined && hookId >= 0, "Hooks could be used only in Render method");
+    localHelpers_1.assert(currentCtx != undefined && hookId >= 0, "Hooks could be used only in Render method");
 }
 
-export function _getHooks() {
+function _getHooks() {
     checkCurrentRenderCtx();
     let hooks = currentCtx.$hooks;
     if (hooks === undefined) {
@@ -3322,17 +3538,17 @@ export function _getHooks() {
     return hooks;
 }
 
-export function _allocHook() {
+function _allocHook() {
     return hookId++;
 }
 
 function setStateHookFunction(value) {
-    if (isFunction(value)) {
+    if (isFunc_1.isFunction(value)) {
         value = value(this[0]);
     }
-    if (!is(value, this[0])) {
+    if (!localHelpers_1.is(value, this[0])) {
         this[0] = value;
-        invalidate(this[2]);
+        exports.invalidate(this[2]);
     }
 }
 
@@ -3349,19 +3565,19 @@ function useStateIterator() {
     };
 }
 
-export function useState(initValue) {
+function useState(initValue) {
     const myHookId = hookId++;
     const hooks = _getHooks();
     const ctx = currentCtx;
     let hook = hooks[myHookId];
     if (hook === undefined) {
-        if (isFunction(initValue)) {
+        if (isFunc_1.isFunction(initValue)) {
             initValue = initValue();
         }
         hook = ((...value) => {
-            if (value.length == 1 && !is(value[0], hook[0])) {
+            if (value.length == 1 && !localHelpers_1.is(value[0], hook[0])) {
                 hook[0] = value[0];
-                invalidate(hook[2]);
+                exports.invalidate(hook[2]);
             }
             return hook[0];
         });
@@ -3374,5 +3590,362 @@ export function useState(initValue) {
     return hook;
 }
 
-export function useReducer(reducer, initializerArg, initializer) {}
+function useReducer(reducer, initializerArg, initializer) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    const ctx = currentCtx;
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        var initValue = isFunc_1.isFunction(initializer) ? initializer(initializerArg) : initializerArg;
+        hook = [ initValue, action => {
+            let currentValue = hook[0];
+            let newValue = reducer(currentValue, action);
+            if (!localHelpers_1.is(newValue, currentValue)) {
+                hook[0] = newValue;
+                exports.invalidate(ctx);
+            }
+        } ];
+        hooks[myHookId] = hook;
+    }
+    return hook;
+}
+
+function createContext(defaultValue, id) {
+    if (id === undefined) {
+        id = "__b#" + allocateMethodId();
+    }
+    return {
+        id,
+        dv: defaultValue
+    };
+}
+
+function context(key) {
+    return (target, propertyKey) => {
+        Object.defineProperty(target, propertyKey, {
+            configurable: true,
+            get() {
+                const cfg = this.me.cfg || this.cfg;
+                if (cfg == undefined || !(key.id in cfg)) return key.dv;
+                return cfg[key.id];
+            },
+            set(value) {
+                extendCfg(this, key.id, value);
+            }
+        });
+    };
+}
+
+function useContext(key) {
+    checkCurrentRenderCtx();
+    const cfg = currentCtx.me.cfg || currentCtx.cfg;
+    if (isFunc_1.isString(key)) {
+        if (cfg == undefined) return undefined;
+        return cfg[key];
+    } else {
+        if (cfg == undefined || !(key.id in cfg)) return key.dv;
+        return cfg[key.id];
+    }
+}
+
+function useProvideContext(key, value) {
+    checkCurrentRenderCtx();
+    extendCfg(currentCtx, isFunc_1.isString(key) ? key : key.id, value);
+}
+
+function useRef(initialValue) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = (value => {
+            if (value !== undefined) {
+                hook.current = value;
+            }
+            return hook.current;
+        });
+        hook.current = initialValue;
+        hooks[myHookId] = hook;
+    }
+    return hook;
+}
+
+function useStore(factory) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = factory();
+        if (isDisposable(hook)) {
+            addDisposable(currentCtx, hook);
+        }
+        hooks[myHookId] = hook;
+    }
+    return hook;
+}
+
+function hookPostInitDom(ctx) {
+    const hooks = ctx.$hooks;
+    const len = hooks.length;
+    for (let i = 0; i < len; i++) {
+        const hook = hooks[i];
+        const fn = hook[postInitDom];
+        if (fn !== undefined) {
+            fn.call(hook, ctx);
+        }
+    }
+}
+
+function hookPostUpdateDom(ctx) {
+    const hooks = ctx.$hooks;
+    const len = hooks.length;
+    for (let i = 0; i < len; i++) {
+        const hook = hooks[i];
+        const fn = hook[postUpdateDom];
+        if (fn !== undefined) {
+            fn.call(hook, ctx);
+        }
+    }
+}
+
+function hookPostUpdateDomEverytime(ctx) {
+    const hooks = ctx.$hooks;
+    const len = hooks.length;
+    for (let i = 0; i < len; i++) {
+        const hook = hooks[i];
+        const fn = hook[postUpdateDomEverytime];
+        if (fn !== undefined) {
+            fn.call(hook, ctx);
+        }
+    }
+}
+
+function bind(target, propertyKey, descriptor) {
+    if (propertyKey != undefined && descriptor != undefined) {
+        const fn = descriptor.value;
+        localHelpers_1.assert(isFunc_1.isFunction(fn), `Only methods can be decorated with @bind. '${propertyKey}' is not a method!`);
+        let definingProperty = false;
+        return {
+            configurable: true,
+            get() {
+                if (definingProperty) {
+                    return fn;
+                }
+                let value = fn.bind(this);
+                definingProperty = true;
+                Object.defineProperty(this, propertyKey, {
+                    value,
+                    configurable: true,
+                    writable: true
+                });
+                definingProperty = false;
+                return value;
+            }
+        };
+    }
+    const proto = target.prototype;
+    const keys = Object.getOwnPropertyNames(proto);
+    keys.forEach(key => {
+        if (key === "constructor") {
+            return;
+        }
+        const descriptor = Object.getOwnPropertyDescriptor(proto, key);
+        if (isFunc_1.isFunction(descriptor.value)) {
+            Object.defineProperty(proto, key, bind(target, key, descriptor));
+        }
+    });
+    return target;
+}
+
+class DepsChangeDetector {
+    detectChange(deps) {
+        let changed = false;
+        if (deps != undefined) {
+            const lastDeps = this.deps;
+            if (lastDeps == undefined) {
+                changed = true;
+            } else {
+                const depsLen = deps.length;
+                if (depsLen != lastDeps.length) changed = true; else {
+                    for (let i = 0; i < depsLen; i++) {
+                        if (!localHelpers_1.is(deps[i], lastDeps[i])) {
+                            changed = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        } else changed = true;
+        this.deps = deps;
+        return changed;
+    }
+}
+
+class MemoHook extends DepsChangeDetector {
+    memoize(factory, deps) {
+        if (this.detectChange(deps)) {
+            this.current = factory();
+        }
+        return this.current;
+    }
+}
+
+function useMemo(factory, deps) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        hook = new MemoHook();
+        hooks[myHookId] = hook;
+    }
+    return hook.memoize(factory, deps);
+}
+
+function useCallback(callback, deps) {
+    return useMemo(() => callback, deps);
+}
+
+class CommonEffectHook extends DepsChangeDetector {
+    constructor() {
+        super(...arguments);
+        this.shouldRun = false;
+    }
+    update(callback, deps) {
+        this.callback = callback;
+        if (this.detectChange(deps)) {
+            this.doRun();
+        }
+    }
+    doRun() {
+        this.shouldRun = true;
+    }
+    run() {
+        const c = this.callback;
+        if (c != undefined) {
+            this.dispose();
+            this.lastDisposer = c();
+        }
+    }
+    dispose() {
+        this.callback = undefined;
+        if (isFunc_1.isFunction(this.lastDisposer)) this.lastDisposer();
+        this.lastDisposer = undefined;
+    }
+}
+
+class EffectHook extends CommonEffectHook {
+    useEffect() {
+        if (this.shouldRun) {
+            this.shouldRun = false;
+            this.run();
+        }
+    }
+}
+
+function useEffect(callback, deps) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        currentCtx.$hookFlags |= hasUseEffect;
+        hook = new EffectHook();
+        addDisposable(currentCtx, hook);
+        hooks[myHookId] = hook;
+    }
+    hook.update(callback, deps);
+}
+
+class LayoutEffectHook extends CommonEffectHook {
+    postInitDom(ctx) {
+        this[postUpdateDomEverytime].call(this, ctx);
+    }
+    postUpdateDomEverytime(ctx) {
+        if (this.shouldRun) {
+            this.shouldRun = false;
+            this.run();
+            if (ctx[ctxInvalidated] > frameCounter) {
+                deferSyncUpdate();
+            }
+        }
+    }
+}
+
+function useLayoutEffect(callback, deps) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        currentCtx.$hookFlags |= hasPostInitDom | hasPostUpdateDomEverytime;
+        hook = new LayoutEffectHook();
+        addDisposable(currentCtx, hook);
+        hooks[myHookId] = hook;
+    }
+    hook.update(callback, deps);
+}
+
+class EventsHook {}
+
+function useEvents(events) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        currentCtx.$hookFlags |= hasEvents;
+        hook = new EventsHook();
+        hooks[myHookId] = hook;
+    } else {
+        localHelpers_1.assert(hook instanceof EventsHook);
+    }
+    hook.events = events;
+}
+
+class CaptureEventsHook {}
+
+function useCaptureEvents(events) {
+    const myHookId = hookId++;
+    const hooks = _getHooks();
+    let hook = hooks[myHookId];
+    if (hook === undefined) {
+        currentCtx.$hookFlags |= hasCaptureEvents;
+        hook = new CaptureEventsHook();
+        hooks[myHookId] = hook;
+    } else {
+        localHelpers_1.assert(hook instanceof CaptureEventsHook);
+    }
+    hook.events = events;
+}
+
+class CommonUseIsHook {
+    constructor(owner, ctx) {
+        this.Value = false;
+        this._owner = owner;
+        this._ctx = ctx;
+        owner.add(this);
+        addDisposable(ctx, this);
+    }
+    update(path) {
+        let newValue = path.indexOf(this._ctx.me) >= 0;
+        if (this.Value == newValue) return;
+        this.Value = newValue;
+        exports.invalidate(this._ctx);
+    }
+    dispose() {
+        this._owner.delete(this);
+    }
+}
+
+exports.CommonUseIsHook = CommonUseIsHook;
+
+function buildUseIsHook(owner) {
+    return () => {
+        const myHookId = hookId++;
+        const hooks = _getHooks();
+        let hook = hooks[myHookId];
+        if (hook === undefined) {
+            hook = new CommonUseIsHook(owner, currentCtx);
+            hooks[myHookId] = hook;
+        }
+        return hook.Value;
+    };
+}
 

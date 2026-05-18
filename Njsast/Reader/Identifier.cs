@@ -112,7 +112,10 @@ public sealed partial class Parser
         if (code < CharCode.LeftSquareBracket) return true;
         if (code < CharCode.LatinSmallLetterA) return code == CharCode.LowLine;
         if (code < CharCode.LeftCurlyBracket) return true;
-        if (code <= 0xffff) return code >= CharCode.FeminineOrdinalIndicator /*0xaa*/ && NonAsciIidentifierStart.IsMatch(char.ConvertFromUtf32(code));
+        if (code <= 0xffff)
+            return code >= CharCode.FeminineOrdinalIndicator /*0xaa*/ &&
+                   (code < 0xd800 || code > 0xdfff) &&
+                   NonAsciIidentifierStart.IsMatch(char.ConvertFromUtf32(code));
         if (astral == false) return false;
         return IsInAstralSet(code, AstralIdentifierStartCodes);
     }
@@ -126,7 +129,10 @@ public sealed partial class Parser
         if (code < CharCode.LeftSquareBracket) return true;
         if (code < CharCode.LatinSmallLetterA) return code == CharCode.LowLine;
         if (code < CharCode.LeftCurlyBracket) return true;
-        if (code <= 0xffff) return code >= CharCode.FeminineOrdinalIndicator /*0xaa*/ && NonAsciIidentifier.IsMatch(char.ConvertFromUtf32(code));
+        if (code <= 0xffff)
+            return code >= CharCode.FeminineOrdinalIndicator /*0xaa*/ &&
+                   (code < 0xd800 || code > 0xdfff) &&
+                   NonAsciIidentifier.IsMatch(char.ConvertFromUtf32(code));
         if (astral == false) return false;
         return IsInAstralSet(code, AstralIdentifierStartCodes) || IsInAstralSet(code, AstralIdentifierCodes);
     }

@@ -16,3 +16,18 @@ public class AstTypeScriptImportEquals : AstVar
         return new AstTypeScriptImportEquals(Source, Start, End, ref definitions);
     }
 }
+
+public class AstTypeScriptImportEqualsConst : AstConst
+{
+    public AstTypeScriptImportEqualsConst(string? source, Position startPos, Position endPos,
+        ref StructList<AstVarDef> definitions) : base(source, startPos, endPos, ref definitions)
+    {
+    }
+
+    public override AstNode ShallowClone()
+    {
+        var definitions = new StructList<AstVarDef>();
+        definitions.AddRange(Definitions.AsReadOnlySpan());
+        return new AstTypeScriptImportEqualsConst(Source, Start, End, ref definitions);
+    }
+}

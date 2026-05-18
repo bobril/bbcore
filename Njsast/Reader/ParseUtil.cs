@@ -58,10 +58,12 @@ public sealed partial class Parser
     // pretend that there is a semicolon at this position.
     void Semicolon()
     {
-        if (!Eat(TokenType.Semi) && !InsertSemicolon())
+        if (!Eat(TokenType.Semi) && !InsertSemicolon() &&
+            !(IsTypeScript && _tsCanInsertSemicolonAfterSkippedType))
         {
             Raise(Start, "Unexpected token");
         }
+        _tsCanInsertSemicolonAfterSkippedType = false;
     }
 
     bool AfterTrailingComma(TokenType tokType, bool notNext = false)
@@ -101,22 +103,24 @@ public sealed partial class Parser
         }
     }
 
-    static void CheckPatternErrors(DestructuringErrors? refDestructuringErrors, bool isAssign)
+    void CheckPatternErrors(DestructuringErrors? refDestructuringErrors, bool isAssign)
     {
         if (refDestructuringErrors == null) return;
         if (refDestructuringErrors.TrailingComma.Line > 0)
         {
-            RaiseRecoverable(refDestructuringErrors.TrailingComma, "Comma is not permitted after the rest element");
+            if (!IsTypeScript)
+                RaiseRecoverable(refDestructuringErrors.TrailingComma, "Comma is not permitted after the rest element");
         }
         var parens = isAssign ? refDestructuringErrors.ParenthesizedAssign : refDestructuringErrors.ParenthesizedBind;
-        if (parens.Line > 0) RaiseRecoverable(parens, "Parenthesized pattern");
+        if (parens.Line > 0 && !IsTypeScript) RaiseRecoverable(parens, "Parenthesized pattern");
     }
 
-    static bool CheckExpressionErrors(DestructuringErrors? refDestructuringErrors, bool andThrow = false)
+    bool CheckExpressionErrors(DestructuringErrors? refDestructuringErrors, bool andThrow = false)
     {
         var pos = refDestructuringErrors?.ShorthandAssign ?? default;
         if (!andThrow) return pos.Line > 0;
-        if (pos.Line > 0) Raise(pos, "Shorthand property assignments are valid only in destructuring patterns");
+        if (pos.Line > 0 && !IsTypeScript)
+            Raise(pos, "Shorthand property assignments are valid only in destructuring patterns");
         return false;
     }
 

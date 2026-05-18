@@ -71,7 +71,7 @@ public sealed partial class Parser
                 }
                 if (stmt is AstDefClass classDecl)
                 {
-                    TsEmitDecoratedClass(node, decorators, classDecl);
+                    TsEmitDecoratedClass(node, decorators, classDecl, TsIsSyntheticDefaultClassName(classDecl));
                     continue;
                 }
                 if (stmt is AstExport { ExportedDefinition: AstDefClass exportedClass, IsDefault: false } export)
@@ -169,6 +169,8 @@ public sealed partial class Parser
         if (Type != TokenType.Name || !"let".Equals(Value)) return false;
         var skip = SkipWhiteSpace.Match(_input, _pos.Index);
         var next = _pos.Index + skip.Groups[0].Length;
+        if (next >= _input.Length)
+            return false;
         var nextCh = _input[next];
         if (nextCh == CharCode.LeftSquareBracket || nextCh == CharCode.LeftCurlyBracket) return true; // '{' and '['
         if (IsIdentifierStart(nextCh, true))
@@ -226,6 +228,10 @@ public sealed partial class Parser
             return TsParseTypeOnlyStatement(startLocation);
         if (TsIsDeclareStatementStart())
             return TsParseDeclareStatement(startLocation);
+        if (TsIsQuotedModuleDeclarationStart())
+            return TsParseQuotedModuleDeclaration(startLocation);
+        if (TsIsGlobalAugmentationStatementStart())
+            return TsParseGlobalAugmentationStatement(startLocation);
                 if (TsIsImportEqualsStatementStart())
                     return TsParseImportEqualsStatement(startLocation);
         if (IsTypeScript && Type == TokenType.Decorator)
@@ -263,12 +269,58 @@ public sealed partial class Parser
             }
             Raise(startLocation, "Unexpected token");
         }
+        if (TsIsGlobalAugmentationStatementStart())
+            return TsParseGlobalAugmentationStatement(startLocation);
         if (IsTypeScript && IsContextual("abstract"))
         {
-            if (TsIsClassFollowing())
+            if (!TsHasLineBreakAfterCurrentToken() && TsIsClassFollowing())
             {
                 Next();
                 return ParseClass(startLocation, true, false);
+            }
+        }
+        if (IsTypeScript && TsDefaultIsFollowedByClass())
+        {
+            Next();
+            var oldDefaultClassName = _tsDefaultExportClassName;
+            var oldDefaultClassNameUsed = _tsDefaultExportClassNameUsed;
+            var oldAllowAnonymousExportClassStatement = _tsAllowAnonymousExportClassStatement;
+            _tsDefaultExportClassName = TsNextInvalidDefaultExportName();
+            _tsDefaultExportClassNameUsed = true;
+            _tsAllowAnonymousExportClassStatement = true;
+            try
+            {
+                return ParseClass(Start, true, false);
+            }
+            finally
+            {
+                _tsDefaultExportClassName = oldDefaultClassName;
+                _tsDefaultExportClassNameUsed = oldDefaultClassNameUsed;
+                _tsAllowAnonymousExportClassStatement = oldAllowAnonymousExportClassStatement;
+            }
+        }
+        if (IsTypeScript && TsDefaultIsFollowedByFunction())
+        {
+            Next();
+            var isAsync = IsAsyncFunction();
+            var startLoc = Start;
+            if (isAsync)
+                Next();
+            if (Type != TokenType.Function)
+                Raise(Start, "Unexpected token");
+            Next();
+            var oldDefaultClassName = _tsDefaultExportClassName;
+            var oldDefaultClassNameUsed = _tsDefaultExportClassNameUsed;
+            _tsDefaultExportClassName = TsNextInvalidDefaultExportName();
+            _tsDefaultExportClassNameUsed = true;
+            try
+            {
+                return ParseFunction(startLoc, true, true, false, isAsync);
+            }
+            finally
+            {
+                _tsDefaultExportClassName = oldDefaultClassName;
+                _tsDefaultExportClassNameUsed = oldDefaultClassNameUsed;
             }
         }
 
@@ -315,7 +367,7 @@ public sealed partial class Parser
             case TokenType.Const:
             case TokenType.Var:
                 var realKind = kind ?? ToVariableKind((string)GetValue());
-                if (!declaration && realKind != VariableKind.Var)
+                if (!declaration && realKind != VariableKind.Var && !IsTypeScript)
                 {
                     Raise(startLocation, "Unexpected token");
                 }
@@ -354,15 +406,15 @@ public sealed partial class Parser
 
                 if (!Options.AllowImportExportEverywhere)
                 {
-                    if (!topLevel)
+                    if (!topLevel && !IsTypeScript)
                         Raise(startLocation, "'import' and 'export' may only appear at the top level");
-                    if (!_inModule)
+                    if (!_inModule && !IsTypeScript)
                         Raise(startLocation, "'import' and 'export' may appear only with 'sourceType: module'");
                 }
 
                 return starttype == TokenType.Import
                     ? ParseImport(startLocation)
-                    : ParseExport(startLocation, exports);
+                    : ParseExport(startLocation, exports, topLevel);
         }
 
         if (!_wasImportKeyword && IsAsyncFunction() && declaration)
@@ -418,7 +470,10 @@ public sealed partial class Parser
         if (label == null)
         {
             if (isBreak && !_allowBreak || !isBreak && !_allowContinue)
-                Raise(nodeStart, "Unsyntactic " + keyword);
+            {
+                if (!IsTypeScript)
+                    Raise(nodeStart, "Unsyntactic " + keyword);
+            }
         }
         else
         {
@@ -437,7 +492,7 @@ public sealed partial class Parser
                 }
             }
 
-            if (i == _labels.Count) Raise(nodeStart, "Unsyntactic " + keyword);
+            if (i == _labels.Count && !IsTypeScript) Raise(nodeStart, "Unsyntactic " + keyword);
         }
 
         if (isBreak)
@@ -566,7 +621,7 @@ public sealed partial class Parser
 
     AstReturn ParseReturnStatement(Position nodeStart)
     {
-        if (!_inFunction && !Options.AllowReturnOutsideFunction)
+        if (!_inFunction && !Options.AllowReturnOutsideFunction && !IsTypeScript)
             Raise(Start, "'return' outside of function");
         Next();
 
@@ -614,7 +669,7 @@ public sealed partial class Parser
                 }
                 else
                 {
-                    if (sawDefault) RaiseRecoverable(_lastTokStart, "Multiple default clauses");
+                    if (sawDefault && !IsTypeScript) RaiseRecoverable(_lastTokStart, "Multiple default clauses");
                     sawDefault = true;
                     consequent = new AstDefault(SourceFile, startLoc, startLoc);
                 }
@@ -670,7 +725,16 @@ public sealed partial class Parser
     {
         Next();
         if (LineBreak.IsMatch(_input.Substring(_lastTokEnd.Index, Start.Index - _lastTokEnd.Index)))
+        {
+            if (IsTypeScript)
+                return new AstThrow(SourceFile, nodeStart, _lastTokEnd, null!);
             Raise(_lastTokEnd, "Illegal newline after throw");
+        }
+        if (IsTypeScript && Type == TokenType.Semi)
+        {
+            Semicolon();
+            return new AstThrow(SourceFile, nodeStart, _lastTokEnd, null!);
+        }
         var argument = ParseExpression(Start);
         Semicolon();
         return new(SourceFile, nodeStart, _lastTokEnd, argument);
@@ -691,6 +755,11 @@ public sealed partial class Parser
                 param = ParseBindingAtom();
                 TsTrySkipOptionalOrDefiniteBindingMarker();
                 TsTrySkipTypeAnnotation();
+                if (IsTypeScript && Eat(TokenType.Eq))
+                {
+                    var right = ParseMaybeAssign(Start);
+                    param = new AstDefaultAssign(SourceFile, param.Start, _lastTokEnd, param, right);
+                }
                 EnterLexicalScope();
                 CheckLVal(param, true, VariableKind.Let);
                 param = ToRightDeclarationSymbolKind(param, VariableKind.Catch);
@@ -720,20 +789,30 @@ public sealed partial class Parser
     {
         Next();
         var declarations = new StructList<AstVarDef>();
-        ParseVar(ref declarations, false, kind);
+        if (!IsTypeScript || Type is not (TokenType.Eof or TokenType.Semi))
+            ParseVar(ref declarations, false, kind);
         Semicolon();
         if (kind == VariableKind.Let)
         {
-            return new AstLet(SourceFile, nodeStart, _lastTokEnd, ref declarations);
+            var statement = new AstLet(SourceFile, nodeStart, _lastTokEnd, ref declarations);
+            if (IsTypeScript)
+                TsForgetErasedTypeOnlyValueNames(statement);
+            return statement;
         }
 
         if (kind == VariableKind.Const)
         {
-            return new AstConst(SourceFile, nodeStart, _lastTokEnd, ref declarations);
+            var statement = new AstConst(SourceFile, nodeStart, _lastTokEnd, ref declarations);
+            if (IsTypeScript)
+                TsForgetErasedTypeOnlyValueNames(statement);
+            return statement;
         }
 
         Debug.Assert(kind == VariableKind.Var);
-        return new AstVar(SourceFile, nodeStart, _lastTokEnd, ref declarations);
+        var varStatement = new AstVar(SourceFile, nodeStart, _lastTokEnd, ref declarations);
+        if (IsTypeScript)
+            TsForgetErasedTypeOnlyValueNames(varStatement);
+        return varStatement;
     }
 
     AstWhile ParseWhileStatement(Position nodeStart)
@@ -752,7 +831,7 @@ public sealed partial class Parser
 
     AstWith ParseWithStatement(Position nodeStart)
     {
-        if (_strict) Raise(Start, "'with' in strict mode");
+        if (_strict && !IsTypeScript) Raise(Start, "'with' in strict mode");
         Next();
         var @object = ParseParenExpression();
         var body = ParseStatement(false) as AstStatement;
@@ -783,22 +862,39 @@ public sealed partial class Parser
 
     void TsParseDecoratedClassToBody(ref StructList<AstNode> body)
     {
+        System.Console.Error.WriteLine($"decorated path {Start.Line}:{Start.Column} {Type} {Value}");
         _tsPendingClassDecorators = TsParseDecorators();
+        System.Console.Error.WriteLine($"after decorators {Start.Line}:{Start.Column} {Type} {Value}");
         if (IsContextual("abstract") && TsIsClassFollowing())
             Next();
+        var oldDefaultClassName = _tsDefaultExportClassName;
+        var oldDefaultClassNameUsed = _tsDefaultExportClassNameUsed;
+        if (Eat(TokenType.Default))
+        {
+            _tsDefaultExportClassName = "default_1";
+            _tsDefaultExportClassNameUsed = true;
+        }
         if (Type != TokenType.Class)
             Raise(Start, "Unexpected token");
-        var decoratedClass = ParseClass(Start, true, false);
-        var decorators = _tsPendingClassDecorators;
-        _tsPendingClassDecorators = null;
-        TsEmitDecoratedClassToBody(ref body, decorators!, (AstDefClass)decoratedClass);
+        try
+        {
+            var decoratedClass = ParseClass(Start, true, false);
+            var decorators = _tsPendingClassDecorators;
+            _tsPendingClassDecorators = null;
+            TsEmitDecoratedClassToBody(ref body, decorators!, (AstDefClass)decoratedClass);
+        }
+        finally
+        {
+            _tsDefaultExportClassName = oldDefaultClassName;
+            _tsDefaultExportClassNameUsed = oldDefaultClassNameUsed;
+        }
     }
 
     AstLabeledStatement ParseLabelledStatement(Position nodeStart, string maybeName, AstSymbol expr)
     {
         foreach (var label in _labels)
         {
-            if (label.Name == maybeName)
+            if (label.Name == maybeName && !IsTypeScript)
                 Raise(expr.Start, "Label '" + maybeName + "' is already declared");
         }
 
@@ -818,7 +914,10 @@ public sealed partial class Parser
         }
         if (body is AstClass or AstLet or AstConst ||
             body is AstFunction functionDeclaration && (_strict || functionDeclaration.IsGenerator))
-            RaiseRecoverable(body.Start, "Invalid labelled declaration");
+        {
+            if (!IsTypeScript)
+                RaiseRecoverable(body.Start, "Invalid labelled declaration");
+        }
         _labels.Pop();
 
         return new(SourceFile, nodeStart, _lastTokEnd, body, newlabel);
@@ -1043,6 +1142,8 @@ public sealed partial class Parser
         if (isStatement || isNullableId)
         {
             id = isNullableId && Type != TokenType.Name ? null : ParseIdent();
+            if (id == null && IsTypeScript && _tsDefaultExportClassNameUsed && _tsDefaultExportClassName != null)
+                id = new AstSymbolRef(SourceFile, startLoc, startLoc, _tsDefaultExportClassName);
             if (id != null)
             {
                 CheckLVal(id, true, VariableKind.Var);
@@ -1136,6 +1237,10 @@ public sealed partial class Parser
         _tsAnonymousClassStaticAccessorName = null;
         TsTrySkipTypeParameters();
         var superClass = ParseClassSuper();
+        if (IsTypeScript && (Type == TokenType.Comma || Type == TokenType.Extends || IsContextual("extends")))
+        {
+            TsSkipHeritageClause();
+        }
         if (IsTypeScript && IsContextual("implements"))
         {
             TsSkipHeritageClause();
@@ -1167,10 +1272,17 @@ public sealed partial class Parser
             var isAbstractMember = false;
             var isDeclareMember = false;
             var hasStaticTsModifier = false;
+            var restartClassMember = false;
             while (true)
             {
                 if (TsStaticIsFollowedByClassMemberModifier())
                 {
+                    if (TsHasLineBreakAfterCurrentToken())
+                    {
+                        Next();
+                        restartClassMember = true;
+                        break;
+                    }
                     hasTsModifiers = true;
                     hasStaticTsModifier = true;
                     Next();
@@ -1180,11 +1292,21 @@ public sealed partial class Parser
                 if (!TsIsClassMemberModifier())
                     break;
 
+                if (hasTsModifiers && TsClassModifierLooksLikeMemberName())
+                    break;
+                if (TsHasLineBreakAfterCurrentToken())
+                {
+                    Next();
+                    restartClassMember = true;
+                    break;
+                }
                 hasTsModifiers = true;
                 if (IsContextual("abstract")) isAbstractMember = true;
                 if (IsContextual("declare")) isDeclareMember = true;
                 Next();
             }
+            if (restartClassMember)
+                continue;
 
             if (isAbstractMember)
             {
@@ -1213,6 +1335,8 @@ public sealed partial class Parser
                 continue;
 
             var methodStart = Start;
+            if (TsTrySkipClassIndexSignature())
+                continue;
             var isGenerator = Eat(TokenType.Star);
             var isAsync = false;
             var isMaybeStatic = hasStaticTsModifier || Type == TokenType.Name && "static".Equals(Value);
@@ -1273,7 +1397,8 @@ public sealed partial class Parser
             if (!computed)
             {
                 if (!isGenerator && !isAsync && key is AstSymbol identifierNode2 &&
-                    Type != TokenType.ParenL && Type != TokenType.Eq &&
+                    Type != TokenType.ParenL && Type != TokenType.Eq && Type != TokenType.Colon &&
+                    Type != TokenType.Semi &&
                     identifierNode2.Name is "get" or "set")
                 {
                     isGetSet = true;
@@ -1286,13 +1411,13 @@ public sealed partial class Parser
                 {
                     if (hadConstructor && TsTrySkipClassMethodOverloadSignature())
                         continue;
-                    if (hadConstructor) Raise(key.Start, "Duplicate constructor in the same class");
+                    if (hadConstructor && !IsTypeScript) Raise(key.Start, "Duplicate constructor in the same class");
                     if (isGetSet) Raise(key.Start, "Constructor can't have get/set modifier");
                     if (isGenerator) Raise(key.Start, "Constructor can't be a generator");
                     if (isAsync) Raise(key.Start, "Constructor can't be an async method");
                     kind = PropertyKind.Constructor;
                 }
-                else if (@static && key is AstSymbol keyIdentifier && keyIdentifier.Name == "prototype")
+                else if (@static && key is AstSymbol keyIdentifier && keyIdentifier.Name == "prototype" && !IsTypeScript)
                 {
                     Raise(key.Start, "Classes may not have a static property named prototype");
                 }
@@ -1338,6 +1463,13 @@ public sealed partial class Parser
                             instanceFieldInitializerStatements.Add(TsBuildClassFieldInitializerStatement(
                                 new AstThis(SourceFile, key.Start, key.End), initializerKey, fieldValue, computed));
                         }
+                    }
+                    else if (computed && (memberDecorators is { Count: > 0 } ||
+                                           key is not (AstSymbol or AstNumber or AstString)))
+                    {
+                        var staticBody = new StructList<AstNode>();
+                        staticBody.Add(new AstSimpleStatement(SourceFile, key.Start, key.End, key));
+                        body.Add(new AstStaticBlock(SourceFile, methodStart, _lastTokEnd, ref staticBody));
                     }
 
                     if (memberDecorators is { Count: > 0 } &&
@@ -1415,7 +1547,7 @@ public sealed partial class Parser
                 hadConstructor = true;
 
             // Optional/abstract method with no body: skip params and return type, eat ;
-            if (isOptional && Type == TokenType.ParenL)
+            if (isOptional && Type == TokenType.ParenL && !TsClassMethodSignatureIsFollowedByBody())
             {
                 Expect(TokenType.ParenL);
                 var pDepth = 1;
@@ -1451,14 +1583,17 @@ public sealed partial class Parser
                 if (methodValue.ArgNames.Count != paramCount)
                 {
                     var startLocation = methodValue.Start;
-                    if (kind == PropertyKind.Get)
-                        RaiseRecoverable(startLocation, "getter should have no params");
-                    else
-                        RaiseRecoverable(startLocation, "setter should have exactly one param");
+                    if (!IsTypeScript)
+                    {
+                        if (kind == PropertyKind.Get)
+                            RaiseRecoverable(startLocation, "getter should have no params");
+                        else
+                            RaiseRecoverable(startLocation, "setter should have exactly one param");
+                    }
                 }
                 else
                 {
-                    if (kind == PropertyKind.Set && methodValue.ArgNames[0] is AstExpansion)
+                    if (kind == PropertyKind.Set && methodValue.ArgNames[0] is AstExpansion && !IsTypeScript)
                         RaiseRecoverable(methodValue.ArgNames[0].Start, "Setter cannot use rest params");
                 }
             }
@@ -1508,8 +1643,12 @@ public sealed partial class Parser
                 else
                 {
                     if (TsClassDecoratorTargetName(id) is { } decoratorClassName)
-                        memberDecoratorStatements.Add(TsBuildParameterDecorateStatement(tsParameterDecorators,
-                            decoratorClassName, methodDecoratorKey, @static, computed));
+                    {
+                        if (!TsTryAppendParameterDecoratorsToExistingMemberStatement(memberDecoratorStatements,
+                                tsParameterDecorators, decoratorClassName, methodDecoratorKey, @static, computed))
+                            memberDecoratorStatements.Add(TsBuildParameterDecorateStatement(tsParameterDecorators,
+                                decoratorClassName, methodDecoratorKey, @static, computed));
+                    }
                 }
             }
         }
@@ -1556,8 +1695,12 @@ public sealed partial class Parser
 
     AstSymbol? ParseClassId(bool isStatement)
     {
+        if (!isStatement && IsTypeScript && IsContextual("implements"))
+            return null;
         if (Type == TokenType.Name)
             return ParseIdent();
+        if (IsTypeScript && Type == TokenType.BraceL && _tsAllowAnonymousExportClassStatement)
+            return null;
         if (isStatement)
         {
             Raise(Start, "A class name is required.");
@@ -1576,16 +1719,22 @@ public sealed partial class Parser
     }
 
     // Parses module export declaration.
-    AstStatement ParseExport(Position nodeStart, IDictionary<string, bool>? exports)
+    AstStatement ParseExport(Position nodeStart, IDictionary<string, bool>? exports, bool topLevel)
     {
+        if (IsTypeScript)
+        {
+            while (Type == TokenType.Export)
+                Next();
+        }
+
         if (IsTypeScript && (IsContextual("type") || IsContextual("interface")))
             _tsErasedTypeOnlyModuleSyntaxUsed = true;
 
         if (IsTypeScript && Eat(TokenType.Eq))
         {
-            TsSkipUntilStatementEnd();
-            _tsErasedTypeOnlyModuleSyntaxUsed = true;
-            return new AstTypeScriptOnly(SourceFile, nodeStart, _lastTokEnd);
+            var value = ParseMaybeAssign(Start);
+            Semicolon();
+            return TsBuildAssignmentStatement(nodeStart, "module.exports", value);
         }
 
         // export * from '...'
@@ -1606,7 +1755,15 @@ public sealed partial class Parser
 
             ExpectContextual("from");
             if (Type != TokenType.String)
+            {
+                if (IsTypeScript)
+                {
+                    TsSkipUntilStatementEnd();
+                    _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                    return new AstTypeScriptOnly(SourceFile, nodeStart, _lastTokEnd);
+                }
                 Raise(Start, "Unexpected token");
+            }
             var source = ParseExpressionAtom(Start) as AstString;
             var (attributes, attributeKeyword) = ParseImportAttributes();
             Semicolon();
@@ -1621,6 +1778,12 @@ public sealed partial class Parser
             {
                 _tsErasedTypeOnlyModuleSyntaxUsed = true;
                 return TsParseTypeOnlyStatement(nodeStart);
+            }
+            if (IsTypeScript && Type == TokenType.Function &&
+                TsTryParseFunctionOverloadStatement(nodeStart, out var typeOnlyStatement))
+            {
+                _tsErasedTypeOnlyModuleSyntaxUsed = true;
+                return typeOnlyStatement;
             }
             CheckExport(exports, "default", _lastTokStart);
             var isAsync = false;
@@ -1651,7 +1814,26 @@ public sealed partial class Parser
                 var startLoc = Start;
                 Next();
                 if (isAsync) Next();
-                declaration = ParseFunction(startLoc, false, true, false, isAsync);
+                if (IsTypeScript && !topLevel)
+                {
+                    var oldDefaultClassName = _tsDefaultExportClassName;
+                    var oldDefaultClassNameUsed = _tsDefaultExportClassNameUsed;
+                    _tsDefaultExportClassName = TsNextInvalidDefaultExportName();
+                    _tsDefaultExportClassNameUsed = true;
+                    try
+                    {
+                        declaration = ParseFunction(startLoc, false, true, false, isAsync);
+                    }
+                    finally
+                    {
+                        _tsDefaultExportClassName = oldDefaultClassName;
+                        _tsDefaultExportClassNameUsed = oldDefaultClassNameUsed;
+                    }
+                }
+                else
+                {
+                    declaration = ParseFunction(startLoc, false, true, false, isAsync);
+                }
             }
             else if (Type == TokenType.Class)
             {
@@ -1765,6 +1947,14 @@ public sealed partial class Parser
                 _tsErasedTypeOnlyModuleSyntaxUsed = true;
                 return TsParseDeclareStatement(nodeStart);
             }
+            else if (IsTypeScript && TsTrySkipModifierBeforeImportEquals())
+            {
+                declaration = TsParseImportEqualsStatement(Start);
+                if (declaration is AstTypeScriptOnly)
+                    return (AstStatement)declaration;
+                if (declaration is AstDefinitions variableDeclaration)
+                    CheckVariableExport(exports, in variableDeclaration.Definitions);
+            }
             else if (IsTypeScript && Options.ParseTypeScriptNamespaceBody && TsIsUsingDeclarationStart())
             {
                 declaration = TsParseNamespaceExportUsingStatement(Start);
@@ -1781,7 +1971,29 @@ public sealed partial class Parser
             }
             else if (ShouldParseExportStatement())
             {
-                declaration = ParseStatement(true);
+                if (IsTypeScript && Type == TokenType.Class && TsClassKeywordIsFollowedByBody())
+                {
+                    var oldDefaultClassName = _tsDefaultExportClassName;
+                    var oldDefaultClassNameUsed = _tsDefaultExportClassNameUsed;
+                    var oldAllowAnonymousExportClassStatement = _tsAllowAnonymousExportClassStatement;
+                    _tsDefaultExportClassName = "default_1";
+                    _tsDefaultExportClassNameUsed = true;
+                    _tsAllowAnonymousExportClassStatement = true;
+                    try
+                    {
+                        declaration = ParseStatement(true);
+                    }
+                    finally
+                    {
+                        _tsDefaultExportClassName = oldDefaultClassName;
+                        _tsDefaultExportClassNameUsed = oldDefaultClassNameUsed;
+                        _tsAllowAnonymousExportClassStatement = oldAllowAnonymousExportClassStatement;
+                    }
+                }
+                else
+                {
+                    declaration = ParseStatement(true);
+                }
                 if (declaration is AstTypeScriptOnly)
                 {
                     return (AstStatement)declaration;
@@ -1802,6 +2014,19 @@ public sealed partial class Parser
             {
                 // export { x, y as z } [from '...']
                 declaration = null;
+                if (IsTypeScript && TsIsNamespaceStatementStart() &&
+                    TsTryParseNamespaceStatements(out var namespaceStatements, forceExport: true))
+                {
+                    if (namespaceStatements.Count == 0)
+                        return new AstTypeScriptOnly(SourceFile, nodeStart, _lastTokEnd);
+                    if (namespaceStatements.Count == 1)
+                        return namespaceStatements[0];
+
+                    var body = new StructList<AstNode>();
+                    foreach (var statement in namespaceStatements)
+                        body.Add(statement);
+                    return new AstBlockStatement(SourceFile, nodeStart, _lastTokEnd, ref body);
+                }
                 ParseExportSpecifiers(ref specifiers, exports, out var sawExportSpecifier);
                 if (specifiers.Count == 0)
                 {
@@ -1871,15 +2096,15 @@ public sealed partial class Parser
         return ((AstObject)ParseExpressionAtom(Start), keyword);
     }
 
-    static void CheckExport(IDictionary<string, bool>? exports, string name, Position pos)
+    void CheckExport(IDictionary<string, bool>? exports, string name, Position pos)
     {
         if (exports == null) return;
-        if (exports.ContainsKey(name))
+        if (exports.ContainsKey(name) && !IsTypeScript)
             RaiseRecoverable(pos, "Duplicate export '" + name + "'");
         exports[name] = true;
     }
 
-    static void CheckPatternExport(IDictionary<string, bool> exports, AstNode pattern)
+    void CheckPatternExport(IDictionary<string, bool> exports, AstNode pattern)
     {
         switch (pattern)
         {
@@ -1909,7 +2134,7 @@ public sealed partial class Parser
         }
     }
 
-    static void CheckVariableExport(IDictionary<string, bool>? exports, in StructList<AstVarDef> decls)
+    void CheckVariableExport(IDictionary<string, bool>? exports, in StructList<AstVarDef> decls)
     {
         if (exports == null)
             return;

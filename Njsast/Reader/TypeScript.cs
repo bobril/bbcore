@@ -51,6 +51,37 @@ public sealed partial class Parser
         return _tsErasedTypeOnlyNames != null && _tsErasedTypeOnlyNames.Contains(name);
     }
 
+    void TsForgetErasedTypeOnlyValueNames(AstDefinitions definitions)
+    {
+        if (_tsErasedTypeOnlyNames == null)
+            return;
+        foreach (var definition in definitions.Definitions.AsReadOnlySpan())
+            TsForgetErasedTypeOnlyValueName(definition.Name);
+    }
+
+    void TsForgetErasedTypeOnlyValueName(AstNode node)
+    {
+        switch (node)
+        {
+            case AstSymbolDeclaration symbol:
+                _tsErasedTypeOnlyNames?.Remove(symbol.Name);
+                break;
+            case AstExpansion expansion:
+                TsForgetErasedTypeOnlyValueName(expansion.Expression);
+                break;
+            case AstDefaultAssign defaultAssign:
+                TsForgetErasedTypeOnlyValueName(defaultAssign.Left);
+                break;
+            case AstDestructuring destructuring:
+                foreach (var name in destructuring.Names.AsReadOnlySpan())
+                    TsForgetErasedTypeOnlyValueName(name);
+                break;
+            case AstObjectKeyVal keyValue:
+                TsForgetErasedTypeOnlyValueName(keyValue.Value);
+                break;
+        }
+    }
+
     void TsInsertEmptyExportModuleMarker(ref StructList<AstNode> body)
     {
         var specifiers = new StructList<AstNameMapping>();
@@ -80,7 +111,27 @@ public sealed partial class Parser
 
     bool TsIsDeclareStatementStart()
     {
-        return IsTypeScript && IsContextual("declare");
+        if (!IsTypeScript || !IsContextual("declare"))
+            return false;
+
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        if (index >= _input.Length)
+            return false;
+        return TsTextStartsKeyword(index, "abstract") ||
+               TsTextStartsKeyword(index, "class") ||
+               TsTextStartsKeyword(index, "const") ||
+               TsTextStartsKeyword(index, "declare") ||
+               TsTextStartsKeyword(index, "enum") ||
+               TsTextStartsKeyword(index, "export") ||
+               TsTextStartsKeyword(index, "function") ||
+               TsTextStartsKeyword(index, "global") ||
+               TsTextStartsKeyword(index, "import") ||
+               TsTextStartsKeyword(index, "interface") ||
+               TsTextStartsKeyword(index, "let") ||
+               TsTextStartsKeyword(index, "module") ||
+               TsTextStartsKeyword(index, "namespace") ||
+               TsTextStartsKeyword(index, "type") ||
+               TsTextStartsKeyword(index, "var");
     }
 
     bool TsIsNamespaceStatementStart()
@@ -89,6 +140,46 @@ public sealed partial class Parser
             return false;
         var index = TsSkipWhitespaceAndComments(End.Index);
         return index < _input.Length && IsIdentifierStart(_input[index], true);
+    }
+
+    bool TsIsQuotedModuleDeclarationStart()
+    {
+        if (!IsTypeScript || !IsContextual("module"))
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        return index < _input.Length && _input[index] is '"' or '\'';
+    }
+
+    bool TsIsGlobalAugmentationStatementStart()
+    {
+        if (!IsTypeScript || !IsContextual("global"))
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        return index < _input.Length && _input[index] == '{';
+    }
+
+    AstStatement TsParseGlobalAugmentationStatement(Position startLocation)
+    {
+        Next();
+        TsSkipAmbientDeclarationBlock();
+        return new AstTypeScriptOnly(SourceFile, startLocation, _lastTokEnd);
+    }
+
+    AstStatement TsParseQuotedModuleDeclaration(Position startLocation)
+    {
+        Next();
+        if (Type == TokenType.String)
+            Next();
+        TsSkipAmbientDeclarationBlock();
+        return new AstTypeScriptOnly(SourceFile, startLocation, _lastTokEnd);
+    }
+
+    bool TsClassKeywordIsFollowedByBody()
+    {
+        if (!IsTypeScript || Type != TokenType.Class)
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        return index < _input.Length && _input[index] == '{';
     }
 
     bool TsIsImportEqualsStatementStart()
@@ -111,6 +202,32 @@ public sealed partial class Parser
         return index < _input.Length && _input[index] == '=';
     }
 
+    bool TsTrySkipModifierBeforeImportEquals()
+    {
+        if (!IsTypeScript || Type != TokenType.Name ||
+            !(IsContextual("public") || IsContextual("private") || IsContextual("protected") ||
+              IsContextual("static")))
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        if (!TsTextStartsKeyword(index, "import"))
+            return false;
+        Next();
+        return TsIsImportEqualsStatementStart();
+    }
+
+    bool TsClassMethodSignatureIsFollowedByBody()
+    {
+        if (!IsTypeScript || Type != TokenType.ParenL)
+            return false;
+        var after = TsFindMatchingSkippingLiterals(Start.Index, '(', ')');
+        if (after < 0)
+            return false;
+        after = TsSkipWhitespaceAndComments(after + 1);
+        if (after < _input.Length && _input[after] == ':')
+            after = TsSkipWhitespaceAndComments(TsSkipTypeInText(after + 1));
+        return after < _input.Length && _input[after] == '{';
+    }
+
     AstStatement TsParseImportEqualsStatement(Position startLocation)
     {
         Expect(TokenType.Import);
@@ -129,9 +246,25 @@ public sealed partial class Parser
 
         if (IsContextual("require"))
         {
-            TsSkipUntilStatementEnd();
-            _tsErasedTypeOnlyModuleSyntaxUsed = true;
-            return new AstTypeScriptOnly(SourceFile, startLocation, _lastTokEnd);
+            var requireStart = Start;
+            Next();
+            Expect(TokenType.ParenL);
+            if (Type != TokenType.String)
+                Raise(Start, "Unexpected token");
+            var moduleName = Value?.ToString() ?? "";
+            var moduleNameStart = Start;
+            Next();
+            Expect(TokenType.ParenR);
+            Semicolon();
+
+            var callArgs = new StructList<AstNode>();
+            callArgs.Add(new AstString(SourceFile, moduleNameStart, moduleNameStart, moduleName));
+            var requireCall = new AstCall(SourceFile, requireStart, _lastTokEnd,
+                new AstSymbolRef(SourceFile, requireStart, requireStart, "require"), ref callArgs);
+            var requireDeclarations = new StructList<AstVarDef>();
+            var requireSymbol = new AstSymbolVar(alias);
+            requireDeclarations.Add(new AstVarDef(SourceFile, alias.Start, _lastTokEnd, requireSymbol, requireCall));
+            return new AstTypeScriptImportEqualsConst(SourceFile, startLocation, _lastTokEnd, ref requireDeclarations);
         }
 
         if (Type == TokenType.Name &&
@@ -1652,11 +1785,12 @@ public sealed partial class Parser
         });
         """;
 
-    bool TsTryParseNamespaceStatements(out List<AstStatement> statements, bool local = false)
+    bool TsTryParseNamespaceStatements(out List<AstStatement> statements, bool local = false,
+        bool forceExport = false)
     {
         statements = null!;
         var namespaceStart = Start;
-        var isExport = false;
+        var isExport = forceExport;
         if (Type == TokenType.Export)
         {
             var index = End.Index;
@@ -1759,6 +1893,8 @@ public sealed partial class Parser
         var searchable = TsEraseCommentsAndStrings(body);
         return Regex.IsMatch(searchable, @"\bexport\s+import\b") ||
                Regex.IsMatch(searchable, @"\bexport\s+(?:type\s+)?\*") ||
+               Regex.IsMatch(searchable, @"\bexport\s+(?:var|let|const)\b") ||
+               Regex.IsMatch(searchable, @"\bfunction\s+[A-Za-z_$][\w$]*\s*(?:<[^>{};]*>\s*)?\([^{};]*\)\s*;") ||
                TsNamespaceBodyHasValueExportSpecifier(searchable) ||
                Regex.IsMatch(searchable, @"\b(?:namespace|module)\s+[A-Za-z_$][\w$]*(?:\s*\.\s*[A-Za-z_$][\w$]*)*\s*\{[\s\S]*?\bexport\s+import\b");
     }
@@ -1938,9 +2074,10 @@ public sealed partial class Parser
     {
         fullNamespaceName ??= namespaceName;
         _tsRuntimeEnumConstants ??= new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
-        var parsedBody = TypeScriptParser.Parse(body, new Options
+        var parsedBody = Parser.Parse(body, new Options
         {
             SourceType = SourceType.Module,
+            ParseTypeScript = true,
             ParseJSX = Options.ParseJSX,
             SourceFile = SourceFile,
             ParseTypeScriptNamespaceBody = true,
@@ -1956,7 +2093,11 @@ public sealed partial class Parser
         TsSyncUsingTempIndexesFromNamespaceBody(parsedBody);
 
         var exportedNames = TsCollectNamespaceVariableExportedNames(parsedBody);
+        TsCollectNamespaceAmbientExportedValueNames(body, exportedNames);
         var iifeBody = new StructList<AstNode>();
+        if (parsedBody.HasUseStrictDirective)
+            iifeBody.Add(new AstSimpleStatement(SourceFile, start, start,
+                new AstString(SourceFile, start, start, "use strict")));
         var namespaceDestructuringTempIndex = 0;
         var pendingDestructuringTemps = new List<string>();
         var pendingDestructuringStatements = new StructList<AstNode>();
@@ -2018,11 +2159,27 @@ public sealed partial class Parser
         if (_tsRuntimeEnumConstants == null)
             return;
 
+        var localRuntimeNames = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var node in parsedBody.Body.AsReadOnlySpan())
+        {
+            if (TsNamespaceRuntimeEnumLocalName(node) is { } localName)
+                localRuntimeNames.Add(localName);
+        }
+
         var prefix = fullNamespaceName + ".";
         foreach (var pair in new List<KeyValuePair<string, Dictionary<string, string>>>(_tsRuntimeEnumConstants))
         {
             if (!pair.Key.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                var dotIndex = pair.Key.IndexOf('.');
+                if (dotIndex > 0 &&
+                    localRuntimeNames.Contains(pair.Key[..dotIndex]) &&
+                    !pair.Key.StartsWith(namespaceName + ".", StringComparison.Ordinal))
+                {
+                    _tsRuntimeEnumConstants[fullNamespaceName + "." + pair.Key] = pair.Value;
+                }
                 continue;
+            }
 
             var localName = pair.Key[prefix.Length..];
             if (localName.Length == 0 || localName.Contains('.', StringComparison.Ordinal))
@@ -2284,9 +2441,13 @@ public sealed partial class Parser
     AstDefinitions TsBuildNamespaceLocalVariable(string namespaceName, Position start, Position end, bool local)
     {
         var definitions = new StructList<AstVarDef>();
-        AstSymbolDeclaration symbol = new AstSymbolLet(new AstSymbolRef(SourceFile, start, end, namespaceName));
+        AstSymbolDeclaration symbol = local
+            ? new AstSymbolLet(new AstSymbolRef(SourceFile, start, end, namespaceName))
+            : new AstSymbolVar(SourceFile, start, end, namespaceName, null);
         definitions.Add(new AstVarDef(SourceFile, start, end, symbol));
-        return new AstLet(SourceFile, start, end, ref definitions);
+        return local
+            ? new AstLet(SourceFile, start, end, ref definitions)
+            : new AstVar(SourceFile, start, end, ref definitions);
     }
 
     AstStatement TsBuildNamespaceIife(string namespaceName, ref StructList<AstNode> body, Position start, Position end)
@@ -2422,6 +2583,13 @@ public sealed partial class Parser
             return;
         }
 
+        if (export is { IsDefault: true, ExportedDefinition: AstDefun { Name: null } anonymousDefaultFunction })
+        {
+            var defaultName = TsNextInvalidDefaultExportName();
+            anonymousDefaultFunction.Name = new AstSymbolDefun(new AstSymbolRef(SourceFile,
+                anonymousDefaultFunction.Start, anonymousDefaultFunction.Start, defaultName));
+        }
+
         if (export.ExportedDefinition is AstDefun or AstDefClass)
         {
             var declaration = TsRewriteNamespaceExportReferences(export.ExportedDefinition, namespaceName, exportedNames);
@@ -2446,11 +2614,13 @@ public sealed partial class Parser
     void TsLowerNamespaceExportedDefinitions(AstDefinitions definitions, string namespaceName, string fullNamespaceName,
         HashSet<string> exportedNames, ref StructList<AstNode> iifeBody, ref int destructuringTempIndex)
     {
+        var assignments = new StructList<AstNode>();
         for (var i = 0u; i < definitions.Definitions.Count; i++)
         {
             var definition = definitions.Definitions[i];
             if (definition.Name is not AstSymbol symbol)
             {
+                TsFlushNamespaceExportedDefinitionAssignments(ref assignments, ref iifeBody, definitions);
                 TsLowerNamespaceExportedDestructuring(definition, namespaceName, exportedNames, ref iifeBody,
                     ref destructuringTempIndex);
                 continue;
@@ -2462,8 +2632,29 @@ public sealed partial class Parser
                 continue;
 
             var value = TsRewriteNamespaceExportReferences(definition.Value, namespaceName, exportedNames);
-            iifeBody.Add(TsBuildNamespaceExportAssignment(namespaceName, symbol.Name, value, definition));
+            assignments.Add(TsBuildNamespaceExportAssignExpression(namespaceName, symbol.Name, value, definition));
         }
+        TsFlushNamespaceExportedDefinitionAssignments(ref assignments, ref iifeBody, definitions);
+    }
+
+    void TsFlushNamespaceExportedDefinitionAssignments(ref StructList<AstNode> assignments,
+        ref StructList<AstNode> iifeBody, AstNode positionHint)
+    {
+        if (assignments.Count == 0)
+            return;
+        AstNode body;
+        if (assignments.Count == 1)
+        {
+            body = assignments[0];
+        }
+        else
+        {
+            var sequence = new StructList<AstNode>();
+            sequence.TransferFrom(ref assignments);
+            body = new AstSequence(SourceFile, positionHint.Start, positionHint.End, ref sequence);
+        }
+        iifeBody.Add(new AstSimpleStatement(SourceFile, positionHint.Start, positionHint.End, body));
+        assignments = new StructList<AstNode>();
     }
 
     bool TsIsTypeOnlyImportEqualsValue(AstNode value, string namespaceName, string fullNamespaceName,
@@ -2824,6 +3015,16 @@ public sealed partial class Parser
         return names;
     }
 
+    static void TsCollectNamespaceAmbientExportedValueNames(string body, HashSet<string> names)
+    {
+        var searchable = TsEraseCommentsAndStrings(body);
+        foreach (Match match in Regex.Matches(searchable,
+                     @"\bexport\s+declare\s+(?:var|let|const)\s+(?<name>[A-Za-z_$][\w$]*)\b"))
+        {
+            names.Add(match.Groups["name"].Value);
+        }
+    }
+
     static void TsCollectNamespaceVariableExportedNames(AstNode statement, HashSet<string> names, AstNode? nextStatement)
     {
         if (statement is AstExport { ExportedDefinition: AstDefinitions definitions })
@@ -3182,7 +3383,7 @@ public sealed partial class Parser
         var knownConstValues = TsCollectLeadingNumericConstValues(enumStatementStart);
         var parsed = Parser.Parse(TsEmitEnumJavaScript(enumName, isExport, members, _tsRuntimeEnumConstants,
                 knownConstValues),
-            new Options { SourceType = SourceType.Module, EcmaVersion = 2022 });
+            new Options { SourceType = SourceType.Module, EcmaVersion = 2022, ParseTypeScript = true });
         if (TsTryCollectRuntimeEnumConstants(enumName, members, _tsRuntimeEnumConstants, knownConstValues,
                 out var runtimeValues))
         {
@@ -3228,7 +3429,7 @@ public sealed partial class Parser
         return values;
     }
 
-    void TsMoveToIndexAndReadToken(int index)
+    void TsMoveToIndexAndReadToken(int index, bool expressionAllowed = false)
     {
         var line = Start.Line;
         var column = Start.Column;
@@ -3256,7 +3457,7 @@ public sealed partial class Parser
         _pos = new Position(line, column, index);
         while (_context.Count > 0 && (_context[^1] == TokContext.QTmpl || _context[^1] == TokContext.BTmpl))
             _context.RemoveAt(_context.Count - 1);
-        _exprAllowed = false;
+        _exprAllowed = expressionAllowed;
         NextToken();
     }
 
@@ -3284,6 +3485,8 @@ public sealed partial class Parser
             {
                 if (_input[index + 1] == '/')
                 {
+                    if (braceDepth == 0 && parenDepth == 0 && bracketDepth == 0)
+                        return index;
                     index += 2;
                     while (index < _input.Length && _input[index] is not '\r' and not '\n')
                         index++;
@@ -3556,7 +3759,7 @@ public sealed partial class Parser
                 name, null, false);
         }
 
-        if (Type == TokenType.Num)
+        if (Type is TokenType.Num or TokenType.BigInt)
         {
             var raw = _input.Substring(Start.Index, End.Index - Start.Index);
             Next();
@@ -4064,7 +4267,8 @@ public sealed partial class Parser
         {
             foreach (var memberPair in enumPair.Value)
                 expression = TsReplaceEnumMemberReferences(expression, enumPair.Key, memberPair.Key, memberPair.Value,
-                    includeBareReference: enumPair.Key == currentEnumName);
+                    includeBareReference: enumPair.Key == currentEnumName,
+                    includePrefixedReference: enumPair.Key == currentEnumName);
         }
 
         return expression;
@@ -4084,7 +4288,8 @@ public sealed partial class Parser
         string replacement, Dictionary<string, Dictionary<string, string>>? knownEnumConstants)
     {
         if (enumName != null)
-            expression = TsReplaceEnumMemberReferences(expression, enumName, referenceName, replacement);
+            expression = TsReplaceEnumMemberReferences(expression, enumName, referenceName, replacement,
+                includePrefixedReference: true);
         if (knownEnumConstants != null && enumName != null)
         {
             foreach (var enumPair in knownEnumConstants)
@@ -4126,21 +4331,40 @@ public sealed partial class Parser
     }
 
     static string TsReplaceEnumMemberReferences(string expression, string enumName, string referenceName,
-        string replacement, bool includeBareReference = true)
+        string replacement, bool includeBareReference = true, bool includePrefixedReference = false)
     {
         var quoted = "\"" + Regex.Escape(TsEscapeString(referenceName)) + "\"";
+        var quotedKey = "(?:\"" + Regex.Escape(TsEscapeString(referenceName)) + "\"|`" +
+                        Regex.Escape(TsEscapeString(referenceName)) + "`)";
         expression = Regex.Replace(expression,
-            $@"\bglobalThis\s*\.\s*{Regex.Escape(enumName)}\s*\[\s*{quoted}\s*\]",
+            $@"\bglobalThis\s*\.\s*{Regex.Escape(enumName)}\s*\[\s*{quotedKey}\s*\]",
             replacement);
         expression = Regex.Replace(expression,
-            $@"(?<![.\w$]){Regex.Escape(enumName)}\s*\[\s*{quoted}\s*\]",
+            $@"(?<![.\w$]){Regex.Escape(enumName)}\s*\[\s*{quotedKey}\s*\]",
             replacement);
         expression = Regex.Replace(expression,
-            $@"(?<![.\w$]){Regex.Escape(enumName)}\s*\?\.\s*\[\s*{quoted}\s*\]",
+            $@"(?<![.\w$]){Regex.Escape(enumName)}\s*\?\.\s*\[\s*{quotedKey}\s*\]",
             replacement);
 
         if (!TsIsIdentifierText(referenceName))
             return expression;
+
+        if (includePrefixedReference || enumName.Contains('.', StringComparison.Ordinal))
+        {
+            var prefixedEnumName = $@"(?:[A-Za-z_$][\w$]*\s*\.\s*)+{Regex.Escape(enumName)}";
+            expression = Regex.Replace(expression,
+                $@"(?<![.\w$]){prefixedEnumName}\s*\[\s*{quotedKey}\s*\]",
+                replacement);
+            expression = Regex.Replace(expression,
+                $@"(?<![.\w$]){prefixedEnumName}\s*\?\.\s*\[\s*{quotedKey}\s*\]",
+                replacement);
+            expression = Regex.Replace(expression,
+                $@"(?<![.\w$]){prefixedEnumName}\s*\.\s*{Regex.Escape(referenceName)}\b",
+                replacement);
+            expression = Regex.Replace(expression,
+                $@"(?<![.\w$]){prefixedEnumName}\s*\?\.\s*{Regex.Escape(referenceName)}\b",
+                replacement);
+        }
 
         expression = Regex.Replace(expression,
             $@"\bglobalThis\s*\.\s*{Regex.Escape(enumName)}\s*\.\s*{Regex.Escape(referenceName)}\b",
@@ -4617,10 +4841,35 @@ public sealed partial class Parser
 
     bool TsIsClassMemberModifier()
     {
-        return IsTypeScript && Type == TokenType.Name &&
-               (IsContextual("public") || IsContextual("private") || IsContextual("protected") ||
-                IsContextual("readonly") || IsContextual("override") || IsContextual("abstract") ||
-                IsContextual("declare"));
+        return IsTypeScript &&
+               (Type == TokenType.Const ||
+                Type == TokenType.Name &&
+                (IsContextual("public") || IsContextual("private") || IsContextual("protected") ||
+                 IsContextual("readonly") || IsContextual("override") || IsContextual("abstract") ||
+                 IsContextual("declare")));
+    }
+
+    bool TsHasLineBreakAfterCurrentToken()
+    {
+        if (!IsTypeScript)
+            return false;
+        for (var index = End.Index; index < _input.Length; index++)
+        {
+            var ch = _input[index];
+            if (ch == '\n' || ch == '\r')
+                return true;
+            if (ch != ' ' && ch != '\t' && ch != '\v' && ch != '\f')
+                return false;
+        }
+        return false;
+    }
+
+    bool TsClassModifierLooksLikeMemberName()
+    {
+        if (!IsTypeScript || Type != TokenType.Name && Type != TokenType.Const)
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        return index >= _input.Length || _input[index] is '=' or ';' or ':' or '?' or '!';
     }
 
     bool TsStaticIsFollowedByClassMemberModifier()
@@ -4629,7 +4878,8 @@ public sealed partial class Parser
             return false;
 
         var index = TsSkipWhitespaceAndComments(End.Index);
-        return TsTextStartsKeyword(index, "readonly") || TsTextStartsKeyword(index, "override") ||
+        return TsTextStartsKeyword(index, "const") || TsTextStartsKeyword(index, "readonly") ||
+               TsTextStartsKeyword(index, "override") ||
                TsTextStartsKeyword(index, "public") || TsTextStartsKeyword(index, "private") ||
                TsTextStartsKeyword(index, "protected") || TsTextStartsKeyword(index, "accessor") ||
                TsTextStartsKeyword(index, "abstract") || TsTextStartsKeyword(index, "declare");
@@ -4639,20 +4889,31 @@ public sealed partial class Parser
     {
         if (!IsTypeScript) return false;
         var skipped = false;
+        var hasParameterPropertyModifier = false;
         while (Type == TokenType.Name &&
                (IsContextual("public") || IsContextual("private") || IsContextual("protected") ||
-                IsContextual("readonly") || IsContextual("override") || IsContextual("accessor")))
+                IsContextual("readonly") || IsContextual("override") || IsContextual("accessor") ||
+                IsContextual("declare") || IsContextual("static")))
         {
+            var index = TsSkipWhitespaceAndComments(End.Index);
+            if (index >= _input.Length ||
+                TsTextStartsKeyword(index, "as") || TsTextStartsKeyword(index, "satisfies") ||
+                _input[index] is ':' or '=' or ',' or ')' ||
+                !IsIdentifierStart(_input[index], true) && _input[index] != '.' && _input[index] != '[' &&
+                _input[index] != '{')
+                break;
+            if (!IsContextual("declare") && !IsContextual("static"))
+                hasParameterPropertyModifier = true;
             skipped = true;
             Next();
         }
 
-        return skipped;
+        return skipped && hasParameterPropertyModifier;
     }
 
     bool TsTrySkipStaticParameterModifier()
     {
-        if (!IsTypeScript || !IsContextual("static"))
+        if (!IsTypeScript || !IsContextual("static") && Type != TokenType.Export)
             return false;
 
         var index = End.Index;
@@ -4683,7 +4944,7 @@ public sealed partial class Parser
         if (!IsTypeScript || Type != TokenType.Name ||
             !(IsContextual("readonly") || IsContextual("public") || IsContextual("private") ||
               IsContextual("protected") || IsContextual("accessor") || IsContextual("declare") ||
-              IsContextual("override")))
+              IsContextual("override") || IsContextual("abstract")))
             return false;
 
         var index = TsSkipWhitespaceAndComments(End.Index);
@@ -4801,13 +5062,84 @@ public sealed partial class Parser
         var close = TsFindMatchingSkippingLiterals(index, '(', ')');
         if (close < 0) return false;
         var after = TsSkipWhitespaceAndComments(close + 1);
+        var endedByLineBreak = false;
         if (after < _input.Length && _input[after] == ':')
-            after = TsSkipWhitespaceAndComments(TsSkipTypeInText(after + 1));
-        if (after >= _input.Length || _input[after] != ';') return false;
+        {
+            var typeStart = after + 1;
+            if (TsFunctionReturnTypeHasBodyBraceOnSameLine(typeStart))
+                return false;
+            after = TsFindDeclareFunctionReturnTypeEnd(after + 1);
+            endedByLineBreak = after < _input.Length && _input[after] is '\n' or '\r';
+            after = TsSkipWhitespaceAndComments(after);
+        }
+        if (after >= _input.Length || _input[after] != ';' && !endedByLineBreak) return false;
 
-        TsSkipUntilStatementEnd();
+        if (endedByLineBreak)
+            TsMoveToIndexAndReadToken(after);
+        else
+            TsSkipUntilStatementEnd();
         typeOnlyStatement = new AstTypeScriptOnly(SourceFile, startLocation, _lastTokEnd);
         return true;
+    }
+
+    bool TsFunctionReturnTypeHasBodyBraceOnSameLine(int index)
+    {
+        var angle = 0;
+        var brace = 0;
+        var paren = 0;
+        var bracket = 0;
+        var startedType = false;
+        var lastSignificant = '\0';
+        var lastWord = "";
+        while (index < _input.Length)
+        {
+            var ch = _input[index];
+            if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 && ch is ('\n' or '\r' or ';'))
+                return false;
+            var allowTypeLiteral = ch == '{' && (!startedType || lastSignificant is '|' or '&' || lastWord == "is");
+            if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 && ch == '{' && startedType &&
+                !allowTypeLiteral)
+                return true;
+            if (ch is '"' or '\'')
+            {
+                index = TsSkipStringLike(index, ch);
+                continue;
+            }
+            if (ch == '`')
+            {
+                index = TsSkipTemplateLiteral(index);
+                continue;
+            }
+            if (IsIdentifierStart(ch, true))
+            {
+                var wordStart = index++;
+                while (index < _input.Length && IsIdentifierChar(_input[index], true))
+                    index++;
+                lastSignificant = _input[index - 1];
+                lastWord = _input.Substring(wordStart, index - wordStart);
+                startedType = true;
+                continue;
+            }
+            if (!char.IsWhiteSpace(ch))
+            {
+                startedType = true;
+                lastSignificant = ch;
+                lastWord = "";
+            }
+            switch (ch)
+            {
+                case '<': angle++; break;
+                case '>': if (angle > 0) angle--; break;
+                case '{': brace++; break;
+                case '}': if (brace > 0) brace--; break;
+                case '(': paren++; break;
+                case ')': if (paren > 0) paren--; break;
+                case '[': bracket++; break;
+                case ']': if (bracket > 0) bracket--; break;
+            }
+            index++;
+        }
+        return false;
     }
 
     AstStatement TsParseDeclareStatement(Position startLocation)
@@ -4826,9 +5158,17 @@ public sealed partial class Parser
         {
             TsSkipClassLikeDeclaration();
         }
+        else if (Type == TokenType.Function)
+        {
+            TsSkipDeclareFunctionStatement();
+        }
         else if (Type == TokenType.Const && TsConstIsFollowedByEnum())
         {
             TsSkipAmbientDeclarationBlock();
+        }
+        else if (Type is TokenType.Var or TokenType.Const || IsLet())
+        {
+            TsSkipDeclareVariableStatement();
         }
         else if (IsContextual("global") || IsContextual("namespace") || IsContextual("module") ||
                  IsContextual("enum") || IsContextual("interface"))
@@ -4837,10 +5177,152 @@ public sealed partial class Parser
         }
         else
         {
-            TsSkipUntilStatementEnd();
+            TsSkipDeclareStatementFallback();
         }
 
         return new AstTypeScriptOnly(SourceFile, startLocation, _lastTokEnd);
+    }
+
+    void TsSkipDeclareFunctionStatement()
+    {
+        var index = End.Index;
+        while (index < _input.Length && char.IsWhiteSpace(_input[index])) index++;
+        if (index < _input.Length && _input[index] == '*')
+            index++;
+        while (index < _input.Length && char.IsWhiteSpace(_input[index])) index++;
+        if (index >= _input.Length || !IsIdentifierStart(_input[index], true))
+        {
+            TsSkipDeclareStatementFallback();
+            return;
+        }
+
+        index++;
+        while (index < _input.Length && IsIdentifierChar(_input[index], true)) index++;
+        index = TsSkipWhitespaceAndComments(index);
+        if (index < _input.Length && _input[index] == '<')
+        {
+            var typeEnd = TsFindTypeArgumentListEnd(index);
+            if (typeEnd < 0)
+            {
+                TsSkipDeclareStatementFallback();
+                return;
+            }
+            index = TsSkipWhitespaceAndComments(typeEnd + 1);
+        }
+
+        if (index >= _input.Length || _input[index] != '(')
+        {
+            TsSkipDeclareStatementFallback();
+            return;
+        }
+
+        var close = TsFindMatchingSkippingLiterals(index, '(', ')');
+        if (close < 0)
+        {
+            TsSkipDeclareStatementFallback();
+            return;
+        }
+
+        index = TsSkipWhitespaceAndComments(close + 1);
+        if (index < _input.Length && _input[index] == ':')
+            index = TsFindDeclareFunctionReturnTypeEnd(index + 1);
+        index = TsSkipWhitespaceAndComments(index);
+        TsMoveToIndexAndReadToken(index);
+        Eat(TokenType.Semi);
+    }
+
+    int TsFindDeclareFunctionReturnTypeEnd(int index)
+    {
+        var angle = 0;
+        var brace = 0;
+        var bracket = 0;
+        var paren = 0;
+        while (index < _input.Length)
+        {
+            var ch = _input[index];
+            if (ch is '"' or '\'')
+            {
+                index = TsSkipStringLike(index, ch);
+                continue;
+            }
+            if (ch == '`')
+            {
+                index = TsSkipTemplateLiteral(index);
+                continue;
+            }
+            if (ch == '/' && index + 1 < _input.Length)
+            {
+                if (_input[index + 1] == '/')
+                {
+                    while (index < _input.Length && _input[index] is not '\n' and not '\r') index++;
+                    continue;
+                }
+                if (_input[index + 1] == '*')
+                {
+                    index += 2;
+                    while (index + 1 < _input.Length && !(_input[index] == '*' && _input[index + 1] == '/')) index++;
+                    index = Math.Min(index + 2, _input.Length);
+                    continue;
+                }
+            }
+
+            if (ch == '<') angle++;
+            else if (ch == '>' && angle > 0) angle--;
+            else if (ch == '{') brace++;
+            else if (ch == '}' && brace > 0) brace--;
+            else if (ch == '[') bracket++;
+            else if (ch == ']' && bracket > 0) bracket--;
+            else if (ch == '(') paren++;
+            else if (ch == ')' && paren > 0) paren--;
+            else if (angle == 0 && brace == 0 && bracket == 0 && paren == 0)
+            {
+                if (ch == ';')
+                    return index;
+                if (ch is '\n' or '\r' && TsNextLineStartsStatement(index + 1))
+                    return index;
+            }
+
+            index++;
+        }
+        return index;
+    }
+
+    bool TsNextLineStartsStatement(int index)
+    {
+        while (index < _input.Length && _input[index] is ' ' or '\t' or '\v' or '\f' or '\n' or '\r')
+            index++;
+        return TsTextStartsKeyword(index, "function") ||
+               TsTextStartsKeyword(index, "declare") ||
+               TsTextStartsKeyword(index, "class") ||
+               TsTextStartsKeyword(index, "interface") ||
+               TsTextStartsKeyword(index, "type") ||
+               TsTextStartsKeyword(index, "namespace") ||
+               TsTextStartsKeyword(index, "module") ||
+               TsTextStartsKeyword(index, "export") ||
+               TsTextStartsKeyword(index, "import") ||
+               TsTextStartsKeyword(index, "const") ||
+               TsTextStartsKeyword(index, "let") ||
+               TsTextStartsKeyword(index, "var") ||
+               TsTextStartsKeyword(index, "async") ||
+               TsIdentifierIsFollowedByCall(index);
+    }
+
+    bool TsIdentifierIsFollowedByCall(int index)
+    {
+        if (index >= _input.Length || !IsIdentifierStart(_input[index], true))
+            return false;
+        index++;
+        while (index < _input.Length && IsIdentifierChar(_input[index], true))
+            index++;
+        index = TsSkipWhitespaceAndComments(index);
+        return index < _input.Length && _input[index] == '(';
+    }
+
+    void TsSkipDeclareStatementFallback()
+    {
+        var end = TsFindStatementEndIndex(Start.Index, stopAtLineBreak: false);
+        TsMoveToIndexAndReadToken(end);
+        Eat(TokenType.Semi);
     }
 
     bool TsConstIsFollowedByEnum()
@@ -4848,6 +5330,86 @@ public sealed partial class Parser
         var index = End.Index;
         while (index < _input.Length && char.IsWhiteSpace(_input[index])) index++;
         return TsTextStartsKeyword(index, "enum");
+    }
+
+    void TsSkipDeclareVariableStatement()
+    {
+        var end = TsFindDeclareVariableStatementEnd(Start.Index);
+        TsMoveToIndexAndReadToken(end);
+        Eat(TokenType.Semi);
+    }
+
+    int TsFindDeclareVariableStatementEnd(int index)
+    {
+        var brace = 0;
+        var bracket = 0;
+        var paren = 0;
+        while (index < _input.Length)
+        {
+            var ch = _input[index];
+            if (ch is '"' or '\'')
+            {
+                index = TsSkipStringLike(index, ch);
+                continue;
+            }
+            if (ch == '`')
+            {
+                index = TsSkipTemplateLiteral(index);
+                continue;
+            }
+            if (ch == '/' && index + 1 < _input.Length)
+            {
+                if (_input[index + 1] == '/')
+                {
+                    while (index < _input.Length && _input[index] is not '\n' and not '\r') index++;
+                    continue;
+                }
+                if (_input[index + 1] == '*')
+                {
+                    index += 2;
+                    while (index + 1 < _input.Length && !(_input[index] == '*' && _input[index + 1] == '/')) index++;
+                    index = Math.Min(index + 2, _input.Length);
+                    continue;
+                }
+            }
+
+            if (ch == '{') brace++;
+            else if (ch == '}' && brace > 0) brace--;
+            else if (ch == '[') bracket++;
+            else if (ch == ']' && bracket > 0) bracket--;
+            else if (ch == '(') paren++;
+            else if (ch == ')' && paren > 0) paren--;
+            else if (brace == 0 && bracket == 0 && paren == 0)
+            {
+                if (ch == ';')
+                    return index;
+                if (ch is '\n' or '\r' && !TsDeclareVariableLineContinues(index))
+                    return index;
+            }
+
+            index++;
+        }
+        return index;
+    }
+
+    bool TsDeclareVariableLineContinues(int newlineIndex)
+    {
+        var index = newlineIndex - 1;
+        while (index >= 0 && _input[index] is ' ' or '\t' or '\v' or '\f' or '\n' or '\r')
+            index--;
+        if (index < 0)
+            return false;
+        var ch = _input[index];
+        if (ch is ':' or '<' or '|' or '&' or ',' or '?' or '=')
+            return true;
+        if (ch == '>' && index > 0 && _input[index - 1] == '=')
+            return true;
+        index = newlineIndex + 1;
+        while (index < _input.Length && _input[index] is ' ' or '\t' or '\v' or '\f' or '\n' or '\r')
+            index++;
+        if (index < _input.Length && _input[index] is '|' or '&' or '>' or '?' or ':' or ',' or ')')
+            return true;
+        return false;
     }
 
     void TsSkipAmbientDeclarationBlock()
@@ -4892,7 +5454,7 @@ public sealed partial class Parser
     void TsSkipAbstractClassMemberSignature()
     {
         var index = Start.Index;
-        while (index < _input.Length && _input[index] != '(' && _input[index] != ';' &&
+        while (index < _input.Length && _input[index] != '(' && _input[index] != ':' && _input[index] != ';' &&
                _input[index] != '\n' && _input[index] != '\r')
             index++;
         if (index < _input.Length && _input[index] == '(')
@@ -4905,6 +5467,9 @@ public sealed partial class Parser
         if (index < _input.Length && _input[index] == ':')
             index = TsSkipTypeInText(index + 1);
         index = TsSkipWhitespaceAndComments(index);
+        while (index < _input.Length && _input[index] != ';' && _input[index] != '\n' && _input[index] != '\r' &&
+               _input[index] != '{')
+            index++;
         if (index < _input.Length && _input[index] == ';')
             index++;
         TsMoveToIndexAndReadToken(index);
@@ -4927,6 +5492,105 @@ public sealed partial class Parser
         if (after >= _input.Length || _input[after] != ';') return false;
         while (Type != TokenType.Eof && Start.Index <= after) Next();
         Eat(TokenType.Semi);
+        return true;
+    }
+
+    bool TsTrySkipObjectMethodSignature()
+    {
+        if (!IsTypeScript)
+            return false;
+        var index = Start.Index;
+        if (Type == TokenType.Name || TokenInformation.Types[Type].Keyword != null)
+            index = End.Index;
+        else if (Type is TokenType.Num or TokenType.String)
+            index = End.Index;
+        else if (Type == TokenType.BracketL)
+        {
+            var closeBracket = TsFindMatchingSkippingLiterals(Start.Index, '[', ']');
+            if (closeBracket < 0)
+                return false;
+            index = closeBracket + 1;
+        }
+        else
+            return false;
+
+        index = TsSkipWhitespaceAndComments(index);
+        if (index >= _input.Length || _input[index] != '(')
+            return false;
+        var close = TsFindMatchingSkippingLiterals(index, '(', ')');
+        if (close < 0)
+            return false;
+        var after = TsSkipWhitespaceAndComments(close + 1);
+        if (after < _input.Length && _input[after] == ':')
+            after = TsSkipWhitespaceAndComments(TsSkipTypeInText(after + 1));
+        if (after >= _input.Length || _input[after] != ';')
+            return false;
+        TsMoveToIndexAndReadToken(after + 1);
+        return true;
+    }
+
+    bool TsTrySkipClassIndexSignature()
+    {
+        if (!IsTypeScript)
+            return false;
+
+        var bracket = Start.Index;
+        if (Type != TokenType.BracketL)
+        {
+            if (!IsContextual("static"))
+                return false;
+            bracket = TsSkipWhitespaceAndComments(End.Index);
+            if (bracket >= _input.Length || _input[bracket] != '[')
+                return false;
+        }
+
+        var close = TsFindMatchingSkippingLiterals(bracket, '[', ']');
+        if (close < 0)
+            return false;
+
+        var colonInBrackets = false;
+        for (var index = bracket + 1; index < close; index++)
+        {
+            if (_input[index] == ':')
+            {
+                colonInBrackets = true;
+                break;
+            }
+        }
+        var restIndexSignature = false;
+        if (!colonInBrackets)
+        {
+            var content = TsSkipWhitespaceAndComments(bracket + 1);
+            restIndexSignature = content + 2 < close && _input[content] == '.' && _input[content + 1] == '.' &&
+                                 _input[content + 2] == '.';
+            if (!restIndexSignature)
+                return false;
+        }
+
+        var after = TsSkipWhitespaceAndComments(close + 1);
+        if (after < _input.Length && _input[after] == ';' && colonInBrackets)
+        {
+            TsMoveToIndexAndReadToken(after + 1);
+            return true;
+        }
+        if (after < _input.Length && _input[after] == '}' && colonInBrackets)
+        {
+            TsMoveToIndexAndReadToken(after);
+            return true;
+        }
+        if (after >= _input.Length || _input[after] != ':')
+            return false;
+
+        after = TsSkipWhitespaceAndComments(TsSkipTypeInText(after + 1));
+        if (after < _input.Length && _input[after] == '}')
+        {
+            TsMoveToIndexAndReadToken(after);
+            return true;
+        }
+        if (after < _input.Length && _input[after] == ';')
+            after++;
+
+        TsMoveToIndexAndReadToken(after);
         return true;
     }
 
@@ -5024,20 +5688,33 @@ public sealed partial class Parser
         return index < _input.Length && (_input[index] == '(' || _input[index] == ':');
     }
 
-    void TsTrySkipTypeParameters()
+    void TsTrySkipTypeParameters(bool expressionAllowedAfter = false)
     {
-        if (!IsTypeScript || Type != TokenType.Relational || !"<".Equals(Value)) return;
+        if (!TsStartsTypeArgumentListToken()) return;
         var end = TsFindTypeArgumentListEnd(Start.Index);
         if (end >= 0)
-            TsMoveToIndexAndReadToken(end + 1);
+            TsMoveToIndexAndReadToken(end + 1, expressionAllowedAfter);
         else
             TsSkipBalancedTokenType(TokenType.Relational, "<", ">");
+    }
+
+    bool TsStartsTypeArgumentListToken()
+    {
+        return IsTypeScript &&
+               (Type == TokenType.Relational && "<".Equals(Value) ||
+                Type == TokenType.BitShift && Value is string bitShift && bitShift.StartsWith("<"));
     }
 
     void TsTrySkipTypeAnnotation()
     {
         if (!IsTypeScript || !Eat(TokenType.Colon)) return;
+        var typeStart = Start;
         TsSkipType();
+        _tsCanInsertSemicolonAfterSkippedType = Type != TokenType.Eq &&
+                                               Type != TokenType.Comma &&
+                                               Type != TokenType.Semi &&
+                                               LineBreak.IsMatch(_input.Substring(typeStart.Index,
+                                                   Math.Max(0, Start.Index - typeStart.Index)));
     }
 
     void TsTrySkipClassFieldTypeAnnotation()
@@ -5056,13 +5733,9 @@ public sealed partial class Parser
 
     void TsTrySkipArrowReturnTypeAnnotation()
     {
-        if (!IsTypeScript || Type != TokenType.Colon)
+        if (!IsTypeScript || !Eat(TokenType.Colon))
             return;
-        var afterType = TsSkipWhitespaceAndComments(TsSkipTypeInText(End.Index));
-        if (afterType + 1 < _input.Length && _input[afterType] == '=' && _input[afterType + 1] == '>')
-            TsMoveToIndexAndReadToken(afterType);
-        else
-            TsTrySkipTypeAnnotation();
+        TsSkipType(stopAtExpressionBodyArrow: true);
     }
 
     bool TsTypeAnnotationStartsWithConditionalAlternate()
@@ -5098,6 +5771,7 @@ public sealed partial class Parser
                 Next();
         }
     }
+
 
     bool TsTypeSpecifierIsTypeOnly()
     {
@@ -5156,6 +5830,26 @@ public sealed partial class Parser
     }
 
     bool TsCanParseAsyncGenericArrow()
+    {
+        if (Type != TokenType.Relational || !"<".Equals(Value))
+            return false;
+
+        var typeEnd = TsFindTypeArgumentListEnd(Start.Index);
+        if (typeEnd < 0)
+            return false;
+        var parenStart = TsSkipWhitespaceAndComments(typeEnd + 1);
+        if (parenStart >= _input.Length || _input[parenStart] != '(')
+            return false;
+        var parenEnd = TsFindMatchingSkippingLiterals(parenStart, '(', ')');
+        if (parenEnd < 0)
+            return false;
+        var after = TsSkipWhitespaceAndComments(parenEnd + 1);
+        if (after < _input.Length && _input[after] == ':')
+            after = TsSkipWhitespaceAndComments(TsSkipTypeInText(after + 1));
+        return after + 1 < _input.Length && _input[after] == '=' && _input[after + 1] == '>';
+    }
+
+    bool TsCanParseGenericArrow()
     {
         if (Type != TokenType.Relational || !"<".Equals(Value))
             return false;
@@ -5248,7 +5942,9 @@ public sealed partial class Parser
             return true;
         if (TsTextStartsKeyword(nextIndex, "as") || TsTextStartsKeyword(nextIndex, "satisfies"))
             return true;
-        return _input[nextIndex] is ';' or ',' or ')' or ']' or '}' or '.' or '?' or '`' or '\n' or '\r';
+        if (TsTextStartsKeyword(nextIndex, "instanceof") || TsTextStartsKeyword(nextIndex, "in"))
+            return true;
+        return _input[nextIndex] is ';' or ',' or ')' or ']' or '}' or '.' or '?' or '`' or '\n' or '\r' or '=';
     }
 
     bool TsStaticModifierIsFollowedByClassElementName()
@@ -5710,6 +6406,33 @@ public sealed partial class Parser
         return TsTextStartsKeyword(index, "get") || TsTextStartsKeyword(index, "set");
     }
 
+    bool TsDefaultIsFollowedByClass()
+    {
+        if (!IsTypeScript || Type != TokenType.Default && !IsContextual("default"))
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        return TsTextStartsKeyword(index, "class");
+    }
+
+    bool TsDefaultIsFollowedByFunction()
+    {
+        if (!IsTypeScript || Type != TokenType.Default && !IsContextual("default"))
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        if (TsTextStartsKeyword(index, "function"))
+            return true;
+        if (!TsTextStartsKeyword(index, "async"))
+            return false;
+        index = TsSkipWhitespaceAndComments(index + "async".Length);
+        return TsTextStartsKeyword(index, "function");
+    }
+
+    string TsNextInvalidDefaultExportName()
+    {
+        _tsInvalidDefaultExportNameIndex++;
+        return "default_" + _tsInvalidDefaultExportNameIndex.ToString(CultureInfo.InvariantCulture);
+    }
+
     void TsSkipTypeDeclaration()
     {
         if (IsContextual("interface"))
@@ -5743,16 +6466,132 @@ public sealed partial class Parser
             Eat(TokenType.Semi);
             return;
         }
-
+        if (IsContextual("type"))
+        {
+            var typeAliasEnd = TsFindTypeAliasStatementEndIndex(Start.Index);
+            if (typeAliasEnd >= 0)
+            {
+                TsMoveToIndexAndReadToken(typeAliasEnd);
+                Eat(TokenType.Semi);
+                return;
+            }
+        }
         var end = TsFindStatementEndIndex(Start.Index, stopAtLineBreak: false);
         while (Type != TokenType.Eof && _lastTokEnd.Index < end)
             Next();
         Eat(TokenType.Semi);
     }
 
+    int TsFindTypeAliasStatementEndIndex(int start)
+    {
+        var index = start;
+        var angle = 0;
+        var brace = 0;
+        var bracket = 0;
+        var paren = 0;
+        var foundEquals = false;
+        while (index < _input.Length)
+        {
+            var ch = _input[index];
+            if (ch is '"' or '\'')
+            {
+                index = TsSkipStringLike(index, ch);
+                continue;
+            }
+            if (ch == '`')
+            {
+                index = TsSkipTemplateLiteral(index);
+                continue;
+            }
+            if (ch == '/' && index + 1 < _input.Length)
+            {
+                if (_input[index + 1] == '/')
+                {
+                    index += 2;
+                    while (index < _input.Length && _input[index] is not '\n' and not '\r') index++;
+                    continue;
+                }
+                if (_input[index + 1] == '*')
+                {
+                    index += 2;
+                    while (index + 1 < _input.Length && !(_input[index] == '*' && _input[index + 1] == '/')) index++;
+                    index = Math.Min(index + 2, _input.Length);
+                    continue;
+                }
+                if (TsCanStartRegexLiteralAt(index))
+                {
+                    index = TsSkipRegexLiteral(index);
+                    continue;
+                }
+            }
+
+            if (ch == '<') angle++;
+            else if (ch == '>' && angle > 0) angle--;
+            else if (ch == '{') brace++;
+            else if (ch == '}' && brace > 0) brace--;
+            else if (ch == '[') bracket++;
+            else if (ch == ']' && bracket > 0) bracket--;
+            else if (ch == '(') paren++;
+            else if (ch == ')' && paren > 0) paren--;
+            else if (ch == '=' && angle == 0 && brace == 0 && bracket == 0 && paren == 0)
+                foundEquals = true;
+            else if (ch == ';' && angle == 0 && brace == 0 && bracket == 0 && paren == 0)
+                return index;
+            else if (foundEquals && (ch == '\n' || ch == '\r') &&
+                     angle == 0 && brace == 0 && bracket == 0 && paren == 0)
+            {
+                var after = TsSkipWhitespaceAndComments(index);
+                if (TsTextStartsStatementAfterTypeAlias(after))
+                    return index;
+            }
+            index++;
+        }
+        return foundEquals ? index : -1;
+    }
+
+    bool TsTextStartsStatementAfterTypeAlias(int index)
+    {
+        return TsTextStartsKeyword(index, "abstract") ||
+               TsTextStartsKeyword(index, "class") ||
+               TsTextStartsKeyword(index, "const") ||
+               TsTextStartsKeyword(index, "declare") ||
+               TsTextStartsKeyword(index, "enum") ||
+               TsTextStartsKeyword(index, "export") ||
+               TsTextStartsKeyword(index, "function") ||
+               TsTextStartsKeyword(index, "import") ||
+               TsTextStartsKeyword(index, "interface") ||
+               TsTextStartsKeyword(index, "let") ||
+               TsTextStartsKeyword(index, "module") ||
+               TsTextStartsKeyword(index, "namespace") ||
+               TsTextStartsKeyword(index, "type") ||
+               TsTextStartsKeyword(index, "var");
+    }
+
     void TsSkipClassLikeDeclaration()
     {
-        while (Type != TokenType.BraceL && Type != TokenType.Semi && Type != TokenType.Eof) Next();
+        var angle = 0;
+        var paren = 0;
+        var bracket = 0;
+        while (Type != TokenType.Eof)
+        {
+            if (Type == TokenType.Semi && angle == 0 && paren == 0 && bracket == 0)
+                break;
+            if (Type == TokenType.BraceL && angle == 0 && paren == 0 && bracket == 0)
+                break;
+            if (Type == TokenType.Relational && "<".Equals(Value)) angle++;
+            else if (Type == TokenType.Relational && ">".Equals(Value) && angle > 0) angle--;
+            else if (Type == TokenType.BitShift && angle > 0)
+            {
+                var value = Value?.ToString();
+                if (value == ">>") angle = Math.Max(0, angle - 2);
+                else if (value == ">>>") angle = Math.Max(0, angle - 3);
+            }
+            else if (Type == TokenType.ParenL) paren++;
+            else if (Type == TokenType.ParenR && paren > 0) paren--;
+            else if (Type == TokenType.BracketL) bracket++;
+            else if (Type == TokenType.BracketR && bracket > 0) bracket--;
+            Next();
+        }
         if (Type == TokenType.BraceL) TsSkipBalancedTokenType(TokenType.BraceL, "{", "}");
         Eat(TokenType.Semi);
     }
@@ -5794,7 +6633,7 @@ public sealed partial class Parser
     }
 
     void TsSkipType(bool stopAtExpressionOperators = false, bool stopAtForInOf = false,
-        bool stopAtClassFieldBoundary = false)
+        bool stopAtClassFieldBoundary = false, bool stopAtExpressionBodyArrow = false)
     {
         var angle = 0;
         var brace = 0;
@@ -5808,16 +6647,27 @@ public sealed partial class Parser
         var justHadArrowAfterParen = false;
         var sawTopLevelExtends = false;
         var lastWasExtends = false;
+        var lastWasConditionalQuestion = false;
+        var lastWasConditionalColon = false;
         var conditionalTypeDepth = 0;
+        var justClosedTopLevelTypeLiteral = false;
         while (Type != TokenType.Eof)
         {
+            if (justClosedTopLevelTypeLiteral && angle == 0 && brace == 0 && paren == 0 && bracket == 0 &&
+                Start.Line > _lastTokEnd.Line && TsIsTypeBoundaryAfterTypeLiteral())
+                return;
+            justClosedTopLevelTypeLiteral = false;
+            if (startedType && angle == 0 && brace == 0 && paren == 0 && bracket == 0 &&
+                Start.Line > _lastTokEnd.Line && TsIsTypeBoundaryAfterTypeLiteral())
+                return;
             if (stopAtExpressionOperators && Type == TokenType.Semi && angle > 0)
                 return;
             if (stopAtClassFieldBoundary && startedType && angle == 0 && brace == 0 && paren == 0 && bracket == 0 &&
-                Start.Line > _lastTokEnd.Line && TsIsClassMemberModifier())
+                Start.Line > _lastTokEnd.Line && (TsIsClassMemberModifier() || TsLooksLikeClassMemberStart()))
                 return;
             var allowTypeLiteral = Type == TokenType.BraceL && (!startedType || lastWasTypePredicateIs ||
-                lastWasPipeOrAmp || justHadArrowAfterParen || lastWasExtends);
+                lastWasPipeOrAmp || justHadArrowAfterParen || lastWasExtends || lastWasConditionalQuestion ||
+                lastWasConditionalColon);
             if (startedType && Type == TokenType.BraceL && !allowTypeLiteral && justClosedBracket &&
                 angle > 0 && brace == 0 && paren == 0 && bracket == 0)
                 return;
@@ -5827,11 +6677,13 @@ public sealed partial class Parser
                  Type == TokenType.BraceR || Type == TokenType.Eq || Type == TokenType.Semi ||
                  (stopAtExpressionOperators && startedType && Type == TokenType.Colon &&
                   conditionalTypeDepth == 0) ||
-                 (Type == TokenType.Question && !sawTopLevelExtends) ||
+                 (Type == TokenType.Question && !sawTopLevelExtends &&
+                  (stopAtExpressionOperators && TsQuestionLooksLikeConditionalExpression() || !IsTypeScript)) ||
                  (stopAtExpressionOperators && startedType && TsIsExpressionOperatorAfterType()) ||
                  (stopAtExpressionOperators && startedType && TsIsRelationalExpressionOperatorAfterType()) ||
                  (stopAtForInOf && startedType && (Type == TokenType.In || IsContextual("of"))) ||
-                 (Type == TokenType.Arrow && !justClosedParen) ||
+                 (Type == TokenType.Arrow &&
+                  (!justClosedParen || stopAtExpressionBodyArrow && TsArrowLooksLikeExpressionBody())) ||
                  (startedType && (IsContextual("as") || IsContextual("satisfies")))))
                 return;
 
@@ -5846,6 +6698,8 @@ public sealed partial class Parser
             lastWasTypePredicateIs = IsContextual("is");
             lastWasPipeOrAmp = Type is TokenType.BitwiseOr or TokenType.BitwiseAnd;
             lastWasExtends = Type == TokenType.Extends || IsContextual("extends");
+            lastWasConditionalQuestion = false;
+            lastWasConditionalColon = false;
             if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 &&
                 (Type == TokenType.Extends || IsContextual("extends")))
                 sawTopLevelExtends = true;
@@ -5854,11 +6708,13 @@ public sealed partial class Parser
             {
                 conditionalTypeDepth++;
                 sawTopLevelExtends = false;
+                lastWasConditionalQuestion = true;
             }
             else if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 && Type == TokenType.Colon &&
                      conditionalTypeDepth > 0)
             {
                 conditionalTypeDepth--;
+                lastWasConditionalColon = true;
             }
             if (Type == TokenType.Relational && "<".Equals(Value)) angle++;
             else if (Type == TokenType.Relational && ">".Equals(Value) && angle > 0) angle--;
@@ -5879,6 +6735,8 @@ public sealed partial class Parser
             {
                 if (brace == 0) return;
                 brace--;
+                if (brace == 0 && angle == 0 && paren == 0 && bracket == 0)
+                    justClosedTopLevelTypeLiteral = true;
             }
             else if (Type == TokenType.ParenL) paren++;
             else if (Type == TokenType.ParenR)
@@ -5899,11 +6757,65 @@ public sealed partial class Parser
         }
     }
 
+    void TsSkipErasedAssertionType()
+    {
+        if (Type == TokenType.Const)
+        {
+            Next();
+            return;
+        }
+
+        TsSkipType(stopAtExpressionOperators: true);
+    }
+
+    bool TsArrowLooksLikeExpressionBody()
+    {
+        if (Type != TokenType.Arrow)
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        if (index >= _input.Length)
+            return false;
+        var ch = _input[index];
+        if (ch is '"' or '\'' or '`' or '(' or '[' or '{' || char.IsDigit(ch))
+            return true;
+        return TsTextStartsKeyword(index, "async") ||
+               TsTextStartsKeyword(index, "class") ||
+               TsTextStartsKeyword(index, "function") ||
+               TsTextStartsKeyword(index, "new") ||
+               TsTextStartsKeyword(index, "null") ||
+               TsTextStartsKeyword(index, "this") ||
+               TsTextStartsKeyword(index, "true") ||
+               TsTextStartsKeyword(index, "false") ||
+               TsTextStartsKeyword(index, "undefined");
+    }
+
+    bool TsIsTypeBoundaryAfterTypeLiteral()
+    {
+        return Type is TokenType.Var or TokenType.Const or TokenType.Function or TokenType.Class or TokenType.Export
+                   or TokenType.Import or TokenType.If or TokenType.For or TokenType.While or TokenType.Switch
+                   or TokenType.Return or TokenType.Throw or TokenType.Try or TokenType.Do or TokenType.Eof ||
+               IsContextual("interface") || IsContextual("type") || IsContextual("namespace") ||
+               IsContextual("module") || IsContextual("declare") || IsContextual("enum") ||
+               IsContextual("abstract") || IsContextual("let");
+    }
+
     bool TsIsExpressionOperatorAfterType()
     {
         return Type is TokenType.PlusMin or TokenType.Star or TokenType.Slash or TokenType.Modulo or TokenType.Starstar
             or TokenType.BitShift or TokenType.Equality or TokenType.LogicalOr or TokenType.LogicalAnd
             or TokenType.NullishCoalescing or TokenType.Instanceof or TokenType.In;
+    }
+
+    bool TsLooksLikeClassMemberStart()
+    {
+        if (!IsTypeScript)
+            return false;
+        if (Type is TokenType.String or TokenType.Num or TokenType.BracketL or TokenType.PrivateName)
+            return true;
+        if (Type != TokenType.Name && TokenInformation.Types[Type].Keyword == null)
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        return index < _input.Length && _input[index] is '(' or ':' or '?' or '!' or '=' or ';' or '<';
     }
 
     bool TsIsRelationalExpressionOperatorAfterType()
@@ -5917,7 +6829,69 @@ public sealed partial class Parser
             return false;
         if (Start.Index > _lastTokEnd.Index)
             return true;
-        return TsFindMatching(Start.Index, '<', '>') < 0;
+        return TsFindTypeArgumentListEnd(Start.Index) < 0;
+    }
+
+    bool TsQuestionLooksLikeConditionalExpression()
+    {
+        if (!IsTypeScript || Type != TokenType.Question)
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        var paren = 0;
+        var bracket = 0;
+        var brace = 0;
+        while (index < _input.Length)
+        {
+            var ch = _input[index];
+            if (ch is ';' or '\r' or '\n' && paren == 0 && bracket == 0 && brace == 0)
+                return false;
+            if (paren == 0 && bracket == 0 && brace == 0 && ch == ':')
+                return true;
+            if (ch is '"' or '\'')
+            {
+                index = TsSkipStringLike(index, ch);
+                continue;
+            }
+            if (ch == '`')
+            {
+                index = TsSkipTemplateLiteral(index);
+                continue;
+            }
+            switch (ch)
+            {
+                case '(':
+                    paren++;
+                    break;
+                case ')':
+                    if (paren == 0) return false;
+                    paren--;
+                    break;
+                case '[':
+                    bracket++;
+                    break;
+                case ']':
+                    if (bracket == 0) return false;
+                    bracket--;
+                    break;
+                case '{':
+                    brace++;
+                    break;
+                case '}':
+                    if (brace == 0) return false;
+                    brace--;
+                    break;
+            }
+            index++;
+        }
+        return false;
+    }
+
+    bool TsRelationalTokenLooksLikeSkippedTypeClose()
+    {
+        if (!IsTypeScript || Type != TokenType.Relational || !">".Equals(Value))
+            return false;
+        var index = TsSkipWhitespaceAndComments(End.Index);
+        return index < _input.Length && _input[index] is ')' or ']' or ',' or ';' or '{';
     }
 
     void TsSkipBalancedTokenType(TokenType openType, string openValue, string closeValue)
@@ -5929,7 +6903,10 @@ public sealed partial class Parser
         var firstLine = Start.Line + 1;
         while (Type != TokenType.Eof)
         {
-            if (Type == openType && openValue.Equals(Value))
+            if ((Type == openType && openValue.Equals(Value)) ||
+                (Type == TokenType.BraceL && openType == TokenType.BraceL) ||
+                (Type == TokenType.ParenL && openType == TokenType.ParenL) ||
+                (Type == TokenType.BracketL && openType == TokenType.BracketL))
             {
                 depth++;
             }
@@ -6018,7 +6995,7 @@ public sealed partial class Parser
             var ch = _input[index];
             var allowTypeLiteral = ch == '{' && (!startedType || lastSignificant is '|' or '&' || lastWord == "is");
             if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 &&
-                (ch == ';' || ch == '=' || (ch == '{' && startedType && !allowTypeLiteral)))
+                (ch == ';' || ch == '=' || ch == '}' || (ch == '{' && startedType && !allowTypeLiteral)))
                 return index;
             if (IsIdentifierStart(ch, true))
             {

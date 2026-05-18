@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using Njsast.Ast;
 
 namespace Njsast.Reader;
@@ -11,9 +12,11 @@ public sealed partial class Parser
             return false;
         if (Type != TokenType.Relational || !"<".Equals(Value))
             return false;
-        var next = _input.Get(End.Index);
+        var nextIndex = SkipJsxWhitespaceAndComments(End.Index);
+        var next = _input.Get(nextIndex);
         if (next == '>' || next == '_' || next == '$' || next == ':' || next == '-' ||
-            next >= 'a' && next <= 'z' || next >= 'A' && next <= 'Z')
+            next >= 'a' && next <= 'z' || next >= 'A' && next <= 'Z' ||
+            next > 127 && (char.IsLetterOrDigit(next) || next == '\u200c' || next == '\u200d'))
         {
             if (Options.ParseTypeScript && TsLooksLikeGenericOrTypeAssertion() &&
                 !TsLooksLikeJsxOpeningWithTypeArguments() &&
@@ -24,6 +27,32 @@ public sealed partial class Parser
         }
 
         return false;
+    }
+
+    int SkipJsxWhitespaceAndComments(int index)
+    {
+        while (index < _input.Length)
+        {
+            while (index < _input.Length && char.IsWhiteSpace(_input[index]))
+                index++;
+            if (index + 1 < _input.Length && _input[index] == '/' && _input[index + 1] == '/')
+            {
+                index += 2;
+                while (index < _input.Length && !IsNewLine(_input[index]))
+                    index++;
+                continue;
+            }
+            if (index + 1 < _input.Length && _input[index] == '/' && _input[index + 1] == '*')
+            {
+                index += 2;
+                while (index + 1 < _input.Length && !(_input[index] == '*' && _input[index + 1] == '/'))
+                    index++;
+                index = Math.Min(index + 2, _input.Length);
+                continue;
+            }
+            break;
+        }
+        return index;
     }
 
     bool TsLooksLikeGenericOrTypeAssertion()
@@ -134,6 +163,7 @@ public sealed partial class Parser
     AstNode ParseJsxElementOrFragment(Position startLocation)
     {
         _pos = End;
+        _pos = MoveToIndex(SkipJsxWhitespaceAndComments(_pos.Index));
         if (_input.Get(_pos.Index) == '>')
         {
             _pos = _pos.Increment(1);
@@ -264,7 +294,7 @@ public sealed partial class Parser
 
         if (_pos.Index >= _input.Length)
             Raise(start, "Unterminated string constant");
-        var value = _input.Substring(valueStart.Index, _pos.Index - valueStart.Index);
+        var value = DecodeJsxEntities(_input.Substring(valueStart.Index, _pos.Index - valueStart.Index));
         _pos = _pos.Increment(1);
         return new AstString(SourceFile, start, CurPosition(), value);
     }
@@ -296,9 +326,10 @@ public sealed partial class Parser
 
             if (_input.Get(_pos.Index) == '<')
             {
-                if (_input.Get(_pos.Index + 1) == '>')
+                var fragmentEnd = SkipJsxWhitespaceAndComments(_pos.Index + 1);
+                if (_input.Get(fragmentEnd) == '>')
                 {
-                    _pos = _pos.Increment(2);
+                    _pos = MoveToIndex(fragmentEnd).Increment(1);
                     var fragmentChildren = ParseJsxChildren(null);
                     children.Add(new AstJsxFragment(SourceFile, start, CurPosition(), ref fragmentChildren));
                     continue;
@@ -357,7 +388,7 @@ public sealed partial class Parser
             _pos = IsNewLine(ch) ? new Position(_pos.Line + 1, 0, _pos.Index + 1) : _pos.Increment(1);
         }
 
-        return _input.Substring(start.Index, _pos.Index - start.Index);
+        return DecodeJsxEntities(_input.Substring(start.Index, _pos.Index - start.Index));
     }
 
     AstJsxNameBase ParseJsxName()
@@ -374,6 +405,7 @@ public sealed partial class Parser
         while (_input.Get(_pos.Index) == '.')
         {
             _pos = _pos.Increment(1);
+            SkipSpace();
             res = new AstJsxMemberName(SourceFile, start, CurPosition(), res, ParseJsxSimpleName());
         }
 
@@ -387,7 +419,7 @@ public sealed partial class Parser
         {
             var ch = _input.Get(_pos.Index);
             if (!(ch == '_' || ch == '$' || ch == '-' || ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' ||
-                  ch >= '0' && ch <= '9'))
+                  ch >= '0' && ch <= '9' || ch > 127 && (char.IsLetterOrDigit(ch) || ch == '\u200c' || ch == '\u200d')))
                 break;
             _pos = _pos.Increment(1);
         }
@@ -415,5 +447,20 @@ public sealed partial class Parser
         if (!_input.AsSpan(_pos.Index).StartsWith(expected.AsSpan(), StringComparison.Ordinal))
             Raise(CurPosition(), "Unexpected token");
         _pos = _pos.Increment(expected.Length);
+    }
+
+    Position MoveToIndex(int index)
+    {
+        while (_pos.Index < index)
+        {
+            var ch = _input.Get(_pos.Index);
+            _pos = IsNewLine(ch) ? new Position(_pos.Line + 1, 0, _pos.Index + 1) : _pos.Increment(1);
+        }
+        return _pos;
+    }
+
+    static string DecodeJsxEntities(string value)
+    {
+        return value.IndexOf('&', StringComparison.Ordinal) < 0 ? value : WebUtility.HtmlDecode(value);
     }
 }

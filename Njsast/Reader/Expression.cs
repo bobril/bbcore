@@ -161,7 +161,7 @@ public sealed partial class Parser
         DestructuringErrors? refDestructuringErrors = null,
         Func<Parser, AstNode, int, Position, AstNode>? afterLeftParse = null)
     {
-        if (_inGenerator && !_wasImportKeyword && IsContextual("yield"))
+        if ((_inGenerator || IsTypeScript) && !_wasImportKeyword && IsContextual("yield"))
             return ParseYield();
 
         var ownDestructuringErrors = false;
@@ -268,7 +268,7 @@ public sealed partial class Parser
         while (IsTypeScript && (IsContextual("as") || IsContextual("satisfies")))
         {
             Next();
-            TsSkipType(true);
+            TsSkipErasedAssertionType();
         }
         if (IsTypeScript && Type == TokenType.Question && TsCanSkipOptionalOrDefiniteMarker())
             return expr;
@@ -311,6 +311,11 @@ public sealed partial class Parser
     // operator that has a lower precedence than the set it is parsing.
     AstNode ParseExpressionOperator(AstNode left, Position leftStartLoc, int minPrec, bool noIn)
     {
+        if (IsTypeScript && TsRelationalTokenLooksLikeSkippedTypeClose())
+        {
+            Next();
+            return left;
+        }
         var prec = TokenInformation.Types[Type].BinaryOperation;
         if (prec >= 0 && (!noIn || Type != TokenType.In))
         {
@@ -342,13 +347,18 @@ public sealed partial class Parser
             var end = TsFindTypeArgumentListEnd(Start.Index);
             if (end >= 0 && (end - Start.Index) < 200)
             {
-                TsTrySkipTypeParameters();
+                TsTrySkipTypeParameters(expressionAllowedAfter: true);
                 _potentialArrowAt = Start;
                 return ParseMaybeUnary(Start, refDestructuringErrors, sawUnary);
             }
         }
 
-        if (IsAwaitExpressionAllowed() && IsContextual("await"))
+        if (IsTypeScript && Type == TokenType.Decorator && TsDecoratorIsFollowedByClass())
+        {
+            TsParseDecorators();
+            expr = ParseExpressionSubscripts(Start, refDestructuringErrors);
+        }
+        else if (IsAwaitExpressionAllowed() && IsContextual("await"))
         {
             expr = ParseAwait();
             sawUnary = true;
@@ -363,7 +373,10 @@ public sealed partial class Parser
             if (update) CheckLVal(argument, false, null);
             else if (_strict && @operator == Operator.Delete &&
                      argument is AstSymbol)
-                RaiseRecoverable(startLocation, "Deleting local variable in strict mode");
+            {
+                if (!IsTypeScript)
+                    RaiseRecoverable(startLocation, "Deleting local variable in strict mode");
+            }
             else sawUnary = true;
             expr = new AstUnaryPrefix(SourceFile, startLocation, _lastTokEnd, @operator, argument);
         }
@@ -483,11 +496,11 @@ public sealed partial class Parser
             if (IsTypeScript && (IsContextual("as") || IsContextual("satisfies")))
             {
                 Next();
-                TsSkipType(true);
+                TsSkipErasedAssertionType();
                 continue;
             }
 
-            if (IsTypeScript && !noCalls && Type == TokenType.Relational && "<".Equals(Value))
+            if (IsTypeScript && !noCalls && TsStartsTypeArgumentListToken())
             {
                 var end = TsFindTypeArgumentListEnd(Start.Index);
                 if (end >= 0)
@@ -569,6 +582,19 @@ public sealed partial class Parser
         var oldAwaitPos = _awaitPos;
         _yieldPos = default;
         _awaitPos = default;
+        if (IsTypeScript && maybeAsyncArrow && TsCurrentParenCallIsFollowedByArrow())
+        {
+            var parameters = new StructList<AstNode>();
+            ParseBindingList(ref parameters, TokenType.ParenR, false, Options.EcmaVersion >= 8);
+            TsTrySkipTypeAnnotation();
+            if (!CanInsertSemicolon() && Eat(TokenType.Arrow))
+            {
+                CheckYieldAwaitInDefaultParams();
+                _yieldPos = oldYieldPos;
+                _awaitPos = oldAwaitPos;
+                return ParseArrowExpression(startLoc, ref parameters, true);
+            }
+        }
         var expressionList = new StructList<AstNode>();
         ParseExpressionList(ref expressionList, TokenType.ParenR, Options.EcmaVersion >= 8, false,
             refDestructuringErrors);
@@ -589,6 +615,17 @@ public sealed partial class Parser
         return new AstCall(SourceFile, startLoc, _lastTokEnd, @base, ref expressionList, optional);
     }
 
+    bool TsCurrentParenCallIsFollowedByArrow()
+    {
+        var parenStart = _lastTokStart.Index;
+        var parenEnd = TsFindMatchingSkippingLiterals(parenStart, '(', ')');
+        if (parenEnd < 0) return false;
+        var after = TsSkipWhitespaceAndComments(parenEnd + 1);
+        if (after < _input.Length && _input[after] == ':')
+            after = TsSkipWhitespaceAndComments(TsSkipTypeInText(after + 1));
+        return after + 1 < _input.Length && _input[after] == '=' && _input[after + 1] == '>';
+    }
+
     // Parse an atomic expression — either a single token that is an
     // expression, an expression started by a keyword like `function` or
     // `new`, or an expression wrapped in punctuation like `()`, `[]`,
@@ -603,12 +640,20 @@ public sealed partial class Parser
             return new AstSymbolRef(SourceFile, startLocation, _lastTokEnd, "!import");
         }
 
+        if (IsTypeScript && Type == TokenType.Relational && "<".Equals(Value) && TsCanParseGenericArrow())
+        {
+            TsTrySkipTypeParameters();
+            if (Type == TokenType.ParenL)
+                return ParseParenAndDistinguishExpression(true);
+            return ParseExpressionSubscripts(Start, refDestructuringErrors);
+        }
+
         if (CanStartJsx())
             return ParseJsxElementOrFragment(startLocation);
 
         if (IsTypeScript && Type == TokenType.Relational && "<".Equals(Value))
         {
-            TsTrySkipTypeParameters();
+            TsTrySkipTypeParameters(expressionAllowedAfter: true);
             if (Type == TokenType.ParenL)
                 return ParseParenAndDistinguishExpression(true);
             return ParseExpressionSubscripts(Start, refDestructuringErrors);
@@ -618,7 +663,7 @@ public sealed partial class Parser
         switch (Type)
         {
             case TokenType.Super:
-                if (!_inFunction)
+                if (!_inFunction && !IsTypeScript)
                     Raise(startLocation, "'super' outside of function or class");
                 Next();
 
@@ -664,7 +709,8 @@ public sealed partial class Parser
                         return ParseArrowExpression(startLocation, ref parameters, true);
                     }
 
-                    if ((!IsTypeScript || !_inConditionalConsequent) && TsShouldProbeSingleParameterArrow())
+                    if ((!IsTypeScript || !_inConditionalConsequent || Type == TokenType.Arrow) &&
+                        TsShouldProbeSingleParameterArrow())
                     {
                         TsTrySkipOptionalOrDefiniteBindingMarker();
                         if (TsTypeAnnotationIsFollowedByArrow())
@@ -804,6 +850,8 @@ public sealed partial class Parser
                 }
 
                 if (IsTypeScript && canBeArrow)
+                    TsTrySkipParameterPropertyModifiers();
+                if (IsTypeScript && canBeArrow)
                     TsTrySkipStaticParameterModifier();
 
                 if (Type == TokenType.Ellipsis)
@@ -896,9 +944,9 @@ public sealed partial class Parser
         if (Options.EcmaVersion >= 6 && Eat(TokenType.Dot))
         {
             var identifierNode = ParseIdent(true);
-            if (identifierNode.Name != "target")
+            if (identifierNode.Name != "target" && !IsTypeScript)
                 RaiseRecoverable(identifierNode.Start, "The only valid meta property for new is new.target");
-            if (!_inFunction)
+            if (!_inFunction && !IsTypeScript)
                 RaiseRecoverable(nodeStart, "new.target can only be used in functions");
             return new AstNewTarget(SourceFile, nodeStart, _lastTokEnd);
         }
@@ -985,6 +1033,8 @@ public sealed partial class Parser
             }
             else first = false;
 
+            if (!isPattern && TsTrySkipObjectMethodSignature())
+                continue;
             var prop = ParseProperty(isPattern, refDestructuringErrors);
             if (!isPattern) CheckPropertyClash(prop, propHash);
             properties.Add(prop);
@@ -1019,6 +1069,12 @@ public sealed partial class Parser
         if (Type == TokenType.Ellipsis)
         {
             var exp = ParseSpread(refDestructuringErrors);
+            if (IsTypeScript && isPattern && Eat(TokenType.Colon))
+            {
+                var aliasValue = ParseMaybeDefault(Start);
+                exp.Expression = new AstObjectKeyVal(SourceFile, exp.Expression.Start, _lastTokEnd,
+                    exp.Expression, aliasValue);
+            }
             if (refDestructuringErrors != null && Type == TokenType.Comma &&
                 refDestructuringErrors.TrailingComma.Line == 0)
                 refDestructuringErrors.TrailingComma = Start;
@@ -1081,6 +1137,9 @@ public sealed partial class Parser
             Raise(Start, "Unexpected token");
         }
 
+        if (!isPattern && IsTypeScript)
+            Eat(TokenType.Question);
+
         if (Eat(TokenType.Colon))
         {
             var value = isPattern ? ParseMaybeDefault(Start) : ParseMaybeAssign(Start, false, refDestructuringErrors);
@@ -1109,7 +1168,8 @@ public sealed partial class Parser
 
             var kind = identifierNode.Name == "get" ? PropertyKind.Get : PropertyKind.Set;
             (computed, key) = ParsePropertyName();
-            key = MakeSymbolMethod(key);
+            if (!computed)
+                key = MakeSymbolMethod(key);
             TsTrySkipTypeParameters();
             var value = ParseMethod(false);
             var paramCount = kind == PropertyKind.Get ? 0 : 1;
@@ -1233,6 +1293,9 @@ public sealed partial class Parser
             MakeSymbolFunArg(ref parameters);
             CheckYieldAwaitInDefaultParams();
             var body = new StructList<AstNode>();
+            if (IsTypeScript && Type != TokenType.BraceL)
+                return new AstFunction(SourceFile, startLoc, _lastTokEnd, null, ref parameters, isGenerator,
+                    isAsync, ref body);
             var useStrict = false;
             var oldAutoAccessorTempIndex = _tsAutoAccessorTempIndex;
             var oldAutoAccessorStorageTempIndex = _tsAutoAccessorStorageTempIndex;
@@ -1433,7 +1496,7 @@ public sealed partial class Parser
                                 // If this is a strict mode function, verify that argument names
                                 // are not repeated, and it does not try to bind the words `eval`
                                 // or `arguments`.
-                                if (nonSimple)
+                                if (nonSimple && !IsTypeScript)
                                     RaiseRecoverable(startLoc,
                                         "Illegal 'use strict' directive in function with non-simple parameter list");
                                 continue;
@@ -1550,14 +1613,17 @@ public sealed partial class Parser
             RaiseRecoverable(start, "Can not use 'yield' as identifier inside a generator");
         if (_inAsync && name == "await")
             RaiseRecoverable(start, "Can not use 'await' as identifier inside an async function");
-        if (_keywords.IsMatch(name))
+        if (!IsTypeScript && _keywords.IsMatch(name))
             Raise(start, $"Unexpected keyword '{name}'");
         if (Options.EcmaVersion < 6 &&
             _input.Substring(start.Index, end - start).IndexOf("\\", StringComparison.Ordinal) != -1)
             return;
         var re = _strict ? _reservedWordsStrict : _reservedWords;
         if (re.IsMatch(name) && !TsCanUseContextualModifierAsIdentifier(name))
-            RaiseRecoverable(start, $"The keyword '{name}' is reserved");
+        {
+            if (!IsTypeScript)
+                RaiseRecoverable(start, $"The keyword '{name}' is reserved");
+        }
     }
 
     // Parse the next token as an identifier. If `liberal` is true (used
@@ -1609,7 +1675,7 @@ public sealed partial class Parser
         var @delegate = false;
         AstNode? argument = null;
         if (Type != TokenType.Semi && !CanInsertSemicolon() &&
-            (Type == TokenType.Star || TokenInformation.Types[Type].StartsExpression))
+            (Type == TokenType.Star || TokenInformation.Types[Type].StartsExpression || CanStartJsx()))
         {
             @delegate = Eat(TokenType.Star);
             argument = ParseMaybeAssign(Start);
@@ -1631,6 +1697,6 @@ public sealed partial class Parser
 
     bool IsAwaitExpressionAllowed()
     {
-        return _inAsync || _inModule && !_inFunction && Options.EcmaVersion >= 13;
+        return IsTypeScript || _inAsync || _inModule && !_inFunction && Options.EcmaVersion >= 13;
     }
 }

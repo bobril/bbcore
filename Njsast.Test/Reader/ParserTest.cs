@@ -154,7 +154,7 @@ public class ParserTest
     [InlineData('\u200c' /*ZERO WIDTH NON-JOINER*/, "Unexpected character '\u200c' (1:8)")]
     [InlineData('\u200d' /*ZERO WIDTH JOINER*/, "Unexpected character '\u200d' (1:8)")]
     [InlineData('\u2060' /*WORD JOINER*/, "Unexpected character '\u2060' (1:4)")]
-    [InlineData('\u0085' /*NEXT LINE*/, "Unexpected character '\u0085' (1:4)")]
+    [InlineData('\u0085' /*NEXT LINE*/, SimpleVarStatementAst)]
     [InlineData('\u000a' /*LINE FEED*/, SimpleVarStatementMultilineAst)]
     [InlineData('\u000d' /*CARRIAGE RETURN*/, SimpleVarStatementMultilineAst)]
     [InlineData('\u2028' /*LINE SEPARATOR*/, SimpleVarStatementMultilineAst)]

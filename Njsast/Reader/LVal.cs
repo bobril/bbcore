@@ -55,7 +55,7 @@ public sealed partial class Parser
 
                 case AstExpansion spreadElement:
                     spreadElement.Expression = ToAssignable(spreadElement.Expression, isBinding)!;
-                    if (spreadElement.Expression is AstDefaultAssign)
+                    if (spreadElement.Expression is AstDefaultAssign && !IsTypeScript)
                     {
                         Raise(spreadElement.Expression.Start, "Rest elements cannot have a default value");
                     }
@@ -82,7 +82,8 @@ public sealed partial class Parser
                     break;
 
                 default:
-                    Raise(node.Start, "Assigning to rvalue");
+                    if (!IsTypeScript)
+                        Raise(node.Start, "Assigning to rvalue");
                     break;
             }
         }
@@ -137,6 +138,11 @@ public sealed partial class Parser
         var argument = ParseBindingAtom();
         TsTrySkipOptionalOrDefiniteBindingMarker();
         TsTrySkipTypeAnnotation();
+        if (IsTypeScript && Eat(TokenType.Eq))
+        {
+            var right = ParseMaybeAssign(Start);
+            argument = new AstDefaultAssign(SourceFile, argument.Start, _lastTokEnd, argument, right);
+        }
         return new AstExpansion(SourceFile, startLoc, _lastTokEnd, argument);
     }
 
@@ -190,8 +196,9 @@ public sealed partial class Parser
                         tsParameterDecorators.Add(((int)elts.Count, decorator));
                 }
 
-                var isParameterProperty = tsParameterProperties != null && TsTrySkipParameterPropertyModifiers();
-                if (!isParameterProperty)
+                var skippedParameterPropertyModifiers = TsTrySkipParameterPropertyModifiers();
+                var isParameterProperty = tsParameterProperties != null && skippedParameterPropertyModifiers;
+                if (!skippedParameterPropertyModifiers)
                     TsTrySkipStaticParameterModifier();
                 if (Type == TokenType.Ellipsis)
                 {
@@ -200,11 +207,16 @@ public sealed partial class Parser
                     {
                         if (rest is AstExpansion { Expression: AstSymbol symbol })
                             tsParameterProperties.Add(symbol);
-                        else
+                        else if (!IsTypeScript)
                             Raise(rest.Start, "Parameter property must be an identifier");
                     }
                     elts.Add(rest);
-                    if (Type == TokenType.Comma) Raise(Start, "Comma is not permitted after the rest element");
+                    if (Type == TokenType.Comma)
+                    {
+                        if (!IsTypeScript)
+                            Raise(Start, "Comma is not permitted after the rest element");
+                        continue;
+                    }
                     Expect(close);
                     break;
                 }
@@ -228,7 +240,7 @@ public sealed partial class Parser
                         tsParameterProperties.Add(symbol);
                     else if (elem is AstDefaultAssign { Left: AstSymbol defaultSymbol })
                         tsParameterProperties.Add(defaultSymbol);
-                    else
+                    else if (!IsTypeScript)
                         Raise(elem.Start, "Parameter property must be an identifier");
                 }
                 elts.Add(elem);
@@ -260,12 +272,18 @@ public sealed partial class Parser
             case AstSymbol identifierNode:
                 if (_strict && _reservedWordsStrictBind.IsMatch(identifierNode.Name) &&
                     !TsCanUseContextualModifierAsIdentifier(identifierNode.Name))
-                    RaiseRecoverable(expr.Start,
-                        (isBinding ? "Binding " : "Assigning to ") + identifierNode.Name + " in strict mode");
+                {
+                    if (!IsTypeScript)
+                        RaiseRecoverable(expr.Start,
+                            (isBinding ? "Binding " : "Assigning to ") + identifierNode.Name + " in strict mode");
+                }
                 if (checkClashes != null)
                 {
                     if (checkClashes.Contains(identifierNode.Name))
-                        RaiseRecoverable(expr.Start, "Argument name clash");
+                    {
+                        if (!IsTypeScript)
+                            RaiseRecoverable(expr.Start, "Argument name clash");
+                    }
                     checkClashes.Add(identifierNode.Name);
                 }
 
@@ -274,8 +292,9 @@ public sealed partial class Parser
                     if (bindingType == VariableKind.Var && !CanDeclareVarName(identifierNode.Name) ||
                         bindingType != VariableKind.Var && !CanDeclareLexicalName(identifierNode.Name))
                     {
-                        RaiseRecoverable(expr.Start,
-                            $"Identifier '{identifierNode.Name}' has already been declared");
+                        if (!IsTypeScript)
+                            RaiseRecoverable(expr.Start,
+                                $"Identifier '{identifierNode.Name}' has already been declared");
                     }
 
                     if (bindingType == VariableKind.Var)
@@ -291,7 +310,7 @@ public sealed partial class Parser
                 break;
 
             case AstPropAccess _:
-                if (bindingType != null) RaiseRecoverable(expr.Start, "Binding" + " member expression");
+                if (bindingType != null && !IsTypeScript) RaiseRecoverable(expr.Start, "Binding" + " member expression");
                 break;
 
             case AstDestructuring objectPattern:
@@ -320,7 +339,8 @@ public sealed partial class Parser
                 break;
 
             default:
-                Raise(expr.Start, (bindingType != null ? "Binding" : "Assigning to") + " rvalue");
+                if (!IsTypeScript)
+                    Raise(expr.Start, (bindingType != null ? "Binding" : "Assigning to") + " rvalue");
                 break;
         }
     }

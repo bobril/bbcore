@@ -34,6 +34,8 @@ public static class TypeScriptParser
                 ? inList ? Remove : new AstEmptyStatement(node.Source, node.Start, node.End)
                 : node is AstTypeScriptImportEquals importEquals && IsUnusedImportEquals(importEquals)
                     ? inList ? Remove : new AstEmptyStatement(node.Source, node.Start, node.End)
+                : node is AstTypeScriptImportEqualsConst constImportEquals && IsUnusedImportEquals(constImportEquals)
+                    ? inList ? Remove : new AstEmptyStatement(node.Source, node.Start, node.End)
                 : null;
         }
 
@@ -42,7 +44,7 @@ public static class TypeScriptParser
             return null;
         }
 
-        static bool IsUnusedImportEquals(AstTypeScriptImportEquals importEquals)
+        static bool IsUnusedImportEquals(AstDefinitions importEquals)
         {
             foreach (var definition in importEquals.Definitions.AsReadOnlySpan())
                 if (definition.Name is AstSymbol { Thedef.References.Count: > 0 })

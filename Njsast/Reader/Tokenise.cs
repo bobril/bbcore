@@ -160,7 +160,8 @@ public sealed partial class Parser : IEnumerable<Token>
 
                     break;
                 default:
-                    if (ch is > CharCode.BackSpace and < CharCode.ShiftOut || ch >= CharCode.OghamSpaceMark &&
+                    if (ch is > CharCode.BackSpace and < CharCode.ShiftOut || ch == 0x85 ||
+                        ch >= CharCode.OghamSpaceMark &&
                         NonAsciIwhitespace.IsMatch(((char)ch).ToString()))
                     {
                         _pos = _pos.Increment(1);
@@ -199,14 +200,14 @@ public sealed partial class Parser : IEnumerable<Token>
     //
     void readToken_dot()
     {
-        var next = _input[_pos.Index + 1];
+        var next = _input.Get(_pos.Index + 1);
         if (next >= CharCode.DigitZero && next <= CharCode.DigitNine)
         {
             ReadNumber(true);
             return;
         }
 
-        var next2 = _input[_pos.Index + 2];
+        var next2 = _input.Get(_pos.Index + 2);
         if (Options.EcmaVersion >= 6 && next == CharCode.Dot && next2 == CharCode.Dot)
         {
             _pos = _pos.Increment(3);
@@ -573,13 +574,22 @@ public sealed partial class Parser : IEnumerable<Token>
                 >= 6 => new Regex("^[gimuy]*$"),
                 _ => new Regex("^[gim]*$")
             };
-            if (!validFlags.IsMatch(mods)) Raise(start, "Invalid regular expression flag");
+            if (!validFlags.IsMatch(mods) && !IsTypeScript) Raise(start, "Invalid regular expression flag");
         }
 
+        var flags = RegExp.String2Flags(mods);
         FinishToken(TokenType.Regexp, new RegExp
         {
             Pattern = content,
-            Flags = RegExp.String2Flags(mods)
+            RawFlags = !string.IsNullOrEmpty(mods) &&
+                       !((Options.EcmaVersion switch
+                       {
+                           >= 11 => new Regex("^[dgimsuvys]*$"),
+                           >= 9 => new Regex("^[gimuys]*$"),
+                           >= 6 => new Regex("^[gimuy]*$"),
+                           _ => new Regex("^[gim]*$")
+                       }).IsMatch(mods)) && IsTypeScript ? mods : null,
+            Flags = flags
         });
     }
 

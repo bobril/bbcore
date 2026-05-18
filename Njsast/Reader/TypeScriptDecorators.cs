@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Njsast.Ast;
+using Njsast.Output;
 
 namespace Njsast.Reader;
 
@@ -36,6 +37,47 @@ public sealed partial class Parser
                 return expression;
             }
         }
+    }
+
+    bool TsDecoratorIsFollowedByClass()
+    {
+        if (Type != TokenType.Decorator)
+            return false;
+        var index = TsSkipDecoratorExpressionText(End.Index);
+        index = TsSkipWhitespaceAndComments(index);
+        while (index < _input.Length && _input[index] == '@')
+        {
+            index = TsSkipDecoratorExpressionText(index + 1);
+            index = TsSkipWhitespaceAndComments(index);
+        }
+        return TsTextStartsKeyword(index, "class");
+    }
+
+    int TsSkipDecoratorExpressionText(int index)
+    {
+        index = TsSkipWhitespaceAndComments(index);
+        while (index < _input.Length)
+        {
+            var ch = _input[index];
+            if (ch == '.')
+            {
+                index = TsSkipWhitespaceAndComments(index + 1);
+                while (index < _input.Length && IsIdentifierChar(_input[index], true))
+                    index++;
+                continue;
+            }
+            if (ch == '(')
+            {
+                var close = TsFindMatchingSkippingLiterals(index, '(', ')');
+                if (close < 0) return index;
+                index = TsSkipWhitespaceAndComments(close + 1);
+                continue;
+            }
+            if (!IsIdentifierChar(ch, true))
+                break;
+            index++;
+        }
+        return index;
     }
 
     void TsEmitDecoratedClass(AstToplevel topLevel, List<AstNode> decorators, AstDefClass classDecl,
@@ -330,6 +372,46 @@ public sealed partial class Parser
             false, computed);
     }
 
+    bool TsTryAppendParameterDecoratorsToExistingMemberStatement(List<AstStatement> statements,
+        List<(int Index, AstNode Decorator)> decorators, string className, AstNode key, bool @static,
+        bool computed = false)
+    {
+        var parameterDecorators = TsBuildParameterDecoratorCalls(decorators);
+        if (parameterDecorators.Count == 0)
+            return true;
+        var target = TsBuildDecoratorTarget(className, @static, key);
+        var decoratorKey = computed ? key : TsBuildDecoratorKey(key);
+
+        for (var i = statements.Count - 1; i >= 0; i--)
+        {
+            if (statements[i] is not AstSimpleStatement
+                {
+                    Body: AstCall
+                    {
+                        Expression: AstSymbolRef { Name: "__decorate" },
+                        Args.Count: 4
+                    } call
+                } ||
+                call.Args[0] is not AstArray decoratorArray ||
+                !TsDecoratorArgumentMatches(call.Args[1], target) ||
+                !TsDecoratorArgumentMatches(call.Args[2], decoratorKey) ||
+                call.Args[3] is not AstNull)
+                continue;
+
+            foreach (var parameterDecorator in parameterDecorators)
+                decoratorArray.Elements.Add(parameterDecorator);
+            return true;
+        }
+
+        return false;
+    }
+
+    static bool TsDecoratorArgumentMatches(AstNode left, AstNode right)
+    {
+        return left.IsStructurallyEquivalentTo(right) ||
+               left.PrintToString() == right.PrintToString();
+    }
+
     string? TsClassDecoratorTargetName(AstSymbol? className)
     {
         if (className != null)
@@ -375,8 +457,10 @@ public sealed partial class Parser
             : key switch
             {
                 AstSymbolPrivate symbol => new AstDot(SourceFile, key.Start, key.End, target, "#" + symbol.Name),
+                AstSymbol { Name: "constructor" } symbol => new AstSub(SourceFile, key.Start, key.End, target,
+                    new AstString(SourceFile, symbol.Start, symbol.End, symbol.Name)),
                 AstSymbol symbol => new AstDot(SourceFile, key.Start, key.End, target, symbol.Name),
-                AstString str => new AstDot(SourceFile, key.Start, key.End, target, str.Value),
+                AstString str => new AstSub(SourceFile, key.Start, key.End, target, str),
                 AstNumber num => new AstSub(SourceFile, key.Start, key.End, target,
                     new AstNumber(SourceFile, key.Start, key.End, num.Value, num.Literal)),
                 _ => new AstSub(SourceFile, key.Start, key.End, target, key)

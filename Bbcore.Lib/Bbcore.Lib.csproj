@@ -935,8 +935,14 @@
         <Compile Include="..\Njsast\Ast\AstTry.cs">
             <Link>Ast\AstTry.cs</Link>
         </Compile>
+        <Compile Include="..\Njsast\Ast\AstTypeScriptImportEquals.cs">
+            <Link>Ast\AstTypeScriptImportEquals.cs</Link>
+        </Compile>
         <Compile Include="..\Njsast\Ast\AstTypeScriptOnly.cs">
             <Link>Ast\AstTypeScriptOnly.cs</Link>
+        </Compile>
+        <Compile Include="..\Njsast\Ast\AstTypeScriptParameterPropertyAssignment.cs">
+            <Link>Ast\AstTypeScriptParameterPropertyAssignment.cs</Link>
         </Compile>
         <Compile Include="..\Njsast\Ast\AstUnary.cs">
             <Link>Ast\AstUnary.cs</Link>

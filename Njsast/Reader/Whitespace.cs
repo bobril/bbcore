@@ -31,7 +31,7 @@ public sealed partial class Parser
     // https://en.wikipedia.org/wiki/Whitespace_character
     // and is not in "Zs" unicode category => https://www.compart.com/en/unicode/category/Zs 
     // https://www.ecma-international.org/ecma-262/10.0/index.html#table-32
-    static readonly Regex NonAsciIwhitespace = new Regex(@"[\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]");
+    static readonly Regex NonAsciIwhitespace = new Regex(@"[\u0085\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]");
     static readonly Regex SkipWhiteSpace = new Regex(@"(?:\s|\/\/.*|\/\*.*?\*\/)*");
 
     static bool IsNewLine(char code)

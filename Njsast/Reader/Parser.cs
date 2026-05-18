@@ -40,6 +40,7 @@ public sealed partial class Parser
     bool _wasImportKeyword;
     bool _invalidTemplateEscape;
     bool _tsParsingLabelBody;
+    bool _tsCanInsertSemicolonAfterSkippedType;
     int _tsBlockDepth;
     int _tsVarScopeDepth;
     List<AstStatement>? _tsPendingClassDecoratorStatements;
@@ -48,6 +49,8 @@ public sealed partial class Parser
     List<(AstStatement Statement, int TargetBlockDepth, int VarScopeDepth)>? _tsPendingClassComputedKeyStatements;
     string? _tsDefaultExportClassName;
     bool _tsDefaultExportClassNameUsed;
+    int _tsInvalidDefaultExportNameIndex;
+    bool _tsAllowAnonymousExportClassStatement;
     string? _tsAnonymousClassStaticAccessorName;
     bool _tsForceAnonymousStaticAccessorNameForDefaultExportClass;
     int _tsAutoAccessorTempIndex;

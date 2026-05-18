@@ -66,13 +66,11 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
         if (node is AstLabeledStatement labeledStatement)
         {
             var l = labeledStatement.Label;
-            if (!_labels.TryAdd(l.Name, l))
-            {
-                throw new Exception($"Label {l.Name} defined twice");
-            }
+            var addedLabel = _labels.TryAdd(l.Name, l);
 
             DescendOnce();
-            _labels.Remove(l.Name);
+            if (addedLabel)
+                _labels.Remove(l.Name);
             return;
         }
 
@@ -140,20 +138,6 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
                 def = _defun!.DefVariable((AstSymbol)node, null);
             }
 
-            if (!def.Orig.All(sym =>
-                {
-                    if (sym == node) return true;
-                    if (node is AstSymbolBlockDeclaration)
-                    {
-                        return sym is AstSymbolLambda;
-                    }
-
-                    return !(sym is AstSymbolLet or AstSymbolConst);
-                }))
-            {
-                throw new Exception(((AstSymbol)node).Name + " redeclared");
-            }
-
             MarkExport(def, 2);
             def.Destructuring = _inDestructuring;
             if (_defun != _currentScope)
@@ -176,17 +160,8 @@ public class SetupScopeChainingAndHandleDefinitionsTreeWalker : TreeWalker
         {
             if (_labels.TryGetValue(labelRef.Name, out var sym))
                 labelRef.Thedef = sym;
-            else
-                throw new Exception(
-                    $"Undefined label {labelRef.Name} [{labelRef.Start.Line},{labelRef.Start.Column}]");
         }
 
-#if DEBUG
-        if (!(_currentScope is AstToplevel) && node is AstExport or AstImport)
-        {
-            throw new Exception(node.PrintToString() + " statement may only appear at top level");
-        }
-#endif
     }
 
     void MarkExport(SymbolDef def, int level)

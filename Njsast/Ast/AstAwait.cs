@@ -51,6 +51,7 @@ public class AstAwait : AstNode
         var p = output.Parent();
         return p is AstPropAccess propAccess && propAccess.Expression == this
                || p is AstCall call && call.Expression == this
+               || p is AstBinary { Operator: Operator.Power }
                || output.Options.Safari10 && p is AstUnaryPrefix;
     }
 }

@@ -131,6 +131,8 @@ public class JsxToCreateElementTreeTransformer : TreeTransformer
 
     static AstObjectKeyVal LowerAttribute(AstJsxAttribute attr)
     {
+        if (TreeTransformer.IsRemove(attr.Value))
+            attr.Value = new AstTrue(attr.Source, attr.Start, attr.End);
         var value = attr.Value switch
         {
             null => new AstTrue(attr.Source, attr.Start, attr.End),
@@ -174,7 +176,7 @@ public class JsxToCreateElementTreeTransformer : TreeTransformer
 
     static bool IsIntrinsicName(string name)
     {
-        return name.Length > 0 && char.IsLower(name[0]);
+        return name.Length > 0 && (char.IsLower(name[0]) || name.Contains('-', StringComparison.Ordinal));
     }
 
     static AstNode BuildDottedExpression(string expression)

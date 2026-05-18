@@ -32,6 +32,11 @@ public class AstRegExp : AstConstant
         output.Print("/");
         output.Print(Value.Pattern);
         output.Print("/");
+        if (Value.RawFlags != null)
+        {
+            output.Print(Value.RawFlags);
+            return;
+        }
         var f = Value.Flags;
         if (f.HasFlag(RegExpFlags.HasIndices))
             output.Print("d");
@@ -55,7 +60,8 @@ public class AstRegExp : AstConstant
     {
         if (with is AstRegExp withRegExp)
         {
-            return Value.Pattern == withRegExp.Value.Pattern && Value.Flags == withRegExp.Value.Flags;
+            return Value.Pattern == withRegExp.Value.Pattern && Value.Flags == withRegExp.Value.Flags &&
+                   Value.RawFlags == withRegExp.Value.RawFlags;
         }
 
         return false;

@@ -586,7 +586,8 @@ public class EsmToCjsTreeTransformer : TreeTransformer
                     }
                     else
                     {
-                        keepDefinitions = true;
+                        if (symbol.Thedef?.References.Count > 0)
+                            keepDefinitions = true;
                     }
                 }
                 else if (def.Name is AstDestructuring dest)
@@ -683,6 +684,9 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         if (dest.IsArray)
             return false;
 
+        if (TryAddSingleExportedObjectDestructuring(from, dest, value, ref statements))
+            return true;
+
         var assignments = new List<(string ExportName, string Access)>();
         if (!TryCollectObjectDestructuringExports(dest, "", assignments) || assignments.Count == 0)
             return false;
@@ -703,6 +707,37 @@ public class EsmToCjsTreeTransformer : TreeTransformer
 
         statements.Add(ParseStatements(from, source.ToString())[0]);
         return true;
+    }
+
+    bool TryAddSingleExportedObjectDestructuring(AstNode from, AstDestructuring dest, AstNode value,
+        ref StructList<AstNode> statements)
+    {
+        if (dest.Names.Count != 1 || !TryGetShorthandObjectDestructuringSymbol(dest.Names[0], out var symbol))
+            return false;
+
+        AddExportPreinit(symbol.Name);
+        AddExportedLocalAssignment(symbol.Name, symbol.Name);
+        statements.Add(MakeExportsAssignStatement(from, symbol.Name,
+            new AstDot(value.Source, value.Start, value.End, value, symbol.Name)));
+        return true;
+    }
+
+    static bool TryGetShorthandObjectDestructuringSymbol(AstNode node, out AstSymbol symbol)
+    {
+        if (node is AstSymbol direct)
+        {
+            symbol = direct;
+            return true;
+        }
+
+        if (node is AstObjectKeyVal { Key: AstSymbol key, Value: AstSymbol value } && key.Name == value.Name)
+        {
+            symbol = value;
+            return true;
+        }
+
+        symbol = null!;
+        return false;
     }
 
     static bool TryCollectObjectDestructuringExports(AstDestructuring dest, string prefix,
