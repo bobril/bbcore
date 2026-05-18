@@ -15,6 +15,30 @@ public class BuildTest
         Assert.Equal("let a_index = \"ahoj\";\n\nconsole.log(a_index);\n\n", javaScript);
         Assert.Null(parsedMessages);
     }
+
+    [Fact]
+    public void BuildWorksWithExplicitTmpDirectory()
+    {
+        var lib = new BbcoreLibrary();
+        var files = new InMemoryFs();
+        files.WriteAllUtf8("/tmp/index.ts", "let a: string = 'ahoj'; console.log(a);");
+        var result = lib.RunBuild(files, "5.1.6", "/tmp", out var javaScript, out var parsedMessages);
+        Assert.True(result);
+        Assert.Equal("let a_index = \"ahoj\";\n\nconsole.log(a_index);\n\n", javaScript);
+        Assert.Null(parsedMessages);
+    }
+
+    [Fact]
+    public void BuildReturnsParsedMessagesForExplicitTmpDirectoryTranspileError()
+    {
+        var lib = new BbcoreLibrary();
+        var files = new InMemoryFs();
+        files.WriteAllUtf8("/tmp/index.ts", "const = ;");
+        var result = lib.RunBuild(files, "5.1.6", "/tmp", out var javaScript, out var parsedMessages);
+        Assert.False(result);
+        Assert.Null(javaScript);
+        Assert.Contains("Error: index.ts", parsedMessages);
+    }
     
     [Fact]
     public void BuildWithSourceMapWorks()
