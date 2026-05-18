@@ -55,4 +55,28 @@ public class ProjectOptionsTests
 
         Assert.Equal(new[] { "/bin", "/generated/file.ts" }, dc.IgnoreWatcherChangesInPaths);
     }
+
+    [Fact]
+    public void FutureIsLoadedFromBbrc()
+    {
+        var fs = new InMemoryFs();
+        fs.WriteAllUtf8("/package.json", "{}");
+        fs.WriteAllUtf8("/.bbrc", "{ future: true }");
+        var dc = new DiskCache.DiskCache(fs, () => fs);
+        var project = new TSProject
+        {
+            DiskCache = dc,
+            Owner = (IDirectoryCache)dc.TryGetItem("/")!,
+            IsRootProject = true
+        };
+        project.ProjectOptions = new ProjectOptions
+        {
+            Owner = project,
+            ForbiddenDependencyUpdate = true
+        };
+
+        project.LoadProjectJson(true, null);
+
+        Assert.True(project.ProjectOptions.Future);
+    }
 }

@@ -6,6 +6,8 @@ namespace Lib.CSSProcessor;
 
 public interface ICssProcessor: IDisposable
 {
+    bool ForceNativeCss { get; set; }
+
     Task<string> ProcessCss(string source, string from, Func<string, string, string> urlReplacer,
         Func<string, string, SourceFromPair?>? importLoader = null);
     Task<string> ConcatenateAndMinifyCss(IEnumerable<SourceFromPair> inputs, Func<string, string, string> urlReplacer,

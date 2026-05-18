@@ -980,6 +980,7 @@ public class BuildModuleCtx : IImportResolver
                         }
 
                         var cssProcessor = BuildCtx.CompilerPool.GetCss();
+                        cssProcessor.ForceNativeCss = Owner!.ProjectOptions.Future;
                         try
                         {
                             info.Output = cssContent;
@@ -1017,6 +1018,7 @@ public class BuildModuleCtx : IImportResolver
                     if (!TryToResolveFromBuildCacheCss(info))
                     {
                         var cssProcessor = BuildCtx.CompilerPool.GetCss();
+                        cssProcessor.ForceNativeCss = Owner!.ProjectOptions.Future;
                         try
                         {
                             info.Output = info.Owner.Utf8Content;
@@ -1214,7 +1216,7 @@ public class BuildModuleCtx : IImportResolver
             };
 
             TranspileResult result;
-            if (NjsastTsValidator.BuildinEnabled)
+            if (NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future))
             {
                 try
                 {

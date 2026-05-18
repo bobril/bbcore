@@ -19,6 +19,7 @@ public class CssProcessor : ICssProcessor
     readonly IToolsDir _toolsDir;
     Func<string, string, string> _urlReplacer;
     TaskCompletionSource<string> _tcs;
+    public bool ForceNativeCss { get; set; }
 
     public class BBCSSCallbacks
     {
@@ -70,7 +71,7 @@ public class CssProcessor : ICssProcessor
     public Task<string> ProcessCss(string source, string from, Func<string, string, string> urlReplacer,
         Func<string, string, SourceFromPair?>? importLoader = null)
     {
-        if (NativeCssEnabled)
+        if (UseNativeCss)
             return Task.FromResult(ProcessCssNative(source, from, urlReplacer, importLoader, minify: false));
         _urlReplacer = urlReplacer;
         _tcs = new TaskCompletionSource<string>();
@@ -82,7 +83,7 @@ public class CssProcessor : ICssProcessor
     public Task<string> ConcatenateAndMinifyCss(System.Collections.Generic.IEnumerable<SourceFromPair> inputs,
         Func<string, string, string> urlReplacer, Func<string, string, SourceFromPair?>? importLoader = null)
     {
-        if (NativeCssEnabled)
+        if (UseNativeCss)
             return Task.FromResult(ConcatenateAndMinifyCssNative(inputs, urlReplacer, importLoader));
         _urlReplacer = urlReplacer;
         _tcs = new TaskCompletionSource<string>();
@@ -95,6 +96,8 @@ public class CssProcessor : ICssProcessor
 
     static bool NativeCssEnabled =>
         string.Equals(Environment.GetEnvironmentVariable("BBCSS"), "native", StringComparison.OrdinalIgnoreCase);
+
+    bool UseNativeCss => ForceNativeCss || NativeCssEnabled;
 
     static string ProcessCssNative(string source, string from, Func<string, string, string> urlReplacer,
         Func<string, string, SourceFromPair?>? importLoader, bool minify)

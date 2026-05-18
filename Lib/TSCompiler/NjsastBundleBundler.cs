@@ -78,6 +78,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         {
             string cssPath = _mainBuildResult.AllocateName("bundle.css");
             var cssProcessor = new CssProcessor(_project.Tools);
+            cssProcessor.ForceNativeCss = _project.Future;
             var cssContent = cssProcessor.ConcatenateAndMinifyCss(cssToBundle, (string url, string from) =>
             {
                 var full = PathUtils.Join(@from, url);

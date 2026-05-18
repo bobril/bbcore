@@ -87,6 +87,7 @@ public class ProjectOptions
     public string? HeadlessBrowserStrategy { get; set; }
     public ScriptTarget Target { get; set; }
     public bool LibraryMode { get; set; }
+    public bool Future { get; set; }
 
     public void RefreshCompilerOptions()
     {
@@ -634,6 +635,7 @@ public class ProjectOptions
         ProxyUrl = bbOptions.proxyUrl;
         HeadlessBrowserStrategy = bbOptions.headlessBrowserStrategy;
         LibraryMode = bbOptions.library ?? false;
+        Future = bbOptions.future ?? false;
     }
 
     public BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,

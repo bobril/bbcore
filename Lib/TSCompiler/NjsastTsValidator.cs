@@ -19,6 +19,8 @@ public static class NjsastTsValidator
     public static bool BuildinEnabled =>
         string.Equals(Environment.GetEnvironmentVariable("BBMODE"), BuildinMode, StringComparison.Ordinal);
 
+    public static bool IsBuildinEnabled(bool future) => future || BuildinEnabled;
+
     public static bool Enabled =>
         string.Equals(Environment.GetEnvironmentVariable("BBMODE"), ValidateTsMode, StringComparison.Ordinal);
 
