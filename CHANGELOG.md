@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.10.0
+
 ### Added
 
 - Added `BBMODE=Buildin` to transpile TypeScript through the built-in Njsast path, log `Using Build in transpiler`
