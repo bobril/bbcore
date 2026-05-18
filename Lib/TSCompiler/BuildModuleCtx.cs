@@ -15,6 +15,7 @@ using System.Text;
 using BobrilMdx;
 using HtmlAgilityPack;
 using Lib.BuildCache;
+using Lib.CSSProcessor;
 using Njsast.Runtime;
 using WebMarkupMin.Core;
 
@@ -988,7 +989,7 @@ public class BuildModuleCtx : IImportResolver
                                     var urlJustName = url.Split('?', '#')[0];
                                     info.ReportTranspilationDependency(null, urlJustName, null);
                                     return url;
-                                }).Wait();
+                                }, (url, @from) => LoadCssImport(info, url, @from)).Wait();
                         }
                         finally
                         {
@@ -1025,7 +1026,7 @@ public class BuildModuleCtx : IImportResolver
                                     var urlJustName = url.Split('?', '#')[0];
                                     info.ReportTranspilationDependency(null, urlJustName, null);
                                     return url;
-                                }).Wait();
+                                }, (url, @from) => LoadCssImport(info, url, @from)).Wait();
                         }
                         finally
                         {
@@ -1161,6 +1162,23 @@ public class BuildModuleCtx : IImportResolver
 
                 info.ReportDependency(fullJustName);
             }
+    }
+
+    SourceFromPair? LoadCssImport(TsFileAdditionalInfo info, string url, string from)
+    {
+        var full = ResolveCssImportPath(url, from);
+        if (Owner!.DiskCache.TryGetItem(full) is not IFileCache { IsInvalid: false } file)
+            return null;
+        info.ReportTranspilationDependency(info.Owner!.HashOfContent, full, file.HashOfContent);
+        return new SourceFromPair(file.Utf8Content, full);
+    }
+
+    static string ResolveCssImportPath(string url, string from)
+    {
+        url = url.Split('?', '#')[0];
+        if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+            return url[7..];
+        return PathUtils.Join(PathUtils.Parent(from), url);
     }
 
     void Transpile(TsFileAdditionalInfo info)

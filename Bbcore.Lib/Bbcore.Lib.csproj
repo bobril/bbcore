@@ -578,6 +578,9 @@
         <Compile Include="..\Njsast\AstDump\StringLineSink.cs">
             <Link>AstDump\StringLineSink.cs</Link>
         </Compile>
+        <Compile Include="..\Njsast\Css\*.cs">
+            <Link>Css\%(Filename)%(Extension)</Link>
+        </Compile>
         <Compile Include="..\Njsast\Ast\AstAccessor.cs">
             <Link>Ast\AstAccessor.cs</Link>
         </Compile>

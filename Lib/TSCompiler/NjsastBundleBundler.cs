@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using BTDB.Collections;
 using Lib.CSSProcessor;
+using Lib.DiskCache;
 using Lib.ToolsDir;
 using Lib.Utils;
 using Lib.Utils.Logger;
@@ -86,7 +87,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                     fileAdditionalInfo.Owner.ByteContent;
                 return PathUtils.GetFile(fileAdditionalInfo.OutputUrl) +
                        full.Substring(fullJustName.Length);
-            }).Result;
+            }, LoadCssImport).Result;
             var cssImports = "";
             foreach (var match in Regex.Matches(cssContent, "@import .*;"))
             {
@@ -176,6 +177,22 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
     {
         _indexHtml =
             $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{_project.ExpandHtmlHead(_buildResult)}<title>{_project.Title}</title>{cssLink}</head><body><script src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
+    }
+
+    SourceFromPair? LoadCssImport(string url, string from)
+    {
+        var full = ResolveCssImportPath(url, from);
+        if (_project.Owner.DiskCache.TryGetItem(full) is not IFileCache { IsInvalid: false } file)
+            return null;
+        return new SourceFromPair(file.Utf8Content, full);
+    }
+
+    static string ResolveCssImportPath(string url, string from)
+    {
+        url = url.Split('?', '#')[0];
+        if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+            return url[7..];
+        return PathUtils.Join(PathUtils.Parent(from), url);
     }
 
     string InitG11n()
