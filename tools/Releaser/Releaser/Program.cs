@@ -176,9 +176,11 @@ static class Program
                 Console.WriteLine(release2.HtmlUrl);
                 foreach (var rid in Rids)
                 {
-                    var uploadAsset = await UploadWithRetry(projDir, client, release2, ToZipName(rid) + ".zip");
+                    var fileName = ToZipName(rid) + ".zip";
+                    var uploadAsset = await UploadWithRetry(projDir, client, release2, fileName);
                     Console.WriteLine(ToZipName(rid) + " url:");
                     Console.WriteLine(uploadAsset.BrowserDownloadUrl);
+                    DeleteFile(projDir + "/bb/bin/Release/net10.0/" + fileName);
                 }
             }
 
@@ -328,13 +330,25 @@ static class Program
     static void CleanupReleaseArtifacts(string projDir)
     {
         var artifactsPath = projDir + "/bb/artifacts";
-        if (!Directory.Exists(artifactsPath))
-        {
-            return;
-        }
+        DeleteDirectory(artifactsPath);
+    }
 
-        Console.WriteLine("Cleaning release artifacts " + artifactsPath);
-        Directory.Delete(artifactsPath, true);
+    static void DeleteDirectory(string path)
+    {
+        if (!Directory.Exists(path))
+            return;
+
+        Console.WriteLine("Cleaning release artifacts " + path);
+        Directory.Delete(path, true);
+    }
+
+    static void DeleteFile(string path)
+    {
+        if (!File.Exists(path))
+            return;
+
+        Console.WriteLine("Cleaning release artifact " + path);
+        File.Delete(path);
     }
 
     static void RunCommand(string projDir, string fileName, string arguments)
@@ -362,13 +376,14 @@ static class Program
     static async Task<ReleaseAsset> UploadWithRetry(string projDir, GitHubClient client, Release release2,
         string fileName)
     {
+        var filePath = projDir + "/bb/bin/Release/net10.0/" + fileName;
         for (var i = 0; i < 5; i++)
         {
             try
             {
+                await using var file = File.OpenRead(filePath);
                 return await client.Repository.Release.UploadAsset(release2,
-                    new(fileName, "application/zip",
-                        File.OpenRead(projDir + "/bb/bin/Release/net10.0/" + fileName), TimeSpan.FromMinutes(14)));
+                    new(fileName, "application/zip", file, TimeSpan.FromMinutes(14)));
             }
             catch (Exception)
             {
@@ -384,37 +399,43 @@ static class Program
         var bbDir = projDir + "/bb";
         var releaseArtifactsPath = projDir + "/bb/artifacts/releaser";
         var publishDir = releaseArtifactsPath + $"/publish/bb/release_{rid}";
-        if (Directory.Exists(publishDir))
-            Directory.Delete(publishDir, true);
-        RunCommand(bbDir, "dotnet", $"restore -r {rid} --artifacts-path {Quote(releaseArtifactsPath)}");
-        RunCommand(bbDir, "dotnet",
-            $"publish -c Release -r {rid} --self-contained true --no-restore --artifacts-path {Quote(releaseArtifactsPath)} -p:DebugType=None -p:DebugSymbols=false -p:Version=" +
-            newVersion + ".0");
-        if (Directory.Exists(publishDir + "/ru-ru"))
+        try
         {
-            Directory.Delete(publishDir + "/ru-ru", true);
-        }
-
-        if (!rid.StartsWith("win"))
-        {
-            if (Directory.Exists(publishDir + "/Resources"))
+            DeleteDirectory(publishDir);
+            RunCommand(bbDir, "dotnet", $"restore -r {rid} --artifacts-path {Quote(releaseArtifactsPath)}");
+            RunCommand(bbDir, "dotnet",
+                $"publish -c Release -r {rid} --self-contained true --no-restore --artifacts-path {Quote(releaseArtifactsPath)} -p:DebugType=None -p:DebugSymbols=false -p:Version=" +
+                newVersion + ".0");
+            if (Directory.Exists(publishDir + "/ru-ru"))
             {
-                Directory.Delete(publishDir + "/Resources", true);
+                Directory.Delete(publishDir + "/ru-ru", true);
             }
-        }
 
-        if (rid == "osx-arm64")
+            if (!rid.StartsWith("win"))
+            {
+                if (Directory.Exists(publishDir + "/Resources"))
+                {
+                    Directory.Delete(publishDir + "/Resources", true);
+                }
+            }
+
+            if (rid == "osx-arm64")
+            {
+                File.Copy(projDir + "/tools/Releaser/Releaser/OsxArm64/bb",
+                    publishDir + "/bb", true);
+                Console.WriteLine("Overwritten Osx Arm64 bb to be signed");
+            }
+
+            var zipFile = projDir + $"/bb/bin/Release/net10.0/{ToZipName(rid)}.zip";
+            Directory.CreateDirectory(Path.GetDirectoryName(zipFile)!);
+            File.Delete(zipFile);
+            System.IO.Compression.ZipFile.CreateFromDirectory(publishDir, zipFile,
+                System.IO.Compression.CompressionLevel.Optimal, false);
+        }
+        finally
         {
-            File.Copy(projDir + "/tools/Releaser/Releaser/OsxArm64/bb",
-                publishDir + "/bb", true);
-            Console.WriteLine("Overwritten Osx Arm64 bb to be signed");
+            DeleteDirectory(releaseArtifactsPath);
         }
-
-        var zipFile = projDir + $"/bb/bin/Release/net10.0/{ToZipName(rid)}.zip";
-        Directory.CreateDirectory(Path.GetDirectoryName(zipFile)!);
-        File.Delete(zipFile);
-        System.IO.Compression.ZipFile.CreateFromDirectory(publishDir, zipFile,
-            System.IO.Compression.CompressionLevel.Optimal, false);
     }
 
     static string ToZipName(string rid)

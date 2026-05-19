@@ -980,7 +980,7 @@ public class BuildModuleCtx : IImportResolver
                         }
 
                         var cssProcessor = BuildCtx.CompilerPool.GetCss();
-                        cssProcessor.ForceNativeCss = Owner!.ProjectOptions.Future;
+                        cssProcessor.ForceNativeCss = Owner!.ProjectOptions!.Future;
                         try
                         {
                             info.Output = cssContent;

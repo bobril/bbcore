@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Releaser now removes temporary publish artifacts immediately after each release zip is created and removes uploaded
+  zip files once they are no longer needed.
+
 ## 5.12.0
 
 ## 5.11.0
