@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.14.0
+
 ### Changed
 
 - Improved Njsast performance and memory usage by replacing AST child lists with a `StructRefList` based structure.
