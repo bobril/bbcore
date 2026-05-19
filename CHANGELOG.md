@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.13.0
+
 ### Added
 
 - Added `.bbrc` `gots: true` option to force Go TypeScript typechecking from a project or global `tsgo` install without
