@@ -5,7 +5,7 @@ namespace Njsast.Ast;
 /// A block statement
 public class AstBlockStatement : AstBlock
 {
-    public AstBlockStatement(string? source, Position startPos, Position endPos, ref StructList<AstNode> body) : base(source, startPos, endPos, ref body)
+    public AstBlockStatement(string? source, Position startPos, Position endPos, ref StructRefList<AstNode> body) : base(source, startPos, endPos, ref body)
     {
     }
 

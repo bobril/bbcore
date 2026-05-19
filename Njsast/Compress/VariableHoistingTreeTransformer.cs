@@ -116,7 +116,7 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
                 }
                 throw new NotImplementedException();
             }
-            ParentBlock.Body.Insert(ParentBlock.Body.IndexOf(AstVar)) = ConvertVariableDefinitionToAssignStatement();
+            ParentBlock.Body.Insert(ParentBlock.Body.IndexOf(AstVar), ConvertVariableDefinitionToAssignStatement());
             RemoveVarDefFromVar();
         }
 
@@ -574,7 +574,7 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
             return astScope;
         ShouldIterateAgain = true; // TODO set should iterate again only if something has really changed
 
-        var varDefs = new StructList<AstVarDef>();
+        var varDefs = new StructRefList<AstVarDef>();
         foreach (var hoistedVariablesValue in hoistedVariables.Values)
         {
             varDefs.Add(hoistedVariablesValue);
@@ -588,7 +588,7 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
             return astScope;
         }
 
-        astScope.Body.Insert(0) = astVar;
+        astScope.Body.Insert(0, astVar);
         return astScope;
     }
 

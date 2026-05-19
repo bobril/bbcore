@@ -9,7 +9,7 @@ public static class Helpers
 {
     public static AstVar EmitVarDefines(IReadOnlyDictionary<string, object> defines)
     {
-        var defs = new StructList<AstVarDef>();
+        var defs = new StructRefList<AstVarDef>();
         defs.Reserve((uint)defines.Count);
         foreach (var (name, value) in defines)
         {
@@ -124,7 +124,7 @@ public static class Helpers
                 var newVar = new AstVar(toplevel);
                 var name = new AstSymbolVar("global");
                 newVar.Definitions.Add(new(toplevel, name, new AstSymbolRef("window")));
-                toplevel.Body.Insert(0) = newVar;
+                toplevel.Body.Insert(0, newVar);
             }
 
             return node;

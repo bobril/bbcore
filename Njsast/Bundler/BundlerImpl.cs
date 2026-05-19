@@ -175,16 +175,16 @@ public class BundlerImpl
                 content.Item2?.ResolveInAst(jsAst);
                 jsAst.FigureOutScope();
                 //BundlerHelpers.SimplifyJavaScriptDependency(jsAst);
-                topLevelAst.Body.AddRange(jsAst.Body);
+                topLevelAst.Body.AddRange(jsAst.Body.AsReadOnlySpan());
             }
 
-            topLevelAst.Body.AddRange(backupBody);
+            topLevelAst.Body.AddRange(backupBody.AsReadOnlySpan());
 
             if (lazySplitCounter > 0 && PartToMainFilesMap.ContainsKey(splitName))
             {
                 var astVar = new AstVar(topLevelAst);
                 astVar.Definitions.Add(new(new AstSymbolVar("__bbb"), new AstObject()));
-                topLevelAst.Body.Insert(0) = astVar;
+                topLevelAst.Body.Insert(0, astVar);
             }
 
             if (CompressOptions != null)
@@ -243,7 +243,7 @@ public class BundlerImpl
             var astVar = new AstVar(topLevelAst);
             astVar.Definitions.Add(new AstVarDef(new AstSymbolVar("global"),
                 new AstSymbolRef(useModernJS ? "globalThis" : "window")));
-            topLevelAst.Body.Insert(0) = astVar;
+            topLevelAst.Body.Insert(0, astVar);
         }
     }
 
@@ -462,8 +462,8 @@ public class BundlerImpl
                 }
             }
 
-            toplevel.Body.Insert(0) = new AstImport(null, new(), new(), new(importModuleName), importName,
-                ref mappings);
+            toplevel.Body.Insert(0, new AstImport(null, new(), new(), new(importModuleName), importName,
+                ref mappings));
         }
     }
 

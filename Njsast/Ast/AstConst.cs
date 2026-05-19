@@ -6,7 +6,7 @@ namespace Njsast.Ast;
 /// A `const` statement
 public class AstConst : AstDefinitions
 {
-    public AstConst(string? source, Position startPos, Position endPos, ref StructList<AstVarDef> definitions) :
+    public AstConst(string? source, Position startPos, Position endPos, ref StructRefList<AstVarDef> definitions) :
         base(source, startPos, endPos, ref definitions)
     {
     }

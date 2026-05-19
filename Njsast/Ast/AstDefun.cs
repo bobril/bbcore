@@ -5,7 +5,7 @@ namespace Njsast.Ast;
 /// A function definition
 public class AstDefun : AstLambda
 {
-    public AstDefun(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(source, startPos, endPos, name, ref argNames, isGenerator, async, ref body)
+    public AstDefun(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructRefList<AstNode> body) : base(source, startPos, endPos, name, ref argNames, isGenerator, async, ref body)
     {
     }
 

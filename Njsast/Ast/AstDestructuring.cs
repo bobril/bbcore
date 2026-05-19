@@ -8,12 +8,19 @@ namespace Njsast.Ast;
 public class AstDestructuring : AstNode
 {
     /// [AstNode*] Array of properties or elements
-    public StructList<AstNode> Names;
+    public StructRefList<AstNode> Names;
 
     /// [Boolean] Whether the destructuring represents an object or array
     public bool IsArray;
 
     public AstDestructuring(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> names,
+        bool isArray) : base(source, startLoc, endLoc)
+    {
+        Names.TransferFrom(ref names);
+        IsArray = isArray;
+    }
+
+    public AstDestructuring(string? source, Position startLoc, Position endLoc, ref StructRefList<AstNode> names,
         bool isArray) : base(source, startLoc, endLoc)
     {
         Names.TransferFrom(ref names);

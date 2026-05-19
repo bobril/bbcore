@@ -7,7 +7,7 @@ namespace Njsast.Ast;
 public class AstArray : AstNode
 {
     /// [AstNode*] array of elements
-    public StructList<AstNode> Elements;
+    public StructRefList<AstNode> Elements;
 
     public AstArray(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> elements) : base(
         source, startLoc, endLoc)
@@ -38,7 +38,7 @@ public class AstArray : AstNode
     public override AstNode ShallowClone()
     {
         var res = new AstArray(Source, Start, End);
-        res.Elements.AddRange(Elements);
+        res.Elements.AddRange(Elements.AsReadOnlySpan());
         return res;
     }
 

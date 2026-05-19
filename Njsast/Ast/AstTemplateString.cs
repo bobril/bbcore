@@ -10,7 +10,7 @@ namespace Njsast.Ast;
 public class AstTemplateString : AstNode
 {
     /// [AstNode*] One or more segments, starting with AstTemplateSegment. AstNode may follow AstTemplateSegment, but each AstNode must be followed by AstTemplateSegment.
-    public StructList<AstNode> Segments;
+    public StructRefList<AstNode> Segments;
 
     public AstTemplateString(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> segments) : base(source, startLoc, endLoc)
     {

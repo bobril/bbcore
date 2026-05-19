@@ -11,6 +11,11 @@ public class AstNew : AstCall
     {
     }
 
+    public AstNew(string? source, Position startLoc, Position endLoc, AstNode expression,
+        ref StructRefList<AstNode> args) : base(source, startLoc, endLoc, expression, ref args)
+    {
+    }
+
     AstNew(string? source, Position startLoc, Position endLoc, AstNode expression) : base(source, startLoc, endLoc, expression)
     {
     }

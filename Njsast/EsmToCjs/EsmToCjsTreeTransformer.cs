@@ -66,7 +66,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
 
     void FinalizeToplevel(AstToplevel toplevel)
     {
-        var prepend = new StructList<AstNode>();
+        var prepend = new StructRefList<AstNode>();
         HoistDecoratedClassSelfReferenceAliasVars(toplevel, ref prepend);
         if (_hoistedTempNames.Count > 0)
             prepend.Add(MakeTempVarStatement(toplevel));
@@ -84,10 +84,10 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             return;
 
         for (var i = (int)prepend.Count - 1; i >= 0; i--)
-            toplevel.Body.Insert(0) = prepend[(uint)i];
+            toplevel.Body.Insert(0, prepend[(uint)i]);
     }
 
-    void HoistDecoratedClassSelfReferenceAliasVars(AstToplevel toplevel, ref StructList<AstNode> prepend)
+    void HoistDecoratedClassSelfReferenceAliasVars(AstToplevel toplevel, ref StructRefList<AstNode> prepend)
     {
         for (var i = 0; i < toplevel.Body.Count;)
         {
@@ -226,12 +226,11 @@ public class EsmToCjsTreeTransformer : TreeTransformer
                     Body: AstCall
                     {
                         Args.Count: 1,
-                        Args: var args
-                    }
+                    } call
                 })
                 continue;
 
-            if (args[0] is not AstBinary
+            if (call.Args[0] is not AstBinary
                 {
                     Operator: Operator.LogicalOr,
                     Left: AstSymbolRef enumRef,
@@ -246,10 +245,10 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             if (enumRef.Name != enumAssignRef.Name || !_exportPreinitNames.Contains(enumRef.Name))
                 continue;
 
-            args[0] = new AstBinary(enumRef.Source, enumRef.Start, enumAssign.End,
+            call.Args.SetItem(0, new AstBinary(enumRef.Source, enumRef.Start, enumAssign.End,
                 enumRef,
                 MakeExportsAssign(enumAssign, enumRef.Name, enumAssign),
-                Operator.LogicalOr);
+                Operator.LogicalOr));
         }
     }
 
@@ -257,7 +256,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     {
         for (var i = 0; i < toplevel.Body.Count; i++)
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             switch (toplevel.Body[i])
             {
                 case AstDefinitions defs:
@@ -277,12 +276,12 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             }
 
             for (var j = 0; j < statements.Count; j++)
-                toplevel.Body.Insert((int)i + 1 + j) = statements[j];
+                toplevel.Body.Insert((int)i + 1 + j, statements[j]);
             i += (int)statements.Count;
         }
     }
 
-    void AddDeferredExportStatements(AstSymbol symbol, ref StructList<AstNode> statements)
+    void AddDeferredExportStatements(AstSymbol symbol, ref StructRefList<AstNode> statements)
     {
         if (!_deferredLocalExports.TryGetValue(symbol.Name, out var exportedNames))
             return;
@@ -320,7 +319,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         if (importedNames.Count == 1 && importedNames[0].ForeignName.Name == "*" && importName == null)
         {
             var nsName = importedNames[0].Name.Name;
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             statements.Add(MakeConst(import, nsName,
                 MakeImportStarCall(import, MakeRequireCall(import, moduleExpr))));
             AddDeferredExportStatements(importedNames[0].Name, ref statements);
@@ -333,7 +332,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             var nsName = importedNames[0].Name.Name;
             var modVarName = MakeModuleVarName(moduleExpr);
             RegisterImportReplacement(importName, from => MakeDot(MakeSymbolRef(from, modVarName), "default"));
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             statements.Add(MakeConst(import, modVarName,
                     MakeImportStarCall(import, MakeRequireCall(import, moduleExpr)),
                 nsName, MakeSymbolRef(import, modVarName)));
@@ -347,7 +346,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         {
             var modVarName = MakeModuleVarName(moduleExpr);
             RegisterImportReplacement(importName, from => MakeDot(MakeSymbolRef(from, modVarName), "default"));
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             statements.Add(MakeConst(import, modVarName,
                 MakeImportDefaultCall(import, MakeRequireCall(import, moduleExpr))));
             AddDeferredExportStatements(importName, ref statements);
@@ -357,7 +356,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         // import def, { a, b as c } from "mod"  (default + named)
         if (importName != null && importedNames.Count > 0 && importedNames[0].ForeignName.Name != "*")
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             var modVarName = MakeModuleVarName(moduleExpr);
             statements.Add(MakeConst(import, modVarName,
                 MakeImportStarCall(import, MakeRequireCall(import, moduleExpr))));
@@ -378,7 +377,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         // import { a, b as c } from "mod"  (named only, no default)
         if (importName == null && importedNames.Count > 0 && importedNames[0].ForeignName.Name != "*")
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             var modVarName = MakeModuleVarName(moduleExpr);
             var hasDefaultImportMapping = false;
             foreach (var mapping in importedNames.AsReadOnlySpan())
@@ -412,7 +411,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         return import;
     }
 
-    static StructList<AstNameMapping> FilterRuntimeImportMappings(StructList<AstNameMapping> importedNames)
+    static StructList<AstNameMapping> FilterRuntimeImportMappings(in StructRefList<AstNameMapping> importedNames)
     {
         var result = new StructList<AstNameMapping>();
         foreach (var mapping in importedNames.AsReadOnlySpan())
@@ -441,7 +440,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             export.ExportedNames[0].Name.Name == "*" &&
             export.ModuleName != null)
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             statements.Add(MakeSimpleStatement(export,
                 MakeExportStarCall(export, MakeRequireCall(export, export.ModuleName))));
             return SpreadStructList(ref statements);
@@ -455,7 +454,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         {
             var nsName = export.ExportedNames[0].ForeignName.Name;
             AddExportPreinit(nsName);
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             statements.Add(MakeExportsAssignStatement(export, nsName,
                 MakeImportStarCall(export, MakeRequireCall(export, export.ModuleName))));
             return SpreadStructList(ref statements);
@@ -465,7 +464,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         if (export.ExportedNames.Count > 0 && export.ModuleName != null &&
             (export.ExportedNames.Count > 1 || export.ExportedNames[0].ForeignName.Name != "*"))
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             var modVarName = MakeModuleVarName(export.ModuleName);
             statements.Add(MakeVar(export, modVarName, MakeRequireCall(export, export.ModuleName)));
 
@@ -487,7 +486,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         // export { a, b as c }  (local named export, no from)
         if (export.ExportedNames.Count > 0 && export.ModuleName == null)
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             foreach (var mapping in export.ExportedNames.AsReadOnlySpan())
             {
                 if (IsErasedTypeOnlyLocalExport(mapping))
@@ -523,8 +522,9 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             if (export.ExportedValue is AstClassExpression classExpression && classExpression.Name == null)
             {
                 var defaultName = MakeDefaultExportName();
-                var props = new StructList<AstNode>(classExpression.Properties);
-                var statements = new StructList<AstNode>();
+                var props = new StructRefList<AstNode>();
+                props.AddRange(classExpression.Properties.AsReadOnlySpan());
+                var statements = new StructRefList<AstNode>();
                 statements.Add(new AstDefClass(classExpression.Source, classExpression.Start, classExpression.End,
                     new AstSymbolDefClass(new AstSymbolVar(classExpression, defaultName)), classExpression.Extends, ref props));
                 statements.Add(MakeExportsAssignStatement(export, "default", MakeSymbolRef(export, defaultName)));
@@ -541,7 +541,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         // export default function/class (ExportedDefinition)
         if (export.IsDefault && export.ExportedDefinition != null)
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             if (export.ExportedDefinition is AstDefun defaultDefun && defaultDefun.Name == null)
                 defaultDefun.Name = new AstSymbolDefun(new AstSymbolVar(defaultDefun, MakeDefaultExportName()));
 
@@ -561,7 +561,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         // export var/let/const
         if (export.ExportedDefinition is AstDefinitions defs)
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             var keepDefinitions = false;
             foreach (var def in defs.Definitions.AsReadOnlySpan())
             {
@@ -606,7 +606,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             }
 
             if (keepDefinitions)
-                statements.Insert(0) = defs;
+                statements.Insert(0, defs);
 
             return SpreadStructList(ref statements);
         }
@@ -614,7 +614,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         // export function
         if (export.ExportedDefinition is AstDefun defun && defun.Name != null)
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             _hoistedExportAssignments.Add(MakeExportsAssignStatement(export, defun.Name.Name,
                 MakeSymbolRef(export, defun.Name.Name)));
             statements.Add(Transform(defun));
@@ -624,7 +624,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         // export class
         if (export.ExportedDefinition is AstDefClass defClass && defClass.Name != null)
         {
-            var statements = new StructList<AstNode>();
+            var statements = new StructRefList<AstNode>();
             AddExportPreinit(defClass.Name.Name);
             statements.Add(Transform(defClass));
             statements.Add(MakeExportsAssignStatement(export, defClass.Name.Name,
@@ -653,7 +653,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         return value;
     }
 
-    void AddDestructuringExports(AstNode from, AstDestructuring dest, ref StructList<AstNode> statements)
+    void AddDestructuringExports(AstNode from, AstDestructuring dest, ref StructRefList<AstNode> statements)
     {
         foreach (var name in dest.Names.AsReadOnlySpan())
         {
@@ -679,7 +679,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     }
 
     bool TryAddExportedDestructuring(AstNode from, AstDestructuring dest, AstNode value,
-        ref StructList<AstNode> statements)
+        ref StructRefList<AstNode> statements)
     {
         if (dest.IsArray)
             return false;
@@ -710,7 +710,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     }
 
     bool TryAddSingleExportedObjectDestructuring(AstNode from, AstDestructuring dest, AstNode value,
-        ref StructList<AstNode> statements)
+        ref StructRefList<AstNode> statements)
     {
         if (dest.Names.Count != 1 || !TryGetShorthandObjectDestructuringSymbol(dest.Names[0], out var symbol))
             return false;
@@ -830,19 +830,19 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     AstNode TransformDynamicImport(AstImportExpression importExpr)
     {
         // import(modExpr) → Promise.resolve().then(function() { return __importStar(require(modExpr)); })
-        var bodyList = new StructList<AstNode>();
+        var bodyList = new StructRefList<AstNode>();
         bodyList.Add(MakeImportStarCall(importExpr, MakeRequireCall(importExpr, importExpr.ModuleName)));
 
-        var argNames = new StructList<AstNode>();
+        var argNames = new StructRefList<AstNode>();
         var func = new AstArrow(importExpr.Source, importExpr.Start, importExpr.End,
             null, ref argNames, false, false, ref bodyList);
 
-        var thenArgs = new StructList<AstNode>();
+        var thenArgs = new StructRefList<AstNode>();
         thenArgs.Add(func);
 
         var promiseRef = new AstSymbolRef(importExpr, "Promise");
         var resolveDot = new AstDot(promiseRef, "resolve");
-        var resolveCallArgs = new StructList<AstNode>();
+        var resolveCallArgs = new StructRefList<AstNode>();
         var resolveCall = new AstCall(importExpr.Source, importExpr.Start, importExpr.End,
             resolveDot, ref resolveCallArgs);
 
@@ -867,7 +867,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
 
     AstVar MakeTempVarStatement(AstNode from)
     {
-        var definitions = new StructList<AstVarDef>();
+        var definitions = new StructRefList<AstVarDef>();
         foreach (var name in _hoistedTempNames)
             definitions.Add(new AstVarDef(from, new AstSymbolVar(from, name), null));
         return new AstVar(from.Source, from.Start, from.End, ref definitions);
@@ -875,14 +875,14 @@ public class EsmToCjsTreeTransformer : TreeTransformer
 
     static AstConst MakeConst(AstNode from, string name, AstNode? value)
     {
-        var definitions = new StructList<AstVarDef>();
+        var definitions = new StructRefList<AstVarDef>();
         definitions.Add(new AstVarDef(from, new AstSymbolConst(new AstSymbolVar(from, name)), value));
         return new AstConst(from.Source, from.Start, from.End, ref definitions);
     }
 
     static AstConst MakeConst(AstNode from, string name, AstNode? value, string name2, AstNode? value2)
     {
-        var definitions = new StructList<AstVarDef>();
+        var definitions = new StructRefList<AstVarDef>();
         definitions.Add(new AstVarDef(from, new AstSymbolConst(new AstSymbolVar(from, name)), value));
         definitions.Add(new AstVarDef(from, new AstSymbolConst(new AstSymbolVar(from, name2)), value2));
         return new AstConst(from.Source, from.Start, from.End, ref definitions);
@@ -979,7 +979,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         return MakeSimpleStatement(from, MakeExportsAssign(from, propName, value));
     }
 
-    void AddExportsPreinitStatements(AstNode from, ref StructList<AstNode> statements)
+    void AddExportsPreinitStatements(AstNode from, ref StructRefList<AstNode> statements)
     {
         if (_exportPreinitNames.Count <= ExportPreinitChunkSize)
         {
@@ -1012,12 +1012,12 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     static AstCall MakeRequireCall(AstNode from, AstNode moduleExpr)
     {
         var requireRef = new AstSymbolRef(from, "require");
-        var args = new StructList<AstNode>();
+        var args = new StructRefList<AstNode>();
         args.Add(moduleExpr);
         return MakeCall(from, requireRef, ref args);
     }
 
-    static AstCall MakeCall(AstNode from, AstNode expression, ref StructList<AstNode> args)
+    static AstCall MakeCall(AstNode from, AstNode expression, ref StructRefList<AstNode> args)
     {
         return new AstCall(from.Source, from.Start, from.End, expression, ref args);
     }
@@ -1025,7 +1025,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     static AstCall MakeImportDefaultCall(AstNode from, AstNode arg)
     {
         var importDefaultRef = new AstSymbolRef(from, "__importDefault");
-        var args = new StructList<AstNode>();
+        var args = new StructRefList<AstNode>();
         args.Add(arg);
         return MakeCall(from, importDefaultRef, ref args);
     }
@@ -1033,7 +1033,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     static AstCall MakeImportStarCall(AstNode from, AstNode arg)
     {
         var importStarRef = new AstSymbolRef(from, "__importStar");
-        var args = new StructList<AstNode>();
+        var args = new StructRefList<AstNode>();
         args.Add(arg);
         return MakeCall(from, importStarRef, ref args);
     }
@@ -1052,7 +1052,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
     {
         var exportStarRef = new AstSymbolRef(from, "__exportStar");
         var exportsRef = new AstSymbolRef(from, "exports");
-        var args = new StructList<AstNode>();
+        var args = new StructRefList<AstNode>();
         args.Add(modRef);
         args.Add(exportsRef);
         return MakeCall(from, exportStarRef, ref args);
@@ -1074,7 +1074,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
         var call = (AstCall)((AstSimpleStatement)statement).Body;
         var obj = (AstObject)call.Args[2];
         var getter = (AstObjectKeyVal)obj.Properties[1];
-        ((AstFunction)getter.Value).Body[0] = new AstReturn(includeSetter ? value.DeepClone() : value);
+        ((AstFunction)getter.Value).Body.SetItem(0, new AstReturn(includeSetter ? value.DeepClone() : value));
         if (includeSetter)
         {
             var setter = (AstObjectKeyVal)obj.Properties[2];
@@ -1096,7 +1096,7 @@ public class EsmToCjsTreeTransformer : TreeTransformer
             .Replace("\"", "\\\"", StringComparison.Ordinal) + "\"";
     }
 
-    static StructList<AstNode> ParseStatements(AstNode from, string source)
+    static StructRefList<AstNode> ParseStatements(AstNode from, string source)
     {
         var parser = new Parser(new Options
         {

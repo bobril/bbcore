@@ -27,7 +27,7 @@ public class DeclarationCollectorTreeWalker : TreeWalker
     {
         if (_declarations.Count == 0)
             return null;
-        var varDefs = new StructList<AstVarDef>();
+        var varDefs = new StructRefList<AstVarDef>();
         foreach (var astStatement in _declarations)
         {
             if (astStatement is AstVar astVar)

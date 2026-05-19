@@ -21,6 +21,8 @@ public class OutputContext
     bool _frequencyCounting;
     uint[] _frequency = new uint[128];
     int _currentCol;
+    int _currentLine;
+    int _currentIndex;
     public int Indentation;
     const string Spaces = "                ";
     char _lastChar = char.MinValue;
@@ -99,9 +101,11 @@ public class OutputContext
 
         _lastChar = text[^1];
         _currentCol += text.Length;
+        _currentIndex += text.Length;
         var pos = text.IndexOf('\n');
         while (pos >= 0)
         {
+            _currentLine++;
             text = text[(pos + 1)..];
             _currentCol = text.Length;
             pos = text.IndexOf('\n');
@@ -152,12 +156,25 @@ public class OutputContext
 
     public void PushNode(AstNode node)
     {
+        if (Options.UpdateNodePositions && !_frequencyCounting)
+        {
+            node.Source = null;
+            node.Start = CurrentPosition();
+        }
         _stack.Add(node);
     }
 
     public void PopNode()
     {
+        var node = _stack[^1];
         _stack.Pop();
+        if (Options.UpdateNodePositions && !_frequencyCounting)
+            node.End = CurrentPosition();
+    }
+
+    Position CurrentPosition()
+    {
+        return new Position(_currentLine, _currentCol, _currentIndex);
     }
 
     public void Comma()
@@ -236,7 +253,7 @@ public class OutputContext
         Space();
     }
 
-    public void PrintBraced(in StructList<AstNode> body, bool hasUseStrictDirective)
+    public void PrintBraced(in StructRefList<AstNode> body, bool hasUseStrictDirective)
     {
         if (body.Count > 0)
         {

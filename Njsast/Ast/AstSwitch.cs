@@ -10,7 +10,7 @@ public class AstSwitch : AstBlock
     public AstNode Expression;
 
     public AstSwitch(string? source, Position startPos, Position endPos, AstNode expression,
-        ref StructList<AstNode> body) : base(source, startPos, endPos, ref body)
+        ref StructRefList<AstNode> body) : base(source, startPos, endPos, ref body)
     {
         Expression = expression;
     }

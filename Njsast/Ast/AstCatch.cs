@@ -10,7 +10,7 @@ public class AstCatch : AstBlock
     public AstNode? Argname;
 
     public AstCatch(string? source, Position startPos, Position endPos, AstNode? argname,
-        ref StructList<AstNode> body) : base(source, startPos, endPos, ref body)
+        ref StructRefList<AstNode> body) : base(source, startPos, endPos, ref body)
     {
         Argname = argname;
     }

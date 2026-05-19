@@ -12,6 +12,12 @@ public class AstClassExpression : AstClass
     {
     }
 
+    public AstClassExpression(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
+        AstNode? extends, ref StructRefList<AstNode> properties) : base(source, startPos, endPos, name,
+        extends, ref properties)
+    {
+    }
+
     public override bool NeedParens(OutputContext output)
     {
         return output.FirstInStatement();
@@ -19,7 +25,8 @@ public class AstClassExpression : AstClass
 
     public override AstNode ShallowClone()
     {
-        var prop = new StructList<AstNode>(Properties);
+        var prop = new StructList<AstNode>();
+        prop.AddRange(Properties.AsReadOnlySpan());
         return new AstClassExpression(Source, Start, End, Name, Extends, ref prop);
     }
 }

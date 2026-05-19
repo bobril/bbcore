@@ -13,4 +13,5 @@ public class OutputOptions
     public bool WrapIife = false;
     public bool Braces = false;
     public bool ShortenBooleans = false;
+    public bool UpdateNodePositions = false;
 }

@@ -8,7 +8,7 @@ namespace Njsast.Ast;
 public class AstLabel : AstSymbol
 {
     /// [AstLoopControl*] a list of nodes referring to this label
-    public StructList<AstLoopControl> References;
+    public StructRefList<AstLoopControl> References;
 
     public bool IsLoop;
 

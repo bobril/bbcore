@@ -30,7 +30,7 @@ public class AstScope : AstBlock
     public AstScope? ParentScope;
 
     /// [SymbolDef*/S] a list of all symbol definitions that are accessed from this scope or any subscopes
-    public StructList<SymbolDef> Enclosed;
+    public StructRefList<SymbolDef> Enclosed;
 
     /// [integer/S] current index for mangling variables (used internally by the mangler)
     public uint Cname;
@@ -71,7 +71,7 @@ public class AstScope : AstBlock
         UsesWith = false;
         UsesEval = false;
         ParentScope = parentScope;
-        Enclosed = new StructList<SymbolDef>();
+        Enclosed = new StructRefList<SymbolDef>();
         Cname = 0;
     }
 

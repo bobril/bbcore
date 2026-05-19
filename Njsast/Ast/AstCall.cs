@@ -12,12 +12,20 @@ public class AstCall : AstNode
     public AstNode Expression;
 
     /// [AstNode*] array of arguments
-    public StructList<AstNode> Args;
+    public StructRefList<AstNode> Args;
 
     public bool Optional;
 
     public AstCall(string? source, Position startLoc, Position endLoc, AstNode expression,
         ref StructList<AstNode> args, bool optional = false) : base(source, startLoc, endLoc)
+    {
+        Expression = expression;
+        Optional = optional;
+        Args.TransferFrom(ref args);
+    }
+
+    public AstCall(string? source, Position startLoc, Position endLoc, AstNode expression,
+        ref StructRefList<AstNode> args, bool optional = false) : base(source, startLoc, endLoc)
     {
         Expression = expression;
         Optional = optional;

@@ -62,7 +62,7 @@ public class JsxToCreateElementTreeTransformer : TreeTransformer
         return new AstCall(fragment.Source, fragment.Start, fragment.End, BuildDottedExpression(_options.Factory), ref args);
     }
 
-    static void AddChildren(ref StructList<AstNode> args, in StructList<AstNode> children)
+    static void AddChildren(ref StructList<AstNode> args, in StructRefList<AstNode> children)
     {
         for (var i = 0u; i < children.Count; i++)
         {

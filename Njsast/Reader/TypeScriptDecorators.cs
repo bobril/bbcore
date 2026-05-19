@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Njsast.Ast;
 using Njsast.Output;
@@ -86,7 +87,7 @@ public sealed partial class Parser
         TsEmitDecoratedClassToBody(ref topLevel.Body, decorators, classDecl, omitClassExpressionName);
     }
 
-    void TsEmitDecoratedClassToBody(ref StructList<AstNode> targetBody, List<AstNode> decorators, AstDefClass classDecl,
+    void TsEmitDecoratedClassToBody(ref StructRefList<AstNode> targetBody, List<AstNode> decorators, AstDefClass classDecl,
         bool omitClassExpressionName = false)
     {
         var name = classDecl.Name!;
@@ -94,12 +95,13 @@ public sealed partial class Parser
 
         var classNameSym = omitClassExpressionName ? null : new AstSymbolDefClass(name);
         var classBody = new StructList<AstNode>();
-        classBody.TransferFrom(ref classDecl.Properties);
+        classBody.AddRange(classDecl.Properties.AsReadOnlySpan());
+        classDecl.Properties.ClearAndTruncate();
         var classSelfAlias = TsDecoratedClassSelfReferenceAlias(classBody, name.Name);
         if (classSelfAlias != null)
         {
             classBody = TsRewriteDecoratedClassSelfReferences(classBody, name.Name, classSelfAlias);
-            classBody.Insert(0) = TsBuildDecoratedClassSelfReferenceStaticBlock(name, classSelfAlias);
+            classBody.Insert(0, TsBuildDecoratedClassSelfReferenceStaticBlock(name, classSelfAlias));
         }
 
         var classExpr = new AstClassExpression(SourceFile, classDecl.Start, classDecl.End,
@@ -108,7 +110,7 @@ public sealed partial class Parser
         var varSym = new AstSymbolLet(name);
         var varDef = new AstVarDef(SourceFile, classDecl.Start, classDecl.End, varSym, classExpr);
 
-        var declarations = new StructList<AstVarDef>();
+        var declarations = new StructRefList<AstVarDef>();
         declarations.Add(varDef);
         var varStmt = new AstLet(SourceFile, classDecl.Start, classDecl.End, ref declarations);
 
@@ -143,10 +145,41 @@ public sealed partial class Parser
 
     string? TsDecoratedClassSelfReferenceAlias(StructList<AstNode> classBody, string className)
     {
-        foreach (var property in classBody.AsReadOnlySpan())
-            if (new ContainsSymbolRefTreeWalker(className).HasReference(property))
-                return className + "_1";
-        return null;
+        if (!TsClassBodyTextContainsIdentifier(classBody, className))
+            return null;
+        return ContainsSymbolRefTreeWalker.HasReference(classBody, className) ? className + "_1" : null;
+    }
+
+    bool TsClassBodyTextContainsIdentifier(StructList<AstNode> classBody, string className)
+    {
+        if (classBody.Count == 0)
+            return false;
+        var start = int.MaxValue;
+        var end = 0;
+        foreach (var node in classBody.AsReadOnlySpan())
+        {
+            start = Math.Min(start, node.Start.Index);
+            end = Math.Max(end, node.End.Index);
+        }
+
+        if (start < 0 || start >= end || end > _input.Length)
+            return true;
+
+        var index = start;
+        while (index < end)
+        {
+            var found = _input.IndexOf(className, index, end - index, StringComparison.Ordinal);
+            if (found < 0)
+                return false;
+            var before = found == start || !IsIdentifierChar(_input[found - 1], true);
+            var afterIndex = found + className.Length;
+            var after = afterIndex == end || !IsIdentifierChar(_input[afterIndex], true);
+            if (before && after)
+                return true;
+            index = found + className.Length;
+        }
+
+        return false;
     }
 
     StructList<AstNode> TsRewriteDecoratedClassSelfReferences(StructList<AstNode> classBody, string className,
@@ -161,7 +194,7 @@ public sealed partial class Parser
 
     AstVar TsBuildDecoratedClassSelfReferenceVar(AstDefClass classDecl, string alias)
     {
-        var definitions = new StructList<AstVarDef>();
+        var definitions = new StructRefList<AstVarDef>();
         definitions.Add(new AstVarDef(SourceFile, classDecl.Start, classDecl.End,
             new AstSymbolVar(SourceFile, classDecl.Start, classDecl.End, alias, null), null));
         return new AstVar(SourceFile, classDecl.Start, classDecl.End, ref definitions);
@@ -175,7 +208,9 @@ public sealed partial class Parser
             Operator.Assignment);
         var statements = new StructList<AstNode>();
         statements.Add(new AstSimpleStatement(SourceFile, className.Start, className.End, assign));
-        return new AstStaticBlock(SourceFile, className.Start, className.End, ref statements);
+        var body = new StructRefList<AstNode>();
+        body.TransferFrom(ref statements);
+        return new AstStaticBlock(SourceFile, className.Start, className.End, ref body);
     }
 
     void TsEmitDecoratedExportedClass(AstToplevel topLevel, List<AstNode> decorators, AstExport export,
@@ -238,27 +273,34 @@ public sealed partial class Parser
 
     sealed class ContainsSymbolRefTreeWalker : TreeWalker
     {
-        readonly string _name;
+        string _name = "";
         bool _found;
 
-        public ContainsSymbolRefTreeWalker(string name)
+        public static bool HasReference(StructList<AstNode> nodes, string name)
         {
-            _name = name;
+            var walker = new ContainsSymbolRefTreeWalker { _name = name };
+            foreach (var node in nodes.AsReadOnlySpan())
+            {
+                walker.Walk(node);
+                if (walker._found)
+                    return true;
+            }
+            return false;
         }
 
-        public bool HasReference(AstNode node)
+        ContainsSymbolRefTreeWalker()
         {
-            _found = false;
-            Walk(node);
-            return _found;
         }
 
         protected override void Visit(AstNode node)
         {
             if (node is AstSymbolRef { Name: var name } && name == _name)
+            {
                 _found = true;
-            if (!_found)
-                Descend();
+                StopDescending();
+                return;
+            }
+            Descend();
         }
     }
 
@@ -469,7 +511,7 @@ public sealed partial class Parser
         return new AstSimpleStatement(SourceFile, key.Start, value.End, assign);
     }
 
-    void TsInjectInstanceFieldInitializers(ref StructList<AstNode> classBody, bool hasSuperClass,
+    void TsInjectInstanceFieldInitializers(ref StructRefList<AstNode> classBody, bool hasSuperClass,
         List<AstStatement> initializers, Position start, Position end)
     {
         for (var i = 0u; i < classBody.Count; i++)
@@ -482,7 +524,7 @@ public sealed partial class Parser
                 })
                 continue;
 
-            var newBody = new StructList<AstNode>();
+            var newBody = new StructRefList<AstNode>();
             var insertIndex = TsConstructorFieldInitializerInsertIndex(constructorFunction.Body, hasSuperClass);
             newBody.Reserve((uint)(constructorFunction.Body.Count + initializers.Count));
             for (var j = 0u; j < insertIndex; j++)
@@ -496,7 +538,7 @@ public sealed partial class Parser
         }
 
         var parameters = new StructList<AstNode>();
-        var body = new StructList<AstNode>();
+        var body = new StructRefList<AstNode>();
         if (hasSuperClass)
         {
             var superArgs = new StructList<AstNode>();
@@ -509,10 +551,10 @@ public sealed partial class Parser
             body.Add(initializer);
         var constructor = new AstFunction(SourceFile, start, end, null, ref parameters, false, false, ref body);
         var key = new AstSymbolProperty(SourceFile, start, end, "constructor");
-        classBody.Insert(0) = new AstConciseMethod(SourceFile, start, end, key, constructor, false, false, false);
+        classBody.Insert(0, new AstConciseMethod(SourceFile, start, end, key, constructor, false, false, false));
     }
 
-    static uint TsConstructorSuperInsertIndex(StructList<AstNode> body)
+    static uint TsConstructorSuperInsertIndex(StructRefList<AstNode> body)
     {
         for (var i = 0u; i < body.Count; i++)
             if (body[i] is AstSimpleStatement { Body: AstCall { Expression: AstSuper } })
@@ -520,7 +562,7 @@ public sealed partial class Parser
         return 0;
     }
 
-    static uint TsConstructorParameterPropertyInsertIndex(StructList<AstNode> body)
+    static uint TsConstructorParameterPropertyInsertIndex(StructRefList<AstNode> body)
     {
         var i = 0u;
         for (; i < body.Count; i++)
@@ -531,7 +573,7 @@ public sealed partial class Parser
         return i;
     }
 
-    static uint TsConstructorFieldInitializerInsertIndex(StructList<AstNode> body, bool hasSuperClass)
+    static uint TsConstructorFieldInitializerInsertIndex(StructRefList<AstNode> body, bool hasSuperClass)
     {
         var i = hasSuperClass ? TsConstructorSuperInsertIndex(body) : 0u;
         for (; i < body.Count; i++)

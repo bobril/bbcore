@@ -186,7 +186,7 @@ public class FunctionReturnTreeTransformer : CompressModuleTreeTransformerBase
     {
         if (astArrow.Body.Count == 1 && astArrow.Body.Last is AstReturn astReturn && astReturn.Value != null)
         {
-            astArrow.Body[astArrow.Body.Count - 1] = astReturn.Value;
+            astArrow.Body.SetItem(astArrow.Body.Count - 1, astReturn.Value);
         }
     }
 

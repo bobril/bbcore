@@ -7,9 +7,15 @@ namespace Njsast.Ast;
 public class AstSequence : AstNode
 {
     /// [AstNode*] array of expressions (at least two)
-    public StructList<AstNode> Expressions;
+    public StructRefList<AstNode> Expressions;
 
     public AstSequence(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> expressions) :
+        base(source, startLoc, endLoc)
+    {
+        Expressions.TransferFrom(ref expressions);
+    }
+
+    public AstSequence(string? source, Position startLoc, Position endLoc, ref StructRefList<AstNode> expressions) :
         base(source, startLoc, endLoc)
     {
         Expressions.TransferFrom(ref expressions);
@@ -89,7 +95,7 @@ public class AstSequence : AstNode
             return;
         if (node is AstSequence seq)
         {
-            Expressions.AddRange(seq.Expressions);
+            Expressions.AddRange(seq.Expressions.AsReadOnlySpan());
             return;
         }
 

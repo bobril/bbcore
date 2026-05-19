@@ -38,6 +38,36 @@ public abstract class TreeTransformer : TreeWalkerBase
         }
     }
 
+    class AstSpreadStructRefList<T> : AstNode where T : AstNode
+    {
+        public readonly StructRefList<T> NodeList = new StructRefList<T>();
+
+        public AstSpreadStructRefList(ref StructRefList<T> nodeList)
+        {
+            NodeList.TransferFrom(ref nodeList);
+        }
+
+        public override void Visit(TreeWalker w)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override void Transform(TreeTransformer tt)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override AstNode ShallowClone()
+        {
+            throw new InvalidOperationException();
+        }
+
+        public override void CodeGen(OutputContext output)
+        {
+            throw new InvalidOperationException();
+        }
+    }
+
     class AstRemoveMe : AstNode
     {
 #if DEBUG
@@ -85,12 +115,17 @@ public abstract class TreeTransformer : TreeWalkerBase
 
     protected static AstNode SpreadStructList(AstBlock block)
     {
-        return new AstSpreadStructList<AstNode>(ref block.Body);
+        return new AstSpreadStructRefList<AstNode>(ref block.Body);
     }
 
     protected static AstNode SpreadStructList(ref StructList<AstNode> statements)
     {
         return new AstSpreadStructList<AstNode>(ref statements);
+    }
+
+    protected static AstNode SpreadStructList(ref StructRefList<AstNode> statements)
+    {
+        return new AstSpreadStructRefList<AstNode>(ref statements);
     }
 
     protected void Descend()
@@ -144,7 +179,7 @@ public abstract class TreeTransformer : TreeWalkerBase
             }
             else if (item is AstSpreadStructList<T> spreadList)
             {
-                list.ReplaceItemAt(i, spreadList.NodeList);
+                list.ReplaceItemAt(i, spreadList.NodeList.AsReadOnlySpan());
                 Modified = true;
             }
             else
@@ -152,6 +187,32 @@ public abstract class TreeTransformer : TreeWalkerBase
                 if (originalNode != item)
                     Modified = true;
                 list[i] = (T)item;
+            }
+        }
+    }
+
+    internal void TransformList<T>(ref StructRefList<T> list) where T : AstNode
+    {
+        for (var i = 0; i < list.Count; i++)
+        {
+            var originalNode = list[i];
+            var item = Transform(originalNode, true);
+            if (IsRemove(item))
+            {
+                list.RemoveAt(i);
+                Modified = true;
+                i--;
+            }
+            else if (item is AstSpreadStructRefList<T> spreadList)
+            {
+                list.ReplaceItemAt(i, spreadList.NodeList.AsReadOnlySpan());
+                Modified = true;
+            }
+            else
+            {
+                if (originalNode != item)
+                    Modified = true;
+                list.SetItem(i, (T)item);
             }
         }
     }

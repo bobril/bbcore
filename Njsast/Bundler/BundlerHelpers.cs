@@ -199,9 +199,9 @@ public static class BundlerHelpers
                         } astBinary && IsWindowX(astBinary.Left, globalName))
                     {
                         astVarDef.Value = astAssign;
-                        body[0] = astVar;
-                        body.Last = new AstSimpleStatement(new AstAssign(astAssign.Left.DeepClone(),
-                            astReturn.Value));
+                        body.SetItem(0, new AstSimpleStatement(astBinary.Right));
+                        body.SetItem(^1, new AstSimpleStatement(new AstAssign(astAssign.Left.DeepClone(),
+                            astReturn.Value)));
                         jsAst.Body.TransferFrom(ref body);
                         jsAst.FigureOutScope();
                     }
@@ -234,7 +234,7 @@ public static class BundlerHelpers
             func.HasUseStrictDirective = true;
             func.Body.TransferFrom(ref topLevelAst.Body);
             var call = new AstCall(new AstDot(func, "call"));
-            call.Args.AddRef() = new AstThis(null, new(), new());
+            call.Args.Add(new AstThis(null, new(), new()));
             topLevelAst.Body.Add(new AstSimpleStatement(new AstUnaryPrefix(Operator.LogicalNot, call)));
         }
     }

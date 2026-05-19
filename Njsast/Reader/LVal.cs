@@ -121,6 +121,15 @@ public sealed partial class Parser
         }
     }
 
+    void ToAssignableList(ref StructRefList<AstNode> expressionList, bool isBinding)
+    {
+        for (var i = 0; i < expressionList.Count; i++)
+        {
+            var element = expressionList[(uint)i];
+            if (element != null) expressionList.SetItem(i, ToAssignable(element, isBinding));
+        }
+    }
+
     // Parses spread element.
     AstExpansion ParseSpread(DestructuringErrors? refDestructuringErrors)
     {

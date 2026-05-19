@@ -6,7 +6,7 @@ namespace Njsast.Ast;
 /// A `finally` node; only makes sense as part of a `try` statement
 public class AstFinally : AstBlock
 {
-    public AstFinally(string? source, Position startPos, Position endPos, ref StructList<AstNode> body) : base(
+    public AstFinally(string? source, Position startPos, Position endPos, ref StructRefList<AstNode> body) : base(
         source, startPos, endPos, ref body)
     {
     }

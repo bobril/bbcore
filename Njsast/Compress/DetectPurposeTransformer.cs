@@ -14,7 +14,7 @@ public class DetectPurposeTransformer : TreeTransformer
                 if (lambda is AstArrow && lambda.Body is { Count: 1 } body2 &&
                     body2[0] is AstReturn { Value: not null } astReturn)
                 {
-                    lambda.Body[0] = astReturn.Value;
+                    lambda.Body.SetItem(0, astReturn.Value);
                 }
 
                 if (lambda.Body.Count == 0) lambda.Pure = true;

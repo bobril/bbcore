@@ -1328,6 +1328,9 @@
         <Compile Include="..\Njsast\StructList.cs">
             <Link>StructList.cs</Link>
         </Compile>
+        <Compile Include="..\Njsast\StructRefList.cs">
+            <Link>StructRefList.cs</Link>
+        </Compile>
         <Compile Include="..\Njsast\SymbolDef.cs">
             <Link>SymbolDef.cs</Link>
         </Compile>

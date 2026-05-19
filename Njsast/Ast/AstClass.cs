@@ -13,10 +13,18 @@ public class AstClass : AstScope
     public AstNode? Extends;
 
     /// [AstObjectProperty|AstStaticBlock*] array of class body elements
-    public StructList<AstNode> Properties;
+    public StructRefList<AstNode> Properties;
 
     public AstClass(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, AstNode? extends,
         ref StructList<AstNode> properties) : base(source, startPos, endPos)
+    {
+        Name = name;
+        Extends = extends;
+        Properties.TransferFrom(ref properties);
+    }
+
+    public AstClass(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name, AstNode? extends,
+        ref StructRefList<AstNode> properties) : base(source, startPos, endPos)
     {
         Name = name;
         Extends = extends;
@@ -34,7 +42,7 @@ public class AstClass : AstScope
     public override AstNode ShallowClone()
     {
         var prop = new StructList<AstNode>();
-        prop.AddRange(Properties);
+        prop.AddRange(Properties.AsReadOnlySpan());
         return new AstClass(Source, Start, End, Name, Extends, ref prop);
     }
 

@@ -9,7 +9,7 @@ public static class TypeScriptParser
     {
         options ??= new Options();
         options.ParseTypeScript = true;
-        return EraseTypeScriptOnly(Parser.Parse(input, options));
+        return EraseTypeScriptOnly(Parser.Parse(input, options), options);
     }
 
     public static AstToplevel ParseTsx(string input, Options? options = null)
@@ -17,12 +17,13 @@ public static class TypeScriptParser
         options ??= new Options();
         options.ParseTypeScript = true;
         options.ParseJSX = true;
-        return EraseTypeScriptOnly(Parser.Parse(input, options));
+        return EraseTypeScriptOnly(Parser.Parse(input, options), options);
     }
 
-    static AstToplevel EraseTypeScriptOnly(AstToplevel ast)
+    static AstToplevel EraseTypeScriptOnly(AstToplevel ast, Options options)
     {
-        ast.FigureOutScope();
+        if (options.ParsedTypeScriptImportEquals)
+            ast.FigureOutScope();
         return (AstToplevel)new TypeScriptEraseTransformer().Transform(ast);
     }
 

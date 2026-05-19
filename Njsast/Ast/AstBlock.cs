@@ -7,9 +7,9 @@ namespace Njsast.Ast;
 public class AstBlock : AstStatement, IMayBeBlockScope
 {
     /// [AstStatement*] an array of statements
-    public StructList<AstNode> Body;
+    public StructRefList<AstNode> Body;
 
-    public AstBlock(string? source, Position startPos, Position endPos, ref StructList<AstNode> body) : base(
+    public AstBlock(string? source, Position startPos, Position endPos, ref StructRefList<AstNode> body) : base(
         source, startPos, endPos)
     {
         Body.TransferFrom(ref body);

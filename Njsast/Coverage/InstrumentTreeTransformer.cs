@@ -110,8 +110,8 @@ class InstrumentTreeTransformer : TreeTransformer
             if (arrow.Body.Count == 1 && arrow.Body.Last.IsExpression())
             {
                 var original = arrow.Body[0];
-                arrow.Body[0] = new AstBlock(original)
-                    { Body = new() { new AstReturn(original) { Value = original } } };
+                arrow.Body.SetItem(0, new AstBlock(original)
+                    { Body = new() { new AstReturn(original) { Value = original } } });
             }
         }
         if (lambda.Source == null)
@@ -123,10 +123,10 @@ class InstrumentTreeTransformer : TreeTransformer
         var idx = _owner.LastIndex++;
         var call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
         call.Args.Add(new AstNumber(idx));
-        lambda.Body.Insert(0) = new AstSimpleStatement(call);
+        lambda.Body.Insert(0, new AstSimpleStatement(call));
         _owner.GetForFile(lambda.Source)
             .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Function, idx, lambda.Start, lambda.End));
-        var input = new StructList<AstNode>();
+        var input = new StructRefList<AstNode>();
         input.TransferFrom(ref lambda.Body);
         lambda.Body.Reserve(input.Count * 2 - 1);
         lambda.Body.Add(input[0]);
@@ -188,6 +188,30 @@ class InstrumentTreeTransformer : TreeTransformer
                 {
                     block.Add(new AstSimpleStatement(call));
                 }
+
+                _owner.GetForFile(ii.Source!)
+                    .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Statement, idx, ii.Start, ii.End));
+            }
+
+            ii = Transform(ii);
+            block.Add(ii);
+        }
+    }
+
+    void InstrumentBlock(ref StructRefList<AstNode> block, bool seq = false)
+    {
+        var input = new StructRefList<AstNode>();
+        input.TransferFrom(ref block);
+        block.Reserve(input.Count * 2);
+        for (var i = 0; i < input.Count; i++)
+        {
+            var ii = input[i];
+            if (ShouldStatementCover(ii))
+            {
+                var idx = _owner.LastIndex++;
+                var call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
+                call.Args.Add(new AstNumber(idx));
+                block.Add(seq ? call : new AstSimpleStatement(call));
 
                 _owner.GetForFile(ii.Source!)
                     .AddInfo(new InstrumentedInfo(InstrumentedInfoType.Statement, idx, ii.Start, ii.End));
@@ -280,7 +304,7 @@ class InstrumentTreeTransformer : TreeTransformer
         var idx = _owner.LastIndex++;
         var call = new AstCall(new AstSymbolRef(_owner.FncNameStatement));
         call.Args.Add(new AstNumber(idx));
-        branch.Body.Insert(0) = new AstSimpleStatement(call);
+        branch.Body.Insert(0, new AstSimpleStatement(call));
         _owner.GetForFile(branch.Source)
             .AddInfo(new InstrumentedInfo(InstrumentedInfoType.SwitchBranch, idx, branch.Start, branch.End));
         return branch;

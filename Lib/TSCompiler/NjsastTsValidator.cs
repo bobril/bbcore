@@ -106,7 +106,7 @@ public static class NjsastTsValidator
         ast.FigureOutScope();
         ast = (AstToplevel)new EsmToCjsTreeTransformer(includeExportSetters: true).Transform(ast);
         ast.FigureOutScope();
-        return (ast.PrintToString(new OutputOptions { Beautify = true }), ast);
+        return (ast.PrintToString(new OutputOptions { Beautify = true, UpdateNodePositions = true }), ast);
     }
 
     public static string FormatJavaScript(string javascript, bool removeEsModuleTagging = false)

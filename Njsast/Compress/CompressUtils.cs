@@ -75,9 +75,10 @@ public static class CompressUtils
         return symbolRefA.Thedef == symbolRefB.Thedef;
     }
 
-    static StructList<AstNode> TrimEndingUndefined(StructList<AstNode> list)
+    static StructList<AstNode> TrimEndingUndefined(in StructRefList<AstNode> list)
     {
-        var newList = new StructList<AstNode>(list);
+        var newList = new StructList<AstNode>();
+        newList.AddRange(list.AsReadOnlySpan());
         // TODO remove undefined at end of list
 //            for (var i = newList.Count - 1; i >= 0; i--)
 //            {

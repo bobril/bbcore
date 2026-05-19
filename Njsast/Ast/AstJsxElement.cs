@@ -6,8 +6,8 @@ namespace Njsast.Ast;
 public class AstJsxElement : AstNode
 {
     public AstJsxNameBase Name;
-    public StructList<AstJsxAttributeLike> Attributes;
-    public StructList<AstNode> Children;
+    public StructRefList<AstJsxAttributeLike> Attributes;
+    public StructRefList<AstNode> Children;
     public bool SelfClosing;
 
     public AstJsxElement(string? source, Position startLoc, Position endLoc, AstJsxNameBase name,
@@ -72,7 +72,7 @@ public class AstJsxElement : AstNode
         output.Print(">");
     }
 
-    internal static void PrintAttributes(OutputContext output, in StructList<AstJsxAttributeLike> attributes)
+    internal static void PrintAttributes(OutputContext output, in StructRefList<AstJsxAttributeLike> attributes)
     {
         foreach (var attr in attributes)
         {
@@ -84,7 +84,7 @@ public class AstJsxElement : AstNode
 
 public class AstJsxFragment : AstNode
 {
-    public StructList<AstNode> Children;
+    public StructRefList<AstNode> Children;
 
     public AstJsxFragment(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> children) : base(
         source, startLoc, endLoc)

@@ -248,7 +248,7 @@ public sealed partial class Parser
             if (enumStatements.Count == 1)
                 return enumStatements[0];
 
-            var body = new StructList<AstNode>();
+            var body = new StructRefList<AstNode>();
             foreach (var statement in enumStatements)
                 body.Add(statement);
             return new AstBlockStatement(SourceFile, startLocation, _lastTokEnd, ref body);
@@ -265,7 +265,7 @@ public sealed partial class Parser
                 if (namespaceStatements.Count == 1)
                     return namespaceStatements[0];
 
-                var body = new StructList<AstNode>();
+                var body = new StructRefList<AstNode>();
                 foreach (var statement in namespaceStatements)
                     body.Add(statement);
                 return new AstBlockStatement(SourceFile, startLocation, _lastTokEnd, ref body);
@@ -562,7 +562,7 @@ public sealed partial class Parser
             var startLoc = Start;
             var kind = isLet ? VariableKind.Let : ToVariableKind((string)GetValue());
             Next();
-            var declarations = new StructList<AstVarDef>();
+            var declarations = new StructRefList<AstVarDef>();
             ParseVar(ref declarations, true, kind);
             AstDefinitions init;
             if (kind == VariableKind.Let)
@@ -646,7 +646,7 @@ public sealed partial class Parser
     {
         Next();
         var discriminant = ParseParenExpression();
-        var cases = new StructList<AstNode>();
+        var cases = new StructRefList<AstNode>();
         Expect(TokenType.BraceL);
         EnterLexicalScope();
 
@@ -795,7 +795,7 @@ public sealed partial class Parser
     AstDefinitions ParseVarStatement(Position nodeStart, VariableKind kind)
     {
         Next();
-        var declarations = new StructList<AstVarDef>();
+        var declarations = new StructRefList<AstVarDef>();
         if (!IsTypeScript || Type is not (TokenType.Eof or TokenType.Semi))
             ParseVar(ref declarations, false, kind);
         Semicolon();
@@ -853,7 +853,7 @@ public sealed partial class Parser
 
     AstStatement TsParseDecoratedClassAsBlockStatement(Position nodeStart)
     {
-        var body = new StructList<AstNode>();
+        var body = new StructRefList<AstNode>();
         EnterLexicalScope();
         try
         {
@@ -867,11 +867,9 @@ public sealed partial class Parser
         return new AstBlockStatement(SourceFile, nodeStart, _lastTokEnd, ref body);
     }
 
-    void TsParseDecoratedClassToBody(ref StructList<AstNode> body)
+    void TsParseDecoratedClassToBody(ref StructRefList<AstNode> body)
     {
-        System.Console.Error.WriteLine($"decorated path {Start.Line}:{Start.Column} {Type} {Value}");
         _tsPendingClassDecorators = TsParseDecorators();
-        System.Console.Error.WriteLine($"after decorators {Start.Line}:{Start.Column} {Type} {Value}");
         if (IsContextual("abstract") && TsIsClassFollowing())
             Next();
         var oldDefaultClassName = _tsDefaultExportClassName;
@@ -947,7 +945,7 @@ public sealed partial class Parser
     AstBlock ParseBlock(bool createNewLexicalScope = true)
     {
         var startLocation = Start;
-        var body = new StructList<AstNode>();
+        var body = new StructRefList<AstNode>();
         Expect(TokenType.BraceL);
         if (createNewLexicalScope)
         {
@@ -1063,7 +1061,7 @@ public sealed partial class Parser
     }
 
     // Parse a list of variable declarations.
-    void ParseVar(ref StructList<AstVarDef> declarations, bool isFor, VariableKind kind)
+    void ParseVar(ref StructRefList<AstVarDef> declarations, bool isFor, VariableKind kind)
     {
         for (;;)
         {
@@ -1122,7 +1120,7 @@ public sealed partial class Parser
             {
                 for (var i = 0; i < destructuring.Names.Count; i++)
                 {
-                    destructuring.Names[i] = ToRightDeclarationSymbolKind(destructuring.Names[i], kind);
+                    destructuring.Names.SetItem(i, ToRightDeclarationSymbolKind(destructuring.Names[i], kind));
                 }
 
                 return id;
@@ -1185,7 +1183,7 @@ public sealed partial class Parser
             ParseFunctionParams(ref parameters);
             TsTrySkipTypeAnnotation();
             MakeSymbolFunArg(ref parameters);
-            var body = new StructList<AstNode>();
+            var body = new StructRefList<AstNode>();
             var useStrict = false;
             var oldAutoAccessorTempIndex = _tsAutoAccessorTempIndex;
             var oldAutoAccessorStorageTempIndex = _tsAutoAccessorStorageTempIndex;
@@ -1259,7 +1257,7 @@ public sealed partial class Parser
             TsSkipHeritageClause();
         }
         var hadConstructor = false;
-        var body = new StructList<AstNode>();
+        var body = new StructRefList<AstNode>();
         var memberDecoratorStatements = new List<AstStatement>();
         var instanceFieldInitializerStatements = new List<AstStatement>();
         Expect(TokenType.BraceL);
@@ -1376,7 +1374,7 @@ public sealed partial class Parser
             if (isMaybeStatic && Type == TokenType.BraceL)
             {
                 var staticBlock = ParseBlock();
-                var staticBody = new StructList<AstNode>();
+                var staticBody = new StructRefList<AstNode>();
                 staticBody.TransferFrom(ref staticBlock.Body);
                 body.Add(new AstStaticBlock(SourceFile, methodStart, _lastTokEnd, ref staticBody));
                 continue;
@@ -1466,7 +1464,7 @@ public sealed partial class Parser
                     {
                         if (@static)
                         {
-                            var staticBody = new StructList<AstNode>();
+                            var staticBody = new StructRefList<AstNode>();
                             staticBody.Add(TsBuildClassFieldInitializerStatement(
                                 new AstThis(SourceFile, key.Start, key.End), initializerKey, fieldValue, computed));
                             body.Add(new AstStaticBlock(SourceFile, methodStart, _lastTokEnd, ref staticBody));
@@ -1480,7 +1478,7 @@ public sealed partial class Parser
                     else if (computed && (memberDecorators is { Count: > 0 } ||
                                            key is not (AstSymbol or AstNumber or AstString)))
                     {
-                        var staticBody = new StructList<AstNode>();
+                        var staticBody = new StructRefList<AstNode>();
                         staticBody.Add(new AstSimpleStatement(SourceFile, key.Start, key.End, key));
                         body.Add(new AstStaticBlock(SourceFile, methodStart, _lastTokEnd, ref staticBody));
                     }
@@ -1502,7 +1500,7 @@ public sealed partial class Parser
                     body.Add(new AstClassField(SourceFile, methodStart, _lastTokEnd, key, null, @static, computed));
                     if (@static)
                     {
-                        var staticBody = new StructList<AstNode>();
+                        var staticBody = new StructRefList<AstNode>();
                         staticBody.Add(TsBuildClassFieldInitializerStatement(
                             new AstThis(SourceFile, key.Start, key.End), key, fieldValue, computed));
                         body.Add(new AstStaticBlock(SourceFile, methodStart, _lastTokEnd, ref staticBody));
@@ -1578,7 +1576,7 @@ public sealed partial class Parser
             var methodValue = ParseMethod(isGenerator, isAsync, tsParameterProperties, tsParameterDecorators);
             if (tsParameterProperties is { Count: > 0 })
             {
-                var newBody = new StructList<AstNode>();
+                var newBody = new StructRefList<AstNode>();
                 newBody.Reserve((uint)(methodValue.Body.Count + tsParameterProperties.Count));
                 var insertIndex = superClass != null ? TsConstructorSuperInsertIndex(methodValue.Body) : 0u;
                 for (var i = 0u; i < insertIndex; i++)
@@ -1672,7 +1670,7 @@ public sealed partial class Parser
 
         if (_tsPendingDecoratedComputedClassKeyAssignments is { Count: > 0 })
         {
-            var staticBody = new StructList<AstNode>();
+            var staticBody = new StructRefList<AstNode>();
             foreach (var assignment in _tsPendingDecoratedComputedClassKeyAssignments)
                 staticBody.Add(new AstSimpleStatement(SourceFile, assignment.Start, assignment.End, assignment));
             body.Add(new AstStaticBlock(SourceFile, nodeStart, _lastTokEnd, ref staticBody));
@@ -2035,7 +2033,7 @@ public sealed partial class Parser
                     if (namespaceStatements.Count == 1)
                         return namespaceStatements[0];
 
-                    var body = new StructList<AstNode>();
+                    var body = new StructRefList<AstNode>();
                     foreach (var statement in namespaceStatements)
                         body.Add(statement);
                     return new AstBlockStatement(SourceFile, nodeStart, _lastTokEnd, ref body);
@@ -2147,7 +2145,7 @@ public sealed partial class Parser
         }
     }
 
-    void CheckVariableExport(IDictionary<string, bool>? exports, in StructList<AstVarDef> decls)
+    void CheckVariableExport(IDictionary<string, bool>? exports, in StructRefList<AstVarDef> decls)
     {
         if (exports == null)
             return;

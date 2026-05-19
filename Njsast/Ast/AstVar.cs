@@ -6,7 +6,7 @@ namespace Njsast.Ast;
 /// A `var` statement
 public class AstVar : AstDefinitions
 {
-    public AstVar(string? source, Position startPos, Position endPos, ref StructList<AstVarDef> definitions) : base(
+    public AstVar(string? source, Position startPos, Position endPos, ref StructRefList<AstVarDef> definitions) : base(
         source, startPos, endPos, ref definitions)
     {
     }
@@ -19,7 +19,7 @@ public class AstVar : AstDefinitions
     {
     }
 
-    public AstVar(ref StructList<AstVarDef> definitions) : base(ref definitions)
+    public AstVar(ref StructRefList<AstVarDef> definitions) : base(ref definitions)
     {
     }
 

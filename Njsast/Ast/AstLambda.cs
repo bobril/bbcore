@@ -11,7 +11,7 @@ public abstract class AstLambda : AstScope
     public AstSymbolDeclaration? Name;
 
     /// [AstSymbolFunarg|AstDestructuring|AstExpansion|AstDefaultAssign*] array of function arguments, destructurings, or expanding arguments
-    public StructList<AstNode> ArgNames;
+    public StructRefList<AstNode> ArgNames;
 
     /// [boolean/S] tells whether this function accesses the arguments array
     public bool UsesArguments;
@@ -28,7 +28,18 @@ public abstract class AstLambda : AstScope
     public IPurpose? Purpose;
 
     protected AstLambda(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
-        ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(source,
+        ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructRefList<AstNode> body) : base(source,
+        startPos, endPos)
+    {
+        Name = name;
+        ArgNames.TransferFrom(ref argNames);
+        IsGenerator = isGenerator;
+        Async = async;
+        Body.TransferFrom(ref body);
+    }
+
+    protected AstLambda(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
+        ref StructRefList<AstNode> argNames, bool isGenerator, bool async, ref StructRefList<AstNode> body) : base(source,
         startPos, endPos)
     {
         Name = name;

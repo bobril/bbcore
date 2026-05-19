@@ -16,7 +16,7 @@ public class AstExport : AstStatement
     public bool IsDefault;
 
     /// List of exported names
-    public StructList<AstNameMapping> ExportedNames;
+    public StructRefList<AstNameMapping> ExportedNames;
 
     /// Name of the file to load exports from
     public AstString? ModuleName;

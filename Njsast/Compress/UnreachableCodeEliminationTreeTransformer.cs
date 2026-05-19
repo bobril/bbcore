@@ -70,7 +70,7 @@ public class UnreachableCodeEliminationTreeTransformer : CompressModuleTreeTrans
                 if (declarations == null)
                     return statement;
 
-                var statements = new StructList<AstNode>();
+                var statements = new StructRefList<AstNode>();
                 statements.Add(declarations);
                 statements.Add(statement);
 
@@ -128,7 +128,7 @@ public class UnreachableCodeEliminationTreeTransformer : CompressModuleTreeTrans
 
         if (declarations == null)
             return statement;
-        var statements = new StructList<AstNode>();
+        var statements = new StructRefList<AstNode>();
         statements.Add(statement);
         statements.Add(declarations);
         return inList

@@ -6,7 +6,7 @@ namespace Njsast.Ast;
 /// A `let` statement
 public class AstLet : AstDefinitions
 {
-    public AstLet(string? source, Position startPos, Position endPos, ref StructList<AstVarDef> definitions) : base(source, startPos, endPos, ref definitions)
+    public AstLet(string? source, Position startPos, Position endPos, ref StructRefList<AstVarDef> definitions) : base(source, startPos, endPos, ref definitions)
     {
     }
 

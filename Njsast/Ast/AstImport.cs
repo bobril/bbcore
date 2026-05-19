@@ -10,7 +10,7 @@ public class AstImport : AstStatement
     public AstSymbolImport? ImportedName; // TODO not sure if it is correct that ImportName should be null
 
     /// [AstNameMapping*] The names of non-default imported variables
-    public StructList<AstNameMapping> ImportedNames;
+    public StructRefList<AstNameMapping> ImportedNames;
 
     /// [AstString] String literal describing where this module came from
     public AstString ModuleName;
@@ -66,7 +66,7 @@ public class AstImport : AstStatement
     public override AstNode ShallowClone()
     {
         var res = new AstImport(Source, Start, End, ModuleName, ImportedName, Attributes, IsDefer, AttributeKeyword);
-        res.ImportedNames.AddRange(ImportedNames);
+        res.ImportedNames.AddRange(ImportedNames.AsReadOnlySpan());
         return res;
     }
 

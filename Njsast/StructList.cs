@@ -90,6 +90,21 @@ public struct StructList<T> : IEnumerable<T>
         return ref _a![index];
     }
 
+    public void Insert(int index, in T value)
+    {
+        Insert(index) = value;
+    }
+
+    public void Insert(uint index, in T value)
+    {
+        Insert((int)index, value);
+    }
+
+    public void Insert(Index index, in T value)
+    {
+        Insert(index.GetOffset((int)_count), value);
+    }
+
     public void RemoveAt(Index index)
     {
         var idx = index.GetOffset((int)_count);
@@ -353,6 +368,11 @@ public struct StructList<T> : IEnumerable<T>
             Expand(count);
         range.CopyTo(_a.AsSpan((int) _count));
         _count = count;
+    }
+
+    public void AddRange<TRef>(in StructRefList<TRef> range) where TRef : class, T
+    {
+        AddRange(range.AsReadOnlySpan());
     }
 
     public readonly bool All(Predicate<T> predicate)

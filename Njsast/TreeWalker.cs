@@ -51,4 +51,12 @@ public abstract class TreeWalker : TreeWalkerBase
             Walk(list[i]);
         }
     }
+
+    internal void WalkList<T>(in StructRefList<T> list) where T : AstNode
+    {
+        for (uint i = 0; i < list.Count; i++)
+        {
+            Walk(list[i]);
+        }
+    }
 }

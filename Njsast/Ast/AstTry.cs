@@ -12,7 +12,7 @@ public class AstTry : AstBlock
     /// [AstFinally?] the finally block, or null if not present
     public AstFinally? Bfinally;
 
-    public AstTry(string? source, Position startPos, Position endPos, ref StructList<AstNode> body, AstCatch? bcatch,
+    public AstTry(string? source, Position startPos, Position endPos, ref StructRefList<AstNode> body, AstCatch? bcatch,
         AstFinally? bfinally) : base(source, startPos, endPos, ref body)
     {
         Bcatch = bcatch;

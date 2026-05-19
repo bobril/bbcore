@@ -96,7 +96,7 @@ public class UnusedFunctionEliminationTreeTransformer : CompressModuleTreeTransf
                     ShouldIterateAgain = true;
                     if (shouldPreserveName && !_isInBinaryOrVar)
                     {
-                        var varDefs = new StructList<AstVarDef>();
+                        var varDefs = new StructRefList<AstVarDef>();
                         varDefs.Add(new AstVarDef(new AstSymbolVar(symbolDef.Name)));
                         return new AstVar(ref varDefs);
                     }

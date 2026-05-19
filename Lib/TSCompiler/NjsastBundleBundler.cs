@@ -331,7 +331,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         var srcToInject = InitG11n();
         if (srcToInject == "")
             return;
-        topLevelAst.Body.InsertRange(0, Parser.Parse(srcToInject).Body);
+        topLevelAst.Body.InsertRange(0, Parser.Parse(srcToInject).Body.AsReadOnlySpan());
     }
 
     public string GenerateBundleName(string forName)

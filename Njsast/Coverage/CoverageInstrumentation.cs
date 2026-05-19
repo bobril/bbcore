@@ -39,7 +39,7 @@ public class CoverageInstrumentation
     {
         var tla = Parser.Parse(
             $"var {StorageName}=new Uint32Array({LastIndex});{globalThis}.{StorageName}={StorageName};function {FncNameStatement}(i){{{StorageName}[i]++;}}function {FncNameCond}(r,i){{{StorageName}[i+(r?1:0)]++;return r}}");
-        toplevel.Body.InsertRange(0, tla.Body);
+        toplevel.Body.InsertRange(0, tla.Body.AsReadOnlySpan());
     }
 
     internal InstrumentedFile GetForFile(string name)

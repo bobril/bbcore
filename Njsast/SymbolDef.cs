@@ -8,10 +8,10 @@ public class SymbolDef : IEquatable<SymbolDef>
 {
     public string Name;
     public string? MangledName;
-    public StructList<AstSymbol> Orig;
+    public StructRefList<AstSymbol> Orig;
     public AstNode? Init;
     public AstScope Scope;
-    public StructList<AstSymbol> References;
+    public StructRefList<AstSymbol> References;
     public bool Global;
     public bool Export;
     public bool Undeclared;
@@ -34,7 +34,7 @@ public class SymbolDef : IEquatable<SymbolDef>
             orig
         ];
         Init = init;
-        References = new StructList<AstSymbol>();
+        References = new StructRefList<AstSymbol>();
         Global = false;
         MangledName = null;
         MangledIdx = -2;

@@ -530,7 +530,18 @@ public class BuildModuleCtx : IImportResolver
                         //_owner.Logger.Info("Loaded from cache " + itemInfo.Owner.FullPath);
                         return true;
                     }
+
+                    if (BuildCtx.Verbose)
+                        Owner.Logger.Info("Build cache miss source info " + itemInfo.Owner.FullPath);
                 }
+                else if (BuildCtx.Verbose)
+                {
+                    Owner.Logger.Info("Build cache miss dependency " + itemInfo.Owner.FullPath);
+                }
+            }
+            else if (BuildCtx.Verbose)
+            {
+                Owner.Logger.Info("Build cache miss content " + itemInfo.Owner.FullPath);
             }
         }
 
@@ -610,8 +621,17 @@ public class BuildModuleCtx : IImportResolver
         {
             if (f.TakenFromBuildCache)
                 continue;
-            if (f.Diagnostics.Count != 0)
+            if (f.Diagnostics.Any(d => d.IsError && !(Owner!.ProjectOptions.IgnoreDiagnostic?.Contains(d.Code) ?? false)))
+            {
+                if (BuildCtx!.Verbose)
+                {
+                    Owner!.Logger.Info("Build cache skip diagnostics " + f.Owner.FullPath);
+                    foreach (var diagnostic in f.Diagnostics)
+                        if (diagnostic.IsError && !(Owner.ProjectOptions.IgnoreDiagnostic?.Contains(diagnostic.Code) ?? false))
+                            Owner.Logger.Info("  " + diagnostic.Code + ": " + diagnostic.Text);
+                }
                 continue;
+            }
             switch (f.Type)
             {
                 case FileCompilationType.TypeScript:
@@ -627,6 +647,8 @@ public class BuildModuleCtx : IImportResolver
                     fbc.TranspilationDependencies = f.TranspilationDependencies;
                     bc.Store(fbc);
                     f.TakenFromBuildCache = true;
+                    if (BuildCtx!.Verbose)
+                        Owner!.Logger.Info("Build cache stored " + f.Owner.FullPath);
                     //_owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
                     break;
                 }
@@ -883,6 +905,8 @@ public class BuildModuleCtx : IImportResolver
                     info.HasError = false;
                     if (!TryToResolveFromBuildCache(info))
                     {
+                        if (BuildCtx!.Verbose)
+                            Owner.Logger.Info("Transpiling " + info.Owner.FullPath);
                         info.Output = null;
                         info.MapLink = null;
                         info.SourceInfo = null;
@@ -1198,6 +1222,7 @@ public class BuildModuleCtx : IImportResolver
     void Transpile(TsFileAdditionalInfo info)
     {
         ITSCompiler compiler = null;
+        AstToplevel? transpiledAst = null;
         try
         {
             if (info.Owner.IsInvalid)
@@ -1238,7 +1263,8 @@ public class BuildModuleCtx : IImportResolver
                     result = new()
                     {
                         JavaScript = builtInResult.JavaScript,
-                        SourceMap = null
+                        SourceMap = null,
+                        Ast = builtInResult.Ast
                     };
                 }
                 catch (SyntaxError error)
@@ -1291,6 +1317,7 @@ public class BuildModuleCtx : IImportResolver
             }
             else
             {
+                transpiledAst = result.Ast;
                 info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
                 info.MapLink = result.SourceMap != null
                     ? SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath)
@@ -1318,9 +1345,17 @@ public class BuildModuleCtx : IImportResolver
                 _currentlyTranspiling = info;
             }
 
-            var parser = new Parser(new(), info.Output);
-            var toplevel = parser.Parse();
-            toplevel.FigureOutScope();
+            AstToplevel toplevel;
+            if (transpiledAst != null)
+            {
+                toplevel = transpiledAst;
+            }
+            else
+            {
+                var parser = new Parser(new(), info.Output);
+                toplevel = parser.Parse();
+                toplevel.FigureOutScope();
+            }
             var ctx = new ResolvingConstEvalCtx(info.Owner.FullPath, this);
 
             string Resolver(IConstEvalCtx myctx, string text)

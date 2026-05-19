@@ -599,8 +599,9 @@ public class SourceMapIterator
         if (_ip >= _mappings.Length || _mappings[_ip] == ';')
         {
             _nextIsNewLine = true;
-            var newLineIndex = _index;
-            while (newLineIndex < _content.Length && _content[newLineIndex] != '\n') newLineIndex++;
+            var newLineIndex = _content.IndexOf('\n', _index);
+            if (newLineIndex < 0)
+                newLineIndex = _content.Length;
             _inOutputCol = _lastOutputCol + newLineIndex - _index;
             if (_index < _content.Length && _inOutputCol > _lastOutputCol &&
                 _content[_index + _inOutputCol - _lastOutputCol - 1] == '\r')

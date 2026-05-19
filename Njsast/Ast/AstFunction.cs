@@ -8,7 +8,13 @@ namespace Njsast.Ast;
 public class AstFunction : AstLambda
 {
     public AstFunction(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
-        ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructList<AstNode> body) : base(source,
+        ref StructList<AstNode> argNames, bool isGenerator, bool async, ref StructRefList<AstNode> body) : base(source,
+        startPos, endPos, name, ref argNames, isGenerator, async, ref body)
+    {
+    }
+
+    public AstFunction(string? source, Position startPos, Position endPos, AstSymbolDeclaration? name,
+        ref StructRefList<AstNode> argNames, bool isGenerator, bool async, ref StructRefList<AstNode> body) : base(source,
         startPos, endPos, name, ref argNames, isGenerator, async, ref body)
     {
     }

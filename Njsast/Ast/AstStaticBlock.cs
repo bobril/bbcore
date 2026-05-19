@@ -6,7 +6,7 @@ namespace Njsast.Ast;
 /// A static initialization block, e.g. `static { ... }` inside a class
 public class AstStaticBlock : AstBlock
 {
-    public AstStaticBlock(string? source, Position startLoc, Position endLoc, ref StructList<AstNode> body)
+    public AstStaticBlock(string? source, Position startLoc, Position endLoc, ref StructRefList<AstNode> body)
         : base(source, startLoc, endLoc, ref body)
     {
     }

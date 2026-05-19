@@ -1187,7 +1187,9 @@ public sealed partial class Parser
                     RaiseRecoverable(value.ArgNames[0].Start, "Setter cannot use rest params");
             }
 
-            var valueAcc = new AstAccessor(SourceFile, value.Start, value.End, ref value.ArgNames, value.IsGenerator,
+            var argNames = new StructList<AstNode>();
+            argNames.AddRange(value.ArgNames.AsReadOnlySpan());
+            var valueAcc = new AstAccessor(SourceFile, value.Start, value.End, ref argNames, value.IsGenerator,
                 value.Async, ref value.Body);
             return (valueAcc, kind, false, false, computed, key);
         }
@@ -1292,7 +1294,7 @@ public sealed partial class Parser
             TsTrySkipTypeAnnotation();
             MakeSymbolFunArg(ref parameters);
             CheckYieldAwaitInDefaultParams();
-            var body = new StructList<AstNode>();
+            var body = new StructRefList<AstNode>();
             if (IsTypeScript && Type != TokenType.BraceL)
                 return new AstFunction(SourceFile, startLoc, _lastTokEnd, null, ref parameters, isGenerator,
                     isAsync, ref body);
@@ -1351,7 +1353,7 @@ public sealed partial class Parser
                 ref var n = ref destructuring.Names;
                 for (var i = 0; i < n.Count; i++)
                 {
-                    n[i] = MakeSymbolFunArg(n[i]);
+                    n.SetItem(i, MakeSymbolFunArg(n[i]));
                 }
 
                 break;
@@ -1389,7 +1391,7 @@ public sealed partial class Parser
         {
             ToAssignableList(ref parameters, true);
             MakeSymbolFunArg(ref parameters);
-            var body = new StructList<AstNode>();
+            var body = new StructRefList<AstNode>();
             var useStrict = false;
             var oldAutoAccessorTempIndex = _tsAutoAccessorTempIndex;
             var oldAutoAccessorStorageTempIndex = _tsAutoAccessorStorageTempIndex;
@@ -1422,7 +1424,7 @@ public sealed partial class Parser
 
     // Parse function body and check parameters.
     bool ParseFunctionBody(in StructList<AstNode> parameters, Position startLoc, AstNode? id,
-        bool isArrowFunction, ref StructList<AstNode> body, ref bool useStrict)
+        bool isArrowFunction, ref StructRefList<AstNode> body, ref bool useStrict)
     {
         var isExpression = isArrowFunction && Type != TokenType.BraceL;
         var oldStrict = _strict;

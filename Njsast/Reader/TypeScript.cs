@@ -75,7 +75,7 @@ public sealed partial class Parser
         }
     }
 
-    void TsInsertEmptyExportModuleMarker(ref StructList<AstNode> body)
+    void TsInsertEmptyExportModuleMarker(ref StructRefList<AstNode> body)
     {
         var specifiers = new StructList<AstNameMapping>();
         body.Add(new AstExport(SourceFile, _lastTokEnd, _lastTokEnd, null, null, ref specifiers));
@@ -254,9 +254,10 @@ public sealed partial class Parser
             callArgs.Add(new AstString(SourceFile, moduleNameStart, moduleNameStart, moduleName));
             var requireCall = new AstCall(SourceFile, requireStart, _lastTokEnd,
                 new AstSymbolRef(SourceFile, requireStart, requireStart, "require"), ref callArgs);
-            var requireDeclarations = new StructList<AstVarDef>();
+            var requireDeclarations = new StructRefList<AstVarDef>();
             var requireSymbol = new AstSymbolVar(alias);
             requireDeclarations.Add(new AstVarDef(SourceFile, alias.Start, _lastTokEnd, requireSymbol, requireCall));
+            Options.ParsedTypeScriptImportEquals = true;
             return new AstTypeScriptImportEqualsConst(SourceFile, startLocation, _lastTokEnd, ref requireDeclarations);
         }
 
@@ -271,9 +272,10 @@ public sealed partial class Parser
         var value = ParseExpression(Start);
         Semicolon();
 
-        var declarations = new StructList<AstVarDef>();
+        var declarations = new StructRefList<AstVarDef>();
         var symbol = new AstSymbolVar(alias);
         declarations.Add(new AstVarDef(SourceFile, alias.Start, _lastTokEnd, symbol, value));
+        Options.ParsedTypeScriptImportEquals = true;
         return new AstTypeScriptImportEquals(SourceFile, startLocation, _lastTokEnd, ref declarations);
     }
 
@@ -492,7 +494,7 @@ public sealed partial class Parser
             Next();
         ExpectContextual("using");
 
-        var definitions = new StructList<AstVarDef>();
+        var definitions = new StructRefList<AstVarDef>();
         for (;;)
         {
             var declStart = Start;
@@ -639,7 +641,7 @@ public sealed partial class Parser
 
         var isDestructuring = id is AstDestructuring;
         var iterName = isDestructuring ? "_a" : TsNewUsingForOfValueName(((AstSymbol)id).Name);
-        var loopDefinitions = new StructList<AstVarDef>();
+        var loopDefinitions = new StructRefList<AstVarDef>();
         loopDefinitions.Add(new AstVarDef(SourceFile, bindingStart, bindingStart,
             new AstSymbolConst(new AstSymbolRef(SourceFile, bindingStart, bindingStart, iterName))));
         var loopInit = new AstConst(SourceFile, bindingStart, bindingStart, ref loopDefinitions);
@@ -647,7 +649,7 @@ public sealed partial class Parser
         var envName = TsAllocateUsingEnvName(topLevel: false);
         var errorName = TsAllocateUsingErrorName(topLevel: false);
 
-        var tryBody = new StructList<AstNode>();
+        var tryBody = new StructRefList<AstNode>();
         if (isDestructuring)
         {
             var bindingSource = _input.Substring(bindingStart.Index, bindingEnd.Index - bindingStart.Index);
@@ -657,7 +659,7 @@ public sealed partial class Parser
         else
         {
             var symbol = (AstSymbol)id;
-            var scopedDefinitions = new StructList<AstVarDef>();
+            var scopedDefinitions = new StructRefList<AstVarDef>();
             scopedDefinitions.Add(new AstVarDef(SourceFile, symbol.Start, symbol.End,
                 ToRightDeclarationSymbolKind(id, VariableKind.Const),
                 TsBuildAddDisposableResourceCall(usingStart, envName,
@@ -675,7 +677,7 @@ public sealed partial class Parser
             tryBody.Add(originalBody);
         }
 
-        var loopBodyStatements = new StructList<AstNode>();
+        var loopBodyStatements = new StructRefList<AstNode>();
         loopBodyStatements.Add(TsBuildUsingEnvDeclaration(usingStart, envName));
         loopBodyStatements.Add(TsBuildUsingTry(usingStart, envName, errorName, isAwaitUsing, ref tryBody));
         var loopBody = new AstBlockStatement(SourceFile, usingStart, _lastTokEnd, ref loopBodyStatements);
@@ -736,7 +738,7 @@ public sealed partial class Parser
     {
         var envName = TsAllocateUsingEnvName(topLevel: false);
         var errorName = TsAllocateUsingErrorName(topLevel: false);
-        var scopedDefinitions = new StructList<AstVarDef>();
+        var scopedDefinitions = new StructRefList<AstVarDef>();
         var rawDeclarations = new List<string>();
         var hasDestructuring = firstId is AstDestructuring;
         ParseForUsingInitializerDefinition(usingStart, envName, isAwaitUsing, firstId, firstDeclStart,
@@ -755,7 +757,7 @@ public sealed partial class Parser
                 ref scopedDefinitions, rawDeclarations);
         }
 
-        var tryBody = new StructList<AstNode>();
+        var tryBody = new StructRefList<AstNode>();
         if (hasDestructuring)
         {
             var rawUsing = (isAwaitUsing ? "await " : "") + "using " + string.Join(", ", rawDeclarations) + ";";
@@ -767,14 +769,14 @@ public sealed partial class Parser
         }
         tryBody.Add(ParseFor(nodeStart, null, isAwait: false));
 
-        var body = new StructList<AstNode>();
+        var body = new StructRefList<AstNode>();
         body.Add(TsBuildUsingEnvDeclaration(usingStart, envName));
         body.Add(TsBuildUsingTry(usingStart, envName, errorName, isAwaitUsing, ref tryBody));
         return new AstBlockStatement(SourceFile, nodeStart, _lastTokEnd, ref body);
     }
 
     void ParseForUsingInitializerDefinition(Position usingStart, string envName, bool isAwaitUsing, AstNode id,
-        Position declStart, Position bindingEnd, ref StructList<AstVarDef> scopedDefinitions,
+        Position declStart, Position bindingEnd, ref StructRefList<AstVarDef> scopedDefinitions,
         List<string> rawDeclarations)
     {
         var initStart = Start;
@@ -886,10 +888,10 @@ public sealed partial class Parser
         var envName = TsAllocateUsingEnvName(topLevel);
         var errorName = TsAllocateUsingErrorName(topLevel);
 
-        var declarations = new StructList<AstVarDef>();
+        var declarations = new StructRefList<AstVarDef>();
         var topLevelModuleStatements = new List<AstStatement>();
         var topLevelDeclarationsAfterUsingVar = new List<AstStatement>();
-        var tryBody = new StructList<AstNode>();
+        var tryBody = new StructRefList<AstNode>();
         var hasAwaitUsing = isAwait;
         TsParseUsingDeclarationIntoScope(startLocation, envName, topLevel, isAwait, ref declarations, ref tryBody);
 
@@ -939,8 +941,8 @@ public sealed partial class Parser
     }
 
     bool TsTryParseTopLevelModuleStatementInUsingScope(List<AstStatement> moduleStatements,
-        List<AstStatement> declarationsAfterUsingVar, ref StructList<AstNode> tryBody,
-        ref StructList<AstVarDef> declarations)
+        List<AstStatement> declarationsAfterUsingVar, ref StructRefList<AstNode> tryBody,
+        ref StructRefList<AstVarDef> declarations)
     {
         if (Type == TokenType.Import)
         {
@@ -994,7 +996,7 @@ public sealed partial class Parser
             return true;
         }
 
-        var exportedDeclarations = new StructList<AstVarDef>();
+        var exportedDeclarations = new StructRefList<AstVarDef>();
         for (var i = 0u; i < definitions.Definitions.Count; i++)
         {
             var definition = definitions.Definitions[i];
@@ -1026,8 +1028,8 @@ public sealed partial class Parser
     }
 
     void TsSplitGeneratedTopLevelUsingScopeExportStatements(List<AstStatement> generatedStatements,
-        List<AstStatement> moduleStatements, ref StructList<AstNode> tryBody,
-        ref StructList<AstVarDef> usingDeclarations)
+        List<AstStatement> moduleStatements, ref StructRefList<AstNode> tryBody,
+        ref StructRefList<AstVarDef> usingDeclarations)
     {
         if (generatedStatements.Count == 0)
             return;
@@ -1059,8 +1061,8 @@ public sealed partial class Parser
             tryBody.Add(generatedStatements[i]);
     }
 
-    void TsHoistTopLevelUsingScopeExportedLocals(AstExport export, ref StructList<AstNode> tryBody,
-        ref StructList<AstVarDef> usingDeclarations)
+    void TsHoistTopLevelUsingScopeExportedLocals(AstExport export, ref StructRefList<AstNode> tryBody,
+        ref StructRefList<AstVarDef> usingDeclarations)
     {
         if (export.ModuleName != null || export.ExportedNames.Count == 0)
             return;
@@ -1071,7 +1073,7 @@ public sealed partial class Parser
         if (exportedLocals.Count == 0)
             return;
 
-        var rewrittenBody = new StructList<AstNode>();
+        var rewrittenBody = new StructRefList<AstNode>();
         foreach (var statement in tryBody.AsReadOnlySpan())
         {
             if (statement is not AstDefinitions definitions)
@@ -1080,7 +1082,7 @@ public sealed partial class Parser
                 continue;
             }
 
-            var remainingDefinitions = new StructList<AstVarDef>();
+            var remainingDefinitions = new StructRefList<AstVarDef>();
             var assignmentStatements = new List<AstNode>();
             foreach (var definition in definitions.Definitions.AsReadOnlySpan())
             {
@@ -1109,7 +1111,7 @@ public sealed partial class Parser
         tryBody.TransferFrom(ref rewrittenBody);
     }
 
-    static AstDefinitions TsCloneDefinitionsWith(AstDefinitions source, ref StructList<AstVarDef> definitions)
+    static AstDefinitions TsCloneDefinitionsWith(AstDefinitions source, ref StructRefList<AstVarDef> definitions)
     {
         return source switch
         {
@@ -1120,8 +1122,8 @@ public sealed partial class Parser
     }
 
     bool TsTrySplitTopLevelUsingScopeExport(AstStatement exportStatement, List<AstStatement> moduleStatements,
-        List<AstStatement> declarationsAfterUsingVar, ref StructList<AstNode> tryBody,
-        ref StructList<AstVarDef> usingDeclarations)
+        List<AstStatement> declarationsAfterUsingVar, ref StructRefList<AstNode> tryBody,
+        ref StructRefList<AstVarDef> usingDeclarations)
     {
         if (exportStatement is not AstExport export)
             return false;
@@ -1199,7 +1201,7 @@ public sealed partial class Parser
         return new AstExport(anchor.Source, anchor.Start, anchor.End, null, null, ref specifiers);
     }
 
-    void TsAddTopLevelUsingVarDeclaration(ref StructList<AstVarDef> declarations, AstNode anchor, string name)
+    void TsAddTopLevelUsingVarDeclaration(ref StructRefList<AstVarDef> declarations, AstNode anchor, string name)
     {
         declarations.Add(new AstVarDef(anchor.Source, anchor.Start, anchor.End,
             new AstSymbolVar(anchor.Source, anchor.Start, anchor.End, name, null)));
@@ -1243,7 +1245,7 @@ public sealed partial class Parser
             return classExpression;
 
         _tsSetFunctionNameHelperUsed = true;
-        classExpression.Properties.Insert(0) = TsBuildSetFunctionNameStaticBlock(classDeclaration.Start, "default");
+        classExpression.Properties.Insert(0, TsBuildSetFunctionNameStaticBlock(classDeclaration.Start, "default"));
         return classExpression;
     }
 
@@ -1254,7 +1256,7 @@ public sealed partial class Parser
         args.Add(new AstString(SourceFile, position, position, name));
         var call = new AstCall(SourceFile, position, position,
             new AstSymbolRef(SourceFile, position, position, "__setFunctionName"), ref args);
-        var body = new StructList<AstNode>();
+        var body = new StructRefList<AstNode>();
         body.Add(new AstSimpleStatement(SourceFile, position, position, call));
         return new AstStaticBlock(SourceFile, position, position, ref body);
     }
@@ -1463,9 +1465,9 @@ public sealed partial class Parser
     }
 
     void TsParseUsingDeclarationIntoScope(Position startLocation, string envName, bool topLevel, bool isAwait,
-        ref StructList<AstVarDef> declarations, ref StructList<AstNode> tryBody)
+        ref StructRefList<AstVarDef> declarations, ref StructRefList<AstNode> tryBody)
     {
-        var scopedDefinitions = new StructList<AstVarDef>();
+        var scopedDefinitions = new StructRefList<AstVarDef>();
         var entries = new List<(AstNode Id, Position DeclStart, Position BindingEnd, Position InitStart,
             Position InitEnd, AstNode ConvertedId, AstNode Init)>();
         var hasDestructuring = false;
@@ -1562,7 +1564,7 @@ public sealed partial class Parser
         return assignment;
     }
 
-    void TsAddTopLevelUsingDestructuringDeclarations(AstNode id, ref StructList<AstVarDef> declarations)
+    void TsAddTopLevelUsingDestructuringDeclarations(AstNode id, ref StructRefList<AstVarDef> declarations)
     {
         var names = new List<AstSymbolDeclaration>();
         TsCollectBindingSymbols(id, names);
@@ -1607,7 +1609,7 @@ public sealed partial class Parser
 
     AstConst TsBuildUsingEnvDeclaration(Position position, string envName)
     {
-        var definitions = new StructList<AstVarDef>();
+        var definitions = new StructRefList<AstVarDef>();
         definitions.Add(new AstVarDef(SourceFile, position, position,
             new AstSymbolConst(new AstSymbolRef(SourceFile, position, position, envName)),
             TsBuildUsingEnvObject(position)));
@@ -1643,19 +1645,19 @@ public sealed partial class Parser
     }
 
     AstTry TsBuildUsingTry(Position position, string envName, string errorName, bool isAwait,
-        ref StructList<AstNode> tryBody, bool topLevel = false)
+        ref StructRefList<AstNode> tryBody, bool topLevel = false)
     {
-        var catchBody = new StructList<AstNode>();
+        var catchBody = new StructRefList<AstNode>();
         catchBody.Add(TsBuildAssignmentStatement(position, envName + ".error", errorName));
         catchBody.Add(TsBuildAssignmentStatement(position, envName + ".hasError", new AstTrue(SourceFile, position, position)));
         var catchNode = new AstCatch(SourceFile, position, position,
             new AstSymbolCatch(new AstSymbolRef(SourceFile, position, position, errorName)), ref catchBody);
 
-        var finallyBody = new StructList<AstNode>();
+        var finallyBody = new StructRefList<AstNode>();
         if (isAwait)
         {
             var resultName = TsAllocateUsingResultName(topLevel);
-            var resultDefinitions = new StructList<AstVarDef>();
+            var resultDefinitions = new StructRefList<AstVarDef>();
             resultDefinitions.Add(new AstVarDef(SourceFile, position, position,
                 new AstSymbolConst(new AstSymbolRef(SourceFile, position, position, resultName)),
                 TsBuildDisposeResourcesCall(position, envName)));
@@ -1700,7 +1702,7 @@ public sealed partial class Parser
             new AstAssign(SourceFile, position, position, target, value, Operator.Assignment));
     }
 
-    void TsInsertUsingHelperStatements(ref StructList<AstNode> body)
+    void TsInsertUsingHelperStatements(ref StructRefList<AstNode> body)
     {
         if (!_tsAddDisposableResourceHelperUsed && !_tsDisposeResourcesHelperUsed && !_tsSetFunctionNameHelperUsed)
             return;
@@ -1720,7 +1722,7 @@ public sealed partial class Parser
                 continue;
             if (!_tsDisposeResourcesHelperUsed && TsDefinitionsDeclareName(helperStatement, "__disposeResources"))
                 continue;
-            body.Insert(insertIndex++) = helperStatement;
+            body.Insert(insertIndex++, helperStatement);
         }
     }
 
@@ -1840,7 +1842,7 @@ public sealed partial class Parser
             _tsErasedTypeOnlyModuleSyntaxUsed = true;
         if (local && statements.Count != 0 && statements[0] is AstVar varStatement)
         {
-            var definitions = new StructList<AstVarDef>();
+            var definitions = new StructRefList<AstVarDef>();
             definitions.AddRange(varStatement.Definitions.AsReadOnlySpan());
             statements[0] = new AstLet(varStatement.Source, varStatement.Start, varStatement.End, ref definitions);
         }
@@ -1853,7 +1855,7 @@ public sealed partial class Parser
         if (namespaceNames.Count == 1)
             return TsLowerNamespace(namespaceNames[0], isExport, body, start, end);
 
-        var iifeBody = new StructList<AstNode>();
+        var iifeBody = new StructRefList<AstNode>();
         TsLowerNestedNamespace(namespaceNames, 1, body, namespaceNames[0], namespaceNames[0], start, end, local,
             ref iifeBody);
         if (iifeBody.Count == 0 && !TsNamespaceBodyNeedsRuntimeShell(body))
@@ -2004,7 +2006,7 @@ public sealed partial class Parser
         return specifier.Substring(start, index - start);
     }
 
-    void TsAddNamespaceStatements(ref StructList<AstNode> targetBody, List<AstStatement> namespaceStatements)
+    void TsAddNamespaceStatements(ref StructRefList<AstNode> targetBody, List<AstStatement> namespaceStatements)
     {
         var startIndex = 0;
         if (namespaceStatements.Count > 1 &&
@@ -2018,7 +2020,7 @@ public sealed partial class Parser
             targetBody.Add(namespaceStatements[i]);
     }
 
-    void TsAddEnumStatements(ref StructList<AstNode> targetBody, List<AstStatement> enumStatements)
+    void TsAddEnumStatements(ref StructRefList<AstNode> targetBody, List<AstStatement> enumStatements)
     {
         var startIndex = 0;
         if (enumStatements.Count > 1 &&
@@ -2040,7 +2042,7 @@ public sealed partial class Parser
         return definitions.Definitions[0].Name is AstSymbol symbol ? symbol.Name : null;
     }
 
-    bool TsBodyHasRuntimeDeclaration(StructList<AstNode> body, string name)
+    bool TsBodyHasRuntimeDeclaration(StructRefList<AstNode> body, string name)
     {
         for (var i = 0u; i < body.Count; i++)
         {
@@ -2075,12 +2077,12 @@ public sealed partial class Parser
         return node is AstExport { ExportedDefinition: { } definition } ? definition : node;
     }
 
-    StructList<AstNode> TsBuildNamespaceIifeBody(string namespaceName, string body, Position start, Position end,
+    StructRefList<AstNode> TsBuildNamespaceIifeBody(string namespaceName, string body, Position start, Position end,
         string? fullNamespaceName = null)
     {
         fullNamespaceName ??= namespaceName;
         _tsRuntimeEnumConstants ??= new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
-        var parsedBody = Parser.Parse(body, new Options
+        var namespaceOptions = new Options
         {
             SourceType = SourceType.Module,
             ParseTypeScript = true,
@@ -2094,19 +2096,22 @@ public sealed partial class Parser
             ReserveTopLevelAwaitUsingResultTemp = _tsReserveTopLevelAwaitUsingResultTemp &&
                                                    !_tsTopLevelAwaitUsingResultTempConsumed,
             TypeScriptRuntimeEnumConstants = _tsRuntimeEnumConstants
-        });
+        };
+        var parsedBody = Parser.Parse(body, namespaceOptions);
+        if (namespaceOptions.ParsedTypeScriptImportEquals)
+            Options.ParsedTypeScriptImportEquals = true;
         TsImportNamespaceRuntimeEnumConstants(namespaceName, fullNamespaceName, parsedBody);
         TsSyncUsingTempIndexesFromNamespaceBody(parsedBody);
 
         var exportedNames = TsCollectNamespaceVariableExportedNames(parsedBody);
         TsCollectNamespaceAmbientExportedValueNames(body, exportedNames);
-        var iifeBody = new StructList<AstNode>();
+        var iifeBody = new StructRefList<AstNode>();
         if (parsedBody.HasUseStrictDirective)
             iifeBody.Add(new AstSimpleStatement(SourceFile, start, start,
                 new AstString(SourceFile, start, start, "use strict")));
         var namespaceDestructuringTempIndex = 0;
         var pendingDestructuringTemps = new List<string>();
-        var pendingDestructuringStatements = new StructList<AstNode>();
+        var pendingDestructuringStatements = new StructRefList<AstNode>();
         AstNode? pendingDestructuringAnchor = null;
 
         void FlushPendingDestructuring()
@@ -2116,7 +2121,7 @@ public sealed partial class Parser
 
             if (pendingDestructuringTemps.Count != 0)
             {
-                var tempDefinitions = new StructList<AstVarDef>();
+                var tempDefinitions = new StructRefList<AstVarDef>();
                 foreach (var temp in pendingDestructuringTemps)
                 {
                     var symbol = new AstSymbolVar(SourceFile, pendingDestructuringAnchor.Start,
@@ -2274,7 +2279,7 @@ public sealed partial class Parser
         }
     }
 
-    static void TsHoistNamespaceUsingDestructuringTemps(ref StructList<AstNode> iifeBody)
+    static void TsHoistNamespaceUsingDestructuringTemps(ref StructRefList<AstNode> iifeBody)
     {
         for (var i = 1u; i < iifeBody.Count; i++)
         {
@@ -2297,7 +2302,7 @@ public sealed partial class Parser
 
             foreach (var tempDeclaration in tempDeclarations)
             {
-                iifeBody.Insert((int)i - 1) = tempDeclaration;
+                iifeBody.Insert((int)i - 1, tempDeclaration);
                 i++;
             }
         }
@@ -2327,12 +2332,12 @@ public sealed partial class Parser
     }
 
     void TsLowerNestedNamespace(List<string> namespaceNames, int index, string body, string parentName,
-        string fullParentName, Position start, Position end, bool local, ref StructList<AstNode> targetBody)
+        string fullParentName, Position start, Position end, bool local, ref StructRefList<AstNode> targetBody)
     {
         var namespaceName = namespaceNames[index];
         var fullNamespaceName = fullParentName + "." + namespaceName;
 
-        var nestedBody = new StructList<AstNode>();
+        var nestedBody = new StructRefList<AstNode>();
         if (index == namespaceNames.Count - 1)
         {
             nestedBody = TsBuildNamespaceIifeBody(namespaceName, body, start, end, fullNamespaceName);
@@ -2350,8 +2355,8 @@ public sealed partial class Parser
         targetBody.Add(TsBuildNestedNamespaceIife(namespaceName, parentName, ref nestedBody, start, end));
     }
 
-    bool TsTryLowerNamespaceExportedClassWithDecorators(StructList<AstNode> statements, ref uint index,
-        string namespaceName, ref StructList<AstNode> iifeBody)
+    bool TsTryLowerNamespaceExportedClassWithDecorators(StructRefList<AstNode> statements, ref uint index,
+        string namespaceName, ref StructRefList<AstNode> iifeBody)
     {
         if (statements[index] is not AstExport { ExportedDefinition: AstDefClass classStatement })
             return false;
@@ -2388,8 +2393,8 @@ public sealed partial class Parser
         };
     }
 
-    bool TsTryLowerNamespaceExportedEnum(StructList<AstNode> statements, ref uint index, string namespaceName,
-        ref StructList<AstNode> iifeBody)
+    bool TsTryLowerNamespaceExportedEnum(StructRefList<AstNode> statements, ref uint index, string namespaceName,
+        ref StructRefList<AstNode> iifeBody)
     {
         if (index + 1 >= statements.Count)
             return false;
@@ -2403,7 +2408,7 @@ public sealed partial class Parser
         if (!TsLooksLikeEnumIife(statements[index + 1], enumSymbol.Name))
             return false;
 
-        var localDefinitions = new StructList<AstVarDef>();
+        var localDefinitions = new StructRefList<AstVarDef>();
         localDefinitions.Add(new AstVarDef(definition,
             new AstSymbolLet(new AstSymbolRef(enumSymbol.Source, enumSymbol.Start, enumSymbol.End, enumSymbol.Name)),
             null));
@@ -2422,7 +2427,7 @@ public sealed partial class Parser
             {
                 Args.Count: 1,
                 Expression: AstFunction,
-                Args.UnsafeBackingArray: var args
+                Args: var args
             }
         } && args[0] is AstBinary
         {
@@ -2433,7 +2438,7 @@ public sealed partial class Parser
 
     AstStatement TsBuildNamespaceVariable(string namespaceName, bool isExport, Position start, Position end)
     {
-        var definitions = new StructList<AstVarDef>();
+        var definitions = new StructRefList<AstVarDef>();
         var symbol = new AstSymbolVar(SourceFile, start, end, namespaceName, null);
         definitions.Add(new AstVarDef(SourceFile, start, end, symbol));
         var varStatement = new AstVar(SourceFile, start, end, ref definitions);
@@ -2446,7 +2451,7 @@ public sealed partial class Parser
 
     AstDefinitions TsBuildNamespaceLocalVariable(string namespaceName, Position start, Position end, bool local)
     {
-        var definitions = new StructList<AstVarDef>();
+        var definitions = new StructRefList<AstVarDef>();
         AstSymbolDeclaration symbol = local
             ? new AstSymbolLet(new AstSymbolRef(SourceFile, start, end, namespaceName))
             : new AstSymbolVar(SourceFile, start, end, namespaceName, null);
@@ -2456,7 +2461,7 @@ public sealed partial class Parser
             : new AstVar(SourceFile, start, end, ref definitions);
     }
 
-    AstStatement TsBuildNamespaceIife(string namespaceName, ref StructList<AstNode> body, Position start, Position end)
+    AstStatement TsBuildNamespaceIife(string namespaceName, ref StructRefList<AstNode> body, Position start, Position end)
     {
         var args = new StructList<AstNode>();
         args.Add(new AstSymbolFunarg(new AstSymbolRef(SourceFile, start, end, namespaceName), namespaceName));
@@ -2473,7 +2478,7 @@ public sealed partial class Parser
         return new AstSimpleStatement(SourceFile, start, end, call);
     }
 
-    AstStatement TsBuildNestedNamespaceIife(string namespaceName, string parentName, ref StructList<AstNode> body,
+    AstStatement TsBuildNestedNamespaceIife(string namespaceName, string parentName, ref StructRefList<AstNode> body,
         Position start, Position end)
     {
         var args = new StructList<AstNode>();
@@ -2497,7 +2502,7 @@ public sealed partial class Parser
     }
 
     void TsLowerNamespaceStatement(AstNode statement, string namespaceName, string fullNamespaceName,
-        HashSet<string> exportedNames, ref StructList<AstNode> iifeBody, ref int namespaceDestructuringTempIndex)
+        HashSet<string> exportedNames, ref StructRefList<AstNode> iifeBody, ref int namespaceDestructuringTempIndex)
     {
         if (statement is AstTypeScriptOnly)
             return;
@@ -2528,12 +2533,12 @@ public sealed partial class Parser
         iifeBody.Add(TsRewriteNamespaceExportReferences(statement, namespaceName, exportedNames));
     }
 
-    void TsLowerNamespaceBlockStatements(ref StructList<AstNode> body, string namespaceName, string fullNamespaceName,
+    void TsLowerNamespaceBlockStatements(ref StructRefList<AstNode> body, string namespaceName, string fullNamespaceName,
         HashSet<string> exportedNames, ref int namespaceDestructuringTempIndex)
     {
-        var loweredBody = new StructList<AstNode>();
+        var loweredBody = new StructRefList<AstNode>();
         var pendingDestructuringTemps = new List<string>();
-        var pendingDestructuringStatements = new StructList<AstNode>();
+        var pendingDestructuringStatements = new StructRefList<AstNode>();
         AstNode? pendingDestructuringAnchor = null;
 
         void FlushPendingDestructuring()
@@ -2543,7 +2548,7 @@ public sealed partial class Parser
 
             if (pendingDestructuringTemps.Count != 0)
             {
-                var tempDefinitions = new StructList<AstVarDef>();
+                var tempDefinitions = new StructRefList<AstVarDef>();
                 foreach (var temp in pendingDestructuringTemps)
                 {
                     var symbol = new AstSymbolVar(SourceFile, pendingDestructuringAnchor.Start,
@@ -2580,7 +2585,7 @@ public sealed partial class Parser
     }
 
     void TsLowerNamespaceExport(AstExport export, string namespaceName, string fullNamespaceName,
-        HashSet<string> exportedNames, ref StructList<AstNode> iifeBody, ref int namespaceDestructuringTempIndex)
+        HashSet<string> exportedNames, ref StructRefList<AstNode> iifeBody, ref int namespaceDestructuringTempIndex)
     {
         if (export.ExportedDefinition is AstDefinitions definitions)
         {
@@ -2618,9 +2623,9 @@ public sealed partial class Parser
     }
 
     void TsLowerNamespaceExportedDefinitions(AstDefinitions definitions, string namespaceName, string fullNamespaceName,
-        HashSet<string> exportedNames, ref StructList<AstNode> iifeBody, ref int destructuringTempIndex)
+        HashSet<string> exportedNames, ref StructRefList<AstNode> iifeBody, ref int destructuringTempIndex)
     {
-        var assignments = new StructList<AstNode>();
+        var assignments = new StructRefList<AstNode>();
         for (var i = 0u; i < definitions.Definitions.Count; i++)
         {
             var definition = definitions.Definitions[i];
@@ -2643,8 +2648,8 @@ public sealed partial class Parser
         TsFlushNamespaceExportedDefinitionAssignments(ref assignments, ref iifeBody, definitions);
     }
 
-    void TsFlushNamespaceExportedDefinitionAssignments(ref StructList<AstNode> assignments,
-        ref StructList<AstNode> iifeBody, AstNode positionHint)
+    void TsFlushNamespaceExportedDefinitionAssignments(ref StructRefList<AstNode> assignments,
+        ref StructRefList<AstNode> iifeBody, AstNode positionHint)
     {
         if (assignments.Count == 0)
             return;
@@ -2655,12 +2660,12 @@ public sealed partial class Parser
         }
         else
         {
-            var sequence = new StructList<AstNode>();
+            var sequence = new StructRefList<AstNode>();
             sequence.TransferFrom(ref assignments);
             body = new AstSequence(SourceFile, positionHint.Start, positionHint.End, ref sequence);
         }
         iifeBody.Add(new AstSimpleStatement(SourceFile, positionHint.Start, positionHint.End, body));
-        assignments = new StructList<AstNode>();
+        assignments = new StructRefList<AstNode>();
     }
 
     bool TsIsTypeOnlyImportEqualsValue(AstNode value, string namespaceName, string fullNamespaceName,
@@ -2706,12 +2711,12 @@ public sealed partial class Parser
     }
 
     void TsLowerNamespaceExportedDestructuring(AstVarDef definition, string namespaceName,
-        HashSet<string> exportedNames, ref StructList<AstNode> iifeBody, ref int tempIndex)
+        HashSet<string> exportedNames, ref StructRefList<AstNode> iifeBody, ref int tempIndex)
     {
         if (definition.Value == null)
             return;
 
-        var assignments = new StructList<AstNode>();
+        var assignments = new StructRefList<AstNode>();
         var temps = new List<string>();
         TsCollectNamespaceDestructuringAssignments(definition.Name, definition.Value!, namespaceName, exportedNames,
             ref assignments, temps, ref tempIndex);
@@ -2721,7 +2726,7 @@ public sealed partial class Parser
 
         if (temps.Count != 0)
         {
-            var tempDefinitions = new StructList<AstVarDef>();
+            var tempDefinitions = new StructRefList<AstVarDef>();
             foreach (var temp in temps)
             {
                 var symbol = new AstSymbolVar(SourceFile, definition.Start, definition.End, temp, null);
@@ -2737,7 +2742,7 @@ public sealed partial class Parser
     }
 
     bool TsTryCollectNamespaceExportedDestructuringStatement(AstNode statement, string namespaceName,
-        HashSet<string> exportedNames, List<string> temps, ref StructList<AstNode> loweredStatements,
+        HashSet<string> exportedNames, List<string> temps, ref StructRefList<AstNode> loweredStatements,
         ref int tempIndex, ref AstNode? anchor)
     {
         if (statement is not AstExport { ExportedDefinition: AstDefinitions definitions })
@@ -2757,7 +2762,7 @@ public sealed partial class Parser
             if (definition.Value == null)
                 continue;
 
-            var assignments = new StructList<AstNode>();
+            var assignments = new StructRefList<AstNode>();
             TsCollectNamespaceDestructuringAssignments(definition.Name, definition.Value!, namespaceName, exportedNames,
                 ref assignments, temps, ref tempIndex);
             if (assignments.Count == 0)
@@ -2773,7 +2778,7 @@ public sealed partial class Parser
     }
 
     void TsCollectNamespaceDestructuringAssignments(AstNode pattern, AstNode sourceValue, string namespaceName,
-        HashSet<string> exportedNames, ref StructList<AstNode> assignments, List<string> temps, ref int tempIndex)
+        HashSet<string> exportedNames, ref StructRefList<AstNode> assignments, List<string> temps, ref int tempIndex)
     {
         if (pattern is AstDestructuring destructuringPattern &&
             sourceValue is not AstSymbolRef &&
@@ -2894,7 +2899,7 @@ public sealed partial class Parser
         return false;
     }
 
-    AstNode TsPrepareObjectDestructuringKey(AstNode key, ref StructList<AstNode> assignments, List<string> temps,
+    AstNode TsPrepareObjectDestructuringKey(AstNode key, ref StructRefList<AstNode> assignments, List<string> temps,
         ref int tempIndex, string namespaceName, HashSet<string> exportedNames)
     {
         if (key is AstSymbolProperty or AstString or AstNumber)
@@ -3314,9 +3319,9 @@ public sealed partial class Parser
                     emptyObject, Operator.Assignment);
                 var fallback = new AstBinary(_sourceFile, currentArg.Start, currentArg.End, nsEnum, nsEnumAssign,
                     Operator.LogicalOr);
-                call.Args[0] = new AstAssign(_sourceFile, currentArg.Start, currentArg.End,
+                call.Args.SetItem(0, new AstAssign(_sourceFile, currentArg.Start, currentArg.End,
                     new AstSymbolRef(_sourceFile, currentArg.Start, currentArg.End, _enumName), fallback,
-                    Operator.Assignment);
+                    Operator.Assignment));
             }
 
             return null;
@@ -3836,7 +3841,7 @@ public sealed partial class Parser
 
             if (statements.Count == 1)
                 return statements[0];
-            var spread = new StructList<AstNode>();
+            var spread = new StructRefList<AstNode>();
             foreach (var statement in statements)
                 spread.Add(statement);
             if (!inList)
@@ -4034,7 +4039,7 @@ public sealed partial class Parser
         var statements = new List<AstStatement>();
         if (emitDeclaration)
         {
-            var definitions = new StructList<AstVarDef>();
+            var definitions = new StructRefList<AstVarDef>();
             definitions.Add(new AstVarDef(new AstSymbolVar(name)));
             AstStatement enumDeclaration = local && !isExport
                 ? new AstLet(SourceFile, new Position(), new Position(), ref definitions)
@@ -4050,7 +4055,7 @@ public sealed partial class Parser
         var referenceNames = new HashSet<string>(StringComparer.Ordinal);
         var stringValuedReferenceNames = new HashSet<string>(StringComparer.Ordinal);
         var futureReferenceNames = TsFutureEnumReferenceNames(members);
-        var body = new StructList<AstNode>();
+        var body = new StructRefList<AstNode>();
         foreach (var member in members)
         {
             if (member.ReferenceName != null)
@@ -4780,7 +4785,7 @@ public sealed partial class Parser
             new AstSymbolProperty(SourceFile, parameter.Start, parameter.End, parameter.Name), null, false);
     }
 
-    AstSimpleStatement TsBuildStaticBlockStatement(Position start, Position end, ref StructList<AstNode> body)
+    AstSimpleStatement TsBuildStaticBlockStatement(Position start, Position end, ref StructRefList<AstNode> body)
     {
         var args = new StructList<AstNode>();
         var arrow = new AstArrow(SourceFile, start, end, null, ref args, false, false, ref body);
@@ -5380,7 +5385,7 @@ public sealed partial class Parser
     }
 
     bool TsTryParseAccessorOverloadSignature(Position startLocation, AstNode key, PropertyKind kind, bool isStatic,
-        ref StructList<AstNode> classBody)
+        ref StructRefList<AstNode> classBody)
     {
         if (!IsTypeScript || Type != TokenType.ParenL)
             return false;
@@ -5407,7 +5412,7 @@ public sealed partial class Parser
         MakeSymbolFunArg(ref parameters);
         Expect(TokenType.Semi);
 
-        var emptyBody = new StructList<AstNode>();
+        var emptyBody = new StructRefList<AstNode>();
         var method = new AstFunction(SourceFile, startLocation, _lastTokEnd, null, ref parameters, false, false,
             ref emptyBody);
         if (kind == PropertyKind.Get)
@@ -5417,7 +5422,7 @@ public sealed partial class Parser
         return true;
     }
 
-    bool TsTryParseDeclareAccessorMember(Position methodStart, ref StructList<AstNode> classBody)
+    bool TsTryParseDeclareAccessorMember(Position methodStart, ref StructRefList<AstNode> classBody)
     {
         if (!IsTypeScript)
             return false;
@@ -5438,7 +5443,7 @@ public sealed partial class Parser
             TsTrySkipTypeAnnotation();
             Expect(TokenType.Semi);
             var parameters = new StructList<AstNode>();
-            var emptyBody = new StructList<AstNode>();
+            var emptyBody = new StructRefList<AstNode>();
             var method = new AstFunction(SourceFile, methodStart, _lastTokEnd, null, ref parameters, false, false,
                 ref emptyBody);
             classBody.Add(new AstObjectGetter(SourceFile, methodStart, _lastTokEnd, property.key, method, isStatic));
@@ -5794,7 +5799,7 @@ public sealed partial class Parser
                _input[index] == '"' || _input[index] == '\'' || char.IsDigit(_input[index]);
     }
 
-    bool TsTryParseAutoAccessor(AstSymbol? className, ref StructList<AstNode> classBody,
+    bool TsTryParseAutoAccessor(AstSymbol? className, ref StructRefList<AstNode> classBody,
         List<AstNode>? decorators, List<AstStatement> memberDecoratorStatements,
         List<AstStatement> instanceFieldInitializerStatements, bool hasStaticTsModifier = false)
     {
@@ -5886,7 +5891,7 @@ public sealed partial class Parser
         return true;
     }
 
-    void TsInsertPendingClassComputedKeyStatements(ref StructList<AstNode> body)
+    void TsInsertPendingClassComputedKeyStatements(ref StructRefList<AstNode> body)
     {
         if (_tsPendingClassComputedKeyStatements == null)
             return;
@@ -5897,7 +5902,7 @@ public sealed partial class Parser
             if (pendingStatement.TargetBlockDepth != _tsBlockDepth ||
                 pendingStatement.VarScopeDepth != _tsVarScopeDepth)
                 continue;
-            body.Insert(insertIndex++) = pendingStatement.Statement;
+            body.Insert(insertIndex++, pendingStatement.Statement);
             _tsPendingClassComputedKeyStatements.RemoveAt(i);
             i--;
         }
@@ -5905,7 +5910,7 @@ public sealed partial class Parser
             _tsPendingClassComputedKeyStatements = null;
     }
 
-    static int TsDirectivePrefixLength(StructList<AstNode> body)
+    static int TsDirectivePrefixLength(StructRefList<AstNode> body)
     {
         var index = 0;
         while (index < body.Count && body[(uint)index] is AstSimpleStatement
@@ -5949,7 +5954,7 @@ public sealed partial class Parser
             }
         }
 
-        var definitions = new StructList<AstVarDef>();
+        var definitions = new StructRefList<AstVarDef>();
         definitions.Add(new AstVarDef(SourceFile, position, position,
             new AstSymbolVar(SourceFile, position, position, temp, null)));
         var statement = new AstVar(SourceFile, position, position, ref definitions);
@@ -6131,7 +6136,7 @@ public sealed partial class Parser
         AstSymbol? className)
     {
         var args = new StructList<AstNode>();
-        var body = new StructList<AstNode>();
+        var body = new StructRefList<AstNode>();
         body.Add(new AstReturn(SourceFile, startLocation, _lastTokEnd,
             TsBuildAutoAccessorStorageRef(startLocation, storageName, isStatic, className)));
         var method = new AstAccessor(SourceFile, startLocation, _lastTokEnd, ref args, false, false, ref body);
@@ -6143,7 +6148,7 @@ public sealed partial class Parser
     {
         var args = new StructList<AstNode>();
         args.Add(new AstSymbolFunarg(new AstSymbolRef(SourceFile, startLocation, _lastTokEnd, "value")));
-        var body = new StructList<AstNode>();
+        var body = new StructRefList<AstNode>();
         var assign = new AstAssign(SourceFile, startLocation, _lastTokEnd,
             TsBuildAutoAccessorStorageRef(startLocation, storageName, isStatic, className),
             new AstSymbolRef(SourceFile, startLocation, _lastTokEnd, "value"), Operator.Assignment);

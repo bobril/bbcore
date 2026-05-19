@@ -7,9 +7,9 @@ namespace Njsast.Ast;
 public abstract class AstDefinitions : AstStatement
 {
     /// [AstVarDef*] array of variable definitions
-    public StructList<AstVarDef> Definitions;
+    public StructRefList<AstVarDef> Definitions;
 
-    protected AstDefinitions(string? source, Position startPos, Position endPos, ref StructList<AstVarDef> definitions)
+    protected AstDefinitions(string? source, Position startPos, Position endPos, ref StructRefList<AstVarDef> definitions)
         : base(source, startPos, endPos)
     {
         Definitions.TransferFrom(ref definitions);
@@ -20,7 +20,7 @@ public abstract class AstDefinitions : AstStatement
     {
     }
 
-    protected AstDefinitions(ref StructList<AstVarDef> definitions)
+    protected AstDefinitions(ref StructRefList<AstVarDef> definitions)
     {
         Definitions.TransferFrom(ref definitions);
     }

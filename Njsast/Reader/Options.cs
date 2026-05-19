@@ -53,6 +53,7 @@ public sealed class Options
     internal int TypeScriptUsingResultIndex;
     internal bool ReserveTopLevelUsingTemp;
     internal bool ReserveTopLevelAwaitUsingResultTemp;
+    internal bool ParsedTypeScriptImportEquals;
     internal Dictionary<string, Dictionary<string, string>>? TypeScriptRuntimeEnumConstants;
 
     public static Options GetOptions(Options? options)

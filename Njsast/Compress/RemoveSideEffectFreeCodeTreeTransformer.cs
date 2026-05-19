@@ -90,7 +90,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     if (lambda is AstArrow && lambda.Body is { Count: 1 } body2 &&
                         body2[0] is AstReturn { Value: { } } astReturn)
                     {
-                        lambda.Body[0] = astReturn.Value;
+                        lambda.Body.SetItem(0, astReturn.Value);
                     }
 
                     NeedValue = lambda.Body is { Count: 1 } body && body[0].IsExpression();
@@ -850,7 +850,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
             var si = block.Body[i];
             if (si is AstConst astConst)
             {
-                block.Body[i] = new AstLet(si.Source, si.Start, si.End, ref astConst.Definitions);
+                block.Body.SetItem(i, new AstLet(si.Source, si.Start, si.End, ref astConst.Definitions));
             }
             else if (si is AstBlockStatement statement)
             {
@@ -887,7 +887,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                 var si2 = block.Body[i + 1];
                 if (si2 is AstVar astVar2)
                 {
-                    astVar.Definitions.AddRange(astVar2.Definitions);
+                    astVar.Definitions.AddRange(astVar2.Definitions.AsReadOnlySpan());
                     block.Body.RemoveAt(i + 1);
                     Modified = true;
                     i--;
@@ -898,7 +898,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                 var si2 = block.Body[i + 1];
                 if (si2 is AstLet astLet2)
                 {
-                    astLet.Definitions.AddRange(astLet2.Definitions);
+                    astLet.Definitions.AddRange(astLet2.Definitions.AsReadOnlySpan());
                     block.Body.RemoveAt(i + 1);
                     Modified = true;
                     i--;
@@ -933,7 +933,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
 
     static AstNode MakeBlockFrom(AstNode from, params AstNode[] statements)
     {
-        var s = new StructList<AstNode>();
+        var s = new StructRefList<AstNode>();
         foreach (var node in statements)
         {
             if (!IsRemove(node)) s.Add(node);
