@@ -45,6 +45,20 @@ public class CssParserTest
     }
 
     [Fact]
+    public void ParsesPseudoElementSelectorsWithColon()
+    {
+        var stylesheet = CssParser.Parse("""
+            .re-icon-alignment:before,
+            .re-icon-alignleft:before {
+                content: "\e901";
+            }
+            """);
+
+        Assert.Equal(".re-icon-alignment:before,\n.re-icon-alignleft:before{content:\"\\e901\";}",
+            stylesheet.PrintToString(new CssOutputOptions { PreserveComments = false }));
+    }
+
+    [Fact]
     public void ConcatenatesStylesheetsInOrder()
     {
         var first = CssParser.Parse(".a{color:red}", new CssParserOptions { SourceFile = "a.css" });

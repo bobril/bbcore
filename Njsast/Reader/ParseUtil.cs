@@ -83,7 +83,7 @@ public sealed partial class Parser
     {
         if (!Eat(type))
         {
-            Raise(Start, "Unexpected token");
+            Raise(Start, "Unexpected token " + Type + " while expecting " + type);
         }
     }
 

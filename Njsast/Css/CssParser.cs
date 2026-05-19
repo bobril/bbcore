@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Njsast.Reader;
 using Njsast.SourceMap;
@@ -101,7 +102,7 @@ public sealed class CssParser
         var head = _input[preludeStart..end].Trim();
         if (terminator == '{')
         {
-            if (FindTopLevelColon(head) >= 0)
+            if (LooksLikeDeclarationWithBlockValue(head))
             {
                 end = ReadDeclarationValueBlockTail();
                 head = _input[preludeStart..end].Trim();
@@ -358,10 +359,22 @@ public sealed class CssParser
     bool Eof => _index >= _input.Length;
     char Peek => _input[_index];
 
-    void Throw(string message) => Throw(message, CurrentPosition());
+    void Throw(string message) => throw new CssParseException(_sourceFile == null ? message : $"{message} in {_sourceFile}",
+        CurrentPosition());
     static void Throw(string message, Position position) => throw new CssParseException(message, position);
 
     static bool IsNameChar(char ch) => char.IsLetterOrDigit(ch) || ch is '-' or '_';
+
+    static bool LooksLikeDeclarationWithBlockValue(string text)
+    {
+        var colon = FindTopLevelColon(text);
+        if (colon < 0) return false;
+        var property = text[..colon].Trim();
+        if (property.Length == 0) return false;
+        if (property.StartsWith("--", StringComparison.Ordinal))
+            return property.Length > 2 && property[2..].All(IsNameChar);
+        return property.All(IsNameChar);
+    }
 }
 
 public static class CssUrlRewriter

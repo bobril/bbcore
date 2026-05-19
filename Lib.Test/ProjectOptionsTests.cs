@@ -61,7 +61,7 @@ public class ProjectOptionsTests
     {
         var fs = new InMemoryFs();
         fs.WriteAllUtf8("/package.json", "{}");
-        fs.WriteAllUtf8("/.bbrc", "{ future: true }");
+        fs.WriteAllUtf8("/.bbrc", "{ future: true, validate: true }");
         var dc = new DiskCache.DiskCache(fs, () => fs);
         var project = new TSProject
         {
@@ -78,5 +78,8 @@ public class ProjectOptionsTests
         project.LoadProjectJson(true, null);
 
         Assert.True(project.ProjectOptions.Future);
+        Assert.True(project.ProjectOptions.Validate);
+        Assert.False(NjsastTsValidator.IsBuildinEnabled(project.ProjectOptions.Future, project.ProjectOptions.Validate));
+        Assert.True(NjsastTsValidator.IsEnabled(project.ProjectOptions.Validate));
     }
 }

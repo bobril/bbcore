@@ -5927,7 +5927,7 @@ public sealed partial class Parser
                         return -1;
                     break;
                 case ';':
-                    if (angle == 1 && brace == 0 && paren == 0 && bracket == 0)
+                    if (angle > 0 && brace == 0 && paren == 0 && bracket == 0)
                         return -1;
                     break;
             }

@@ -263,7 +263,14 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                 var sourceReplacer = new SourceReplacer();
                 _project.ApplySourceInfo(sourceReplacer, fileInfo.Owner!.FullPath, fileInfo.MapLink,
                     fileInfo.SourceInfo, _buildResult);
-                sourceReplacer.Apply(adder);
+                try
+                {
+                    sourceReplacer.Apply(adder);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("Failed to apply source replacements for " + name, ex);
+                }
                 return (sourceMapBuilder.Content(), sourceMapBuilder.Build(".", "."));
             }
             else
@@ -273,7 +280,14 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                 var sourceReplacer = new SourceReplacer();
                 _project.ApplySourceInfo(sourceReplacer, fileInfo.Owner!.FullPath, null, fileInfo.SourceInfo,
                     _buildResult);
-                sourceReplacer.Apply(adder);
+                try
+                {
+                    sourceReplacer.Apply(adder);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("Failed to apply source replacements for " + name, ex);
+                }
                 return (sourceMapBuilder.Content(), null);
             }
         }

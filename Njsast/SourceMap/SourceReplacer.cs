@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Njsast.Utils;
 
 namespace Njsast.Utils
@@ -31,12 +32,30 @@ namespace Njsast.SourceMap
                 if (cur != m.From)
                 {
                     Debug.Assert(cur < m.From);
-                    sourceAdder.Add(cur.Line, cur.Col, m.From.Line, m.From.Col);
+                    try
+                    {
+                        sourceAdder.Add(cur.Line, cur.Col, m.From.Line, m.From.Col);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException(
+                            $"Failed to copy source range {cur.Line}:{cur.Col}-{m.From.Line}:{m.From.Col}",
+                            ex);
+                    }
                 }
 
                 if (m.Start != m.End)
                 {
-                    sourceAdder.Add(m.Start.Line, m.Start.Col, m.End.Line, m.End.Col);
+                    try
+                    {
+                        sourceAdder.Add(m.Start.Line, m.Start.Col, m.End.Line, m.End.Col);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new InvalidOperationException(
+                            $"Failed to move source range {m.Start.Line}:{m.Start.Col}-{m.End.Line}:{m.End.Col} to {m.From.Line}:{m.From.Col}",
+                            ex);
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(m.Content))

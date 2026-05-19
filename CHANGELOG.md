@@ -7,6 +7,8 @@
 ### Added
 
 - Added `.bbrc` `future: true` option to enable the built-in Njsast transpiler and C# CSS/SCSS processing paths.
+- Added `.bbrc` `validate: true` option to enable the `BBMODE=ValidateTS` validation path, taking priority over
+  `future: true`.
 
 ## 5.10.0
 

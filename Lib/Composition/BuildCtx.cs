@@ -385,7 +385,7 @@ public class BuildCtx
                     project.ExpandEnv();
                 }
 
-                if (NjsastTsValidator.IsBuildinEnabled(project.Future))
+                if (NjsastTsValidator.IsBuildinEnabled(project.Future, project.Validate))
                 {
                     ShowBuildinTranspiler();
                     project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(NjsastTsValidator.BuildinTranspilerCacheKey,

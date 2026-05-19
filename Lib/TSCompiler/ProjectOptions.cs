@@ -88,6 +88,7 @@ public class ProjectOptions
     public ScriptTarget Target { get; set; }
     public bool LibraryMode { get; set; }
     public bool Future { get; set; }
+    public bool Validate { get; set; }
 
     public void RefreshCompilerOptions()
     {
@@ -636,6 +637,7 @@ public class ProjectOptions
         HeadlessBrowserStrategy = bbOptions.headlessBrowserStrategy;
         LibraryMode = bbOptions.library ?? false;
         Future = bbOptions.future ?? false;
+        Validate = bbOptions.validate ?? false;
     }
 
     public BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,

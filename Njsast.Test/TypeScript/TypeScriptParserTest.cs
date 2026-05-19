@@ -5495,6 +5495,58 @@ public sealed class TypeScriptParserTest
     }
 
     [Fact]
+    public void TypeScriptParserShouldEraseGenericRestParameterUnionArrayType()
+    {
+        var input = """
+            export function format<TParam extends {}>(formatString: string, ...args: (TParam | undefined)[]): string {
+                return safeFormat(formatString, true, args);
+            }
+            """;
+
+        var output = PrintTypeScript(input);
+
+        Assert.Contains("export function format(formatString, ...args)", output);
+        Assert.DoesNotContain("TParam", output);
+        Assert.DoesNotContain("undefined)[]", output);
+    }
+
+    [Fact]
+    public void TypeScriptParserShouldNotScanTypeArgumentsAcrossForConditionSemicolon()
+    {
+        var input = """
+            export function hashCode(toHash: string): number {
+                let hash: number = 0;
+                for (let i: number = 0; i < toHash.length; i++) {
+                    let char: number = toHash.charCodeAt(i);
+                    hash = (hash << 5) - hash + char;
+                }
+                return hash;
+            }
+            export function capitalizeFirstLetter(text: string): string {
+                return text.charAt(0).toUpperCase() + text.slice(1);
+            }
+            export function toPascalCase(text: string): string {
+                const words = text.split(" ");
+                return words.map(word => capitalizeFirstLetter(word)).join("");
+            }
+            export function lpad(text: string, length: number, repeatingCharacter: string = " "): string {
+                const lengthDiff: number = length - text.length;
+                if (lengthDiff > 0) {
+                    return generateStringWithSpecificLength(lengthDiff, repeatingCharacter) + text;
+                }
+                return text;
+            }
+            export function format<TParam extends {}>(formatString: string, ...args: (TParam | undefined)[]): string {
+                return safeFormat(formatString, true, args);
+            }
+            """;
+
+        var output = PrintTypeScript(input);
+
+        Assert.Contains("export function format(formatString, ...args)", output);
+    }
+
+    [Fact]
     public void TypeScriptParserShouldEraseStaticParameterModifiers()
     {
         var input = """

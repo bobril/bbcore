@@ -1186,7 +1186,6 @@ public class BuildModuleCtx : IImportResolver
     void Transpile(TsFileAdditionalInfo info)
     {
         ITSCompiler compiler = null;
-        AstToplevel? builtinToplevel = null;
         try
         {
             if (info.Owner.IsInvalid)
@@ -1216,12 +1215,11 @@ public class BuildModuleCtx : IImportResolver
             };
 
             TranspileResult result;
-            if (NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future))
+            if (NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future, Owner.ProjectOptions.Validate))
             {
                 try
                 {
                     var builtInResult = NjsastTsValidator.TranspileToCommonJsAst(newFileName, source);
-                    builtinToplevel = builtInResult.Ast;
                     result = new()
                     {
                         JavaScript = builtInResult.JavaScript,
@@ -1249,11 +1247,12 @@ public class BuildModuleCtx : IImportResolver
             else
             {
                 compiler = BuildCtx.CompilerPool.GetTs(Owner!.DiskCache, transpileOptions);
-                var njsastTask = NjsastTsValidator.Enabled
+                var validateTs = NjsastTsValidator.IsEnabled(Owner!.ProjectOptions.Validate);
+                var njsastTask = validateTs
                     ? NjsastTsValidator.StartTranspile(newFileName, source)
                     : null;
                 result = compiler.Transpile(newFileName, source);
-                if (NjsastTsValidator.Enabled && (result.Diagnostics == null || result.Diagnostics.All(d => !d.IsError)))
+                if (validateTs && (result.Diagnostics == null || result.Diagnostics.All(d => !d.IsError)))
                     NjsastTsValidator.Validate(Owner!.Owner.FullPath, newFileName, source, result.JavaScript,
                         njsastTask, Owner.Logger.Info);
             }
@@ -1302,13 +1301,9 @@ public class BuildModuleCtx : IImportResolver
                 _currentlyTranspiling = info;
             }
 
-            var toplevel = builtinToplevel;
-            if (toplevel == null)
-            {
-                var parser = new Parser(new(), info.Output);
-                toplevel = parser.Parse();
-                toplevel.FigureOutScope();
-            }
+            var parser = new Parser(new(), info.Output);
+            var toplevel = parser.Parse();
+            toplevel.FigureOutScope();
             var ctx = new ResolvingConstEvalCtx(info.Owner.FullPath, this);
 
             string Resolver(IConstEvalCtx myctx, string text)

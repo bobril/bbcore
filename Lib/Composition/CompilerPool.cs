@@ -50,7 +50,9 @@ public class CompilerPool : ICompilerPool
     public ICssProcessor GetCss()
     {
         _semaphoreCss.Wait();
-        return _poolCss.TryTake(out var res) ? res : new CssProcessor(_toolsDir);
+        var res = _poolCss.TryTake(out var pooled) ? pooled : new CssProcessor(_toolsDir);
+        res.ForceNativeCss = false;
+        return res;
     }
 
     public void ReleaseCss(ICssProcessor value)

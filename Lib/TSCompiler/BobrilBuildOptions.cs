@@ -40,6 +40,7 @@ public class BobrilBuildOptions
     public string? headlessBrowserStrategy { get; set; }
     public bool? library { get; set; }
     public bool? future { get; set; }
+    public bool? validate { get; set; }
     public Dictionary<string, string>? assets { get; set; }
 
     public BobrilBuildOptions Merge(BobrilBuildOptions? with)
@@ -142,6 +143,8 @@ public class BobrilBuildOptions
             library = with.library;
         if (with.future != null)
             future = with.future;
+        if (with.validate != null)
+            validate = with.validate;
         if (with.assets != null)
             assets = with.assets;
         return this;
@@ -278,6 +281,15 @@ public class BobrilBuildOptions
         try
         {
             future = bobrilSection["future"]?.Value<bool>();
+        }
+        catch
+        {
+            // ignored
+        }
+
+        try
+        {
+            validate = bobrilSection["validate"]?.Value<bool>();
         }
         catch
         {
