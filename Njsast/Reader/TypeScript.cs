@@ -6,20 +6,13 @@ using System.Text.RegularExpressions;
 using Njsast;
 using Njsast.Ast;
 using Njsast.Output;
+using Njsast.Runtime;
 
 namespace Njsast.Reader;
 
 public sealed partial class Parser
 {
     bool IsTypeScript => Options.ParseTypeScript;
-
-    internal readonly record struct TsEnumMember(
-        string Name,
-        string KeyExpression,
-        string ReverseNameExpression,
-        string? ReferenceName,
-        string? Value,
-        bool ForceReverseMap);
 
     AstStatement TsParseTypeOnlyStatement(Position startLocation)
     {
@@ -1040,7 +1033,15 @@ public sealed partial class Parser
             return;
 
         var firstRuntimeStatement = 0;
-        if (generatedStatements[0] is AstExport { ExportedDefinition: AstDefinitions definitions } export)
+        if (generatedStatements[0] is AstTypeScriptEnum { IsExport: true } enumNode)
+        {
+            TsAddTopLevelUsingVarDeclaration(ref usingDeclarations, enumNode, enumNode.Name);
+            moduleStatements.Add(TsBuildExportSpecifierStatement(enumNode, enumNode.Name, enumNode.Name));
+            generatedStatements[0] = new AstTypeScriptEnum(enumNode.Source, enumNode.Start, enumNode.End,
+                enumNode.Name, isExport: false, enumNode.IsConst, enumNode.IsLocal, enumNode.PreserveConstEnum,
+                enumNode.Members, emitDeclaration: false);
+        }
+        else if (generatedStatements[0] is AstExport { ExportedDefinition: AstDefinitions definitions } export)
         {
             foreach (var definition in definitions.Definitions.AsReadOnlySpan())
             {
@@ -1186,11 +1187,16 @@ public sealed partial class Parser
 
     AstExport TsBuildExportSpecifierStatement(AstExport export, string localName, string exportedName)
     {
+        return TsBuildExportSpecifierStatement((AstNode)export, localName, exportedName);
+    }
+
+    AstExport TsBuildExportSpecifierStatement(AstNode anchor, string localName, string exportedName)
+    {
         var specifiers = new StructList<AstNameMapping>();
-        specifiers.Add(new AstNameMapping(export.Source, export.Start, export.End,
-            new AstSymbolExportForeign(export.Source, export.Start, export.End, exportedName),
-            new AstSymbolExport(export.Source, export.Start, export.End, localName)));
-        return new AstExport(export.Source, export.Start, export.End, null, null, ref specifiers);
+        specifiers.Add(new AstNameMapping(anchor.Source, anchor.Start, anchor.End,
+            new AstSymbolExportForeign(anchor.Source, anchor.Start, anchor.End, exportedName),
+            new AstSymbolExport(anchor.Source, anchor.Start, anchor.End, localName)));
+        return new AstExport(anchor.Source, anchor.Start, anchor.End, null, null, ref specifiers);
     }
 
     void TsAddTopLevelUsingVarDeclaration(ref StructList<AstVarDef> declarations, AstNode anchor, string name)
@@ -3321,7 +3327,6 @@ public sealed partial class Parser
         bool preserveConstEnum = false)
     {
         statements = null!;
-        var enumStatementStart = Start.Index;
         var isExport = false;
         var isConst = false;
         if (Type == TokenType.Export)
@@ -3352,81 +3357,38 @@ public sealed partial class Parser
         var enumName = name!;
         Next();
         Expect(TokenType.BraceL);
-        var members = new List<TsEnumMember>();
+        var members = new List<AstTypeScriptEnumMember>();
         while (Type != TokenType.BraceR && Type != TokenType.Eof)
         {
             var memberName = TsParseEnumMemberName();
             string? value = null;
+            AstNode? valueExpression = null;
+            var forceReverseMap = false;
             if (Eat(TokenType.Eq))
             {
                 var valueStart = Start.Index;
-                var valueEnd = TsFindEnumMemberValueEnd(valueStart);
-                TsMoveToIndexAndReadToken(valueEnd);
-                value = _input.Substring(valueStart, valueEnd - valueStart).Trim();
+                valueExpression = ParseMaybeAssign(Start);
+                value = _input.Substring(valueStart, _lastTokEnd.Index - valueStart).Trim();
+                forceReverseMap = TsEnumInitializerHadErasedAssertion(valueStart, _lastTokEnd.Index);
             }
 
-            var normalized = TsNormalizeEnumMemberValue(value);
-            members.Add(memberName with { Value = normalized.Value, ForceReverseMap = normalized.ForceReverseMap });
+            members.Add(memberName with
+            {
+                Value = value,
+                ValueExpression = valueExpression,
+                ForceReverseMap = forceReverseMap
+            });
             Eat(TokenType.Comma);
         }
 
         Expect(TokenType.BraceR);
-        if (isConst && !local && !preserveConstEnum && !Options.PreserveConstEnums &&
-            TsTryEvaluateConstEnumMembers(members, out var values))
+        _tsHasEnumNodes = true;
+        statements = new List<AstStatement>
         {
-            _tsConstEnums ??= new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
-            _tsConstEnums[enumName] = values;
-            statements = new List<AstStatement>();
-            return true;
-        }
-
-        var knownConstValues = TsCollectLeadingNumericConstValues(enumStatementStart);
-        var parsed = Parser.Parse(TsEmitEnumJavaScript(enumName, isExport, members, _tsRuntimeEnumConstants,
-                knownConstValues),
-            new Options { SourceType = SourceType.Module, EcmaVersion = 2022, ParseTypeScript = true });
-        if (TsTryCollectRuntimeEnumConstants(enumName, members, _tsRuntimeEnumConstants, knownConstValues,
-                out var runtimeValues))
-        {
-            _tsRuntimeEnumConstants ??= new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
-            _tsRuntimeEnumConstants[enumName] = runtimeValues;
-        }
-        statements = new List<AstStatement>();
-        foreach (var statement in parsed.Body.AsReadOnlySpan())
-        {
-            if (local && statement is AstVar varStatement)
-            {
-                var definitions = new StructList<AstVarDef>();
-                definitions.AddRange(varStatement.Definitions.AsReadOnlySpan());
-                statements.Add(new AstLet(varStatement.Source, varStatement.Start, varStatement.End,
-                    ref definitions));
-                continue;
-            }
-            statements.Add((AstStatement)statement);
-        }
+            new AstTypeScriptEnum(SourceFile, Start, _lastTokEnd, enumName, isExport, isConst, local,
+                preserveConstEnum, members)
+        };
         return true;
-    }
-
-    Dictionary<string, string>? TsCollectLeadingNumericConstValues(int endIndex)
-    {
-        if (endIndex <= 0)
-            return null;
-
-        Dictionary<string, string>? values = null;
-        var prefix = _input[..endIndex];
-        foreach (Match match in Regex.Matches(prefix,
-                     @"(?:^|[;\r\n])\s*(?:export\s+)?const\s+([A-Za-z_$][\w$]*)\s*=\s*([^;\r\n]+)\s*;"))
-        {
-            var name = match.Groups[1].Value;
-            var expression = match.Groups[2].Value.Trim();
-            expression = TsReplaceKnownConstReferences(expression, values);
-            if (!TsTryEvaluateNumericExpression(expression, out var numeric))
-                continue;
-
-            values ??= new Dictionary<string, string>(StringComparer.Ordinal);
-            values[name] = TsFormatEnumNumber(numeric);
-        }
-
-        return values;
     }
 
     void TsMoveToIndexAndReadToken(int index, bool expressionAllowed = false)
@@ -3459,70 +3421,6 @@ public sealed partial class Parser
             _context.RemoveAt(_context.Count - 1);
         _exprAllowed = expressionAllowed;
         NextToken();
-    }
-
-    int TsFindEnumMemberValueEnd(int index)
-    {
-        var braceDepth = 0;
-        var parenDepth = 0;
-        var bracketDepth = 0;
-        while (index < _input.Length)
-        {
-            var ch = _input[index];
-            if (braceDepth == 0 && parenDepth == 0 && bracketDepth == 0 && (ch == ',' || ch == '}'))
-                return index;
-            if (ch is '"' or '\'')
-            {
-                index = TsSkipStringLike(index, ch);
-                continue;
-            }
-            if (ch == '`')
-            {
-                index = TsSkipTemplateLiteral(index);
-                continue;
-            }
-            if (ch == '/' && index + 1 < _input.Length)
-            {
-                if (_input[index + 1] == '/')
-                {
-                    if (braceDepth == 0 && parenDepth == 0 && bracketDepth == 0)
-                        return index;
-                    index += 2;
-                    while (index < _input.Length && _input[index] is not '\r' and not '\n')
-                        index++;
-                    continue;
-                }
-                if (_input[index + 1] == '*')
-                {
-                    index += 2;
-                    while (index + 1 < _input.Length && !(_input[index] == '*' && _input[index + 1] == '/'))
-                        index++;
-                    index = Math.Min(index + 2, _input.Length);
-                    continue;
-                }
-            }
-            switch (ch)
-            {
-                case '{': braceDepth++; break;
-                case '}':
-                    if (braceDepth == 0) return index;
-                    braceDepth--;
-                    break;
-                case '(': parenDepth++; break;
-                case ')':
-                    if (parenDepth == 0) return index;
-                    parenDepth--;
-                    break;
-                case '[': bracketDepth++; break;
-                case ']':
-                    if (bracketDepth == 0) return index;
-                    bracketDepth--;
-                    break;
-            }
-            index++;
-        }
-
-        return index;
     }
 
     int TsFindMatchingSkippingLiterals(int index, char open, char close)
@@ -3741,69 +3639,101 @@ public sealed partial class Parser
         _tsRuntimeEnumConstants = snapshot;
     }
 
-    TsEnumMember TsParseEnumMemberName()
+    AstTypeScriptEnumMember TsParseEnumMemberName()
     {
         if (Type == TokenType.Name)
         {
             var name = Value!.ToString()!;
             Next();
-            return new TsEnumMember(name, "[\"" + TsEscapeString(name) + "\"]", "\"" + TsEscapeString(name) + "\"",
-                name, null, false);
+            return new AstTypeScriptEnumMember(name, new AstString(name), new AstString(name),
+                name, null, null, false);
         }
 
         if (Type == TokenType.String)
         {
             var name = Value!.ToString()!;
             Next();
-            return new TsEnumMember(name, "[\"" + TsEscapeString(name) + "\"]", "\"" + TsEscapeString(name) + "\"",
-                name, null, false);
+            return new AstTypeScriptEnumMember(name, new AstString(name), new AstString(name),
+                name, null, null, false);
         }
 
         if (Type is TokenType.Num or TokenType.BigInt)
         {
-            var raw = _input.Substring(Start.Index, End.Index - Start.Index);
-            Next();
-            return new TsEnumMember(raw, "[" + raw + "]", raw, null, null, false);
+            var raw = Value!.ToString()!;
+            var expression = ParseExpressionAtom(Start);
+            return new AstTypeScriptEnumMember(raw, expression, expression.DeepClone(), null, null, null, false);
         }
 
         var keyword = TokenInformation.Types[Type].Keyword;
         if (keyword != null)
         {
             Next();
-            return new TsEnumMember(keyword, "[\"" + TsEscapeString(keyword) + "\"]",
-                "\"" + TsEscapeString(keyword) + "\"", keyword, null, false);
+            return new AstTypeScriptEnumMember(keyword, new AstString(keyword),
+                new AstString(keyword), keyword, null, null, false);
         }
 
         if (Type == TokenType.BracketL)
         {
-            var expressionStart = End.Index;
-            var end = TsFindMatchingSkippingLiterals(Start.Index, '[', ']');
-            if (end < 0)
-                Raise(Start, "Unexpected token");
-            TsMoveToIndexAndReadToken(end);
+            Next();
+            var keyExpression = ParseExpression(Start);
             Expect(TokenType.BracketR);
-            var expression = _input.Substring(expressionStart, end - expressionStart).Trim();
-            return new TsEnumMember(expression, "[" + expression + "]", expression,
-                TsTryGetLiteralEnumMemberReferenceName(expression), null, false);
+            return new AstTypeScriptEnumMember(keyExpression.PrintToString(), keyExpression, keyExpression.DeepClone(),
+                TsTryGetLiteralEnumMemberReferenceName(keyExpression), null, null, false);
         }
 
         Raise(Start, "Unexpected token");
         throw new InvalidOperationException();
     }
 
-    static string? TsTryGetLiteralEnumMemberReferenceName(string expression)
+    static string? TsTryGetLiteralEnumMemberReferenceName(AstNode expression)
     {
-        if (expression.Length >= 2 && expression[0] is '"' or '\'' && expression[^1] == expression[0])
-            return TsUnescapeSimpleStringLiteral(expression[1..^1]);
-        if (expression.Length >= 2 && expression[0] == '`' && expression[^1] == '`' &&
-            !expression.Contains("${", StringComparison.Ordinal))
-            return TsUnescapeSimpleStringLiteral(expression[1..^1]);
-        return null;
+        return expression switch
+        {
+            AstString { Value: var value } => value,
+            AstTemplateString { Segments.Count: 1, Segments: var segments } =>
+                ((AstTemplateSegment)segments[0]).Value,
+            _ => null
+        };
     }
 
-    static string TsUnescapeSimpleStringLiteral(string value)
+    bool TsEnumInitializerHadErasedAssertion(int start, int end)
     {
-        return Regex.Unescape(value);
+        for (var index = start; index < end; index++)
+        {
+            var ch = _input[index];
+            if (ch is '"' or '\'')
+            {
+                index = TsSkipStringLike(index, ch) - 1;
+                continue;
+            }
+            if (ch == '`')
+            {
+                index = TsSkipTemplateLiteral(index) - 1;
+                continue;
+            }
+            if (ch == '!' && (index + 1 >= end || _input[index + 1] != '='))
+                return true;
+            if ((ch == 'a' && TsTextStartsKeyword(_input, index, "as")) ||
+                (ch == 's' && TsTextStartsKeyword(_input, index, "satisfies")))
+                return true;
+        }
+
+        return false;
+    }
+
+    static AstNode TsParseEnumInitializerExpression(string expression)
+    {
+        var parsed = TypeScriptParser.Parse("const __bbEnumValue = " + expression + ";", new Options
+        {
+            SourceType = SourceType.Module,
+            EcmaVersion = 2022,
+            PreserveConstEnums = true
+        });
+        if (parsed.Body.Count != 1 ||
+            parsed.Body[0] is not AstConst { Definitions.Count: 1 } constStatement ||
+            constStatement.Definitions[0].Value is not { } value)
+            throw new InvalidOperationException("Could not parse enum initializer expression");
+        return value;
     }
 
     bool TsExportStartsEnum(out bool isConst)
@@ -3827,6 +3757,129 @@ public sealed partial class Parser
         return TsTextStartsKeyword(index, "enum");
     }
 
+    AstToplevel TsLowerTypeScriptEnumsPostParse(AstToplevel node)
+    {
+        if (!_tsHasEnumNodes)
+            return node;
+
+        node = (AstToplevel)new TypeScriptEnumLoweringTransformer(this).Transform(node);
+        if (_tsConstEnums is { Count: > 0 })
+            new TypeScriptConstEnumInlineTransformer(SourceFile, _tsConstEnums).Transform(node);
+        return node;
+    }
+
+    sealed class TypeScriptEnumLoweringTransformer : TreeTransformer
+    {
+        readonly Parser _parser;
+        readonly Stack<Dictionary<string, Dictionary<string, string>>?> _runtimeEnumScopes = new();
+        readonly Stack<HashSet<string>> _declarationScopes = new();
+        readonly Stack<HashSet<string>> _enumDeclarationScopes = new();
+        readonly Stack<Dictionary<string, AstNode>> _constScopes = new();
+        readonly HashSet<string> _currentDeclarations = new(StringComparer.Ordinal);
+        readonly HashSet<string> _currentEnumDeclarations = new(StringComparer.Ordinal);
+        readonly Dictionary<string, AstNode> _currentConstValues = new(StringComparer.Ordinal);
+
+        public TypeScriptEnumLoweringTransformer(Parser parser)
+        {
+            _parser = parser;
+        }
+
+        protected override AstNode? Before(AstNode node, bool inList)
+        {
+            if (node is AstLambda or AstBlock)
+            {
+                _runtimeEnumScopes.Push(_parser._tsRuntimeEnumConstants == null
+                    ? null
+                    : new Dictionary<string, Dictionary<string, string>>(_parser._tsRuntimeEnumConstants,
+                        StringComparer.Ordinal));
+                _declarationScopes.Push(new HashSet<string>(_currentDeclarations, StringComparer.Ordinal));
+                _enumDeclarationScopes.Push(new HashSet<string>(_currentEnumDeclarations, StringComparer.Ordinal));
+                _constScopes.Push(new Dictionary<string, AstNode>(_currentConstValues, StringComparer.Ordinal));
+                _currentDeclarations.Clear();
+                _currentEnumDeclarations.Clear();
+                _currentConstValues.Clear();
+                return null;
+            }
+
+            if (node is AstDefinitions definitions)
+                RememberConstDefinitions(definitions);
+
+            if (node is AstVar { Definitions.Count: 1 } varStatement &&
+                varStatement.Definitions[0] is { Value: null, Name: AstSymbol { Name: var varName } } &&
+                _currentEnumDeclarations.Contains(varName))
+                return inList ? Remove : new AstEmptyStatement(node.Source, node.Start, node.End);
+
+            if (node is not AstTypeScriptEnum enumNode)
+                return null;
+
+            if (enumNode.IsConst && !enumNode.IsLocal && !enumNode.PreserveConstEnum &&
+                !_parser.Options.PreserveConstEnums &&
+                TsTryEvaluateConstEnumMembers(enumNode.Members, out var values))
+            {
+                _parser._tsConstEnums ??= new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
+                _parser._tsConstEnums[enumNode.Name] = values;
+                return inList ? Remove : new AstEmptyStatement(enumNode.Source, enumNode.Start, enumNode.End);
+            }
+
+            var emitDeclaration = enumNode.EmitDeclaration && _currentDeclarations.Add(enumNode.Name);
+            if (emitDeclaration)
+                _currentEnumDeclarations.Add(enumNode.Name);
+            var statements = _parser.TsEmitEnumStatements(enumNode.Name, enumNode.IsExport, enumNode.IsLocal,
+                enumNode.Members, _parser._tsRuntimeEnumConstants, emitDeclaration, _currentConstValues);
+            if (TsTryCollectRuntimeEnumConstants(enumNode.Name, enumNode.Members, _parser._tsRuntimeEnumConstants,
+                    _currentConstValues, out var runtimeValues))
+            {
+                _parser._tsRuntimeEnumConstants ??=
+                    new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
+                _parser._tsRuntimeEnumConstants[enumNode.Name] = runtimeValues;
+            }
+
+            if (statements.Count == 1)
+                return statements[0];
+            var spread = new StructList<AstNode>();
+            foreach (var statement in statements)
+                spread.Add(statement);
+            if (!inList)
+                return new AstBlockStatement(enumNode.Source, enumNode.Start, enumNode.End, ref spread);
+            return SpreadStructList(ref spread);
+        }
+
+        protected override AstNode? After(AstNode node, bool inList)
+        {
+            if (node is AstLambda or AstBlock)
+            {
+                _parser._tsRuntimeEnumConstants = _runtimeEnumScopes.Pop();
+                _currentDeclarations.Clear();
+                foreach (var name in _declarationScopes.Pop())
+                    _currentDeclarations.Add(name);
+                _currentEnumDeclarations.Clear();
+                foreach (var name in _enumDeclarationScopes.Pop())
+                    _currentEnumDeclarations.Add(name);
+                _currentConstValues.Clear();
+                foreach (var pair in _constScopes.Pop())
+                    _currentConstValues.Add(pair.Key, pair.Value);
+            }
+
+            return null;
+        }
+
+        void RememberConstDefinitions(AstDefinitions definitions)
+        {
+            foreach (var definition in definitions.Definitions.AsReadOnlySpan())
+            {
+                if (definition.Name is not AstSymbol symbol)
+                    continue;
+                _currentConstValues.Remove(symbol.Name);
+                if (definitions is not AstConst || definition.Value == null)
+                    continue;
+                var value = definition.Value.ConstValue();
+                if (value == null)
+                    continue;
+                _currentConstValues[symbol.Name] = TypeConverter.ToAst(value);
+            }
+        }
+    }
+
     bool TsTextStartsKeyword(int index, string keyword)
     {
         return TsTextStartsKeyword(_input, index, keyword);
@@ -3839,15 +3892,15 @@ public sealed partial class Parser
                (index + keyword.Length == input.Length || !IsIdentifierChar(input[index + keyword.Length]));
     }
 
-    static bool TsTryEvaluateConstEnumMembers(List<TsEnumMember> members,
+    static bool TsTryEvaluateConstEnumMembers(List<AstTypeScriptEnumMember> members,
         out Dictionary<string, string> values)
     {
         return TsTryEvaluateEnumMembers(members, knownEnumConstants: null, out values);
     }
 
-    static bool TsTryCollectRuntimeEnumConstants(string enumName, List<TsEnumMember> members,
+    static bool TsTryCollectRuntimeEnumConstants(string enumName, List<AstTypeScriptEnumMember> members,
         Dictionary<string, Dictionary<string, string>>? knownEnumConstants,
-        Dictionary<string, string>? knownConstValues,
+        Dictionary<string, AstNode>? knownConstValues,
         out Dictionary<string, string> values)
     {
         values = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -3872,13 +3925,19 @@ public sealed partial class Parser
                 continue;
             }
 
-            var expression = member.Value;
+            var expression = member.ValueExpression?.DeepClone();
+            if (expression == null)
+            {
+                next = null;
+                continue;
+            }
             if (!member.ForceReverseMap)
             {
                 expression = TsReplaceKnownEnumMemberReferences(expression, knownEnumConstants, enumName);
                 expression = TsReplaceKnownConstReferences(expression, knownConstValues);
                 foreach (var pair in values)
-                    expression = TsReplaceCurrentEnumMemberReferences(expression, enumName: null, pair.Key, pair.Value,
+                    expression = TsReplaceCurrentEnumMemberReferences(expression, enumName: null, pair.Key,
+                        TsParseEnumInitializerExpression(pair.Value),
                         knownEnumConstants);
                 expression = TsReplaceForwardEnumMemberReferences(expression, enumName: null, futureReferenceNames,
                     knownEnumConstants);
@@ -3890,7 +3949,7 @@ public sealed partial class Parser
                 continue;
             }
 
-            if (TsTryEvaluateNumericExpression(expression, out var numeric))
+            if (!member.ForceReverseMap && TsTryEvaluateNumericExpression(expression, out var numeric))
             {
                 values[member.ReferenceName] = TsFormatEnumNumber(numeric);
                 next = numeric + 1;
@@ -3903,7 +3962,7 @@ public sealed partial class Parser
         return values.Count != 0;
     }
 
-    static bool TsTryEvaluateEnumMembers(List<TsEnumMember> members,
+    static bool TsTryEvaluateEnumMembers(List<AstTypeScriptEnumMember> members,
         Dictionary<string, Dictionary<string, string>>? knownEnumConstants,
         out Dictionary<string, string> values)
     {
@@ -3923,14 +3982,17 @@ public sealed partial class Parser
                 continue;
             }
 
-            var expression = member.Value;
+            var expression = member.ValueExpression?.DeepClone();
+            if (expression == null)
+                return false;
             if (!member.ForceReverseMap)
             {
                 if (TsContainsForwardEnumMemberReference(expression, futureReferenceNames))
                     return false;
                 expression = TsReplaceKnownEnumMemberReferences(expression, knownEnumConstants);
                 foreach (var pair in values)
-                    expression = TsReplaceCurrentEnumMemberReferences(expression, enumName: null, pair.Key, pair.Value,
+                    expression = TsReplaceCurrentEnumMemberReferences(expression, enumName: null, pair.Key,
+                        TsParseEnumInitializerExpression(pair.Value),
                         knownEnumConstants);
                 expression = TsReplaceForwardEnumMemberReferences(expression, enumName: null, futureReferenceNames,
                     knownEnumConstants);
@@ -3950,12 +4012,7 @@ public sealed partial class Parser
         return true;
     }
 
-    static bool TsTryEvaluateNumericExpression(string expression, out double value)
-    {
-        return new TsConstExpressionEvaluator(expression).TryEvaluate(out value);
-    }
-
-    static HashSet<string> TsFutureEnumReferenceNames(List<TsEnumMember> members)
+    static HashSet<string> TsFutureEnumReferenceNames(List<AstTypeScriptEnumMember> members)
     {
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var member in members)
@@ -3964,189 +4021,36 @@ public sealed partial class Parser
         return names;
     }
 
-    static bool TsContainsForwardEnumMemberReference(string expression, HashSet<string> futureReferenceNames)
-    {
-        foreach (var referenceName in futureReferenceNames)
-            if (Regex.IsMatch(expression, $@"(?<![.\w$]){Regex.Escape(referenceName)}\b"))
-                return true;
-        return false;
-    }
-
     static string TsFormatEnumNumber(double value)
     {
         return value == 0d ? "0" : value.ToString(CultureInfo.InvariantCulture);
     }
 
-    sealed class TsConstExpressionEvaluator
+    List<AstStatement> TsEmitEnumStatements(string name, bool isExport, bool local,
+        List<AstTypeScriptEnumMember> members,
+        Dictionary<string, Dictionary<string, string>>? knownEnumConstants = null, bool emitDeclaration = true,
+        Dictionary<string, AstNode>? knownConstValues = null)
     {
-        readonly string _expression;
-        int _index;
-
-        public TsConstExpressionEvaluator(string expression)
+        var statements = new List<AstStatement>();
+        if (emitDeclaration)
         {
-            _expression = expression;
+            var definitions = new StructList<AstVarDef>();
+            definitions.Add(new AstVarDef(new AstSymbolVar(name)));
+            AstStatement enumDeclaration = local && !isExport
+                ? new AstLet(SourceFile, new Position(), new Position(), ref definitions)
+                : new AstVar(ref definitions);
+            if (isExport)
+                enumDeclaration = new AstExport(enumDeclaration.Source, enumDeclaration.Start, enumDeclaration.End,
+                    enumDeclaration, isDefault: false);
+            statements.Add(enumDeclaration);
         }
 
-        public bool TryEvaluate(out double value)
-        {
-            value = ParseBitwiseOr();
-            SkipWhiteSpace();
-            return !_failed && _index == _expression.Length;
-        }
-
-        bool _failed;
-
-        double ParseBitwiseOr()
-        {
-            var value = ParseBitwiseXor();
-            while (Eat('|'))
-                value = ToInt(value) | ToInt(ParseBitwiseXor());
-            return value;
-        }
-
-        double ParseBitwiseXor()
-        {
-            var value = ParseBitwiseAnd();
-            while (Eat('^'))
-                value = ToInt(value) ^ ToInt(ParseBitwiseAnd());
-            return value;
-        }
-
-        double ParseBitwiseAnd()
-        {
-            var value = ParseShift();
-            while (Eat('&'))
-                value = ToInt(value) & ToInt(ParseShift());
-            return value;
-        }
-
-        double ParseShift()
-        {
-            var value = ParseAdditive();
-            for (;;)
-            {
-                if (Eat(">>>"))
-                    value = (int)((uint)ToInt(value) >> (ToInt(ParseAdditive()) & 31));
-                else if (Eat(">>"))
-                    value = ToInt(value) >> (ToInt(ParseAdditive()) & 31);
-                else if (Eat("<<"))
-                    value = ToInt(value) << (ToInt(ParseAdditive()) & 31);
-                else
-                    return value;
-            }
-        }
-
-        double ParseAdditive()
-        {
-            var value = ParseMultiplicative();
-            for (;;)
-            {
-                if (Eat('+'))
-                    value += ParseMultiplicative();
-                else if (Eat('-'))
-                    value -= ParseMultiplicative();
-                else
-                    return value;
-            }
-        }
-
-        double ParseMultiplicative()
-        {
-            var value = ParseExponentiation();
-            for (;;)
-            {
-                if (Eat('*'))
-                    value *= ParseExponentiation();
-                else if (Eat('/'))
-                    value /= ParseExponentiation();
-                else if (Eat('%'))
-                    value %= ParseExponentiation();
-                else
-                    return value;
-            }
-        }
-
-        double ParseExponentiation()
-        {
-            var value = ParseUnary();
-            if (Eat("**"))
-                value = Math.Pow(value, ParseExponentiation());
-            return value;
-        }
-
-        double ParseUnary()
-        {
-            if (Eat('+')) return ParseUnary();
-            if (Eat('-')) return -ParseUnary();
-            if (Eat('~')) return ~ToInt(ParseUnary());
-            return ParsePrimary();
-        }
-
-        double ParsePrimary()
-        {
-            SkipWhiteSpace();
-            if (Eat('('))
-            {
-                var innerValue = ParseBitwiseOr();
-                if (!Eat(')')) _failed = true;
-                return innerValue;
-            }
-
-            var start = _index;
-            while (_index < _expression.Length &&
-                   (char.IsDigit(_expression[_index]) || _expression[_index] == '.'))
-                _index++;
-            if (start == _index ||
-                !double.TryParse(_expression.AsSpan(start, _index - start), NumberStyles.Float,
-                    CultureInfo.InvariantCulture, out var value))
-            {
-                _failed = true;
-                return 0;
-            }
-            return value;
-        }
-
-        bool Eat(char ch)
-        {
-            SkipWhiteSpace();
-            if (_index >= _expression.Length || _expression[_index] != ch)
-                return false;
-            _index++;
-            return true;
-        }
-
-        bool Eat(string text)
-        {
-            SkipWhiteSpace();
-            if (_index + text.Length > _expression.Length ||
-                !_expression.AsSpan(_index, text.Length).SequenceEqual(text.AsSpan()))
-                return false;
-            _index += text.Length;
-            return true;
-        }
-
-        void SkipWhiteSpace()
-        {
-            while (_index < _expression.Length && char.IsWhiteSpace(_expression[_index]))
-                _index++;
-        }
-
-        static int ToInt(double value) => unchecked((int)value);
-    }
-
-    internal static string TsEmitEnumJavaScript(string name, bool isExport, List<TsEnumMember> members,
-        Dictionary<string, Dictionary<string, string>>? knownEnumConstants = null,
-        Dictionary<string, string>? knownConstValues = null)
-    {
-        var builder = new StringBuilder();
-        if (isExport) builder.Append("export ");
-        builder.Append("var ").Append(name).Append(";\n");
-        builder.Append("(function (").Append(name).Append(") {\n");
         double? nextNumeric = 0d;
-        var constantValues = new Dictionary<string, string>(StringComparer.Ordinal);
+        var constantValues = new Dictionary<string, AstNode>(StringComparer.Ordinal);
         var referenceNames = new HashSet<string>(StringComparer.Ordinal);
         var stringValuedReferenceNames = new HashSet<string>(StringComparer.Ordinal);
         var futureReferenceNames = TsFutureEnumReferenceNames(members);
+        var body = new StructList<AstNode>();
         foreach (var member in members)
         {
             if (member.ReferenceName != null)
@@ -4154,59 +4058,60 @@ public sealed partial class Parser
             var value = member.Value;
             if (value == null)
             {
-                value = nextNumeric != null ? TsFormatEnumNumber(nextNumeric.Value) : "void 0";
+                AstNode valueExpression = nextNumeric != null ? TsEnumNumberNode(nextNumeric.Value) : TsVoidZero();
                 if (nextNumeric != null)
                     nextNumeric++;
                 if (member.ReferenceName != null)
                 {
-                    constantValues[member.ReferenceName] = value;
+                    constantValues[member.ReferenceName] = valueExpression;
                     referenceNames.Add(member.ReferenceName);
                 }
-                builder.Append(name).Append('[').Append(name).Append(member.KeyExpression).Append(" = ").Append(value)
-                    .Append("] = ").Append(member.ReverseNameExpression).Append(";\n");
+                body.Add(TsEnumReverseMapStatement(name, member, valueExpression.DeepClone()));
                 continue;
             }
 
-            var expression = value;
+            var expression = member.ValueExpression?.DeepClone();
+            if (expression == null)
+                throw new InvalidOperationException("Enum member initializer expression was not parsed");
             if (!member.ForceReverseMap)
             {
                 expression = TsReplaceKnownEnumMemberReferences(expression, knownEnumConstants, name);
                 expression = TsReplaceKnownConstReferences(expression, knownConstValues);
                 foreach (var pair in constantValues)
-                    expression = TsReplaceCurrentEnumMemberReferences(expression, name, pair.Key, pair.Value,
-                        knownEnumConstants);
+                    expression = TsReplaceCurrentEnumMemberReferences(expression, name, pair.Key,
+                        pair.Value.DeepClone(), knownEnumConstants);
                 expression = TsReplaceForwardEnumMemberReferences(expression, name, futureReferenceNames,
                     knownEnumConstants);
             }
-            if (TsTryEvaluateNumericExpression(expression, out var numeric))
+            if (!member.ForceReverseMap && TsTryEvaluateNumericExpression(expression, out var numeric))
             {
-                value = TsFormatEnumNumber(numeric);
+                var valueExpression = TsEnumNumberNode(numeric);
                 nextNumeric = numeric + 1;
                 if (member.ReferenceName != null)
                 {
-                    constantValues[member.ReferenceName] = value;
+                    constantValues[member.ReferenceName] = valueExpression;
                     referenceNames.Add(member.ReferenceName);
                 }
-                builder.Append(name).Append('[').Append(name).Append(member.KeyExpression).Append(" = ").Append(value)
-                    .Append("] = ").Append(member.ReverseNameExpression).Append(";\n");
+                body.Add(TsEnumReverseMapStatement(name, member, valueExpression.DeepClone()));
             }
             else if (!member.ForceReverseMap && TsTryEvaluateStringExpression(expression, out var stringValue))
             {
                 nextNumeric = null;
-                value = TsQuoteString(stringValue);
+                var valueExpression = new AstString(stringValue);
                 if (member.ReferenceName != null)
                 {
-                    constantValues[member.ReferenceName] = value;
+                    constantValues[member.ReferenceName] = valueExpression;
                     referenceNames.Add(member.ReferenceName);
                 }
-                builder.Append(name).Append(member.KeyExpression).Append(" = ").Append(value).Append(";\n");
+                body.Add(TsEnumAssignmentStatement(name, member.KeyExpression.DeepClone(), valueExpression.DeepClone()));
             }
             else if (!member.ForceReverseMap &&
                      (TsIsStringValuedEnumExpression(expression) ||
                       TsReferencesStringValuedEnumMember(expression, name, stringValuedReferenceNames)))
             {
                 nextNumeric = null;
-                value = TsQualifyEnumMemberReferences(value, name,
+                var valueExpression = TsQualifyEnumMemberReferences(
+                    member.ValueExpression!, name,
                     TsReferenceNamesIncludingCurrent(referenceNames, member.ReferenceName),
                     member.ForceReverseMap);
                 if (member.ReferenceName != null)
@@ -4214,23 +4119,57 @@ public sealed partial class Parser
                     referenceNames.Add(member.ReferenceName);
                     stringValuedReferenceNames.Add(member.ReferenceName);
                 }
-                builder.Append(name).Append(member.KeyExpression).Append(" = ").Append(value).Append(";\n");
+                body.Add(TsEnumAssignmentStatement(name, member.KeyExpression.DeepClone(), valueExpression));
             }
             else
             {
                 nextNumeric = null;
-                value = TsQualifyEnumMemberReferences(value, name,
+                var valueExpression = TsQualifyEnumMemberReferences(
+                    member.ValueExpression!, name,
                     TsReferenceNamesIncludingCurrent(referenceNames, member.ReferenceName),
                     member.ForceReverseMap);
                 if (member.ReferenceName != null)
                     referenceNames.Add(member.ReferenceName);
-                builder.Append(name).Append('[').Append(name).Append(member.KeyExpression).Append(" = ").Append(value)
-                    .Append("] = ").Append(member.ReverseNameExpression).Append(";\n");
+                body.Add(TsEnumReverseMapStatement(name, member, valueExpression));
             }
         }
 
-        builder.Append("})(").Append(name).Append(" || (").Append(name).Append(" = {}));");
-        return builder.ToString();
+        var args = new StructList<AstNode>();
+        args.Add(new AstBinary(SourceFile, new Position(), new Position(), new AstSymbolRef(name),
+            new AstAssign(new AstSymbolRef(name), new AstObject(), Operator.Assignment),
+            Operator.LogicalOr));
+        var argNames = new StructList<AstNode>();
+        argNames.Add(new AstSymbolFunarg(name));
+        var function = new AstFunction(SourceFile, new Position(), new Position(), null, ref argNames,
+            isGenerator: false, async: false, ref body);
+        statements.Add(new AstSimpleStatement(new AstCall(SourceFile, new Position(), new Position(), function,
+            ref args)));
+        return statements;
+    }
+
+    static AstSimpleStatement TsEnumAssignmentStatement(string enumName, AstNode keyExpression, AstNode valueExpression)
+    {
+        return new AstSimpleStatement(new AstAssign(new AstSub(null, new Position(), new Position(),
+            new AstSymbolRef(enumName), keyExpression), valueExpression, Operator.Assignment));
+    }
+
+    static AstSimpleStatement TsEnumReverseMapStatement(string enumName, AstTypeScriptEnumMember member, AstNode valueExpression)
+    {
+        var innerAssignment = new AstAssign(
+            new AstSub(null, new Position(), new Position(), new AstSymbolRef(enumName),
+                member.KeyExpression.DeepClone()),
+            valueExpression, Operator.Assignment);
+        return TsEnumAssignmentStatement(enumName, innerAssignment, member.ReverseNameExpression.DeepClone());
+    }
+
+    static AstNode TsVoidZero()
+    {
+        return new AstUnaryPrefix(Operator.Void, new AstNumber(0));
+    }
+
+    static AstNumber TsEnumNumberNode(double value)
+    {
+        return new AstNumber(value == 0d ? 0d : value);
     }
 
     static HashSet<string> TsReferenceNamesIncludingCurrent(HashSet<string> referenceNames, string? currentName)
@@ -4242,21 +4181,25 @@ public sealed partial class Parser
         return result;
     }
 
-    static string TsQualifyEnumMemberReferences(string expression, string enumName, HashSet<string> referenceNames,
+    static AstNode TsQualifyEnumMemberReferences(AstNode expression, string enumName, HashSet<string> referenceNames,
         bool preserveLiteralKeywords = false)
     {
+        var replacements = new Dictionary<string, AstNode>(StringComparer.Ordinal);
         foreach (var referenceName in referenceNames)
         {
             if (!TsIsIdentifierText(referenceName))
                 continue;
             if (preserveLiteralKeywords && TsIsNonReferenceEnumExpressionIdentifier(referenceName))
                 continue;
-            expression = TsReplaceBareIdentifier(expression, referenceName, enumName + "." + referenceName);
+            replacements[referenceName] = new AstDot(new AstSymbolRef(enumName), referenceName);
         }
-        return expression;
+        return replacements.Count == 0
+            ? expression.DeepClone()
+            : new TsEnumReferenceTransformer(null, replacements, includeBareReferences: true,
+                includePrefixedReferences: false).Transform(expression.DeepClone());
     }
 
-    static string TsReplaceKnownEnumMemberReferences(string expression,
+    static AstNode TsReplaceKnownEnumMemberReferences(AstNode expression,
         Dictionary<string, Dictionary<string, string>>? knownEnumConstants, string? currentEnumName = null)
     {
         if (knownEnumConstants == null)
@@ -4264,320 +4207,307 @@ public sealed partial class Parser
 
         foreach (var enumPair in knownEnumConstants)
         {
-            foreach (var memberPair in enumPair.Value)
-                expression = TsReplaceEnumMemberReferences(expression, enumPair.Key, memberPair.Key, memberPair.Value,
-                    includeBareReference: enumPair.Key == currentEnumName,
-                    includePrefixedReference: enumPair.Key == currentEnumName);
+            var replacements = TsParseConstantMap(enumPair.Value);
+            expression = new TsEnumReferenceTransformer(enumPair.Key, replacements,
+                includeBareReferences: enumPair.Key == currentEnumName,
+                includePrefixedReferences: enumPair.Key == currentEnumName).Transform(expression);
         }
 
         return expression;
     }
 
-    static string TsReplaceKnownConstReferences(string expression, Dictionary<string, string>? knownConstValues)
+    static AstNode TsReplaceKnownConstReferences(AstNode expression, Dictionary<string, AstNode>? knownConstValues)
     {
-        if (knownConstValues == null)
+        if (knownConstValues == null || knownConstValues.Count == 0)
             return expression;
-
-        foreach (var pair in knownConstValues)
-            expression = TsReplaceBareIdentifier(expression, pair.Key, pair.Value);
-        return expression;
+        return new TsEnumReferenceTransformer(null, knownConstValues,
+            includeBareReferences: true, includePrefixedReferences: false).Transform(expression);
     }
 
-    static string TsReplaceCurrentEnumMemberReferences(string expression, string? enumName, string referenceName,
-        string replacement, Dictionary<string, Dictionary<string, string>>? knownEnumConstants)
+    static AstNode TsReplaceCurrentEnumMemberReferences(AstNode expression, string? enumName, string referenceName,
+        AstNode replacement, Dictionary<string, Dictionary<string, string>>? knownEnumConstants)
     {
+        var replacements = new Dictionary<string, AstNode>(StringComparer.Ordinal) { [referenceName] = replacement };
         if (enumName != null)
-            expression = TsReplaceEnumMemberReferences(expression, enumName, referenceName, replacement,
-                includePrefixedReference: true);
+            expression = new TsEnumReferenceTransformer(enumName, replacements, includeBareReferences: false,
+                includePrefixedReferences: true).Transform(expression);
         if (knownEnumConstants != null && enumName != null)
         {
             foreach (var enumPair in knownEnumConstants)
             {
                 if (enumPair.Key.EndsWith("." + enumName, StringComparison.Ordinal))
-                    expression = TsReplaceEnumMemberReferences(expression, enumPair.Key, referenceName, replacement);
+                    expression = new TsEnumReferenceTransformer(enumPair.Key, replacements,
+                        includeBareReferences: false, includePrefixedReferences: false).Transform(expression);
             }
         }
-        return TsReplaceBareIdentifier(expression, referenceName, replacement);
+        return new TsEnumReferenceTransformer(null, replacements, includeBareReferences: true,
+            includePrefixedReferences: false).Transform(expression);
     }
 
-    static string TsReplaceForwardEnumMemberReferences(string expression, string? enumName,
+    static AstNode TsReplaceForwardEnumMemberReferences(AstNode expression, string? enumName,
         HashSet<string> futureReferenceNames, Dictionary<string, Dictionary<string, string>>? knownEnumConstants)
     {
-        if (TsIsQuotedStringLiteral(expression))
+        if (expression is AstString)
             return expression;
+        var zeroReplacements = new Dictionary<string, AstNode>(StringComparer.Ordinal);
         foreach (var referenceName in futureReferenceNames)
-        {
-            if (enumName != null)
-                expression = TsReplaceEnumMemberReferences(expression, enumName, referenceName, "0");
-            if (knownEnumConstants != null && enumName != null)
-            {
-                foreach (var enumPair in knownEnumConstants)
-                {
-                    if (enumPair.Key.EndsWith("." + enumName, StringComparison.Ordinal))
-                        expression = TsReplaceEnumMemberReferences(expression, enumPair.Key, referenceName, "0");
-                }
-            }
-            expression = TsReplaceBareIdentifier(expression, referenceName, "0");
-        }
-
-        return expression;
-    }
-
-    static bool TsIsQuotedStringLiteral(string expression)
-    {
-        expression = expression.Trim();
-        return expression.Length >= 2 && expression[0] is '"' or '\'' && expression[^1] == expression[0];
-    }
-
-    static string TsReplaceEnumMemberReferences(string expression, string enumName, string referenceName,
-        string replacement, bool includeBareReference = true, bool includePrefixedReference = false)
-    {
-        expression = TsReplaceEnumMemberReferencesInText(expression, enumName, referenceName, replacement,
-            includePrefixedReference);
-
-        if (!TsIsIdentifierText(referenceName))
+            zeroReplacements[referenceName] = new AstNumber(0);
+        if (zeroReplacements.Count == 0)
             return expression;
-
-        return includeBareReference
-            ? TsReplaceBareIdentifier(expression, referenceName, replacement)
-            : expression;
-    }
-
-    static string TsReplaceBareIdentifier(string expression, string identifier, string replacement)
-    {
-        if (!TsIsIdentifierText(identifier))
-            return expression;
-
-        StringBuilder? builder = null;
-        var copyFrom = 0;
-        var index = 0;
-        while (index <= expression.Length - identifier.Length)
+        if (enumName != null)
+            expression = new TsEnumReferenceTransformer(enumName, zeroReplacements, includeBareReferences: false,
+                includePrefixedReferences: false).Transform(expression);
+        if (knownEnumConstants != null && enumName != null)
         {
-            var found = expression.IndexOf(identifier, index, StringComparison.Ordinal);
-            if (found < 0)
-                break;
-            var after = found + identifier.Length;
-            if (TsCanReplaceBareIdentifier(expression, found, after))
+            foreach (var enumPair in knownEnumConstants)
             {
-                builder ??= new StringBuilder(expression.Length);
-                builder.Append(expression, copyFrom, found - copyFrom);
-                builder.Append(replacement);
-                copyFrom = after;
+                if (enumPair.Key.EndsWith("." + enumName, StringComparison.Ordinal))
+                    expression = new TsEnumReferenceTransformer(enumPair.Key, zeroReplacements,
+                        includeBareReferences: false, includePrefixedReferences: false).Transform(expression);
             }
-            index = after;
         }
-
-        if (builder == null)
-            return expression;
-        builder.Append(expression, copyFrom, expression.Length - copyFrom);
-        return builder.ToString();
+        return new TsEnumReferenceTransformer(null, zeroReplacements, includeBareReferences: true,
+            includePrefixedReferences: false).Transform(expression);
     }
 
-    static bool TsCanReplaceBareIdentifier(string expression, int start, int end)
+    static Dictionary<string, AstNode> TsParseConstantMap(Dictionary<string, string> values)
     {
-        if (start > 0 && (IsIdentifierChar(expression[start - 1], true) || expression[start - 1] == '.'))
-            return false;
-        return end >= expression.Length || !IsIdentifierChar(expression[end], true);
+        var result = new Dictionary<string, AstNode>(StringComparer.Ordinal);
+        foreach (var pair in values)
+            result[pair.Key] = TsParseEnumInitializerExpression(pair.Value);
+        return result;
     }
 
-    static string TsReplaceEnumMemberReferencesInText(string expression, string enumName, string referenceName,
-        string replacement, bool includePrefixedReference)
+    static bool TsTryEvaluateNumericExpression(AstNode expression, out double value)
     {
-        StringBuilder? builder = null;
-        var copyFrom = 0;
-        var index = 0;
-        while (index < expression.Length)
+        var constValue = expression.ConstValue();
+        switch (constValue)
         {
-            var tokenStart = TsFindNextIdentifierStart(expression, index);
-            if (tokenStart < 0)
-                break;
-            var tokenEnd = TsReadIdentifier(expression, tokenStart);
-            var isGlobalThis = expression.AsSpan(tokenStart, tokenEnd - tokenStart)
-                .SequenceEqual("globalThis".AsSpan());
-            var enumStart = tokenStart;
-            if (isGlobalThis)
-            {
-                var globalEnd = TsSkipWhitespace(expression, tokenEnd);
-                if (!TsTryReadDot(expression, globalEnd, out var afterGlobalDot))
-                {
-                    index = tokenEnd;
-                    continue;
-                }
-                enumStart = TsSkipWhitespace(expression, afterGlobalDot);
-            }
-
-            var enumEnd = TsTryReadEnumReference(expression, enumStart, enumName, includePrefixedReference);
-            if (enumEnd < 0)
-            {
-                index = tokenEnd;
-                continue;
-            }
-
-            var memberEnd = TsTryReadEnumMemberAccess(expression, enumEnd, referenceName);
-            if (memberEnd < 0)
-            {
-                index = Math.Max(tokenEnd, enumEnd);
-                continue;
-            }
-
-            builder ??= new StringBuilder(expression.Length);
-            builder.Append(expression, copyFrom, tokenStart - copyFrom);
-            builder.Append(replacement);
-            copyFrom = memberEnd;
-            index = memberEnd;
-        }
-
-        if (builder == null)
-            return expression;
-        builder.Append(expression, copyFrom, expression.Length - copyFrom);
-        return builder.ToString();
-    }
-
-    static int TsFindNextIdentifierStart(string expression, int index)
-    {
-        while (index < expression.Length)
-        {
-            if ((index == 0 || !IsIdentifierChar(expression[index - 1], true)) &&
-                IsIdentifierStart(expression[index], true))
-                return index;
-            index++;
-        }
-        return -1;
-    }
-
-    static int TsReadIdentifier(string expression, int index)
-    {
-        index++;
-        while (index < expression.Length && IsIdentifierChar(expression[index], true))
-            index++;
-        return index;
-    }
-
-    static int TsTryReadEnumReference(string expression, int index, string enumName, bool includePrefixedReference)
-    {
-        var enumParts = enumName.Split('.');
-        if (TsTryReadDottedName(expression, index, enumParts, out var enumEnd) &&
-            (TsCanStartReference(expression, index) ||
-             index > 0 && expression[index - 1] == '.' && TsStartsWithGlobalThisQualifier(expression, index)))
-            return enumEnd;
-
-        if (!includePrefixedReference && !enumName.Contains('.', StringComparison.Ordinal))
-            return -1;
-
-        var current = index;
-        while (current < expression.Length && IsIdentifierStart(expression[current], true))
-        {
-            var nameEnd = TsReadIdentifier(expression, current);
-            var afterName = TsSkipWhitespace(expression, nameEnd);
-            if (!TsTryReadDot(expression, afterName, out var afterDot))
-                return -1;
-            current = TsSkipWhitespace(expression, afterDot);
-            if (TsTryReadDottedName(expression, current, enumParts, out enumEnd))
-                return enumEnd;
-        }
-
-        return -1;
-    }
-
-    static bool TsTryReadDottedName(string expression, int index, string[] parts, out int end)
-    {
-        end = index;
-        for (var i = 0; i < parts.Length; i++)
-        {
-            var part = parts[i];
-            if (!TsTextStartsKeyword(expression, end, part))
-                return false;
-            end += part.Length;
-            if (i == parts.Length - 1)
+            case double number:
+                value = number;
                 return true;
-            var afterPart = TsSkipWhitespace(expression, end);
-            if (!TsTryReadDot(expression, afterPart, out end))
+            case int number:
+                value = number;
+                return true;
+            case uint number:
+                value = number;
+                return true;
+            case long number:
+                value = number;
+                return true;
+            case ulong number:
+                value = number;
+                return true;
+        }
+        value = 0;
+        return false;
+    }
+
+    static bool TsTryEvaluateStringExpression(AstNode expression, out string value)
+    {
+        if (expression.ConstValue() is string stringValue)
+        {
+            value = stringValue;
+            return true;
+        }
+        value = "";
+        return false;
+    }
+
+    static bool TsContainsForwardEnumMemberReference(AstNode expression, HashSet<string> futureReferenceNames)
+    {
+        return new TsSymbolReferenceFinder(futureReferenceNames).HasReference(expression);
+    }
+
+    static bool TsIsStringValuedEnumExpression(AstNode expression)
+    {
+        return expression switch
+        {
+            AstString or AstTemplateString => true,
+            AstBinary { Operator: Operator.Addition } binary =>
+                TsIsStringValuedEnumExpression(binary.Left) || TsIsStringValuedEnumExpression(binary.Right),
+            _ => false
+        };
+    }
+
+    static bool TsReferencesStringValuedEnumMember(AstNode expression, string enumName,
+        HashSet<string> stringValuedReferenceNames)
+    {
+        return new TsEnumReferenceFinder(enumName, stringValuedReferenceNames).HasReference(expression);
+    }
+
+    sealed class TsEnumReferenceTransformer : TreeTransformer
+    {
+        readonly string? _enumName;
+        readonly Dictionary<string, AstNode> _replacements;
+        readonly bool _includeBareReferences;
+        readonly bool _includePrefixedReferences;
+
+        public TsEnumReferenceTransformer(string? enumName, Dictionary<string, AstNode> replacements,
+            bool includeBareReferences, bool includePrefixedReferences)
+        {
+            _enumName = enumName;
+            _replacements = replacements;
+            _includeBareReferences = includeBareReferences;
+            _includePrefixedReferences = includePrefixedReferences;
+        }
+
+        protected override AstNode? Before(AstNode node, bool inList)
+        {
+            if (_includeBareReferences && node is AstSymbolRef { Name: var name } &&
+                _replacements.TryGetValue(name, out var replacement))
+                return replacement.DeepClone();
+            if (_includeBareReferences && TsKeywordConstantReferenceName(node) is { } keywordName &&
+                _replacements.TryGetValue(keywordName, out replacement))
+                return replacement.DeepClone();
+
+            if (_enumName != null && TryGetEnumMemberReference(node, _enumName, _includePrefixedReferences,
+                    out var referenceName) &&
+                _replacements.TryGetValue(referenceName, out replacement))
+                return replacement.DeepClone();
+
+            return null;
+        }
+
+        protected override AstNode? After(AstNode node, bool inList) => null;
+    }
+
+    static string? TsKeywordConstantReferenceName(AstNode node)
+    {
+        return node switch
+        {
+            AstTrue => "true",
+            AstFalse => "false",
+            AstNull => "null",
+            _ => null
+        };
+    }
+
+    sealed class TsSymbolReferenceFinder : TreeWalker
+    {
+        readonly HashSet<string> _names;
+        bool _found;
+
+        public TsSymbolReferenceFinder(HashSet<string> names)
+        {
+            _names = names;
+        }
+
+        public bool HasReference(AstNode node)
+        {
+            _found = false;
+            Walk(node);
+            return _found;
+        }
+
+        protected override void Visit(AstNode node)
+        {
+            if (node is AstSymbolRef { Name: var name } && _names.Contains(name))
+            {
+                _found = true;
+                StopDescending();
+                return;
+            }
+            Descend();
+        }
+    }
+
+    sealed class TsStringLiteralFinder : TreeWalker
+    {
+        bool _found;
+
+        public bool HasStringLiteral(AstNode node)
+        {
+            _found = false;
+            Walk(node);
+            return _found;
+        }
+
+        protected override void Visit(AstNode node)
+        {
+            if (node is AstString or AstTemplateString { Segments.Count: 1 })
+            {
+                _found = true;
+                StopDescending();
+                return;
+            }
+            Descend();
+        }
+    }
+
+    sealed class TsEnumReferenceFinder : TreeWalker
+    {
+        readonly string _enumName;
+        readonly HashSet<string> _referenceNames;
+        bool _found;
+
+        public TsEnumReferenceFinder(string enumName, HashSet<string> referenceNames)
+        {
+            _enumName = enumName;
+            _referenceNames = referenceNames;
+        }
+
+        public bool HasReference(AstNode node)
+        {
+            _found = false;
+            Walk(node);
+            return _found;
+        }
+
+        protected override void Visit(AstNode node)
+        {
+            if (node is AstSymbolRef { Name: var name } && _referenceNames.Contains(name) ||
+                TryGetEnumMemberReference(node, _enumName, includePrefixedReference: false, out var referenceName) &&
+                _referenceNames.Contains(referenceName))
+            {
+                _found = true;
+                StopDescending();
+                return;
+            }
+            Descend();
+        }
+    }
+
+    static bool TryGetEnumMemberReference(AstNode node, string enumName, bool includePrefixedReference,
+        out string referenceName)
+    {
+        referenceName = "";
+        AstNode target;
+        switch (node)
+        {
+            case AstDot { PropertyAsString: var property, Expression: var expression }:
+                if (property == null)
+                    return false;
+                referenceName = property;
+                target = expression;
+                break;
+            case AstSub { Property: AstString { Value: var property }, Expression: var expression }:
+                referenceName = property;
+                target = expression;
+                break;
+            default:
                 return false;
-            end = TsSkipWhitespace(expression, end);
         }
-        return true;
+
+        var path = TsAstDottedName(target);
+        if (path == null)
+            return false;
+        if (target.Start.Index > node.Start.Index)
+            return false;
+        if (path == enumName || path == "globalThis." + enumName)
+            return true;
+        return includePrefixedReference && path.EndsWith("." + enumName, StringComparison.Ordinal);
     }
 
-    static int TsTryReadEnumMemberAccess(string expression, int index, string referenceName)
+    static string? TsAstDottedName(AstNode node)
     {
-        index = TsSkipWhitespace(expression, index);
-        if (TsTryReadDot(expression, index, out var afterDot))
+        return node switch
         {
-            afterDot = TsSkipWhitespace(expression, afterDot);
-            return TsTextStartsKeyword(expression, afterDot, referenceName) ? afterDot + referenceName.Length : -1;
-        }
-        if (index + 1 < expression.Length && expression[index] == '?' && expression[index + 1] == '.')
-        {
-            var afterOptional = TsSkipWhitespace(expression, index + 2);
-            if (TsTryReadBracketKey(expression, afterOptional, referenceName, out var bracketEnd))
-                return bracketEnd;
-            return TsTextStartsKeyword(expression, afterOptional, referenceName)
-                ? afterOptional + referenceName.Length
-                : -1;
-        }
-        return TsTryReadBracketKey(expression, index, referenceName, out var end) ? end : -1;
-    }
-
-    static bool TsTryReadBracketKey(string expression, int index, string referenceName, out int end)
-    {
-        end = index;
-        if (index >= expression.Length || expression[index] != '[')
-            return false;
-        index = TsSkipWhitespace(expression, index + 1);
-        if (index >= expression.Length || expression[index] is not '"' and not '`')
-            return false;
-        var quote = expression[index++];
-        var keyStart = index;
-        while (index < expression.Length && expression[index] != quote)
-        {
-            if (expression[index] == '\\')
-                index++;
-            index++;
-        }
-        if (index >= expression.Length)
-            return false;
-        var key = expression.Substring(keyStart, index - keyStart);
-        if (!key.Equals(TsEscapeString(referenceName), StringComparison.Ordinal))
-            return false;
-        index = TsSkipWhitespace(expression, index + 1);
-        if (index >= expression.Length || expression[index] != ']')
-            return false;
-        end = index + 1;
-        return true;
-    }
-
-    static bool TsTryReadDot(string expression, int index, out int afterDot)
-    {
-        afterDot = index;
-        if (index >= expression.Length || expression[index] != '.')
-            return false;
-        if (index + 1 < expression.Length && expression[index + 1] == '.')
-            return false;
-        afterDot = index + 1;
-        return true;
-    }
-
-    static int TsSkipWhitespace(string expression, int index)
-    {
-        while (index < expression.Length && char.IsWhiteSpace(expression[index]))
-            index++;
-        return index;
-    }
-
-    static bool TsCanStartReference(string expression, int index)
-    {
-        return index == 0 || !IsIdentifierChar(expression[index - 1], true) && expression[index - 1] != '.';
-    }
-
-    static bool TsStartsWithGlobalThisQualifier(string expression, int index)
-    {
-        var globalThis = "globalThis";
-        if (index < globalThis.Length + 1)
-            return false;
-        var start = index - globalThis.Length - 1;
-        return expression[start + globalThis.Length] == '.' &&
-               expression.AsSpan(start, globalThis.Length).SequenceEqual(globalThis.AsSpan()) &&
-               (start == 0 || !IsIdentifierChar(expression[start - 1], true));
+            AstSymbolRef { Name: var name } => name,
+            AstDot { Expression: var expression, PropertyAsString: var property } when property != null =>
+                TsAstDottedName(expression) is { } prefix ? prefix + "." + property : null,
+            _ => null
+        };
     }
 
     static bool TsIsIdentifierText(string value)
@@ -4593,113 +4523,6 @@ public sealed partial class Parser
     static bool TsIsNonReferenceEnumExpressionIdentifier(string name)
     {
         return name is "true" or "false" or "null";
-    }
-
-    static (string? Value, bool ForceReverseMap) TsNormalizeEnumMemberValue(string? value)
-    {
-        if (value == null)
-            return (null, false);
-        value = value.Trim();
-        value = TsStripEnumErasedAssertions(value, out var forceReverseMap);
-        if (value.Length >= 2 && value[0] == '`' && value[^1] == '`' && !value.Contains("${", StringComparison.Ordinal))
-            return ("\"" + TsEscapeString(value[1..^1]) + "\"", forceReverseMap);
-        return (value, forceReverseMap);
-    }
-
-    static string TsStripEnumErasedAssertions(string value, out bool forceReverseMap)
-    {
-        forceReverseMap = false;
-        var result = new StringBuilder(value.Length);
-        var index = 0;
-        while (index < value.Length)
-        {
-            if ((TsTextStartsKeyword(value, index, "as") || TsTextStartsKeyword(value, index, "satisfies")) &&
-                result.Length > 0 && char.IsWhiteSpace(result[^1]))
-            {
-                while (result.Length > 0 && char.IsWhiteSpace(result[^1]))
-                    result.Length--;
-                forceReverseMap = true;
-                index += value[index] == 'a' ? 2 : "satisfies".Length;
-                index = TsSkipTypeAssertionInText(value, index);
-                continue;
-            }
-
-            if (value[index] == '!' && TsCanStripEnumNonNullAssertion(value, index, result))
-            {
-                forceReverseMap = true;
-                index++;
-                continue;
-            }
-
-            result.Append(value[index++]);
-        }
-
-        return result.ToString().Trim();
-    }
-
-    static bool TsCanStripEnumNonNullAssertion(string value, int index, StringBuilder result)
-    {
-        if (index + 1 < value.Length && value[index + 1] == '=')
-            return false;
-        var previous = result.Length - 1;
-        while (previous >= 0 && char.IsWhiteSpace(result[previous]))
-            previous--;
-        if (previous < 0)
-            return false;
-        var previousChar = result[previous];
-        if (!(IsIdentifierChar(previousChar, true) || previousChar is ')' or ']'))
-            return false;
-        var next = index + 1;
-        while (next < value.Length && char.IsWhiteSpace(value[next]))
-            next++;
-        return next == value.Length || value[next] is '.' or '[' or ')' or ']' or '}' or ',' or '+' or '-' or '*' or
-            '/' or '%' or '&' or '|' or '^' or '<' or '>' or '=' or '?' or ':';
-    }
-
-    static int TsSkipTypeAssertionInText(string value, int index)
-    {
-        var angle = 0;
-        var brace = 0;
-        var paren = 0;
-        var bracket = 0;
-        while (index < value.Length && char.IsWhiteSpace(value[index]))
-            index++;
-        while (index < value.Length)
-        {
-            var ch = value[index];
-            if (ch is '"' or '\'' or '`')
-            {
-                index = TsSkipStringLike(value, index, ch);
-                continue;
-            }
-            if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 &&
-                (ch == ',' || ch == ')' || ch == ']' || ch == '}' || ch == '?' || ch == ':' ||
-                 TsTextStartsKeyword(value, index, "as") || TsTextStartsKeyword(value, index, "satisfies")))
-                return index;
-            switch (ch)
-            {
-                case '<': angle++; break;
-                case '>': if (angle > 0) angle--; break;
-                case '{': brace++; break;
-                case '}':
-                    if (brace > 0) brace--;
-                    else return index;
-                    break;
-                case '(': paren++; break;
-                case ')':
-                    if (paren > 0) paren--;
-                    else return index;
-                    break;
-                case '[': bracket++; break;
-                case ']':
-                    if (bracket > 0) bracket--;
-                    else return index;
-                    break;
-            }
-            index++;
-        }
-
-        return index;
     }
 
     static string TsEscapeString(string value)
@@ -4727,229 +4550,6 @@ public sealed partial class Parser
         return value.StartsWith("\"", StringComparison.Ordinal) || value.StartsWith("'", StringComparison.Ordinal);
     }
 
-    static bool TsIsStringConstantValue(string value)
-    {
-        value = value.Trim();
-        if (!TsIsStringLiteral(value) || value.Length < 2)
-            return false;
-        var quote = value[0];
-        if (value[^1] != quote)
-            return false;
-        var escaped = false;
-        for (var i = 1; i < value.Length - 1; i++)
-        {
-            if (escaped)
-            {
-                escaped = false;
-                continue;
-            }
-            if (value[i] == '\\')
-            {
-                escaped = true;
-                continue;
-            }
-            if (value[i] == quote)
-                return false;
-        }
-        return !escaped;
-    }
-
-    static bool TsTryEvaluateStringExpression(string expression, out string value)
-    {
-        value = "";
-        var parts = TsSplitTopLevelAddition(expression);
-        if (parts.Count == 0)
-            return false;
-
-        var builder = new StringBuilder();
-        var sawString = false;
-        foreach (var part in parts)
-        {
-            if (TsTryParseStringLiteralValue(part, out var stringPart))
-            {
-                sawString = true;
-                builder.Append(stringPart);
-                continue;
-            }
-            if (TsTryParseTemplateLiteralValue(part, out var templatePart))
-            {
-                sawString = true;
-                builder.Append(templatePart);
-                continue;
-            }
-            if (TsTryEvaluateNumericExpression(part, out var numericPart))
-            {
-                builder.Append(TsFormatEnumNumber(numericPart));
-                continue;
-            }
-            return false;
-        }
-
-        if (!sawString)
-            return false;
-        value = builder.ToString();
-        return true;
-    }
-
-    static bool TsIsStringValuedEnumExpression(string expression)
-    {
-        var parts = TsSplitTopLevelAddition(expression);
-        if (parts.Count == 0)
-            return false;
-        foreach (var part in parts)
-        {
-            if (TsTryParseStringLiteralValue(part, out _) || TsLooksLikeTemplateLiteral(part))
-                return true;
-        }
-        return false;
-    }
-
-    static bool TsReferencesStringValuedEnumMember(string expression, string enumName,
-        HashSet<string> stringValuedReferenceNames)
-    {
-        foreach (var referenceName in stringValuedReferenceNames)
-        {
-            if (Regex.IsMatch(expression, $@"(?<![.\w$]){Regex.Escape(referenceName)}\b"))
-                return true;
-            if (!TsIsIdentifierText(referenceName))
-                continue;
-            if (Regex.IsMatch(expression,
-                    $@"(?<![.\w$]){Regex.Escape(enumName)}\s*\.\s*{Regex.Escape(referenceName)}\b"))
-                return true;
-        }
-
-        return false;
-    }
-
-    static bool TsLooksLikeTemplateLiteral(string expression)
-    {
-        expression = TsStripOuterParens(expression.Trim());
-        return expression.Length >= 2 && expression[0] == '`' && expression[^1] == '`';
-    }
-
-    static bool TsTryParseTemplateLiteralValue(string expression, out string value)
-    {
-        value = "";
-        expression = TsStripOuterParens(expression.Trim());
-        if (expression.Length < 2 || expression[0] != '`' || expression[^1] != '`')
-            return false;
-
-        var builder = new StringBuilder();
-        for (var i = 1; i < expression.Length - 1; i++)
-        {
-            var ch = expression[i];
-            if (ch == '\\')
-            {
-                if (i + 1 >= expression.Length - 1)
-                    return false;
-                builder.Append(expression[++i]);
-                continue;
-            }
-            if (ch == '$' && i + 1 < expression.Length - 1 && expression[i + 1] == '{')
-            {
-                var close = TsFindTemplateExpressionEnd(expression, i + 2);
-                if (close < 0)
-                    return false;
-                var inner = expression[(i + 2)..close].Trim();
-                if (TsTryParseStringLiteralValue(inner, out var innerString))
-                    builder.Append(innerString);
-                else if (TsTryParseTemplateLiteralValue(inner, out var innerTemplate))
-                    builder.Append(innerTemplate);
-                else if (TsTryEvaluateNumericExpression(inner, out var innerNumber))
-                    builder.Append(TsFormatEnumNumber(innerNumber));
-                else
-                    return false;
-                i = close;
-                continue;
-            }
-            builder.Append(ch);
-        }
-
-        value = builder.ToString();
-        return true;
-    }
-
-    static int TsFindTemplateExpressionEnd(string expression, int index)
-    {
-        var depth = 1;
-        for (var i = index; i < expression.Length; i++)
-        {
-            var ch = expression[i];
-            if (ch is '"' or '\'' or '`')
-            {
-                i = TsSkipStringLike(expression, i, ch) - 1;
-                continue;
-            }
-            if (ch == '{') depth++;
-            else if (ch == '}' && --depth == 0) return i;
-        }
-        return -1;
-    }
-
-    static string TsStripOuterParens(string expression)
-    {
-        while (expression.Length >= 2 && expression[0] == '(' && expression[^1] == ')' &&
-               TsMatchingParenCoversExpression(expression))
-            expression = expression[1..^1].Trim();
-        return expression;
-    }
-
-    static bool TsMatchingParenCoversExpression(string expression)
-    {
-        var depth = 0;
-        for (var i = 0; i < expression.Length; i++)
-        {
-            var ch = expression[i];
-            if (ch is '"' or '\'' or '`')
-            {
-                i = TsSkipStringLike(expression, i, ch) - 1;
-                continue;
-            }
-            if (ch == '(') depth++;
-            else if (ch == ')' && --depth == 0)
-                return i == expression.Length - 1;
-        }
-        return false;
-    }
-
-    static List<string> TsSplitTopLevelAddition(string expression)
-    {
-        var result = new List<string>();
-        var start = 0;
-        var paren = 0;
-        var bracket = 0;
-        var brace = 0;
-        for (var i = 0; i < expression.Length; i++)
-        {
-            var ch = expression[i];
-            if (ch is '"' or '\'' or '`')
-            {
-                i = TsSkipStringLike(expression, i, ch) - 1;
-                continue;
-            }
-            if (ch == '(') paren++;
-            else if (ch == ')' && paren > 0) paren--;
-            else if (ch == '[') bracket++;
-            else if (ch == ']' && bracket > 0) bracket--;
-            else if (ch == '{') brace++;
-            else if (ch == '}' && brace > 0) brace--;
-            else if (ch == '+' && paren == 0 && bracket == 0 && brace == 0)
-            {
-                var part = expression[start..i].Trim();
-                if (part.Length == 0)
-                    return new List<string>();
-                result.Add(part);
-                start = i + 1;
-            }
-        }
-
-        var last = expression[start..].Trim();
-        if (last.Length == 0)
-            return new List<string>();
-        result.Add(last);
-        return result;
-    }
-
     static int TsSkipStringLike(string input, int index, char quote)
     {
         index++;
@@ -4965,33 +4565,6 @@ public sealed partial class Parser
             index++;
         }
         return index;
-    }
-
-    static bool TsTryParseStringLiteralValue(string expression, out string value)
-    {
-        value = "";
-        expression = expression.Trim();
-        if (!TsIsStringConstantValue(expression))
-            return false;
-        try
-        {
-            var parsed = Parser.Parse(expression + ";", new Options
-            {
-                SourceType = SourceType.Script,
-                EcmaVersion = 2022
-            });
-            if (parsed.Body.Count == 1 &&
-                parsed.Body[0] is AstSimpleStatement { Body: AstString str })
-            {
-                value = str.Value;
-                return true;
-            }
-        }
-        catch
-        {
-            return false;
-        }
-        return false;
     }
 
     static string TsQuoteString(string value)

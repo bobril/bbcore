@@ -26,7 +26,9 @@ public sealed partial class Parser
                 Next();
                 var usingStatements = TsParseUsingScope(topLevel: true, () => Type == TokenType.Eof);
                 foreach (var usingStatement in usingStatements)
+                {
                     node.Body.Add(usingStatement);
+                }
                 break;
             }
 
@@ -35,7 +37,9 @@ public sealed partial class Parser
                 var usingStatements = TsParseUsingScope(topLevel: !Options.ParseTypeScriptNamespaceBody,
                     () => Type == TokenType.Eof);
                 foreach (var usingStatement in usingStatements)
+                {
                     node.Body.Add(usingStatement);
+                }
                 break;
             }
 
@@ -144,7 +148,9 @@ public sealed partial class Parser
             if (_tsPendingClassDecoratorStatements != null)
             {
                 foreach (var decoratorStatement in _tsPendingClassDecoratorStatements)
+                {
                     node.Body.Add(decoratorStatement);
+                }
                 _tsPendingClassDecoratorStatements = null;
             }
 
@@ -156,9 +162,6 @@ public sealed partial class Parser
         if (IsTypeScript && !Options.ParseTypeScriptNamespaceBody &&
             _tsErasedTypeOnlyModuleSyntaxUsed && !_tsRuntimeModuleSyntaxUsed)
             TsInsertEmptyExportModuleMarker(ref node.Body);
-
-        if (IsTypeScript && _tsConstEnums is { Count: > 0 })
-            new TypeScriptConstEnumInlineTransformer(SourceFile, _tsConstEnums).Transform(node);
 
         Next();
         node.End = _lastTokEnd;
@@ -687,7 +690,9 @@ public sealed partial class Parser
                 if (IsTypeScript && TsTryParseEnumStatements(out var enumStatements, local: true))
                 {
                     foreach (var enumStatement in enumStatements)
+                    {
                         consequent.Body.Add(enumStatement);
+                    }
                     continue;
                 }
                 if (IsTypeScript && TsTryParseNamespaceStatements(out var namespaceStatements, local: true))
@@ -697,7 +702,8 @@ public sealed partial class Parser
                 }
                 if (IsTypeScript && TsIsUsingDeclarationStart())
                 {
-                    consequent.Body.Add(TsParseUsingDeclarationAsPreservedStatement());
+                    var usingStatement = TsParseUsingDeclarationAsPreservedStatement();
+                    consequent.Body.Add(usingStatement);
                     continue;
                 }
                 if (IsTypeScript && Type == TokenType.Decorator)
@@ -706,7 +712,8 @@ public sealed partial class Parser
                     continue;
                 }
 
-                consequent.Body.Add(ParseStatement(true));
+                var statement = ParseStatement(true);
+                consequent.Body.Add(statement);
             }
         }
 
@@ -961,7 +968,9 @@ public sealed partial class Parser
                 if (IsTypeScript && TsTryParseEnumStatements(out var enumStatements, local: true))
                 {
                     foreach (var enumStatement in enumStatements)
+                    {
                         body.Add(enumStatement);
+                    }
                     continue;
                 }
                 if (IsTypeScript && TsTryParseNamespaceStatements(out var namespaceStatements, local: true))
@@ -973,7 +982,9 @@ public sealed partial class Parser
                 {
                     var usingStatements = TsParseUsingScope(topLevel: false, () => Type is TokenType.BraceR or TokenType.Eof);
                     foreach (var usingStatement in usingStatements)
+                    {
                         body.Add(usingStatement);
+                    }
                     continue;
                 }
                 var stmt = ParseStatement(true);
@@ -991,7 +1002,9 @@ public sealed partial class Parser
         {
             _tsBlockDepth--;
             if (IsTypeScript)
+            {
                 TsRestoreRuntimeEnumConstants(oldRuntimeEnumConstants);
+            }
         }
 
         if (createNewLexicalScope)

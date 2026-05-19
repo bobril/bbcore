@@ -231,13 +231,20 @@ public class TypeConverter
     /// http://www.ecma-international.org/ecma-262/5.1/#sec-9.5
     public static int ToInt32(object o)
     {
-        return (int) (uint) ToNumber(o);
+        return unchecked((int) ToUint32(o));
     }
 
     /// http://www.ecma-international.org/ecma-262/5.1/#sec-9.6
     public static uint ToUint32(object o)
     {
-        return (uint) ToNumber(o);
+        var number = ToNumber(o);
+        if (!double.IsFinite(number) || number == 0)
+            return 0;
+        var integer = Math.Sign(number) * Math.Floor(Math.Abs(number));
+        var modulo = integer % 4294967296d;
+        if (modulo < 0)
+            modulo += 4294967296d;
+        return (uint) modulo;
     }
 
     public static string ToString(double d)

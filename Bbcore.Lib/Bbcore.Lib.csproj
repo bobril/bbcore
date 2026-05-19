@@ -941,6 +941,9 @@
         <Compile Include="..\Njsast\Ast\AstTypeScriptImportEquals.cs">
             <Link>Ast\AstTypeScriptImportEquals.cs</Link>
         </Compile>
+        <Compile Include="..\Njsast\Ast\AstTypeScriptEnum.cs">
+            <Link>Ast\AstTypeScriptEnum.cs</Link>
+        </Compile>
         <Compile Include="..\Njsast\Ast\AstTypeScriptOnly.cs">
             <Link>Ast\AstTypeScriptOnly.cs</Link>
         </Compile>

@@ -106,8 +106,10 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
                     {
                         usage |= SymbolUsage.Write;
                         var def = astSymbol.Thedef!;
+                        var declarationParent = Parent(2 + deepness);
                         if (def.Orig[0] == astSymbol && def.References.Count == 0 &&
-                            Parent(2 + deepness) == def.Scope)
+                            (declarationParent == def.Scope ||
+                             declarationParent is AstExport && Parent(3 + deepness) == def.Scope))
                         {
                             def.VarInit = astVarDef.Value;
                         }
@@ -261,6 +263,9 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
                     usage |= classField.Computed ? SymbolUsage.Read : SymbolUsage.Write;
                 }
 
+                break;
+            case AstTypeScriptEnum _:
+                usage |= SymbolUsage.Read;
                 break;
             case { }:
                 throw new NotImplementedException("Symbol Usage Detection parent " + parent.GetType().Name);

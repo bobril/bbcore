@@ -1,6 +1,8 @@
-﻿using Njsast.ConstEval;
+﻿using System.Text;
+using Njsast.ConstEval;
 using Njsast.Output;
 using Njsast.Reader;
+using Njsast.Runtime;
 
 namespace Njsast.Ast;
 
@@ -60,7 +62,22 @@ public class AstTemplateString : AstNode
     public override object? ConstValue(IConstEvalCtx? ctx = null)
     {
         if (Segments.Count == 1) return ((AstTemplateSegment)Segments[0]).Value;
-        return null;
+        var result = new StringBuilder();
+        for (var i = 0u; i < Segments.Count; i++)
+        {
+            var segment = Segments[i];
+            if (segment is AstTemplateSegment templateSegment)
+            {
+                result.Append(templateSegment.Value);
+                continue;
+            }
+
+            var value = segment.ConstValue(ctx?.StripPathResolver());
+            if (value == null)
+                return null;
+            result.Append(TypeConverter.ToString(value));
+        }
+        return result.ToString();
     }
 
     public override bool IsConstantLike(bool forbidPropWrite)

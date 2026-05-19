@@ -73,6 +73,7 @@ public sealed partial class Parser
     Dictionary<string, Dictionary<string, string>>? _tsRuntimeEnumConstants;
     HashSet<string>? _tsErasedTypeOnlyNamespaces;
     HashSet<string>? _tsErasedTypeOnlyNames;
+    bool _tsHasEnumNodes;
 
     public static AstToplevel Parse(string input, Options? options = null)
     {
@@ -176,6 +177,8 @@ public sealed partial class Parser
         var node = Options.Program ?? new AstToplevel(SourceFile, Start, _lastTokEnd);
         NextToken();
         ParseTopLevel(node);
+        if (Options.ParseTypeScript)
+            node = TsLowerTypeScriptEnumsPostParse(node);
         return node;
     }
 

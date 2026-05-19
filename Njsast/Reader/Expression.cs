@@ -1463,7 +1463,9 @@ public sealed partial class Parser
                     if (IsTypeScript && TsTryParseEnumStatements(out var enumStatements, local: true))
                     {
                         foreach (var enumStatement in enumStatements)
+                        {
                             body.Add(enumStatement);
+                        }
                         _canBeDirective = false;
                         continue;
                     }
@@ -1479,7 +1481,9 @@ public sealed partial class Parser
                     {
                         var usingStatements = TsParseUsingScope(topLevel: false, () => Type is TokenType.BraceR or TokenType.Eof);
                         foreach (var usingStatement in usingStatements)
+                        {
                             body.Add(usingStatement);
+                        }
                         _canBeDirective = false;
                         continue;
                     }
@@ -1525,7 +1529,9 @@ public sealed partial class Parser
             finally
             {
                 if (IsTypeScript)
+                {
                     TsRestoreRuntimeEnumConstants(oldRuntimeEnumConstants);
+                }
             }
 
             expression = false;
