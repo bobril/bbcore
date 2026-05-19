@@ -56,6 +56,7 @@ public class BuildCtx
     ITSCompiler _typeChecker;
     public readonly IBuildCache BuildCache;
 
+    bool _includeTestSourcesInBuild;
     bool _buildOnceOnly;
     bool _projectStructureChanged;
     bool _compilerOptionsChanged;
@@ -323,11 +324,13 @@ public class BuildCtx
         bool buildOnlyOnce,
         BuildResult buildResult,
         MainBuildResult mainBuildResult,
-        int iterationId)
+        int iterationId,
+        bool includeTestSourcesInBuild = true)
     {
         if (project.PreserveProjectRoot)
             mainBuildResult.PreserveProjectRoot = true;
         _buildOnceOnly = buildOnlyOnce;
+        _includeTestSourcesInBuild = includeTestSourcesInBuild;
         _compilerOptionsChanged = false;
         _projectStructureChanged = false;
         MainFile = project.MainFile;
@@ -456,7 +459,7 @@ public class BuildCtx
                         FileCompilationType.Unknown);
                 }
 
-            if (TestSources != null)
+            if (_includeTestSourcesInBuild && TestSources != null)
                 foreach (var src in TestSources)
                 {
                     buildModuleCtx.CheckAdd(PathUtils.Join(tsProject.Owner.FullPath, src),

@@ -2,6 +2,17 @@
 
 ## [unreleased]
 
+### Changed
+
+- Improved Njsast performance and memory usage by replacing AST child lists with a `StructRefList` based structure.
+- Sped up TypeScript enum parsing.
+- Typecheck and transpile emit logging now includes duration details.
+
+### Fixed
+
+- `bb build` now keeps generated `tsconfig.json` up to date for Go TypeScript typechecking, including test sources
+  like `bb gen-tsconfig`, while still excluding those test sources from the actual build output.
+
 ## 5.13.0
 
 ### Added

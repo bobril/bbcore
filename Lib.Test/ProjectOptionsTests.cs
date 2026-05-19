@@ -1,6 +1,11 @@
 using Lib.DiskCache;
 using Lib.Composition;
 using Lib.TSCompiler;
+using Lib.Utils;
+using Lib.Utils.Logger;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Linq;
 using Xunit;
 
 namespace Lib.Test;
@@ -93,5 +98,32 @@ public class ProjectOptionsTests
 
         Assert.True(BuildCtx.TryFindNativeTypeScriptDirectory("/workspace/apps/WebApp", fs, out var directory));
         Assert.Equal("/workspace/node_modules/@typescript/native-preview", directory);
+    }
+
+    [Fact]
+    public void GeneratedTsConfigIncludesConfiguredTestSources()
+    {
+        var fs = new InMemoryFs();
+        fs.WriteAllUtf8("/package.json", "{ main: 'src/index.ts', bobril: { testDirectories: [ 'spec' ] } }");
+        fs.WriteAllUtf8("/src/index.ts", "export const value = 1;");
+        fs.WriteAllUtf8("/spec/test.spec.ts", "describe('test', () => {});");
+        var dc = new DiskCache.DiskCache(fs, () => fs);
+        var project = TSProject.Create((IDirectoryCache)dc.TryGetItem("/")!, dc, new DummyLogger(), null)!;
+        project.IsRootProject = true;
+        project.ProjectOptions!.Tools = new ToolsDir.ToolsDir(
+            PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore/tools"), new DummyLogger(),
+            new NativeFsAbstraction());
+        project.ProjectOptions.ForbiddenDependencyUpdate = true;
+
+        project.LoadProjectJson(true, null);
+        project.ProjectOptions.RefreshCompilerOptions();
+        project.ProjectOptions.RefreshMainFile();
+        project.ProjectOptions.RefreshTestSources();
+        project.ProjectOptions.UpdateTSConfigJson();
+
+        var tsconfig = JObject.Parse(fs.ReadAllUtf8("/tsconfig.json"));
+        var files = tsconfig["files"]!.Values<string>().ToArray();
+        Assert.Contains("src/index.ts", files);
+        Assert.Contains("spec/test.spec.ts", files);
     }
 }

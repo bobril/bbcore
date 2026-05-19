@@ -727,10 +727,11 @@ public class Composition
             proj.SpriterInitialization(_mainBuildResult);
             proj.RefreshCompilerOptions();
             proj.RefreshMainFile();
+            proj.RefreshTestSources();
             proj.RefreshExampleSources();
             var ctx = new BuildCtx(_compilerPool, _dc, _verbose, _logger, proj.Owner.Owner.FullPath, _buildCache,
                 bCommand.UpdateTranslations.Value ? "no" : bCommand.TypeCheck.Value!);
-            ctx.Build(proj, true, buildResult, _mainBuildResult, 1);
+            ctx.Build(proj, true, buildResult, _mainBuildResult, 1, includeTestSourcesInBuild: false);
             ctx.BuildSubProjects(proj, true, buildResult, _mainBuildResult, 1);
             _compilerPool.FreeMemory().GetAwaiter();
             if (!ctx.OnlyTypeCheck)
