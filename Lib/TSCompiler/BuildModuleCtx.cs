@@ -35,6 +35,9 @@ public class BuildModuleCtx : IImportResolver
 
     internal OrderedHashSet<string>? ToCheck;
     internal uint CrawledCount;
+    long _transpileEmitTicks;
+    int _transpileEmitCount;
+    bool _lastTranspileEmitWasBuildin;
 
     static bool IsDts(ReadOnlySpan<char> name)
     {
@@ -724,12 +727,21 @@ public class BuildModuleCtx : IImportResolver
 
     public void Crawl()
     {
+        _transpileEmitTicks = 0;
+        _transpileEmitCount = 0;
         while (CrawledCount < ToCheck.Count)
         {
             var fileName = ToCheck[(int)CrawledCount];
             CrawledCount++;
 
             CrawlFile(fileName);
+        }
+
+        if (_transpileEmitCount > 0)
+        {
+            var seconds = _transpileEmitTicks / (double)Stopwatch.Frequency;
+            Owner!.Logger.Info(
+                $"{(_lastTranspileEmitWasBuildin ? "Built-in" : "TypeScript")} transpile emit done in {seconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}s for {_transpileEmitCount} files");
         }
     }
 
@@ -1215,7 +1227,10 @@ public class BuildModuleCtx : IImportResolver
             };
 
             TranspileResult result;
-            if (NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future, Owner.ProjectOptions.Validate))
+            var useBuildin = NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future, Owner.ProjectOptions.Validate);
+            var transpileEmitStart = Stopwatch.GetTimestamp();
+            _lastTranspileEmitWasBuildin = useBuildin;
+            if (useBuildin)
             {
                 try
                 {
@@ -1256,6 +1271,8 @@ public class BuildModuleCtx : IImportResolver
                     NjsastTsValidator.Validate(Owner!.Owner.FullPath, newFileName, source, result.JavaScript,
                         njsastTask, Owner.Logger.Info);
             }
+            _transpileEmitTicks += Stopwatch.GetTimestamp() - transpileEmitStart;
+            _transpileEmitCount++;
 
             if (result.Diagnostics != null)
             {

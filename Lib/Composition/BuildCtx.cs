@@ -181,6 +181,7 @@ public class BuildCtx
     }
 
     TypeCheckChange _cancelledTypeCheckType;
+    public double LastTypeCheckDurationSeconds { get; private set; }
 
     ITSCompiler CreateTypeChecker()
     {
@@ -292,7 +293,9 @@ public class BuildCtx
             }
 
             _cancelledTypeCheckType = TypeCheckChange.None;
+            var typeCheckStart = DateTime.UtcNow;
             DoTypeCheck(current);
+            LastTypeCheckDurationSeconds = (DateTime.UtcNow - typeCheckStart).TotalSeconds;
             if (cancellationTokenSource.IsCancellationRequested)
             {
                 return null;

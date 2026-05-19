@@ -1791,7 +1791,7 @@ public class Composition
                         if (typeCheckValue != "no")
                         {
                             _logger.WriteLine(
-                                $"Semantic check done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}",
+                                $"Semantic check done in {ctx.LastTypeCheckDurationSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}",
                                 color);
                         }
                     }, TaskContinuationOptions.OnlyOnRanToCompletion);

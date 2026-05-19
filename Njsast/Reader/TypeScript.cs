@@ -4251,8 +4251,7 @@ public sealed partial class Parser
                 continue;
             if (preserveLiteralKeywords && TsIsNonReferenceEnumExpressionIdentifier(referenceName))
                 continue;
-            expression = Regex.Replace(expression, $@"(?<![.\w$]){Regex.Escape(referenceName)}\b",
-                enumName + "." + referenceName);
+            expression = TsReplaceBareIdentifier(expression, referenceName, enumName + "." + referenceName);
         }
         return expression;
     }
@@ -4280,7 +4279,7 @@ public sealed partial class Parser
             return expression;
 
         foreach (var pair in knownConstValues)
-            expression = Regex.Replace(expression, $@"(?<![.\w$]){Regex.Escape(pair.Key)}\b", pair.Value);
+            expression = TsReplaceBareIdentifier(expression, pair.Key, pair.Value);
         return expression;
     }
 
@@ -4298,7 +4297,7 @@ public sealed partial class Parser
                     expression = TsReplaceEnumMemberReferences(expression, enumPair.Key, referenceName, replacement);
             }
         }
-        return Regex.Replace(expression, $@"(?<![.\w$]){Regex.Escape(referenceName)}\b", replacement);
+        return TsReplaceBareIdentifier(expression, referenceName, replacement);
     }
 
     static string TsReplaceForwardEnumMemberReferences(string expression, string? enumName,
@@ -4318,7 +4317,7 @@ public sealed partial class Parser
                         expression = TsReplaceEnumMemberReferences(expression, enumPair.Key, referenceName, "0");
                 }
             }
-            expression = Regex.Replace(expression, $@"(?<![.\w$]){Regex.Escape(referenceName)}\b", "0");
+            expression = TsReplaceBareIdentifier(expression, referenceName, "0");
         }
 
         return expression;
@@ -4333,51 +4332,252 @@ public sealed partial class Parser
     static string TsReplaceEnumMemberReferences(string expression, string enumName, string referenceName,
         string replacement, bool includeBareReference = true, bool includePrefixedReference = false)
     {
-        var quoted = "\"" + Regex.Escape(TsEscapeString(referenceName)) + "\"";
-        var quotedKey = "(?:\"" + Regex.Escape(TsEscapeString(referenceName)) + "\"|`" +
-                        Regex.Escape(TsEscapeString(referenceName)) + "`)";
-        expression = Regex.Replace(expression,
-            $@"\bglobalThis\s*\.\s*{Regex.Escape(enumName)}\s*\[\s*{quotedKey}\s*\]",
-            replacement);
-        expression = Regex.Replace(expression,
-            $@"(?<![.\w$]){Regex.Escape(enumName)}\s*\[\s*{quotedKey}\s*\]",
-            replacement);
-        expression = Regex.Replace(expression,
-            $@"(?<![.\w$]){Regex.Escape(enumName)}\s*\?\.\s*\[\s*{quotedKey}\s*\]",
-            replacement);
+        expression = TsReplaceEnumMemberReferencesInText(expression, enumName, referenceName, replacement,
+            includePrefixedReference);
 
         if (!TsIsIdentifierText(referenceName))
             return expression;
 
-        if (includePrefixedReference || enumName.Contains('.', StringComparison.Ordinal))
+        return includeBareReference
+            ? TsReplaceBareIdentifier(expression, referenceName, replacement)
+            : expression;
+    }
+
+    static string TsReplaceBareIdentifier(string expression, string identifier, string replacement)
+    {
+        if (!TsIsIdentifierText(identifier))
+            return expression;
+
+        StringBuilder? builder = null;
+        var copyFrom = 0;
+        var index = 0;
+        while (index <= expression.Length - identifier.Length)
         {
-            var prefixedEnumName = $@"(?:[A-Za-z_$][\w$]*\s*\.\s*)+{Regex.Escape(enumName)}";
-            expression = Regex.Replace(expression,
-                $@"(?<![.\w$]){prefixedEnumName}\s*\[\s*{quotedKey}\s*\]",
-                replacement);
-            expression = Regex.Replace(expression,
-                $@"(?<![.\w$]){prefixedEnumName}\s*\?\.\s*\[\s*{quotedKey}\s*\]",
-                replacement);
-            expression = Regex.Replace(expression,
-                $@"(?<![.\w$]){prefixedEnumName}\s*\.\s*{Regex.Escape(referenceName)}\b",
-                replacement);
-            expression = Regex.Replace(expression,
-                $@"(?<![.\w$]){prefixedEnumName}\s*\?\.\s*{Regex.Escape(referenceName)}\b",
-                replacement);
+            var found = expression.IndexOf(identifier, index, StringComparison.Ordinal);
+            if (found < 0)
+                break;
+            var after = found + identifier.Length;
+            if (TsCanReplaceBareIdentifier(expression, found, after))
+            {
+                builder ??= new StringBuilder(expression.Length);
+                builder.Append(expression, copyFrom, found - copyFrom);
+                builder.Append(replacement);
+                copyFrom = after;
+            }
+            index = after;
         }
 
-        expression = Regex.Replace(expression,
-            $@"\bglobalThis\s*\.\s*{Regex.Escape(enumName)}\s*\.\s*{Regex.Escape(referenceName)}\b",
-            replacement);
-        expression = Regex.Replace(expression,
-            $@"(?<![.\w$]){Regex.Escape(enumName)}\s*\.\s*{Regex.Escape(referenceName)}\b",
-            replacement);
-        expression = Regex.Replace(expression,
-            $@"(?<![.\w$]){Regex.Escape(enumName)}\s*\?\.\s*{Regex.Escape(referenceName)}\b",
-            replacement);
-        return includeBareReference
-            ? Regex.Replace(expression, $@"(?<![.\w$]){Regex.Escape(referenceName)}\b", replacement)
-            : expression;
+        if (builder == null)
+            return expression;
+        builder.Append(expression, copyFrom, expression.Length - copyFrom);
+        return builder.ToString();
+    }
+
+    static bool TsCanReplaceBareIdentifier(string expression, int start, int end)
+    {
+        if (start > 0 && (IsIdentifierChar(expression[start - 1], true) || expression[start - 1] == '.'))
+            return false;
+        return end >= expression.Length || !IsIdentifierChar(expression[end], true);
+    }
+
+    static string TsReplaceEnumMemberReferencesInText(string expression, string enumName, string referenceName,
+        string replacement, bool includePrefixedReference)
+    {
+        StringBuilder? builder = null;
+        var copyFrom = 0;
+        var index = 0;
+        while (index < expression.Length)
+        {
+            var tokenStart = TsFindNextIdentifierStart(expression, index);
+            if (tokenStart < 0)
+                break;
+            var tokenEnd = TsReadIdentifier(expression, tokenStart);
+            var isGlobalThis = expression.AsSpan(tokenStart, tokenEnd - tokenStart)
+                .SequenceEqual("globalThis".AsSpan());
+            var enumStart = tokenStart;
+            if (isGlobalThis)
+            {
+                var globalEnd = TsSkipWhitespace(expression, tokenEnd);
+                if (!TsTryReadDot(expression, globalEnd, out var afterGlobalDot))
+                {
+                    index = tokenEnd;
+                    continue;
+                }
+                enumStart = TsSkipWhitespace(expression, afterGlobalDot);
+            }
+
+            var enumEnd = TsTryReadEnumReference(expression, enumStart, enumName, includePrefixedReference);
+            if (enumEnd < 0)
+            {
+                index = tokenEnd;
+                continue;
+            }
+
+            var memberEnd = TsTryReadEnumMemberAccess(expression, enumEnd, referenceName);
+            if (memberEnd < 0)
+            {
+                index = Math.Max(tokenEnd, enumEnd);
+                continue;
+            }
+
+            builder ??= new StringBuilder(expression.Length);
+            builder.Append(expression, copyFrom, tokenStart - copyFrom);
+            builder.Append(replacement);
+            copyFrom = memberEnd;
+            index = memberEnd;
+        }
+
+        if (builder == null)
+            return expression;
+        builder.Append(expression, copyFrom, expression.Length - copyFrom);
+        return builder.ToString();
+    }
+
+    static int TsFindNextIdentifierStart(string expression, int index)
+    {
+        while (index < expression.Length)
+        {
+            if ((index == 0 || !IsIdentifierChar(expression[index - 1], true)) &&
+                IsIdentifierStart(expression[index], true))
+                return index;
+            index++;
+        }
+        return -1;
+    }
+
+    static int TsReadIdentifier(string expression, int index)
+    {
+        index++;
+        while (index < expression.Length && IsIdentifierChar(expression[index], true))
+            index++;
+        return index;
+    }
+
+    static int TsTryReadEnumReference(string expression, int index, string enumName, bool includePrefixedReference)
+    {
+        var enumParts = enumName.Split('.');
+        if (TsTryReadDottedName(expression, index, enumParts, out var enumEnd) &&
+            (TsCanStartReference(expression, index) ||
+             index > 0 && expression[index - 1] == '.' && TsStartsWithGlobalThisQualifier(expression, index)))
+            return enumEnd;
+
+        if (!includePrefixedReference && !enumName.Contains('.', StringComparison.Ordinal))
+            return -1;
+
+        var current = index;
+        while (current < expression.Length && IsIdentifierStart(expression[current], true))
+        {
+            var nameEnd = TsReadIdentifier(expression, current);
+            var afterName = TsSkipWhitespace(expression, nameEnd);
+            if (!TsTryReadDot(expression, afterName, out var afterDot))
+                return -1;
+            current = TsSkipWhitespace(expression, afterDot);
+            if (TsTryReadDottedName(expression, current, enumParts, out enumEnd))
+                return enumEnd;
+        }
+
+        return -1;
+    }
+
+    static bool TsTryReadDottedName(string expression, int index, string[] parts, out int end)
+    {
+        end = index;
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var part = parts[i];
+            if (!TsTextStartsKeyword(expression, end, part))
+                return false;
+            end += part.Length;
+            if (i == parts.Length - 1)
+                return true;
+            var afterPart = TsSkipWhitespace(expression, end);
+            if (!TsTryReadDot(expression, afterPart, out end))
+                return false;
+            end = TsSkipWhitespace(expression, end);
+        }
+        return true;
+    }
+
+    static int TsTryReadEnumMemberAccess(string expression, int index, string referenceName)
+    {
+        index = TsSkipWhitespace(expression, index);
+        if (TsTryReadDot(expression, index, out var afterDot))
+        {
+            afterDot = TsSkipWhitespace(expression, afterDot);
+            return TsTextStartsKeyword(expression, afterDot, referenceName) ? afterDot + referenceName.Length : -1;
+        }
+        if (index + 1 < expression.Length && expression[index] == '?' && expression[index + 1] == '.')
+        {
+            var afterOptional = TsSkipWhitespace(expression, index + 2);
+            if (TsTryReadBracketKey(expression, afterOptional, referenceName, out var bracketEnd))
+                return bracketEnd;
+            return TsTextStartsKeyword(expression, afterOptional, referenceName)
+                ? afterOptional + referenceName.Length
+                : -1;
+        }
+        return TsTryReadBracketKey(expression, index, referenceName, out var end) ? end : -1;
+    }
+
+    static bool TsTryReadBracketKey(string expression, int index, string referenceName, out int end)
+    {
+        end = index;
+        if (index >= expression.Length || expression[index] != '[')
+            return false;
+        index = TsSkipWhitespace(expression, index + 1);
+        if (index >= expression.Length || expression[index] is not '"' and not '`')
+            return false;
+        var quote = expression[index++];
+        var keyStart = index;
+        while (index < expression.Length && expression[index] != quote)
+        {
+            if (expression[index] == '\\')
+                index++;
+            index++;
+        }
+        if (index >= expression.Length)
+            return false;
+        var key = expression.Substring(keyStart, index - keyStart);
+        if (!key.Equals(TsEscapeString(referenceName), StringComparison.Ordinal))
+            return false;
+        index = TsSkipWhitespace(expression, index + 1);
+        if (index >= expression.Length || expression[index] != ']')
+            return false;
+        end = index + 1;
+        return true;
+    }
+
+    static bool TsTryReadDot(string expression, int index, out int afterDot)
+    {
+        afterDot = index;
+        if (index >= expression.Length || expression[index] != '.')
+            return false;
+        if (index + 1 < expression.Length && expression[index + 1] == '.')
+            return false;
+        afterDot = index + 1;
+        return true;
+    }
+
+    static int TsSkipWhitespace(string expression, int index)
+    {
+        while (index < expression.Length && char.IsWhiteSpace(expression[index]))
+            index++;
+        return index;
+    }
+
+    static bool TsCanStartReference(string expression, int index)
+    {
+        return index == 0 || !IsIdentifierChar(expression[index - 1], true) && expression[index - 1] != '.';
+    }
+
+    static bool TsStartsWithGlobalThisQualifier(string expression, int index)
+    {
+        var globalThis = "globalThis";
+        if (index < globalThis.Length + 1)
+            return false;
+        var start = index - globalThis.Length - 1;
+        return expression[start + globalThis.Length] == '.' &&
+               expression.AsSpan(start, globalThis.Length).SequenceEqual(globalThis.AsSpan()) &&
+               (start == 0 || !IsIdentifierChar(expression[start - 1], true));
     }
 
     static bool TsIsIdentifierText(string value)
