@@ -87,11 +87,18 @@ public static class NjsastTsValidator
             JsxFragmentFactory = "b.Fragment",
             PreserveConstEnums = true
         };
-        var ast = IsTsxLike(fileName)
-            ? TypeScriptParser.ParseTsx(source, options)
-            : TypeScriptParser.Parse(source, options);
+        var ast = IsTypeScriptLike(fileName)
+            ? IsTsxLike(fileName)
+                ? TypeScriptParser.ParseTsx(source, options)
+                : TypeScriptParser.Parse(source, options)
+            : Parser.Parse(source, new Options
+            {
+                SourceType = SourceType.Module,
+                EcmaVersion = 2022,
+                ParseJSX = IsJsxLike(fileName)
+            });
 
-        if (IsTsxLike(fileName))
+        if (IsTsxLike(fileName) || IsJsxLike(fileName))
         {
             ast = (AstToplevel)new JsxToCreateElementTreeTransformer(options).Transform(ast);
         }
@@ -185,5 +192,11 @@ public static class NjsastTsValidator
     {
         return fileName.EndsWith(".tsx", StringComparison.Ordinal) ||
                fileName.EndsWith(".mtsx", StringComparison.Ordinal);
+    }
+
+    static bool IsJsxLike(string fileName)
+    {
+        return fileName.EndsWith(".jsx", StringComparison.Ordinal) ||
+               fileName.EndsWith(".mjsx", StringComparison.Ordinal);
     }
 }

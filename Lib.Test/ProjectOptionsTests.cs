@@ -1,4 +1,5 @@
 using Lib.DiskCache;
+using Lib.Composition;
 using Lib.TSCompiler;
 using Xunit;
 
@@ -61,7 +62,7 @@ public class ProjectOptionsTests
     {
         var fs = new InMemoryFs();
         fs.WriteAllUtf8("/package.json", "{}");
-        fs.WriteAllUtf8("/.bbrc", "{ future: true, validate: true }");
+        fs.WriteAllUtf8("/.bbrc", "{ future: true, validate: true, gots: true }");
         var dc = new DiskCache.DiskCache(fs, () => fs);
         var project = new TSProject
         {
@@ -79,7 +80,18 @@ public class ProjectOptionsTests
 
         Assert.True(project.ProjectOptions.Future);
         Assert.True(project.ProjectOptions.Validate);
+        Assert.True(project.ProjectOptions.GoTs);
         Assert.False(NjsastTsValidator.IsBuildinEnabled(project.ProjectOptions.Future, project.ProjectOptions.Validate));
         Assert.True(NjsastTsValidator.IsEnabled(project.ProjectOptions.Validate));
+    }
+
+    [Fact]
+    public void NativeTypeScriptDirectoryCanBeFoundInParentNodeModules()
+    {
+        var fs = new InMemoryFs();
+        fs.WriteAllUtf8("/workspace/node_modules/@typescript/native-preview/bin/tsgo.js", "");
+
+        Assert.True(BuildCtx.TryFindNativeTypeScriptDirectory("/workspace/apps/WebApp", fs, out var directory));
+        Assert.Equal("/workspace/node_modules/@typescript/native-preview", directory);
     }
 }

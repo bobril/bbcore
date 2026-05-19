@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+- Added `.bbrc` `gots: true` option to force Go TypeScript typechecking from a project or global `tsgo` install without
+  relying on `devDependencies` detection. Builds now also log the Go typecheck error count and duration in seconds.
+
 ### Fixed
 
 - Releaser now removes temporary publish artifacts immediately after each release zip is created and removes uploaded

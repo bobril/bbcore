@@ -15,6 +15,8 @@ namespace Lib.TSCompiler;
 
 public sealed class NativeTsCompiler : ITSCompiler
 {
+    public const string GlobalTsgoExecutable = "tsgo";
+
     static readonly Regex AnsiEscapeRegex = new(
         @"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])",
         RegexOptions.Compiled);
@@ -93,9 +95,17 @@ public sealed class NativeTsCompiler : ITSCompiler
     {
         _currentDirectory = currentDirectory;
         StopWatchProcess();
+        var sw = Stopwatch.StartNew();
         var output = RunTypeScript("--project", "tsconfig.json", "--noEmit", "--pretty", "false");
+        sw.Stop();
+        Diagnostic[] diagnostics;
         lock (_lock)
+        {
             _diagnostics = ParseDiagnostics(output).ToArray();
+            diagnostics = _diagnostics;
+        }
+
+        LogTypeCheckResult(diagnostics, sw.Elapsed);
     }
 
     string RunTypeScript(params string[] arguments)
@@ -115,6 +125,19 @@ public sealed class NativeTsCompiler : ITSCompiler
 
     ProcessStartInfo CreateStartInfo()
     {
+        if (IsTsgoExecutablePath(_nativePreviewDirectory))
+        {
+            return new ProcessStartInfo(_nativePreviewDirectory)
+            {
+                WorkingDirectory = _currentDirectory.Length == 0 ? Directory.GetCurrentDirectory() : _currentDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
+                UseShellExecute = false
+            };
+        }
+
         var tsgoPath = PathUtils.Join(_nativePreviewDirectory, "bin/tsgo.js");
         var start = File.Exists(tsgoPath)
             ? new ProcessStartInfo("node")
@@ -146,6 +169,7 @@ public sealed class NativeTsCompiler : ITSCompiler
             _watchGeneration = 0;
             _watchCompiling = true;
             _watchCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            _watchStart = Stopwatch.StartNew();
         }
 
         _watchProcess = Process.Start(start)!;
@@ -221,6 +245,7 @@ public sealed class NativeTsCompiler : ITSCompiler
             {
                 _watchDiagnostics.Clear();
                 _watchCompiling = true;
+                _watchStart = Stopwatch.StartNew();
             }
         }
 
@@ -233,15 +258,20 @@ public sealed class NativeTsCompiler : ITSCompiler
 
         if (WatchCompleteRegex.IsMatch(line))
         {
+            Diagnostic[] diagnostics;
+            TimeSpan duration;
             lock (_lock)
             {
                 _diagnostics = _watchDiagnostics.ToArray();
+                diagnostics = _diagnostics;
+                duration = _watchStart?.Elapsed ?? TimeSpan.Zero;
                 _watchDiagnostics.Clear();
                 _watchCompiling = false;
                 _watchGeneration++;
                 _watchCompletion?.TrySetResult(_watchGeneration);
                 _watchCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
             }
+            LogTypeCheckResult(diagnostics, duration);
             return;
         }
 
@@ -268,6 +298,70 @@ public sealed class NativeTsCompiler : ITSCompiler
         }
 
         return diagnostics;
+    }
+
+    Stopwatch? _watchStart;
+
+    void LogTypeCheckResult(IReadOnlyCollection<Diagnostic> diagnostics, TimeSpan duration)
+    {
+        var errors = 0;
+        foreach (var diagnostic in diagnostics)
+        {
+            if (diagnostic.IsError)
+                errors++;
+        }
+
+        _logger.Info(
+            $"Go TypeScript typecheck found {errors.ToString(CultureInfo.InvariantCulture)} errors in {duration.TotalSeconds.ToString("F2", CultureInfo.InvariantCulture)}s");
+    }
+
+    internal static bool HasTsgoExecutable(string nativePreviewDirectory, IFsAbstraction fsAbstraction)
+    {
+        return fsAbstraction.FileExists(PathUtils.Join(nativePreviewDirectory, "bin/tsgo.js")) ||
+               fsAbstraction.FileExists(PathUtils.Join(nativePreviewDirectory, "bin/tsgo")) ||
+               fsAbstraction.FileExists(PathUtils.Join(nativePreviewDirectory, "bin/tsgo.exe"));
+    }
+
+    internal static bool TryFindGlobalTsgoExecutable(out string tsgoExecutable)
+    {
+        var path = Environment.GetEnvironmentVariable("PATH");
+        if (!string.IsNullOrEmpty(path))
+        {
+            foreach (var dir in path.Split(Path.PathSeparator))
+            {
+                if (string.IsNullOrWhiteSpace(dir))
+                    continue;
+                foreach (var candidate in TsgoExecutableNames())
+                {
+                    var fullPath = Path.Combine(dir, candidate);
+                    if (File.Exists(fullPath))
+                    {
+                        tsgoExecutable = fullPath;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        tsgoExecutable = "";
+        return false;
+    }
+
+    static IEnumerable<string> TsgoExecutableNames()
+    {
+        yield return "tsgo";
+        if (OperatingSystem.IsWindows())
+        {
+            yield return "tsgo.exe";
+            yield return "tsgo.cmd";
+            yield return "tsgo.bat";
+        }
+    }
+
+    static bool IsTsgoExecutablePath(string path)
+    {
+        var fileName = Path.GetFileName(path);
+        return fileName is "tsgo" or "tsgo.exe" or "tsgo.cmd" or "tsgo.bat";
     }
 
     internal static bool TryParseDiagnosticLine(string line, string currentDirectory, out Diagnostic diagnostic)

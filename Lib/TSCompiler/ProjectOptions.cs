@@ -89,6 +89,7 @@ public class ProjectOptions
     public bool LibraryMode { get; set; }
     public bool Future { get; set; }
     public bool Validate { get; set; }
+    public bool GoTs { get; set; }
 
     public void RefreshCompilerOptions()
     {
@@ -638,6 +639,7 @@ public class ProjectOptions
         LibraryMode = bbOptions.library ?? false;
         Future = bbOptions.future ?? false;
         Validate = bbOptions.validate ?? false;
+        GoTs = bbOptions.gots ?? false;
     }
 
     public BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,

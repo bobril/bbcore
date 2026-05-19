@@ -78,6 +78,23 @@ public class CompilerTests
     }
 
     [Fact]
+    public void BuildinTranspilerParsesJavaScriptAsJavaScript()
+    {
+        var output = NjsastTsValidator.TranspileToCommonJs(
+            "standalone.js",
+            """
+            export function run(ue, $, x, A, h, other) {
+                if (!ue || $ && x.oldPos < A.oldPos ? h = other(A) : h = other(x)) {
+                    return h;
+                }
+            }
+            """);
+
+        Parser.Parse(output, new Options { EcmaVersion = 2022 });
+        Assert.Contains("x.oldPos < A.oldPos", output);
+    }
+
+    [Fact]
     public void TypeScript6IgnoresDeprecatedCompilerOptionErrors()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "bbcore-ts6-" + Guid.NewGuid().ToString("N"));

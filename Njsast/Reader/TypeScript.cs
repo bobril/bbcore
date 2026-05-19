@@ -5094,8 +5094,14 @@ public sealed partial class Parser
         while (index < _input.Length)
         {
             var ch = _input[index];
-            if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 && ch is ('\n' or '\r' or ';'))
+            if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 && ch == ';')
                 return false;
+            if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 && ch is '\n' or '\r')
+            {
+                var next = TsSkipWhitespaceAndComments(index + 1);
+                if (next >= _input.Length || _input[next] is not ('|' or '&') && TsNextLineStartsStatement(next))
+                    return false;
+            }
             var allowTypeLiteral = ch == '{' && (!startedType || lastSignificant is '|' or '&' || lastWord == "is");
             if (angle == 0 && brace == 0 && paren == 0 && bracket == 0 && ch == '{' && startedType &&
                 !allowTypeLiteral)
@@ -5103,11 +5109,17 @@ public sealed partial class Parser
             if (ch is '"' or '\'')
             {
                 index = TsSkipStringLike(index, ch);
+                startedType = true;
+                lastSignificant = ch;
+                lastWord = "";
                 continue;
             }
             if (ch == '`')
             {
                 index = TsSkipTemplateLiteral(index);
+                startedType = true;
+                lastSignificant = ch;
+                lastWord = "";
                 continue;
             }
             if (IsIdentifierStart(ch, true))

@@ -41,6 +41,7 @@ public class BobrilBuildOptions
     public bool? library { get; set; }
     public bool? future { get; set; }
     public bool? validate { get; set; }
+    public bool? gots { get; set; }
     public Dictionary<string, string>? assets { get; set; }
 
     public BobrilBuildOptions Merge(BobrilBuildOptions? with)
@@ -145,6 +146,8 @@ public class BobrilBuildOptions
             future = with.future;
         if (with.validate != null)
             validate = with.validate;
+        if (with.gots != null)
+            gots = with.gots;
         if (with.assets != null)
             assets = with.assets;
         return this;
@@ -290,6 +293,15 @@ public class BobrilBuildOptions
         try
         {
             validate = bobrilSection["validate"]?.Value<bool>();
+        }
+        catch
+        {
+            // ignored
+        }
+
+        try
+        {
+            gots = bobrilSection["gots"]?.Value<bool>();
         }
         catch
         {

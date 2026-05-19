@@ -347,7 +347,7 @@ public class BuildCtx
             if (_nativeTypeScriptDirectory != null)
             {
                 project.UpdateTSConfigJson();
-                _logger.Info("Using TypeScript native preview typecheck from " + _nativeTypeScriptDirectory);
+                _logger.Info("Using Go TypeScript typecheck from " + _nativeTypeScriptDirectory);
             }
         }
 
@@ -517,16 +517,43 @@ public class BuildCtx
     string? DetectNativeTypeScriptDirectory(ProjectOptions project)
     {
         var tsProject = project.Owner;
-        if (project.TypeScriptVersionOverride || !(tsProject.DevDependencies?.Contains("@typescript/native-preview") ?? false))
+        if (!project.GoTs && (project.TypeScriptVersionOverride ||
+                              !(tsProject.DevDependencies?.Contains("@typescript/native-preview") ?? false)))
             return null;
 
-        var typeScriptDir = PathUtils.Join(tsProject.Owner.FullPath, "node_modules/@typescript/native-preview");
-        if (_diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo.js")) ||
-            _diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo")) ||
-            _diskCache.FsAbstraction.FileExists(PathUtils.Join(typeScriptDir, "bin/tsgo.exe")))
+        if (TryFindNativeTypeScriptDirectory(tsProject.Owner.FullPath, _diskCache.FsAbstraction, out var typeScriptDir))
             return typeScriptDir;
 
+        if (project.GoTs)
+        {
+            if (NativeTsCompiler.TryFindGlobalTsgoExecutable(out var tsgoExecutable))
+                return tsgoExecutable;
+            throw new InvalidOperationException(
+                "gots is enabled, but tsgo was not found in node_modules/@typescript/native-preview or on PATH");
+        }
+
         return null;
+    }
+
+    internal static bool TryFindNativeTypeScriptDirectory(string projectDirectory, IFsAbstraction fsAbstraction,
+        out string typeScriptDir)
+    {
+        var dir = PathUtils.Normalize(projectDirectory).TrimEnd('/');
+        while (!string.IsNullOrEmpty(dir))
+        {
+            typeScriptDir = PathUtils.Join(dir, "node_modules/@typescript/native-preview");
+            if (NativeTsCompiler.HasTsgoExecutable(typeScriptDir, fsAbstraction))
+                return true;
+
+            var parentSpan = PathUtils.Parent(dir);
+            var parent = parentSpan.IsEmpty ? "" : parentSpan.ToString();
+            if (parent == dir)
+                break;
+            dir = parent;
+        }
+
+        typeScriptDir = "";
+        return false;
     }
 
     public void BuildSubProjects(ProjectOptions project, bool buildOnlyOnce, BuildResult buildResult,

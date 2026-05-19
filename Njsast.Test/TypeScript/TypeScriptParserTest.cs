@@ -5547,6 +5547,47 @@ public sealed class TypeScriptParserTest
     }
 
     [Fact]
+    public void TypeScriptParserShouldKeepExportedFunctionsWithStringLiteralUnionReturnTypes()
+    {
+        var input = """
+            export function getDisplayHeight(height: Height): number | "100%" {
+                return 1;
+            }
+            export function getGroupsDisplayHeight(height: Height) {
+                return getDisplayHeight(height);
+            }
+            """;
+
+        var output = PrintTypeScript(input);
+
+        Assert.Contains("export function getDisplayHeight(height)", output);
+        Assert.Contains("return getDisplayHeight(height);", output);
+    }
+
+    [Fact]
+    public void TypeScriptParserShouldKeepExportedFunctionsWithMultilineUnionReturnTypes()
+    {
+        var input = """
+            export function getFieldNames(tree: Tree):
+                | {
+                      existing: string[] | undefined;
+                      renamed: string[] | undefined;
+                  }
+                | undefined {
+                return undefined;
+            }
+            export function getNodesInLocation(tree: Tree) {
+                return getFieldNames(tree);
+            }
+            """;
+
+        var output = PrintTypeScript(input);
+
+        Assert.Contains("export function getFieldNames(tree)", output);
+        Assert.Contains("return getFieldNames(tree);", output);
+    }
+
+    [Fact]
     public void TypeScriptParserShouldEraseStaticParameterModifiers()
     {
         var input = """
