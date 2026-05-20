@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.14.1
+
 ### Fixed
 
 - Fixed Njsast TypeScript/JSX parsing to avoid raw closing-tag source searches and use token-based generic
