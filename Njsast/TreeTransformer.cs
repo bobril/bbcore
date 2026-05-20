@@ -182,6 +182,11 @@ public abstract class TreeTransformer : TreeWalkerBase
                 list.ReplaceItemAt(i, spreadList.NodeList.AsReadOnlySpan());
                 Modified = true;
             }
+            else if (item is AstSpreadStructRefList<T> spreadRefList)
+            {
+                list.ReplaceItemAt(i, spreadRefList.NodeList.AsReadOnlySpan());
+                Modified = true;
+            }
             else
             {
                 if (originalNode != item)
@@ -206,6 +211,11 @@ public abstract class TreeTransformer : TreeWalkerBase
             else if (item is AstSpreadStructRefList<T> spreadList)
             {
                 list.ReplaceItemAt(i, spreadList.NodeList.AsReadOnlySpan());
+                Modified = true;
+            }
+            else if (item is AstSpreadStructList<T> spreadStructList)
+            {
+                list.ReplaceItemAt(i, spreadStructList.NodeList.AsReadOnlySpan());
                 Modified = true;
             }
             else

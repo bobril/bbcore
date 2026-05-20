@@ -131,6 +131,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         }
         else
         {
+            if (_project.MainFile == null)
+                return;
             bundler.PartToMainFilesMap = new Dictionary<string, IReadOnlyList<string>>
                 { { "Bundle", new[] { _project.MainFile } } };
         }

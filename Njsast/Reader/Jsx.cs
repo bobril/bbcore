@@ -20,8 +20,7 @@ public sealed partial class Parser
         {
             if (Options.ParseTypeScript && TsLooksLikeGenericOrTypeAssertion() &&
                 !TsLooksLikeJsxOpeningWithTypeArguments() &&
-                !TsLooksLikeJsxOpeningWithAttributes() &&
-                !TsLooksLikeJsxOpeningWithClosingTag())
+                !TsLooksLikeJsxOpeningWithAttributes())
                 return false;
             return true;
         }
@@ -113,25 +112,6 @@ public sealed partial class Parser
         return next == '=' || next == '>' || next == '/' || next == '{' ||
                next == '_' || next == '$' || next == ':' ||
                next >= 'a' && next <= 'z' || next >= 'A' && next <= 'Z';
-    }
-
-    bool TsLooksLikeJsxOpeningWithClosingTag()
-    {
-        var index = End.Index;
-        while (index < _input.Length)
-        {
-            var ch = _input.Get(index);
-            if (!(ch == '_' || ch == '$' || ch == '-' || ch == ':' || ch == '.' ||
-                  ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z' || ch >= '0' && ch <= '9'))
-                break;
-            index++;
-        }
-
-        if (index >= _input.Length || _input.Get(index) != '>')
-            return false;
-        var tagName = _input.Substring(End.Index, index - End.Index);
-        return tagName.Length > 0 &&
-               _input.IndexOf("</" + tagName + ">", index + 1, StringComparison.Ordinal) >= 0;
     }
 
     bool TsLooksLikeJsxOpeningWithTypeArguments()

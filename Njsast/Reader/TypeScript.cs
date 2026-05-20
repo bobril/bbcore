@@ -5726,15 +5726,58 @@ public sealed partial class Parser
         return -1;
     }
 
-    bool TsCanSkipInstantiationExpressionTypeArguments(int nextIndex)
+    bool TsCanFollowTypeArgumentsInExpression(int nextIndex)
     {
-        if (nextIndex >= _input.Length)
+        if (nextIndex >= _input.Length || _input[nextIndex] is '\n' or '\r')
             return true;
-        if (TsTextStartsKeyword(nextIndex, "as") || TsTextStartsKeyword(nextIndex, "satisfies"))
+        var ch = _input[nextIndex];
+        if (ch is '(' or '`')
             return true;
-        if (TsTextStartsKeyword(nextIndex, "instanceof") || TsTextStartsKeyword(nextIndex, "in"))
-            return true;
-        return _input[nextIndex] is ';' or ',' or ')' or ']' or '}' or '.' or '?' or '`' or '\n' or '\r' or '=';
+        if (ch is '<' or '>' or '+' or '-')
+            return false;
+        return TsTokenAtCanFollowTypeArgumentsInExpression(nextIndex);
+    }
+
+    bool TsTokenAtCanFollowTypeArgumentsInExpression(int index)
+    {
+        var tokenStart = Start;
+        var tokenEnd = End;
+        var tokenType = Type;
+        var tokenValue = Value;
+        var lastTokStart = _lastTokStart;
+        var lastTokEnd = _lastTokEnd;
+        var pos = _pos;
+        var containsEsc = _containsEsc;
+        var exprAllowed = _exprAllowed;
+        var inTemplateElement = _inTemplateElement;
+        var context = _context.ToArray();
+        try
+        {
+            _pos = MoveToIndex(index);
+            NextToken();
+            if (Type is TokenType.Relational && Value is "<" or ">" ||
+                Type is TokenType.PlusMin && Value is "+" or "-")
+                return false;
+            return CanInsertSemicolon() || TsIsExpressionOperatorAfterType() ||
+                   IsContextual("as") || IsContextual("satisfies") ||
+                   Type is TokenType.Instanceof or TokenType.In ||
+                   !TokenInformation.Types[Type].StartsExpression;
+        }
+        finally
+        {
+            Start = tokenStart;
+            End = tokenEnd;
+            Type = tokenType;
+            Value = tokenValue;
+            _lastTokStart = lastTokStart;
+            _lastTokEnd = lastTokEnd;
+            _pos = pos;
+            _containsEsc = containsEsc;
+            _exprAllowed = exprAllowed;
+            _inTemplateElement = inTemplateElement;
+            _context.Clear();
+            _context.AddRange(context);
+        }
     }
 
     bool TsStaticModifierIsFollowedByClassElementName()

@@ -533,7 +533,7 @@ public sealed partial class Parser
                         TsTrySkipTypeParameters();
                         continue;
                     }
-                    if (TsCanSkipInstantiationExpressionTypeArguments(next))
+                    if (TsCanFollowTypeArgumentsInExpression(next))
                     {
                         TsTrySkipTypeParameters();
                         continue;

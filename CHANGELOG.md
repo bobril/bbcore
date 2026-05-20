@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fixed Njsast TypeScript/JSX parsing to avoid raw closing-tag source searches and use token-based generic
+  follow checks inspired by TypeScript Go.
+- Fixed built-in TypeScript validation and bundling crashes caused by mixed `StructList`/`StructRefList` spread
+  transformer placeholders.
+- Fixed `bb build` handling of projects without a resolved main file, avoiding a null main-file bundler crash.
+
 ## 5.14.0
 
 ### Changed
