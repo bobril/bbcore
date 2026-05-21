@@ -531,17 +531,7 @@ public class BuildModuleCtx : IImportResolver
                         return true;
                     }
 
-                    if (BuildCtx.Verbose)
-                        Owner.Logger.Info("Build cache miss source info " + itemInfo.Owner.FullPath);
                 }
-                else if (BuildCtx.Verbose)
-                {
-                    Owner.Logger.Info("Build cache miss dependency " + itemInfo.Owner.FullPath);
-                }
-            }
-            else if (BuildCtx.Verbose)
-            {
-                Owner.Logger.Info("Build cache miss content " + itemInfo.Owner.FullPath);
             }
         }
 
@@ -647,9 +637,6 @@ public class BuildModuleCtx : IImportResolver
                     fbc.TranspilationDependencies = f.TranspilationDependencies;
                     bc.Store(fbc);
                     f.TakenFromBuildCache = true;
-                    if (BuildCtx!.Verbose)
-                        Owner!.Logger.Info("Build cache stored " + f.Owner.FullPath);
-                    //_owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
                     break;
                 }
                 case FileCompilationType.Css:
@@ -663,7 +650,6 @@ public class BuildModuleCtx : IImportResolver
                     fbc.TranspilationDependencies = f.TranspilationDependencies;
                     bc.Store(fbc);
                     f.TakenFromBuildCache = true;
-                    //_owner.Logger.Info("Storing to cache " + f.Owner.FullPath);
                     break;
                 }
             }

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Lib.DiskCache;
 using Lib.Utils;
 using Lib.Utils.Logger;
+using Newtonsoft.Json;
 
 namespace Lib.TSCompiler;
 
@@ -43,6 +44,7 @@ public sealed class NativeTsCompiler : ITSCompiler
     int _watchGeneration;
     bool _watchCompiling;
     string _currentDirectory = "";
+    string _typeCheckProjectPath = "tsconfig.json";
 
     public NativeTsCompiler(string nativePreviewDirectory, ILogger logger)
     {
@@ -67,6 +69,7 @@ public sealed class NativeTsCompiler : ITSCompiler
     public void CreateProgram(string currentDirectory, string[] mainFiles)
     {
         _currentDirectory = currentDirectory;
+        WriteTypeCheckProject(mainFiles);
         StopWatchProcess();
         StartWatchProcess();
         WaitForWatchCompilation(0, true);
@@ -74,6 +77,7 @@ public sealed class NativeTsCompiler : ITSCompiler
 
     public void UpdateProgram(string[] mainFiles)
     {
+        WriteTypeCheckProject(mainFiles);
     }
 
     public void TriggerUpdate()
@@ -94,9 +98,10 @@ public sealed class NativeTsCompiler : ITSCompiler
     public void CheckProgram(string currentDirectory, string[] mainFiles)
     {
         _currentDirectory = currentDirectory;
+        WriteTypeCheckProject(mainFiles);
         StopWatchProcess();
         var sw = Stopwatch.StartNew();
-        var output = RunTypeScript("--project", "tsconfig.json", "--noEmit", "--pretty", "false");
+        var output = RunTypeScript("--project", _typeCheckProjectPath, "--noEmit", "--pretty", "false");
         sw.Stop();
         Diagnostic[] diagnostics;
         lock (_lock)
@@ -158,7 +163,7 @@ public sealed class NativeTsCompiler : ITSCompiler
         var start = CreateStartInfo();
         start.ArgumentList.Add("--watch");
         start.ArgumentList.Add("--project");
-        start.ArgumentList.Add("tsconfig.json");
+        start.ArgumentList.Add(_typeCheckProjectPath);
         start.ArgumentList.Add("--noEmit");
         start.ArgumentList.Add("--pretty");
         start.ArgumentList.Add("false");
@@ -202,6 +207,29 @@ public sealed class NativeTsCompiler : ITSCompiler
             _watchProcess.Dispose();
             _watchProcess = null;
         }
+    }
+
+    void WriteTypeCheckProject(string[] mainFiles)
+    {
+        var files = new List<string>(mainFiles.Length);
+        foreach (var file in mainFiles)
+            files.Add(PathUtils.Subtract(file, _currentDirectory));
+        var project = new NativeTsTypeCheckProject
+        {
+            extends = "./tsconfig.json",
+            files = files,
+            include = Array.Empty<string>()
+        };
+        _typeCheckProjectPath = ".bbcore-tsgo-typecheck.json";
+        File.WriteAllText(PathUtils.Join(_currentDirectory, _typeCheckProjectPath),
+            JsonConvert.SerializeObject(project, Formatting.Indented));
+    }
+
+    sealed class NativeTsTypeCheckProject
+    {
+        public string extends = "";
+        public List<string> files = new();
+        public string[] include = Array.Empty<string>();
     }
 
     void WaitForWatchCompilation(int previousGeneration, bool initial)

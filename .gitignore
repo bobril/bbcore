@@ -21,6 +21,7 @@ TestResults
 .vs/
 .idea/
 .bbcore/
+**/.bbcore-tsgo-typecheck.json
 .idea/
 /bb/Properties/launchSettings.json
 /tools/bbcorenpm/node_modules

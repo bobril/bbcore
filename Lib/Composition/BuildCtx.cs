@@ -315,7 +315,7 @@ public class BuildCtx
         if (AdditionalSources != null) res.AddRange(AdditionalSources);
         if (MainFile != null) res.Add(MainFile);
         if (ExampleSources != null) res.AddRange(ExampleSources);
-        if (TestSources != null) res.AddRange(TestSources);
+        if (_includeTestSourcesInBuild && TestSources != null) res.AddRange(TestSources);
         return res.ToArray();
     }
 
