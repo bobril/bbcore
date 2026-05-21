@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.15.0
+
 ### Fixed
 
 - Fixed Go TypeScript typechecking during `bb build` to use the build source list through a generated
