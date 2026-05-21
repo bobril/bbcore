@@ -186,8 +186,6 @@ static class Program
 
             colimaStartedByReleaser = EnsureDockerRunning(projDir);
             DockerBuild(projDir, newVersion);
-            Console.WriteLine("Press Enter for finish");
-            Console.ReadLine();
             return 0;
         }
         finally
