@@ -213,7 +213,7 @@ public sealed class NativeTsCompiler : ITSCompiler
     {
         var files = new List<string>(mainFiles.Length);
         foreach (var file in mainFiles)
-            files.Add(PathUtils.Subtract(file, _currentDirectory));
+            files.Add(Path.IsPathRooted(file) ? PathUtils.Subtract(file, _currentDirectory) : file);
         var project = new NativeTsTypeCheckProject
         {
             extends = "./tsconfig.json",
