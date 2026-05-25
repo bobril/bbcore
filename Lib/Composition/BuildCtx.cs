@@ -417,9 +417,13 @@ public class BuildCtx
             mainBuildResult.MergeCommonSourceDirectory(tsProject.Owner.FullPath);
             if (_nativeTypeScriptDirectory != null)
                 project.UpdateTSConfigJson();
-            buildResult.TaskForSemanticCheck = StartTypeCheck();
+            if (_nativeTypeScriptDirectory == null)
+                buildResult.TaskForSemanticCheck = StartTypeCheck();
             if (_typeCheck == RunTypeCheck.Only)
+            {
+                buildResult.TaskForSemanticCheck = StartTypeCheck();
                 return;
+            }
             if (tryDetectChanges)
             {
                 if (!buildModuleCtx.CrawlChanges())
@@ -499,6 +503,8 @@ public class BuildCtx
             }
 
             noDependencyChangeDetected: ;
+            if (_nativeTypeScriptDirectory != null)
+                buildResult.TaskForSemanticCheck = StartTypeCheck();
             if (project.SpriteGeneration) project.SpriteGenerator.ProcessNew();
             var hasError = false;
             foreach (var item in buildResult.Path2FileInfo)

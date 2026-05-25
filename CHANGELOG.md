@@ -11,6 +11,8 @@
 - Fixed Go TypeScript typechecking during `bb build` to use the build source list through a generated
   `.bbcore-tsgo-typecheck.json` overlay instead of inherited `tsconfig.json` test/source globs, while
   preserving relative include-source paths such as package-provided declaration files.
+- Fixed intermittent Go TypeScript typecheck diagnostics during `bb build` by starting build typechecking after
+  dependency crawling has completed.
 
 ## 5.14.1
 
