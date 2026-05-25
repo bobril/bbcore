@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fixed stale Go TypeScript watch diagnostics during incremental typechecking by clearing native diagnostics and
+  touching the generated `.bbcore-tsgo-typecheck.json` overlay before watcher-triggered updates.
+
 ## 5.15.2
 
 ## 5.15.1

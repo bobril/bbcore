@@ -38,13 +38,14 @@ public sealed class NativeTsCompiler : ITSCompiler
     readonly ILogger _logger;
     readonly object _lock = new();
     readonly List<Diagnostic> _watchDiagnostics = new();
-    Diagnostic[] _diagnostics = Array.Empty<Diagnostic>();
+    Diagnostic[] _diagnostics = [];
     Process? _watchProcess;
     TaskCompletionSource<int>? _watchCompletion;
     int _watchGeneration;
     bool _watchCompiling;
     string _currentDirectory = "";
     string _typeCheckProjectPath = "tsconfig.json";
+    string[] _mainFiles = [];
 
     public NativeTsCompiler(string nativePreviewDirectory, ILogger logger)
     {
@@ -82,11 +83,17 @@ public sealed class NativeTsCompiler : ITSCompiler
 
     public void TriggerUpdate()
     {
+        WriteTypeCheckProject(_mainFiles);
         WaitForWatchCompilation(_watchGeneration, false);
     }
 
     public void ClearDiagnostics()
     {
+        lock (_lock)
+        {
+            _diagnostics = [];
+            _watchDiagnostics.Clear();
+        }
     }
 
     public Diagnostic[] GetDiagnostics()
@@ -211,6 +218,7 @@ public sealed class NativeTsCompiler : ITSCompiler
 
     void WriteTypeCheckProject(string[] mainFiles)
     {
+        _mainFiles = mainFiles;
         var files = new List<string>(mainFiles.Length);
         foreach (var file in mainFiles)
             files.Add(Path.IsPathRooted(file) ? PathUtils.Subtract(file, _currentDirectory) : file);
@@ -218,7 +226,7 @@ public sealed class NativeTsCompiler : ITSCompiler
         {
             extends = "./tsconfig.json",
             files = files,
-            include = Array.Empty<string>()
+            include = []
         };
         _typeCheckProjectPath = ".bbcore-tsgo-typecheck.json";
         File.WriteAllText(PathUtils.Join(_currentDirectory, _typeCheckProjectPath),
@@ -229,7 +237,7 @@ public sealed class NativeTsCompiler : ITSCompiler
     {
         public string extends = "";
         public List<string> files = new();
-        public string[] include = Array.Empty<string>();
+        public string[] include = [];
     }
 
     void WaitForWatchCompilation(int previousGeneration, bool initial)
