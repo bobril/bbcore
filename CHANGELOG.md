@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.15.3
+
 ### Fixed
 
 - Fixed stale Go TypeScript watch diagnostics during incremental typechecking by clearing native diagnostics and
