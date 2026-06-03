@@ -1777,22 +1777,31 @@ public class Composition
                     IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
                     if (!buildResult.HasError && typeCheckValue != "only")
                         AddUnusedDependenciesMessages(proj, buildResult, ref errors, ref warnings, messages);
+                    var buildErrors = errors;
+                    var buildWarnings = warnings;
+                    var buildMessages = messages.ToList();
+                    var buildStart = start;
                     buildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
                     {
-                        var duration = (DateTime.UtcNow - start).TotalSeconds;
-                        var allmess = IncludeSemanticMessages(_currentProject, semanticDiag.Result, ref errors,
-                            ref warnings,
-                            messages);
-                        _mainServer?.NotifyCompilationFinished(errors, warnings, duration, allmess);
+                        var semanticDiagnostics = semanticDiag.Result;
+                        if (semanticDiagnostics == null)
+                            return;
+                        var semanticErrors = buildErrors;
+                        var semanticWarnings = buildWarnings;
+                        var duration = (DateTime.UtcNow - buildStart).TotalSeconds;
+                        var allmess = IncludeSemanticMessages(_currentProject, semanticDiagnostics, ref semanticErrors,
+                            ref semanticWarnings,
+                            buildMessages);
+                        _mainServer?.NotifyCompilationFinished(semanticErrors, semanticWarnings, duration, allmess);
                         _notificationManager.SendNotification(
-                            NotificationParameters.CreateBuildParameters(errors, warnings, duration));
+                            NotificationParameters.CreateBuildParameters(semanticErrors, semanticWarnings, duration));
                         if (!buildResult.HasError) PrintMessages(allmess, true);
-                        var color = errors != 0 ? ConsoleColor.Red :
-                            warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
+                        var color = semanticErrors != 0 ? ConsoleColor.Red :
+                            semanticWarnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                         if (typeCheckValue != "no")
                         {
                             _logger.WriteLine(
-                                $"Semantic check done in {ctx.LastTypeCheckDurationSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")}",
+                                $"Semantic check done in {ctx.LastTypeCheckDurationSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(semanticErrors, "error")} and {Plural(semanticWarnings, "warning")}",
                                 color);
                         }
                     }, TaskContinuationOptions.OnlyOnRanToCompletion);

@@ -243,7 +243,7 @@ public sealed class NativeTsCompiler : ITSCompiler
     void WaitForWatchCompilation(int previousGeneration, bool initial)
     {
         TaskCompletionSource<int>? completion = null;
-        var waitUntil = DateTime.UtcNow + (initial ? TimeSpan.Zero : TimeSpan.FromMilliseconds(250));
+        var waitUntil = DateTime.UtcNow + (initial ? TimeSpan.Zero : TimeSpan.FromSeconds(5));
         lock (_lock)
         {
             if (_watchGeneration > previousGeneration)

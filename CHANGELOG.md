@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fixed Go TypeScript interactive semantic check reporting so watch diagnostics are included before printing the
+  semantic summary, and avoided reporting cancelled semantic checks as successful.
+
 ## 5.15.3
 
 ### Fixed
