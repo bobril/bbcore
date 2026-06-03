@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.15.4
+
 ### Fixed
 
 - Fixed Go TypeScript interactive semantic check reporting so watch diagnostics are included before printing the
