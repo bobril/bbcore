@@ -23,6 +23,65 @@ public class EsmToCjsTest
         AssertEquivalentToTypeScriptOracle(testData, outCjs);
     }
 
+    [Fact]
+    public void HoistsImportBindingWhenReferencedBeforeImport()
+    {
+        var input = """
+                    var target = {};
+                    reExport(target, ns);
+                    import * as ns from "./mod.js";
+                    console.log(ns.foo);
+                    """;
+        var parser = new Parser(
+            new Options
+            {
+                SourceType = SourceType.Module,
+                EcmaVersion = 2022
+            },
+            input);
+        var toplevel = parser.Parse();
+        toplevel.FigureOutScope();
+        new EsmToCjsTreeTransformer(includeExportSetters: true).Transform(toplevel);
+        toplevel.FigureOutScope();
+        var output = toplevel.PrintToString(new OutputOptions { Beautify = true });
+
+        var constIndex = output.IndexOf("const ns = __importStar", StringComparison.Ordinal);
+        var reExportIndex = output.IndexOf("reExport(target, ns)", StringComparison.Ordinal);
+
+        Assert.NotEqual(-1, constIndex);
+        Assert.NotEqual(-1, reExportIndex);
+        Assert.True(constIndex < reExportIndex, "The import binding const should be emitted before the statement that references it.");
+    }
+
+    [Fact]
+    public void PreservesImportPositionWhenNotReferencedBeforeImport()
+    {
+        var input = """
+                    console.log("before");
+                    import * as ns from "./mod.js";
+                    console.log(ns.foo);
+                    """;
+        var parser = new Parser(
+            new Options
+            {
+                SourceType = SourceType.Module,
+                EcmaVersion = 2022
+            },
+            input);
+        var toplevel = parser.Parse();
+        toplevel.FigureOutScope();
+        new EsmToCjsTreeTransformer(includeExportSetters: true).Transform(toplevel);
+        toplevel.FigureOutScope();
+        var output = toplevel.PrintToString(new OutputOptions { Beautify = true });
+
+        var consoleBeforeIndex = output.IndexOf("console.log(\"before\")", StringComparison.Ordinal);
+        var constIndex = output.IndexOf("const ns = __importStar", StringComparison.Ordinal);
+
+        Assert.NotEqual(-1, consoleBeforeIndex);
+        Assert.NotEqual(-1, constIndex);
+        Assert.True(consoleBeforeIndex < constIndex, "When there is no early reference, the import binding const should stay at the original import position.");
+    }
+
     public static (string outCjs, string outCjsMap) EsmToCjsTestCore(EsmToCjsTestData testData)
     {
         string outCjs;

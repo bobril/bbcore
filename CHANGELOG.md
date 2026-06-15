@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fixed built-in ESM-to-CJS transpiler to hoist import binding `const` declarations when they are referenced by
+  preceding statements. This avoids `ReferenceError: Cannot access ... before initialization` for code such as
+  `monaco-editor`'s `_.contribution.js` files, which rely on ESM import hoisting.
+
 ## 5.15.5
 
 ## 5.15.4

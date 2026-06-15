@@ -79,12 +79,114 @@ public class EsmToCjsTreeTransformer : TreeTransformer
 
         PatchExportedEnumIifes(toplevel);
         InsertDeferredLocalExports(toplevel);
+        HoistImportBindingsWithEarlyReferences(toplevel);
 
         if (prepend.Count == 0)
             return;
 
         for (var i = (int)prepend.Count - 1; i >= 0; i--)
             toplevel.Body.Insert(0, prepend[(uint)i]);
+    }
+
+    static bool IsImportBindingConst(AstConst constNode)
+    {
+        foreach (var def in constNode.Definitions.AsReadOnlySpan())
+        {
+            var value = def.Value;
+            if (value is AstCall { Expression: AstSymbolRef { Name: "__importStar" or "__importDefault" or "__bbcjs" }, Args.Count: 1 })
+                return true;
+            if (value is AstCall { Expression: AstSymbolRef { Name: "require" }, Args.Count: 1 })
+                return true;
+        }
+
+        return false;
+    }
+
+    void HoistImportBindingsWithEarlyReferences(AstToplevel toplevel)
+    {
+        var body = toplevel.Body;
+        var toHoist = new List<(AstConst Const, int Index)>();
+
+        for (var i = 0; i < body.Count; i++)
+        {
+            if (body[i] is not AstConst constNode || !IsImportBindingConst(constNode))
+                continue;
+
+            var targetNames = new HashSet<string>();
+            foreach (var def in constNode.Definitions.AsReadOnlySpan())
+            {
+                if (def.Name is AstSymbol symbol)
+                    targetNames.Add(symbol.Name);
+            }
+
+            if (targetNames.Count == 0)
+                continue;
+
+            var walker = new FindTopLevelSymbolRefWalker(targetNames);
+            for (var j = 0; j < i; j++)
+            {
+                walker.Walk(body[j]);
+                if (walker.Found)
+                {
+                    toHoist.Add((constNode, i));
+                    break;
+                }
+            }
+        }
+
+        if (toHoist.Count == 0)
+            return;
+
+        var newBody = new AstNode[body.Count];
+        var newIndex = 0;
+        var hoistedSet = new HashSet<AstConst>();
+        foreach (var (constNode, _) in toHoist)
+            hoistedSet.Add(constNode);
+
+        foreach (var (constNode, _) in toHoist)
+            newBody[newIndex++] = constNode;
+
+        for (var i = 0; i < body.Count; i++)
+        {
+            if (body[i] is AstConst constNode && hoistedSet.Contains(constNode))
+                continue;
+            newBody[newIndex++] = body[i];
+        }
+
+        toplevel.Body = new StructRefList<AstNode>(newBody);
+    }
+
+    class FindTopLevelSymbolRefWalker : TreeWalker
+    {
+        readonly HashSet<string> _targetNames;
+
+        public FindTopLevelSymbolRefWalker(HashSet<string> targetNames)
+        {
+            _targetNames = targetNames;
+        }
+
+        public bool Found { get; private set; }
+
+        protected override void Visit(AstNode node)
+        {
+            if (Found)
+                return;
+
+            if (node is AstSymbolRef { Thedef: not null } symbolRef && _targetNames.Contains(symbolRef.Name))
+            {
+                Found = true;
+                StopDescending();
+                return;
+            }
+
+            if (node is AstLambda or AstClass)
+            {
+                StopDescending();
+                return;
+            }
+
+            Descend();
+        }
     }
 
     void HoistDecoratedClassSelfReferenceAliasVars(AstToplevel toplevel, ref StructRefList<AstNode> prepend)

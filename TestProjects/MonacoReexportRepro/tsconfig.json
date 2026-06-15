@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "checkJs": false,
+    "declaration": true,
+    "experimentalDecorators": true,
+    "jsx": "react",
+    "lib": [
+      "es2022",
+      "dom"
+    ],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "noEmitHelpers": true,
+    "preserveConstEnums": false,
+    "reactNamespace": "b",
+    "removeComments": false,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "sourceMap": true,
+    "target": "es2022",
+    "resolveJsonModule": true
+  },
+  "files": [
+    "node_modules/bobril/jsx.d.ts"
+  ],
+  "include": [
+    "**/*"
+  ]
+}

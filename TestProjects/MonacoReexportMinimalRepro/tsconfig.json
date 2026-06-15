@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "lib": [
+      "es2022",
+      "dom"
+    ],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "noEmitHelpers": true,
+    "removeComments": false,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "sourceMap": true,
+    "target": "es2022",
+    "resolveJsonModule": true
+  },
+  "include": [
+    "**/*"
+  ]
+}
