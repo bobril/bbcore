@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.16.0
+
 ### Fixed
 
 - Fixed generated `tsconfig.json` files on Windows to keep absolute file paths when the referenced file is on a
