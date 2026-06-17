@@ -112,6 +112,11 @@ public static class PathUtils
 
     public static string Subtract(string pathA, string pathB)
     {
+        pathA = Normalize(pathA);
+        pathB = Normalize(pathB);
+        if (HasDifferentWindowsDrive(pathA, pathB))
+            return pathA;
+
         if (pathB.EndsWith("/")) pathB = pathB.Substring(0, pathB.Length - 1);
         if (pathA.Length > pathB.Length + 1 && pathA.StartsWith(pathB) && pathA[pathB.Length] == '/')
         {
@@ -143,6 +148,19 @@ public static class PathUtils
 
         sb.Append(pathA.Substring(commonStart));
         return sb.ToString();
+    }
+
+    static bool HasDifferentWindowsDrive(string pathA, string pathB)
+    {
+        if (!IsWindowsDriveRootedPath(pathA) || !IsWindowsDriveRootedPath(pathB))
+            return false;
+
+        return pathA[0] != pathB[0];
+    }
+
+    static bool IsWindowsDriveRootedPath(string path)
+    {
+        return path.Length >= 3 && path[1] == ':' && path[2] == '/';
     }
 
     public static string GetFile(string fn)

@@ -126,4 +126,24 @@ public class ProjectOptionsTests
         Assert.Contains("src/index.ts", files);
         Assert.Contains("spec/test.spec.ts", files);
     }
+
+    [Fact]
+    public void PathSubtractKeepsAbsoluteWindowsPathOnDifferentDrive()
+    {
+        var path = PathUtils.Subtract(
+            @"C:\Users\user\.bbcore\tools\jasmine400.d.ts",
+            @"D:\Repositories\bbcore-local");
+
+        Assert.Equal("C:/Users/user/.bbcore/tools/jasmine400.d.ts", path);
+    }
+
+    [Fact]
+    public void PathSubtractRelativizesWindowsPathOnSameDrive()
+    {
+        var path = PathUtils.Subtract(
+            @"D:\Repositories\.bbcore\tools\jasmine400.d.ts",
+            @"D:\Repositories\bbcore-local\Project");
+
+        Assert.Equal("../../.bbcore/tools/jasmine400.d.ts", path);
+    }
 }

@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Fixed generated `tsconfig.json` files on Windows to keep absolute file paths when the referenced file is on a
+  different drive than the project root.
 - Fixed built-in ESM-to-CJS transpiler to hoist import binding `const` declarations when they are referenced by
   preceding statements. This avoids `ReferenceError: Cannot access ... before initialization` for code such as
   `monaco-editor`'s `_.contribution.js` files, which rely on ESM import hoisting.
