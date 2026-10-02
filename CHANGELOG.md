@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.17.0
+
 ### Fixed
 
 - Fixed `bb test --filter` being ignored: the test server gave a test client that connected after the run had started
