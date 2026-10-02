@@ -33,6 +33,7 @@ class TestServer
     }
 
     public string Url { get; internal set; }
+    public string SpecFilter { get; private set; } = "";
     public IDictionary<string, SourceMap> SourceMaps { get; internal set; }
 
     public ILongPollingConnectionHandler NewConnectionHandler()
@@ -44,6 +45,7 @@ class TestServer
     {
         _runid++;
         Url = url;
+        SpecFilter = specFilter;
         SourceMaps = sourceMaps;
         LastResults.Clear();
         foreach (var client in Clients.Keys)

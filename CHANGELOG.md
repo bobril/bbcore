@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fixed `bb test --filter` being ignored: the test server gave a test client that connected after the run had started
+  the run's URL but not its spec filter, and the headless browser started by `bb test` always connects after that, so
+  every spec ran.
+
 ## 5.16.0
 
 ### Fixed

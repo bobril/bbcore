@@ -35,6 +35,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
     {
         _testServer.Clients.TryAdd(this, this);
         _url = _testServer.Url;
+        _specFilter = _testServer.SpecFilter;
         _connection = connection;
     }
 
