@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Lib.Composition;
+using Lib.Utils.CommandLineParser.Definitions;
+using Lib.Utils.CommandLineParser.Parser;
 using Lib.Utils.Logger;
 using Lib.WebServer;
 using Newtonsoft.Json.Linq;
@@ -10,6 +12,16 @@ namespace Lib.Test;
 
 public class TestServerSpecFilterTests
 {
+    [Fact]
+    public void TestCommandAcceptsFilePathAlongsideSpecFilter()
+    {
+        var command = Assert.IsType<TestCommand>(CommandLineParser.Parse(
+            ["test", "--testFilePath", "spec/a test.spec.ts", "--filter", "^suite spec$"], [new TestCommand()]));
+
+        Assert.Equal("spec/a test.spec.ts", command.TestFilePath.Value);
+        Assert.Equal("^suite spec$", command.SpecFilter.Value);
+    }
+
     const string UserAgent =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36";
 

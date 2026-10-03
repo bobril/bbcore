@@ -213,6 +213,15 @@ add additional directories where to search.
         "testDirectories": [ "spec" ]
     }
 
+To build and run tests from a single file, pass its absolute path or a path relative to the project directory:
+
+    bb test --testFilePath spec/common/scripts.spec.ts --filter "^scripts getSafeVariableName number at the start$"
+
+`--testFilePath` selects one of the discovered test files before compilation and bundling. Its imports and the
+project's normal entry points are still included. The optional `--filter` further selects tests by name within
+that file; on its own, `--filter` still builds all test files. A path that does not match a discovered test file
+is an error. IDE wrappers must forward the test file path to `bb test` as well as the name filter.
+
 ## Warnings As Errors
 
     {

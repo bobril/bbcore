@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Added
+
+- Added `bb test --testFilePath <path>` to select a test file before compilation and bundling, avoiding loading
+  unrelated test files. Supports absolute and project-relative paths and can be combined with `--filter`.
+
 ## 5.17.0
 
 ### Fixed

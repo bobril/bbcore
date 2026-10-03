@@ -36,6 +36,10 @@ public class TestCommand : CommonParametersBaseCommand
     public CommandLineArgumentString SpecFilter { get; } =
         new("enable/disable tests matching a pattern", words: new[] { "-f", "--filter" });
 
+    public CommandLineArgumentString TestFilePath { get; } =
+        new("build and run only this test file (absolute or relative to the project directory)",
+            words: ["--testFilePath"]);
+
     public CommandLineArgumentEnumValues Coverage { get; } = new(
         "calculate code coverage",
         new[] { "-c", "--coverage" },

@@ -137,6 +137,59 @@ public class ProjectOptionsTests
         Assert.Equal("C:/Users/user/.bbcore/tools/jasmine400.d.ts", path);
     }
 
+    [Theory]
+    [InlineData("spec/selected.spec.ts")]
+    [InlineData("./spec/selected.spec.ts")]
+    [InlineData("spec/../spec/selected.spec.ts")]
+    [InlineData(@"spec\selected.spec.ts")]
+    [InlineData("/project/spec/selected.spec.ts")]
+    public void TestFilePathSelectsOneSourceAndPreservesCustomJasmineDeclarations(string testFilePath)
+    {
+        var options = CreateTestSourceOptions();
+
+        options.RefreshTestSources(testFilePath);
+
+        Assert.Equal(["/project/spec/selected.spec.ts"], options.TestSources);
+        Assert.Equal("/project/spec/jasmine.d.ts", options.JasmineDts);
+
+        options.RefreshTestSources();
+
+        Assert.Equal(["/project/spec/other.spec.ts", "/project/spec/selected.spec.ts"], options.TestSources);
+    }
+
+    [Theory]
+    [InlineData("spec/missing.spec.ts")]
+    [InlineData("outside.spec.ts")]
+    [InlineData("spec/jasmine.d.ts")]
+    [InlineData("")]
+    public void TestFilePathRejectsPathsOutsideDiscoveredTests(string testFilePath)
+    {
+        var options = CreateTestSourceOptions();
+
+        var exception = Assert.Throws<ArgumentException>(() => options.RefreshTestSources(testFilePath));
+
+        Assert.Contains("was not found among the project's test sources", exception.Message);
+    }
+
+    static ProjectOptions CreateTestSourceOptions()
+    {
+        var fs = new InMemoryFs();
+        fs.WriteAllUtf8("/project/package.json", "{ bobril: { testDirectories: [ 'spec' ] } }");
+        fs.WriteAllUtf8("/project/spec/selected.spec.ts", "describe('selected', () => {});");
+        fs.WriteAllUtf8("/project/spec/other.spec.ts", "describe('other', () => {});");
+        fs.WriteAllUtf8("/project/spec/jasmine.d.ts", "// custom Jasmine declarations");
+        fs.WriteAllUtf8("/project/outside.spec.ts", "describe('outside', () => {});");
+        var dc = new DiskCache.DiskCache(fs, () => fs);
+        var project = TSProject.Create((IDirectoryCache)dc.TryGetItem("/project")!, dc, new DummyLogger(), null)!;
+        project.IsRootProject = true;
+        project.ProjectOptions!.Tools = new ToolsDir.ToolsDir(
+            PathUtils.Join(PathUtils.Normalize(Environment.CurrentDirectory), ".bbcore/tools"), new DummyLogger(),
+            new NativeFsAbstraction());
+        project.ProjectOptions.ForbiddenDependencyUpdate = true;
+        project.LoadProjectJson(true, null);
+        return project.ProjectOptions;
+    }
+
     [Fact]
     public void PathSubtractRelativizesWindowsPathOnSameDrive()
     {

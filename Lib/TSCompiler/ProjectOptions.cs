@@ -178,7 +178,7 @@ public class ProjectOptions
         }
     }
 
-    public void RefreshTestSources()
+    public void RefreshTestSources(string? testFilePath = null)
     {
         Tools.SetJasmineVersion(JasmineVersion);
         JasmineDts = Tools.JasmineDtsPath;
@@ -202,6 +202,18 @@ public class ProjectOptions
             {
                 RecursiveFileSearch(Owner.Owner, Owner.DiskCache, fileRegex, res);
             }
+        }
+
+        if (testFilePath != null)
+        {
+            var fullPath = PathUtils.RealPath(PathUtils.Normalize(
+                PathUtils.Join(Owner.Owner.FullPath, PathUtils.Normalize(testFilePath))));
+            var comparison = OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            res.RemoveAll(path => !path.Equals(fullPath, comparison));
+            if (res.Count == 0)
+                throw new ArgumentException($"Test file '{testFilePath}' was not found among the project's test sources.");
         }
 
         res.Sort(StringComparer.Ordinal);

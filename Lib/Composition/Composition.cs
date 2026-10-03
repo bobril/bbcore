@@ -871,7 +871,7 @@ public class Composition
             proj.GenerateCode();
             proj.RefreshCompilerOptions();
             proj.RefreshMainFile();
-            proj.RefreshTestSources();
+            proj.RefreshTestSources(testCommand.TestFilePath.Value);
             proj.SpriterInitialization(_mainBuildResult);
             if (proj.TestSources is { Count: > 0 })
             {

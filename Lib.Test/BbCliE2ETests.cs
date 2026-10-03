@@ -10,6 +10,50 @@ namespace Lib.Test;
 [Collection("Serial")]
 public class BbCliE2ETests
 {
+    [Theory]
+    [InlineData(false, "no")]
+    [InlineData(true, "yes")]
+    public void TestFilePathBuildsOnlySelectedTestAndItsDependencies(bool absolutePath, string typeCheck)
+    {
+        var bbDll = Path.Combine(FindRepoRoot(), "bb", "bin", "Debug", "net10.0", "bb.dll");
+        var projectDir = Path.Combine(Path.GetTempPath(), "bbcore-test-file-e2e-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(projectDir, "spec"));
+        try
+        {
+            File.WriteAllText(Path.Combine(projectDir, "package.json"),
+                """{"name":"test-file-e2e","main":"index.ts","bobril":{"dependencies":"disabled"}}""");
+            File.WriteAllText(Path.Combine(projectDir, "index.ts"), "export const value = 1;");
+            File.WriteAllText(Path.Combine(projectDir, "spec", "helper.ts"),
+                "export const value = 'selected-dependency-marker';");
+            File.WriteAllText(Path.Combine(projectDir, "spec", "selected.spec.ts"),
+                """
+                import { value } from './helper';
+                describe('selected-suite-marker', () => {
+                    it('works', () => expect(value).toBe('selected-dependency-marker'));
+                });
+                """);
+            // This import would fail the build if the unrelated test were compiled.
+            File.WriteAllText(Path.Combine(projectDir, "spec", "other.spec.ts"),
+                "import './missing-dependency'; describe('unrelated-suite-marker', () => {});");
+            var testPath = absolutePath ? Path.Combine(projectDir, "spec", "selected.spec.ts") : "spec/selected.spec.ts";
+
+            RunBb(bbDll, projectDir, "test", "--testFilePath", testPath,
+                "--filter", "^selected-suite-marker works$", "--dir", "dist", "-t", typeCheck);
+
+            var distDir = Path.Combine(projectDir, "dist");
+            Assert.True(File.Exists(Path.Combine(distDir, "test.html")));
+            var bundle = string.Join("\n", Directory.EnumerateFiles(distDir, "*.js", SearchOption.AllDirectories)
+                .Select(File.ReadAllText));
+            Assert.Contains("selected-suite-marker", bundle);
+            Assert.Contains("selected-dependency-marker", bundle);
+            Assert.DoesNotContain("unrelated-suite-marker", bundle);
+        }
+        finally
+        {
+            DeleteFixtureProject(projectDir);
+        }
+    }
+
     [Fact]
     public void BuildCommandsWorkForProjectUsingBobrilG11n()
     {
