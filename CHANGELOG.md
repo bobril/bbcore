@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.18.0
+
 ### Added
 
 - Added `bb test --testFilePath <path>` to select a test file before compilation and bundling, avoiding loading
