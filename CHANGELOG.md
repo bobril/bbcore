@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fixed `bb test` holding back the test result for about 30 seconds after the tests had finished on Windows. When
+  `chrome.exe` handed over to a detached browser process and exited, that browser kept its temporary profile directory
+  locked, because the kill-on-close job was only closed after the directory delete had retried 20 times. The job is now
+  closed before the delete, the delete gives up after about 3 seconds, and a browser still holding the directory is
+  killed through PowerShell, since the `System.Management` (WMI) based scan always threw in the trimmed release build and
+  was silently ignored. The unused `System.Management` package reference was removed.
+
 ## 5.18.0
 
 ### Added
