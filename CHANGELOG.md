@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 5.18.1
+
 ### Fixed
 
 - Fixed `bb test` holding back the test result for about 30 seconds after the tests had finished on Windows. When
