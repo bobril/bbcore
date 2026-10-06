@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Management;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Threading;
 using Lib.DiskCache;
 using Lib.Utils;
@@ -150,17 +148,26 @@ public class BrowserProcessFactory : IBrowserProcessFactory
         browserProcess.BeginErrorReadLine();
         browserProcess.BeginOutputReadLine();
 
-        var jobHandle = IntPtr.Zero;
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            jobHandle = CreateKillOnCloseJobObject();
-            if (jobHandle != IntPtr.Zero)
-            {
-                AssignProcessToJobObject(jobHandle, browserProcess.Handle);
-            }
-        }
+        var jobHandle = CreateKillOnCloseJobFor(browserProcess);
 
         return new LocalBrowserProcess(directoryInfo, browserProcess, _verbose, jobHandle);
+    }
+
+    /// <summary>
+    /// Windows only: puts <paramref name="process"/> (and everything it starts later) into a job that kills all of its
+    /// processes when the returned handle is closed. Returns <see cref="IntPtr.Zero"/> when not available.
+    /// </summary>
+    internal static IntPtr CreateKillOnCloseJobFor(Process process)
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return IntPtr.Zero;
+        var jobHandle = CreateKillOnCloseJobObject();
+        if (jobHandle != IntPtr.Zero)
+        {
+            AssignProcessToJobObject(jobHandle, process.Handle);
+        }
+
+        return jobHandle;
     }
 
     [DllImport("kernel32.dll", SetLastError = true)]
@@ -290,14 +297,17 @@ public class BrowserProcessFactory : IBrowserProcessFactory
             AppDomain.CurrentDomain.UnhandledException -= _unhandledExceptionHandler;
             KillProcessTree(Process);
 
-            if (_userDirectory != null && OperatingSystem.IsWindows())
+            // The job also holds browser processes that outlive the launched one (chrome.exe can hand over to a detached
+            // browser process and exit). Close it before deleting the profile directory, otherwise that browser keeps
+            // the directory locked and every delete attempt fails.
+            if (_jobHandle != IntPtr.Zero)
             {
-                KillDetachedWindowsBrowserProcesses(_userDirectory.FullName);
+                CloseHandle(_jobHandle);
             }
 
             try
             {
-                Process.WaitForExit(5000);
+                Process.WaitForExit(1000);
             }
             catch
             {
@@ -305,11 +315,6 @@ public class BrowserProcessFactory : IBrowserProcessFactory
             }
 
             DeleteUserDirectoryWithRetry();
-
-            if (_jobHandle != IntPtr.Zero)
-            {
-                CloseHandle(_jobHandle);
-            }
         }
 
         static void KillProcessTree(Process process)
@@ -327,47 +332,40 @@ public class BrowserProcessFactory : IBrowserProcessFactory
             }
         }
 
-        [SupportedOSPlatform("windows")]
-        static void KillDetachedWindowsBrowserProcesses(string userDirectory)
+        // Fallback for a profile directory that is still locked after the job was closed: kill the browsers whose command
+        // line mentions the (random, unique) directory name. It shells out to PowerShell because System.Management (WMI)
+        // throws TypeInitializationException in the trimmed release build, which the previous implementation swallowed.
+        void KillDetachedWindowsBrowserProcesses()
         {
-            try
-            {
-                using var searcher = new ManagementObjectSearcher(
-                    "SELECT ProcessId, Name, CommandLine FROM Win32_Process " +
-                    "WHERE Name = 'chrome.exe' OR Name = 'msedge.exe' OR Name = 'chromium.exe'");
-                using var processes = searcher.Get();
-                foreach (ManagementObject processInfo in processes)
-                {
-                    var commandLine = processInfo["CommandLine"] as string;
-                    if (commandLine == null ||
-                        commandLine.IndexOf(userDirectory, StringComparison.OrdinalIgnoreCase) < 0)
-                    {
-                        continue;
-                    }
-
-                    var processId = Convert.ToInt32(processInfo["ProcessId"]);
-                    using var process = Process.GetProcessById(processId);
-                    KillProcessTree(process);
-                }
-            }
-            catch
-            {
-                // ignored
-            }
+            if (_userDirectory == null)
+                return;
+            var script =
+                "Get-CimInstance Win32_Process | Where-Object { $_.Name -in 'chrome.exe','msedge.exe','chromium.exe' -and $_.CommandLine -like '*" +
+                _userDirectory.Name +
+                "*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }";
+            RunWindowsCommand("powershell.exe", "-NoProfile -NonInteractive -Command \"" + script + "\"");
         }
 
         void DeleteUserDirectoryWithRetry()
         {
             if (_userDirectory == null)
                 return;
+            // It is only a temp directory: never hold the caller (and the test result) up for long because of it.
+            var deadline = DateTime.UtcNow.AddSeconds(3);
+            var killedDetached = false;
             var repetition = 0;
-            while (repetition++ < 20)
+            while (repetition++ < 20 && DateTime.UtcNow < deadline)
             {
                 if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
                     RunWindowsCommand("cmd", "/C rd /s /q \"" + _userDirectory.FullName + "\"");
                     if (!Directory.Exists(_userDirectory.FullName))
                         return;
+                    if (!killedDetached)
+                    {
+                        killedDetached = true;
+                        KillDetachedWindowsBrowserProcesses();
+                    }
                 }
                 else
                 {
@@ -382,7 +380,7 @@ public class BrowserProcessFactory : IBrowserProcessFactory
                     }
                 }
 
-                Thread.Sleep(100 * repetition);
+                Thread.Sleep(Math.Min(100 * repetition, 300));
             }
         }
 
