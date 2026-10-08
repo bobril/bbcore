@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using Njsast.EsmToCjs;
 using Njsast.Ast;
@@ -181,6 +182,8 @@ public class EsmToCjsTest
                 WorkingDirectory = TestEnvironment.RepositoryRoot,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
                 UseShellExecute = false
             };
             psi.ArgumentList.Add("-e");
