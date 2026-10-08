@@ -1,3 +1,7 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Njsast.AstDump;
 using Njsast.Bobril;
 using Njsast.Compress;
@@ -127,6 +131,30 @@ public class CompressTest
     public void ShouldHoistVariableToBeginOfScopeWith2Passes(CompressTestData testData)
     {
         RunAndAssert(testData, VariableHosting2PassesCompressOptions);
+    }
+
+    [Theory]
+    [InlineData(
+        "if(flag)var a=first(),b=second();else var c=third(),d=fourth();",
+        "var a,b,c,d;if(flag){a=first();b=second()}else{c=third();d=fourth()}")]
+    [InlineData(
+        "var k;if(k){var n=call();if(null==n)k=\"\";else{if(null==n)n=4;else var r=1,n=r?2:3;}}",
+        "var n,k,r;if(k){n=call();if(null==n)k=\"\";else{if(null==n)n=4;else{r=1;n=r?2:3}}}")]
+    public async Task ParallelVariableHoistingKeepsConditionalAssignments(string input, string expected)
+    {
+        const int workers = 8;
+        using var start = new Barrier(workers);
+        var tasks = Enumerable.Range(0, workers).Select(_ => Task.Factory.StartNew(() =>
+        {
+            Assert.True(start.SignalAndWait(TimeSpan.FromSeconds(30)), "Workers did not start together.");
+            for (var iteration = 0; iteration < 256; iteration++)
+            {
+                var data = new CompressTestData { InputFileName = "parallel.js", InputContent = input };
+                var (_, actual, _) = CompressTestCore(data, VariableHosting2PassesCompressOptions);
+                Assert.Equal(expected, actual);
+            }
+        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)).ToArray();
+        await Task.WhenAll(tasks);
     }
 
     [Theory]
