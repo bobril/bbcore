@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using Njsast.EsmToCjs;
 using Njsast.Ast;
@@ -178,13 +179,16 @@ public class EsmToCjsTest
         {
             var psi = new ProcessStartInfo("node")
             {
+                WorkingDirectory = TestEnvironment.RepositoryRoot,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
                 UseShellExecute = false
             };
             psi.ArgumentList.Add("-e");
             psi.ArgumentList.Add("""
-const ts = require('/Users/borisletocha/Research/bbcore/TestProjects/BbApp/node_modules/typescript');
+const ts = require('./TestProjects/BbApp/node_modules/typescript');
 const fs = require('fs');
 const fileName = process.argv[1];
 const input = fs.readFileSync(fileName, 'utf8');

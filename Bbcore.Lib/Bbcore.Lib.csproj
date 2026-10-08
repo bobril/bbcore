@@ -8,6 +8,7 @@
         <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
         <Authors>Tomáš Zálešák, Boris Letocha</Authors>
         <Nullable>enable</Nullable>
+        <DefineConstants>$(DefineConstants);BBCORE_LIB</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,7 +23,6 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="ProxyKit" Version="2.3.4"/>
         <PackageReference Include="SemanticVersioning" Version="3.0.0"/>
-        <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
         <PackageReference Include="System.Reactive" Version="6.1.0" />
         <PackageReference Include="System.Management" Version="10.0.0"/>
         <PackageReference Include="UAParser" Version="3.1.47"/>
@@ -389,8 +389,8 @@
         <Compile Include="..\Lib\TSCompiler\ProjectOptions.cs">
             <Link>TSCompiler\ProjectOptions.cs</Link>
         </Compile>
-        <Compile Include="..\Lib\TSCompiler\SpriteHolder.cs">
-            <Link>TSCompiler\SpriteHolder.cs</Link>
+        <Compile Include="..\Lib\TSCompiler\ISpriteGenerator.cs">
+            <Link>TSCompiler\ISpriteGenerator.cs</Link>
         </Compile>
         <Compile Include="..\Lib\TSCompiler\StructuralEqualityComparer.cs">
             <Link>TSCompiler\StructuralEqualityComparer.cs</Link>
@@ -443,8 +443,8 @@
         <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\JSGlobalsCommand.cs">
             <Link>Utils\CommandLineParser\Definitions\JSGlobalsCommand.cs</Link>
         </Compile>
-        <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\JSLocateCommand.cs">
-            <Link>Utils\CommandLineParser\Definitions\JSLocateCommand.cs</Link>
+        <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\JsLocateCommand.cs">
+            <Link>Utils\CommandLineParser\Definitions\JsLocateCommand.cs</Link>
         </Compile>
         <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\PackageManagerAddCommand.cs">
             <Link>Utils\CommandLineParser\Definitions\PackageManagerAddCommand.cs</Link>

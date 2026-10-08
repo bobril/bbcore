@@ -2,6 +2,16 @@
 
 ## [unreleased]
 
+### Changed
+
+- Migrated bbcore sprite atlas generation from ImageSharp to SkiaSharp, preserving exact RGB (128, 128, 128)
+  recoloring and alpha multiplication. ImageSharp and sprite image processing dependencies are no longer
+  included in `Bbcore.Lib`; built-in sprite atlas generation is only available in bbcore.
+
+### Fixed
+
+- Fixed the linked `JsLocateCommand.cs` filename casing so `Bbcore.Lib` builds on case-sensitive filesystems.
+
 ## 5.18.1
 
 ### Fixed

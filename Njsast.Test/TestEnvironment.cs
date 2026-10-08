@@ -6,6 +6,8 @@ namespace Test;
 
 static class TestEnvironment
 {
+    public static string RepositoryRoot => Directory.GetParent(ProjectRoot)!.FullName;
+
     [ModuleInitializer]
     public static void Initialize()
     {
