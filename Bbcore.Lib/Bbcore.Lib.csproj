@@ -443,8 +443,8 @@
         <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\JSGlobalsCommand.cs">
             <Link>Utils\CommandLineParser\Definitions\JSGlobalsCommand.cs</Link>
         </Compile>
-        <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\JSLocateCommand.cs">
-            <Link>Utils\CommandLineParser\Definitions\JSLocateCommand.cs</Link>
+        <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\JsLocateCommand.cs">
+            <Link>Utils\CommandLineParser\Definitions\JsLocateCommand.cs</Link>
         </Compile>
         <Compile Include="..\Lib\Utils\CommandLineParser\Definitions\PackageManagerAddCommand.cs">
             <Link>Utils\CommandLineParser\Definitions\PackageManagerAddCommand.cs</Link>
