@@ -18,10 +18,11 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
         public AstVarDef AstVarDef { get; }
         public bool CanMoveInitialization { get; }
 
-        public static readonly HashSet<AstBlock> CreatedIfBlocks = new();
+        readonly Dictionary<AstVar, AstBlock> _createdIfBlocks;
 
-        public VariableDefinition(AstBlock parentBlock, AstNode parent, AstVar astVar, AstVarDef astVarDef, bool canMoveInitialization, int originalIndexInVar)
+        public VariableDefinition(AstBlock parentBlock, AstNode parent, AstVar astVar, AstVarDef astVarDef, bool canMoveInitialization, int originalIndexInVar, Dictionary<AstVar, AstBlock> createdIfBlocks)
         {
+            _createdIfBlocks = createdIfBlocks;
             ParentBlock = parentBlock;
             Parent = parent;
             AstVar = astVar;
@@ -79,7 +80,7 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
                     if (astIf.Body == AstVar)
                     {
                         var block = new AstBlock(AstVar);
-                        CreatedIfBlocks.Add(block);
+                        _createdIfBlocks.Add(AstVar, block);
                         block.Body.AddRange(VarDefsWithInitialization());
                         block.Body.ReplaceItem(AstVarDef, ConvertVariableDefinitionToAssignStatement());
                         astIf.Body = block;
@@ -90,7 +91,7 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
                     if (astIf.Alternative == AstVar)
                     {
                         var block = new AstBlock(AstVar);
-                        CreatedIfBlocks.Add(block);
+                        _createdIfBlocks.Add(AstVar, block);
                         block.Body.AddRange(VarDefsWithInitialization());
                         block.Body.ReplaceItem(AstVarDef, ConvertVariableDefinitionToAssignStatement());
                         astIf.Alternative = block;
@@ -98,18 +99,9 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
                         return;
                     }
 
-                    if (astIf.Body is AstBlock bodyBlock &&
-                        CreatedIfBlocks.Contains(bodyBlock))
+                    if (_createdIfBlocks.TryGetValue(AstVar, out var createdBlock))
                     {
-                        bodyBlock.Body.ReplaceItem(AstVarDef, ConvertVariableDefinitionToAssignStatement());
-                        RemoveVarDefFromVar();
-                        return;
-                    }
-
-                    if (astIf.Alternative is AstBlock alternativeBlock &&
-                        CreatedIfBlocks.Contains(alternativeBlock))
-                    {
-                        alternativeBlock.Body.ReplaceItem(AstVarDef, ConvertVariableDefinitionToAssignStatement());
+                        createdBlock.Body.ReplaceItem(AstVarDef, ConvertVariableDefinitionToAssignStatement());
                         RemoveVarDefFromVar();
                         return;
                     }
@@ -201,6 +193,7 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
     bool _canPerformMergeDefAndInit;
     bool _isInRightSideOfBinary;
     int _astVarCount;
+    readonly Dictionary<AstVar, AstBlock> _createdIfBlocks = [];
     List<string> _variableWriteOrder = new List<string>();
     readonly NodeFinderTreeWalker<AstCall> _callNodeFinderTreeWalker = new NodeFinderTreeWalker<AstCall>();
     readonly NodeFinderTreeWalker<AstSymbolRef> _symbolRefNodeFinderTreeWalker = new NodeFinderTreeWalker<AstSymbolRef>();
@@ -253,7 +246,7 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
         _isInScope = false;
         _canPerformMergeDefAndInit = false;
         _astVarCount = 0;
-        VariableDefinition.CreatedIfBlocks.Clear();
+        _createdIfBlocks.Clear();
         _variableWriteOrder = new List<string>();
     }
 
@@ -505,7 +498,8 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
                     astVar,
                     astVarDefinition,
                     usage.CanMoveInitialization && canMoveInitialization,
-                    index++);
+                    index++,
+                    _createdIfBlocks);
             usage.Definitions.Add(variableDefinition);
         }
 

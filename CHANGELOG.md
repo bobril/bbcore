@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Fixed intermittent failures during parallel JavaScript compression by isolating variable-hoisting state between compressor instances.
+- Fixed variable hoisting selecting the wrong branch when both sides of an `if/else` declare multiple initialized variables.
+
 ## 6.0.0
 
 ### Changed
