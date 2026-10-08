@@ -75,7 +75,8 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="ProxyKit" Version="2.3.4"/>
         <PackageReference Include="SemanticVersioning" Version="3.0.0"/>
-        <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
+        <PackageReference Include="SkiaSharp" Version="4.153.1" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
         <PackageReference Include="System.Collections.Concurrent" Version="4.3.0"/>
         <PackageReference Include="System.IO.FileSystem.Primitives" Version="4.3.0"/>
         <PackageReference Include="System.Reactive" Version="6.1.0" />

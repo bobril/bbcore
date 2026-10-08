@@ -43,7 +43,7 @@ public class ProjectOptions
     public ITSCompilerOptions? CompilerOptions;
     public string? AdditionalResourcesDirectory;
     public bool SpriteGeneration;
-    public SpriteHolder SpriteGenerator;
+    public ISpriteGenerator SpriteGenerator;
     public string BundlePngUrl;
     public bool GenerateSpritesTs;
     public string Variant;
@@ -118,8 +118,12 @@ public class ProjectOptions
     {
         if (SpriteGeneration && SpriteGenerator == null)
         {
+#if BBCORE_LIB
+            throw new NotSupportedException("Sprite atlas generation is only available in bbcore, not Bbcore.Lib.");
+#else
             SpriteGenerator = new SpriteHolder(Owner.DiskCache, Owner.Logger);
             BundlePngUrl = buildResult.AllocateName("bundle.png");
+#endif
         }
     }
 

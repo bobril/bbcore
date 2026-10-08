@@ -2,8 +2,6 @@
 using Njsast;
 using Njsast.Bobril;
 using Njsast.SourceMap;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
 
@@ -44,9 +42,6 @@ public class TsFileAdditionalInfo
     public SourceMap? MapLink { get; set; }
     public SourceInfo? SourceInfo { get; set; }
     public List<DependencyTriplet>? TranspilationDependencies { get; set; }
-    public Image<Rgba32>? Image { get; set; }
-
-    public int ImageCacheId;
     public string? OutputUrl { get; set; }
     public TSProject? FromModule;
 

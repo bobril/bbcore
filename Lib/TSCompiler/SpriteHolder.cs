@@ -3,22 +3,17 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Lib.DiskCache;
 using Lib.Spriter;
 using Lib.Utils;
 using Lib.Utils.Logger;
 using Njsast.Bobril;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Png;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Processing.Processors;
+using SkiaSharp;
 
 namespace Lib.TSCompiler;
 
-public class SpriteHolder : ISpritePlace
+public class SpriteHolder : ISpritePlace, ISpriteGenerator
 {
     readonly IDiskCache _dc;
     readonly ILogger _logger;
@@ -26,7 +21,7 @@ public class SpriteHolder : ISpritePlace
     readonly List<OutputSprite> _allSprites;
     readonly List<OutputSprite> _newSprites;
     IReadOnlyList<ImageBytesWithQuality>? _result;
-    readonly Dictionary<string, TsFileAdditionalInfo> _imageCache = new();
+    readonly Dictionary<string, CachedImage> _imageCache = new();
     bool _wasChange;
 
     public SpriteHolder(IDiskCache dc, ILogger logger)
@@ -112,26 +107,21 @@ public class SpriteHolder : ISpritePlace
                 var (Name, Quality) = PathUtils.ExtractQuality(item.Name);
                 if (Name.AsSpan().SequenceEqual(fnF))
                 {
-                    if (!_imageCache.TryGetValue(item.FullPath,out var fi))
-                    {
-                        fi = TsFileAdditionalInfo.Create((item as IFileCache)!);
-                        _imageCache.Add(item.FullPath, fi);
-                    }
-                    if (fi.ImageCacheId != item.ChangeId)
+                    if (!_imageCache.TryGetValue(item.FullPath, out var image) || image.ChangeId != item.ChangeId)
                     {
                         _wasChange = true;
                         try
                         {
-                            fi.Image = Image.Load<Rgba32>((item as IFileCache)!.ByteContent);
+                            image = CachedImage.Load(((IFileCache)item).ByteContent, item.ChangeId);
+                            _imageCache[item.FullPath] = image;
                         }
                         catch (Exception ex)
                         {
                             _logger.Error("Failed to load sprite " + item.FullPath + " as image. " + ex.Message);
                             continue;
                         }
-                        fi.ImageCacheId = item.ChangeId;
                     }
-                    slices.Add(new() { name = item.Name, quality = Quality, width = fi.Image.Width, height = fi.Image.Height });
+                    slices.Add(new() { name = item.Name, quality = Quality, width = image.Width, height = image.Height });
                 }
             }
             slices.Sort((l, r) => l.quality < r.quality ? -1 : l.quality > r.quality ? 1 : 0);
@@ -182,12 +172,6 @@ public class SpriteHolder : ISpritePlace
         return res;
     }
 
-    public struct ImageBytesWithQuality
-    {
-        public float Quality;
-        public byte[] Content;
-    }
-
     public IReadOnlyList<ImageBytesWithQuality>? BuildImage(bool maxCompression)
     {
         if (!_wasChange)
@@ -213,37 +197,47 @@ public class SpriteHolder : ISpritePlace
         for (i = 0; i < result.Length; i++)
         {
             var q = result[i].Quality;
-            var resultImage = new Image<Rgba32>((int)Math.Ceiling(_placer.Dim.Width * q), (int)Math.Ceiling(_placer.Dim.Height * q));
-            resultImage.Mutate(c =>
+            using var resultImage = new SKBitmap(new SKImageInfo(
+                (int)Math.Ceiling(_placer.Dim.Width * q), (int)Math.Ceiling(_placer.Dim.Height * q),
+                SKColorType.Rgba8888, SKAlphaType.Premul));
+            using (var canvas = new SKCanvas(resultImage))
             {
-                for (var j = 0; j < _allSprites.Count; j++)
+                canvas.Clear(SKColors.Transparent);
+                foreach (var sprite in _allSprites)
                 {
-                    var sprite = _allSprites[j];
-                    var fn = sprite.Me.Name;
                     var slice = FindBestSlice(sprite.slices, q);
-                    var fi = _imageCache[PathUtils.InjectQuality(fn, slice.quality)];
-                    if (fi == null) continue;
-                    var image = fi.Image;
+                    var cached = _imageCache[PathUtils.InjectQuality(sprite.Me.Name!, slice.quality)];
+                    using var image = cached.CreateBitmap();
                     if (sprite.Me.Color != null)
-                    {
-                        var rgbColor = ParseColor(sprite.Me.Color);
-                        image = image.Clone(operation =>
-                        {
-                            operation.ApplyProcessor(new Recolor(rgbColor));
-                        });
-                    }
-                    image = image.Clone(operation =>
-                    {
-                        if (q != slice.quality)
-                            operation = operation.Resize((int)Math.Round(image.Width * q / slice.quality), (int)Math.Round(image.Height * q / slice.quality));
-                        operation.Crop(new(new((int)(q * Math.Max(0,sprite.Me.X)), (int)(q * Math.Max(0,sprite.Me.Y))), new((int)(sprite.owidth * q), (int)(sprite.oheight * q))));
-                    });
-                    c.DrawImage(image, new((int)(sprite.ox * q), (int)(sprite.oy * q)), new GraphicsOptions());
+                        Recolor(image.GetPixelSpan(), ParseColor(sprite.Me.Color));
+
+                    // Keep the original resize-then-crop order and integer rounding.
+                    using var resized = q != slice.quality
+                        ? image.Resize(new SKImageInfo(
+                                (int)Math.Round(image.Width * q / slice.quality),
+                                (int)Math.Round(image.Height * q / slice.quality),
+                                SKColorType.Rgba8888, SKAlphaType.Premul),
+                            new SKSamplingOptions(SKCubicResampler.CatmullRom))
+                            ?? throw new InvalidDataException("Cannot resize sprite " + sprite.Me.Name)
+                        : null;
+                    var bitmap = resized ?? image;
+                    var x = (int)(q * Math.Max(0, sprite.Me.X));
+                    var y = (int)(q * Math.Max(0, sprite.Me.Y));
+                    var width = (int)(sprite.owidth * q);
+                    var height = (int)(sprite.oheight * q);
+                    if (width <= 0 || height <= 0 || x + width > bitmap.Width || y + height > bitmap.Height)
+                        throw new InvalidDataException("Invalid crop rectangle for sprite " + sprite.Me.Name);
+                    using var drawable = SKImage.FromBitmap(bitmap);
+                    canvas.DrawImage(drawable, SKRect.Create(x, y, width, height),
+                        SKRect.Create((int)(sprite.ox * q), (int)(sprite.oy * q), width, height),
+                        new SKSamplingOptions(SKFilterMode.Nearest));
                 }
-            });
-            var ms = new MemoryStream();
-            resultImage.Save(ms, new PngEncoder { CompressionLevel = maxCompression ? PngCompressionLevel.BestCompression : PngCompressionLevel.BestSpeed });
-            result[i].Content = ms.ToArray();
+            }
+            using var pixels = resultImage.PeekPixels();
+            using var encoded = pixels.Encode(new SKPngEncoderOptions(
+                SKPngEncoderFilterFlags.AllFilters, maxCompression ? 9 : 1))
+                ?? throw new InvalidDataException("Cannot encode sprite atlas as PNG.");
+            result[i].Content = encoded.ToArray();
         }
         _wasChange = false;
         _result = result;
@@ -261,7 +255,7 @@ public class SpriteHolder : ISpritePlace
 
     static readonly Regex RgbaColorParser = new(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript);
 
-    public static Rgba32 ParseColor(string color)
+    public static SKColor ParseColor(string color)
     {
         if (color.Length == 4 && color[0] == '#')
         {
@@ -298,73 +292,46 @@ public class SpriteHolder : ISpritePlace
         throw new InvalidDataException("Cannot parse color " + color);
     }
 
-    class RealRecolor : IImageProcessor<Rgba32>
+    // Pixels must be RGBA8888 with straight (unpremultiplied) alpha. Comparing after
+    // premultiplication would lose the exact 128 marker, especially at low alpha.
+    internal static void Recolor(Span<byte> pixels, SKColor color)
     {
-        readonly Rgba32 _rgbColor;
-        readonly Image<Rgba32> _source;
-
-        public RealRecolor(Rgba32 rgbColor, Image<Rgba32> source)
+        for (var i = 0; i < pixels.Length; i += 4)
         {
-            _rgbColor = rgbColor;
-            _source = source;
-        }
-
-        public void Execute()
-        {
-            var cgray = new Bgr24(128, 128, 128);
-            var frame = _source.Frames.RootFrame;
-            if (_rgbColor.A == 255)
-            {
-                for (var y = 0; y < frame.Height; y++)
-                for (var x = 0; x < frame.Width; x++)
-                {
-                    var c = frame[x, y];
-                    if (cgray.Equals(c.Bgr))
-                    {
-                        var alpha = c.A;
-                        c = _rgbColor;
-                        c.A = alpha;
-                        frame[x, y] = c;
-                    }
-                }
-            }
-            else
-            {
-                for (int y = 0; y < frame.Height; y++)
-                for (int x = 0; x < frame.Width; x++)
-                {
-                    var c = frame[x, y];
-                    if (cgray.Equals(c.Bgr))
-                    {
-                        var alpha = c.A;
-                        c = _rgbColor;
-                        c.A = (byte)(((c.A * alpha) * 32897) >> 23); // clever divide by 255
-                        frame[x, y] = c;
-                    }
-                }
-            }
-        }
-
-        public void Dispose()
-        {
+            if (pixels[i] != 128 || pixels[i + 1] != 128 || pixels[i + 2] != 128)
+                continue;
+            pixels[i] = color.Red;
+            pixels[i + 1] = color.Green;
+            pixels[i + 2] = color.Blue;
+            pixels[i + 3] = (byte)(((color.Alpha * pixels[i + 3]) * 32897) >> 23);
         }
     }
 
-    class Recolor : IImageProcessor
+    // Cache managed pixel data, not native bitmaps, so project/watch cache lifetimes
+    // cannot retain unmanaged image allocations. Every Skia object is short-lived.
+    sealed class CachedImage(int width, int height, byte[] pixels, int changeId)
     {
-        readonly Rgba32 _rgbColor;
+        public int Width => width;
+        public int Height => height;
+        public int ChangeId => changeId;
 
-        public Recolor(Rgba32 rgbColor)
+        public static CachedImage Load(byte[] content, int changeId)
         {
-            _rgbColor = rgbColor;
+            using var data = SKData.CreateCopy(content);
+            using var codec = SKCodec.Create(data) ?? throw new InvalidDataException("Unsupported image format.");
+            using var bitmap = new SKBitmap(new SKImageInfo(codec.Info.Width, codec.Info.Height,
+                SKColorType.Rgba8888, SKAlphaType.Unpremul));
+            var result = codec.GetPixels(bitmap.Info, bitmap.GetPixels());
+            if (result != SKCodecResult.Success)
+                throw new InvalidDataException("Cannot decode image: " + result);
+            return new(bitmap.Width, bitmap.Height, bitmap.GetPixelSpan().ToArray(), changeId);
         }
 
-        public IImageProcessor<TPixel> CreatePixelSpecificProcessor<TPixel>(SixLabors.ImageSharp.Configuration configuration, Image<TPixel> source,
-            Rectangle sourceRectangle) where TPixel : unmanaged, IPixel<TPixel>
+        public SKBitmap CreateBitmap()
         {
-            if (typeof(TPixel)==typeof(Rgba32))
-                return Unsafe.As<IImageProcessor<TPixel>>(new RealRecolor(_rgbColor, Unsafe.As<Image<Rgba32>>(source)));
-            throw new NotSupportedException();
+            var bitmap = new SKBitmap(new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Unpremul));
+            pixels.AsSpan().CopyTo(bitmap.GetPixelSpan());
+            return bitmap;
         }
     }
 }
