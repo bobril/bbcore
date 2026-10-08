@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 6.0.0
+
 ### Changed
 
 - Migrated bbcore sprite atlas generation from ImageSharp to SkiaSharp, preserving exact RGB (128, 128, 128)
