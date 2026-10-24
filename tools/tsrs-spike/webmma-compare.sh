@@ -16,6 +16,9 @@ export TSRS_BINARY=${TSRS_BINARY:-$HERE/node_modules/@tsrs/darwin-arm64/tsrs}
 [ -e $RBBRC ] && { echo "$RBBRC already exists, refusing to overwrite"; exit 1; }
 trap 'rm -f $RBBRC' EXIT
 apps=("$@"); [ ${#apps} -eq 0 ] && apps=($(cd ${WEBMMA:?set WEBMMA}/apps && for d in */; do [ -f $d/package.json ] && echo ${d%/}; done))
+# Each bb run is limited to LIMIT seconds (default 300), a hang is reported as TIMEOUT in the log
+limited() { perl -e 'my $t = shift; my $pid = fork; if (!$pid) { setpgrp(0, 0); exec @ARGV or exit 127 }
+  $SIG{ALRM} = sub { print STDERR "TIMEOUT\n"; kill "KILL", -$pid; exit 124 }; alarm $t; waitpid($pid, 0); exit($? >> 8)' ${LIMIT:-300} "$@" }
 diags() { grep -E "\([0-9]+,[0-9]+\)|\([0-9]+\)$" $1 | sort }
 for app in $apps; do
   A=$WEBMMA/apps/$app; O=$OUT/$app; mkdir -p $O
@@ -23,7 +26,7 @@ for app in $apps; do
   hadBbcore=0; [ -d $A/.bbcore ] && hadBbcore=1
   cd $A
   echo '{ "validate": "tsrs" }' > $RBBRC
-  dotnet $BB build -n --nocache -t no -d $O/dist-validate > $O/validate.log 2>&1
+  limited dotnet $BB build -n --nocache -t no -d $O/dist-validate > $O/validate.log 2>&1
   rm -rf $O/repro; mkdir -p $O/repro
   [ -d $A/.bbcore/TsrsInput ] && mv $A/.bbcore/TsrsInput $A/.bbcore/TsrsWrong $O/repro/
   [ $hadBbcore = 0 ] && rmdir $A/.bbcore 2>/dev/null
@@ -32,8 +35,9 @@ for app in $apps; do
     if [ $mode = tsrs ]; then echo '{ "tsrs": true }' > $RBBRC; else rm -f $RBBRC; fi
     for i in $(seq 1 $RUNS); do
       rm -rf $O/dist-$mode
-      /usr/bin/time -l dotnet $BB build -n --nocache -t no -d $O/dist-$mode > $O/build-$mode.$i.log 2> $O/build-$mode.$i.time
-      /usr/bin/time -l dotnet $BB build -n --nocache -t only > $O/check-$mode.$i.log 2> $O/check-$mode.$i.time
+      limited /usr/bin/time -l dotnet $BB build -n --nocache -t no -d $O/dist-$mode > $O/build-$mode.$i.log 2> $O/build-$mode.$i.time
+      limited /usr/bin/time -l dotnet $BB build -n --nocache -t only > $O/check-$mode.$i.log 2> $O/check-$mode.$i.time
+      grep -q TIMEOUT $O/build-$mode.$i.time $O/check-$mode.$i.time && echo "$app $mode run$i: TIMEOUT" 
       echo "$app $mode run$i: build $(grep real $O/build-$mode.$i.time | awk '{print $1}')s rss=$(grep 'maximum resident' $O/build-$mode.$i.time | awk '{printf "%.0fMB",$1/1048576}') | $(grep -oE 'transpile emit done in [0-9.]+s' $O/build-$mode.$i.log) | $(grep -oE 'typecheck found [0-9]+ errors in [0-9.]+s' $O/check-$mode.$i.log)"
     done
   done

@@ -16,6 +16,44 @@ With `.bbrc` `"tsrs": true` on all 15 WebMma apps, compared with WebMma's curren
 - **Speed and memory:** builds are 1.1–2.0× faster, transpilation 2.2–3.0× faster and typechecking about 4.5× faster
   (see the table below). Peak memory is 20–40% lower.
 
+## Re-verification after WebMma environment update (same day, inspirecloud `334bccec532`)
+
+After the WebMma environment was refreshed, inspirecloud's root `package.json` added `@typescript/native-preview`
+`7.0.0-dev.20260525.1`. bbcore now picks it up as the `gots` baseline in place of Homebrew tsgo. Some packages are
+still missing from `WebMma/node_modules`: `monaco-editor`, `bbseeker-extended`, `bobwai--l-separate-sections`,
+`bobwai--carousel` and a few more. So only WebDeviceLogin and WebMain build without errors now. WebAppRoot fails in
+both modes on missing `bobwai--*` packages.
+
+Results with `tools/tsrs-spike/webmma-compare.sh` on all 15 apps:
+
+- **Transpile:** 0 of 23,366 transpiled files differ.
+- **Typecheck:** identical diagnostics in all 15 apps.
+- **Bundles:** byte-identical `.js` for WebDeviceLogin and WebMain.
+- **Remaining difference, source maps:** TS 7 emits finer source map segments than TS 6. tsrs matches TS 7 exactly.
+  With `-g yes`, WebMain's `a.js` is identical, but `a.js.map` has 222,029 segments instead of 225,321 (same
+  sources). bbcore positions its own build diagnostics (such as `Missing import`, code -3) through this map. About
+  20% of those differ in **column only**, never in line or message. For example `pageMainContent.ts(10,39)` becomes
+  `(10,45)`; the import string itself starts at column 27 (1-based). Matching TS 6's segment layout is not practical, so this
+  stays a known difference.
+
+Median of 3 runs on the new environment:
+
+| app (transpiled files) | build wall | peak RSS | transpile emit | typecheck (bbcore log) |
+| --- | --- | --- | --- | --- |
+| WebMain (1194) | 10.8 → **9.2 s** | 633 → **488 MB** | 3.80 → **1.63 s** | 0.41 → **0.09 s** |
+| WebDeviceLogin (1075) | 10.2 → **9.0 s** | 596 → **472 MB** | 3.66 → **1.65 s** | 0.40 → **0.10 s** |
+| WebOnDemand (2953) | 13.6 → **6.2 s** | 639 → **378 MB** | 10.80 → **3.44 s** | 0.88 → **0.19 s** |
+
+Notes from the re-run:
+
+- While `node_modules` was apparently still changing, the tsgo baseline was briefly unstable: WebMessenger gave 305,
+  then 93, then 53 errors, all extras being "Cannot find module" for installed packages. One tsgo `-t only` run hung
+  at 0% CPU. Afterwards tsgo, tsrs and the TS 7.1 oracle all gave 53, stable over 12 bb runs and 8 direct runs each.
+  tsrs never varied.
+- The hang wasn't reproducible in 10 more runs. While looking into it, `NativeTsCompiler.RunTypeScript` was fixed to
+  read stderr concurrently with stdout, because a full stderr pipe could deadlock it. `webmma-compare.sh` now limits
+  each bb run to 300 s (`LIMIT`) and reports `TIMEOUT`.
+
 ## What was built
 
 | area | files |

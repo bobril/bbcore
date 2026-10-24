@@ -143,8 +143,10 @@ public sealed class NativeTsCompiler : ITSCompiler
             start.ArgumentList.Add(argument);
 
         using var process = Process.Start(start)!;
+        // Read stderr concurrently, so a full stderr pipe cannot block the compiler while stdout is read
+        var errorTask = process.StandardError.ReadToEndAsync();
         var output = process.StandardOutput.ReadToEnd();
-        var error = process.StandardError.ReadToEnd();
+        var error = errorTask.GetAwaiter().GetResult();
         process.WaitForExit();
         if (error.Length > 0 && _logger.Verbose)
             _logger.Info(error.TrimEnd());

@@ -22,6 +22,8 @@
 - Native TypeScript typecheck (`gots`, `tsrs`) now leaves files that do not exist out of the generated typecheck
   project. TypeScript 7.1 stopped checking the whole program because of them (TS6053), for example for a missing
   `node_modules/monaco-editor/monaco.d.ts`; TypeScript 7.0 already ignored them.
+- Native TypeScript one-shot typecheck now reads stderr concurrently with stdout, so a compiler writing a lot to
+  stderr cannot deadlock the build.
 - Native TypeScript `--watch` processes are now killed when bb exits or receives SIGTERM, SIGINT or SIGHUP, so
   `tsrs --watch` is not left running.
 - Fixed Njsast `SourceMapBuilder` plain text source adder (used without input source map) jumping to the end of the

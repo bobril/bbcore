@@ -163,8 +163,9 @@ JavaScript through the tsrs `transpileModule` API. To use tsrs only for typechec
 transpiler, add `"tsrsTranspile": false`. The binary is found through the `TSRS_BINARY` environment variable,
 `node_modules/@tsrs/<platform>`, `node_modules/tsrs` or `PATH`. tsrs currently has no Windows build.
 
-bbcore applies the same emit changes to tsrs output as to its patched TypeScript compiler, so bundles are the same as
-with the regular transpiler. To compare both transpilers for every file, use `"validate": "tsrs"`; differing files are
+bbcore applies the same emit changes to tsrs output as to its patched TypeScript compiler, so bundled JavaScript is the
+same as with the regular transpiler. Source maps follow TypeScript 7 and are slightly more detailed, so columns of
+build diagnostics can differ. To compare both transpilers for every file, use `"validate": "tsrs"`; differing files are
 written to `.bbcore/TsrsInput` (regular output) and `.bbcore/TsrsWrong` (tsrs output).
 
 ## Override localization
