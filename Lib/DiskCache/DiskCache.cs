@@ -315,11 +315,9 @@ public class DiskCache : IDiskCache
         ((DirectoryCache)directory).Add(subFile);
     }
 
-    static SHA1 _hashFunction = new SHA1Managed();
-
     static byte[] CalcHash(byte[] value)
     {
-        return _hashFunction.ComputeHash(value);
+        return SHA1.HashData(value);
     }
 
     class FileCache : IFileCache

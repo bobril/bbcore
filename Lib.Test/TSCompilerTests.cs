@@ -20,7 +20,6 @@ public class CompilerTests
     string _bbdir;
     ToolsDir.ToolsDir _tools;
     CompilerPool _compilerPool;
-    string projdir;
 
     public CompilerTests()
     {

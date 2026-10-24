@@ -17,7 +17,6 @@ using System.Linq;
 using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using System.Reflection;
 using System.Text;
 using System.Reactive;
 using System.Text.Encodings.Web;
@@ -96,8 +95,7 @@ public class Composition
             }
             else
             {
-                var location = new Uri(Assembly.GetEntryAssembly()!.GetName().CodeBase!);
-                var runningFrom = PathUtils.Normalize(new FileInfo(location.AbsolutePath).Directory!.FullName);
+                var runningFrom = PathUtils.Normalize(AppContext.BaseDirectory).TrimEnd('/');
                 _bbdir = PathUtils.Join(
                     PathUtils.Normalize(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)),
                     ".bbcore");
@@ -389,7 +387,7 @@ public class Composition
         {
             inputSource = _fsAbstraction.ReadAllUtf8(jsGlobalsCommand.FileName.Value!);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             _logger.Error("Cannot read " + jsGlobalsCommand.FileName.Value!);
             return 2;

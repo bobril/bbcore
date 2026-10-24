@@ -2,17 +2,22 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ProxyKit;
 
 namespace Lib.WebServer;
 
 public class WebServerHost : IWebServerBuilder
 {
-    IWebHost _webHost;
+    IHost _webHost;
 
     public bool InDocker { get; set; }
     public RequestDelegate Handler { get; set; }
@@ -87,26 +92,36 @@ public class WebServerHost : IWebServerBuilder
         }
         if (_webHost == null)
             throw new Exception("Cannot find empty port to be allowed to listen on. Started on " + Port);
-        Port = new Uri(_webHost.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First()).Port;
+        Port = new Uri(_webHost.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!
+            .Addresses.First()).Port;
     }
 
-    IWebHost BuildWebHost(int port)
+    IHost BuildWebHost(int port)
     {
-        return new WebHostBuilder().UseKestrel(config =>
-            {
-                config.AddServerHeader = false;
-                config.Limits.MaxRequestBodySize = int.MaxValue;
-                config.Listen(BindToAny ? IPAddress.Any : IPAddress.Loopback, port);
-                if (!InDocker)
-                    config.Listen(BindToAny ? IPAddress.IPv6Any : IPAddress.IPv6Loopback, port);
-            })
-            .ConfigureServices(s => { s.AddProxy(); })
-            .Configure(a =>
-            {
-                a.UseWebSockets();
-                a.Run(Handler);
-            })
+        return new HostBuilder()
+            .ConfigureWebHost(web => web.UseKestrel(config =>
+                {
+                    config.AddServerHeader = false;
+                    config.Limits.MaxRequestBodySize = int.MaxValue;
+                    config.Listen(BindToAny ? IPAddress.Any : IPAddress.Loopback, port);
+                    if (!InDocker)
+                        config.Listen(BindToAny ? IPAddress.IPv6Any : IPAddress.IPv6Loopback, port);
+                })
+                .ConfigureServices(s => { s.AddProxy(); })
+                .Configure(a =>
+                {
+                    a.UseWebSockets();
+                    a.Run(Handler);
+                }))
+            // Default ConsoleLifetime would take Ctrl+C and SIGTERM handling away from bb
+            .ConfigureServices(s => s.AddSingleton<IHostLifetime, NoopHostLifetime>())
             .Build();
+    }
+
+    sealed class NoopHostLifetime : IHostLifetime
+    {
+        public Task WaitForStartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     public void Stop()

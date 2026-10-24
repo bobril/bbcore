@@ -2,6 +2,18 @@
 
 ## [unreleased]
 
+### Changed
+
+- Updated NuGet dependencies to latest versions, including BTDB 35.13, ClearScript V8 7.5.1.1,
+  JavaScriptEngineSwitcher 3.35, Markdig 1.5, System.Reactive 7, YamlDotNet 18, WebMarkupMin 2.22 and ASP.NET Core
+  2.3.13 packages. `Bbcore.Lib` now uses the same versions as bbcore (it was on older BTDB, JavaScriptEngineSwitcher,
+  ClearScript and WebMarkupMin).
+- Fixed all non-nullable build warnings: the interactive web server now uses the generic host (`HostBuilder` with
+  `ConfigureWebHost`) instead of obsolete `WebHostBuilder`, file hashing uses `SHA1.HashData` (also thread-safe,
+  unlike the shared `SHA1Managed` instance), the install directory comes from `AppContext.BaseDirectory` instead of
+  obsolete `AssemblyName.CodeBase`, redundant `System.*` package references were removed and `Bbcore.Lib` got its
+  missing solution configurations.
+
 ### Fixed
 
 - The JavaScript TypeScript selected by `tsVersion` (or the default version) is now downloaded only when it is really
