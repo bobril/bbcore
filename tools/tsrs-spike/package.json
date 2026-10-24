@@ -1,0 +1,10 @@
+{
+  "name": "tsrs-spike",
+  "private": true,
+  "dependencies": {
+    "tsrs": "0.18.0-ts7.1.0-dev.20260929",
+    "ts7": "npm:typescript@7.1.0-dev.20260930.4",
+    "ts6": "npm:typescript@6.0.3"
+  },
+  "description": "tsrs Phase 0 spike scripts, see docs/plans/tsrs-spike.md"
+}
