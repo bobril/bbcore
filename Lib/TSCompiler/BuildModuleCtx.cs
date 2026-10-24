@@ -738,12 +738,29 @@ public class BuildModuleCtx : IImportResolver
     {
         _transpileEmitTicks = 0;
         _transpileEmitCount = 0;
-        while (CrawledCount < ToCheck.Count)
+        var prefetchExecutable = NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future,
+            Owner.ProjectOptions.Validate)
+            ? null
+            : BuildCtx!.NativeTranspilerExecutable;
+        _prefetchOptions = prefetchExecutable != null ? CreateTranspileOptions() : null;
+        _prefetchScanIndex = 0;
+        try
         {
-            var fileName = ToCheck[(int)CrawledCount];
-            CrawledCount++;
+            while (CrawledCount < ToCheck.Count)
+            {
+                if (prefetchExecutable != null)
+                    PrefetchTranspiles(prefetchExecutable);
+                var fileName = ToCheck[(int)CrawledCount];
+                CrawledCount++;
 
-            CrawlFile(fileName);
+                CrawlFile(fileName);
+            }
+        }
+        finally
+        {
+            // Unused results (file taken from build cache or changed meanwhile) are just dropped
+            _prefetchedTranspiles.Clear();
+            _prefetchOptions = null;
         }
 
         if (_transpileEmitCount > 0)
@@ -1227,6 +1244,97 @@ public class BuildModuleCtx : IImportResolver
         });
     }
 
+    // Native transpilation is pure function of file name, source and options, so files queued for crawl are transpiled
+    // ahead in parallel on native transpiler pool and sequential crawl just takes finished results
+    readonly Dictionary<string, (string Source, Task<TranspileResult> Result)> _prefetchedTranspiles = new();
+    ITSCompilerOptions? _prefetchOptions;
+    int _prefetchScanIndex;
+
+    static readonly int PrefetchWindow = 2 * Math.Min(8, Environment.ProcessorCount);
+
+    void PrefetchTranspiles(string nativeExecutable)
+    {
+        var running = 0;
+        foreach (var (_, prefetched) in _prefetchedTranspiles)
+        {
+            if (!prefetched.Result.IsCompleted)
+                running++;
+        }
+
+        if (_prefetchScanIndex < (int)CrawledCount)
+            _prefetchScanIndex = (int)CrawledCount;
+        while (running < PrefetchWindow && _prefetchScanIndex < ToCheck!.Count)
+        {
+            var fileName = ToCheck[_prefetchScanIndex++];
+            if (_prefetchedTranspiles.ContainsKey(fileName) || !TryGetSourceToPrefetch(fileName, out var source))
+                continue;
+            var options = _prefetchOptions!;
+            var transpileFileName = TranspileFileName(fileName);
+            var pool = BuildCtx!.CompilerPool;
+            _prefetchedTranspiles[fileName] = (source, Task.Run(() =>
+            {
+                var compiler = pool.GetNativeTranspiler(nativeExecutable, options);
+                try
+                {
+                    return compiler.Transpile(transpileFileName, source);
+                }
+                finally
+                {
+                    pool.ReleaseNativeTranspiler(compiler);
+                }
+            }));
+            running++;
+        }
+    }
+
+    // Only TypeScript files which will be really transpiled: changed since last crawl and not in build cache
+    bool TryGetSourceToPrefetch(string fileName, out string source)
+    {
+        source = "";
+        if (!IsTsOrTsx(fileName) || IsDts(fileName))
+            return false;
+        if (Owner!.DiskCache.TryGetItem(fileName) is not IFileCache { IsInvalid: false } file)
+            return false;
+        if (Result!.Path2FileInfo.TryGetValue(fileName, out var info) &&
+            (info.Type != FileCompilationType.TypeScript || info.ChangeId == file.ChangeId))
+            return false;
+        var buildCache = BuildCtx!.BuildCache;
+        if (buildCache.IsEnabled)
+        {
+            try
+            {
+                if (buildCache.FindTSFileBuildCache(file.HashOfContent, Owner.ProjectOptions.ConfigurationBuildCacheId) !=
+                    null)
+                    return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        source = file.Utf8Content;
+        return true;
+    }
+
+    ITSCompilerOptions CreateTranspileOptions()
+    {
+        var transpileOptions = BuildCtx!.CompilerOptions.Clone();
+        transpileOptions.module = ModuleKind.Commonjs;
+        if (transpileOptions.moduleResolution == ModuleResolutionKind.Bundler)
+            transpileOptions.moduleResolution = null;
+        transpileOptions.sourceMap = true;
+        return transpileOptions;
+    }
+
+    static string TranspileFileName(string fileName) => fileName switch
+    {
+        _ when fileName.EndsWith(".mjs") => PathUtils.ChangeExtension(fileName, "js"),
+        _ when fileName.EndsWith(".mts") => PathUtils.ChangeExtension(fileName, "ts"),
+        _ when fileName.EndsWith(".mtsx") => PathUtils.ChangeExtension(fileName, "tsx"),
+        _ => fileName // Preserve all other extensions
+    };
+
     void Transpile(TsFileAdditionalInfo info)
     {
         ITSCompiler compiler = null;
@@ -1246,19 +1354,9 @@ public class BuildModuleCtx : IImportResolver
 
             var fileName = info.Owner.FullPath;
             var source = info.Owner.Utf8Content;
-            var transpileOptions = BuildCtx!.CompilerOptions.Clone();
-            transpileOptions.module = ModuleKind.Commonjs;
-            if (transpileOptions.moduleResolution == ModuleResolutionKind.Bundler)
-                transpileOptions.moduleResolution = null;
-            transpileOptions.sourceMap = true;
+            var transpileOptions = CreateTranspileOptions();
             //_owner.Logger.Info("Transpiling " + info.Owner.FullPath);
-            var newFileName = fileName switch
-            {
-                _ when fileName.EndsWith(".mjs") => PathUtils.ChangeExtension(fileName, "js"),
-                _ when fileName.EndsWith(".mts") => PathUtils.ChangeExtension(fileName, "ts"),
-                _ when fileName.EndsWith(".mtsx") => PathUtils.ChangeExtension(fileName, "tsx"),
-                _ => fileName // Preserve all other extensions
-            };
+            var newFileName = TranspileFileName(fileName);
 
             TranspileResult result;
             var useBuildin = NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future, Owner.ProjectOptions.Validate);
@@ -1269,9 +1367,16 @@ public class BuildModuleCtx : IImportResolver
                 : "TypeScript";
             if (nativeExecutable != null)
             {
-                compiler = BuildCtx.CompilerPool.GetNativeTranspiler(nativeExecutable, transpileOptions);
-                compilerIsNative = true;
-                result = compiler.Transpile(newFileName, source);
+                if (_prefetchedTranspiles.Remove(fileName, out var prefetched) && prefetched.Source == source)
+                {
+                    result = prefetched.Result.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    compiler = BuildCtx.CompilerPool.GetNativeTranspiler(nativeExecutable, transpileOptions);
+                    compilerIsNative = true;
+                    result = compiler.Transpile(newFileName, source);
+                }
             }
             else if (useBuildin)
             {

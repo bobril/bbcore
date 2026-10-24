@@ -77,6 +77,37 @@ Not tested on Windows itself. The code paths are platform-neutral: `tsc.exe`, `-
 no Unix file modes, signal registration tolerant of unsupported signals. TypeScript 7's own `--watch` behavior on
 Windows is the main thing to check there.
 
+## Parallel transpilation
+
+The dependency crawl in `BuildModuleCtx` is sequential. Now, before each crawl step it starts background transpiles
+for files already queued in `ToCheck`, up to 2× the native pool size (`min(8, cores)` processes). Only TypeScript
+files that changed since the last crawl and aren't in the build cache are prefetched. `Transpile` takes the finished
+result when the source still matches, and otherwise transpiles inline as before. Only the pure transpile call
+(native API plus `NativeOutputPatcher`) runs in parallel; everything touching build state stays on the crawl thread.
+
+A/B on WebMma, sequential vs parallel binary, median of 3 runs, `bb build -n --nocache -t no`. "Transpile wait" is
+time the crawl spent waiting for transpile results (the `transpile emit done` log line):
+
+| app (files) | mode | build wall | transpile wait |
+| --- | --- | --- | --- |
+| WebAppRoot (1449) | tsrs | 11.8 → **11.1 s** | 2.00 → **0.26 s** |
+| WebAppRoot | tsc | 12.8 → **10.6 s** | 2.63 → **0.24 s** |
+| WebMain (1194) | tsrs | 9.6 → **9.1 s** | 1.64 → **0.17 s** |
+| WebMain | tsc | 10.4 → **9.4 s** | 2.05 → **0.19 s** |
+| WebOnDemand (2953) | tsrs | 6.2 → **5.0 s** | 3.42 → **0.70 s** |
+| WebOnDemand | tsc | 9.8 → **7.2 s** | 7.15 → **3.33 s** |
+| WebAdministration (2202) | tsrs | 5.2 → **3.7 s** | 2.84 → **0.26 s** |
+| WebAdministration | tsc | 6.5 → **3.7 s** | 3.70 → **0.27 s** |
+
+- **Identical output:** bundles are byte-identical between sequential and parallel for every app that builds
+  (WebAppRoot, WebMain), in both modes. Build diagnostics are identical in all four apps.
+- **Compared with the original TS 6 setup:** WebOnDemand builds in 13.6 → 5.0 s with tsrs and 7.2 s with TS 7
+  `tsc`. WebAdministration builds in 10.1 → 3.7 s in either mode.
+- **Interactive mode:** incremental rebuilds after an edit go through the same prefetch; checked on the scratch
+  project.
+- **Remaining wait, WebOnDemand with `tsc`:** about 3.3 s, apparently files discovered late in the crawl, where the
+  look-ahead window is small. Prefetching the whole known source list up front could reduce that further.
+
 ## What was built
 
 | area | files |

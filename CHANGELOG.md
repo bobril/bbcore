@@ -21,6 +21,9 @@
   same emit changes as tsrs. A project with `typescript` 7.1+ in `devDependencies` uses its installed `tsc`. This
   works on Windows too. When tsrs is not available, bbcore now falls back to TypeScript 7 in the version tsrs ports
   (`7.1.0-dev.20260930.4`) before falling back to Go TypeScript or regular TypeScript. TypeScript 7.0 is rejected.
+- tsrs and TypeScript 7 transpilation now runs in parallel: files queued by the dependency crawl are transpiled ahead
+  on the pool of native API processes (only changed files not found in the build cache), and the crawl takes the
+  finished results, so output stays exactly the same.
 - Added `.bbrc` `validate: "tsrs"` option, which transpiles with the regular TypeScript compiler and compares the
   formatted output of tsrs (or TypeScript 7 where tsrs is not available) for every file, writing differing cases
   to `.bbcore/TsrsInput` and `.bbcore/TsrsWrong`.
