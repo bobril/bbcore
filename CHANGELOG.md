@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.0.0
+
 ### Added
 
 - Added `.bbrc` `tsrs: true` option to use [tsrs](https://github.com/oxc-project/tsrs), the Rust port of TypeScript 7,
