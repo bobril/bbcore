@@ -104,7 +104,7 @@ public class TsFileAdditionalInfo
         Dependencies.Add(fullname);
     }
 
-    public void ReportTranspilationDependency(byte[] sourceHash, string import, byte[] targetHash)
+    public void ReportTranspilationDependency(byte[]? sourceHash, string import, byte[]? targetHash)
     {
         TranspilationDependencies ??= new();
 

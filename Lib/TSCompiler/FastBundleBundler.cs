@@ -4,6 +4,8 @@ using Lib.ToolsDir;
 using System.Linq;
 using Njsast.SourceMap;
 using System;
+using System.IO;
+using System.Diagnostics.CodeAnalysis;
 using BTDB.Collections;
 using Lib.DiskCache;
 using Lib.Utils;
@@ -16,15 +18,15 @@ namespace Lib.TSCompiler;
 
 public class FastBundleBundler
 {
-    string _bundleJs;
-    SourceMap _sourceMap;
-    string _sourceMapString;
-    string _bundle2Js;
+    string? _bundleJs;
+    SourceMap? _sourceMap;
+    string? _sourceMapString;
+    string? _bundle2Js;
     SourceMap? _sourceMap2;
     string? _sourceMap2String;
-    string _cssLink;
-    string _indexHtml;
-    string _versionDirPrefix;
+    string _cssLink = "";
+    string? _indexHtml;
+    string _versionDirPrefix = "";
 
     readonly IToolsDir _tools;
 
@@ -42,10 +44,10 @@ public class FastBundleBundler
     readonly MainBuildResult _mainBuildResult;
 
     string? _bundlePng;
-    List<float> _bundlePngInfo;
+    List<float>? _bundlePngInfo;
     RefDictionary<string, FastBundleBundler>? _subBundlers;
 
-    public Dictionary<string, SourceMap> SourceMaps;
+    public Dictionary<string, SourceMap> SourceMaps = new();
 
     public void Build(string sourceRoot, bool testProj = false, bool allowIncremental = true)
     {
@@ -54,7 +56,7 @@ public class FastBundleBundler
         if (coverage) allowIncremental = false;
         if (_mainBuildResult.OutputSubDir != null)
             _versionDirPrefix = _mainBuildResult.OutputSubDir + "/";
-        var root = _mainBuildResult.CommonSourceDirectory;
+        var root = _mainBuildResult.CommonSourceDirectory!;
         var incremental = _buildResult.Incremental && allowIncremental;
         var start = DateTime.UtcNow;
         var sourceMapBuilder = new SourceMapBuilder();
@@ -108,8 +110,8 @@ public class FastBundleBundler
         var cssLink = "";
 
         var sortedResultSet = incremental
-            ? _buildResult.RecompiledIncrementally.Where(f => f.Owner != null).OrderBy(f => f.Owner.FullPath).ToArray()
-            : _buildResult.Path2FileInfo.Select(a => a.Value).Where(f => f.Owner != null).OrderBy(f => f.Owner.FullPath)
+            ? _buildResult.RecompiledIncrementally.Where(f => f.Owner != null).OrderBy(f => f.Owner!.FullPath).ToArray()
+            : _buildResult.Path2FileInfo.Select(a => a.Value).Where(f => f.Owner != null).OrderBy(f => f.Owner!.FullPath)
                 .ToArray();
 
         if (!incremental)
@@ -122,12 +124,13 @@ public class FastBundleBundler
 
         foreach (var source in sortedResultSet)
         {
+            var owner = source.Owner!; // sortedResultSet contains only infos with Owner
             if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript
                 or FileCompilationType.JavaScript or FileCompilationType.Scss)
             {
                 if (source.Output == null)
                     continue; // Skip d.ts
-                var moduleName = source.Owner!.FullPath;
+                var moduleName = owner.FullPath;
                 if (source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript or
                     FileCompilationType.JavaScript)
                 {
@@ -136,11 +139,11 @@ public class FastBundleBundler
 
                 sourceMapBuilder.AddText(
                     source.Type is FileCompilationType.TypeScript or FileCompilationType.EsmJavaScript
-                        ? $"R('{PathUtils.Subtract(moduleName, root!)}',function(require, module, exports){{"
-                        : $"R('{PathUtils.Subtract(moduleName, root!)}',function(require, module, exports, global){{");
+                        ? $"R('{PathUtils.Subtract(moduleName, root)}',function(require, module, exports){{"
+                        : $"R('{PathUtils.Subtract(moduleName, root)}',function(require, module, exports, global){{");
                 var adder = sourceMapBuilder.CreateSourceAdder(source.Output, source.MapLink);
                 var sourceReplacer = new SourceReplacer();
-                _project.ApplySourceInfo(sourceReplacer, source.Owner.FullPath, source.MapLink, source.SourceInfo,
+                _project.ApplySourceInfo(sourceReplacer, owner.FullPath, source.MapLink, source.SourceInfo,
                     _buildResult);
                 sourceReplacer.Apply(adder);
                 sourceMapBuilder.AddText("\n});");
@@ -148,22 +151,22 @@ public class FastBundleBundler
             else if (source.Type == FileCompilationType.Json)
             {
                 sourceMapBuilder.AddText(
-                    $"R('{PathUtils.Subtract(source.Owner.FullPath, root)}',");
-                sourceMapBuilder.AddText(source.Owner.Utf8Content);
+                    $"R('{PathUtils.Subtract(owner.FullPath, root)}',");
+                sourceMapBuilder.AddText(owner.Utf8Content);
                 sourceMapBuilder.AddText(");");
             }
             else if (source.Type == FileCompilationType.ImportedCss)
             {
                 sourceMapBuilder.AddText(
-                    $"R('{PathUtils.Subtract(source.Owner.FullPath, root)}',function(){{}});");
+                    $"R('{PathUtils.Subtract(owner.FullPath, root)}',function(){{}});");
                 string cssPath = _buildResult.ToOutputUrl(source);
-                _mainBuildResult.FilesContent.GetOrAddValueRef(cssPath) = source.Output;
+                _mainBuildResult.FilesContent.GetOrAddValueRef(cssPath) = source.Output!;
                 cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
             }
             else if (source.Type == FileCompilationType.Css)
             {
                 string cssPath = _buildResult.ToOutputUrl(source);
-                _mainBuildResult.FilesContent.GetOrAddValueRef(cssPath) = source.Output;
+                _mainBuildResult.FilesContent.GetOrAddValueRef(cssPath) = source.Output!;
                 cssLink += "<link rel=\"stylesheet\" href=\"" + cssPath + "\">";
             }
             else if (source.Type == FileCompilationType.Html)
@@ -173,7 +176,7 @@ public class FastBundleBundler
             else if (source.Type == FileCompilationType.Resource)
             {
                 _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(source)) =
-                    source.Owner.ByteContent;
+                    owner.ByteContent;
             }
         }
 
@@ -189,12 +192,15 @@ public class FastBundleBundler
 
         if (_project.Localize)
         {
-            _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent,
+            // TranslationDb is always initialized when Localize is enabled
+            _project.TranslationDb!.BuildTranslationJs(_tools, _mainBuildResult.FilesContent,
                 _mainBuildResult.OutputSubDir);
         }
 
         if (incremental)
         {
+            if (_bundleJs == null || _sourceMap == null || _sourceMapString == null)
+                throw new InvalidOperationException("Incremental bundle requires previous full bundle");
             sourceMapBuilder.AddText("//# sourceMappingURL=bundle2.js.map");
             _sourceMap2 = sourceMapBuilder.Build(root, sourceRoot);
             _sourceMap2String = _sourceMap2.ToString();
@@ -219,8 +225,7 @@ public class FastBundleBundler
                 _project.CoverageInstrumentation = coverageInst;
                 toplevel = coverageInst.Instrument(toplevel);
                 coverageInst.AddCountingHelpers(toplevel);
-                coverageInst.CleanUp(new SourceReader(_project.Owner.DiskCache,
-                    _mainBuildResult.CommonSourceDirectory));
+                coverageInst.CleanUp(new SourceReader(_project.Owner.DiskCache, root));
                 if (_project.MainFile != null)
                     MarkImportant(_project.MainFile, _buildResult, new(), coverageInst);
                 sourceMapBuilder = new SourceMapBuilder();
@@ -247,7 +252,8 @@ public class FastBundleBundler
 
         _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.BundleJsUrl) = _bundleJs;
         _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.BundleJsUrl + ".map") = _sourceMapString;
-        if (incremental)
+        // bundle2 fields are always set above when incremental
+        if (incremental && _bundle2Js != null && _sourceMap2String != null && _sourceMap2 != null)
         {
             _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "bundle2.js") = _bundle2Js;
             _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "bundle2.js.map") =
@@ -277,8 +283,9 @@ public class FastBundleBundler
                 if (subProject == null) continue;
                 if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                 {
-                    subBundler = new FastBundleBundler(_tools, _mainBuildResult, subProject,
-                        _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
+                    var subBuildResult = _buildResult.SubBuildResults?.GetOrFakeValueRef(projPath) ??
+                                         throw new InvalidOperationException("Missing build result for " + projPath);
+                    subBundler = new FastBundleBundler(_tools, _mainBuildResult, subProject, subBuildResult);
                 }
 
                 newSubBundlers.GetOrAddValueRef(projPath) = subBundler;
@@ -316,18 +323,30 @@ public class FastBundleBundler
     public void BuildHtml(bool testProj = false)
     {
         string root = _mainBuildResult.CommonSourceDirectory!;
-        if (!testProj && !_project.NoHtml && _project.ExampleSources.Count > 0)
+        if (testProj)
         {
-            if (_project.ExampleSources.Count == 1)
+            // TestSources are always refreshed before building test html
+            BuildFastBundlerTestHtml(_project.TestSources!, root, _cssLink);
+            _mainBuildResult.FilesContent.GetOrAddValueRef("test.html") = _indexHtml;
+            _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-core.js") =
+                _tools.JasmineCoreJs;
+            _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-boot.js") =
+                _tools.JasmineBootJs;
+        }
+        else if (!_project.NoHtml)
+        {
+            // ExampleSources are always refreshed before building html
+            var exampleSources = _project.ExampleSources!;
+            if (exampleSources.Count == 1)
             {
                 BuildFastBundlerIndexHtml(
-                    PathUtils.WithoutExtension(PathUtils.Subtract(_project.ExampleSources[0], root)), _cssLink,
+                    PathUtils.WithoutExtension(PathUtils.Subtract(exampleSources[0], root)), _cssLink,
                     "bundleExample");
             }
-            else
+            else if (exampleSources.Count > 1)
             {
                 var htmlList = new List<string>();
-                foreach (var exampleSrc in _project.ExampleSources)
+                foreach (var exampleSrc in exampleSources)
                 {
                     var moduleNameWoExt = PathUtils.WithoutExtension(PathUtils.Subtract(exampleSrc, root));
                     var justName = PathUtils.GetFile(moduleNameWoExt);
@@ -338,28 +357,14 @@ public class FastBundleBundler
 
                 BuildExampleListHtml(htmlList, _cssLink);
             }
-        }
-        else if (testProj)
-        {
-            BuildFastBundlerTestHtml(_project.TestSources, root, _cssLink);
-        }
-        else if (!_project.NoHtml && _project.MainFile != null)
-        {
-            BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(_project.MainFile, root)),
-                _cssLink, "bundleMain");
-        }
+            else if (_project.MainFile != null)
+            {
+                BuildFastBundlerIndexHtml(PathUtils.WithoutExtension(PathUtils.Subtract(_project.MainFile, root)),
+                    _cssLink, "bundleMain");
+            }
 
-        if (testProj)
-        {
-            _mainBuildResult.FilesContent.GetOrAddValueRef("test.html") = _indexHtml;
-            _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-core.js") =
-                _tools.JasmineCoreJs;
-            _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "jasmine-boot.js") =
-                _tools.JasmineBootJs;
-        }
-        else if (!_project.NoHtml)
-        {
-            _mainBuildResult.FilesContent.GetOrAddValueRef("index.html") = _indexHtml;
+            // Without main file and examples it stays as before (null or from previous build)
+            _mainBuildResult.FilesContent.GetOrAddValueRef("index.html") = _indexHtml!;
             if (_project.LiveReloadEnabled)
             {
                 _mainBuildResult.FilesContent.GetOrAddValueRef(_versionDirPrefix + "liveReload.js") =
@@ -368,6 +373,7 @@ public class FastBundleBundler
         }
     }
 
+    [MemberNotNull(nameof(_indexHtml))]
     void BuildFastBundlerTestHtml(IEnumerable<string> testSources, string root, string cssLink)
     {
         var reqSpec = RequireBobril() + string.Join(' ',
@@ -393,6 +399,7 @@ public class FastBundleBundler
 ";
     }
 
+    [MemberNotNull(nameof(_indexHtml))]
     void BuildFastBundlerIndexHtml(string mainModule, string cssLink, string mainRequireJs)
     {
         var liveReloadInclude = "";
@@ -429,6 +436,7 @@ public class FastBundleBundler
         return importBundle2;
     }
 
+    [MemberNotNull(nameof(_indexHtml))]
     void BuildExampleListHtml(List<string> namesWOExt, string cssLink)
     {
         var testList = "";
@@ -463,7 +471,7 @@ public class FastBundleBundler
 
     string GetModuleMap()
     {
-        var root = _mainBuildResult.CommonSourceDirectory;
+        var root = _mainBuildResult.CommonSourceDirectory!;
         var res = new Dictionary<string, string>();
         foreach (var source in _buildResult.Modules)
         {
@@ -549,7 +557,8 @@ public class SourceReader : ITextFileReader
 
     public ReadOnlySpan<byte> ReadUtf8(string fileName)
     {
-        var item = _diskCache.TryGetItem(PathUtils.Join(_root, fileName));
+        var path = PathUtils.Join(_root, fileName);
+        var item = _diskCache.TryGetItem(path) ?? throw new FileNotFoundException("Source file not found", path);
         if (item.IsFile && !item.IsInvalid)
         {
             return ((IFileCache)item).ByteContent;

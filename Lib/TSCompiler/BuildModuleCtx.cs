@@ -24,17 +24,20 @@ namespace Lib.TSCompiler;
 
 public class BuildModuleCtx : IImportResolver
 {
-    public BuildCtx? BuildCtx;
-    public TSProject? Owner;
-    public BuildResult? Result;
-    public MainBuildResult? MainResult;
+    public required BuildCtx BuildCtx;
+    public required TSProject Owner;
+    public required BuildResult Result;
+    public required MainBuildResult MainResult;
     public int IterationId;
     TsFileAdditionalInfo? _currentlyTranspiling;
+
+    // Owner is always the root project of a ProjectOptions, so its ProjectOptions are always set
+    ProjectOptions OwnerOptions => Owner.ProjectOptions!;
 
     static readonly string[] ExtensionsToImport = { ".tsx", ".ts", ".d.ts", ".jsx", ".js", "" };
     static readonly string[] ExtensionsToImportFromJs = { ".jsx", ".js", "" };
 
-    internal OrderedHashSet<string>? ToCheck;
+    internal OrderedHashSet<string> ToCheck = new();
     internal uint CrawledCount;
     long _transpileEmitTicks;
     int _transpileEmitCount;
@@ -63,7 +66,7 @@ public class BuildModuleCtx : IImportResolver
 
     public TSProject? ResolveModule(string name, string from)
     {
-        if (Result!.Modules.TryGetValue(name, out var module))
+        if (Result.Modules.TryGetValue(name, out var module))
         {
             if (module.IterationId == IterationId)
                 return module.Valid ? module : null;
@@ -130,17 +133,17 @@ public class BuildModuleCtx : IImportResolver
 
     public bool CheckFileExistence(string name)
     {
-        return Owner!.DiskCache.TryGetItem(name) is IFileCache { IsInvalid: false };
+        return Owner.DiskCache.TryGetItem(name) is IFileCache { IsInvalid: false };
     }
 
     public bool CheckItemExistence(string name)
     {
-        return Owner!.DiskCache.TryGetItem(name)?.IsInvalid == false;
+        return Owner.DiskCache.TryGetItem(name)?.IsInvalid == false;
     }
 
     public void ReportMissingImport(string from, string name)
     {
-        if (Result!.Path2FileInfo.TryGetValue(from, out var parentInfo))
+        if (Result.Path2FileInfo.TryGetValue(from, out var parentInfo))
         {
             parentInfo.ReportDiag(true, -15, "Cannot resolve import '" + name + "'", 0, 0, 0, 0);
         }
@@ -152,7 +155,7 @@ public class BuildModuleCtx : IImportResolver
         FileCompilationType forceCompilationType = FileCompilationType.Unknown)
     {
         if (forceCompilationType == FileCompilationType.Resource) forceResource = true;
-        if (Result!.ResolveCache.TryGetValue((from, name), out var res))
+        if (Result.ResolveCache.TryGetValue((from, name), out var res))
         {
             if (res.IterationId == IterationId) return res.FileName!;
         }
@@ -170,7 +173,7 @@ public class BuildModuleCtx : IImportResolver
 
         name = name.Replace("//", "/");
 
-        if (Owner?.ProjectOptions?.Imports?.TryGetValue(name, out var import) ?? false)
+        if (Owner.ProjectOptions?.Imports?.TryGetValue(name, out var import) ?? false)
         {
             if (import == null)
             {
@@ -182,7 +185,7 @@ public class BuildModuleCtx : IImportResolver
         }
 
         Result.Path2FileInfo.TryGetValue(from, out var parentInfo);
-        var fromModule = parentInfo?.FromModule ?? Owner!;
+        var fromModule = parentInfo?.FromModule ?? Owner;
 
         var name2 = fromModule.ResolveImports(name);
         if (name2 == null)
@@ -195,18 +198,18 @@ public class BuildModuleCtx : IImportResolver
 
         res.IterationId = IterationId;
         var relative = name.StartsWith("./") || name.StartsWith("../");
-        string? fn = null;
+        var fn = "";
         if (relative)
         {
-            fn = PathUtils.Join(parentInfo.Owner!.Parent!.FullPath, name);
-            var browserResolve = parentInfo.FromModule?.ProjectOptions.BrowserResolve;
+            fn = PathUtils.Join(parentInfo!.Owner!.Parent!.FullPath, name);
+            var browserResolve = parentInfo.FromModule?.ProjectOptions?.BrowserResolve;
             if (browserResolve != null)
             {
                 var relativeToModule = PathUtils.Subtract(fn + ".js", parentInfo.FromModule!.Owner.FullPath);
                 if (!relativeToModule.StartsWith("../")) relativeToModule = "./" + relativeToModule;
                 if (browserResolve.TryGetValue(relativeToModule, out var resolveReplace))
                 {
-                    fn = PathUtils.Join(parentInfo.FromModule.Owner.FullPath, resolveReplace);
+                    fn = PathUtils.Join(parentInfo.FromModule.Owner.FullPath, resolveReplace ?? "");
                 }
             }
         }
@@ -216,7 +219,7 @@ public class BuildModuleCtx : IImportResolver
         {
             if (forceCompilationType != FileCompilationType.Unknown)
             {
-                if (Owner!.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false })
+                if (Owner.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false })
                 {
                     res.FileName = fn;
                     CheckAdd(fn, forceCompilationType);
@@ -226,7 +229,7 @@ public class BuildModuleCtx : IImportResolver
 
             if (fn.EndsWith(".json") || fn.EndsWith(".css"))
             {
-                if (Owner!.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false })
+                if (Owner.DiskCache.TryGetItem(fn) is IFileCache { IsInvalid: false })
                 {
                     res.FileName = fn;
                     CheckAdd(fn, forceResource
@@ -242,7 +245,7 @@ public class BuildModuleCtx : IImportResolver
 
             var dirPath = PathUtils.Parent(fn).ToString();
             var fileOnly = fn.Substring(dirPath.Length + 1);
-            if (Owner!.DiskCache.TryGetItem(dirPath) is not IDirectoryCache dc || dc.IsInvalid)
+            if (Owner.DiskCache.TryGetItem(dirPath) is not IDirectoryCache dc || dc.IsInvalid)
             {
                 res.FileName = "?";
                 return res.FileName;
@@ -272,7 +275,7 @@ public class BuildModuleCtx : IImportResolver
                 if (info != null) CrawlInfo(info);
             }
 
-            var item = (parentInfo.Type == FileCompilationType.EsmJavaScript
+            var item = (parentInfo!.Type == FileCompilationType.EsmJavaScript
                     ? ExtensionsToImportFromJs
                     : ExtensionsToImport).Select(ext =>
                 {
@@ -296,11 +299,11 @@ public class BuildModuleCtx : IImportResolver
                 if (dc2.TryGetChild("package.json") is IFileCache { IsInvalid: false })
                 {
                     var mn = PathUtils.Subtract(fn, Owner.Owner.FullPath);
-                    if (!Result!.Modules.TryGetValue(mn, out var module))
+                    if (!Result.Modules.TryGetValue(mn, out var module))
                     {
                         module = TSProject.Create(dc2, Owner.DiskCache, Owner.Logger, mn);
                         module!.LoadProjectJson(true, Owner.ProjectOptions);
-                        Result!.Modules[mn] = module;
+                        Result.Modules[mn] = module;
                     }
 
                     var mainFile = PathUtils.Join(module.Owner.FullPath, module.MainFile);
@@ -412,8 +415,8 @@ public class BuildModuleCtx : IImportResolver
                 if (!Owner.Dependencies?.Contains(moduleInfo.Name!) ?? false)
                 {
                     var allowDevDependencies =
-                            (Owner.ProjectOptions.ExampleSources?.Contains(parentInfo.Owner!.FullPath) ?? false) ||
-                            (Owner.ProjectOptions.TestSources?.Contains(parentInfo.Owner!.FullPath) ?? false) ||
+                            (OwnerOptions.ExampleSources?.Contains(parentInfo.Owner!.FullPath) ?? false) ||
+                            (OwnerOptions.TestSources?.Contains(parentInfo.Owner!.FullPath) ?? false) ||
                             IsExampleOrSpecDir(Owner.Owner, parentInfo.Owner!.Parent!)
                         ;
                     if (!allowDevDependencies || (!Owner.DevDependencies?.Contains(moduleInfo.Name!) ?? false))
@@ -460,7 +463,7 @@ public class BuildModuleCtx : IImportResolver
 
             if (moduleInfo.ProjectOptions?.ObsoleteMessage != null)
             {
-                if (!PragmaParser.ParseIgnoreImportingObsolete(parentInfo.Owner.Utf8Content).Contains(name))
+                if (!PragmaParser.ParseIgnoreImportingObsolete(parentInfo.Owner!.Utf8Content).Contains(name))
                 {
                     parentInfo.ReportDiag(false, -14,
                         "Importing obsolete module: " + moduleInfo.ProjectOptions?.ObsoleteMessage, 0, 0, 0, 0);
@@ -495,13 +498,13 @@ public class BuildModuleCtx : IImportResolver
     bool TryToResolveFromBuildCache(TsFileAdditionalInfo itemInfo)
     {
         itemInfo.TakenFromBuildCache = false;
-        var bc = BuildCtx!.BuildCache;
+        var bc = BuildCtx.BuildCache;
         if (bc.IsEnabled)
         {
             byte[] hashOfContent;
             try
             {
-                hashOfContent = itemInfo.Owner.HashOfContent;
+                hashOfContent = itemInfo.Owner!.HashOfContent;
             }
             catch
             {
@@ -509,7 +512,7 @@ public class BuildModuleCtx : IImportResolver
                 return false;
             }
 
-            var confId = Owner.ProjectOptions.ConfigurationBuildCacheId;
+            var confId = OwnerOptions.ConfigurationBuildCacheId;
             var fbc = bc.FindTSFileBuildCache(hashOfContent, confId);
             if (fbc != null)
             {
@@ -539,7 +542,7 @@ public class BuildModuleCtx : IImportResolver
         return false;
     }
 
-    bool MatchingTranspilationDendencies(IFileCache owner, List<DependencyTriplet> transpilationDependencies)
+    bool MatchingTranspilationDendencies(IFileCache owner, List<DependencyTriplet>? transpilationDependencies)
     {
         if (transpilationDependencies == null) return true;
         var hashToName = new Dictionary<byte[], string>(StructuralEqualityComparer<byte[]>.Default);
@@ -555,7 +558,7 @@ public class BuildModuleCtx : IImportResolver
             {
                 if (processed[i]) continue;
                 var dep = transpilationDependencies[(int)i];
-                if (!hashToName.TryGetValue(dep.SourceHash, out var sourceName))
+                if (!hashToName.TryGetValue(dep.SourceHash!, out var sourceName))
                 {
                     somethingFailed = true;
                     continue;
@@ -563,14 +566,14 @@ public class BuildModuleCtx : IImportResolver
 
                 somethingProcessed = true;
                 processed[i] = true;
-                var targetName = ResolveImport(sourceName, dep.Import);
+                var targetName = ResolveImport(sourceName, dep.Import!);
                 if (targetName == "?")
                 {
                     return false;
                 }
 
                 Result.Path2FileInfo.TryGetValue(targetName, out var targetInfo);
-                if (!dep.TargetHash.AsSpan().SequenceEqual(targetInfo.Owner.HashOfContent))
+                if (!dep.TargetHash.AsSpan().SequenceEqual(targetInfo!.Owner!.HashOfContent))
                 {
                     return false;
                 }
@@ -587,10 +590,10 @@ public class BuildModuleCtx : IImportResolver
     bool TryToResolveFromBuildCacheCss(TsFileAdditionalInfo itemInfo)
     {
         itemInfo.TakenFromBuildCache = false;
-        var bc = BuildCtx!.BuildCache;
+        var bc = BuildCtx.BuildCache;
         if (bc.IsEnabled)
         {
-            var hashOfContent = itemInfo.Owner.HashOfContent;
+            var hashOfContent = itemInfo.Owner!.HashOfContent;
             var fbc = bc.FindTSFileBuildCache(hashOfContent, 0);
             if (fbc != null)
             {
@@ -607,18 +610,18 @@ public class BuildModuleCtx : IImportResolver
 
     public void StoreResultToBuildCache(BuildResult result)
     {
-        var bc = BuildCtx!.BuildCache;
+        var bc = BuildCtx.BuildCache;
         foreach (var f in result.RecompiledIncrementally)
         {
             if (f.TakenFromBuildCache)
                 continue;
-            if (f.Diagnostics.Any(d => d.IsError && !(Owner!.ProjectOptions.IgnoreDiagnostic?.Contains(d.Code) ?? false)))
+            if (f.Diagnostics.Any(d => d.IsError && !(OwnerOptions.IgnoreDiagnostic?.Contains(d.Code) ?? false)))
             {
-                if (BuildCtx!.Verbose)
+                if (BuildCtx.Verbose)
                 {
-                    Owner!.Logger.Info("Build cache skip diagnostics " + f.Owner.FullPath);
+                    Owner.Logger.Info("Build cache skip diagnostics " + f.Owner!.FullPath);
                     foreach (var diagnostic in f.Diagnostics)
-                        if (diagnostic.IsError && !(Owner.ProjectOptions.IgnoreDiagnostic?.Contains(diagnostic.Code) ?? false))
+                        if (diagnostic.IsError && !(OwnerOptions.IgnoreDiagnostic?.Contains(diagnostic.Code) ?? false))
                             Owner.Logger.Info("  " + diagnostic.Code + ": " + diagnostic.Text);
                 }
                 continue;
@@ -629,11 +632,11 @@ public class BuildModuleCtx : IImportResolver
                 case FileCompilationType.EsmJavaScript:
                 {
                     var fbc = new TSFileBuildCache();
-                    fbc.ConfigurationId = Owner.ProjectOptions.ConfigurationBuildCacheId;
-                    fbc.ContentHash = f.Owner.HashOfContent;
+                    fbc.ConfigurationId = OwnerOptions.ConfigurationBuildCacheId;
+                    fbc.ContentHash = f.Owner!.HashOfContent;
                     fbc.Output = f.Output;
                     fbc.MapLink = f.MapLink;
-                    MakeSourceInfoRelative(f.SourceInfo, f.Owner.Parent.FullPath);
+                    MakeSourceInfoRelative(f.SourceInfo, f.Owner.Parent!.FullPath);
                     fbc.SourceInfo = f.SourceInfo;
                     fbc.TranspilationDependencies = f.TranspilationDependencies;
                     bc.Store(fbc);
@@ -646,7 +649,7 @@ public class BuildModuleCtx : IImportResolver
                 {
                     var fbc = new TSFileBuildCache();
                     fbc.ConfigurationId = 0;
-                    fbc.ContentHash = f.Owner.HashOfContent;
+                    fbc.ContentHash = f.Owner!.HashOfContent;
                     fbc.Output = f.Output;
                     fbc.TranspilationDependencies = f.TranspilationDependencies;
                     bc.Store(fbc);
@@ -662,14 +665,14 @@ public class BuildModuleCtx : IImportResolver
         if (!Result.Path2FileInfo.TryGetValue(fullNameWithExtension, out var info))
         {
             if (Owner.DiskCache.TryGetItem(fullNameWithExtension) is not IFileCache fc || fc.IsInvalid) return null;
-            info = TsFileAdditionalInfo.Create(fc);
+            info = TsFileAdditionalInfo.Create(fc)!;
             info.Type = compilationType;
             MainResult.MergeCommonSourceDirectory(fc.FullPath);
             Result.Path2FileInfo.GetOrAddValueRef(fullNameWithExtension) = info;
         }
         else
         {
-            if (info.Owner.IsInvalid)
+            if (info.Owner!.IsInvalid)
             {
                 Result.Path2FileInfo.Remove(fullNameWithExtension);
                 return null;
@@ -738,10 +741,10 @@ public class BuildModuleCtx : IImportResolver
     {
         _transpileEmitTicks = 0;
         _transpileEmitCount = 0;
-        var prefetchExecutable = NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future,
-            Owner.ProjectOptions.Validate)
+        var prefetchExecutable = NjsastTsValidator.IsBuildinEnabled(OwnerOptions.Future,
+            OwnerOptions.Validate)
             ? null
-            : BuildCtx!.NativeTranspilerExecutable;
+            : BuildCtx.NativeTranspilerExecutable;
         _prefetchOptions = prefetchExecutable != null ? CreateTranspileOptions() : null;
         _prefetchScanIndex = 0;
         try
@@ -766,7 +769,7 @@ public class BuildModuleCtx : IImportResolver
         if (_transpileEmitCount > 0)
         {
             var seconds = _transpileEmitTicks / (double)Stopwatch.Frequency;
-            Owner!.Logger.Info(
+            Owner.Logger.Info(
                 $"{_lastTranspileEmitName} transpile emit done in {seconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}s for {_transpileEmitCount} files");
         }
     }
@@ -788,7 +791,7 @@ public class BuildModuleCtx : IImportResolver
                 return null;
             }
 
-            info = TsFileAdditionalInfo.Create(fileCache);
+            info = TsFileAdditionalInfo.Create(fileCache)!;
             info.Type = FileCompilationType.Unknown;
             Result.Path2FileInfo.GetOrAddValueRef(fileName) = info;
         }
@@ -874,17 +877,19 @@ public class BuildModuleCtx : IImportResolver
             {
                 case FileCompilationType.MdxbList:
                 {
-                    var newContentList = BuildMdxbList(info.DirOwner, Owner.DiskCache);
+                    // MdxbList infos are always created virtual with DirOwner set
+                    var dirOwner = info.DirOwner!;
+                    var newContentList = BuildMdxbList(dirOwner, Owner.DiskCache);
                     var trueChangeDetected =
-                        Owner.DiskCache.UpdateFile(info.DirOwner.FullPath + "/.mdxb.tsx", newContentList);
-                    Owner.Logger.Info((trueChangeDetected ? "Updated" : "Checked") + " " + info.DirOwner.FullPath +
+                        Owner.DiskCache.UpdateFile(dirOwner.FullPath + "/.mdxb.tsx", newContentList);
+                    Owner.Logger.Info((trueChangeDetected ? "Updated" : "Checked") + " " + dirOwner.FullPath +
                                       "/.mdxb.tsx in " + sw.ElapsedMilliseconds + "ms");
                     break;
                 }
                 case FileCompilationType.Mdxb:
                 {
                     var mdxToTsx = new MdxToTsx();
-                    var content = info.Owner.Utf8Content;
+                    var content = info.Owner!.Utf8Content;
                     var newContent = UpdateMdxDependentFileContent(content, info.Owner, Owner.DiskCache);
                     if (newContent != content)
                     {
@@ -909,8 +914,8 @@ public class BuildModuleCtx : IImportResolver
                     info.HasError = false;
                     if (!TryToResolveFromBuildCache(info))
                     {
-                        if (BuildCtx!.Verbose)
-                            Owner.Logger.Info("Transpiling " + info.Owner.FullPath);
+                        if (BuildCtx.Verbose)
+                            Owner.Logger.Info("Transpiling " + info.Owner!.FullPath);
                         info.Output = null;
                         info.MapLink = null;
                         info.SourceInfo = null;
@@ -920,7 +925,7 @@ public class BuildModuleCtx : IImportResolver
                     break;
                 case FileCompilationType.JavaScriptAsset:
                 case FileCompilationType.JavaScript:
-                    info.Output = info.Owner.Utf8Content;
+                    info.Output = info.Owner!.Utf8Content;
                     info.MapLink = SourceMap.Identity(info.Output, info.Owner.FullPath);
                     break;
                 case FileCompilationType.Resource:
@@ -928,7 +933,7 @@ public class BuildModuleCtx : IImportResolver
                 case FileCompilationType.Html:
                     if (!TryToResolveFromBuildCacheCss(info))
                     {
-                        var htmlContent = info.Owner.Utf8Content;
+                        var htmlContent = info.Owner!.Utf8Content;
                         var htmlDoc = new HtmlDocument();
                         htmlDoc.LoadHtml(htmlContent);
                         var toReplace = new StructList<(HtmlNode, string)>();
@@ -936,8 +941,8 @@ public class BuildModuleCtx : IImportResolver
                         {
                             if (htmlNode.Attributes.AttributesWithName("src").SingleOrDefault() is { } srcattr)
                             {
-                                var scriptPath = PathUtils.Join(PathUtils.Parent(info.Owner.FullPath), srcattr.Value);
-                                if (Owner!.DiskCache.TryGetItem(scriptPath) is IFileCache { IsInvalid: false } fc)
+                                var scriptPath = PathUtils.Join(PathUtils.Parent(info.Owner.FullPath), srcattr.Value ?? "");
+                                if (Owner.DiskCache.TryGetItem(scriptPath) is IFileCache { IsInvalid: false } fc)
                                 {
                                     info.ReportTranspilationDependency(info.Owner.HashOfContent, scriptPath,
                                         fc.HashOfContent);
@@ -957,7 +962,7 @@ public class BuildModuleCtx : IImportResolver
                             {
                                 htmlNode.Attributes.RemoveAll();
                                 htmlNode.ChildNodes.Clear();
-                                htmlNode.ParentNode.ReplaceChild(HtmlNode.CreateNode(newHtml), htmlNode);
+                                htmlNode.ParentNode!.ReplaceChild(HtmlNode.CreateNode(newHtml), htmlNode);
                             }
 
                             htmlContent = htmlDoc.DocumentNode.WriteContentTo();
@@ -984,7 +989,7 @@ public class BuildModuleCtx : IImportResolver
                                 "file://" + info.Owner.FullPath[prepend.Length..], url =>
                                 {
                                     if (url.StartsWith("file://")) url = prepend + url[7..];
-                                    if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false })
+                                    if (Owner.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false })
                                     {
                                         return "file://" + url[prepend.Length..];
                                     }
@@ -1003,7 +1008,7 @@ public class BuildModuleCtx : IImportResolver
                                 }, url =>
                                 {
                                     if (url.StartsWith("file://")) url = prepend + url[7..];
-                                    if (Owner!.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false } fc)
+                                    if (Owner.DiskCache.TryGetItem(url) is IFileCache { IsInvalid: false } fc)
                                     {
                                         info.ReportTranspilationDependency(info.Owner.HashOfContent, url,
                                             fc.HashOfContent);
@@ -1012,7 +1017,7 @@ public class BuildModuleCtx : IImportResolver
 
                                     info.ReportDiag(true, -3, "Missing dependency " + url, 0, 0, 0, 0);
                                     return "";
-                                }, text => { Owner!.Logger.Info(text); }).Result;
+                                }, text => { Owner.Logger.Info(text); }).Result;
                         }
                         finally
                         {
@@ -1020,7 +1025,7 @@ public class BuildModuleCtx : IImportResolver
                         }
 
                         var cssProcessor = BuildCtx.CompilerPool.GetCss();
-                        cssProcessor.ForceNativeCss = Owner!.ProjectOptions!.Future;
+                        cssProcessor.ForceNativeCss = OwnerOptions.Future;
                         try
                         {
                             info.Output = cssContent;
@@ -1041,7 +1046,7 @@ public class BuildModuleCtx : IImportResolver
                                       info.Output.Replace("\\", "\\\\").Replace("$", "\\$").Replace("`", "\\`") + "`;";
                     }
 
-                    var resolved = ResolveImport(info.Owner.FullPath, "lit");
+                    var resolved = ResolveImport(info.Owner!.FullPath, "lit");
                     if (resolved != null && resolved != "?")
                     {
                         info.ReportDependency(resolved);
@@ -1058,10 +1063,10 @@ public class BuildModuleCtx : IImportResolver
                     if (!TryToResolveFromBuildCacheCss(info))
                     {
                         var cssProcessor = BuildCtx.CompilerPool.GetCss();
-                        cssProcessor.ForceNativeCss = Owner!.ProjectOptions.Future;
+                        cssProcessor.ForceNativeCss = OwnerOptions.Future;
                         try
                         {
-                            info.Output = info.Owner.Utf8Content;
+                            info.Output = info.Owner!.Utf8Content;
                             cssProcessor.ProcessCss(info.Owner.Utf8Content,
                                 info.Owner.FullPath, (url, @from) =>
                                 {
@@ -1085,7 +1090,7 @@ public class BuildModuleCtx : IImportResolver
                 if (!info.Dependencies.SequenceEqual(oldDependencies))
                 {
                     if (BuildCtx.Verbose)
-                        Owner.Logger.Info("Dependency change detected " + info.Owner.FullPath);
+                        Owner.Logger.Info("Dependency change detected " + info.Owner!.FullPath);
                     _noDependencyCheck = false;
                 }
             }
@@ -1148,7 +1153,7 @@ public class BuildModuleCtx : IImportResolver
                 while (endLine < lines.Count && lines[endLine] != "```") endLine++;
                 if (endLine == lines.Count) break;
                 var pos = line.Split("from:")[1].Split(':');
-                var fn = PathUtils.Join(owner.Parent.FullPath, pos[0]);
+                var fn = PathUtils.Join(owner.Parent!.FullPath, pos[0]);
                 if (diskCache.TryGetItem(fn) is IFileCache { IsInvalid: false } file)
                 {
                     var nc = file.Utf8Content;
@@ -1209,7 +1214,7 @@ public class BuildModuleCtx : IImportResolver
     SourceFromPair? LoadCssImport(TsFileAdditionalInfo info, string url, string from)
     {
         var full = ResolveCssImportPath(url, from);
-        if (Owner!.DiskCache.TryGetItem(full) is not IFileCache { IsInvalid: false } file)
+        if (Owner.DiskCache.TryGetItem(full) is not IFileCache { IsInvalid: false } file)
             return null;
         info.ReportTranspilationDependency(info.Owner!.HashOfContent, full, file.HashOfContent);
         return new SourceFromPair(file.Utf8Content, full);
@@ -1228,7 +1233,7 @@ public class BuildModuleCtx : IImportResolver
     {
         return Task.Run(() =>
         {
-            var tsrs = BuildCtx!.CompilerPool.GetNativeTranspiler(nativeExecutable, transpileOptions);
+            var tsrs = BuildCtx.CompilerPool.GetNativeTranspiler(nativeExecutable, transpileOptions);
             try
             {
                 var tsrsResult = tsrs.Transpile(fileName, source);
@@ -1263,14 +1268,14 @@ public class BuildModuleCtx : IImportResolver
 
         if (_prefetchScanIndex < (int)CrawledCount)
             _prefetchScanIndex = (int)CrawledCount;
-        while (running < PrefetchWindow && _prefetchScanIndex < ToCheck!.Count)
+        while (running < PrefetchWindow && _prefetchScanIndex < ToCheck.Count)
         {
             var fileName = ToCheck[_prefetchScanIndex++];
             if (_prefetchedTranspiles.ContainsKey(fileName) || !TryGetSourceToPrefetch(fileName, out var source))
                 continue;
             var options = _prefetchOptions!;
             var transpileFileName = TranspileFileName(fileName);
-            var pool = BuildCtx!.CompilerPool;
+            var pool = BuildCtx.CompilerPool;
             _prefetchedTranspiles[fileName] = (source, Task.Run(() =>
             {
                 var compiler = pool.GetNativeTranspiler(nativeExecutable, options);
@@ -1293,17 +1298,17 @@ public class BuildModuleCtx : IImportResolver
         source = "";
         if (!IsTsOrTsx(fileName) || IsDts(fileName))
             return false;
-        if (Owner!.DiskCache.TryGetItem(fileName) is not IFileCache { IsInvalid: false } file)
+        if (Owner.DiskCache.TryGetItem(fileName) is not IFileCache { IsInvalid: false } file)
             return false;
-        if (Result!.Path2FileInfo.TryGetValue(fileName, out var info) &&
+        if (Result.Path2FileInfo.TryGetValue(fileName, out var info) &&
             (info.Type != FileCompilationType.TypeScript || info.ChangeId == file.ChangeId))
             return false;
-        var buildCache = BuildCtx!.BuildCache;
+        var buildCache = BuildCtx.BuildCache;
         if (buildCache.IsEnabled)
         {
             try
             {
-                if (buildCache.FindTSFileBuildCache(file.HashOfContent, Owner.ProjectOptions.ConfigurationBuildCacheId) !=
+                if (buildCache.FindTSFileBuildCache(file.HashOfContent, OwnerOptions.ConfigurationBuildCacheId) !=
                     null)
                     return false;
             }
@@ -1319,7 +1324,7 @@ public class BuildModuleCtx : IImportResolver
 
     ITSCompilerOptions CreateTranspileOptions()
     {
-        var transpileOptions = BuildCtx!.CompilerOptions.Clone();
+        var transpileOptions = BuildCtx.CompilerOptions.Clone();
         transpileOptions.module = ModuleKind.Commonjs;
         if (transpileOptions.moduleResolution == ModuleResolutionKind.Bundler)
             transpileOptions.moduleResolution = null;
@@ -1337,12 +1342,12 @@ public class BuildModuleCtx : IImportResolver
 
     void Transpile(TsFileAdditionalInfo info)
     {
-        ITSCompiler compiler = null;
+        ITSCompiler? compiler = null;
         var compilerIsNative = false;
         AstToplevel? transpiledAst = null;
         try
         {
-            if (info.Owner.IsInvalid)
+            if (info.Owner!.IsInvalid)
             {
                 info.HasError = true;
                 info.Output = null;
@@ -1359,7 +1364,7 @@ public class BuildModuleCtx : IImportResolver
             var newFileName = TranspileFileName(fileName);
 
             TranspileResult result;
-            var useBuildin = NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future, Owner.ProjectOptions.Validate);
+            var useBuildin = NjsastTsValidator.IsBuildinEnabled(OwnerOptions.Future, OwnerOptions.Validate);
             var nativeExecutable = useBuildin ? null : BuildCtx.NativeTranspilerExecutable;
             var transpileEmitStart = Stopwatch.GetTimestamp();
             _lastTranspileEmitName = useBuildin ? "Built-in"
@@ -1410,10 +1415,10 @@ public class BuildModuleCtx : IImportResolver
             }
             else
             {
-                compiler = BuildCtx.CompilerPool.GetTs(Owner!.DiskCache, transpileOptions);
+                compiler = BuildCtx.CompilerPool.GetTs(Owner.DiskCache, transpileOptions);
                 var validateExecutable = BuildCtx.ValidateTranspilerExecutable;
                 var validateTsrs = validateExecutable != null;
-                var validateTs = !validateTsrs && NjsastTsValidator.IsEnabled(Owner!.ProjectOptions.Validate);
+                var validateTs = !validateTsrs && NjsastTsValidator.IsEnabled(OwnerOptions.Validate);
                 var candidateTask = validateTsrs
                     ? StartNativeTranspile(validateExecutable!, transpileOptions, newFileName, source)
                     : validateTs
@@ -1422,7 +1427,7 @@ public class BuildModuleCtx : IImportResolver
                 result = compiler.Transpile(newFileName, source);
                 if ((validateTs || validateTsrs) &&
                     (result.Diagnostics == null || result.Diagnostics.All(d => !d.IsError)))
-                    NjsastTsValidator.Validate(Owner!.Owner.FullPath, newFileName, source, result.JavaScript,
+                    NjsastTsValidator.Validate(Owner.Owner.FullPath, newFileName, source, result.JavaScript,
                         candidateTask, Owner.Logger.Info, validateTsrs ? "Tsrs" : "Njsast");
             }
             _transpileEmitTicks += Stopwatch.GetTimestamp() - transpileEmitStart;
@@ -1448,7 +1453,7 @@ public class BuildModuleCtx : IImportResolver
                 transpiledAst = result.Ast;
                 info.Output = SourceMap.RemoveLinkToSourceMap(result.JavaScript);
                 info.MapLink = result.SourceMap != null
-                    ? SourceMap.Parse(result.SourceMap, info.Owner.Parent.FullPath)
+                    ? SourceMap.Parse(result.SourceMap, info.Owner.Parent!.FullPath)
                     : SourceMap.Identity(info.Output, fileName);
                 info.MapLink.sources = [fileName];
             }
@@ -1485,7 +1490,7 @@ public class BuildModuleCtx : IImportResolver
             }
             else
             {
-                var parser = new Parser(new(), info.Output);
+                var parser = new Parser(new(), info.Output!);
                 toplevel = parser.Parse();
                 toplevel.FigureOutScope();
             }
@@ -1691,7 +1696,7 @@ public class BuildModuleCtx : IImportResolver
             return;
         sourceInfo.Imports?.ForEach(i =>
         {
-            var resolved = ResolveImport(fileInfo.Owner.FullPath, i.Name);
+            var resolved = ResolveImport(fileInfo.Owner!.FullPath, i.Name!);
             if (resolved != null && resolved != "?")
             {
                 fileInfo.ReportDependency(resolved);
@@ -1722,7 +1727,7 @@ public class BuildModuleCtx : IImportResolver
                     name += "/package.json";
                 }
 
-                if (Owner!.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is not IFileCache)
+                if (Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is not IFileCache)
                 {
                     fileInfo.ReportDiagWithMapLink(true, -3, "Missing dependency " + assetName, a.StartLine, a.StartCol,
                         a.EndLine, a.EndCol);
@@ -1759,9 +1764,8 @@ public class BuildModuleCtx : IImportResolver
         {
             foreach (var sourceInfoSprite in sourceInfo.Sprites)
             {
-                if (sourceInfoSprite.IsSvg())
+                if (sourceInfoSprite.Name is { } name && sourceInfoSprite.IsSvg())
                 {
-                    var name = sourceInfoSprite.Name;
                     if (!(Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, name)) is
                             IFileCache fc))
                     {
@@ -1786,9 +1790,9 @@ public class BuildModuleCtx : IImportResolver
                 }
             }
 
-            if (Owner.ProjectOptions.SpriteGeneration)
+            if (OwnerOptions.SpriteGeneration)
             {
-                var spriteHolder = Owner.ProjectOptions.SpriteGenerator;
+                var spriteHolder = OwnerOptions.SpriteGenerator;
                 spriteHolder.Process(sourceInfo.Sprites);
             }
             else
@@ -1809,7 +1813,7 @@ public class BuildModuleCtx : IImportResolver
 
         if (sourceInfo.VdomTranslations != null)
         {
-            var trdb = Owner.ProjectOptions.TranslationDb;
+            var trdb = OwnerOptions.TranslationDb;
             if (trdb != null)
             {
                 sourceInfo.VdomTranslations.ForEach(t =>
@@ -1836,7 +1840,7 @@ public class BuildModuleCtx : IImportResolver
 
         if (sourceInfo.Translations != null)
         {
-            var trdb = Owner.ProjectOptions.TranslationDb;
+            var trdb = OwnerOptions.TranslationDb;
             if (trdb != null)
             {
                 sourceInfo.Translations.ForEach(t =>
@@ -1869,11 +1873,11 @@ public class BuildModuleCtx : IImportResolver
         }
     }
 
-    TsFileAdditionalInfo ReportDependency(TsFileAdditionalInfo owner, TsFileAdditionalInfo dep)
+    TsFileAdditionalInfo? ReportDependency(TsFileAdditionalInfo owner, TsFileAdditionalInfo? dep)
     {
         if (dep != null)
         {
-            owner.ReportDependency(dep.Owner.FullPath);
+            owner.ReportDependency(dep.Owner!.FullPath);
         }
 
         return dep;
@@ -1914,15 +1918,15 @@ public class BuildModuleCtx : IImportResolver
     {
         var fileName = ResolveImport(module.ImportedFrom, module.Name);
         if (fileName == null || fileName == "?") return (null, null);
-        if (_currentlyTranspiling.Owner.FullPath == fileName)
+        if (_currentlyTranspiling!.Owner!.FullPath == fileName)
         {
             return (null, null);
         }
 
         Result.Path2FileInfo.TryGetValue(module.ImportedFrom, out var sourceInfo);
         var info = CrawlFile(fileName);
-        _currentlyTranspiling.ReportTranspilationDependency(sourceInfo.Owner.HashOfContent, module.Name,
-            info.Owner.HashOfContent);
+        _currentlyTranspiling.ReportTranspilationDependency(sourceInfo!.Owner!.HashOfContent, module.Name,
+            info!.Owner!.HashOfContent);
         if (_parsedCache.TryGetValue(fileName, out var toplevel))
         {
             return (fileName, toplevel);
@@ -1936,7 +1940,7 @@ public class BuildModuleCtx : IImportResolver
 
         try
         {
-            var parser = new Parser(new(), info.Output);
+            var parser = new Parser(new(), info.Output!);
             toplevel = parser.Parse();
             toplevel.FigureOutScope();
             _parsedCache.Add(fileName, toplevel);

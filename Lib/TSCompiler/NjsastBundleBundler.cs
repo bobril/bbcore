@@ -20,10 +20,9 @@ namespace Lib.TSCompiler;
 
 public class NjsastBundleBundler : IBundler, IBundlerCtx
 {
-    string _mainJsBundleUrl;
-    string _bundlePng;
-    List<float> _bundlePngInfo;
-    string _indexHtml;
+    readonly string _mainJsBundleUrl;
+    string? _bundlePng;
+    List<float>? _bundlePngInfo;
     readonly IToolsDir _tools;
     readonly ILogger _logger;
 
@@ -39,6 +38,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         _mainBuildResult = mainBuildResult;
         _project = project;
         _buildResult = buildResult;
+        _mainJsBundleUrl = buildResult.BundleJsUrl;
         _noHtml = _project.LibraryMode || _project.NoHtml;
     }
 
@@ -83,17 +83,19 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
             {
                 var full = PathUtils.Join(@from, url);
                 var fullJustName = full.Split('?', '#')[0];
-                _buildResult.Path2FileInfo.TryGetValue(fullJustName, out var fileAdditionalInfo);
+                if (!_buildResult.Path2FileInfo.TryGetValue(fullJustName, out var fileAdditionalInfo))
+                    throw new InvalidOperationException("Css referenced file not found: " + fullJustName);
                 _mainBuildResult.FilesContent.GetOrAddValueRef(_buildResult.ToOutputUrl(fileAdditionalInfo)) =
-                    fileAdditionalInfo.Owner.ByteContent;
-                return PathUtils.GetFile(fileAdditionalInfo.OutputUrl) +
+                    fileAdditionalInfo.Owner!.ByteContent;
+                // ToOutputUrl above always fills OutputUrl
+                return PathUtils.GetFile(fileAdditionalInfo.OutputUrl!) +
                        full.Substring(fullJustName.Length);
             }, LoadCssImport).Result;
             var cssImports = "";
-            foreach (var match in Regex.Matches(cssContent, "@import .*;"))
+            foreach (Match match in Regex.Matches(cssContent, "@import .*;"))
             {
-                cssImports += match.ToString();
-                cssContent = cssContent.Replace(match.ToString(), "");
+                cssImports += match.Value;
+                cssContent = cssContent.Replace(match.Value, "");
             }
 
             _mainBuildResult.FilesContent.GetOrAddValueRef(cssPath) = cssImports + cssContent;
@@ -121,13 +123,11 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
             }
         }
 
-        _mainJsBundleUrl = _buildResult.BundleJsUrl;
-
         var bundler = new BundlerImpl(this);
-        if (!_project.LibraryMode && (_project.ExampleSources?.Count ?? 0) > 0)
+        if (!_project.LibraryMode && _project.ExampleSources is { Count: > 0 } exampleSources)
         {
             bundler.PartToMainFilesMap = new Dictionary<string, IReadOnlyList<string>>
-                { { "Bundle", new[] { _project.ExampleSources[0] } } };
+                { { "Bundle", new[] { exampleSources[0] } } };
         }
         else
         {
@@ -147,8 +147,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         bundler.Run();
         if (!_noHtml)
         {
-            BuildFastBundlerIndexHtml(cssLink);
-            _mainBuildResult.FilesContent.GetOrAddValueRef("index.html") = _indexHtml;
+            _mainBuildResult.FilesContent.GetOrAddValueRef("index.html") = BuildFastBundlerIndexHtml(cssLink);
         }
 
         if (_project.SubProjects != null)
@@ -160,8 +159,9 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                 if (subProject == null) continue;
                 if (_subBundlers == null || !_subBundlers.TryGetValue(projPath, out var subBundler))
                 {
-                    subBundler = new(_tools, _logger, _mainBuildResult, subProject,
-                        _buildResult.SubBuildResults.GetOrFakeValueRef(projPath));
+                    var subBuildResult = _buildResult.SubBuildResults?.GetOrFakeValueRef(projPath) ??
+                                         throw new InvalidOperationException("Missing build result for " + projPath);
+                    subBundler = new(_tools, _logger, _mainBuildResult, subProject, subBuildResult);
                 }
 
                 newSubBundlers.GetOrAddValueRef(projPath) = subBundler;
@@ -176,9 +176,9 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         }
     }
 
-    void BuildFastBundlerIndexHtml(string cssLink)
+    string BuildFastBundlerIndexHtml(string cssLink)
     {
-        _indexHtml =
+        return
             $@"<!DOCTYPE html><html><head><meta charset=""utf-8"">{_project.ExpandHtmlHead(_buildResult)}<title>{_project.Title}</title>{cssLink}</head><body><script src=""{_mainJsBundleUrl}"" charset=""utf-8""></script></body></html>";
     }
 
@@ -205,7 +205,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         var res = "";
         if (_project.Localize)
         {
-            _project.TranslationDb.BuildTranslationJs(_tools, _mainBuildResult.FilesContent,
+            // TranslationDb is always initialized when Localize is enabled
+            _project.TranslationDb!.BuildTranslationJs(_tools, _mainBuildResult.FilesContent,
                 _mainBuildResult.OutputSubDir);
             res +=
                 $"function g11nPath(s){{return\"./{_mainBuildResult.OutputSubDirPrefix}\"+s.toLowerCase()+\".js\"}};";
@@ -238,16 +239,16 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         if (fileInfo.Type == FileCompilationType.Json)
         {
             if (BuildSourceMap)
-                return (fileInfo.Owner.Utf8Content,
+                return (fileInfo.Owner!.Utf8Content,
                     SourceMap.Identity(fileInfo.Owner.Utf8Content, fileInfo.Owner.FullPath));
-            return (fileInfo.Owner.Utf8Content, null);
+            return (fileInfo.Owner!.Utf8Content, null);
         }
 
         if (fileInfo.Type is FileCompilationType.JavaScriptAsset or FileCompilationType.JavaScript
             or FileCompilationType.Scss)
         {
             if (BuildSourceMap)
-                return (fileInfo.Output, SourceMap.Identity(fileInfo.Output, fileInfo.Owner.FullPath));
+                return (fileInfo.Output, SourceMap.Identity(fileInfo.Output!, fileInfo.Owner!.FullPath));
             return (fileInfo.Output, null);
         }
 
@@ -313,7 +314,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
     {
         content.AddText("//# sourceMappingURL=" + name + ".map");
         var source = content.Content();
-        var sm = content.Build(_mainBuildResult.CommonSourceDirectory, SourceMapSourceRoot ?? "..").ToString();
+        var sm = content.Build(_mainBuildResult.CommonSourceDirectory!, SourceMapSourceRoot ?? "..").ToString();
         _logger.Info("Bundler created " + name + " with " + source.Length + " chars and sourcemap with " +
                      sm.Length + " chars");
         _mainBuildResult.FilesContent.GetOrAddValueRef(name) = source;
@@ -351,7 +352,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         }
 
         var res = resolveResult.FileNameWithPreference(false);
-        if (res == "?")
+        if (res is null or "?")
         {
             throw new Exception($"Bundler failed to resolve {name} from {@from}");
         }
@@ -372,7 +373,8 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
         var sourceInfo = fileInfo.SourceInfo;
         if (sourceInfo?.Assets == null)
             return Array.Empty<string>();
-        return sourceInfo.Assets.Select(i => i.Name).Where(i =>
+        // Asset names are expected to be resolved here (null ones are reported as errors during crawl)
+        return sourceInfo.Assets.Select(i => i.Name!).Where(i =>
                 !i.StartsWith("resource:") && !i.StartsWith("project:") && i.EndsWith(".js"))
             .ToList();
     }

@@ -405,7 +405,7 @@ public class TranslationDb
         return res;
     }
 
-    public void BuildTranslationJs(IToolsDir tools, RefDictionary<string, object> filesContent, string versionDir)
+    public void BuildTranslationJs(IToolsDir tools, RefDictionary<string, object> filesContent, string? versionDir)
     {
         if (_changed)
         {
@@ -540,7 +540,7 @@ public class TranslationDb
 
     MessageParser _messageParser = new MessageParser();
 
-    public ErrorAst? CheckMessage(string message, List<string> knownParams)
+    public ErrorAst? CheckMessage(string message, List<string>? knownParams)
     {
         var res = _messageParser.Parse(message);
         if (res is ErrorAst)
