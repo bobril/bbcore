@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using Lib.ToolsDir;
 using System.Threading.Tasks;
 using Lib.TSCompiler;
@@ -18,6 +19,8 @@ public class CompilerPool : ICompilerPool
         _semaphore = new(parallelCompilations);
         _semaphoreCss = new(parallelCompilations);
         _semaphoreScss = new(parallelCompilations);
+        _nativeTranspilerParallelCompilations = Math.Min(8, Math.Min(Environment.ProcessorCount, parallelCompilations));
+        _semaphoreNativeTranspilers = new(_nativeTranspilerParallelCompilations);
     }
 
     readonly System.Threading.SemaphoreSlim _semaphore;
@@ -26,6 +29,11 @@ public class CompilerPool : ICompilerPool
     readonly ConcurrentBag<ITSCompiler> _pool = new();
     readonly ConcurrentBag<ICssProcessor> _poolCss = new();
     readonly ConcurrentBag<IScssProcessor> _poolScss = new();
+
+    // Each native transpiler owns one `tsrs --api` or `tsc --api` process, which handles one request at a time
+    readonly System.Threading.SemaphoreSlim _semaphoreNativeTranspilers;
+    readonly ConcurrentBag<NativeApiTranspiler> _poolNativeTranspilers = new();
+    readonly int _nativeTranspilerParallelCompilations;
 
     readonly IToolsDir _toolsDir;
     readonly ILogger _logger;
@@ -45,6 +53,32 @@ public class CompilerPool : ICompilerPool
     {
         _pool.Add(value);
         _semaphore.Release();
+    }
+
+    public ITSCompiler GetNativeTranspiler(string executable, ITSCompilerOptions compilerOptions)
+    {
+        _semaphoreNativeTranspilers.Wait();
+        NativeApiTranspiler? res = null;
+        while (_poolNativeTranspilers.TryTake(out var pooled))
+        {
+            if (pooled.Executable == executable)
+            {
+                res = pooled;
+                break;
+            }
+
+            pooled.Dispose();
+        }
+
+        res ??= new(executable, _logger);
+        res.CompilerOptions = compilerOptions;
+        return res;
+    }
+
+    public void ReleaseNativeTranspiler(ITSCompiler value)
+    {
+        _poolNativeTranspilers.Add((NativeApiTranspiler)value);
+        _semaphoreNativeTranspilers.Release();
     }
 
     public ICssProcessor GetCss()
@@ -92,6 +126,21 @@ public class CompilerPool : ICompilerPool
                 processor.Dispose();
             }
             _poolCss.Clear();
+            for (var i = 0; i < _nativeTranspilerParallelCompilations; i++)
+                await _semaphoreNativeTranspilers.WaitAsync();
+            try
+            {
+                foreach (var transpiler in _poolNativeTranspilers)
+                {
+                    transpiler.Dispose();
+                }
+
+                _poolNativeTranspilers.Clear();
+            }
+            finally
+            {
+                _semaphoreNativeTranspilers.Release(_nativeTranspilerParallelCompilations);
+            }
         }
         finally
         {

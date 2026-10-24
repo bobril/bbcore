@@ -2,8 +2,42 @@
 
 ## [unreleased]
 
+### Added
+
+- Added `.bbrc` `tsrs: true` option to use [tsrs](https://github.com/oxc-project/tsrs), the Rust port of TypeScript 7,
+  for typechecking (including the continuously running `--watch` process in interactive builds) and for
+  TypeScript-to-JavaScript transpilation through its `transpileModule` API. Transpilation uses long-running
+  `tsrs --api` processes (pooled, up to 8) and its own build cache key. `tsrsTranspile: false` keeps the existing
+  transpiler and uses tsrs only for typechecking. tsrs is found through `TSRS_BINARY`, `node_modules/@tsrs/<platform>`,
+  `node_modules/tsrs` or `PATH`, otherwise it is downloaded from npm into the bbcore tools directory (`tsrsVersion`
+  selects the version). Where tsrs is not available (Windows and Intel macOS have no tsrs build yet) or the download
+  fails, bbcore warns and falls back to Go TypeScript (tsgo) or regular TypeScript. The tsrs output gets the same
+  emit changes bbcore applies to its patched TypeScript (no `(0, f)()` indirect calls, no `__esModule` tagging,
+  setters on reexports, chunked export initialization and TypeScript 6 style destructured exports), so bundles stay
+  the same.
+- Added TypeScript 7.1+ native compiler support: `.bbrc` `tsVersion` 7.1 or newer (for example `7.1.0-beta`)
+  downloads `@typescript/typescript-<platform>` from npm into the bbcore tools directory and uses its `tsc` for
+  typechecking, including `--watch`, and for transpilation through the `tsc --api` `transpileModule` API, with the
+  same emit changes as tsrs. A project with `typescript` 7.1+ in `devDependencies` uses its installed `tsc`. This
+  works on Windows too. When tsrs is not available, bbcore now falls back to TypeScript 7 in the version tsrs ports
+  (`7.1.0-dev.20260930.4`) before falling back to Go TypeScript or regular TypeScript. TypeScript 7.0 is rejected.
+- Added `.bbrc` `validate: "tsrs"` option, which transpiles with the regular TypeScript compiler and compares the
+  formatted output of tsrs (or TypeScript 7 where tsrs is not available) for every file, writing differing cases
+  to `.bbcore/TsrsInput` and `.bbcore/TsrsWrong`.
+
 ### Fixed
 
+- Fixed Njsast variable hoisting throwing `NotImplementedException` on variables written by a destructuring
+  assignment such as `({ a: x } = f())`, which TypeScript 7 emits for destructured exports.
+- Native TypeScript typecheck (`gots`, `tsrs`) now leaves files that do not exist out of the generated typecheck
+  project. TypeScript 7.1 stopped checking the whole program because of them (TS6053), for example for a missing
+  `node_modules/monaco-editor/monaco.d.ts`; TypeScript 7.0 already ignored them.
+- Native TypeScript one-shot typecheck now reads stderr concurrently with stdout, so a compiler writing a lot to
+  stderr cannot deadlock the build.
+- Native TypeScript `--watch` processes are now killed when bb exits or receives SIGTERM, SIGINT or SIGHUP, so
+  `tsrs --watch` is not left running.
+- Fixed Njsast `SourceMapBuilder` plain text source adder (used without input source map) jumping to the end of the
+  line instead of the requested column.
 - Fixed intermittent failures during parallel JavaScript compression by isolating variable-hoisting state between compressor instances.
 - Fixed variable hoisting selecting the wrong branch when both sides of an `if/else` declare multiple initialized variables.
 

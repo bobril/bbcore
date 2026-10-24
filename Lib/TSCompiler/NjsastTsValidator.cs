@@ -33,7 +33,7 @@ public static class NjsastTsValidator
     }
 
     public static void Validate(string projectDir, string fileName, string source, string v8JavaScript,
-        Task<string>? njsastTask, Action<string> log)
+        Task<string>? njsastTask, Action<string> log, string candidateName = "Njsast")
     {
         if (njsastTask == null) return;
         string njsastJavaScript;
@@ -43,10 +43,10 @@ public static class NjsastTsValidator
         }
         catch (Exception ex)
         {
-            log("Njsast ValidateTS failed for " + fileName + ": " + ex.Message);
+            log(candidateName + " ValidateTS failed for " + fileName + ": " + ex.Message);
             var failedTestCase = WriteRegressionTestCase(projectDir, fileName, source, v8JavaScript,
-                "// Njsast failed: " + ex + "\n");
-            log("Njsast ValidateTS wrote repro " + failedTestCase);
+                "// " + candidateName + " failed: " + ex + "\n", ReproDirectoryPrefix(candidateName));
+            log(candidateName + " ValidateTS wrote repro " + failedTestCase);
             return;
         }
 
@@ -59,18 +59,19 @@ public static class NjsastTsValidator
         }
         catch (Exception ex)
         {
-            log("Njsast ValidateTS normalization failed for " + fileName + ": " + ex.Message);
+            log(candidateName + " ValidateTS normalization failed for " + fileName + ": " + ex.Message);
             var failedTestCase = WriteRegressionTestCase(projectDir, fileName, source, v8JavaScript,
-                "// Njsast normalization failed: " + ex + "\n\n" + njsastJavaScript);
-            log("Njsast ValidateTS wrote repro " + failedTestCase);
+                "// " + candidateName + " normalization failed: " + ex + "\n\n" + njsastJavaScript,
+                ReproDirectoryPrefix(candidateName));
+            log(candidateName + " ValidateTS wrote repro " + failedTestCase);
             return;
         }
 
         if (formattedV8 == formattedNjsast) return;
 
         var testCase = WriteRegressionTestCase(projectDir, fileName, source, formattedV8,
-            formattedNjsast);
-        log("Njsast ValidateTS output differs for " + fileName + "; wrote " + testCase);
+            formattedNjsast, ReproDirectoryPrefix(candidateName));
+        log(candidateName + " ValidateTS output differs for " + fileName + "; wrote " + testCase);
     }
 
     public static string TranspileToCommonJs(string fileName, string source)
@@ -160,12 +161,14 @@ public static class NjsastTsValidator
         }
     }
 
+    static string ReproDirectoryPrefix(string candidateName) => candidateName == "Njsast" ? "" : candidateName;
+
     public static string WriteRegressionTestCase(string projectDir, string fileName, string source,
-        string v8JavaScript, string njsastJavaScript)
+        string v8JavaScript, string njsastJavaScript, string directoryPrefix = "")
     {
         projectDir = Path.GetFullPath(projectDir);
-        var inputDir = Path.Combine(projectDir, ".bbcore", "Input");
-        var wrongDir = Path.Combine(projectDir, ".bbcore", "Wrong");
+        var inputDir = Path.Combine(projectDir, ".bbcore", directoryPrefix + "Input");
+        var wrongDir = Path.Combine(projectDir, ".bbcore", directoryPrefix + "Wrong");
         Directory.CreateDirectory(inputDir);
         Directory.CreateDirectory(wrongDir);
         var baseName = Path.GetFileName(fileName);

@@ -146,6 +146,45 @@ When `@typescript/native-preview` is listed in `devDependencies`, bbcore uses it
 Interactive builds keep `tsgo --watch` running continuously, so typechecking is faster after the first check.
 Transpilation from TypeScript to JavaScript still uses the regular TypeScript JavaScript compiler path.
 
+## Use tsrs (Rust TypeScript) for typechecking and transpilation
+
+[tsrs](https://github.com/oxc-project/tsrs) is a Rust port of TypeScript 7. Enable it in `.bbrc`:
+
+    {
+        "tsrs": true
+    }
+
+bbcore then uses tsrs for typechecking (interactive builds keep `tsrs --watch` running) and transpiles TypeScript to
+JavaScript through the tsrs `transpileModule` API. To use tsrs only for typechecking and keep the existing
+transpiler, add `"tsrsTranspile": false`.
+
+The binary is found through the `TSRS_BINARY` environment variable, `node_modules/@tsrs/<platform>`,
+`node_modules/tsrs` or `PATH`. When none is found, bbcore downloads the tsrs package for your platform from npm into
+its tools directory (`"tsrsVersion"` selects the version, default is the version bbcore was tested with). When tsrs
+is not available, for example on Windows or Intel macOS where tsrs has no build yet, or when the download fails,
+bbcore logs a warning and falls back to TypeScript 7 (see below) in the version tsrs follows, so results stay the
+same. When that is not available either, it falls back to Go TypeScript (`tsgo` from `@typescript/native-preview` or
+`PATH`) for typechecking, or to regular TypeScript, and transpiles with regular TypeScript.
+
+## Use TypeScript 7.1+ native compiler
+
+TypeScript 7 is a native compiler without `typescript.js`, so bbcore runs its `tsc` directly: for typechecking
+(interactive builds keep `tsc --watch` running) and for transpilation through its `transpileModule` API. Select it by
+version in `.bbrc`:
+
+    {
+        "tsVersion": "7.1.0-beta"
+    }
+
+bbcore downloads `@typescript/typescript-<platform>` from npm into its tools directory. A project with `typescript`
+7.1+ in `devDependencies` uses its installed `tsc` instead. TypeScript 7.0 is not supported, because its API cannot
+transpile. Output gets the same emit changes as described for tsrs above.
+
+bbcore applies the same emit changes to tsrs output as to its patched TypeScript compiler, so bundled JavaScript is the
+same as with the regular transpiler. Source maps follow TypeScript 7 and are slightly more detailed, so columns of
+build diagnostics can differ. To compare both transpilers for every file, use `"validate": "tsrs"`; differing files are
+written to `.bbcore/TsrsInput` (regular output) and `.bbcore/TsrsWrong` (tsrs output).
+
 ## Override localization
 
 By default localization is detected from existence of dependency bobril-g11n. You can override it:

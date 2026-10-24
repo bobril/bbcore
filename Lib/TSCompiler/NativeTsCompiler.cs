@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -13,6 +14,14 @@ using Lib.Utils.Logger;
 using Newtonsoft.Json;
 
 namespace Lib.TSCompiler;
+
+public enum NativeTypeScriptKind
+{
+    Tsgo,
+    Tsrs,
+    // TypeScript 7.1+ tsc
+    Tsc
+}
 
 public sealed class NativeTsCompiler : ITSCompiler
 {
@@ -35,6 +44,7 @@ public sealed class NativeTsCompiler : ITSCompiler
         RegexOptions.Compiled);
 
     readonly string _nativePreviewDirectory;
+    readonly NativeTypeScriptKind _kind;
     readonly ILogger _logger;
     readonly object _lock = new();
     readonly List<Diagnostic> _watchDiagnostics = new();
@@ -47,11 +57,27 @@ public sealed class NativeTsCompiler : ITSCompiler
     string _typeCheckProjectPath = "tsconfig.json";
     string[] _mainFiles = [];
 
-    public NativeTsCompiler(string nativePreviewDirectory, ILogger logger)
+    public NativeTsCompiler(string nativePreviewDirectory, ILogger logger,
+        NativeTypeScriptKind kind = NativeTypeScriptKind.Tsgo)
     {
         _nativePreviewDirectory = nativePreviewDirectory;
+        _kind = kind;
         _logger = logger;
     }
+
+    public static string GetDisplayName(NativeTypeScriptKind kind) => kind switch
+    {
+        NativeTypeScriptKind.Tsrs => "Rust TypeScript (tsrs)",
+        NativeTypeScriptKind.Tsc => "TypeScript 7 (tsc)",
+        _ => "Go TypeScript"
+    };
+
+    public static string GetTypeCheckProjectFileName(NativeTypeScriptKind kind) => kind switch
+    {
+        NativeTypeScriptKind.Tsrs => ".bbcore-tsrs-typecheck.json",
+        NativeTypeScriptKind.Tsc => ".bbcore-tsc-typecheck.json",
+        _ => ".bbcore-tsgo-typecheck.json"
+    };
 
     public IDiskCache DiskCache { get; set; } = null!;
     public ITSCompilerOptions CompilerOptions { get; set; } = null!;
@@ -127,8 +153,10 @@ public sealed class NativeTsCompiler : ITSCompiler
             start.ArgumentList.Add(argument);
 
         using var process = Process.Start(start)!;
+        // Read stderr concurrently, so a full stderr pipe cannot block the compiler while stdout is read
+        var errorTask = process.StandardError.ReadToEndAsync();
         var output = process.StandardOutput.ReadToEnd();
-        var error = process.StandardError.ReadToEnd();
+        var error = errorTask.GetAwaiter().GetResult();
         process.WaitForExit();
         if (error.Length > 0 && _logger.Verbose)
             _logger.Info(error.TrimEnd());
@@ -137,7 +165,7 @@ public sealed class NativeTsCompiler : ITSCompiler
 
     ProcessStartInfo CreateStartInfo()
     {
-        if (IsTsgoExecutablePath(_nativePreviewDirectory))
+        if (_kind != NativeTypeScriptKind.Tsgo || IsTsgoExecutablePath(_nativePreviewDirectory))
         {
             return new ProcessStartInfo(_nativePreviewDirectory)
             {
@@ -185,6 +213,7 @@ public sealed class NativeTsCompiler : ITSCompiler
         }
 
         _watchProcess = Process.Start(start)!;
+        RegisterWatchProcess(_watchProcess);
         _watchProcess.EnableRaisingEvents = true;
         _watchProcess.Exited += (_, _) =>
         {
@@ -197,10 +226,62 @@ public sealed class NativeTsCompiler : ITSCompiler
         _watchProcess.BeginErrorReadLine();
     }
 
+    // tsrs --watch keeps running when bb exits, so kill watch processes on exit and on termination signals
+    static readonly HashSet<Process> RunningWatchProcesses = new();
+    static List<PosixSignalRegistration>? _signalRegistrations;
+
+    static void RegisterWatchProcess(Process process)
+    {
+        lock (RunningWatchProcesses)
+        {
+            RunningWatchProcesses.Add(process);
+            if (_signalRegistrations != null) return;
+            _signalRegistrations = new();
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => KillRunningWatchProcesses();
+            foreach (var signal in new[] { PosixSignal.SIGTERM, PosixSignal.SIGINT, PosixSignal.SIGHUP })
+            {
+                try
+                {
+                    _signalRegistrations.Add(PosixSignalRegistration.Create(signal, _ => KillRunningWatchProcesses()));
+                }
+                catch (PlatformNotSupportedException)
+                {
+                    // ignored
+                }
+            }
+        }
+    }
+
+    static void UnregisterWatchProcess(Process process)
+    {
+        lock (RunningWatchProcesses)
+            RunningWatchProcesses.Remove(process);
+    }
+
+    static void KillRunningWatchProcesses()
+    {
+        Process[] processes;
+        lock (RunningWatchProcesses)
+            processes = [.. RunningWatchProcesses];
+        foreach (var process in processes)
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill(true);
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+    }
+
     void StopWatchProcess()
     {
         if (_watchProcess == null)
             return;
+        UnregisterWatchProcess(_watchProcess);
         try
         {
             if (!_watchProcess.HasExited)
@@ -221,14 +302,25 @@ public sealed class NativeTsCompiler : ITSCompiler
         _mainFiles = mainFiles;
         var files = new List<string>(mainFiles.Length);
         foreach (var file in mainFiles)
+        {
+            // TypeScript 7.1 (tsrs) stops checking whole program on missing root file (TS6053), TypeScript 7.0 ignored it
+            var fullPath = Path.IsPathRooted(file) ? file : PathUtils.Join(_currentDirectory, file);
+            if (!File.Exists(fullPath))
+            {
+                if (_logger.Verbose)
+                    _logger.Info("Typecheck skips missing file " + fullPath);
+                continue;
+            }
+
             files.Add(Path.IsPathRooted(file) ? PathUtils.Subtract(file, _currentDirectory) : file);
+        }
         var project = new NativeTsTypeCheckProject
         {
             extends = "./tsconfig.json",
             files = files,
             include = []
         };
-        _typeCheckProjectPath = ".bbcore-tsgo-typecheck.json";
+        _typeCheckProjectPath = GetTypeCheckProjectFileName(_kind);
         File.WriteAllText(PathUtils.Join(_currentDirectory, _typeCheckProjectPath),
             JsonConvert.SerializeObject(project, Formatting.Indented));
     }
@@ -348,7 +440,7 @@ public sealed class NativeTsCompiler : ITSCompiler
         }
 
         _logger.Info(
-            $"Go TypeScript typecheck found {errors.ToString(CultureInfo.InvariantCulture)} errors in {duration.TotalSeconds.ToString("F2", CultureInfo.InvariantCulture)}s");
+            $"{GetDisplayName(_kind)} typecheck found {errors.ToString(CultureInfo.InvariantCulture)} errors in {duration.TotalSeconds.ToString("F2", CultureInfo.InvariantCulture)}s");
     }
 
     internal static bool HasTsgoExecutable(string nativePreviewDirectory, IFsAbstraction fsAbstraction)

@@ -42,6 +42,10 @@ public class BobrilBuildOptions
     public bool? future { get; set; }
     public bool? validate { get; set; }
     public bool? gots { get; set; }
+    public bool? tsrs { get; set; }
+    public bool? tsrsTranspile { get; set; }
+    public string? tsrsVersion { get; set; }
+    public bool? validateTsrs { get; set; }
     public Dictionary<string, string>? assets { get; set; }
 
     public BobrilBuildOptions Merge(BobrilBuildOptions? with)
@@ -148,6 +152,14 @@ public class BobrilBuildOptions
             validate = with.validate;
         if (with.gots != null)
             gots = with.gots;
+        if (with.tsrs != null)
+            tsrs = with.tsrs;
+        if (with.tsrsTranspile != null)
+            tsrsTranspile = with.tsrsTranspile;
+        if (with.tsrsVersion != null)
+            tsrsVersion = with.tsrsVersion;
+        if (with.validateTsrs != null)
+            validateTsrs = with.validateTsrs;
         if (with.assets != null)
             assets = with.assets;
         return this;
@@ -290,13 +302,20 @@ public class BobrilBuildOptions
             // ignored
         }
 
-        try
+        if (GetStringProperty(bobrilSection, "validate") == "tsrs")
         {
-            validate = bobrilSection["validate"]?.Value<bool>();
+            validateTsrs = true;
         }
-        catch
+        else
         {
-            // ignored
+            try
+            {
+                validate = bobrilSection["validate"]?.Value<bool>();
+            }
+            catch
+            {
+                // ignored
+            }
         }
 
         try
@@ -307,6 +326,26 @@ public class BobrilBuildOptions
         {
             // ignored
         }
+
+        try
+        {
+            tsrs = bobrilSection["tsrs"]?.Value<bool>();
+        }
+        catch
+        {
+            // ignored
+        }
+
+        try
+        {
+            tsrsTranspile = bobrilSection["tsrsTranspile"]?.Value<bool>();
+        }
+        catch
+        {
+            // ignored
+        }
+
+        tsrsVersion = GetStringProperty(bobrilSection, "tsrsVersion");
 
         if (bobrilSection.GetValue("assets") is JObject assetsJson)
         {

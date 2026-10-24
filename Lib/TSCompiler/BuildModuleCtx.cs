@@ -12,6 +12,7 @@ using Njsast.Ast;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading.Tasks;
 using BobrilMdx;
 using HtmlAgilityPack;
 using Lib.BuildCache;
@@ -37,7 +38,7 @@ public class BuildModuleCtx : IImportResolver
     internal uint CrawledCount;
     long _transpileEmitTicks;
     int _transpileEmitCount;
-    bool _lastTranspileEmitWasBuildin;
+    string _lastTranspileEmitName = "TypeScript";
 
     static bool IsDts(ReadOnlySpan<char> name)
     {
@@ -749,7 +750,7 @@ public class BuildModuleCtx : IImportResolver
         {
             var seconds = _transpileEmitTicks / (double)Stopwatch.Frequency;
             Owner!.Logger.Info(
-                $"{(_lastTranspileEmitWasBuildin ? "Built-in" : "TypeScript")} transpile emit done in {seconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}s for {_transpileEmitCount} files");
+                $"{_lastTranspileEmitName} transpile emit done in {seconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}s for {_transpileEmitCount} files");
         }
     }
 
@@ -1205,9 +1206,31 @@ public class BuildModuleCtx : IImportResolver
         return PathUtils.Join(PathUtils.Parent(from), url);
     }
 
+    Task<string> StartNativeTranspile(string nativeExecutable, ITSCompilerOptions transpileOptions, string fileName,
+        string source)
+    {
+        return Task.Run(() =>
+        {
+            var tsrs = BuildCtx!.CompilerPool.GetNativeTranspiler(nativeExecutable, transpileOptions);
+            try
+            {
+                var tsrsResult = tsrs.Transpile(fileName, source);
+                var error = tsrsResult.Diagnostics?.FirstOrDefault(d => d.IsError);
+                if (error != null)
+                    throw new InvalidOperationException("TS" + error.Code + ": " + error.Text);
+                return tsrsResult.JavaScript;
+            }
+            finally
+            {
+                BuildCtx.CompilerPool.ReleaseNativeTranspiler(tsrs);
+            }
+        });
+    }
+
     void Transpile(TsFileAdditionalInfo info)
     {
         ITSCompiler compiler = null;
+        var compilerIsNative = false;
         AstToplevel? transpiledAst = null;
         try
         {
@@ -1239,9 +1262,18 @@ public class BuildModuleCtx : IImportResolver
 
             TranspileResult result;
             var useBuildin = NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future, Owner.ProjectOptions.Validate);
+            var nativeExecutable = useBuildin ? null : BuildCtx.NativeTranspilerExecutable;
             var transpileEmitStart = Stopwatch.GetTimestamp();
-            _lastTranspileEmitWasBuildin = useBuildin;
-            if (useBuildin)
+            _lastTranspileEmitName = useBuildin ? "Built-in"
+                : nativeExecutable != null ? NativeApiTranspiler.GetName(nativeExecutable)
+                : "TypeScript";
+            if (nativeExecutable != null)
+            {
+                compiler = BuildCtx.CompilerPool.GetNativeTranspiler(nativeExecutable, transpileOptions);
+                compilerIsNative = true;
+                result = compiler.Transpile(newFileName, source);
+            }
+            else if (useBuildin)
             {
                 try
                 {
@@ -1274,14 +1306,19 @@ public class BuildModuleCtx : IImportResolver
             else
             {
                 compiler = BuildCtx.CompilerPool.GetTs(Owner!.DiskCache, transpileOptions);
-                var validateTs = NjsastTsValidator.IsEnabled(Owner!.ProjectOptions.Validate);
-                var njsastTask = validateTs
-                    ? NjsastTsValidator.StartTranspile(newFileName, source)
-                    : null;
+                var validateExecutable = BuildCtx.ValidateTranspilerExecutable;
+                var validateTsrs = validateExecutable != null;
+                var validateTs = !validateTsrs && NjsastTsValidator.IsEnabled(Owner!.ProjectOptions.Validate);
+                var candidateTask = validateTsrs
+                    ? StartNativeTranspile(validateExecutable!, transpileOptions, newFileName, source)
+                    : validateTs
+                        ? NjsastTsValidator.StartTranspile(newFileName, source)
+                        : null;
                 result = compiler.Transpile(newFileName, source);
-                if (validateTs && (result.Diagnostics == null || result.Diagnostics.All(d => !d.IsError)))
+                if ((validateTs || validateTsrs) &&
+                    (result.Diagnostics == null || result.Diagnostics.All(d => !d.IsError)))
                     NjsastTsValidator.Validate(Owner!.Owner.FullPath, newFileName, source, result.JavaScript,
-                        njsastTask, Owner.Logger.Info);
+                        candidateTask, Owner.Logger.Info, validateTsrs ? "Tsrs" : "Njsast");
             }
             _transpileEmitTicks += Stopwatch.GetTimestamp() - transpileEmitStart;
             _transpileEmitCount++;
@@ -1314,7 +1351,12 @@ public class BuildModuleCtx : IImportResolver
         finally
         {
             if (compiler != null)
-                BuildCtx.CompilerPool.ReleaseTs(compiler);
+            {
+                if (compilerIsNative)
+                    BuildCtx.CompilerPool.ReleaseNativeTranspiler(compiler);
+                else
+                    BuildCtx.CompilerPool.ReleaseTs(compiler);
+            }
         }
 
         if (info.HasError)

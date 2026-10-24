@@ -149,6 +149,13 @@ public class BuildCtx
     readonly DiskCache.DiskCache _diskCache;
     readonly ILogger _logger;
     string? _nativeTypeScriptDirectory;
+    NativeTypeScriptKind _nativeTypeScriptKind;
+
+    // tsrs or TypeScript 7.1+ tsc used for transpilation through its API
+    public string? NativeTranspilerExecutable { get; private set; }
+
+    // tsrs (or TypeScript 7.1+ tsc where tsrs is not available) compared with regular transpiler by validate: "tsrs"
+    public string? ValidateTranspilerExecutable { get; private set; }
 
     string? _lastTsVersion;
     List<Diagnostic>? _lastSemantics;
@@ -159,6 +166,16 @@ public class BuildCtx
         {
             _logger.Info("Using TypeScript version " + version);
             _lastTsVersion = version;
+        }
+    }
+
+    void ShowNativeTranspiler(string name, string version)
+    {
+        var key = name + " " + version;
+        if (_lastTsVersion != key)
+        {
+            _logger.Info("Using " + (name == "tsc" ? "TypeScript 7 (tsc)" : name) + " transpiler version " + version);
+            _lastTsVersion = key;
         }
     }
 
@@ -187,7 +204,7 @@ public class BuildCtx
     ITSCompiler CreateTypeChecker()
     {
         return _nativeTypeScriptDirectory != null
-            ? new NativeTsCompiler(_nativeTypeScriptDirectory, _logger)
+            ? new NativeTsCompiler(_nativeTypeScriptDirectory, _logger, _nativeTypeScriptKind)
             : CompilerPool.GetTs(_diskCache, CompilerOptions);
     }
 
@@ -339,8 +356,16 @@ public class BuildCtx
         TestSources = project.TestSources;
         JasmineDts = project.TestSources != null ? project.JasmineDts : null;
         CompilerOptions = project.FinalCompilerOptions!;
-        var newNativeTypeScriptDirectory = DetectNativeTypeScriptDirectory(project);
-        if (newNativeTypeScriptDirectory != _nativeTypeScriptDirectory)
+        var (tsrsExecutable, tscExecutable) = ResolveNativeCompilers(project);
+        var (newNativeTypeScriptKind, newNativeTypeScriptDirectory) =
+            DetectNativeTypeScriptDirectory(project, tsrsExecutable, tscExecutable);
+        NativeTranspilerExecutable = project.ValidateTsrs ? null
+            : tsrsExecutable != null && project.TsrsTranspile ? tsrsExecutable
+            : tscExecutable != null && (!project.Tsrs || project.TsrsTranspile) ? tscExecutable
+            : null;
+        ValidateTranspilerExecutable = project.ValidateTsrs ? tsrsExecutable ?? tscExecutable : null;
+        if (newNativeTypeScriptDirectory != _nativeTypeScriptDirectory ||
+            newNativeTypeScriptKind != _nativeTypeScriptKind)
         {
             if (_typeChecker != null)
             {
@@ -349,11 +374,13 @@ public class BuildCtx
             }
 
             _nativeTypeScriptDirectory = newNativeTypeScriptDirectory;
+            _nativeTypeScriptKind = newNativeTypeScriptKind;
             _compilerOptionsChanged = true;
             if (_nativeTypeScriptDirectory != null)
             {
                 project.UpdateTSConfigJson();
-                _logger.Info("Using Go TypeScript typecheck from " + _nativeTypeScriptDirectory);
+                _logger.Info("Using " + NativeTsCompiler.GetDisplayName(_nativeTypeScriptKind) + " typecheck from " +
+                             _nativeTypeScriptDirectory);
             }
         }
 
@@ -382,7 +409,12 @@ public class BuildCtx
             {
                 if (!tryDetectChanges)
                 {
-                    if (!project.TypeScriptVersionOverride && 
+                    // TypeScript 7 has no typescript.js, regular TypeScript stays available for everything else
+                    if (_projectTypeScriptIsNative ||
+                        project.TypeScriptVersionOverride &&
+                        TypeScriptNativeInstaller.IsNativeVersion(project.TypeScriptVersion))
+                        project.Tools.SetTypeScriptVersion(ProjectOptions.DefaultTypeScriptVersion);
+                    else if (!project.TypeScriptVersionOverride && 
                         ((tsProject.DevDependencies?.Contains("typescript") ?? false) 
                          || (tsProject.Dependencies?.Contains("typescript") ?? false)))
                         project.Tools.SetTypeScriptPath(tsProject.Owner.FullPath);
@@ -395,6 +427,15 @@ public class BuildCtx
                 {
                     ShowBuildinTranspiler();
                     project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(NjsastTsValidator.BuildinTranspilerCacheKey,
+                        JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
+                            TSCompilerOptions.GetSerializerSettings()));
+                }
+                else if (NativeTranspilerExecutable != null)
+                {
+                    var nativeName = NativeApiTranspiler.GetName(NativeTranspilerExecutable);
+                    var nativeVersion = NativeApiTranspiler.GetVersion(NativeTranspilerExecutable);
+                    ShowNativeTranspiler(nativeName, nativeVersion);
+                    project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(nativeName + "-" + nativeVersion,
                         JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
                             TSCompilerOptions.GetSerializerSettings()));
                 }
@@ -526,25 +567,109 @@ public class BuildCtx
         }
     }
 
-    string? DetectNativeTypeScriptDirectory(ProjectOptions project)
+    (NativeTypeScriptKind, string?) DetectNativeTypeScriptDirectory(ProjectOptions project, string? tsrsExecutable,
+        string? tscExecutable)
     {
+        if (project.Tsrs && tsrsExecutable != null)
+            return (NativeTypeScriptKind.Tsrs, tsrsExecutable);
+        if (tscExecutable != null)
+            return (NativeTypeScriptKind.Tsc, tscExecutable);
+        if (project.Tsrs)
+        {
+            // Fallback like gots, without failing when tsgo is not found either
+            if (TryFindNativeTypeScriptDirectory(project.Owner.Owner.FullPath, _diskCache.FsAbstraction,
+                    out var fallbackDirectory))
+                return (NativeTypeScriptKind.Tsgo, fallbackDirectory);
+            if (NativeTsCompiler.TryFindGlobalTsgoExecutable(out var fallbackTsgo))
+                return (NativeTypeScriptKind.Tsgo, fallbackTsgo);
+            return (NativeTypeScriptKind.Tsgo, null);
+        }
+
         var tsProject = project.Owner;
         if (!project.GoTs && (project.TypeScriptVersionOverride ||
                               !(tsProject.DevDependencies?.Contains("@typescript/native-preview") ?? false)))
-            return null;
+            return (NativeTypeScriptKind.Tsgo, null);
 
         if (TryFindNativeTypeScriptDirectory(tsProject.Owner.FullPath, _diskCache.FsAbstraction, out var typeScriptDir))
-            return typeScriptDir;
+            return (NativeTypeScriptKind.Tsgo, typeScriptDir);
 
         if (project.GoTs)
         {
             if (NativeTsCompiler.TryFindGlobalTsgoExecutable(out var tsgoExecutable))
-                return tsgoExecutable;
+                return (NativeTypeScriptKind.Tsgo, tsgoExecutable);
             throw new InvalidOperationException(
                 "gots is enabled, but tsgo was not found in node_modules/@typescript/native-preview or on PATH");
         }
 
-        return null;
+        return (NativeTypeScriptKind.Tsgo, null);
+    }
+
+    // tsrs (when enabled) and TypeScript 7.1+ tsc (tsVersion 7.1+, project local typescript 7.1+ or fallback when tsrs
+    // is not available)
+    (string? Tsrs, string? Tsc) ResolveNativeCompilers(ProjectOptions project)
+    {
+        var tsrs = project.Tsrs || project.ValidateTsrs ? ResolveTsrsExecutable(project) : null;
+        var tsc = ResolveTscExecutable(project, (project.Tsrs || project.ValidateTsrs) && tsrs == null);
+        return (tsrs, tsc);
+    }
+
+    string? _resolvedTscKey;
+    string? _resolvedTscExecutable;
+    bool _projectTypeScriptIsNative;
+
+    string? ResolveTscExecutable(ProjectOptions project, bool tsrsFallback)
+    {
+        var tsProject = project.Owner;
+        var explicitVersion = project.TypeScriptVersionOverride &&
+                              TypeScriptNativeInstaller.IsNativeVersion(project.TypeScriptVersion)
+            ? project.TypeScriptVersion
+            : null;
+        var key = tsProject.Owner.FullPath + "|" + explicitVersion + "|" + tsrsFallback;
+        if (_resolvedTscKey == key)
+            return _resolvedTscExecutable;
+        _resolvedTscKey = key;
+        _projectTypeScriptIsNative = false;
+        if (!project.TypeScriptVersionOverride &&
+            ((tsProject.DevDependencies?.Contains("typescript") ?? false) ||
+             (tsProject.Dependencies?.Contains("typescript") ?? false)) &&
+            TypeScriptNativeInstaller.TryFindInProject(tsProject.Owner.FullPath, _diskCache.FsAbstraction,
+                out var projectTsc, out _))
+        {
+            _projectTypeScriptIsNative = true;
+            return _resolvedTscExecutable = projectTsc;
+        }
+
+        var version = explicitVersion ?? (tsrsFallback ? TypeScriptNativeInstaller.DefaultVersion : null);
+        if (version == null)
+            return _resolvedTscExecutable = null;
+        if (TypeScriptNativeInstaller.TryInstall(project.Tools.Path, version, _logger, out var tscExecutable,
+                out var failureReason))
+            return _resolvedTscExecutable = tscExecutable;
+        if (explicitVersion != null)
+            throw new InvalidOperationException("tsVersion " + explicitVersion + ": " + failureReason);
+        _logger.Warn("TypeScript 7 (tsc) is not available either (" + failureReason + ")");
+        return _resolvedTscExecutable = null;
+    }
+
+    string? _resolvedTsrsKey;
+    string? _resolvedTsrsExecutable;
+
+    // Finds tsrs, installs it into tools directory when missing, null means fallback to gots or regular TypeScript.
+    // Result is remembered, so interactive rebuilds do not retry failed downloads.
+    string? ResolveTsrsExecutable(ProjectOptions project)
+    {
+        var key = project.Owner.Owner.FullPath + "|" + project.TsrsVersion;
+        if (_resolvedTsrsKey == key)
+            return _resolvedTsrsExecutable;
+        _resolvedTsrsKey = key;
+        if (TsrsLocator.TryFind(project.Owner.Owner.FullPath, _diskCache.FsAbstraction, out var tsrsExecutable))
+            return _resolvedTsrsExecutable = tsrsExecutable;
+        if (TsrsInstaller.TryInstall(project.Tools.Path, project.TsrsVersion, _logger, out tsrsExecutable,
+                out var failureReason))
+            return _resolvedTsrsExecutable = tsrsExecutable;
+        _logger.Warn("tsrs is not available (" + failureReason + "), falling back to TypeScript 7 (tsc " +
+                     TypeScriptNativeInstaller.DefaultVersion + "), then Go TypeScript (tsgo), then regular TypeScript");
+        return _resolvedTsrsExecutable = null;
     }
 
     internal static bool TryFindNativeTypeScriptDirectory(string projectDirectory, IFsAbstraction fsAbstraction,
