@@ -15,8 +15,15 @@
   emit changes bbcore applies to its patched TypeScript (no `(0, f)()` indirect calls, no `__esModule` tagging,
   setters on reexports, chunked export initialization and TypeScript 6 style destructured exports), so bundles stay
   the same.
+- Added TypeScript 7.1+ native compiler support: `.bbrc` `tsVersion` 7.1 or newer (for example `7.1.0-beta`)
+  downloads `@typescript/typescript-<platform>` from npm into the bbcore tools directory and uses its `tsc` for
+  typechecking, including `--watch`, and for transpilation through the `tsc --api` `transpileModule` API, with the
+  same emit changes as tsrs. A project with `typescript` 7.1+ in `devDependencies` uses its installed `tsc`. This
+  works on Windows too. When tsrs is not available, bbcore now falls back to TypeScript 7 in the version tsrs ports
+  (`7.1.0-dev.20260930.4`) before falling back to Go TypeScript or regular TypeScript. TypeScript 7.0 is rejected.
 - Added `.bbrc` `validate: "tsrs"` option, which transpiles with the regular TypeScript compiler and compares the
-  formatted output of tsrs for every file, writing differing cases to `.bbcore/TsrsInput` and `.bbcore/TsrsWrong`.
+  formatted output of tsrs (or TypeScript 7 where tsrs is not available) for every file, writing differing cases
+  to `.bbcore/TsrsInput` and `.bbcore/TsrsWrong`.
 
 ### Fixed
 

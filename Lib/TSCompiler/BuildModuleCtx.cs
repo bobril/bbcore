@@ -1206,12 +1206,12 @@ public class BuildModuleCtx : IImportResolver
         return PathUtils.Join(PathUtils.Parent(from), url);
     }
 
-    Task<string> StartTsrsTranspile(string tsrsExecutable, ITSCompilerOptions transpileOptions, string fileName,
+    Task<string> StartNativeTranspile(string nativeExecutable, ITSCompilerOptions transpileOptions, string fileName,
         string source)
     {
         return Task.Run(() =>
         {
-            var tsrs = BuildCtx!.CompilerPool.GetTsrs(tsrsExecutable, transpileOptions);
+            var tsrs = BuildCtx!.CompilerPool.GetNativeTranspiler(nativeExecutable, transpileOptions);
             try
             {
                 var tsrsResult = tsrs.Transpile(fileName, source);
@@ -1222,7 +1222,7 @@ public class BuildModuleCtx : IImportResolver
             }
             finally
             {
-                BuildCtx.CompilerPool.ReleaseTsrs(tsrs);
+                BuildCtx.CompilerPool.ReleaseNativeTranspiler(tsrs);
             }
         });
     }
@@ -1230,7 +1230,7 @@ public class BuildModuleCtx : IImportResolver
     void Transpile(TsFileAdditionalInfo info)
     {
         ITSCompiler compiler = null;
-        var compilerIsTsrs = false;
+        var compilerIsNative = false;
         AstToplevel? transpiledAst = null;
         try
         {
@@ -1262,15 +1262,15 @@ public class BuildModuleCtx : IImportResolver
 
             TranspileResult result;
             var useBuildin = NjsastTsValidator.IsBuildinEnabled(Owner!.ProjectOptions.Future, Owner.ProjectOptions.Validate);
-            var tsrsExecutable = BuildCtx.TsrsExecutable;
-            var useTsrs = !useBuildin && Owner.ProjectOptions.TsrsTranspile && !Owner.ProjectOptions.ValidateTsrs &&
-                          tsrsExecutable != null;
+            var nativeExecutable = useBuildin ? null : BuildCtx.NativeTranspilerExecutable;
             var transpileEmitStart = Stopwatch.GetTimestamp();
-            _lastTranspileEmitName = useBuildin ? "Built-in" : useTsrs ? "tsrs" : "TypeScript";
-            if (useTsrs)
+            _lastTranspileEmitName = useBuildin ? "Built-in"
+                : nativeExecutable != null ? NativeApiTranspiler.GetName(nativeExecutable)
+                : "TypeScript";
+            if (nativeExecutable != null)
             {
-                compiler = BuildCtx.CompilerPool.GetTsrs(tsrsExecutable!, transpileOptions);
-                compilerIsTsrs = true;
+                compiler = BuildCtx.CompilerPool.GetNativeTranspiler(nativeExecutable, transpileOptions);
+                compilerIsNative = true;
                 result = compiler.Transpile(newFileName, source);
             }
             else if (useBuildin)
@@ -1306,10 +1306,11 @@ public class BuildModuleCtx : IImportResolver
             else
             {
                 compiler = BuildCtx.CompilerPool.GetTs(Owner!.DiskCache, transpileOptions);
-                var validateTsrs = Owner.ProjectOptions.ValidateTsrs && tsrsExecutable != null;
+                var validateExecutable = BuildCtx.ValidateTranspilerExecutable;
+                var validateTsrs = validateExecutable != null;
                 var validateTs = !validateTsrs && NjsastTsValidator.IsEnabled(Owner!.ProjectOptions.Validate);
                 var candidateTask = validateTsrs
-                    ? StartTsrsTranspile(tsrsExecutable!, transpileOptions, newFileName, source)
+                    ? StartNativeTranspile(validateExecutable!, transpileOptions, newFileName, source)
                     : validateTs
                         ? NjsastTsValidator.StartTranspile(newFileName, source)
                         : null;
@@ -1351,8 +1352,8 @@ public class BuildModuleCtx : IImportResolver
         {
             if (compiler != null)
             {
-                if (compilerIsTsrs)
-                    BuildCtx.CompilerPool.ReleaseTsrs(compiler);
+                if (compilerIsNative)
+                    BuildCtx.CompilerPool.ReleaseNativeTranspiler(compiler);
                 else
                     BuildCtx.CompilerPool.ReleaseTs(compiler);
             }

@@ -54,6 +54,29 @@ Notes from the re-run:
   read stderr concurrently with stdout, because a full stderr pipe could deadlock it. `webmma-compare.sh` now limits
   each bb run to 300 s (`LIMIT`) and reports `TIMEOUT`.
 
+## TypeScript 7.1+ native mode and fallback (for Windows)
+
+`.bbrc` `tsVersion` 7.1+ (or a project-local `typescript` 7.1+) installs `@typescript/typescript-<platform>` and uses
+its `tsc` the way tsrs is used: for typechecking (one-shot and `--watch`) and for transpilation through
+`tsc --api` `transpileModule`, which speaks the same protocol, with the same output patcher. Where tsrs isn't
+available, bbcore now falls back to this mode at `7.1.0-dev.20260930.4`, the build tsrs 0.18 ports, and only after
+that to tsgo or regular TypeScript. TypeScript 7.0 is rejected, because its API doesn't answer `initialize`.
+
+Verified on macOS arm64 by forcing the Windows path (an unpublished `tsrsVersion` and no tsrs binary), so every app
+ran with the auto-installed TS 7.1 `tsc`:
+
+- **Transpile:** 0 of 23,444 files differ (`validate` compared against `tsc`).
+- **Typecheck:** identical diagnostics in all 15 apps.
+- **Bundles:** byte-identical for all 5 apps that build (WebAppRoot, WebAppRootCls, WebDeviceLogin, WebMain,
+  WebMessengerUnsubscribe).
+- **Speed:** transpile is 1.4–2.1× faster than TS 6 (WebOnDemand 9.9 → 7.2 s, WebAdministration 7.9 → 3.7 s), but
+  slower than tsrs. Typecheck is about the same as tsgo. Peak memory is lower.
+- **Interactive mode:** `tsc --watch` reports and clears a type error; no `tsc` processes remain after `bb` exits.
+
+Not tested on Windows itself. The code paths are platform-neutral: `tsc.exe`, `--useCaseSensitiveFileNames=false`,
+no Unix file modes, signal registration tolerant of unsupported signals. TypeScript 7's own `--watch` behavior on
+Windows is the main thing to check there.
+
 ## What was built
 
 | area | files |

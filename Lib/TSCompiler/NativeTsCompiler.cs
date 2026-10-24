@@ -18,7 +18,9 @@ namespace Lib.TSCompiler;
 public enum NativeTypeScriptKind
 {
     Tsgo,
-    Tsrs
+    Tsrs,
+    // TypeScript 7.1+ tsc
+    Tsc
 }
 
 public sealed class NativeTsCompiler : ITSCompiler
@@ -63,11 +65,19 @@ public sealed class NativeTsCompiler : ITSCompiler
         _logger = logger;
     }
 
-    public static string GetDisplayName(NativeTypeScriptKind kind) =>
-        kind == NativeTypeScriptKind.Tsrs ? "Rust TypeScript (tsrs)" : "Go TypeScript";
+    public static string GetDisplayName(NativeTypeScriptKind kind) => kind switch
+    {
+        NativeTypeScriptKind.Tsrs => "Rust TypeScript (tsrs)",
+        NativeTypeScriptKind.Tsc => "TypeScript 7 (tsc)",
+        _ => "Go TypeScript"
+    };
 
-    public static string GetTypeCheckProjectFileName(NativeTypeScriptKind kind) =>
-        kind == NativeTypeScriptKind.Tsrs ? ".bbcore-tsrs-typecheck.json" : ".bbcore-tsgo-typecheck.json";
+    public static string GetTypeCheckProjectFileName(NativeTypeScriptKind kind) => kind switch
+    {
+        NativeTypeScriptKind.Tsrs => ".bbcore-tsrs-typecheck.json",
+        NativeTypeScriptKind.Tsc => ".bbcore-tsc-typecheck.json",
+        _ => ".bbcore-tsgo-typecheck.json"
+    };
 
     public IDiskCache DiskCache { get; set; } = null!;
     public ITSCompilerOptions CompilerOptions { get; set; } = null!;
@@ -155,7 +165,7 @@ public sealed class NativeTsCompiler : ITSCompiler
 
     ProcessStartInfo CreateStartInfo()
     {
-        if (_kind == NativeTypeScriptKind.Tsrs || IsTsgoExecutablePath(_nativePreviewDirectory))
+        if (_kind != NativeTypeScriptKind.Tsgo || IsTsgoExecutablePath(_nativePreviewDirectory))
         {
             return new ProcessStartInfo(_nativePreviewDirectory)
             {

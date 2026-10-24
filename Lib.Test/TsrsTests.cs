@@ -103,7 +103,7 @@ public class TsrsTests
             Assert.True(TsrsInstaller.TryInstall(tools, TsrsInstaller.DefaultVersion, new DummyLogger(),
                 out var tsrsExecutable, out var reason), reason);
             Assert.StartsWith(TsrsInstaller.InstallDirectory(tools, TsrsInstaller.DefaultVersion), tsrsExecutable);
-            Assert.StartsWith("7.", TsrsTranspiler.GetVersion(tsrsExecutable));
+            Assert.StartsWith("7.", NativeApiTranspiler.GetVersion(tsrsExecutable));
             // Second call reuses installed binary
             Assert.True(TsrsInstaller.TryInstall(tools, TsrsInstaller.DefaultVersion, new DummyLogger(),
                 out var again, out _));
@@ -138,6 +138,89 @@ public class TsrsTests
     }
 
     [Fact]
+    public void TypeScript7NativeVersionsAreRecognized()
+    {
+        Assert.False(TypeScriptNativeInstaller.IsNativeVersion("6.0.3"));
+        Assert.False(TypeScriptNativeInstaller.IsNativeVersion(""));
+        Assert.True(TypeScriptNativeInstaller.IsNativeVersion("7.0.2"));
+        Assert.False(TypeScriptNativeInstaller.SupportsApi("7.0.2"));
+        Assert.True(TypeScriptNativeInstaller.SupportsApi("7.1.0-beta"));
+        Assert.True(TypeScriptNativeInstaller.SupportsApi("7.1.0-dev.20260930.4"));
+        Assert.True(TypeScriptNativeInstaller.SupportsApi("7.2.0"));
+        Assert.True(TypeScriptNativeInstaller.SupportsApi(TypeScriptNativeInstaller.DefaultVersion));
+    }
+
+    [Fact]
+    public void TypeScript70CannotBeInstalledForNativeMode()
+    {
+        Assert.False(TypeScriptNativeInstaller.TryInstall("/nonexistent", "7.0.2", new DummyLogger(), out _,
+            out var reason));
+        Assert.Contains("7.1 or newer", reason);
+    }
+
+    [Fact]
+    public void ProjectLocalTypeScript7IsFound()
+    {
+        var fs = new InMemoryFs();
+        var platform = TypeScriptNativeInstaller.PlatformNames().First();
+        var tsc = "/workspace/node_modules/@typescript/typescript-" + platform + "/lib/" +
+                  TypeScriptNativeInstaller.ExecutableName;
+        fs.WriteAllUtf8("/workspace/node_modules/typescript/package.json", "{ \"version\": \"7.1.0-beta\" }");
+        fs.WriteAllUtf8(tsc, "");
+
+        Assert.True(TypeScriptNativeInstaller.TryFindInProject("/workspace/apps/web", fs, out var found, out var version));
+        Assert.Equal(tsc, found);
+        Assert.Equal("7.1.0-beta", version);
+
+        fs.WriteAllUtf8("/workspace/node_modules/typescript/package.json", "{ \"version\": \"6.0.3\" }");
+        Assert.False(TypeScriptNativeInstaller.TryFindInProject("/workspace/apps/web", fs, out _, out _));
+    }
+
+    [Fact]
+    public void NativeTranspilerNameComesFromExecutable()
+    {
+        Assert.Equal("tsrs", NativeApiTranspiler.GetName("/x/node_modules/@tsrs/darwin-arm64/tsrs"));
+        Assert.Equal("tsc", NativeApiTranspiler.GetName("/x/tsc-7.1.0-beta/win32-x64/lib/tsc.exe"));
+        Assert.Equal(".bbcore-tsc-typecheck.json",
+            NativeTsCompiler.GetTypeCheckProjectFileName(NativeTypeScriptKind.Tsc));
+    }
+
+    [Fact]
+    public void TypeScript7IsInstalledAndTranspilesThroughApiWhenEnabled()
+    {
+        // Downloads TypeScript 7.1 native compiler from npm, runs only with TSRS_INSTALL_TEST=1
+        if (!InstallTestsEnabled || !TypeScriptNativeInstaller.PlatformNames().Any())
+            return;
+        var tools = Path.Combine(Path.GetTempPath(), "bbcore-tsc-install-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Assert.True(TypeScriptNativeInstaller.TryInstall(tools, "7.1.0-beta", new DummyLogger(),
+                out var tsc, out var reason), reason);
+            Assert.Equal("7.1.0-beta", NativeApiTranspiler.GetVersion(tsc));
+            using var transpiler = new NativeApiTranspiler(tsc, new DummyLogger());
+            transpiler.CompilerOptions = new TSCompilerOptions
+            {
+                module = ModuleKind.Commonjs,
+                target = ScriptTarget.Es2022,
+                jsx = JsxEmit.React,
+                reactNamespace = "b",
+                sourceMap = true
+            };
+            var result = transpiler.Transpile("src/index.tsx",
+                "import { t } from \"g\";\nexport const a: number = t(\"x\");\nexport const e = <div/>;");
+            Assert.Null(result.Diagnostics);
+            Assert.Contains("g_1.t(\"x\")", result.JavaScript);
+            Assert.DoesNotContain("__esModule", result.JavaScript);
+            Assert.NotNull(result.SourceMap);
+        }
+        finally
+        {
+            if (Directory.Exists(tools))
+                Directory.Delete(tools, true);
+        }
+    }
+
+    [Fact]
     public void TsrsPlatformBinaryIsFoundInParentNodeModules()
     {
         var fs = new InMemoryFs();
@@ -162,7 +245,7 @@ public class TsrsTests
     [Fact]
     public void CompilerOptionsUseTypeScript7EnumNumbers()
     {
-        var options = TsrsTranspiler.ToApiCompilerOptions(new TSCompilerOptions
+        var options = NativeApiTranspiler.ToApiCompilerOptions(new TSCompilerOptions
         {
             target = ScriptTarget.Es2022,
             module = ModuleKind.Esnext,
@@ -189,7 +272,7 @@ public class TsrsTests
     [Fact]
     public void CompilerOptionsMapCommonJsAndCrLf()
     {
-        var options = TsrsTranspiler.ToApiCompilerOptions(new TSCompilerOptions
+        var options = NativeApiTranspiler.ToApiCompilerOptions(new TSCompilerOptions
         {
             module = ModuleKind.Commonjs,
             newLine = NewLineKind.CarriageReturnLineFeed
@@ -213,7 +296,7 @@ public class TsrsTests
              ]}
             """);
 
-        var result = TsrsTranspiler.ParseTranspileResponse("src/a.tsx", response);
+        var result = NativeApiTranspiler.ParseTranspileResponse("src/a.tsx", response);
 
         Assert.StartsWith("\"use strict\";", result.JavaScript);
         Assert.Equal("{\"version\":3}", result.SourceMap);
@@ -236,7 +319,7 @@ public class TsrsTests
     [Fact]
     public void PatcherUnwrapsIndirectCalls()
     {
-        var (js, _) = TsrsOutputPatcher.Patch(
+        var (js, _) = NativeOutputPatcher.Patch(
             "const g11n_1 = require(\"bobril-g11n\");\nlet a = (0, g11n_1.t)(\"Hello\", (0, g11n_1.f)(1));\n" +
             "let b = (0, x)(substring(0, 1));\n", null);
 
@@ -250,7 +333,7 @@ public class TsrsTests
     {
         const string source = "import { t } from \"g\";\nt(\"a\");\n(0, eval)(\"1\");\n(0,vn.codeFrame)(x);\n";
 
-        var (js, _) = TsrsOutputPatcher.Patch(
+        var (js, _) = NativeOutputPatcher.Patch(
             "const g_1 = require(\"g\");\n(0, g_1.t)(\"a\");\n(0, eval)(\"1\");\n(0, vn.codeFrame)(x);\n", null, source);
 
         Assert.Equal("const g_1 = require(\"g\");\ng_1.t(\"a\");\n(0, eval)(\"1\");\n(0, vn.codeFrame)(x);\n", js);
@@ -259,7 +342,7 @@ public class TsrsTests
     [Fact]
     public void PatcherRemovesEsModuleTagging()
     {
-        var (js, _) = TsrsOutputPatcher.Patch(
+        var (js, _) = NativeOutputPatcher.Patch(
             "\"use strict\";\nObject.defineProperty(exports, \"__esModule\", { value: true });\nexports.a = 1;\n", null);
 
         Assert.Equal("\"use strict\";\nexports.a = 1;\n", js);
@@ -268,7 +351,7 @@ public class TsrsTests
     [Fact]
     public void PatcherAddsSettersToReexports()
     {
-        var (js, _) = TsrsOutputPatcher.Patch("""
+        var (js, _) = NativeOutputPatcher.Patch("""
             var flux_1 = require("./flux");
             Object.defineProperty(exports, "createAction", { enumerable: true, get: function () { return flux_1.createAction; } });
             const app_1 = require("./app");
@@ -293,21 +376,21 @@ public class TsrsTests
         var names = Enumerable.Range(0, 60).Select(i => "n" + i).ToList();
         var input = string.Concat(Enumerable.Reverse(names).Select(n => "exports." + n + " = ")) + "void 0;\n";
 
-        var (js, _) = TsrsOutputPatcher.Patch(input, null);
+        var (js, _) = NativeOutputPatcher.Patch(input, null);
 
         Assert.Equal(
             string.Concat(Enumerable.Reverse(names.Take(50)).Select(n => "exports." + n + " = ")) + "void 0;\n" +
             string.Concat(Enumerable.Reverse(names.Skip(50)).Select(n => "exports." + n + " = ")) + "void 0;\n", js);
         var shortInput = string.Concat(Enumerable.Reverse(names.Take(50)).Select(n => "exports." + n + " = ")) +
                          "void 0;\n";
-        Assert.Equal(shortInput, TsrsOutputPatcher.Patch(shortInput, null).JavaScript);
+        Assert.Equal(shortInput, NativeOutputPatcher.Patch(shortInput, null).JavaScript);
     }
 
     [Fact]
     public void PatcherEmitsDestructuredExportsLikeTypeScript6()
     {
         // tsrs output; expected is TypeScript 6 output with bbcore patches
-        var (js, _) = TsrsOutputPatcher.Patch("""
+        var (js, _) = NativeOutputPatcher.Patch("""
             "use strict";
             Object.defineProperty(exports, "__esModule", { value: true });
             exports.k2 = exports.k1 = exports.q = exports.p = exports.b = exports.a = exports.getA = exports.only = void 0;
@@ -360,7 +443,7 @@ public class TsrsTests
             {"version":3,"file":"a.js","sourceRoot":"","sources":["a.ts"],"names":[],"mappings":";;;AAAA,yBAAsB;AACtB,uBAAsB;AAAb,sFAAA,CAAC,OAAA;AAEV,IAAI,CAAC,GAAG,IAAA,KAAC,EAAC,GAAG,EAAE,IAAA,KAAC,EAAC,GAAG,CAAC,CAAC,CAAC"}
             """;
 
-        var (js, patchedMap) = TsrsOutputPatcher.Patch(input, map);
+        var (js, patchedMap) = NativeOutputPatcher.Patch(input, map);
 
         Assert.Equal("""
             "use strict";
@@ -395,7 +478,7 @@ public class TsrsTests
         if (string.IsNullOrEmpty(tsrsExecutable) || !File.Exists(tsrsExecutable))
             return;
 
-        using var transpiler = new TsrsTranspiler(tsrsExecutable, new DummyLogger());
+        using var transpiler = new NativeApiTranspiler(tsrsExecutable, new DummyLogger());
         transpiler.CompilerOptions = new TSCompilerOptions
         {
             module = ModuleKind.Commonjs,

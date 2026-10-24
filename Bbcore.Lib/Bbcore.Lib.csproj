@@ -383,11 +383,17 @@
         <Compile Include="..\Lib\TSCompiler\NativeTsCompiler.cs">
             <Link>TSCompiler\NativeTsCompiler.cs</Link>
         </Compile>
-        <Compile Include="..\Lib\TSCompiler\TsrsApiClient.cs">
-            <Link>TSCompiler\TsrsApiClient.cs</Link>
+        <Compile Include="..\Lib\TSCompiler\NativeApiClient.cs">
+            <Link>TSCompiler\NativeApiClient.cs</Link>
         </Compile>
-        <Compile Include="..\Lib\TSCompiler\TsrsOutputPatcher.cs">
-            <Link>TSCompiler\TsrsOutputPatcher.cs</Link>
+        <Compile Include="..\Lib\TSCompiler\NativeOutputPatcher.cs">
+            <Link>TSCompiler\NativeOutputPatcher.cs</Link>
+        </Compile>
+        <Compile Include="..\Lib\TSCompiler\NativePackageInstaller.cs">
+            <Link>TSCompiler\NativePackageInstaller.cs</Link>
+        </Compile>
+        <Compile Include="..\Lib\TSCompiler\TypeScriptNativeInstaller.cs">
+            <Link>TSCompiler\TypeScriptNativeInstaller.cs</Link>
         </Compile>
         <Compile Include="..\Lib\TSCompiler\TsrsInstaller.cs">
             <Link>TSCompiler\TsrsInstaller.cs</Link>
@@ -395,8 +401,8 @@
         <Compile Include="..\Lib\TSCompiler\TsrsLocator.cs">
             <Link>TSCompiler\TsrsLocator.cs</Link>
         </Compile>
-        <Compile Include="..\Lib\TSCompiler\TsrsTranspiler.cs">
-            <Link>TSCompiler\TsrsTranspiler.cs</Link>
+        <Compile Include="..\Lib\TSCompiler\NativeApiTranspiler.cs">
+            <Link>TSCompiler\NativeApiTranspiler.cs</Link>
         </Compile>
         <Compile Include="..\Lib\TSCompiler\PragmaParser.cs">
             <Link>TSCompiler\PragmaParser.cs</Link>

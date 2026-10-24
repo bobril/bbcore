@@ -9,15 +9,15 @@ using Njsast.SourceMap;
 
 namespace Lib.TSCompiler;
 
-// bbcore patches TypeScript emit (see ToolsDir.TypeScriptJsContent). tsrs is native and cannot be patched, so the same
-// changes are applied to its CommonJS output here, keeping source map in sync:
+// bbcore patches TypeScript emit (see ToolsDir.TypeScriptJsContent). tsrs and TypeScript 7 are native and cannot be
+// patched, so the same changes are applied to their CommonJS output here, keeping source map in sync:
 // 1. `(0, a.b)(...)` indirect calls are emitted as `a.b(...)` (also needed for bobril-g11n t calls detection), indirect
 //    calls already written in source (like `(0, eval)(code)` or prebuilt JavaScript) are kept
 // 2. `Object.defineProperty(exports, "__esModule", { value: true });` is not emitted
 // 3. live binding reexports get setter, so reexported values can be mocked
 // 4. `exports.a = ... = void 0;` initialization is split into chunks of 50 names
 // 5. destructured exports `({ a: exports.a, b: exports.b } = f());` are emitted as `_a = f(), exports.a = _a.a, ...`
-public static class TsrsOutputPatcher
+public static class NativeOutputPatcher
 {
     const int ExportedNamesChunkSize = 50;
 

@@ -10,16 +10,17 @@ using Newtonsoft.Json.Linq;
 
 namespace Lib.TSCompiler;
 
-public sealed class TsrsApiException : Exception
+public sealed class NativeApiException : Exception
 {
-    public TsrsApiException(string message) : base(message)
+    public NativeApiException(string message) : base(message)
     {
     }
 }
 
-// Talks TypeScript 7 native API protocol to `tsrs --api --async` (JSON-RPC with Content-Length framing over stdio).
+// Talks TypeScript 7 native API protocol to `tsrs --api --async` or `tsc --api --async` (TypeScript 7.1+), JSON-RPC with
+// Content-Length framing over stdio.
 // One request at a time; the server serializes requests anyway, so parallelism comes from multiple clients.
-public sealed class TsrsApiClient : IDisposable
+public sealed class NativeApiClient : IDisposable
 {
     static readonly byte[] HeaderEnd = "\r\n\r\n"u8.ToArray();
 
@@ -27,14 +28,16 @@ public sealed class TsrsApiClient : IDisposable
     readonly Stream _input;
     readonly Stream _output;
     readonly ILogger _logger;
+    readonly string _name;
     readonly byte[] _headerBuffer = new byte[256];
     int _nextId;
     bool _disposed;
 
-    public TsrsApiClient(string tsrsExecutable, string currentDirectory, ILogger logger)
+    public NativeApiClient(string executable, string name, string currentDirectory, ILogger logger)
     {
         _logger = logger;
-        var start = new ProcessStartInfo(tsrsExecutable)
+        _name = name;
+        var start = new ProcessStartInfo(executable)
         {
             WorkingDirectory = currentDirectory,
             RedirectStandardInput = true,
@@ -53,7 +56,7 @@ public sealed class TsrsApiClient : IDisposable
         _process.ErrorDataReceived += (_, args) =>
         {
             if (args.Data != null && _logger.Verbose)
-                _logger.Info("tsrs api: " + args.Data);
+                _logger.Info(_name + " api: " + args.Data);
         };
         _process.BeginErrorReadLine();
         _input = _process.StandardInput.BaseStream;
@@ -91,13 +94,13 @@ public sealed class TsrsApiClient : IDisposable
                     message["id"]!.Value<int>() != id)
                     continue;
                 if (message["error"] is JObject error)
-                    throw new TsrsApiException("tsrs " + method + " failed: " + error["message"]);
+                    throw new NativeApiException(_name + " " + method + " failed: " + error["message"]);
                 return message["result"] ?? JValue.CreateNull();
             }
         }
         catch (IOException ex)
         {
-            throw new TsrsApiException("tsrs api process exited during " + method + ": " + ex.Message);
+            throw new NativeApiException(_name + " api process exited during " + method + ": " + ex.Message);
         }
     }
 
@@ -107,7 +110,7 @@ public sealed class TsrsApiClient : IDisposable
         while (headerLength < 4 || !_headerBuffer.AsSpan(headerLength - 4, 4).SequenceEqual(HeaderEnd))
         {
             if (headerLength == _headerBuffer.Length)
-                throw new IOException("tsrs api header too long");
+                throw new IOException(_name + " api header too long");
             var b = _output.ReadByte();
             if (b < 0)
                 throw new IOException("unexpected end of stream");
@@ -122,7 +125,7 @@ public sealed class TsrsApiClient : IDisposable
         }
 
         if (contentLength < 0)
-            throw new IOException("tsrs api message without Content-Length");
+            throw new IOException(_name + " api message without Content-Length");
         var body = new byte[contentLength];
         _output.ReadExactly(body);
         return JObject.Parse(Encoding.UTF8.GetString(body));

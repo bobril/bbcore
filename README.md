@@ -162,8 +162,23 @@ The binary is found through the `TSRS_BINARY` environment variable, `node_module
 `node_modules/tsrs` or `PATH`. When none is found, bbcore downloads the tsrs package for your platform from npm into
 its tools directory (`"tsrsVersion"` selects the version, default is the version bbcore was tested with). When tsrs
 is not available, for example on Windows or Intel macOS where tsrs has no build yet, or when the download fails,
-bbcore logs a warning and falls back to Go TypeScript (`tsgo` from `@typescript/native-preview` or `PATH`) for
-typechecking, or to regular TypeScript when tsgo is not found either, and transpiles with regular TypeScript.
+bbcore logs a warning and falls back to TypeScript 7 (see below) in the version tsrs follows, so results stay the
+same. When that is not available either, it falls back to Go TypeScript (`tsgo` from `@typescript/native-preview` or
+`PATH`) for typechecking, or to regular TypeScript, and transpiles with regular TypeScript.
+
+## Use TypeScript 7.1+ native compiler
+
+TypeScript 7 is a native compiler without `typescript.js`, so bbcore runs its `tsc` directly: for typechecking
+(interactive builds keep `tsc --watch` running) and for transpilation through its `transpileModule` API. Select it by
+version in `.bbrc`:
+
+    {
+        "tsVersion": "7.1.0-beta"
+    }
+
+bbcore downloads `@typescript/typescript-<platform>` from npm into its tools directory. A project with `typescript`
+7.1+ in `devDependencies` uses its installed `tsc` instead. TypeScript 7.0 is not supported, because its API cannot
+transpile. Output gets the same emit changes as described for tsrs above.
 
 bbcore applies the same emit changes to tsrs output as to its patched TypeScript compiler, so bundled JavaScript is the
 same as with the regular transpiler. Source maps follow TypeScript 7 and are slightly more detailed, so columns of

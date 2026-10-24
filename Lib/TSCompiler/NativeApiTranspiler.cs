@@ -11,25 +11,32 @@ using Newtonsoft.Json.Linq;
 
 namespace Lib.TSCompiler;
 
-// Transpiles single modules with tsrs `transpileModule` API; used only for transpilation, typecheck goes through
+// Transpiles single modules with tsrs or TypeScript 7.1+ `transpileModule` API; used only for transpilation, typecheck goes through
 // NativeTsCompiler.
-public sealed class TsrsTranspiler : ITSCompiler
+public sealed class NativeApiTranspiler : ITSCompiler
 {
     static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(60);
     static readonly ConcurrentDictionary<string, string> VersionCache = new();
 
     readonly ILogger _logger;
-    TsrsApiClient? _client;
+    NativeApiClient? _client;
     ITSCompilerOptions? _compilerOptions;
     JObject _apiCompilerOptions = new();
 
-    public TsrsTranspiler(string tsrsExecutable, ILogger logger)
+    public NativeApiTranspiler(string executable, ILogger logger)
     {
-        TsrsExecutable = tsrsExecutable;
+        Executable = executable;
+        Name = GetName(executable);
         _logger = logger;
     }
 
-    public string TsrsExecutable { get; }
+    public string Executable { get; }
+
+    // "tsrs" or "tsc"
+    public string Name { get; }
+
+    public static string GetName(string executable) =>
+        System.IO.Path.GetFileName(executable).StartsWith("tsrs", StringComparison.OrdinalIgnoreCase) ? "tsrs" : "tsc";
     public IDiskCache DiskCache { get; set; } = null!;
 
     public ITSCompilerOptions CompilerOptions
@@ -43,12 +50,13 @@ public sealed class TsrsTranspiler : ITSCompiler
         }
     }
 
-    public string GetTSVersion() => GetVersion(TsrsExecutable);
+    public string GetTSVersion() => GetVersion(Executable);
 
-    // `tsrs --version` prints "Version 7.1.0-dev.20260930.4 (tsrs 0.18.0-..., microsoft/TypeScript@...)"
-    public static string GetVersion(string tsrsExecutable)
+    // `tsrs --version` prints "Version 7.1.0-dev.20260930.4 (tsrs 0.18.0-..., microsoft/TypeScript@...)",
+    // `tsc --version` prints "Version 7.1.0-beta"
+    public static string GetVersion(string executable)
     {
-        return VersionCache.GetOrAdd(tsrsExecutable, static exe =>
+        return VersionCache.GetOrAdd(executable, static exe =>
         {
             var start = new ProcessStartInfo(exe)
             {
@@ -80,10 +88,10 @@ public sealed class TsrsTranspiler : ITSCompiler
         JToken response;
         try
         {
-            _client ??= new(TsrsExecutable, Directory.GetCurrentDirectory(), _logger);
+            _client ??= new(Executable, Name, Directory.GetCurrentDirectory(), _logger);
             response = _client.Request("transpileModule", parameters, RequestTimeout);
         }
-        catch (Exception ex) when (ex is TsrsApiException or IOException or InvalidOperationException
+        catch (Exception ex) when (ex is NativeApiException or IOException or InvalidOperationException
                                        or System.ComponentModel.Win32Exception)
         {
             // Next request respawns the process
@@ -102,7 +110,7 @@ public sealed class TsrsTranspiler : ITSCompiler
         var result = ParseTranspileResponse(fileName, response);
         if (result.Diagnostics == null || !result.Diagnostics.Exists(d => d.IsError))
             (result.JavaScript, result.SourceMap) =
-                TsrsOutputPatcher.Patch(result.JavaScript, result.SourceMap, content);
+                NativeOutputPatcher.Patch(result.JavaScript, result.SourceMap, content);
         return result;
     }
 
@@ -199,13 +207,13 @@ public sealed class TsrsTranspiler : ITSCompiler
     }
 
     public void CreateProgram(string currentDirectory, string[] mainFiles) =>
-        throw new NotSupportedException("tsrs transpiler is used only for transpilation.");
+        throw new NotSupportedException("Native TypeScript API transpiler is used only for transpilation.");
 
     public void UpdateProgram(string[] mainFiles) =>
-        throw new NotSupportedException("tsrs transpiler is used only for transpilation.");
+        throw new NotSupportedException("Native TypeScript API transpiler is used only for transpilation.");
 
     public void TriggerUpdate() =>
-        throw new NotSupportedException("tsrs transpiler is used only for transpilation.");
+        throw new NotSupportedException("Native TypeScript API transpiler is used only for transpilation.");
 
     public void ClearDiagnostics()
     {
@@ -214,7 +222,7 @@ public sealed class TsrsTranspiler : ITSCompiler
     public Diagnostic[] GetDiagnostics() => [];
 
     public void CheckProgram(string currentDirectory, string[] mainFiles) =>
-        throw new NotSupportedException("tsrs transpiler is used only for transpilation.");
+        throw new NotSupportedException("Native TypeScript API transpiler is used only for transpilation.");
 
     public void Dispose()
     {
