@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -382,7 +383,8 @@ public static class PathUtils
         return dir.ToString();
     }
 
-    public static string ForDiagnosticDisplay(string name, string relativeTo, string rootToStayInside)
+    [return: NotNullIfNotNull(nameof(name))]
+    public static string? ForDiagnosticDisplay(string? name, string relativeTo, string? rootToStayInside)
     {
         if (name == null) return null;
         if (rootToStayInside == null) rootToStayInside = relativeTo;

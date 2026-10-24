@@ -29,7 +29,8 @@ public class CfgManager<T> where T : class, new()
             };
             if (File.Exists(_configName))
             {
-                cfg = JsonSerializer.Deserialize<T>(File.ReadAllBytes(_configName), jsonOptions);
+                cfg = JsonSerializer.Deserialize<T>(File.ReadAllBytes(_configName), jsonOptions) ??
+                      throw new JsonException("Configuration " + _configName + " is null");
             }
             else if (_createIfNotFound)
             {
@@ -44,5 +45,5 @@ public class CfgManager<T> where T : class, new()
         Cfg = cfg;
     }
 
-    public T Cfg { get; private set; }
+    public T Cfg { get; private set; } = new();
 }

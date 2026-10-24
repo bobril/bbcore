@@ -32,9 +32,9 @@ public class CommandLineArgumentStrings : CommandLineArgument
     /// </summary>
     /// <param name="args">Command line arguments</param>
     /// <returns>Rest arguments</returns>
-    public override string[] SetValue(string[] args)
+    public override string[]? SetValue(string[] args)
     {
-        if (args?.Length < Value.Length + 1)
+        if (args.Length < Value.Length + 1)
             return null;
 
         Array.Copy(args, 1, Value, 0, Value.Length);

@@ -12,7 +12,7 @@ public class CommandLineArgumentBoolNullable : CommandLineArgument
         Value = defaultValue;
     }
 
-    public override string[] SetValue(string[] args)
+    public override string[]? SetValue(string[] args)
     {
         if (args.Length < 2)
             return null;

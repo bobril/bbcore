@@ -16,7 +16,7 @@ public class NpmNodePackageManager : INodePackageManager
 {
     readonly IDiskCache _diskCache;
     readonly ILogger _logger;
-    string _npmPath;
+    readonly string? _npmPath;
 
     public NpmNodePackageManager(IDiskCache diskCache, ILogger logger)
     {
@@ -25,7 +25,7 @@ public class NpmNodePackageManager : INodePackageManager
         _npmPath = GetNpmPath();
     }
 
-    private string GetNpmPath()
+    private string? GetNpmPath()
     {
         var npmExecName = "npm";
         if (!_diskCache.FsAbstraction.IsUnixFs)
@@ -74,7 +74,7 @@ public class NpmNodePackageManager : INodePackageManager
     public void RunNpm(string dir, string aParams)
     {
         _logger.Info("Npm " + aParams);
-        var start = new ProcessStartInfo(_npmPath, aParams)
+        var start = new ProcessStartInfo(_npmPath ?? throw new InvalidOperationException("npm not found in PATH"), aParams)
         {
             UseShellExecute = false,
             WorkingDirectory = dir,
@@ -85,7 +85,7 @@ public class NpmNodePackageManager : INodePackageManager
             RedirectStandardOutput = true
         };
 
-        var process = Process.Start(start);
+        var process = Process.Start(start)!;
         process.OutputDataReceived += Process_OutputDataReceived;
         process.ErrorDataReceived += Process_OutputDataReceived;
         process.BeginErrorReadLine();
@@ -95,7 +95,7 @@ public class NpmNodePackageManager : INodePackageManager
 
     void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
     {
-        _logger.WriteLine(e.Data);
+        _logger.WriteLine(e.Data ?? "");
     }
 
     public void Install(IDirectoryCache projectDirectory, IDiskCache? dc)
@@ -106,17 +106,7 @@ public class NpmNodePackageManager : INodePackageManager
     void RunNpmWithParam(IDirectoryCache projectDirectory, string param)
     {
         var fullPath = projectDirectory.FullPath;
-        var project = TSProject.Create(projectDirectory, _diskCache, _logger, null);
-        project.LoadProjectJson(true, null);
-        if (project.ProjectOptions.NpmRegistry != null)
-        {
-            if (!(projectDirectory.TryGetChild(".npmrc") is IFileCache))
-            {
-                _diskCache.FsAbstraction.WriteAllUtf8(
-                    PathUtils.Join(fullPath, ".npmrc"),
-                    "registry =" + project.ProjectOptions.NpmRegistry);
-            }
-        }
+        ProjectNpmRc.EnsureRegistry(projectDirectory, _diskCache, _logger);
 
         var par = param;
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("BBCoreNoLinks")))
@@ -136,7 +126,7 @@ public class NpmNodePackageManager : INodePackageManager
         Install(projectDirectory, dc);
     }
 
-    void RecursiveDelete(IDirectoryCache dirToDelete)
+    void RecursiveDelete(IDirectoryCache? dirToDelete)
     {
         if (dirToDelete == null)
             return;

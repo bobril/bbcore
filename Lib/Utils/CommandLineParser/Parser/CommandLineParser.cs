@@ -17,13 +17,13 @@ public class CommandLineParser
     /// <param name="args">Arguments</param>
     /// <param name="commands">Commands</param>
     /// <returns>Command</returns>
-    public static CommandLineCommand Parse(string[] args, List<CommandLineCommand> commands)
+    public static CommandLineCommand? Parse(string[] args, List<CommandLineCommand> commands)
     {
-        CommandLineCommand command;
+        CommandLineCommand? command;
         string[] commandArgs = args;
 
         // first argument
-        string firstArg = args?.Length > 0 ? args[0].Trim() : null;
+        string? firstArg = args.Length > 0 ? args[0].Trim() : null;
         if (firstArg != null && !firstArg.StartsWith('-'))
         {
             // help
@@ -34,7 +34,7 @@ public class CommandLineParser
             }
 
             // get the command by the first argument
-            command = commands?.FirstOrDefault(c => c.Words?.Contains(firstArg) ?? false);
+            command = commands.FirstOrDefault(c => c.Words?.Contains(firstArg) ?? false);
 
             // remove first argument
             commandArgs = args.Skip(1).ToArray();
@@ -48,7 +48,7 @@ public class CommandLineParser
                 ShowCommandsHelp(commands);
             }
 
-            command = commands?.FirstOrDefault(c => c.Words == null || c.Words.Contains(""));
+            command = commands.FirstOrDefault(c => c.Words == null || c.Words.Contains(""));
         }
 
         // Parse arguments or show help

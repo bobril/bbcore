@@ -18,8 +18,9 @@ public class NpmRepositoryAccessor : IDisposable
         _httpClient.Timeout = TimeSpan.FromSeconds(30);
     }
 
-    public async Task<(EntityTagHeaderValue etag, string content)> GetPackageInfo(string name,
-        EntityTagHeaderValue etag)
+    // content is null when etag matches (not modified)
+    public async Task<(EntityTagHeaderValue? etag, string? content)> GetPackageInfo(string name,
+        EntityTagHeaderValue? etag)
     {
         var req = new HttpRequestMessage(HttpMethod.Get, name);
         if (etag != null)

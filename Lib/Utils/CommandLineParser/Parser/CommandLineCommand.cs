@@ -22,7 +22,7 @@ public abstract class CommandLineCommand
     /// <summary>
     /// List of sub commands
     /// </summary>
-    public virtual List<CommandLineCommand> SubCommands { get; } = null;
+    public virtual List<CommandLineCommand>? SubCommands { get; } = null;
 
     /// <summary>
     /// Command arguments
@@ -33,7 +33,8 @@ public abstract class CommandLineCommand
         {
             var argumentProperties = GetType().GetProperties()
                 .Where(p => p.PropertyType.IsSubclassOf(typeof(CommandLineArgument))).ToList();
-            return argumentProperties.ToList().Select(ap => (CommandLineArgument) ap.GetValue(this))
+            return argumentProperties.ToList().Select(ap => (CommandLineArgument) (ap.GetValue(this) ??
+                    throw new InvalidOperationException("Argument " + ap.Name + " is not initialized")))
                 .ToList();
         }
     }
@@ -42,7 +43,7 @@ public abstract class CommandLineCommand
     /// Read arguments from command line arguments
     /// </summary>
     /// <param name="args">Command line arguments (at least one)</param>
-    public CommandLineCommand ParseArguments(string[] args)
+    public CommandLineCommand? ParseArguments(string[] args)
     {
         var firstArg = args[0];
 
@@ -90,10 +91,11 @@ public abstract class CommandLineCommand
         // list of arguments (it always creates new list instance, so it could be modified by ParseOneArgument)
         var arguments = Arguments;
 
-        while (args?.Length > 0)
-            args = ParseOneArgument(args, arguments);
+        string[]? restArgs = args;
+        while (restArgs?.Length > 0)
+            restArgs = ParseOneArgument(restArgs, arguments);
 
-        return args == null ? null : this;
+        return restArgs == null ? null : this;
     }
 
     /// <summary>
@@ -102,7 +104,7 @@ public abstract class CommandLineCommand
     /// <param name="args">Command line arguments (at least one)</param>
     /// <param name="arguments">Argument definitions</param>
     /// <returns>Rest command line arguments</returns>
-    string[] ParseOneArgument(string[] args, List<CommandLineArgument> arguments)
+    string[]? ParseOneArgument(string[] args, List<CommandLineArgument> arguments)
     {
         var firstArg = args[0].Trim();
         var argument = arguments.FirstOrDefault(a =>
@@ -158,7 +160,7 @@ public abstract class CommandLineCommand
     {
         Arguments.ForEach(a =>
         {
-            var name = string.Join("|", a.Words);
+            var name = string.Join("|", a.Words ?? throw new InvalidOperationException("Argument without words"));
             var property = a.GetType().GetProperty("Value",
                 System.Reflection.BindingFlags.GetProperty | System.Reflection.BindingFlags.Instance |
                 System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly);

@@ -8,12 +8,13 @@ public class PackageJson
 {
     public static PackageJson Parse(JsonReader reader)
     {
-        return JObject.Load(reader).ToObject<PackageJson>();
+        return JObject.Load(reader).ToObject<PackageJson>() ??
+               throw new JsonSerializationException("Cannot parse package.json");
     }
 
-    public string Version { get; set; }
-    public string Name { get; set; }
-    public PackageJsonDist Dist { get; set; }
-    public Dictionary<string, string> Dependencies { get; set; }
-    public Dictionary<string, string> DevDependencies { get; set; }
+    public required string Version { get; set; }
+    public required string Name { get; set; }
+    public required PackageJsonDist Dist { get; set; }
+    public Dictionary<string, string>? Dependencies { get; set; }
+    public Dictionary<string, string>? DevDependencies { get; set; }
 }

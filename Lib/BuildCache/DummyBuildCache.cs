@@ -20,12 +20,12 @@ public class DummyBuildCache : IBuildCache
     {
     }
 
-    public TSFileBuildCache FindTSFileBuildCache(byte[] contentHash, uint configurationId)
+    public TSFileBuildCache? FindTSFileBuildCache(byte[] contentHash, uint configurationId)
     {
         return null;
     }
 
-    public string GetContentByHash(byte[] contentHash)
+    public string? GetContentByHash(byte[] contentHash)
     {
         return null;
     }

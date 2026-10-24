@@ -44,24 +44,25 @@ public class BunNodePackageManager : INodePackageManager
 
     public bool IsUsedInProject(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
-        while (projectDirectory != null)
+        IDirectoryCache? dir = projectDirectory;
+        while (dir != null)
         {
-            if (projectDirectory.IsFake && dc != null)
+            if (dir.IsFake && dc != null)
             {
-                if (dc.FsAbstraction.FileExists(PathUtils.Join(projectDirectory.FullPath, "bun.lock")) ||
-                    dc.FsAbstraction.FileExists(PathUtils.Join(projectDirectory.FullPath, "bun.lockb")))
+                if (dc.FsAbstraction.FileExists(PathUtils.Join(dir.FullPath, "bun.lock")) ||
+                    dc.FsAbstraction.FileExists(PathUtils.Join(dir.FullPath, "bun.lockb")))
                 {
                     return true;
                 }
             }
 
-            if (projectDirectory.TryGetChild("bun.lock") is IFileCache ||
-                projectDirectory.TryGetChild("bun.lockb") is IFileCache)
+            if (dir.TryGetChild("bun.lock") is IFileCache ||
+                dir.TryGetChild("bun.lockb") is IFileCache)
             {
                 return true;
             }
 
-            projectDirectory = projectDirectory.Parent;
+            dir = dir.Parent;
         }
 
         return false;
@@ -146,7 +147,7 @@ public class BunNodePackageManager : INodePackageManager
 
     void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
     {
-        _logger.WriteLine(e.Data);
+        _logger.WriteLine(e.Data ?? "");
     }
 
     public void Install(IDirectoryCache projectDirectory, IDiskCache? dc)
@@ -157,17 +158,7 @@ public class BunNodePackageManager : INodePackageManager
     void RunBunWithParam(IDirectoryCache projectDirectory, string param)
     {
         var fullPath = projectDirectory.FullPath;
-        var project = TSProject.Create(projectDirectory, _diskCache, _logger, null);
-        project.LoadProjectJson(true, null);
-        if (project.ProjectOptions.NpmRegistry != null)
-        {
-            if (projectDirectory.TryGetChild(".npmrc") is not IFileCache)
-            {
-                _diskCache.FsAbstraction.WriteAllUtf8(
-                    PathUtils.Join(fullPath, ".npmrc"),
-                    "registry =" + project.ProjectOptions.NpmRegistry);
-            }
-        }
+        ProjectNpmRc.EnsureRegistry(projectDirectory, _diskCache, _logger);
 
         RunBun(fullPath, param);
     }

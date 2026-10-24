@@ -16,8 +16,8 @@ public class OsWatcher : IDirectoryWatcher
         }
     }
 
-    string _watchedDirectory;
-    FileSystemWatcher _fileSystemWatcher;
+    string _watchedDirectory = "";
+    FileSystemWatcher? _fileSystemWatcher;
     bool _disposed;
     readonly object _createLock = new object();
 
@@ -25,9 +25,9 @@ public class OsWatcher : IDirectoryWatcher
     {
     }
 
-    public Action<string> OnFileChange { get; set; }
+    public Action<string> OnFileChange { get; set; } = _ => { };
 
-    public Action OnError { get; set; }
+    public Action OnError { get; set; } = () => { };
 
     void WatcherErrorHandler(object sender, ErrorEventArgs e)
     {

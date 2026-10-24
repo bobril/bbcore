@@ -67,7 +67,7 @@ public class NotificationParameters
 public class NotificationManager
 {
     static readonly Version WindowsMinimumVersionForToastNotificationManager = new Version(10, 0, 10240, 0);
-    static readonly Version OSVersion;
+    static readonly Version? OSVersion;
 
     public static bool Enabled = true;
     static NotificationManager()

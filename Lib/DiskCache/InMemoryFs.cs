@@ -9,8 +9,9 @@ namespace Lib.DiskCache;
 
 public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
 {
-    private readonly IDictionary<KeyValuePair<string, string>, FakeFile> _content =
-        new ConcurrentDictionary<KeyValuePair<string, string>, FakeFile>();
+    // null value means directory
+    private readonly IDictionary<KeyValuePair<string, string>, FakeFile?> _content =
+        new ConcurrentDictionary<KeyValuePair<string, string>, FakeFile?>();
     private readonly bool _isUnixFs;
 
     public InMemoryFs(bool isUnixFs = true)
@@ -18,9 +19,9 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
         _isUnixFs = isUnixFs;
     }
 
-    public string WatchedDirectory { get; set; }
-    public Action<string> OnFileChange { get; set; }
-    public Action OnError { get; set; }
+    public string WatchedDirectory { get; set; } = "";
+    public Action<string> OnFileChange { get; set; } = _ => { };
+    public Action OnError { get; set; } = () => { };
 
     public void Dispose()
     {
@@ -71,11 +72,10 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
         if (file == null)
             throw new Exception("Cannot read directory as file " + path);
 
-        if (file._content is string)
-            return Encoding.UTF8.GetBytes(file._content.ToString());
+        if (file._content is string s)
+            return Encoding.UTF8.GetBytes(s);
 
-        return file._content as byte[];
-
+        return (byte[])file._content;
     }
 
     public string ReadAllUtf8(string path)
@@ -91,7 +91,7 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
         if (file._content is byte[] bytes)
             return Encoding.UTF8.GetString(bytes);
         
-        return file._content as string;
+        return (string)file._content;
     }
 
     public bool FileExists(string path)
@@ -183,7 +183,7 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
 
     private class FakeFile
     {
-        public object _content;
+        public required object _content;
         public DateTime _lastWriteTimeUtc;
         public ulong _length;
     }

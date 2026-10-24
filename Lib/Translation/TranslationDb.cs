@@ -31,7 +31,7 @@ public class TranslationDb
     Dictionary<uint, uint> UsedIdMap = new Dictionary<uint, uint>();
     List<uint> UsedIds = new List<uint>();
     List<List<string>> Locations = new List<List<string>>();
-    Dictionary<string, List<string>> Lang2ValueList = new Dictionary<string, List<string>>();
+    Dictionary<string, List<string?>> Lang2ValueList = new Dictionary<string, List<string?>>();
     HashSet<string> _loadedLanguages = new HashSet<string>();
     readonly IFsAbstraction _fsAbstraction;
     bool _changed;
@@ -78,12 +78,11 @@ public class TranslationDb
     {
         var reader = new JsonTextReader(new StringReader(_fsAbstraction.ReadAllUtf8(fileName)));
         var state = LoaderState.Start;
-        string lang = null;
-        List<string> valueList = null;
-        string message = null;
-        string hint = null;
+        List<string?>? valueList = null;
+        string? message = null;
+        string? hint = null;
         var withParams = false;
-        string value = null;
+        string? value = null;
         while (reader.Read())
         {
             switch (reader.TokenType)
@@ -107,21 +106,21 @@ public class TranslationDb
                     switch (state)
                     {
                         case LoaderState.LangString:
-                            lang = (string)reader.Value;
+                            var lang = StringTokenValue(reader);
                             _loadedLanguages.Add(lang);
                             valueList = AddLanguage(lang);
                             state = LoaderState.BeforeItem;
                             break;
                         case LoaderState.Message:
-                            message = (string)reader.Value;
+                            message = StringTokenValue(reader);
                             state = LoaderState.Hint;
                             break;
                         case LoaderState.Hint:
-                            hint = (string)reader.Value;
+                            hint = StringTokenValue(reader);
                             state = LoaderState.Flags;
                             break;
                         case LoaderState.Value:
-                            value = (string)reader.Value;
+                            value = StringTokenValue(reader);
                             state = LoaderState.AfterValue;
                             break;
                         default:
@@ -134,7 +133,8 @@ public class TranslationDb
                     switch (state)
                     {
                         case LoaderState.Flags:
-                            withParams = ((int)(long)reader.Value & 1) != 0;
+                            // Integer token always has value
+                            withParams = ((int)(long)reader.Value! & 1) != 0;
                             state = LoaderState.Value;
                             break;
                         default:
@@ -170,6 +170,9 @@ public class TranslationDb
                             value = null;
                             goto case LoaderState.AfterValue;
                         case LoaderState.AfterValue:
+                            if (message == null || valueList == null)
+                                throw new Exception("Unexpected token " + reader.TokenType + " Line:" +
+                                                    reader.LineNumber + " Pos:" + reader.LinePosition);
                             state = LoaderState.BeforeItem;
                             var id = AddToDB(message, hint, withParams);
                             while (valueList.Count <= id) valueList.Add(null);
@@ -196,6 +199,9 @@ public class TranslationDb
             throw new Exception("Unexpected end of file when in state " + state);
         }
     }
+
+    // String token always has string value
+    static string StringTokenValue(JsonReader reader) => (string)reader.Value!;
 
     public void SaveLangDbs(string dir, bool justUsed)
     {
@@ -286,11 +292,11 @@ public class TranslationDb
 
     public bool HasLanguage(string lang) => Lang2ValueList.ContainsKey(lang);
 
-    public List<string> AddLanguage(string lang)
+    public List<string?> AddLanguage(string lang)
     {
-        if (!Lang2ValueList.TryGetValue(lang, out List<string> valueList))
+        if (!Lang2ValueList.TryGetValue(lang, out var valueList))
         {
-            valueList = new List<string>();
+            valueList = new List<string?>();
             Lang2ValueList.Add(lang, valueList);
         }
 
@@ -304,7 +310,7 @@ public class TranslationDb
             specificLanguage = GetLanguageFromSpecificPath(specificPath);
 
         var contentBuilder = new StringBuilder();
-        List<string>? values = null;
+        List<string?>? values = null;
 
         if (!string.IsNullOrEmpty(specificLanguage))
             values = Lang2ValueList[specificLanguage];
@@ -326,7 +332,8 @@ public class TranslationDb
             }
             else
             {
-                if (exportOnlyUntranslated && values[id] != null)
+                if (exportOnlyUntranslated &&
+                    (values ?? throw new InvalidOperationException("Language to export is not specified"))[id] != null)
                     continue;
                 contentBuilder.Append(ExportLanguageItem(trs.Message, trs.Hint));
             }
@@ -344,7 +351,8 @@ public class TranslationDb
     string GetLanguageFromSpecificPath(string specificPath)
     {
         var content = _fsAbstraction.ReadAllUtf8(specificPath);
-        return JArray.Parse(content).First.ToString();
+        return (JArray.Parse(content).First ??
+                throw new InvalidDataException("Missing language in " + specificPath)).ToString();
     }
 
     string ExportLanguageItem(string source, string? hint)
@@ -670,7 +678,7 @@ public class TranslationDb
     {
         var keys = new HashSet<TranslationKey>();
 
-        void AddData(string source, string hint, string target) =>
+        void AddData(string source, string? hint, string target) =>
             keys.Add(new TranslationKey(source, hint, false));
 
         var outputFile = files.Last();

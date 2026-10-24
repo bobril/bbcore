@@ -92,7 +92,7 @@ public class ToolsDir : IToolsDir
     public IDictionary<string, byte[]> CoverageDetailsVisualizerZip { get; }
 
     public string Path { get; }
-    string _typeScriptLibDir;
+    string _typeScriptLibDir = "";
     (string Dir, string Version)? _pendingTypeScriptDownload;
 
     // Selected TypeScript is downloaded only when really used, native compilers (tsrs, TypeScript 7) do not need it
@@ -106,7 +106,7 @@ public class ToolsDir : IToolsDir
         private set => _typeScriptLibDir = value;
     }
 
-    public string TypeScriptVersion { get; private set; }
+    public string TypeScriptVersion { get; private set; } = "";
 
     string? _typeScriptJsContent;
 
@@ -247,8 +247,8 @@ public class ToolsDir : IToolsDir
     };
     
     readonly JObject _localeDefs;
-    string _proxyWeb;
-    string _proxyWebt;
+    string? _proxyWeb;
+    string? _proxyWebt;
 
     public string LiveReloadJs { get; }
 
@@ -257,11 +257,13 @@ public class ToolsDir : IToolsDir
         _logger.Info($"Downloading and extracting TypeScript {versionString}");
         var version = new SemanticVersioning.Version(versionString);
         var npmr = new NpmRepositoryAccessor();
-        var packageEtagAndContent = await npmr.GetPackageInfo("typescript", null);
+        var (_, content) = await npmr.GetPackageInfo("typescript", null);
+        if (content == null)
+            throw new InvalidOperationException("Failed to get TypeScript package info");
         var task = null as Task<byte[]>;
         try
         {
-            var packageInfo = new PackageInfo(packageEtagAndContent.content);
+            var packageInfo = new PackageInfo(content);
             packageInfo.LazyParseVersions(v => v == version, reader =>
             {
                 var j = PackageJson.Parse(reader);
@@ -273,8 +275,7 @@ public class ToolsDir : IToolsDir
         catch (Exception)
         {
             _logger.Error("Failed to parse TypeScript package info: " +
-                          packageEtagAndContent.content.Substring(0,
-                              Math.Min(1000, packageEtagAndContent.content.Length)));
+                          content.Substring(0, Math.Min(1000, content.Length)));
             throw;
         }
 
@@ -347,7 +348,7 @@ public class ToolsDir : IToolsDir
         return jsEngineSwitcher.CreateDefaultEngine();
     }
 
-    public byte[] WebGet(string path)
+    public byte[]? WebGet(string path)
     {
         if (_proxyWeb != null)
         {
@@ -365,7 +366,7 @@ public class ToolsDir : IToolsDir
         return result;
     }
 
-    public byte[] WebtGet(string path)
+    public byte[]? WebtGet(string path)
     {
         if (_proxyWebt != null)
         {
@@ -384,7 +385,7 @@ public class ToolsDir : IToolsDir
     }
 
     HttpClient _httpClient = new();
-    string _jasmineVersion;
+    string _jasmineVersion = "3.3";
 
     byte[] ProxyGet(string baseUrl, string path)
     {

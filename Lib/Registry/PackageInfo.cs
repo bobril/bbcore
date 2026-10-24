@@ -9,7 +9,7 @@ namespace Lib.Registry;
 public class PackageInfo
 {
     readonly string _content;
-    Dictionary<string, Version> _distTags;
+    Dictionary<string, Version>? _distTags;
 
     public PackageInfo(string content)
     {
@@ -62,7 +62,7 @@ public class PackageInfo
                 case JsonToken.PropertyName:
                     if (state == State.Main)
                     {
-                        if ((string) reader.Value == "dist-tags")
+                        if ((string?) reader.Value == "dist-tags")
                         {
                             if (!reader.Read())
                                 throw new Exception("Wrong format");
@@ -75,9 +75,9 @@ public class PackageInfo
                     }
                     else if (state == State.Versions)
                     {
-                        var tag = (string) reader.Value;
+                        var tag = (string) reader.Value!;
                         reader.Read();
-                        var ver = new Version((string) reader.Value, true);
+                        var ver = new Version((string?) reader.Value, true);
                         yield return (tag, ver);
                     }
 
@@ -142,7 +142,7 @@ public class PackageInfo
                 case JsonToken.PropertyName:
                     if (state == State.Main)
                     {
-                        if ((string) reader.Value == "versions")
+                        if ((string?) reader.Value == "versions")
                         {
                             if (!reader.Read())
                                 throw new Exception("Wrong format");
@@ -155,7 +155,7 @@ public class PackageInfo
                     }
                     else if (state == State.Versions)
                     {
-                        var ver = new Version((string) reader.Value, true);
+                        var ver = new Version((string?) reader.Value, true);
                         if (shouldReadVersion(ver))
                         {
                             reader.Read();

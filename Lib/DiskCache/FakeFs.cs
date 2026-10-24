@@ -8,7 +8,7 @@ public class FakeFs : IFsAbstraction
     bool _isUnix;
     bool _isMac;
     string? _chromPath;
-    public FakeFs(bool isUnix, string chromePath = null, bool isMac = false)
+    public FakeFs(bool isUnix, string? chromePath = null, bool isMac = false)
     {
         _isUnix = isUnix;
         _isMac = isMac;

@@ -10,7 +10,7 @@ namespace Lib.Watcher;
 public class PollingWatcher : IDirectoryWatcher
 {
     readonly TimeSpan _delay;
-    string _watchedDirectory;
+    string _watchedDirectory = "";
     Timer? _timer;
     List<(string, long, DateTime)>? _list;
 
@@ -75,6 +75,6 @@ public class PollingWatcher : IDirectoryWatcher
         return (entry.ToFullPath(), entry.Length, entry.LastWriteTimeUtc.UtcDateTime);
     }
 
-    public Action<string> OnFileChange { get; set; }
-    public Action OnError { get; set; }
+    public Action<string> OnFileChange { get; set; } = _ => { };
+    public Action OnError { get; set; } = () => { };
 }

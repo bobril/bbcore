@@ -28,7 +28,7 @@ public class CommandLineArgumentString : CommandLineArgument
     /// </summary>
     /// <param name="args">Command line arguments</param>
     /// <returns>Unused command line arguments</returns>
-    public override string[] SetValue(string[] args)
+    public override string[]? SetValue(string[] args)
     {
         if (Words == null)
         {

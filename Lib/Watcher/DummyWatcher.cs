@@ -8,7 +8,7 @@ public class DummyWatcher : IDirectoryWatcher
     {
     }
 
-    public string WatchedDirectory { get; set; }
-    public Action<string> OnFileChange { get; set; }
-    public Action OnError { get; set; }
+    public string WatchedDirectory { get; set; } = "";
+    public Action<string> OnFileChange { get; set; } = _ => { };
+    public Action OnError { get; set; } = () => { };
 }

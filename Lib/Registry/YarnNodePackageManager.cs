@@ -43,22 +43,23 @@ public class YarnNodePackageManager : INodePackageManager
 
     public bool IsUsedInProject(IDirectoryCache projectDirectory, IDiskCache? dc)
     {
-        while (projectDirectory != null)
+        IDirectoryCache? dir = projectDirectory;
+        while (dir != null)
         {
-            if (projectDirectory.IsFake && dc != null)
+            if (dir.IsFake && dc != null)
             {
-                if (dc.FsAbstraction.FileExists(PathUtils.Join(projectDirectory.FullPath, "yarn.lock")))
+                if (dc.FsAbstraction.FileExists(PathUtils.Join(dir.FullPath, "yarn.lock")))
                 {
                     return true;
                 }
             }
 
-            if (projectDirectory.TryGetChild("yarn.lock") is IFileCache)
+            if (dir.TryGetChild("yarn.lock") is IFileCache)
             {
                 return true;
             }
 
-            projectDirectory = projectDirectory.Parent;
+            dir = dir.Parent;
         }
 
         return false;
@@ -223,17 +224,7 @@ public class YarnNodePackageManager : INodePackageManager
     void RunYarnWithParam(IDirectoryCache projectDirectory, string param)
     {
         var fullPath = projectDirectory.FullPath;
-        var project = TSProject.Create(projectDirectory, _diskCache, _logger, null)!;
-        project.LoadProjectJson(true, null);
-        if (project.ProjectOptions.NpmRegistry != null)
-        {
-            if (projectDirectory.TryGetChild(".npmrc") is not IFileCache)
-            {
-                _diskCache.FsAbstraction.WriteAllUtf8(
-                    PathUtils.Join(fullPath, ".npmrc"),
-                    "registry =" + project.ProjectOptions.NpmRegistry);
-            }
-        }
+        ProjectNpmRc.EnsureRegistry(projectDirectory, _diskCache, _logger);
 
         var par = param;
         par += " --no-emoji --non-interactive";

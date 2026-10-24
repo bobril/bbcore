@@ -17,8 +17,9 @@ public class CssProcessor : ICssProcessor
     }
 
     readonly IToolsDir _toolsDir;
-    Func<string, string, string> _urlReplacer;
-    TaskCompletionSource<string> _tcs;
+    // Both are assigned in ProcessCss/ConcatenateAndMinifyCss right before calling into JS engine, which is the only caller of callbacks
+    Func<string, string, string>? _urlReplacer;
+    TaskCompletionSource<string>? _tcs;
     public bool ForceNativeCss { get; set; }
 
     public class BBCSSCallbacks
@@ -32,17 +33,17 @@ public class CssProcessor : ICssProcessor
 
         public string urlReplace(string url, string from)
         {
-            return _owner._urlReplacer(url, from);
+            return _owner._urlReplacer!(url, from);
         }
 
         public void finish(string result)
         {
-            _owner._tcs.SetResult(result);
+            _owner._tcs!.SetResult(result);
         }
 
         public void fail(string result)
         {
-            _owner._tcs.SetException(new Exception(result));
+            _owner._tcs!.SetException(new Exception(result));
         }
 
         public string readFileSync(string fileName)

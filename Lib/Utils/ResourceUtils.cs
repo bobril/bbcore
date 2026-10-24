@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -11,7 +12,7 @@ static public class ResourceUtils
     {
         using (var stream = typeof(ResourceUtils).Assembly.GetManifestResourceStream(name))
         {
-            using (var reader = new StreamReader(stream, Encoding.UTF8))
+            using (var reader = new StreamReader(stream ?? throw new InvalidOperationException("Missing resource " + name), Encoding.UTF8))
             {
                 return reader.ReadToEnd();
             }

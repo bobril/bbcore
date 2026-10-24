@@ -34,8 +34,8 @@ public class DiskCache : IDiskCache
 
     class DirectoryCache : IDirectoryCache
     {
-        public string Name { get; set; }
-        public string FullPath { get; set; }
+        public required string Name { get; set; }
+        public required string FullPath { get; set; }
         public IDirectoryCache? Parent { get; set; }
         public bool IsFile => false;
         public bool IsDirectory => true;
@@ -101,7 +101,7 @@ public class DiskCache : IDiskCache
             }
         }
 
-        public Func<(IDirectoryCache parent, string name, bool isDir), bool> Filter { get; set; }
+        public required Func<(IDirectoryCache parent, string name, bool isDir), bool> Filter { get; set; }
 
         public IDirectoryCache RealPath
         {
@@ -215,22 +215,16 @@ public class DiskCache : IDiskCache
         LastTrueChange = "First build";
         FsAbstraction = fsAbstraction;
         _directoryWatcherFactory = directoryWatcherFactory;
-        _root = new DirectoryCache(this, false);
-        _root.IsFake = true;
         IsUnixFs = fsAbstraction.IsUnixFs;
-        if (IsUnixFs)
-        {
-            ((DirectoryCache)_root).Name = "/";
-            ((DirectoryCache)_root).FullPath = "/";
-        }
-        else
-        {
-            ((DirectoryCache)_root).Name = "";
-            ((DirectoryCache)_root).FullPath = "";
-        }
-
         DefaultFilter = tuple => tuple is not { isDir: true, name: ".git" or ".hg" };
-        _root.Filter = DefaultFilter;
+        var rootPath = IsUnixFs ? "/" : "";
+        _root = new DirectoryCache(this, false)
+        {
+            Name = rootPath,
+            FullPath = rootPath,
+            Filter = DefaultFilter,
+            IsFake = true
+        };
     }
 
     void WatcherError()
@@ -322,8 +316,8 @@ public class DiskCache : IDiskCache
 
     class FileCache : IFileCache
     {
-        public string Name { get; set; }
-        public string FullPath { get; set; }
+        public required string Name { get; set; }
+        public required string FullPath { get; set; }
 
         byte[]? _contentBytes;
         byte[]? _contentHash;
@@ -331,7 +325,7 @@ public class DiskCache : IDiskCache
         bool _wasLoaded;
         bool _isInvalid;
 
-        public IDiskCache Owner { get; set; }
+        public required IDiskCache Owner { get; set; }
         public IDirectoryCache? Parent { get; set; }
         public bool IsFile => true;
         public bool IsDirectory => false;
@@ -780,7 +774,7 @@ public class DiskCache : IDiskCache
             p.Contains("/.pnpm/", StringComparison.Ordinal);
     }
 
-    bool NotWatchedByParents(IDirectoryCache directory)
+    bool NotWatchedByParents(IDirectoryCache? directory)
     {
         while (directory != null)
         {

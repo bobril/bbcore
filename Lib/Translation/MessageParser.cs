@@ -123,7 +123,7 @@ public class FormatAst : MessageAst
     }
 
     public string Id { get; }
-    public MessageAst Format { get; set; }
+    public MessageAst? Format { get; set; }
 
     public override void GatherParams(HashSet<string> pars)
     {
@@ -138,12 +138,12 @@ public class FormatTypeAst : MessageAst
     public FormatTypeAst(string type)
     {
         Type = type;
-        Options = new List<KeyValuePair<string, MessageAst>>();
+        Options = new List<KeyValuePair<string, MessageAst?>>();
     }
 
     public string Type { get; }
-    public string Style { get; set; }
-    public List<KeyValuePair<string, MessageAst>> Options { get; }
+    public string? Style { get; set; }
+    public List<KeyValuePair<string, MessageAst?>> Options { get; }
 
     public override void GatherParams(HashSet<string> pars)
     {
@@ -186,7 +186,7 @@ public class SelectAst : MessageAst
 
 public class MessageParser
 {
-    string _sourceText;
+    string _sourceText = "";
     int _pos;
     int _length;
     int _curLine;
@@ -194,7 +194,7 @@ public class MessageParser
     int _nextLine;
     int _nextCol;
     int _curToken;
-    string _errorMsg;
+    string _errorMsg = "";
     StringBuilder _sb = new StringBuilder();
 
     const int _eOFToken = -1;
@@ -498,12 +498,12 @@ public class MessageParser
 
                             if (IsError(val)) return (ErrorAst) val;
                             ((FormatTypeAst) res.Format).Options.Add(
-                                new KeyValuePair<string, MessageAst>((string) optionName, val));
+                                new KeyValuePair<string, MessageAst?>((string) optionName, val));
                         }
                         else
                         {
                             ((FormatTypeAst) res.Format).Options.Add(
-                                new KeyValuePair<string, MessageAst>((string) optionName, null));
+                                new KeyValuePair<string, MessageAst?>((string) optionName, null));
                         }
 
                         continue;

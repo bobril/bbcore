@@ -20,7 +20,7 @@ public abstract class CommandLineArgument
     /// <summary>
     /// Default value in string
     /// </summary>
-    string _defaultValueString;
+    string? _defaultValueString;
 
     /// <summary>
     /// Constructor
@@ -28,7 +28,7 @@ public abstract class CommandLineArgument
     /// <param name="description">Description</param>
     /// <param name="words">Argument aliases</param>
     /// <param name="defaultValue">Default value</param>
-    protected CommandLineArgument(string description, string[]? words, string defaultValue)
+    protected CommandLineArgument(string description, string[]? words, string? defaultValue)
     {
         Words = words;
         Description = description;
@@ -39,8 +39,8 @@ public abstract class CommandLineArgument
     /// Set value of argument
     /// </summary>
     /// <param name="args">Command line arguments</param>
-    /// <returns>Unused command line arguments</returns>
-    public abstract string[] SetValue(string[] args);
+    /// <returns>Unused command line arguments or null if value is invalid</returns>
+    public abstract string[]? SetValue(string[] args);
 
     /// <summary>
     /// Show help
@@ -59,5 +59,5 @@ public abstract class CommandLineArgument
     /// Additional help info
     /// </summary>
     /// <returns>Additional help info</returns>
-    protected virtual string AdditionalHelpInfo => null;
+    protected virtual string? AdditionalHelpInfo => null;
 }
