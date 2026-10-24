@@ -70,7 +70,7 @@ public class CompilerTests
     [Fact]
     public void TranspilerWorks()
     {
-        var ts = _compilerPool.GetTs(null, new TSCompilerOptions { newLine = NewLineKind.LineFeed });
+        var ts = _compilerPool.GetTs(new Lib.DiskCache.DiskCache(new InMemoryFs(), () => new DummyWatcher()), new TSCompilerOptions { newLine = NewLineKind.LineFeed });
         var res = ts.Transpile("index.ts", "let a: string = 'ahoj';");
         Assert.Equal("var a = 'ahoj';\n", res.JavaScript);
         _compilerPool.ReleaseTs(ts);
@@ -166,7 +166,7 @@ public class CompilerTests
     public void TypeScript6StillFindsBobrilSpritesInGatheredSourceInfo()
     {
         _tools.SetTypeScriptVersion("6.0.2");
-        var ts = _compilerPool.GetTs(null, new TSCompilerOptions
+        var ts = _compilerPool.GetTs(new Lib.DiskCache.DiskCache(new InMemoryFs(), () => new DummyWatcher()), new TSCompilerOptions
         {
             jsx = JsxEmit.React,
             module = ModuleKind.Commonjs,

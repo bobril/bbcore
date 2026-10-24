@@ -167,45 +167,52 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         string directory,
         string typeScriptVersion)
     {
+        var toolsDir = new ToolsDir(directory, Logger, files);
+        toolsDir.SetTypeScriptVersion(typeScriptVersion);
+        var diskCache = new DiskCache(files, () => new DummyWatcher());
+        var mainFilePath = directory == "." ? "/tmp/index.ts" : PathUtils.Join(directory, "index.ts");
+        var mainFile = diskCache.TryGetItem(mainFilePath);
+        var mainBuildResult = new MainBuildResult(true, null, null);
+        var directoryCache = (directory == "." ? diskCache.TryGetItem("/") as IDirectoryCache : mainFile?.Parent) ??
+                             throw new InvalidOperationException("Directory for " + mainFilePath + " not found");
+        var tsProject = TSProject.Create(directoryCache, diskCache, Logger, null)!;
+        tsProject.IsRootProject = true;
+        tsProject.ProjectOptions!.ForbiddenDependencyUpdate = true;
+        tsProject.ProjectOptions.UpdateFromProjectJson(null);
+        tsProject.ProjectOptions.Debug = false;
+        tsProject.ProjectOptions.LibraryMode = true;
+        tsProject.ProjectOptions.FinalCompilerOptions =
+            tsProject.ProjectOptions.GetDefaultTSCompilerOptions();
+        tsProject.ProjectOptions.FinalCompilerOptions!.allowJs = true;
+        tsProject.ProjectOptions.FinalCompilerOptions.declaration = true;
+        tsProject.ProjectOptions.FinalCompilerOptions.module = ModuleKind.Commonjs;
+        tsProject.ProjectOptions.FinalCompilerOptions.target = ScriptTarget.Es2019;
+        tsProject.ProjectOptions.FinalCompilerOptions.strict = true;
+        tsProject.ProjectOptions.FinalCompilerOptions.outDir = "dist";
+        tsProject.ProjectOptions.MainFile = "/tmp/index.ts";
+        tsProject.ProjectOptions.Tools = toolsDir;
+        tsProject.ProjectOptions.TypeScriptVersion = typeScriptVersion;
+        var buildCache = new DummyBuildCache();
         var context = new BuildContext
         {
-            ToolsDir = new ToolsDir(directory, Logger, files),
+            ToolsDir = toolsDir,
             FileSystemAbstraction = files,
+            DiskCache = diskCache,
+            MainBuildResult = mainBuildResult,
+            DirectoryCache = directoryCache,
+            TsProject = tsProject,
+            BuildResult = new BuildResult(mainBuildResult, tsProject.ProjectOptions),
+            Messages = new List<Diagnostic>(),
+            BuildCache = buildCache,
+            TranspilationContext = new BuildCtx(
+                new CompilerPool(toolsDir, Logger),
+                diskCache,
+                verbose: true,
+                Logger,
+                currentDirectory: tsProject.Owner.FullPath,
+                buildCache,
+                typeCheckValue: "no")
         };
-        context.ToolsDir.SetTypeScriptVersion(typeScriptVersion);
-        context.DiskCache = new DiskCache(context.FileSystemAbstraction, () => new DummyWatcher());
-        var mainFilePath = directory == "." ? "/tmp/index.ts" : PathUtils.Join(directory, "index.ts");
-        var mainFile = context.DiskCache.TryGetItem(mainFilePath);
-        context.MainBuildResult = new MainBuildResult(true, null, null);
-        context.DirectoryCache = directory == "." ? context.DiskCache.TryGetItem("/") as IDirectoryCache : mainFile?.Parent;
-        context.TsProject = TSProject.Create(context.DirectoryCache, context.DiskCache, Logger, null);
-        context.TsProject!.IsRootProject = true;
-        context.TsProject.ProjectOptions!.ForbiddenDependencyUpdate = true;
-        context.TsProject.ProjectOptions!.UpdateFromProjectJson(null);
-        context.TsProject.ProjectOptions.Debug = false;
-        context.TsProject.ProjectOptions.LibraryMode = true;
-        context.TsProject.ProjectOptions.FinalCompilerOptions =
-            context.TsProject.ProjectOptions.GetDefaultTSCompilerOptions();
-        context.TsProject.ProjectOptions.FinalCompilerOptions!.allowJs = true;
-        context.TsProject.ProjectOptions.FinalCompilerOptions.declaration = true;
-        context.TsProject.ProjectOptions.FinalCompilerOptions.module = ModuleKind.Commonjs;
-        context.TsProject.ProjectOptions.FinalCompilerOptions.target = ScriptTarget.Es2019;
-        context.TsProject.ProjectOptions.FinalCompilerOptions.strict = true;
-        context.TsProject.ProjectOptions.FinalCompilerOptions.outDir = "dist";
-        context.TsProject.ProjectOptions.MainFile = "/tmp/index.ts";
-        context.TsProject.ProjectOptions.Tools = context.ToolsDir;
-        context.TsProject.ProjectOptions.TypeScriptVersion = typeScriptVersion;
-        context.BuildResult = new BuildResult(context.MainBuildResult, context.TsProject.ProjectOptions);
-        context.Messages = new List<Diagnostic>();
-        context.BuildCache = new DummyBuildCache();
-        context.TranspilationContext = new BuildCtx(
-            new CompilerPool(context.ToolsDir, Logger),
-            context.DiskCache,
-            verbose: true,
-            Logger,
-            currentDirectory: context.TsProject.Owner.FullPath,
-            context.BuildCache,
-            typeCheckValue: "no");
 
         return context;
     }
@@ -215,8 +222,9 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         ref int errors,
         ref int warnings)
     {
+        var options = context.TsProject.ProjectOptions!;
         context.TranspilationContext.Build(
-            context.TsProject.ProjectOptions!,
+            options,
             buildOnlyOnce: true,
             context.BuildResult,
             context.MainBuildResult,
@@ -225,7 +233,7 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         context.TranspilationContext.CompilerPool.FreeMemory().GetAwaiter();
 
         IncludeMessages(
-            context.TsProject.ProjectOptions,
+            options,
             context.MainBuildResult,
             context.BuildResult,
             ref errors,
@@ -241,7 +249,7 @@ public partial class BbcoreLibrary : IBbcoreLibrary
         ref int warnings,
         IList<Diagnostic> messages)
     {
-        var rootPath = options.Owner.Owner.FullPath;
+        var relativeTo = mainBuildResult.CommonSourceDirectory ?? options.Owner.Owner.FullPath;
         foreach (var pathInfoPair in buildResult.Path2FileInfo)
         {
             var diag = pathInfoPair.Value.Diagnostics;
@@ -256,8 +264,7 @@ public partial class BbcoreLibrary : IBbcoreLibrary
                     warnings++;
                 messages.Add(new Diagnostic
                 {
-                    FileName = PathUtils.ForDiagnosticDisplay(pathInfoPair.Key,
-                        mainBuildResult.CommonSourceDirectory ?? rootPath, mainBuildResult.CommonSourceDirectory),
+                    FileName = PathUtils.ForDiagnosticDisplay(pathInfoPair.Key, relativeTo, relativeTo),
                     IsError = isError,
                     Text = d.Text,
                     Code = d.Code,

@@ -1,6 +1,7 @@
 using System.Linq;
 using Lib.DiskCache;
 using Lib.Registry;
+using Lib.Utils.Logger;
 using Xunit;
 
 namespace Lib.Test;
@@ -67,7 +68,8 @@ public class PnpmLockParserTests
         fs.WriteAllUtf8("proj/pnpm-lock.yaml", source);
         var dc = new DiskCache.DiskCache(fs, () => fs);
         var directory = dc.TryGetItem("proj") as IDirectoryCache;
-        var result = new PnpmNodePackageManager(dc, null).GetLockedDependencies(directory).ToArray();
+        Assert.NotNull(directory);
+        var result = new PnpmNodePackageManager(dc, new DummyLogger()).GetLockedDependencies(directory).ToArray();
         Assert.Equal(3, result.Length);
         Assert.Equal("bobril", result[0].Name);
         Assert.Equal("20.7.1", result[0].Version);

@@ -35,6 +35,12 @@ class Program
         };
         Console.WriteLine($"Starting bobril-build of {projDir}");
         var process = Process.Start(start);
+        if (process == null)
+        {
+            Console.WriteLine($"Cannot start bobril-build in {projDir}");
+            return;
+        }
+
         process.WaitForExit();
         if (process.ExitCode > 0)
         {

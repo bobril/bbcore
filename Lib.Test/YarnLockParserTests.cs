@@ -40,6 +40,7 @@ public class YarnLockParserTests
         fs.WriteAllUtf8("proj/package.json", "");
         var dc = new DiskCache.DiskCache(fs, () => fs);
         var directory = dc.TryGetItem("proj") as IDirectoryCache;
+        Assert.NotNull(directory);
         var result = YarnNodePackageManager.ParseYarnLock(directory, source).ToArray();
         Assert.Equal(3, result.Length);
         Assert.Equal("@types/node", result[0].Name);
@@ -81,6 +82,7 @@ public class YarnLockParserTests
         fs.WriteAllUtf8("proj/package.json", "");
         var dc = new DiskCache.DiskCache(fs, () => fs);
         var directory = dc.TryGetItem("proj") as IDirectoryCache;
+        Assert.NotNull(directory);
         var result = YarnNodePackageManager.ParseYarnLock(directory, source).ToArray();
         Assert.Equal(4, result.Length);
         Assert.Equal("@types/node", result[0].Name);

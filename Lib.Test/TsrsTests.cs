@@ -11,7 +11,7 @@ namespace Lib.Test;
 
 public class TsrsTests
 {
-    static TSProject LoadProject(string bbrc)
+    static ProjectOptions LoadProjectOptions(string bbrc)
     {
         var fs = new InMemoryFs();
         fs.WriteAllUtf8("/package.json", "{}");
@@ -23,19 +23,20 @@ public class TsrsTests
             Owner = (IDirectoryCache)dc.TryGetItem("/")!,
             IsRootProject = true
         };
-        project.ProjectOptions = new ProjectOptions
+        var options = new ProjectOptions
         {
             Owner = project,
             ForbiddenDependencyUpdate = true
         };
+        project.ProjectOptions = options;
         project.LoadProjectJson(true, null);
-        return project;
+        return options;
     }
 
     [Fact]
     public void TsrsEnablesTypecheckAndTranspile()
     {
-        var options = LoadProject("{ tsrs: true }").ProjectOptions;
+        var options = LoadProjectOptions("{ tsrs: true }");
 
         Assert.True(options.Tsrs);
         Assert.True(options.TsrsTranspile);
@@ -45,7 +46,7 @@ public class TsrsTests
     [Fact]
     public void TsrsTranspileCanBeDisabled()
     {
-        var options = LoadProject("{ tsrs: true, tsrsTranspile: false }").ProjectOptions;
+        var options = LoadProjectOptions("{ tsrs: true, tsrsTranspile: false }");
 
         Assert.True(options.Tsrs);
         Assert.False(options.TsrsTranspile);
@@ -54,7 +55,7 @@ public class TsrsTests
     [Fact]
     public void TsrsTranspileRequiresTsrs()
     {
-        var options = LoadProject("{ tsrsTranspile: true }").ProjectOptions;
+        var options = LoadProjectOptions("{ tsrsTranspile: true }");
 
         Assert.False(options.Tsrs);
         Assert.False(options.TsrsTranspile);
@@ -63,7 +64,7 @@ public class TsrsTests
     [Fact]
     public void ValidateTsrsIsLoadedFromBbrc()
     {
-        var options = LoadProject("{ validate: 'tsrs' }").ProjectOptions;
+        var options = LoadProjectOptions("{ validate: 'tsrs' }");
 
         Assert.True(options.ValidateTsrs);
         Assert.False(options.Validate);
@@ -73,9 +74,9 @@ public class TsrsTests
     [Fact]
     public void TsrsVersionDefaultsToTestedVersion()
     {
-        Assert.Equal(TsrsInstaller.DefaultVersion, LoadProject("{ tsrs: true }").ProjectOptions.TsrsVersion);
+        Assert.Equal(TsrsInstaller.DefaultVersion, LoadProjectOptions("{ tsrs: true }").TsrsVersion);
         Assert.Equal("0.19.0-ts7.1.0-beta",
-            LoadProject("{ tsrs: true, tsrsVersion: '0.19.0-ts7.1.0-beta' }").ProjectOptions.TsrsVersion);
+            LoadProjectOptions("{ tsrs: true, tsrsVersion: '0.19.0-ts7.1.0-beta' }").TsrsVersion);
     }
 
     [Fact]
