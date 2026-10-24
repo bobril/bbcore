@@ -29,28 +29,30 @@ public class ProjectOptions
     public const string DefaultTypeScriptVersion = "5.6.3";
     public const string DefaultTestRegex = @"^.*?(?:\.s|S)pec(?:\.d)?\.ts(?:x)?$";
 
-    public IToolsDir Tools;
-    public TSProject Owner;
-    public string TestSourcesRegExp;
+    // Tools and Owner are always assigned right after construction
+    public IToolsDir Tools = null!;
+    public TSProject Owner = null!;
+    public string? TestSourcesRegExp;
     public Dictionary<string, AstToplevel>? Defines;
     public Dictionary<string, AstToplevel>? ProcessEnvs;
-    public string Title;
-    public string HtmlHead;
+    public string Title = "Bobril Application";
+    public string HtmlHead = "";
     public StyleDefNamingStyle StyleDefNaming;
-    public string PrefixStyleNames;
-    public string Example;
+    public string PrefixStyleNames = "";
+    public string Example = "";
     public bool BobrilJsx;
     public ITSCompilerOptions? CompilerOptions;
     public string? AdditionalResourcesDirectory;
     public bool SpriteGeneration;
-    public ISpriteGenerator SpriteGenerator;
-    public string BundlePngUrl;
+    // SpriteGenerator and BundlePngUrl are assigned by SpriterInitialization and used only when SpriteGeneration is true
+    public ISpriteGenerator SpriteGenerator = null!;
+    public string BundlePngUrl = null!;
     public bool GenerateSpritesTs;
-    public string Variant;
+    public string Variant = "";
     public bool NoHtml;
     public bool WarningsAsErrors;
     public bool PreserveProjectRoot;
-    public string JasmineVersion;
+    public string JasmineVersion = "3.3";
     public IList<string>? TestDirectories;
     public IList<string>? ExcludeWatchers;
     public string? PathToTranslations;
@@ -59,8 +61,8 @@ public class ProjectOptions
     public Dictionary<string, string?>? Imports { get; set; }
     public string? ProxyUrl;
 
-    public Dictionary<string, string> ExpandedProcessEnvs;
-    public Dictionary<string, AstNode> ExpandedDefines;
+    public Dictionary<string, string>? ExpandedProcessEnvs;
+    public Dictionary<string, AstNode>? ExpandedDefines;
     public string? MainFile;
     public string? JasmineDts;
     public List<string>? TestSources;
@@ -238,7 +240,7 @@ public class ProjectOptions
             return;
         foreach (var item in owner)
         {
-            if (item is IDirectoryCache)
+            if (item is IDirectoryCache itemDir)
             {
                 if (item.Name is "node_modules" or ".bbcore")
                     continue;
@@ -246,7 +248,7 @@ public class ProjectOptions
                     continue;
                 if (item.IsInvalid)
                     continue;
-                RecursiveFileSearch(item as IDirectoryCache, diskCache, fileRegex, res);
+                RecursiveFileSearch(itemDir, diskCache, fileRegex, res);
             }
             else if (item is IFileCache)
             {
@@ -325,9 +327,9 @@ public class ProjectOptions
             return;
         var resourcesPath = PathUtils.Join(Owner.Owner.FullPath, AdditionalResourcesDirectory);
         var item = Owner.DiskCache.TryGetItem(resourcesPath);
-        if (item is IDirectoryCache)
+        if (item is IDirectoryCache itemDir)
         {
-            RecursiveFillOutputByAdditionalResourcesDirectory(buildResult, item as IDirectoryCache, resourcesPath);
+            RecursiveFillOutputByAdditionalResourcesDirectory(buildResult, itemDir, resourcesPath);
         }
     }
 
@@ -337,10 +339,9 @@ public class ProjectOptions
         Owner.DiskCache.WatchDirectChildren(directoryCache, null, true, true);
         foreach (var child in directoryCache)
         {
-            if (child is IDirectoryCache)
+            if (child is IDirectoryCache childDir)
             {
-                RecursiveFillOutputByAdditionalResourcesDirectory(buildResult, child as IDirectoryCache,
-                    resourcesPath);
+                RecursiveFillOutputByAdditionalResourcesDirectory(buildResult, childDir, resourcesPath);
                 continue;
             }
 
@@ -746,7 +747,9 @@ public class ProjectOptions
             foreach (var processEnv in sourceInfo.ProcessEnvs)
             {
                 if (processEnv.Name == null) continue;
-                if (!ExpandedProcessEnvs.TryGetValue(processEnv.Name, out var value))
+                var expandedProcessEnvs = ExpandedProcessEnvs ??
+                                          throw new InvalidOperationException("ExpandEnv must be called before ApplySourceInfo");
+                if (!expandedProcessEnvs.TryGetValue(processEnv.Name, out var value))
                 {
                     value = "undefined";
                 }
@@ -765,7 +768,9 @@ public class ProjectOptions
                 var assetName = a.Name;
                 if (assetName.StartsWith("project:"))
                 {
-                    var subBuildResult = buildResult.SubBuildResults.GetOrFakeValueRef(assetName);
+                    var subBuildResults = buildResult.SubBuildResults ??
+                                          throw new InvalidOperationException("SubBuildResults are not initialized");
+                    var subBuildResult = subBuildResults.GetOrFakeValueRef(assetName);
                     // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                     if (subBuildResult != null)
                         sourceReplacer.Replace(a.StartLine, a.StartCol, a.EndLine, a.EndCol,
@@ -906,7 +911,7 @@ public class ProjectOptions
                                                  Col = t.StartCol + 1
                                              });
                 sourceReplacer.Replace(t.StartLine, t.StartCol, t.EndLine, t.EndCol, "" + finalId);
-                sourceReplacer.Replace(t.StartHintLine, t.StartHintCol, t.EndHintLine, t.EndHintCol, null);
+                sourceReplacer.Replace(t.StartHintLine, t.StartHintCol, t.EndHintLine, t.EndHintCol, "");
             }
         }
 
@@ -981,7 +986,8 @@ public class ProjectOptions
         var constsInput = new Dictionary<string, AstNode>();
         var definesOutput = new Dictionary<string, AstNode>();
         constsInput["DEBUG"] = Debug ? (AstNode)AstTrue.Instance : AstFalse.Instance;
-        foreach (var (key, value) in Defines)
+        var defines = Defines ?? throw new InvalidOperationException("Defines are not initialized");
+        foreach (var (key, value) in defines)
         {
             var clone = value.DeepClone();
             clone.FigureOutScope();
@@ -991,7 +997,8 @@ public class ProjectOptions
         }
 
         var envReplace = new Dictionary<string, string>();
-        foreach (var (key, value) in ProcessEnvs)
+        var processEnvs = ProcessEnvs ?? throw new InvalidOperationException("ProcessEnvs are not initialized");
+        foreach (var (key, value) in processEnvs)
         {
             var clone = value.DeepClone();
             clone.FigureOutScope();
@@ -1114,7 +1121,8 @@ public class ProjectOptions
 
         foreach (var p in ExpandedDefines)
         {
-            res.Add(p.Key, p.Value.ConstValue());
+            // Values were produced by TypeConverter.ToAst in ExpandEnv, so they are constant nodes with non-null ConstValue
+            res.Add(p.Key, p.Value.ConstValue()!);
         }
 
         return res;

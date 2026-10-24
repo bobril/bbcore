@@ -10,10 +10,12 @@ namespace Lib.TSCompiler;
 
 public class TSProject
 {
-    public ILogger Logger { get; set; }
-    public IDiskCache DiskCache { get; set; }
-    public IDirectoryCache Owner { get; set; }
-    public string MainFile { get; set; }
+    // Logger, DiskCache and Owner are assigned in Create (CreateInvalid projects never use them)
+    public ILogger Logger { get; set; } = null!;
+    public IDiskCache DiskCache { get; set; } = null!;
+    public IDirectoryCache Owner { get; set; } = null!;
+    // Assigned by LoadProjectJson (or by BuildCtx for virtual projects) before use
+    public string MainFile { get; set; } = null!;
 
     public string? TypesMainFile { get; set; }
     public ProjectOptions? ProjectOptions { get; set; }
@@ -62,7 +64,8 @@ public class TSProject
                 }
             }
 
-            ProjectOptions.FinalCompilerOptions = null;
+            (ProjectOptions ?? throw new InvalidOperationException("ProjectOptions are not initialized"))
+                .FinalCompilerOptions = null;
             JObject parsed;
             try
             {
@@ -169,7 +172,7 @@ public class TSProject
                 }
 
                 if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath, PathUtils.ChangeExtension(MainFile, "ts")))
-                    is IFileCache fileAsTs)
+                    is IFileCache)
                 {
                     MainFile = PathUtils.ChangeExtension(MainFile, "ts");
                     TypesMainFile = null;
@@ -177,9 +180,8 @@ public class TSProject
                 }
                 else
                 {
-                    fileAsTs = DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath,
-                        PathUtils.ChangeExtension(MainFile, "tsx"))) as IFileCache;
-                    if (fileAsTs != null)
+                    if (DiskCache.TryGetItem(PathUtils.Join(Owner.FullPath,
+                            PathUtils.ChangeExtension(MainFile, "tsx"))) is IFileCache)
                     {
                         MainFile = PathUtils.ChangeExtension(MainFile, "tsx");
                         TypesMainFile = null;
@@ -288,7 +290,8 @@ public class TSProject
         if (parsed?.GetValue("bobril") is not JObject bobrilSection)
             return null;
         var bbOptions = new BobrilBuildOptions(bobrilSection);
-        bbOptions = ProjectOptions.LoadBbrc(dir, bbOptions);
+        bbOptions = (ProjectOptions ?? throw new InvalidOperationException("ProjectOptions are not initialized"))
+            .LoadBbrc(dir, bbOptions);
         return bbOptions.assets;
     }
 

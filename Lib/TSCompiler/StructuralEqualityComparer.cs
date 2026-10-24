@@ -1,16 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Lib.TSCompiler;
 
 public class StructuralEqualityComparer<T> : IEqualityComparer<T>
 {
-    public bool Equals(T x, T y)
+    public bool Equals(T? x, T? y)
     {
         return StructuralComparisons.StructuralEqualityComparer.Equals(x, y);
     }
 
-    public int GetHashCode(T obj)
+    public int GetHashCode([DisallowNull] T obj)
     {
         return StructuralComparisons.StructuralEqualityComparer.GetHashCode(obj);
     }
@@ -20,7 +21,7 @@ public class StructuralEqualityComparer<T> : IEqualityComparer<T>
     {
         get
         {
-            StructuralEqualityComparer<T> comparer = defaultComparer;
+            var comparer = defaultComparer;
             if (comparer == null)
             {
                 comparer = new StructuralEqualityComparer<T>();

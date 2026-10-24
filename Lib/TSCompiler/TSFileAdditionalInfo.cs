@@ -173,8 +173,9 @@ public class TsFileAdditionalInfo
     internal bool DetectChange()
     {
         if (Type == FileCompilationType.MdxbList) return true;
-        var res = Owner.ChangeId != ChangeId;
-        ChangeId = Owner.ChangeId;
+        var owner = Owner ?? throw new InvalidOperationException("Cannot detect change of virtual file");
+        var res = owner.ChangeId != ChangeId;
+        ChangeId = owner.ChangeId;
         return res;
     }
 

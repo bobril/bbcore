@@ -25,18 +25,20 @@ public class TsCompiler : ITSCompiler
     readonly IToolsDir _toolsDir;
 
     public ILogger Logger { get; }
-    public IDiskCache DiskCache { get; set; }
+    // Always assigned by CompilerPool.GetTs right after construction
+    public IDiskCache DiskCache { get; set; } = null!;
 
-    TranspileResult _transpileResult;
-    ITSCompilerOptions _lastCompilerOptions;
+    TranspileResult? _transpileResult;
+    ITSCompilerOptions? _lastCompilerOptions;
 
     public ITSCompilerOptions CompilerOptions
     {
         get
         {
             var engine = getJSEnviroment();
+            // bbGetCurrentCompilerOptions always returns JSON.stringify of an options object, never "null"
             return JsonConvert.DeserializeObject<TSCompilerOptions>(
-                engine.CallFunction<string>("bbGetCurrentCompilerOptions"));
+                engine.CallFunction<string>("bbGetCurrentCompilerOptions"))!;
         }
         set
         {
@@ -257,25 +259,26 @@ public class TsCompiler : ITSCompiler
     public TranspileResult Transpile(string fileName, string content)
     {
         var engine = getJSEnviroment();
-        _transpileResult = new TranspileResult();
+        var transpileResult = new TranspileResult { JavaScript = "" };
+        _transpileResult = transpileResult;
         try
         {
-            _transpileResult.JavaScript = (string)engine.CallFunction("bbTranspile", fileName, content);
+            transpileResult.JavaScript = (string)engine.CallFunction("bbTranspile", fileName, content);
             var sm = engine.CallFunction("bbGetLastSourceMap");
             if (sm is string smStr)
             {
-                _transpileResult.SourceMap = smStr;
+                transpileResult.SourceMap = smStr;
             }
             else
             {
-                _transpileResult.SourceMap = null!;
+                transpileResult.SourceMap = null;
             }
 
-            return _transpileResult;
+            return transpileResult;
         }
         finally
         {
-            _transpileResult = null!;
+            _transpileResult = null;
         }
     }
 
@@ -313,7 +316,7 @@ public class TsCompiler : ITSCompiler
         engine.CallFunction("bbUpdateSourceList", string.Join('|', mainFiles));
     }
 
-    string _currentDirectory;
+    string? _currentDirectory;
 
     public void TriggerUpdate()
     {

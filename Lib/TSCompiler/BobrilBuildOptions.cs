@@ -237,7 +237,7 @@ public class BobrilBuildOptions
 
         try
         {
-            testDirectories = bobrilSection["testDirectories"]?.Values<string>().ToList();
+            testDirectories = bobrilSection["testDirectories"]?.Values<string>().Select(d => d ?? "").ToList();
         }
         catch
         {

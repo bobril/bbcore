@@ -7,8 +7,8 @@ public class Diagnostic : IEquatable<Diagnostic>
     public bool IsError;
     public bool IsSemantic;
     public int Code;
-    public string Text;
-    public string FileName;
+    public required string Text;
+    public string? FileName;
     public int StartLine;
     public int StartCol;
     public int EndLine;
@@ -19,7 +19,7 @@ public class Diagnostic : IEquatable<Diagnostic>
         return Equals(obj as Diagnostic);
     }
 
-    public bool Equals(Diagnostic other)
+    public bool Equals(Diagnostic? other)
     {
         return other != null &&
                IsError == other.IsError &&

@@ -44,16 +44,17 @@ public class BuildCtx
     {
     }
 
-    RefDictionary<string, BuildCtx?>? _subBuildCtxs;
+    RefDictionary<string, BuildCtx>? _subBuildCtxs;
 
     readonly RunTypeCheck _typeCheck;
-    string _mainFile;
-    string _jasmineDts;
-    List<string> _exampleSources;
-    List<string> _testSources;
-    string[] _additionalSources;
-    ITSCompilerOptions _compilerOptions;
-    ITSCompiler _typeChecker;
+    string? _mainFile;
+    string? _jasmineDts;
+    List<string>? _exampleSources;
+    List<string>? _testSources;
+    string[]? _additionalSources;
+    // Always assigned in Build before CompilerOptions is read
+    ITSCompilerOptions _compilerOptions = null!;
+    ITSCompiler? _typeChecker;
     public readonly IBuildCache BuildCache;
 
     bool _includeTestSourcesInBuild;
@@ -233,11 +234,13 @@ public class BuildCtx
             case TypeCheckChange.None:
                 return;
             case TypeCheckChange.Small:
-                _typeChecker.ClearDiagnostics();
+                // type is forced to Options above when _typeChecker is null
+                _typeChecker!.ClearDiagnostics();
                 _typeChecker.TriggerUpdate();
                 break;
             case TypeCheckChange.Input:
-                _typeChecker.ClearDiagnostics();
+                // type is forced to Options above when _typeChecker is null
+                _typeChecker!.ClearDiagnostics();
                 _typeChecker.UpdateProgram(MakeSourceListArray());
                 _typeChecker.TriggerUpdate();
                 break;
@@ -272,7 +275,8 @@ public class BuildCtx
                 return;
         }
 
-        _lastSemantics = _typeChecker.GetDiagnostics().ToList();
+        // Small, Input and Options cases all leave _typeChecker assigned
+        _lastSemantics = _typeChecker!.GetDiagnostics().ToList();
     }
 
     TypeCheckChange DetectTypeCheckChange()
@@ -290,7 +294,7 @@ public class BuildCtx
         return TypeCheckChange.Small;
     }
 
-    CancellationTokenSource _cancellation;
+    CancellationTokenSource? _cancellation;
     Task _typeCheckTask = Task.CompletedTask;
 
     public Task<List<Diagnostic>> StartTypeCheck()
@@ -301,7 +305,7 @@ public class BuildCtx
         if (_typeCheck == RunTypeCheck.No)
             return Task.FromResult(new List<Diagnostic>());
         var current = DetectTypeCheckChange();
-        var res = _typeCheckTask.ContinueWith((_task, _state) =>
+        var res = _typeCheckTask.ContinueWith<List<Diagnostic>?>((_task, _state) =>
         {
             current = (TypeCheckChange) Math.Max((int) _cancelledTypeCheckType, (int) current);
             if (cancellationTokenSource.IsCancellationRequested)
@@ -322,7 +326,8 @@ public class BuildCtx
             return _lastSemantics;
         }, TaskContinuationOptions.RunContinuationsAsynchronously | TaskContinuationOptions.LongRunning);
         _typeCheckTask = res;
-        return res;
+        // Result is null when the type check was cancelled; consumers of BuildResult.TaskForSemanticCheck handle it
+        return res!;
     }
 
     string[] MakeSourceListArray()
@@ -732,10 +737,12 @@ public class BuildCtx
                             continue;
                         tsProject = TSProject.Create(mainFile.Parent, _diskCache, _logger, null, true)!;
                         tsProject.MainFile = mainFile.FullPath;
-                        tsProject.ProjectOptions.Variant = pref.Substring(8, pref.Length - 9);
-                        tsProject.ProjectOptions.NoHtml = true;
-                        tsProject.ProjectOptions.TypeScriptVersion = project.TypeScriptVersion;
-                        tsProject.ProjectOptions.Tools = project.Tools;
+                        // TSProject.Create always initializes ProjectOptions
+                        var virtualProjectOptions = tsProject.ProjectOptions!;
+                        virtualProjectOptions.Variant = pref.Substring(8, pref.Length - 9);
+                        virtualProjectOptions.NoHtml = true;
+                        virtualProjectOptions.TypeScriptVersion = project.TypeScriptVersion;
+                        virtualProjectOptions.Tools = project.Tools;
                     }
                     else
                     {
@@ -751,8 +758,10 @@ public class BuildCtx
                     if (BuildCache == null)
                         if (tsProject.Virtual)
                         {
-                            tsProject.ProjectOptions.Tools = project.Tools;
-                            tsProject.ProjectOptions.ForbiddenDependencyUpdate = true;
+                            // TSProject.Create always initializes ProjectOptions
+                            var virtualProjectOptions = tsProject.ProjectOptions!;
+                            virtualProjectOptions.Tools = project.Tools;
+                            virtualProjectOptions.ForbiddenDependencyUpdate = true;
                         }
                         else
                         {
@@ -764,7 +773,8 @@ public class BuildCtx
                             };
                         }
 
-                    subProj = tsProject.ProjectOptions;
+                    // TSProject.Create always initializes ProjectOptions
+                    subProj = tsProject.ProjectOptions!;
                 }
 
                 newSubProjects.ValueRef(u) = subProj;
@@ -774,7 +784,8 @@ public class BuildCtx
                 if (_subBuildCtxs == null || !_subBuildCtxs.TryGetValue(projectPath, out var subBuildCtx))
                 {
                     subBuildCtx = new BuildCtx(CompilerPool, _diskCache, Verbose, _logger,
-                        subProj.Owner.Owner.FullPath, BuildCache, _typeCheck);
+                        // BuildCache is a non-nullable readonly field, the defensive null check above only affects flow analysis
+                        subProj.Owner.Owner.FullPath, BuildCache!, _typeCheck);
                 }
 
                 newSubBuildCtxs.GetOrAddValueRef(projectPath) = subBuildCtx;
@@ -788,8 +799,11 @@ public class BuildCtx
                 newSubBuildResults.GetOrAddValueRef(projectPath) = subBuildResult;
                 subBuildCtx.Build(subProj, buildOnlyOnce, subBuildResult, mainBuildResult, iterationId);
                 buildResult.HasError |= subBuildResult.HasError;
-                buildResult.TaskForSemanticCheck = Task.WhenAll(buildResult.TaskForSemanticCheck,
-                    subBuildResult.TaskForSemanticCheck).ContinueWith(
+                buildResult.TaskForSemanticCheck = Task.WhenAll(
+                    buildResult.TaskForSemanticCheck ??
+                    throw new InvalidOperationException("Semantic check task of project is missing"),
+                    subBuildResult.TaskForSemanticCheck ??
+                    throw new InvalidOperationException("Semantic check task of sub project is missing")).ContinueWith(
                     subresults => { return subresults.Result.Where(d => d != null).SelectMany(d => d).ToList(); });
             }
         }
