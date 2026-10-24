@@ -90,6 +90,9 @@ public class ProjectOptions
     public bool Future { get; set; }
     public bool Validate { get; set; }
     public bool GoTs { get; set; }
+    public bool Tsrs { get; set; }
+    public bool TsrsTranspile { get; set; }
+    public bool ValidateTsrs { get; set; }
 
     public void RefreshCompilerOptions()
     {
@@ -656,6 +659,9 @@ public class ProjectOptions
         Future = bbOptions.future ?? false;
         Validate = bbOptions.validate ?? false;
         GoTs = bbOptions.gots ?? false;
+        ValidateTsrs = bbOptions.validateTsrs ?? false;
+        Tsrs = bbOptions.tsrs ?? false;
+        TsrsTranspile = Tsrs && (bbOptions.tsrsTranspile ?? true);
     }
 
     public BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,

@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using Lib.ToolsDir;
 using System.Threading.Tasks;
 using Lib.TSCompiler;
@@ -18,6 +19,8 @@ public class CompilerPool : ICompilerPool
         _semaphore = new(parallelCompilations);
         _semaphoreCss = new(parallelCompilations);
         _semaphoreScss = new(parallelCompilations);
+        _tsrsParallelCompilations = Math.Min(8, Math.Min(Environment.ProcessorCount, parallelCompilations));
+        _semaphoreTsrs = new(_tsrsParallelCompilations);
     }
 
     readonly System.Threading.SemaphoreSlim _semaphore;
@@ -26,6 +29,11 @@ public class CompilerPool : ICompilerPool
     readonly ConcurrentBag<ITSCompiler> _pool = new();
     readonly ConcurrentBag<ICssProcessor> _poolCss = new();
     readonly ConcurrentBag<IScssProcessor> _poolScss = new();
+
+    // Each tsrs transpiler owns one `tsrs --api` process, which handles one request at a time
+    readonly System.Threading.SemaphoreSlim _semaphoreTsrs;
+    readonly ConcurrentBag<TsrsTranspiler> _poolTsrs = new();
+    readonly int _tsrsParallelCompilations;
 
     readonly IToolsDir _toolsDir;
     readonly ILogger _logger;
@@ -45,6 +53,32 @@ public class CompilerPool : ICompilerPool
     {
         _pool.Add(value);
         _semaphore.Release();
+    }
+
+    public ITSCompiler GetTsrs(string tsrsExecutable, ITSCompilerOptions compilerOptions)
+    {
+        _semaphoreTsrs.Wait();
+        TsrsTranspiler? res = null;
+        while (_poolTsrs.TryTake(out var pooled))
+        {
+            if (pooled.TsrsExecutable == tsrsExecutable)
+            {
+                res = pooled;
+                break;
+            }
+
+            pooled.Dispose();
+        }
+
+        res ??= new(tsrsExecutable, _logger);
+        res.CompilerOptions = compilerOptions;
+        return res;
+    }
+
+    public void ReleaseTsrs(ITSCompiler value)
+    {
+        _poolTsrs.Add((TsrsTranspiler)value);
+        _semaphoreTsrs.Release();
     }
 
     public ICssProcessor GetCss()
@@ -92,6 +126,21 @@ public class CompilerPool : ICompilerPool
                 processor.Dispose();
             }
             _poolCss.Clear();
+            for (var i = 0; i < _tsrsParallelCompilations; i++)
+                await _semaphoreTsrs.WaitAsync();
+            try
+            {
+                foreach (var transpiler in _poolTsrs)
+                {
+                    transpiler.Dispose();
+                }
+
+                _poolTsrs.Clear();
+            }
+            finally
+            {
+                _semaphoreTsrs.Release(_tsrsParallelCompilations);
+            }
         }
         finally
         {

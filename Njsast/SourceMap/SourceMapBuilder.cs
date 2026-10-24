@@ -304,9 +304,9 @@ public class SourceMapBuilder
                 _col = 0;
             }
 
-            while (col > _col)
+            while (col > _col && _index < _content.Length && _content[_index] != '\n')
             {
-                while (_index < _content.Length && _content[_index] != '\n') _index++;
+                _index++;
                 _col++;
             }
         }

@@ -149,6 +149,10 @@ public class BuildCtx
     readonly DiskCache.DiskCache _diskCache;
     readonly ILogger _logger;
     string? _nativeTypeScriptDirectory;
+    NativeTypeScriptKind _nativeTypeScriptKind;
+
+    // tsrs binary used for transpilation (tsrsTranspile) or transpile validation (validate: "tsrs")
+    public string? TsrsExecutable { get; private set; }
 
     string? _lastTsVersion;
     List<Diagnostic>? _lastSemantics;
@@ -159,6 +163,16 @@ public class BuildCtx
         {
             _logger.Info("Using TypeScript version " + version);
             _lastTsVersion = version;
+        }
+    }
+
+    void ShowTsrsTranspiler(string version)
+    {
+        var key = "tsrs " + version;
+        if (_lastTsVersion != key)
+        {
+            _logger.Info("Using tsrs transpiler version " + version);
+            _lastTsVersion = key;
         }
     }
 
@@ -187,7 +201,7 @@ public class BuildCtx
     ITSCompiler CreateTypeChecker()
     {
         return _nativeTypeScriptDirectory != null
-            ? new NativeTsCompiler(_nativeTypeScriptDirectory, _logger)
+            ? new NativeTsCompiler(_nativeTypeScriptDirectory, _logger, _nativeTypeScriptKind)
             : CompilerPool.GetTs(_diskCache, CompilerOptions);
     }
 
@@ -339,8 +353,10 @@ public class BuildCtx
         TestSources = project.TestSources;
         JasmineDts = project.TestSources != null ? project.JasmineDts : null;
         CompilerOptions = project.FinalCompilerOptions!;
-        var newNativeTypeScriptDirectory = DetectNativeTypeScriptDirectory(project);
-        if (newNativeTypeScriptDirectory != _nativeTypeScriptDirectory)
+        var (newNativeTypeScriptKind, newNativeTypeScriptDirectory) = DetectNativeTypeScriptDirectory(project);
+        TsrsExecutable = project.TsrsTranspile || project.ValidateTsrs ? FindTsrsExecutable(project) : null;
+        if (newNativeTypeScriptDirectory != _nativeTypeScriptDirectory ||
+            newNativeTypeScriptKind != _nativeTypeScriptKind)
         {
             if (_typeChecker != null)
             {
@@ -349,11 +365,13 @@ public class BuildCtx
             }
 
             _nativeTypeScriptDirectory = newNativeTypeScriptDirectory;
+            _nativeTypeScriptKind = newNativeTypeScriptKind;
             _compilerOptionsChanged = true;
             if (_nativeTypeScriptDirectory != null)
             {
                 project.UpdateTSConfigJson();
-                _logger.Info("Using Go TypeScript typecheck from " + _nativeTypeScriptDirectory);
+                _logger.Info("Using " + NativeTsCompiler.GetDisplayName(_nativeTypeScriptKind) + " typecheck from " +
+                             _nativeTypeScriptDirectory);
             }
         }
 
@@ -395,6 +413,14 @@ public class BuildCtx
                 {
                     ShowBuildinTranspiler();
                     project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(NjsastTsValidator.BuildinTranspilerCacheKey,
+                        JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
+                            TSCompilerOptions.GetSerializerSettings()));
+                }
+                else if (project.TsrsTranspile && !project.ValidateTsrs && TsrsExecutable != null)
+                {
+                    var tsrsVersion = TsrsTranspiler.GetVersion(TsrsExecutable);
+                    ShowTsrsTranspiler(tsrsVersion);
+                    project.ConfigurationBuildCacheId = BuildCache.MapConfiguration("tsrs-" + tsrsVersion,
                         JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
                             TSCompilerOptions.GetSerializerSettings()));
                 }
@@ -526,25 +552,37 @@ public class BuildCtx
         }
     }
 
-    string? DetectNativeTypeScriptDirectory(ProjectOptions project)
+    (NativeTypeScriptKind, string?) DetectNativeTypeScriptDirectory(ProjectOptions project)
     {
+        if (project.Tsrs)
+            return (NativeTypeScriptKind.Tsrs, FindTsrsExecutable(project));
+
         var tsProject = project.Owner;
         if (!project.GoTs && (project.TypeScriptVersionOverride ||
                               !(tsProject.DevDependencies?.Contains("@typescript/native-preview") ?? false)))
-            return null;
+            return (NativeTypeScriptKind.Tsgo, null);
 
         if (TryFindNativeTypeScriptDirectory(tsProject.Owner.FullPath, _diskCache.FsAbstraction, out var typeScriptDir))
-            return typeScriptDir;
+            return (NativeTypeScriptKind.Tsgo, typeScriptDir);
 
         if (project.GoTs)
         {
             if (NativeTsCompiler.TryFindGlobalTsgoExecutable(out var tsgoExecutable))
-                return tsgoExecutable;
+                return (NativeTypeScriptKind.Tsgo, tsgoExecutable);
             throw new InvalidOperationException(
                 "gots is enabled, but tsgo was not found in node_modules/@typescript/native-preview or on PATH");
         }
 
-        return null;
+        return (NativeTypeScriptKind.Tsgo, null);
+    }
+
+    string FindTsrsExecutable(ProjectOptions project)
+    {
+        if (TsrsLocator.TryFind(project.Owner.Owner.FullPath, _diskCache.FsAbstraction, out var tsrsExecutable))
+            return tsrsExecutable;
+        throw new InvalidOperationException(
+            "tsrs is enabled, but tsrs was not found in TSRS_BINARY, node_modules/@tsrs, node_modules/tsrs or on PATH" +
+            (OperatingSystem.IsWindows() ? " (tsrs has no Windows build yet, use gots instead)" : ""));
     }
 
     internal static bool TryFindNativeTypeScriptDirectory(string projectDirectory, IFsAbstraction fsAbstraction,

@@ -10,6 +10,9 @@ public interface ICompilerPool
     ITSCompiler GetTs(DiskCache.IDiskCache diskCache, ITSCompilerOptions? compilerOptions);
     void ReleaseTs(ITSCompiler value);
 
+    ITSCompiler GetTsrs(string tsrsExecutable, ITSCompilerOptions compilerOptions);
+    void ReleaseTsrs(ITSCompiler value);
+
     ICssProcessor GetCss();
     void ReleaseCss(ICssProcessor value);
 

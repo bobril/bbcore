@@ -146,6 +146,27 @@ When `@typescript/native-preview` is listed in `devDependencies`, bbcore uses it
 Interactive builds keep `tsgo --watch` running continuously, so typechecking is faster after the first check.
 Transpilation from TypeScript to JavaScript still uses the regular TypeScript JavaScript compiler path.
 
+## Use tsrs (Rust TypeScript) for typechecking and transpilation
+
+[tsrs](https://github.com/oxc-project/tsrs) is a Rust port of TypeScript 7. Install it in your project:
+
+    npm install -D tsrs
+
+and enable it in `.bbrc`:
+
+    {
+        "tsrs": true
+    }
+
+bbcore then uses tsrs for typechecking (interactive builds keep `tsrs --watch` running) and transpiles TypeScript to
+JavaScript through the tsrs `transpileModule` API. To use tsrs only for typechecking and keep the existing
+transpiler, add `"tsrsTranspile": false`. The binary is found through the `TSRS_BINARY` environment variable,
+`node_modules/@tsrs/<platform>`, `node_modules/tsrs` or `PATH`. tsrs currently has no Windows build.
+
+bbcore applies the same emit changes to tsrs output as to its patched TypeScript compiler, so bundles are the same as
+with the regular transpiler. To compare both transpilers for every file, use `"validate": "tsrs"`; differing files are
+written to `.bbcore/TsrsInput` (regular output) and `.bbcore/TsrsWrong` (tsrs output).
+
 ## Override localization
 
 By default localization is detected from existence of dependency bobril-g11n. You can override it:

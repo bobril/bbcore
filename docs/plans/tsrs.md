@@ -1,7 +1,8 @@
 # Plan: tsrs (Rust TypeScript) mode for bbcore
 
-Status: proposal, 2026-10-24. Phase 0 is done ([spike results](tsrs-spike.md)): go for all three capabilities.
-Nothing else is implemented yet.
+Status: implemented, 2026-10-24. Phase 0: [spike results](tsrs-spike.md). Phases 1–5: [implementation and WebMma
+results](tsrs-results.md). Equal outputs needed one addition to the plan below: `TsrsOutputPatcher`, which applies
+bbcore's TypeScript emit patches to tsrs output.
 
 ## Phase 0 outcome in brief
 

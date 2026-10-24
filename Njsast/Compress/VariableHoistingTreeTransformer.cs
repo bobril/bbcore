@@ -369,7 +369,8 @@ public class VariableHoistingTreeTransformer : CompressModuleTreeTransformerBase
                         break;
                     }
 
-                    throw new NotImplementedException();
+                    // Write in other position (for example destructuring assignment target) is not hoistable
+                    scopeVariableInfo.UnknownReferencesCount++;
                 }
 
                 break;

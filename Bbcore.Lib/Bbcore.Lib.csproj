@@ -383,6 +383,18 @@
         <Compile Include="..\Lib\TSCompiler\NativeTsCompiler.cs">
             <Link>TSCompiler\NativeTsCompiler.cs</Link>
         </Compile>
+        <Compile Include="..\Lib\TSCompiler\TsrsApiClient.cs">
+            <Link>TSCompiler\TsrsApiClient.cs</Link>
+        </Compile>
+        <Compile Include="..\Lib\TSCompiler\TsrsOutputPatcher.cs">
+            <Link>TSCompiler\TsrsOutputPatcher.cs</Link>
+        </Compile>
+        <Compile Include="..\Lib\TSCompiler\TsrsLocator.cs">
+            <Link>TSCompiler\TsrsLocator.cs</Link>
+        </Compile>
+        <Compile Include="..\Lib\TSCompiler\TsrsTranspiler.cs">
+            <Link>TSCompiler\TsrsTranspiler.cs</Link>
+        </Compile>
         <Compile Include="..\Lib\TSCompiler\PragmaParser.cs">
             <Link>TSCompiler\PragmaParser.cs</Link>
         </Compile>
