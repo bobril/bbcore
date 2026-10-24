@@ -354,7 +354,7 @@ public class BuildCtx
         JasmineDts = project.TestSources != null ? project.JasmineDts : null;
         CompilerOptions = project.FinalCompilerOptions!;
         var (newNativeTypeScriptKind, newNativeTypeScriptDirectory) = DetectNativeTypeScriptDirectory(project);
-        TsrsExecutable = project.TsrsTranspile || project.ValidateTsrs ? FindTsrsExecutable(project) : null;
+        TsrsExecutable = project.TsrsTranspile || project.ValidateTsrs ? ResolveTsrsExecutable(project) : null;
         if (newNativeTypeScriptDirectory != _nativeTypeScriptDirectory ||
             newNativeTypeScriptKind != _nativeTypeScriptKind)
         {
@@ -555,7 +555,17 @@ public class BuildCtx
     (NativeTypeScriptKind, string?) DetectNativeTypeScriptDirectory(ProjectOptions project)
     {
         if (project.Tsrs)
-            return (NativeTypeScriptKind.Tsrs, FindTsrsExecutable(project));
+        {
+            if (ResolveTsrsExecutable(project) is { } tsrsExecutable)
+                return (NativeTypeScriptKind.Tsrs, tsrsExecutable);
+            // Fallback like gots, without failing when tsgo is not found either
+            if (TryFindNativeTypeScriptDirectory(project.Owner.Owner.FullPath, _diskCache.FsAbstraction,
+                    out var fallbackDirectory))
+                return (NativeTypeScriptKind.Tsgo, fallbackDirectory);
+            if (NativeTsCompiler.TryFindGlobalTsgoExecutable(out var fallbackTsgo))
+                return (NativeTypeScriptKind.Tsgo, fallbackTsgo);
+            return (NativeTypeScriptKind.Tsgo, null);
+        }
 
         var tsProject = project.Owner;
         if (!project.GoTs && (project.TypeScriptVersionOverride ||
@@ -576,13 +586,25 @@ public class BuildCtx
         return (NativeTypeScriptKind.Tsgo, null);
     }
 
-    string FindTsrsExecutable(ProjectOptions project)
+    string? _resolvedTsrsKey;
+    string? _resolvedTsrsExecutable;
+
+    // Finds tsrs, installs it into tools directory when missing, null means fallback to gots or regular TypeScript.
+    // Result is remembered, so interactive rebuilds do not retry failed downloads.
+    string? ResolveTsrsExecutable(ProjectOptions project)
     {
+        var key = project.Owner.Owner.FullPath + "|" + project.TsrsVersion;
+        if (_resolvedTsrsKey == key)
+            return _resolvedTsrsExecutable;
+        _resolvedTsrsKey = key;
         if (TsrsLocator.TryFind(project.Owner.Owner.FullPath, _diskCache.FsAbstraction, out var tsrsExecutable))
-            return tsrsExecutable;
-        throw new InvalidOperationException(
-            "tsrs is enabled, but tsrs was not found in TSRS_BINARY, node_modules/@tsrs, node_modules/tsrs or on PATH" +
-            (OperatingSystem.IsWindows() ? " (tsrs has no Windows build yet, use gots instead)" : ""));
+            return _resolvedTsrsExecutable = tsrsExecutable;
+        if (TsrsInstaller.TryInstall(project.Tools.Path, project.TsrsVersion, _logger, out tsrsExecutable,
+                out var failureReason))
+            return _resolvedTsrsExecutable = tsrsExecutable;
+        _logger.Warn("tsrs is not available (" + failureReason + "), falling back to Go TypeScript (tsgo) if found, " +
+                     "otherwise to regular TypeScript");
+        return _resolvedTsrsExecutable = null;
     }
 
     internal static bool TryFindNativeTypeScriptDirectory(string projectDirectory, IFsAbstraction fsAbstraction,

@@ -58,9 +58,9 @@ public static class TsrsLocator
         return false;
     }
 
-    static string ExecutableName => OperatingSystem.IsWindows() ? "tsrs.exe" : "tsrs";
+    public static string ExecutableName => OperatingSystem.IsWindows() ? "tsrs.exe" : "tsrs";
 
-    internal static IEnumerable<string> PlatformPackageNames()
+    internal static IEnumerable<string> PlatformPackageNames(bool preferMusl = false)
     {
         var arch = RuntimeInformation.OSArchitecture switch
         {
@@ -73,8 +73,8 @@ public static class TsrsLocator
         }
         else if (OperatingSystem.IsLinux())
         {
-            yield return "linux-" + arch + "-gnu";
-            yield return "linux-" + arch + "-musl";
+            yield return "linux-" + arch + (preferMusl ? "-musl" : "-gnu");
+            yield return "linux-" + arch + (preferMusl ? "-gnu" : "-musl");
         }
         else if (OperatingSystem.IsWindows())
         {

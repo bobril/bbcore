@@ -92,6 +92,7 @@ public class ProjectOptions
     public bool GoTs { get; set; }
     public bool Tsrs { get; set; }
     public bool TsrsTranspile { get; set; }
+    public string TsrsVersion { get; set; } = TsrsInstaller.DefaultVersion;
     public bool ValidateTsrs { get; set; }
 
     public void RefreshCompilerOptions()
@@ -662,6 +663,7 @@ public class ProjectOptions
         ValidateTsrs = bbOptions.validateTsrs ?? false;
         Tsrs = bbOptions.tsrs ?? false;
         TsrsTranspile = Tsrs && (bbOptions.tsrsTranspile ?? true);
+        TsrsVersion = bbOptions.tsrsVersion ?? TsrsInstaller.DefaultVersion;
     }
 
     public BobrilBuildOptions LoadBbrc(IDirectoryCache? dir, BobrilBuildOptions bbOptions,

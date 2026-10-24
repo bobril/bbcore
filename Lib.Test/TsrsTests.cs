@@ -71,6 +71,73 @@ public class TsrsTests
     }
 
     [Fact]
+    public void TsrsVersionDefaultsToTestedVersion()
+    {
+        Assert.Equal(TsrsInstaller.DefaultVersion, LoadProject("{ tsrs: true }").ProjectOptions.TsrsVersion);
+        Assert.Equal("0.19.0-ts7.1.0-beta",
+            LoadProject("{ tsrs: true, tsrsVersion: '0.19.0-ts7.1.0-beta' }").ProjectOptions.TsrsVersion);
+    }
+
+    [Fact]
+    public void LinuxMuslPackageIsPreferredOnMusl()
+    {
+        if (!OperatingSystem.IsLinux())
+            return;
+        Assert.EndsWith("-musl", TsrsLocator.PlatformPackageNames(true).First());
+        Assert.EndsWith("-gnu", TsrsLocator.PlatformPackageNames(false).First());
+    }
+
+    static bool InstallTestsEnabled => Environment.GetEnvironmentVariable("TSRS_INSTALL_TEST") == "1";
+
+    [Fact]
+    public void InstallerDownloadsTsrsWhenEnabled()
+    {
+        // Downloads from npm, runs only with TSRS_INSTALL_TEST=1 on platform with tsrs build
+        if (!InstallTestsEnabled || !(OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() &&
+                System.Runtime.InteropServices.RuntimeInformation.OSArchitecture ==
+                System.Runtime.InteropServices.Architecture.Arm64))
+            return;
+        var tools = Path.Combine(Path.GetTempPath(), "bbcore-tsrs-install-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Assert.True(TsrsInstaller.TryInstall(tools, TsrsInstaller.DefaultVersion, new DummyLogger(),
+                out var tsrsExecutable, out var reason), reason);
+            Assert.StartsWith(TsrsInstaller.InstallDirectory(tools, TsrsInstaller.DefaultVersion), tsrsExecutable);
+            Assert.StartsWith("7.", TsrsTranspiler.GetVersion(tsrsExecutable));
+            // Second call reuses installed binary
+            Assert.True(TsrsInstaller.TryInstall(tools, TsrsInstaller.DefaultVersion, new DummyLogger(),
+                out var again, out _));
+            Assert.Equal(tsrsExecutable, again);
+            Assert.Empty(Directory.GetDirectories(TsrsInstaller.InstallDirectory(tools, TsrsInstaller.DefaultVersion),
+                "*.tmp-*"));
+        }
+        finally
+        {
+            if (Directory.Exists(tools))
+                Directory.Delete(tools, true);
+        }
+    }
+
+    [Fact]
+    public void InstallerReportsUnpublishedVersion()
+    {
+        if (!InstallTestsEnabled)
+            return;
+        var tools = Path.Combine(Path.GetTempPath(), "bbcore-tsrs-install-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Assert.False(TsrsInstaller.TryInstall(tools, "0.0.1-not-published", new DummyLogger(), out _,
+                out var reason));
+            Assert.Contains("not published", reason);
+        }
+        finally
+        {
+            if (Directory.Exists(tools))
+                Directory.Delete(tools, true);
+        }
+    }
+
+    [Fact]
     public void TsrsPlatformBinaryIsFoundInParentNodeModules()
     {
         var fs = new InMemoryFs();

@@ -9,9 +9,12 @@
   TypeScript-to-JavaScript transpilation through its `transpileModule` API. Transpilation uses long-running
   `tsrs --api` processes (pooled, up to 8) and its own build cache key. `tsrsTranspile: false` keeps the existing
   transpiler and uses tsrs only for typechecking. tsrs is found through `TSRS_BINARY`, `node_modules/@tsrs/<platform>`,
-  `node_modules/tsrs` or `PATH`; tsrs currently has no Windows build. The tsrs output gets the same emit changes
-  bbcore applies to its patched TypeScript (no `(0, f)()` indirect calls, no `__esModule` tagging, setters on
-  reexports, chunked export initialization and TypeScript 6 style destructured exports), so bundles stay the same.
+  `node_modules/tsrs` or `PATH`, otherwise it is downloaded from npm into the bbcore tools directory (`tsrsVersion`
+  selects the version). Where tsrs is not available (Windows and Intel macOS have no tsrs build yet) or the download
+  fails, bbcore warns and falls back to Go TypeScript (tsgo) or regular TypeScript. The tsrs output gets the same
+  emit changes bbcore applies to its patched TypeScript (no `(0, f)()` indirect calls, no `__esModule` tagging,
+  setters on reexports, chunked export initialization and TypeScript 6 style destructured exports), so bundles stay
+  the same.
 - Added `.bbrc` `validate: "tsrs"` option, which transpiles with the regular TypeScript compiler and compares the
   formatted output of tsrs for every file, writing differing cases to `.bbcore/TsrsInput` and `.bbcore/TsrsWrong`.
 

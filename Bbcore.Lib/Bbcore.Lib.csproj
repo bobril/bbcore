@@ -389,6 +389,9 @@
         <Compile Include="..\Lib\TSCompiler\TsrsOutputPatcher.cs">
             <Link>TSCompiler\TsrsOutputPatcher.cs</Link>
         </Compile>
+        <Compile Include="..\Lib\TSCompiler\TsrsInstaller.cs">
+            <Link>TSCompiler\TsrsInstaller.cs</Link>
+        </Compile>
         <Compile Include="..\Lib\TSCompiler\TsrsLocator.cs">
             <Link>TSCompiler\TsrsLocator.cs</Link>
         </Compile>

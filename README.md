@@ -148,11 +148,7 @@ Transpilation from TypeScript to JavaScript still uses the regular TypeScript Ja
 
 ## Use tsrs (Rust TypeScript) for typechecking and transpilation
 
-[tsrs](https://github.com/oxc-project/tsrs) is a Rust port of TypeScript 7. Install it in your project:
-
-    npm install -D tsrs
-
-and enable it in `.bbrc`:
+[tsrs](https://github.com/oxc-project/tsrs) is a Rust port of TypeScript 7. Enable it in `.bbrc`:
 
     {
         "tsrs": true
@@ -160,8 +156,14 @@ and enable it in `.bbrc`:
 
 bbcore then uses tsrs for typechecking (interactive builds keep `tsrs --watch` running) and transpiles TypeScript to
 JavaScript through the tsrs `transpileModule` API. To use tsrs only for typechecking and keep the existing
-transpiler, add `"tsrsTranspile": false`. The binary is found through the `TSRS_BINARY` environment variable,
-`node_modules/@tsrs/<platform>`, `node_modules/tsrs` or `PATH`. tsrs currently has no Windows build.
+transpiler, add `"tsrsTranspile": false`.
+
+The binary is found through the `TSRS_BINARY` environment variable, `node_modules/@tsrs/<platform>`,
+`node_modules/tsrs` or `PATH`. When none is found, bbcore downloads the tsrs package for your platform from npm into
+its tools directory (`"tsrsVersion"` selects the version, default is the version bbcore was tested with). When tsrs
+is not available, for example on Windows or Intel macOS where tsrs has no build yet, or when the download fails,
+bbcore logs a warning and falls back to Go TypeScript (`tsgo` from `@typescript/native-preview` or `PATH`) for
+typechecking, or to regular TypeScript when tsgo is not found either, and transpiles with regular TypeScript.
 
 bbcore applies the same emit changes to tsrs output as to its patched TypeScript compiler, so bundled JavaScript is the
 same as with the regular transpiler. Source maps follow TypeScript 7 and are slightly more detailed, so columns of
