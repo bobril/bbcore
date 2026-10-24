@@ -92,7 +92,20 @@ public class ToolsDir : IToolsDir
     public IDictionary<string, byte[]> CoverageDetailsVisualizerZip { get; }
 
     public string Path { get; }
-    public string TypeScriptLibDir { get; private set; }
+    string _typeScriptLibDir;
+    (string Dir, string Version)? _pendingTypeScriptDownload;
+
+    // Selected TypeScript is downloaded only when really used, native compilers (tsrs, TypeScript 7) do not need it
+    public string TypeScriptLibDir
+    {
+        get
+        {
+            EnsureTypeScriptDownloaded();
+            return _typeScriptLibDir;
+        }
+        private set => _typeScriptLibDir = value;
+    }
+
     public string TypeScriptVersion { get; private set; }
 
     string? _typeScriptJsContent;
@@ -295,18 +308,26 @@ public class ToolsDir : IToolsDir
             return;
         _typeScriptJsContent = null;
         var tsVerDir = PathUtils.Join(Path, $"TS{version}");
-        var tspackage = PathUtils.Join(tsVerDir, "package.json");
+        lock (_lock)
+            _pendingTypeScriptDownload = (tsVerDir, version);
+        TypeScriptLibDir = PathUtils.Join(tsVerDir, "lib");
+        TypeScriptVersion = version;
+    }
+
+    void EnsureTypeScriptDownloaded()
+    {
         lock (_lock)
         {
-            if (!_fsAbstraction.FileExists(tspackage))
+            if (_pendingTypeScriptDownload is not var (tsVerDir, version))
+                return;
+            if (!_fsAbstraction.FileExists(PathUtils.Join(tsVerDir, "package.json")))
             {
                 Directory.CreateDirectory(tsVerDir);
                 DownloadAndExtractTS(tsVerDir, version).Wait();
             }
-        }
 
-        TypeScriptLibDir = PathUtils.Join(tsVerDir, "lib");
-        TypeScriptVersion = version;
+            _pendingTypeScriptDownload = null;
+        }
     }
 
     public void SetTypeScriptPath(string projectPath)
@@ -314,6 +335,8 @@ public class ToolsDir : IToolsDir
         if (TypeScriptVersion == "project")
             return;
         _typeScriptJsContent = null;
+        lock (_lock)
+            _pendingTypeScriptDownload = null;
         TypeScriptLibDir = PathUtils.Join(projectPath, "node_modules/typescript/lib");
         TypeScriptVersion = "project";
     }

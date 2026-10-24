@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Fixed
+
+- The JavaScript TypeScript selected by `tsVersion` (or the default version) is now downloaded only when it is really
+  used. With tsrs or TypeScript 7 handling both typecheck and transpilation it is not needed, so the first build on a
+  new machine no longer waits for the download (3.6 s → 0.4 s on a small project).
+
 ## 7.0.0
 
 ### Added
