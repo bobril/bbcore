@@ -49,20 +49,22 @@ public class Composition
     readonly bool _inDocker;
     string _bbdir;
     ToolsDir.IToolsDir _tools;
-    DiskCache.DiskCache _dc;
+    // Fields assigned with null! are initialized by the command being run (InitTools, InitDiskCache, SetMainProject,
+    // InitTestServer, InitMainServer, StartWebServer, or the command itself) before they are used.
+    DiskCache.DiskCache _dc = null!;
     CompilerPool _compilerPool;
-    WebServerHost _webServer;
+    WebServerHost _webServer = null!;
     AutoResetEvent _hasBuildWork = new AutoResetEvent(true);
-    ProjectOptions _currentProject;
-    MainBuildResult _mainBuildResult;
+    ProjectOptions _currentProject = null!;
+    MainBuildResult _mainBuildResult = null!;
     CommandLineCommand? _command;
-    TestServer _testServer;
-    ILongPollingServer _testServerLongPollingHandler;
+    TestServer _testServer = null!;
+    ILongPollingServer _testServerLongPollingHandler = null!;
     MainServer? _mainServer;
-    ILongPollingServer _mainServerLongPollingHandler;
+    ILongPollingServer _mainServerLongPollingHandler = null!;
     IBrowserProcessFactory? _browserProcessFactory;
     IBrowserProcess? _browserProcess;
-    IBuildCache _buildCache;
+    IBuildCache _buildCache = null!;
     bool _verbose;
     bool _forbiddenDependencyUpdate;
     NotificationManager _notificationManager;
@@ -529,8 +531,7 @@ public class Composition
         var addLanguage = tCommand.AddLang.Value;
         if (addLanguage != null)
         {
-            project.InitializeTranslationDb();
-            trDb = project.TranslationDb;
+            trDb = InitializeTranslationDb(project);
             addLanguage = addLanguage.ToLowerInvariant();
             if (trDb.HasLanguage(addLanguage))
             {
@@ -550,8 +551,7 @@ public class Composition
         var removeLanguage = tCommand.RemoveLang.Value;
         if (removeLanguage != null)
         {
-            project.InitializeTranslationDb();
-            trDb = project.TranslationDb;
+            trDb = InitializeTranslationDb(project);
             if (!trDb.HasLanguage(removeLanguage))
             {
                 _logger.Warn($"Cannot remove language {removeLanguage} because it does not exist. Doing nothing.");
@@ -570,10 +570,9 @@ public class Composition
         var exportAll = tCommand.ExportAll.Value;
         var lang = tCommand.Lang.Value;
         var specificPath = tCommand.SpecificPath.Value;
-        if (export != null || exportAll != null)
+        if ((exportAll ?? export) is { } destinationFile)
         {
-            project.InitializeTranslationDb(specificPath);
-            trDb = project.TranslationDb;
+            trDb = InitializeTranslationDb(project, specificPath);
 
             if (lang != null && !trDb.HasLanguage(lang))
             {
@@ -582,14 +581,7 @@ public class Composition
                 return;
             }
 
-            var destinationFile = export;
-            var exportOnlyUntranslated = true;
-
-            if (exportAll != null)
-            {
-                destinationFile = exportAll;
-                exportOnlyUntranslated = false;
-            }
+            var exportOnlyUntranslated = exportAll == null;
 
             if (!trDb.ExportLanguages(destinationFile, exportOnlyUntranslated, lang, specificPath))
                 _logger.Warn("Nothing to export. No export file created.");
@@ -611,8 +603,7 @@ public class Composition
         var import = tCommand.Import.Value;
         if (import != null)
         {
-            project.InitializeTranslationDb(specificPath);
-            trDb = project.TranslationDb;
+            trDb = InitializeTranslationDb(project, specificPath);
             if (specificPath == null)
             {
                 if (!trDb.ImportTranslatedLanguage(import, specificPath))
@@ -635,7 +626,7 @@ public class Composition
                 }
 
                 var language = trDb.GetLanguageFromSpecificFile(specificPath);
-                var dir = Path.GetDirectoryName(specificPath);
+                var dir = Path.GetDirectoryName(specificPath) ?? "";
                 trDb.SaveLangDb(dir, language, false);
 
                 _logger.WriteLine(
@@ -654,8 +645,7 @@ public class Composition
                 return;
             }
 
-            project.InitializeTranslationDb();
-            trDb = project.TranslationDb;
+            trDb = InitializeTranslationDb(project);
 
             if (trDb.UnionExportedLanguage(union))
                 _logger.Success(
@@ -673,8 +663,7 @@ public class Composition
                 return;
             }
 
-            project.InitializeTranslationDb();
-            trDb = project.TranslationDb;
+            trDb = InitializeTranslationDb(project);
 
             if (trDb.SubtractExportedLanguage(subtract[0], subtract[1], subtract[2]))
                 _logger.Success(
@@ -692,7 +681,7 @@ public class Composition
         AppDomain.CurrentDomain.FirstChanceException += CurrentDomain_FirstChanceException;
     }
 
-    void CurrentDomain_FirstChanceException(object sender,
+    void CurrentDomain_FirstChanceException(object? sender,
         System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
     {
         string s = e.Exception.ToString();
@@ -763,7 +752,7 @@ public class Composition
                             bCommand.SourceMap.Value == "yes", bCommand.SourceMapRoot.Value);
                     }
 
-                    buildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
+                    SemanticCheckTask(buildResult).ContinueWith(semanticDiag =>
                     {
                         if (semanticDiag.IsCompletedSuccessfully)
                             messages = IncludeSemanticMessages(proj, semanticDiag.Result, ref errors, ref warnings,
@@ -832,6 +821,19 @@ public class Composition
     static string PathToTranslations(ProjectOptions proj)
     {
         return PathUtils.Join(proj.Owner.Owner.FullPath, proj.PathToTranslations ?? "translations");
+    }
+
+    static TranslationDb InitializeTranslationDb(ProjectOptions proj, string? specificPath = null)
+    {
+        proj.InitializeTranslationDb(specificPath);
+        // InitializeTranslationDb always leaves TranslationDb assigned
+        return proj.TranslationDb!;
+    }
+
+    static Task<List<Diagnostic>> SemanticCheckTask(BuildResult buildResult)
+    {
+        return buildResult.TaskForSemanticCheck ??
+               throw new InvalidOperationException("Semantic check was not started by build");
     }
 
     void RunTest(TestCommand testCommand)
@@ -916,7 +918,8 @@ public class Composition
                         {
                             _testServer.OnCoverageResults.Subscribe(results =>
                             {
-                                var covInstr = proj.CoverageInstrumentation;
+                                var covInstr = proj.CoverageInstrumentation ??
+                                               throw new InvalidOperationException("Coverage instrumentation is missing");
                                 covInstr.BuildCoveredFiles(_mainBuildResult.CommonSourceDirectory);
                                 covInstr.AddHits(results.CoverageData!);
                                 covInstr.CalcStats(true);
@@ -929,7 +932,7 @@ public class Composition
                         _logger.Success("Build successful. Starting Headless browser to run tests in " +
                                         durationb.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s");
 
-                        _testServer.StartTest("/test.html", fastBundle.SourceMaps, testCommand.SpecFilter.Value);
+                        _testServer.StartTest("/test.html", fastBundle.SourceMaps, testCommand.SpecFilter.Value ?? "");
                         StartHeadlessBrowserTest();
                         var testTimeout = GetTestTimeout();
                         if (!waitForTestResults.WaitOne(testTimeout))
@@ -997,9 +1000,8 @@ public class Composition
             "Test done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " +
             Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " +
             Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure"), color);
-        if (proj.CoverageEnabled && (proj.CoverageInstrumentation?.DirectoryStats.Count ?? 0) > 0)
+        if (proj.CoverageEnabled && proj.CoverageInstrumentation is { DirectoryStats.Count: > 0 } covInstr)
         {
-            var covInstr = proj.CoverageInstrumentation;
             var stats = covInstr.DirectoryStats[""];
             _logger.Info("Total coverage statement: " + stats.StatementsPercentageText + " condition: " +
                          stats.ConditionsPercentageText + " function: " + stats.FunctionsPercentageText +
@@ -1060,7 +1062,7 @@ public class Composition
                 indent++;
             }
 
-            foreach (var suiteOrTest in testResults.Nested)
+            foreach (var suiteOrTest in testResults.NestedOfSuite())
             {
                 PrintFailed(suiteOrTest, logger, indent);
             }
@@ -1181,7 +1183,9 @@ public class Composition
             }
 
             var unused = new List<string>();
-            SearchUnused(buildResultSet.Select(i => i.Owner.FullPath).ToHashSet(), proj.Owner.Owner, unused, "");
+            SearchUnused(buildResultSet.Select(i =>
+                (i.Owner ?? throw new InvalidOperationException("Cannot search unused files with virtual file in build"))
+                .FullPath).ToHashSet(), proj.Owner.Owner, unused, "");
             _logger.WriteLine(
                 "Build finished total used: " + buildResultSet.Count + " total unused: " + unused.Count,
                 ConsoleColor.Cyan);
@@ -1254,7 +1258,7 @@ public class Composition
             StartWebServer(port, command.BindToAny.Value);
         }
 
-        InitInteractiveMode(command.Localize.Value, command.SourceMapRoot.Value, command.TypeCheck.Value);
+        InitInteractiveMode(command.Localize.Value, command.SourceMapRoot.Value, command.TypeCheck.Value!);
         WaitForStop();
     }
 
@@ -1315,15 +1319,18 @@ public class Composition
     {
         var projectDir = PathUtils.Normalize(new DirectoryInfo(path).FullName);
         var dirCache = _dc.TryGetItem(projectDir) as IDirectoryCache;
-        var proj = TSProject.Create(dirCache, _dc, _logger, null);
+        var proj = TSProject.Create(dirCache, _dc, _logger, null) ??
+                   throw new InvalidOperationException("Project directory " + projectDir + " not found");
         proj.IsRootProject = true;
-        proj.ProjectOptions.Tools = _tools;
-        proj.ProjectOptions.ForbiddenDependencyUpdate = _forbiddenDependencyUpdate;
-        proj.ProjectOptions.RefreshExcludeWatchers();
-        _currentProject = proj.ProjectOptions;
+        var projectOptions = proj.ProjectOptions ??
+                             throw new InvalidOperationException("Project " + projectDir + " has no options");
+        projectOptions.Tools = _tools;
+        projectOptions.ForbiddenDependencyUpdate = _forbiddenDependencyUpdate;
+        projectOptions.RefreshExcludeWatchers();
+        _currentProject = projectOptions;
         if (_mainServer != null)
             _mainServer.Project = _currentProject;
-        return proj.ProjectOptions;
+        return projectOptions;
     }
 
     public void StartWebServer(int port, bool bindToAny)
@@ -1406,7 +1413,7 @@ public class Composition
 
         if (path.StartsWithSegments("/bb/api/liveReload", out var liveIdx))
         {
-            while (_currentProject.LiveReloadIdx == int.Parse(liveIdx.Value.Substring(1)))
+            while (_currentProject.LiveReloadIdx == int.Parse(liveIdx.Value!.Substring(1)))
             {
                 await _currentProject.LiveReloadAwaiter.Task;
                 _currentProject.LiveReloadAwaiter = new TaskCompletionSource<Unit>();
@@ -1504,7 +1511,8 @@ public class Composition
     {
         var reqBody = await new StreamReader(context.Request.Body, Encoding.UTF8).ReadToEndAsync();
         var req = System.Text.Json.JsonSerializer.Deserialize<TReq>(reqBody,
-            _apiJsonSerializerOptions);
+                      _apiJsonSerializerOptions) ??
+                  throw new System.Text.Json.JsonException("Request body must not be null");
         var resp = func(req);
         context.Response.ContentType = "application/json";
         await System.Text.Json.JsonSerializer.SerializeAsync(context.Response.Body, resp,
@@ -1514,11 +1522,10 @@ public class Composition
     GetFileCoverageResponse GetFileCoverage(GetFileCoverageRequest req)
     {
         var resp = new GetFileCoverageResponse();
-        resp.Status = "Unknown";
         var wholeState = _testServer.GetState();
         if (_mainBuildResult.CommonSourceDirectory == null)
             return resp;
-        var fn = PathUtils.Normalize(req.FileName);
+        var fn = PathUtils.Normalize(req.FileName ?? throw new ArgumentException("fileName is required"));
         if (wholeState.Agents.Count == 0)
             return resp;
         if (!_currentProject.CoverageEnabled)
@@ -1620,7 +1627,7 @@ public class Composition
 
     class ProvideProxyOptions : IOptionsMonitor<ProxyOptions>
     {
-        public ProxyOptions Get(string name)
+        public ProxyOptions Get(string? name)
         {
             return CurrentValue;
         }
@@ -1670,7 +1677,7 @@ public class Composition
                     color);
                 _notificationManager.SendNotification(results.ToNotificationParameters());
 
-                if (results.UserAgent
+                if ((results.UserAgent ?? throw new InvalidOperationException("Test results without user agent"))
                     .Contains("HeadlessChrome")) // Kill headless Chrome to prevent hang after idle time
                 {
                     _browserProcess?.Dispose();
@@ -1686,8 +1693,7 @@ public class Composition
 
     public void InitMainServer()
     {
-        _mainServer = new MainServer(() => _testServer.GetState());
-        _mainServer.MainBuildResult = _mainBuildResult;
+        _mainServer = new MainServer(() => _testServer.GetState()) { MainBuildResult = _mainBuildResult };
         _mainServerLongPollingHandler = new LongPollingServer(_mainServer.NewConnectionHandler);
         _testServer.OnChange.Subscribe(_ => { _mainServer.NotifyTestServerChange(); });
         _testServer.OnCoverageResults.Subscribe(_ => { _mainServer.NotifyCoverageChange(); });
@@ -1779,7 +1785,7 @@ public class Composition
                     var buildWarnings = warnings;
                     var buildMessages = messages.ToList();
                     var buildStart = start;
-                    buildResult.TaskForSemanticCheck.ContinueWith(semanticDiag =>
+                    SemanticCheckTask(buildResult).ContinueWith(semanticDiag =>
                     {
                         var semanticDiagnostics = semanticDiag.Result;
                         if (semanticDiagnostics == null)
@@ -1928,7 +1934,8 @@ public class Composition
     void IncludeMessages(ProjectOptions options, BuildResult buildResult, ref int errors, ref int warnings,
         List<Diagnostic> messages)
     {
-        var rootPath = options.Owner.Owner.FullPath;
+        // ForDiagnosticDisplay uses relativeTo as root to stay inside when CommonSourceDirectory is null
+        var relativeTo = _mainBuildResult.CommonSourceDirectory ?? options.Owner.Owner.FullPath;
         foreach (var pathInfoPair in buildResult.Path2FileInfo)
         {
             var diag = pathInfoPair.Value.Diagnostics;
@@ -1943,8 +1950,7 @@ public class Composition
                     warnings++;
                 messages.Add(new Diagnostic
                 {
-                    FileName = PathUtils.ForDiagnosticDisplay(pathInfoPair.Key,
-                        _mainBuildResult.CommonSourceDirectory ?? rootPath, _mainBuildResult.CommonSourceDirectory),
+                    FileName = PathUtils.ForDiagnosticDisplay(pathInfoPair.Key, relativeTo, relativeTo),
                     IsError = isError,
                     Text = d.Text,
                     Code = d.Code,
@@ -1972,7 +1978,8 @@ public class Composition
     {
         if (semanticDiagnostics == null || semanticDiagnostics.Count == 0) return messages;
         var res = messages.ToList();
-        var rootPath = options.Owner.Owner.FullPath;
+        // ForDiagnosticDisplay uses relativeTo as root to stay inside when CommonSourceDirectory is null
+        var relativeTo = _mainBuildResult.CommonSourceDirectory ?? options.Owner.Owner.FullPath;
         foreach (var d in semanticDiagnostics)
         {
             if (options.IgnoreDiagnostic?.Contains(d.Code) ?? false)
@@ -1980,9 +1987,7 @@ public class Composition
             var isError = d.IsError || options.WarningsAsErrors;
             var dd = new Diagnostic
             {
-                FileName = PathUtils.ForDiagnosticDisplay(d.FileName,
-                    _mainBuildResult.CommonSourceDirectory ?? rootPath,
-                    _mainBuildResult.CommonSourceDirectory),
+                FileName = PathUtils.ForDiagnosticDisplay(d.FileName, relativeTo, relativeTo),
                 IsError = isError,
                 Text = d.Text,
                 Code = d.Code,

@@ -7,9 +7,9 @@ namespace Lib.Composition;
 
 public class StackFrame
 {
-    public string FunctionName;
-    public List<string> Args;
-    public string FileName;
+    public string? FunctionName;
+    public List<string>? Args;
+    public string? FileName;
     public int LineNumber;
     public int ColumnNumber;
     public override string ToString()
@@ -39,7 +39,7 @@ public class StackFrame
         }
     }
 
-    static List<string> ExtractLocation(string urlLike)
+    static List<string?> ExtractLocation(string urlLike)
     {
         // Fail-fast but return locations like "(native)"
         if (urlLike.IndexOf(':') < 0)

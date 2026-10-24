@@ -8,7 +8,7 @@ namespace Lib.Composition;
 
 class MainServerConnectionHandler : ILongPollingConnectionHandler
 {
-    ILongPollingConnection _connection;
+    ILongPollingConnection? _connection;
     MainServer _mainServer;
 
     public MainServerConnectionHandler(MainServer mainServer)
@@ -20,11 +20,11 @@ class MainServerConnectionHandler : ILongPollingConnectionHandler
     {
         _mainServer.Clients.TryAdd(this, this);
         _connection = connection;
-        _connection.Send("testUpdated", _mainServer.TestServerStateGetter());
-        // _connection.Send("actionsRefresh", actions.actionList.getList());
-        _connection.Send("setLiveReload",
+        connection.Send("testUpdated", _mainServer.TestServerStateGetter());
+        // connection.Send("actionsRefresh", actions.actionList.getList());
+        connection.Send("setLiveReload",
             new Dictionary<string, object> {{"value", _mainServer.Project.LiveReloadEnabled}});
-        _connection.Send("setCoverage",
+        connection.Send("setCoverage",
             new Dictionary<string, object> {{"value", _mainServer.Project.CoverageEnabled}});
     }
 
@@ -33,9 +33,9 @@ class MainServerConnectionHandler : ILongPollingConnectionHandler
         _mainServer.Clients.TryRemove(this, out var _);
     }
 
-    internal void Send(string message, object data)
+    internal void Send(string message, object? data)
     {
-        _connection.Send(message, data);
+        (_connection ?? throw new InvalidOperationException("Main client is not connected")).Send(message, data);
     }
 
     public void OnMessage(ILongPollingConnection connection, string message, JToken data)
@@ -44,9 +44,9 @@ class MainServerConnectionHandler : ILongPollingConnectionHandler
         {
             case "focusPlace":
             {
-                var position = new Dictionary<string, object>
+                var position = new Dictionary<string, object?>
                 {
-                    {"fn", PathUtils.RealPath(PathUtils.Join(_mainServer.ProjectDir, data.Value<string>("fn")))},
+                    {"fn", PathUtils.RealPath(PathUtils.Join(_mainServer.ProjectDir, data.Value<string>("fn") ?? ""))},
                     {"pos", data.Value<JArray>("pos")}
                 };
                 _mainServer.SendToAll(message, position);

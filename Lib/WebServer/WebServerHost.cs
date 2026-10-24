@@ -17,10 +17,10 @@ namespace Lib.WebServer;
 
 public class WebServerHost : IWebServerBuilder
 {
-    IHost _webHost;
+    IHost? _webHost;
 
     public bool InDocker { get; set; }
-    public RequestDelegate Handler { get; set; }
+    public required RequestDelegate Handler { get; set; }
     public int Port { get; set; }
     public bool FallbackToRandomPort { get; set; }
     public bool BindToAny { get; set; }
@@ -79,7 +79,7 @@ public class WebServerHost : IWebServerBuilder
                         }
                         catch (Exception)
                         {
-                            _webHost.Dispose();
+                            _webHost?.Dispose();
                             _webHost = null;
                         }
                     }
@@ -126,7 +126,8 @@ public class WebServerHost : IWebServerBuilder
 
     public void Stop()
     {
-        _webHost.StopAsync(TimeSpan.FromSeconds(1)).Wait();
-        _webHost.Dispose();
+        var webHost = _webHost ?? throw new InvalidOperationException("Web server is not started");
+        webHost.StopAsync(TimeSpan.FromSeconds(1)).Wait();
+        webHost.Dispose();
     }
 }

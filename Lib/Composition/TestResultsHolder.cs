@@ -10,7 +10,7 @@ namespace Lib.Composition;
 
 public class TestResultsHolder : SuiteOrTest
 {
-    public string UserAgent;
+    public string? UserAgent;
     public bool Running;
     [JsonIgnore]
     public uint[]? CoverageData;
@@ -32,7 +32,7 @@ public class TestResultsHolder : SuiteOrTest
             Failure = Failure,
             Duration = Duration,
             Failures = Failures.ToList(),
-            Nested = new List<SuiteOrTest>(Nested.Select(n => n.Clone())),
+            Nested = new List<SuiteOrTest>(NestedOfSuite().Select(n => n.Clone())),
             Logs = Logs.ToList(),
             UserAgent = UserAgent,
             Running = Running,
@@ -73,7 +73,7 @@ public class TestResultsHolder : SuiteOrTest
 
     static void WriteTestCases(XmlWriter w, SuiteOrTest suite)
     {
-        suite.Nested.ForEach(test =>
+        suite.NestedOfSuite().ForEach(test =>
         {
             if (test.IsSuite)
                 return;
@@ -85,7 +85,7 @@ public class TestResultsHolder : SuiteOrTest
         });
     }
 
-    static void RecursiveWriteJUnit(XmlWriter w, SuiteOrTest suite, string name, bool isWritingFlatTestSuites)
+    static void RecursiveWriteJUnit(XmlWriter w, SuiteOrTest suite, string? name, bool isWritingFlatTestSuites)
     {
         var duration = 0d;
         var testCaseCount = 0;

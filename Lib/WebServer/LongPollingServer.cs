@@ -26,7 +26,7 @@ public class LongPollingServer : ILongPollingServer
         TaskCompletionSource<Unit>? _responseEnder;
         HttpContext? _response;
         Timer? _timeOut;
-        readonly List<(string, object)> _toSend;
+        readonly List<(string, object?)> _toSend;
 
         internal Connection(LongPollingServer owner, ILongPollingConnectionHandler handler)
         {
@@ -39,7 +39,7 @@ public class LongPollingServer : ILongPollingServer
             _timeOut = new(HandleTimeOut, null, 15000, Timeout.Infinite);
         }
 
-        void HandleTimeOut(object state)
+        void HandleTimeOut(object? state)
         {
             if (_response == null)
                 Close();
@@ -50,9 +50,9 @@ public class LongPollingServer : ILongPollingServer
             _timeOut?.Change(15000, Timeout.Infinite);
         }
 
-        public void Send(string message, object data)
+        public void Send(string message, object? data)
         {
-            HttpContext response;
+            HttpContext? response;
             lock (_toSend)
             {
                 _toSend.Add((message, data));
@@ -156,7 +156,7 @@ public class LongPollingServer : ILongPollingServer
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                     resp.WriteAsync(Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, object>
                             { { "id", _id }, { "old", true } }))
-                        .ContinueWith((t) => ender.TrySetResult(Unit.Default));
+                        .ContinueWith((t) => ender?.TrySetResult(Unit.Default));
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                 }
 
@@ -182,7 +182,7 @@ public class LongPollingServer : ILongPollingServer
         {
             if (_response == response)
             {
-                TaskCompletionSource<Unit> ender;
+                TaskCompletionSource<Unit>? ender;
                 lock (_toSend)
                 {
                     if (_response != response)
@@ -192,7 +192,8 @@ public class LongPollingServer : ILongPollingServer
                     _responseEnder = null;
                 }
 
-                ender.TrySetResult(Unit.Default);
+                // _responseEnder is always set together with _response
+                ender!.TrySetResult(Unit.Default);
                 Retimeout();
             }
         }
@@ -271,8 +272,8 @@ public class LongPollingServer : ILongPollingServer
             firstResponse = true;
         }
 
-        if (context.Request.Headers.TryGetValue("user-agent", out var ua)) c.UserAgent = ua;
-        if (data["close"] != null && (bool)data["close"])
+        if (context.Request.Headers.TryGetValue("user-agent", out var ua)) c.UserAgent = ua.ToString();
+        if (data["close"] is { } close && (bool)close)
         {
             c.Close();
             waitAllowed = false;

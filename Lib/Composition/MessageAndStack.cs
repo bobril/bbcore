@@ -4,6 +4,6 @@ namespace Lib.Composition;
 
 public class MessageAndStack
 {
-    public string Message;
-    public List<StackFrame> Stack;
+    public string? Message;
+    public List<StackFrame> Stack = [];
 }

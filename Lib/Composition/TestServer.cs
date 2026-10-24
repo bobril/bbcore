@@ -32,9 +32,9 @@ class TestServer
         OnChangeRaw.Throttle(TimeSpan.FromMilliseconds(500)).Subscribe(OnChange);
     }
 
-    public string Url { get; internal set; }
+    public string? Url { get; internal set; }
     public string SpecFilter { get; private set; } = "";
-    public IDictionary<string, SourceMap> SourceMaps { get; internal set; }
+    public IDictionary<string, SourceMap> SourceMaps { get; internal set; } = new Dictionary<string, SourceMap>();
 
     public ILongPollingConnectionHandler NewConnectionHandler()
     {

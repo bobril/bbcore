@@ -22,7 +22,16 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
     readonly object _lock = new object();
     readonly bool _verbose;
     readonly ILogger _logger;
-    uint[] _coverageData;
+    uint[]? _coverageData;
+
+    ILongPollingConnection Connection =>
+        _connection ?? throw new InvalidOperationException("Test client is not connected");
+
+    TestResultsHolder OldResults =>
+        _oldResults ?? throw new InvalidOperationException("Coverage report received before test results");
+
+    static JArray RequiredArray(JToken data, string name) =>
+        data.Value<JArray>(name) ?? throw new InvalidOperationException($"Message is missing '{name}' array");
 
     public TestServerConnectionHandler(TestServer testServer)
     {
@@ -79,7 +88,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                         }
                         else
                         {
-                            _connection.Send("wait", null);
+                            Connection.Send("wait", null);
                         }
                     }
 
@@ -142,7 +151,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
 
                 case "suiteStart":
                 {
-                    if (_verbose) _logger.Info($"suiteStart {(string)data}");
+                    if (_verbose) _logger.Info($"suiteStart {(string?)data}");
                     lock (_lock)
                     {
                         if (_curResults == null)
@@ -153,7 +162,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                         {
                             Id = ++_suiteId,
                             ParentId = _suiteStack.Peek().Id,
-                            Name = (string)data,
+                            Name = (string?)data,
                             Nested = new List<SuiteOrTest>(),
                             Duration = 0,
                             Failure = false,
@@ -162,7 +171,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                             Skipped = false,
                             Logs = new List<MessageAndStack>()
                         };
-                        _suiteStack.Peek().Nested.Add(suite);
+                        _suiteStack.Peek().NestedOfSuite().Add(suite);
                         _suiteStack.Push(suite);
                     }
 
@@ -182,7 +191,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                         suite.Duration = data.Value<double>("duration");
                         if (_verbose)
                             _logger.Info($"suiteDone {suite.Name} {suite.Duration:f2}");
-                        suite.Failures.AddRange(ConvertFailures(data.Value<JArray>("failures")));
+                        suite.Failures.AddRange(ConvertFailures(RequiredArray(data, "failures")));
                         if (suite.Failures.Count > 0)
                         {
                             _curResults.SuitesFailed += suite.Failures.Count;
@@ -225,7 +234,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                             Skipped = false,
                             Logs = new List<MessageAndStack>()
                         };
-                        _suiteStack.Peek().Nested.Add(test);
+                        _suiteStack.Peek().NestedOfSuite().Add(test);
                         _suiteStack.Push(test);
                     }
 
@@ -243,7 +252,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                             break;
                         var test = _suiteStack.Pop();
                         test.Duration = data.Value<double>("duration");
-                        test.Failures.AddRange(ConvertFailures(data.Value<JArray>("failures")));
+                        test.Failures.AddRange(ConvertFailures(RequiredArray(data, "failures")));
                         _curResults.TestsFinished++;
                         var status = data.Value<string>("status");
                         if (_verbose)
@@ -313,8 +322,9 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
 
                 case "coverageReport":
                 {
-                    _coverageData = new uint[data.Value<int>("length")];
-                    var dataPart = data.Value<JArray>("data").Select(t => t.Value<int>()).ToList();
+                    var coverageData = new uint[data.Value<int>("length")];
+                    _coverageData = coverageData;
+                    var dataPart = RequiredArray(data, "data").Select(t => t.Value<int>()).ToList();
                     if (_verbose) _logger.Info("coverageReport " + data.Value<int>("length") + " " + dataPart.Count);
                     var pos = 0;
                     foreach (var v in dataPart)
@@ -322,10 +332,11 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                         if (v < 0)
                             pos -= v;
                         else
-                            _coverageData[pos++] = (uint)v;
+                            coverageData[pos++] = (uint)v;
                     }
-                    _oldResults.CoverageData = _coverageData;
-                    _testServer.OnCoverageResults.OnNext(_oldResults);
+                    var oldResults = OldResults;
+                    oldResults.CoverageData = coverageData;
+                    _testServer.OnCoverageResults.OnNext(oldResults);
                     break;
                 }
 
@@ -340,16 +351,17 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
                 {
                     var start = data.Value<int>("start");
                     if (_verbose) _logger.Info("coverageReportPart " + start);
-                    var dataPart = data.Value<JArray>("data").Select(t => t.Value<uint>()).ToList();
-                    dataPart.CopyTo(_coverageData, start);
+                    var dataPart = RequiredArray(data, "data").Select(t => t.Value<uint>()).ToList();
+                    dataPart.CopyTo(_coverageData ?? throw new InvalidOperationException("Coverage report part received before its start"), start);
                     break;
                 }
 
                 case "coverageReportFinished":
                 {
                     if (_verbose) _logger.Info("coverageReportFinished");
-                    _oldResults.CoverageData = _coverageData;
-                    _testServer.OnCoverageResults.OnNext(_oldResults);
+                    var oldResults = OldResults;
+                    oldResults.CoverageData = _coverageData;
+                    _testServer.OnCoverageResults.OnNext(oldResults);
                     break;
                 }
             }
@@ -361,7 +373,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
         }
     }
 
-    MessageAndStack ConvertMessageAndStack(string message, string rawStack)
+    MessageAndStack ConvertMessageAndStack(string? message, string? rawStack)
     {
         if (rawStack == null)
         {
@@ -429,7 +441,7 @@ class TestServerConnectionHandler : ILongPollingConnectionHandler
     void DoStart()
     {
         InitCurResults();
-        _connection.Send("test", new { specFilter = _specFilter, url = _url + "#" + _runid });
+        Connection.Send("test", new { specFilter = _specFilter, url = _url + "#" + _runid });
     }
 
     void InitCurResults()

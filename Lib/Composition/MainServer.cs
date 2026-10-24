@@ -18,7 +18,8 @@ class MainServer
         _testServerStateGetter = testServerStateGetter;
     }
 
-    ProjectOptions _project;
+    // Assigned by Composition.SetMainProject before web server starts serving clients
+    ProjectOptions _project = null!;
     readonly Func<TestServerState> _testServerStateGetter;
 
     public ProjectOptions Project
@@ -26,9 +27,9 @@ class MainServer
         get => _project; internal set => _project = value;
     }
 
-    public MainBuildResult MainBuildResult { get; set; }
+    public required MainBuildResult MainBuildResult { get; set; }
 
-    public string ProjectDir { get => MainBuildResult.CommonSourceDirectory; }
+    public string? ProjectDir { get => MainBuildResult.CommonSourceDirectory; }
 
     public Func<TestServerState> TestServerStateGetter => _testServerStateGetter;
 
@@ -37,7 +38,7 @@ class MainServer
         return new MainServerConnectionHandler(this);
     }
 
-    public void SendToAll(string message, object data)
+    public void SendToAll(string message, object? data)
     {
         foreach (var client in Clients.Keys)
         {

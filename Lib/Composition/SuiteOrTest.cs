@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Lib.Composition;
@@ -8,15 +9,18 @@ public class SuiteOrTest
     public int Id;
     public int ParentId;
     public bool IsSuite;
-    public string Name;
+    public string? Name;
     public bool Skipped;
     public bool Failure;
     public bool Incomplete;
     public double Duration;
-    public List<MessageAndStack> Failures;
-    public List<SuiteOrTest> Nested;
-    public List<MessageAndStack> Logs;
-    public List<StackFrame> Stack; // Only for tests
+    public List<MessageAndStack> Failures = [];
+    public List<SuiteOrTest>? Nested; // Only for suites
+    public List<MessageAndStack> Logs = [];
+    public List<StackFrame>? Stack; // Only for tests
+
+    internal List<SuiteOrTest> NestedOfSuite() =>
+        Nested ?? throw new InvalidOperationException($"'{Name}' is not a suite and cannot have nested tests");
 
     public SuiteOrTest Clone()
     {

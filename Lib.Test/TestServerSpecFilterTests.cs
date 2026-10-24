@@ -30,7 +30,7 @@ public class TestServerSpecFilterTests
         public string UserAgent => "";
         public readonly List<(string Message, JToken Data)> Sent = [];
 
-        public void Send(string message, object data) => Sent.Add((message, data == null ? JValue.CreateNull() : JToken.FromObject(data)));
+        public void Send(string message, object? data) => Sent.Add((message, data == null ? JValue.CreateNull() : JToken.FromObject(data)));
 
         public void Close()
         {
