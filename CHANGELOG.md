@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.0.1
+
 ### Changed
 
 - Updated NuGet dependencies to latest versions, including BTDB 35.13, ClearScript V8 7.5.1.1,
