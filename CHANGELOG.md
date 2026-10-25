@@ -13,6 +13,10 @@
   (so `packageManager` selected through Corepack is respected) and no longer passes Yarn 1 only options
   (`--ignore-optional`, `--no-emoji`, `--non-interactive`, `--no-bin-links`) that Yarn 4 rejects. Upgrades use
   `yarn up`.
+- Bun `bun.lock` parsing now understands the real lock format (`name@version` resolutions), so `bb p u` writes
+  `DEPSCHANGELOG.md` for Bun projects again (it previously read no packages at all). Nested packages get their nested
+  `node_modules` path, top level ones win over nested ones with the same name (avoiding a duplicate key crash in
+  changelog generation) and GitHub, workspace, `file:` and tarball dependencies are skipped.
 
 ### Added
 

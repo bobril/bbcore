@@ -77,48 +77,85 @@ public class BunNodePackageManager : INodePackageManager
         return ParseBunLock(projectDirectory, lockFile.Utf8Content);
     }
 
+    // Keys are install paths like "debug" or nested "send/debug", "@scope/a/@scope/b". Values start with resolution
+    // "name@version", non registry ones look like "name@github:...", "name@workspace:..." or "name@file:..."
     public static IEnumerable<PackagePathVersion> ParseBunLock(IDirectoryCache projectDirectory, string content)
     {
         var parsed = JObject.Parse(content);
-        var packages = parsed["packages"] as JObject;
-        if (packages == null)
+        if (parsed["packages"] is not JObject packages)
         {
             yield break;
         }
 
+        var entries = new List<(string[] Segments, string Version)>();
         foreach (var prop in packages.Properties())
         {
-            if (prop.Value is not JArray packageInfo || packageInfo.Count == 0)
+            if (prop.Value is not JArray { Count: > 0 } packageInfo)
             {
                 continue;
             }
 
-            var resolution = packageInfo[0].Value<string>();
-            var version = ExtractPackageVersion(resolution);
+            var version = ExtractPackageVersion(packageInfo[0].Type == JTokenType.String
+                ? packageInfo[0].Value<string>()
+                : null);
             if (version == null)
             {
                 continue;
             }
 
-            yield return new PackagePathVersion
+            entries.Add((SplitInstallPath(prop.Name), version));
+        }
+
+        // Top level packages win over nested ones with same name, consumers expect unique names
+        var known = new HashSet<string>();
+        foreach (var (segments, version) in entries.OrderBy(e => e.Segments.Length))
+        {
+            var name = segments[^1];
+            if (!known.Add(name)) continue;
+            yield return new()
             {
-                Name = prop.Name,
+                Name = name,
                 Version = version,
-                Path = PathUtils.Join(projectDirectory.FullPath, "node_modules/" + prop.Name)
+                Path = PathUtils.Join(projectDirectory.FullPath,
+                    string.Join('/', segments.Select(segment => "node_modules/" + segment)))
             };
         }
     }
 
-    static string? ExtractPackageVersion(string? resolution)
+    static string[] SplitInstallPath(string key)
     {
-        const string npmProtocol = "@npm:";
-        var npmProtocolIndex = resolution?.LastIndexOf(npmProtocol, StringComparison.Ordinal);
-        if (npmProtocolIndex is null or < 0)
+        var parts = key.Split('/');
+        var segments = new List<string>();
+        for (var i = 0; i < parts.Length; i++)
         {
-            return null;
+            if (parts[i].StartsWith('@') && i + 1 < parts.Length)
+            {
+                segments.Add(parts[i] + "/" + parts[++i]);
+            }
+            else
+            {
+                segments.Add(parts[i]);
+            }
         }
 
-        return resolution![(npmProtocolIndex.Value + npmProtocol.Length)..];
+        return segments.ToArray();
+    }
+
+    public static string? ExtractPackageVersion(string? resolution)
+    {
+        if (string.IsNullOrEmpty(resolution)) return null;
+        // Skip first character so scope '@' of "@scope/name@1.0.0" is not taken as separator
+        var at = resolution.IndexOf('@', 1);
+        if (at < 0) return null;
+        var spec = resolution[(at + 1)..];
+        if (spec.StartsWith("npm:", StringComparison.Ordinal))
+        {
+            spec = spec["npm:".Length..];
+        }
+
+        // github:, git+https:, workspace:, file:, link: and tarball URLs are not registry versions
+        if (spec.Length == 0 || spec.IndexOfAny([':', '/', '#']) >= 0) return null;
+        return spec;
     }
 
     public void RunBun(string dir, string aParams)
