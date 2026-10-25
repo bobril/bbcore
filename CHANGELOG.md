@@ -8,6 +8,11 @@
   JavaScriptEngineSwitcher 3.35, Markdig 1.5, System.Reactive 7, YamlDotNet 18, WebMarkupMin 2.22 and ASP.NET Core
   2.3.13 packages. `Bbcore.Lib` now uses the same versions as bbcore (it was on older BTDB, JavaScriptEngineSwitcher,
   ClearScript and WebMarkupMin).
+- Fixed all nullable reference type warnings (about 520 in Lib, Bbcore.Lib, tests and tools), so the whole solution
+  now builds without warnings. Members that really can be null are annotated, always set members are `required` or
+  initialized. Paths that used to fail with `NullReferenceException` now throw a descriptive exception at the same
+  place; builds, bundles and diagnostics are unchanged (verified on all WebMma apps). In `Bbcore.Lib`,
+  `BuildContext` members are now `required` and `BuildContext.Bundler` is `IBundler?`.
 - Fixed all non-nullable build warnings: the interactive web server now uses the generic host (`HostBuilder` with
   `ConfigureWebHost`) instead of obsolete `WebHostBuilder`, file hashing uses `SHA1.HashData` (also thread-safe,
   unlike the shared `SHA1Managed` instance), the install directory comes from `AppContext.BaseDirectory` instead of
