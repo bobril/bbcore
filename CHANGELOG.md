@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.0.2
+
 ### Fixed
 
 - Package manager failures are no longer ignored. Bun, pnpm, Yarn and npm adapters now check the installer exit code
