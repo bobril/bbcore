@@ -11,7 +11,8 @@ public interface INodePackageManager
     bool IsAvailable { get; }
     bool IsUsedInProject(IDirectoryCache projectDirectory, IDiskCache? dc);
     IEnumerable<PackagePathVersion> GetLockedDependencies(IDirectoryCache projectDirectory);
-    void Install(IDirectoryCache projectDirectory, IDiskCache? dc);
+    // frozen means lock file must not be changed, install fails if it is not up to date with package.json
+    void Install(IDirectoryCache projectDirectory, IDiskCache? dc, bool frozen = false);
     void UpgradeAll(IDirectoryCache projectDirectory, IDiskCache? dc);
     void Upgrade(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName);
     void Add(IDirectoryCache projectDirectory, IDiskCache? dc, string packageName, bool devDependency = false);

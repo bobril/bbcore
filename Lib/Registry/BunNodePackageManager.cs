@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Lib.DiskCache;
 using Lib.TSCompiler;
 using Lib.Utils;
@@ -126,33 +124,12 @@ public class BunNodePackageManager : INodePackageManager
     public void RunBun(string dir, string aParams)
     {
         _logger.Info("Bun " + aParams);
-        var start = new ProcessStartInfo(_bunPath!, aParams)
-        {
-            UseShellExecute = false,
-            WorkingDirectory = dir,
-            StandardErrorEncoding = Encoding.UTF8,
-            StandardOutputEncoding = Encoding.UTF8,
-            RedirectStandardError = true,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true
-        };
-
-        var process = Process.Start(start)!;
-        process.OutputDataReceived += Process_OutputDataReceived;
-        process.ErrorDataReceived += Process_OutputDataReceived;
-        process.BeginErrorReadLine();
-        process.BeginOutputReadLine();
-        process.WaitForExit();
+        PackageManagerProcess.Run("Bun", _bunPath, dir, aParams, _logger);
     }
 
-    void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
+    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc, bool frozen = false)
     {
-        _logger.WriteLine(e.Data ?? "");
-    }
-
-    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc)
-    {
-        RunBunWithParam(projectDirectory, "install");
+        RunBunWithParam(projectDirectory, frozen ? "install --frozen-lockfile" : "install");
     }
 
     void RunBunWithParam(IDirectoryCache projectDirectory, string param)

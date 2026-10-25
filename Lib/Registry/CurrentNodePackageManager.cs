@@ -195,9 +195,17 @@ class CurrentNodePackageManager : INodePackageManager
         return null;
     }
 
-    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc)
+    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc, bool frozen = false)
     {
-        Choose(projectDirectory, dc)?.Install(projectDirectory, dc);
+        var packageManager = Choose(projectDirectory, dc);
+        if (packageManager == null)
+        {
+            if (frozen)
+                throw new PackageManagerException("Frozen install requested, but no usable package manager found");
+            return;
+        }
+
+        packageManager.Install(projectDirectory, dc, frozen);
     }
 
     public void UpgradeAll(IDirectoryCache projectDirectory, IDiskCache? dc)

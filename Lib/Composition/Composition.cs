@@ -475,7 +475,22 @@ public class Composition
         }
         else
         {
-            currentNodePackageManager.Add(project.Owner.Owner, _dc, addCommand.PackageName.Value, addCommand.Dev.Value);
+            RunPackageManagerCommand(() =>
+                currentNodePackageManager.Add(project.Owner.Owner, _dc, addCommand.PackageName.Value,
+                    addCommand.Dev.Value));
+        }
+    }
+
+    void RunPackageManagerCommand(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (PackageManagerException e)
+        {
+            _logger.Error(e.Message);
+            Environment.ExitCode = 1;
         }
     }
 
@@ -485,13 +500,22 @@ public class Composition
         var project = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
         var currentNodePackageManager = new CurrentNodePackageManager(_dc, _logger);
         var before = currentNodePackageManager.GetLockedDependencies(project.Owner.Owner).ToArray();
-        if (upgradeCommand.PackageName.Value == null)
+        try
         {
-            currentNodePackageManager.UpgradeAll(project.Owner.Owner, _dc);
+            if (upgradeCommand.PackageName.Value == null)
+            {
+                currentNodePackageManager.UpgradeAll(project.Owner.Owner, _dc);
+            }
+            else
+            {
+                currentNodePackageManager.Upgrade(project.Owner.Owner, _dc, upgradeCommand.PackageName.Value);
+            }
         }
-        else
+        catch (PackageManagerException e)
         {
-            currentNodePackageManager.Upgrade(project.Owner.Owner, _dc, upgradeCommand.PackageName.Value);
+            _logger.Error(e.Message);
+            Environment.ExitCode = 1;
+            return;
         }
 
         _dc.CheckForTrueChange();
@@ -520,7 +544,9 @@ public class Composition
     {
         InitDiskCache();
         var project = SetMainProject(PathUtils.Normalize(Environment.CurrentDirectory));
-        new CurrentNodePackageManager(_dc, _logger).Install(project.Owner.Owner, _dc);
+        RunPackageManagerCommand(() =>
+            new CurrentNodePackageManager(_dc, _logger).Install(project.Owner.Owner, _dc,
+                installCommand.Frozen.Value));
     }
 
     void RunTranslation(TranslationCommand tCommand)

@@ -284,6 +284,9 @@
         <Compile Include="..\Lib\Registry\PackagePathVersion.cs">
             <Link>Registry\PackagePathVersion.cs</Link>
         </Compile>
+        <Compile Include="..\Lib\Registry\PackageManagerProcess.cs">
+            <Link>Registry\PackageManagerProcess.cs</Link>
+        </Compile>
         <Compile Include="..\Lib\Registry\PnpmLockParser.cs">
             <Link>Registry\PnpmNodePackageManager.cs</Link>
         </Compile>

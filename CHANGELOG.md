@@ -2,6 +2,24 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Package manager failures are no longer ignored. Bun, pnpm, Yarn and npm adapters now check the installer exit code
+  (and report a missing or unstartable executable), so a failed automatic install during `bb b`, `bb test` or
+  interactive mode is reported as an error and stops compilation instead of building against incomplete
+  `node_modules`; this includes registry or security policy rejections. In interactive mode the install is retried on
+  the next build. `bb p i`, `bb p a` and `bb p u` exit with code 1 when the package manager fails.
+- Yarn 2+ (Berry, including Yarn 4) is now supported. bbcore detects the Yarn version in the project directory
+  (so `packageManager` selected through Corepack is respected) and no longer passes Yarn 1 only options
+  (`--ignore-optional`, `--no-emoji`, `--non-interactive`, `--no-bin-links`) that Yarn 4 rejects. Upgrades use
+  `yarn up`.
+
+### Added
+
+- `bb p i --frozen` installs without changing the lock file (`npm ci`, `pnpm`/`bun install --frozen-lockfile`,
+  `yarn install --frozen-lockfile` or `--immutable` for Yarn 2+) and fails when the lock file is out of date, so CI
+  can gate compilation on a successful frozen install.
+
 ## 7.0.1
 
 ### Changed

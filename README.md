@@ -354,7 +354,8 @@ Docker it forces polling watcher:
 ## Disable yarn creating links
 
 Docker on Windows filesystem has limitation in creating links. To workaround this issue create environment variable
-`BBCoreNoLinks` with not empty value so bbcore will add `--no-bin-links` parameter to yarn command line.
+`BBCoreNoLinks` with not empty value so bbcore will add `--no-bin-links` parameter to yarn command line (Yarn 1 and
+npm only, Yarn 2+ does not support it).
 
 ## Recognize when running in Docker
 

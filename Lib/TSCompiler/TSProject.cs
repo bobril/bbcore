@@ -252,13 +252,22 @@ public class TSProject
             Assets = ProjectOptions.Assets;
             if (forbiddenDependencyUpdate || ProjectOptions.DependencyUpdate == DepedencyUpdate.Disabled) return;
             var packageManager = new CurrentNodePackageManager(DiskCache, Logger);
-            if (ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade)
+            try
             {
-                packageManager.UpgradeAll(Owner, DiskCache);
+                if (ProjectOptions.DependencyUpdate == DepedencyUpdate.Upgrade)
+                {
+                    packageManager.UpgradeAll(Owner, DiskCache);
+                }
+                else
+                {
+                    packageManager.Install(Owner, DiskCache);
+                }
             }
-            else
+            catch (PackageManagerException)
             {
-                packageManager.Install(Owner, DiskCache);
+                // Retry on next build and do not compile against incomplete node_modules
+                PackageJsonChangeId = -1;
+                throw;
             }
 
             DiskCache.CheckForTrueChange();

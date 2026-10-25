@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Lib.DiskCache;
 using Lib.TSCompiler;
 using Lib.Utils;
@@ -74,33 +72,12 @@ public class NpmNodePackageManager : INodePackageManager
     public void RunNpm(string dir, string aParams)
     {
         _logger.Info("Npm " + aParams);
-        var start = new ProcessStartInfo(_npmPath ?? throw new InvalidOperationException("npm not found in PATH"), aParams)
-        {
-            UseShellExecute = false,
-            WorkingDirectory = dir,
-            StandardErrorEncoding = Encoding.UTF8,
-            StandardOutputEncoding = Encoding.UTF8,
-            RedirectStandardError = true,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true
-        };
-
-        var process = Process.Start(start)!;
-        process.OutputDataReceived += Process_OutputDataReceived;
-        process.ErrorDataReceived += Process_OutputDataReceived;
-        process.BeginErrorReadLine();
-        process.BeginOutputReadLine();
-        process.WaitForExit();
+        PackageManagerProcess.Run("Npm", _npmPath, dir, aParams, _logger);
     }
 
-    void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
+    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc, bool frozen = false)
     {
-        _logger.WriteLine(e.Data ?? "");
-    }
-
-    public void Install(IDirectoryCache projectDirectory, IDiskCache? dc)
-    {
-        RunNpmWithParam(projectDirectory, "install");
+        RunNpmWithParam(projectDirectory, frozen ? "ci" : "install");
     }
 
     void RunNpmWithParam(IDirectoryCache projectDirectory, string param)
