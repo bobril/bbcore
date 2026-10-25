@@ -177,7 +177,7 @@ public class BbCliE2ETests
         process.WaitForExit();
 
         Assert.True(process.ExitCode == 0,
-            $"Command failed: {fileName} {string.Join(" ", arguments)}{Environment.NewLine}output:{Environment.NewLine}{output}");
+            $"Command failed with exit code {process.ExitCode}: {fileName} {string.Join(" ", arguments)}{Environment.NewLine}output:{Environment.NewLine}{output}");
     }
 
     static void CopyDirectory(string sourceDir, string destinationDir)
