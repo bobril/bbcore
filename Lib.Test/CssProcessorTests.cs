@@ -1,6 +1,7 @@
 ﻿using Lib.CSSProcessor;
 using Lib.Utils;
 using System;
+using System.Threading.Tasks;
 using Lib.DiskCache;
 using Xunit;
 
@@ -19,14 +20,14 @@ public class CssProcessorTests
     }
 
     [Fact]
-    void ProcessSimpleCss()
+    async Task ProcessSimpleCss()
     {
         var cssProcessor = new CssProcessor(_tools);
-        Assert.Equal(".c { width: 100% }", cssProcessor.ProcessCss(".c { width: 100% }", "/dir/file.css", (url, from) => url).Result);
+        Assert.Equal(".c { width: 100% }", await cssProcessor.ProcessCss(".c { width: 100% }", "/dir/file.css", (url, from) => url));
     }
 
     [Fact]
-    void ProcessCssWithUrl()
+    async Task ProcessCssWithUrl()
     {
         var cssProcessor = new CssProcessor(_tools);
         Func<string, string, string> urlReplacerUrlFrom = (url, from) =>
@@ -36,26 +37,26 @@ public class CssProcessorTests
             return from + "/" + url;
         };
         Assert.Equal(".c { background-image: url(\"./dir/logo.png\") }",
-            cssProcessor.ProcessCss(".c { background-image: url(\"logo.png\") }", "./dir/file.css",
-                urlReplacerUrlFrom).Result);
+            await cssProcessor.ProcessCss(".c { background-image: url(\"logo.png\") }", "./dir/file.css",
+                urlReplacerUrlFrom));
     }
 
     [Fact]
-    void MinimizeCss()
+    async Task MinimizeCss()
     {
         var cssProcessor = new CssProcessor(_tools);
-        Assert.Equal(".c{width:100%}", cssProcessor.ConcatenateAndMinifyCss(
-            new[] { new SourceFromPair(".c { width: 100% }", "/dir/file.css") }, (url, from) => url).Result);
+        Assert.Equal(".c{width:100%}", await cssProcessor.ConcatenateAndMinifyCss(
+            new[] { new SourceFromPair(".c { width: 100% }", "/dir/file.css") }, (url, from) => url));
     }
 
     [Fact]
-    void ConcatenateAndMinimizeCss()
+    async Task ConcatenateAndMinimizeCss()
     {
         var cssProcessor = new CssProcessor(_tools);
-        Assert.Equal(".c{background-image:url(/dir/logo.png)}.c2{background-image:url(pogo.png)}", cssProcessor.ConcatenateAndMinifyCss(
+        Assert.Equal(".c{background-image:url(/dir/logo.png)}.c2{background-image:url(pogo.png)}", await cssProcessor.ConcatenateAndMinifyCss(
             new[] {
                 new SourceFromPair(".c { background-image: url(\"logo.png\") }", "/dir/file.css"),
                 new SourceFromPair(".c2 { background-image: url(\"pogo.png\") }", "./file.css")
-            }, (url, from) => from+"/"+url).Result);
+            }, (url, from) => from+"/"+url));
     }
 }
