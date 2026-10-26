@@ -158,35 +158,58 @@ public class BuildCtx
     // tsrs (or TypeScript 7.1+ tsc where tsrs is not available) compared with regular transpiler by validate: "tsrs"
     public string? ValidateTranspilerExecutable { get; private set; }
 
-    string? _lastTsVersion;
+    string? _lastTranspilerInfo;
+    string? _lastTypeCheckerInfo;
     List<Diagnostic>? _lastSemantics;
 
     void ShowTsVersion(string version)
     {
-        if (_lastTsVersion != version)
+        if (_lastTranspilerInfo != version)
         {
             _logger.Info("Using TypeScript version " + version);
-            _lastTsVersion = version;
+            _lastTranspilerInfo = version;
         }
     }
 
-    void ShowNativeTranspiler(string name, string version)
+    // Same native executable used for transpile and typecheck is reported just once
+    void ShowNativeTranspiler(string executable, string name, string version)
     {
-        var key = name + " " + version;
-        if (_lastTsVersion != key)
+        var key = executable + " " + version;
+        if (_lastTranspilerInfo == key)
+            return;
+        _lastTranspilerInfo = key;
+        var displayName = name == "tsc" ? NativeTsCompiler.GetDisplayName(NativeTypeScriptKind.Tsc)
+            : NativeTsCompiler.GetDisplayName(NativeTypeScriptKind.Tsrs);
+        if (_nativeTypeScriptDirectory == executable)
         {
-            _logger.Info("Using " + (name == "tsc" ? "TypeScript 7 (tsc)" : name) + " transpiler version " + version);
-            _lastTsVersion = key;
+            _logger.Info("Using " + displayName + " transpile and typecheck version " + version + " from " +
+                         executable);
+            _lastTypeCheckerInfo = key;
+        }
+        else
+        {
+            _logger.Info("Using " + displayName + " transpiler version " + version + " from " + executable);
+        }
+    }
+
+    void ShowNativeTypeChecker(string version)
+    {
+        var key = _nativeTypeScriptDirectory + " " + version;
+        if (_lastTypeCheckerInfo != key)
+        {
+            _logger.Info("Using " + NativeTsCompiler.GetDisplayName(_nativeTypeScriptKind) + " typecheck version " +
+                         version + " from " + _nativeTypeScriptDirectory);
+            _lastTypeCheckerInfo = key;
         }
     }
 
     void ShowBuildinTranspiler()
     {
         const string version = "Buildin";
-        if (_lastTsVersion != version)
+        if (_lastTranspilerInfo != version)
         {
             _logger.Info("Using Build in transpiler");
-            _lastTsVersion = version;
+            _lastTranspilerInfo = version;
         }
     }
 
@@ -253,7 +276,7 @@ public class BuildCtx
 
                 _typeChecker = CreateTypeChecker();
                 if (_nativeTypeScriptDirectory != null)
-                    ShowTsVersion(_typeChecker.GetTSVersion());
+                    ShowNativeTypeChecker(_typeChecker.GetTSVersion());
                 _typeChecker.ClearDiagnostics();
                 _typeChecker.CreateProgram(_currentDirectory, MakeSourceListArray());
                 break;
@@ -266,7 +289,7 @@ public class BuildCtx
 
                 _typeChecker = CreateTypeChecker();
                 if (_nativeTypeScriptDirectory != null)
-                    ShowTsVersion(_typeChecker.GetTSVersion());
+                    ShowNativeTypeChecker(_typeChecker.GetTSVersion());
                 _typeChecker.ClearDiagnostics();
                 _typeChecker.CheckProgram(_currentDirectory, MakeSourceListArray());
                 _lastSemantics = _typeChecker.GetDiagnostics().ToList();
@@ -384,8 +407,6 @@ public class BuildCtx
             if (_nativeTypeScriptDirectory != null)
             {
                 project.UpdateTSConfigJson();
-                _logger.Info("Using " + NativeTsCompiler.GetDisplayName(_nativeTypeScriptKind) + " typecheck from " +
-                             _nativeTypeScriptDirectory);
             }
         }
 
@@ -439,7 +460,7 @@ public class BuildCtx
                 {
                     var nativeName = NativeApiTranspiler.GetName(NativeTranspilerExecutable);
                     var nativeVersion = NativeApiTranspiler.GetVersion(NativeTranspilerExecutable);
-                    ShowNativeTranspiler(nativeName, nativeVersion);
+                    ShowNativeTranspiler(NativeTranspilerExecutable, nativeName, nativeVersion);
                     project.ConfigurationBuildCacheId = BuildCache.MapConfiguration(nativeName + "-" + nativeVersion,
                         JsonConvert.SerializeObject(CompilerOptions, Formatting.None,
                             TSCompilerOptions.GetSerializerSettings()));
@@ -549,6 +570,7 @@ public class BuildCtx
             }
 
             noDependencyChangeDetected: ;
+            buildModuleCtx.ReportTranspileStats();
             if (_nativeTypeScriptDirectory != null)
                 buildResult.TaskForSemanticCheck = StartTypeCheck();
             if (project.SpriteGeneration) project.SpriteGenerator.ProcessNew();

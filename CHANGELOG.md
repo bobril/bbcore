@@ -6,6 +6,13 @@
 
 - Default tsrs version updated to `0.20.0-ts7.1.0-beta` (TypeScript 7.1 beta). This release also publishes a Windows
   x64 binary, so `tsrs: true` auto-install now works on Windows.
+- Less repeated output about the TypeScript compiler. When tsrs (or TypeScript 7 tsc) is used for both transpilation
+  and typecheck, a single `Using ... transpile and typecheck version ... from ...` line replaces the previous three
+  lines. Interactive mode no longer prints the extra `tsrs typecheck found N errors` line after each rebuild, because
+  `Semantic check done` already reports that.
+- `Build done` and `Test done` now report how many sources were transpiled (by which transpiler, and how long it
+  took) and how many were taken from the build cache, e.g. `has 150 files (transpiled 12 sources by tsrs in 0.35s,
+  138 from cache)`. This replaces the separate `transpile emit done` line.
 
 ## 7.0.3
 

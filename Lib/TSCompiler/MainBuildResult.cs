@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Threading;
 using BTDB.Collections;
 using Lib.Utils;
 
@@ -23,6 +25,7 @@ public class MainBuildResult
 
     public string? CommonSourceDirectory;
     public string? ProxyUrl;
+    public readonly TranspileStats TranspileStats = new();
 
     public MainBuildResult(bool compressFileNames, string? outputSubDir, string? spriteOutputPathOverride)
     {
@@ -133,5 +136,51 @@ public class MainBuildResult
         res.Append(";");
 
         return res.ToString();
+    }
+}
+
+// Counts TypeScript files transpiled or taken from build cache during one build, sub projects included
+public class TranspileStats
+{
+    int _transpiled;
+    int _fromBuildCache;
+    long _ticks;
+    string _transpilerName = "TypeScript";
+
+    public void Reset()
+    {
+        _transpiled = 0;
+        _fromBuildCache = 0;
+        _ticks = 0;
+    }
+
+    public void Add(int transpiled, int fromBuildCache, long ticks, string transpilerName)
+    {
+        Interlocked.Add(ref _transpiled, transpiled);
+        Interlocked.Add(ref _fromBuildCache, fromBuildCache);
+        Interlocked.Add(ref _ticks, ticks);
+        if (transpiled > 0)
+            _transpilerName = transpilerName;
+    }
+
+    public override string ToString()
+    {
+        if (_transpiled == 0 && _fromBuildCache == 0)
+            return "";
+        var res = " (";
+        if (_transpiled > 0)
+        {
+            var seconds = _ticks / (double)Stopwatch.Frequency;
+            res += "transpiled " + _transpiled.ToString(CultureInfo.InvariantCulture) +
+                   (_transpiled == 1 ? " source" : " sources") + " by " +
+                   _transpilerName + " in " + seconds.ToString("F2", CultureInfo.InvariantCulture) +
+                   "s";
+            if (_fromBuildCache > 0)
+                res += ", ";
+        }
+
+        if (_fromBuildCache > 0)
+            res += _fromBuildCache.ToString(CultureInfo.InvariantCulture) + " from cache";
+        return res + ")";
     }
 }

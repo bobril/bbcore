@@ -41,6 +41,7 @@ public class BuildModuleCtx : IImportResolver
     internal uint CrawledCount;
     long _transpileEmitTicks;
     int _transpileEmitCount;
+    int _fromBuildCacheCount;
     string _lastTranspileEmitName = "TypeScript";
 
     static bool IsDts(ReadOnlySpan<char> name)
@@ -739,8 +740,6 @@ public class BuildModuleCtx : IImportResolver
 
     public void Crawl()
     {
-        _transpileEmitTicks = 0;
-        _transpileEmitCount = 0;
         var prefetchExecutable = NjsastTsValidator.IsBuildinEnabled(OwnerOptions.Future,
             OwnerOptions.Validate)
             ? null
@@ -765,13 +764,13 @@ public class BuildModuleCtx : IImportResolver
             _prefetchedTranspiles.Clear();
             _prefetchOptions = null;
         }
+    }
 
-        if (_transpileEmitCount > 0)
-        {
-            var seconds = _transpileEmitTicks / (double)Stopwatch.Frequency;
-            Owner.Logger.Info(
-                $"{_lastTranspileEmitName} transpile emit done in {seconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}s for {_transpileEmitCount} files");
-        }
+    // Files are transpiled by both CrawlChanges and Crawl, so it is reported once per build
+    public void ReportTranspileStats()
+    {
+        MainResult.TranspileStats.Add(_transpileEmitCount, _fromBuildCacheCount, _transpileEmitTicks,
+            _lastTranspileEmitName);
     }
 
     public TsFileAdditionalInfo? CrawlFile(string fileName)
@@ -912,7 +911,11 @@ public class BuildModuleCtx : IImportResolver
                 case FileCompilationType.EsmJavaScript:
                 case FileCompilationType.TypeScript:
                     info.HasError = false;
-                    if (!TryToResolveFromBuildCache(info))
+                    if (TryToResolveFromBuildCache(info))
+                    {
+                        _fromBuildCacheCount++;
+                    }
+                    else
                     {
                         if (BuildCtx.Verbose)
                             Owner.Logger.Info("Transpiling " + info.Owner!.FullPath);

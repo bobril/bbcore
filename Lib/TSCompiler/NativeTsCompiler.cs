@@ -209,7 +209,6 @@ public sealed class NativeTsCompiler : ITSCompiler
             _watchGeneration = 0;
             _watchCompiling = true;
             _watchCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            _watchStart = Stopwatch.StartNew();
         }
 
         _watchProcess = Process.Start(start)!;
@@ -373,7 +372,6 @@ public sealed class NativeTsCompiler : ITSCompiler
             {
                 _watchDiagnostics.Clear();
                 _watchCompiling = true;
-                _watchStart = Stopwatch.StartNew();
             }
         }
 
@@ -386,20 +384,15 @@ public sealed class NativeTsCompiler : ITSCompiler
 
         if (WatchCompleteRegex.IsMatch(line))
         {
-            Diagnostic[] diagnostics;
-            TimeSpan duration;
             lock (_lock)
             {
                 _diagnostics = _watchDiagnostics.ToArray();
-                diagnostics = _diagnostics;
-                duration = _watchStart?.Elapsed ?? TimeSpan.Zero;
                 _watchDiagnostics.Clear();
                 _watchCompiling = false;
                 _watchGeneration++;
                 _watchCompletion?.TrySetResult(_watchGeneration);
                 _watchCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
             }
-            LogTypeCheckResult(diagnostics, duration);
             return;
         }
 
@@ -427,8 +420,6 @@ public sealed class NativeTsCompiler : ITSCompiler
 
         return diagnostics;
     }
-
-    Stopwatch? _watchStart;
 
     void LogTypeCheckResult(IReadOnlyCollection<Diagnostic> diagnostics, TimeSpan duration)
     {

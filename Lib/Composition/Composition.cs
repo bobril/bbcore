@@ -731,6 +731,7 @@ public class Composition
         try
         {
             _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
+            _mainBuildResult.TranspileStats.Reset();
             proj.UpdateFromProjectJson(bCommand.Localize.Value);
             proj.StyleDefNaming =
                 ParseStyleDefNaming(bCommand.Style.Value ?? (bCommand.Fast.Value ? "2" : "0"));
@@ -804,7 +805,7 @@ public class Composition
         PrintMessages(messages);
         var color = errors != 0 ? ConsoleColor.Red : warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
         _logger.WriteLine(
-            $"Build done in {duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(_mainBuildResult.FilesContent.Count, "file")}",
+            $"Build done in {duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(_mainBuildResult.FilesContent.Count, "file")}{_mainBuildResult.TranspileStats}",
             color);
 
         Environment.ExitCode = errors != 0 ? 1 : 0;
@@ -1025,7 +1026,8 @@ public class Composition
         _logger.WriteLine(
             "Test done in " + duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture) + " with " +
             Plural(errors, "error") + " and " + Plural(warnings, "warning") + " and has " +
-            Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure"), color);
+            Plural(totalFiles, "file") + " and " + Plural(testFailures, "failure") + _mainBuildResult.TranspileStats,
+            color);
         if (proj.CoverageEnabled && proj.CoverageInstrumentation is { DirectoryStats.Count: > 0 } covInstr)
         {
             var stats = covInstr.DirectoryStats[""];
@@ -1788,6 +1790,7 @@ public class Composition
                 {
                     proj.UpdateFromProjectJson(localizeValue);
                     _mainBuildResult.ProxyUrl = proj.ProxyUrl;
+                    _mainBuildResult.TranspileStats.Reset();
                     proj.GenerateCode();
                     proj.RefreshCompilerOptions();
                     proj.RefreshMainFile();
@@ -1885,7 +1888,7 @@ public class Composition
                     var color = errors != 0 ? ConsoleColor.Red :
                         warnings != 0 ? ConsoleColor.Yellow : ConsoleColor.Green;
                     _logger.WriteLine(
-                        $"Build done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(_mainBuildResult.FilesContent.Count, "file")}",
+                        $"Build done in {duration.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(_mainBuildResult.FilesContent.Count, "file")}{_mainBuildResult.TranspileStats}",
                         color);
                 }
             }
