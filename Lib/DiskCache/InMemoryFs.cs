@@ -47,7 +47,6 @@ public class InMemoryFs : IFsAbstraction, IDirectoryWatcher
 
     public FsItemInfo GetItemInfo(ReadOnlySpan<char> path)
     {
-        if (path.Length > 1) path = path.TrimEnd('/');
         GetDirectoryAndFileNames(path.ToString(), out var d, out var f);
         if (!_content.TryGetValue(new KeyValuePair<string, string>(d, f), out var file))
             return FsItemInfo.Missing();

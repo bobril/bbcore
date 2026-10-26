@@ -12,7 +12,7 @@ public class DiskCacheWatcherTests
     [Fact]
     public void WatcherIgnoresSiblingKnownOnlyFromDirectoryListing()
     {
-        var fs = new InMemoryFs();
+        var fs = new LinkFs(new InMemoryFs());
         fs.WriteAllUtf8("/project/package.json", "{}");
         fs.WriteAllUtf8("/external/imported.ts", "export const value = 1;");
         fs.WriteAllUtf8("/external/index.html", "<!doctype html>");
@@ -254,7 +254,7 @@ public class DiskCacheWatcherTests
     [Fact]
     public void PackagesInNodeModulesAreWatchedByWatcherOfProjectContainingNodeModules()
     {
-        var fs = new InMemoryFs();
+        var fs = new LinkFs(new InMemoryFs());
         fs.WriteAllUtf8("/repo/package.json", "{}");
         fs.WriteAllUtf8("/repo/app/package.json", "{}");
         fs.WriteAllUtf8("/repo/node_modules/a/index.js", "export const a = 1;");
@@ -283,7 +283,7 @@ public class DiskCacheWatcherTests
     [Fact]
     public void PackagesInNodeModulesOutsideOfProjectAreWatchedSeparately()
     {
-        var fs = new InMemoryFs();
+        var fs = new LinkFs(new InMemoryFs());
         fs.WriteAllUtf8("/home/app/package.json", "{}");
         fs.WriteAllUtf8("/home/node_modules/a/index.js", "export const a = 1;");
         fs.WriteAllUtf8("/home/node_modules/b/index.js", "export const b = 1;");
@@ -340,8 +340,9 @@ public class DiskCacheWatcherTests
         }
     }
 
-    // Directory at linkPath is symlink to realPath
-    class LinkFs(InMemoryFs inner, string linkPath, string realPath) : IFsAbstraction
+    // Accepts directory paths with trailing slash like real file system, directory at linkPath is symlink to realPath
+    class LinkFs(InMemoryFs inner, string linkPath = "/nonexistent/link", string realPath = "/nonexistent/link")
+        : IFsAbstraction
     {
         string ToReal(string path) => path == linkPath || path.StartsWith(linkPath + "/", StringComparison.Ordinal)
             ? realPath + path[linkPath.Length..]
