@@ -6,7 +6,7 @@ namespace Lib.TSCompiler;
 // Downloads tsrs native binary for current platform from npm into bbcore tools directory
 public static class TsrsInstaller
 {
-    public const string DefaultVersion = "0.18.0-ts7.1.0-dev.20260929";
+    public const string DefaultVersion = "0.20.0-ts7.1.0-beta";
 
     static NativePackage Package => new("tsrs", "@tsrs/",
         TsrsLocator.PlatformPackageNames(NativePackageInstaller.IsMusl()).ToArray(), TsrsLocator.ExecutableName,

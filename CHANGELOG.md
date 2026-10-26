@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default tsrs version updated to `0.20.0-ts7.1.0-beta` (TypeScript 7.1 beta). This release also publishes a Windows
+  x64 binary, so `tsrs: true` auto-install now works on Windows.
+
 ## 7.0.3
 
 ### Fixed
