@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.0.3
+
 ### Fixed
 
 - Interactive mode (`bb`) is much faster to start in monorepos. Every package in `node_modules` and every linked
