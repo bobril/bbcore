@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Interactive mode (`bb`) is much faster to start in monorepos. Every package in `node_modules` and every linked
+  workspace package used to get its own recursive file system watcher, and starting each one (an FSEvents stream on
+  macOS) blocked the build for tens of ms, so a project with ~300 packages spent ~17s just starting watchers (initial
+  build of a large app went from 19.7s to 2.4s). Packages in `node_modules` are now watched by a single watcher of the
+  project containing that `node_modules` (when it has `package.json`), and linked packages whose real path is already
+  watched reuse that watcher instead of starting their own.
+
 ## 7.0.2
 
 ### Fixed

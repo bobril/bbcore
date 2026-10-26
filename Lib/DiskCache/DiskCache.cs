@@ -23,6 +23,8 @@ public class DiskCache : IDiskCache
     readonly Dictionary<string, HashSet<string>> _excludedAcceptedWatcherChildNames = new();
     readonly Dictionary<string, HashSet<string>> _acceptedWatcherChildFileNames = new();
     readonly Dictionary<string, HashSet<string>> _acceptedWatcherChildDirectoryNames = new();
+    // Real path of linked directory => its linked paths, changes are reported by watcher of directory containing real path
+    readonly Dictionary<string, HashSet<string>> _linksWatchedByRealPath = new();
     readonly IDirectoryCache _root;
     readonly object _lock = new();
     readonly bool IsUnixFs;
@@ -242,27 +244,41 @@ public class DiskCache : IDiskCache
         //Console.WriteLine("Change: " + path);
         lock (_lock)
         {
-            if (!IsAcceptedWatcherPath(path))
-                return;
-
-            if (_acceptedWatcherFiles.Contains(path) && TryGetKnownItemNoLock(path) is FileCache file)
+            WatcherFileChangedNoLock(path);
+            foreach (var (realPath, linkPaths) in _linksWatchedByRealPath)
             {
-                file.IsStale = true;
-                _changeSubject.OnNext(path);
-                return;
+                if (!IsSamePathOrChild(path, realPath))
+                    continue;
+                foreach (var linkPath in linkPaths)
+                {
+                    WatcherFileChangedNoLock(linkPath + path[realPath.Length..]);
+                }
             }
+        }
+    }
 
-            var parentPath = PathUtils.Parent(path);
-            if (TryGetKnownItemNoLock(parentPath) is not DirectoryCache { IsFake: false } dir)
-                return;
+    void WatcherFileChangedNoLock(string path)
+    {
+        if (!IsAcceptedWatcherPath(path))
+            return;
 
-            var item = TryGetItemNoLock(parentPath);
-            if (item is IDirectoryCache { IsFake: false } changedDir)
-            {
-                //Console.WriteLine("Setting stale for " + dir.FullPath);
-                changedDir.IsStale = true;
-                _changeSubject.OnNext(path);
-            }
+        if (_acceptedWatcherFiles.Contains(path) && TryGetKnownItemNoLock(path) is FileCache file)
+        {
+            file.IsStale = true;
+            _changeSubject.OnNext(path);
+            return;
+        }
+
+        var parentPath = PathUtils.Parent(path);
+        if (TryGetKnownItemNoLock(parentPath) is not DirectoryCache { IsFake: false } dir)
+            return;
+
+        var item = TryGetItemNoLock(parentPath);
+        if (item is IDirectoryCache { IsFake: false } changedDir)
+        {
+            //Console.WriteLine("Setting stale for " + dir.FullPath);
+            changedDir.IsStale = true;
+            _changeSubject.OnNext(path);
         }
     }
 
@@ -759,10 +775,75 @@ public class DiskCache : IDiskCache
             }
         }
 
-        directory.IsWatcherRoot =
-            !directory.IsInvalid && !IsUnwatchableDirectory(directory.FullPath) &&
-            (directory.IsLink || NotWatchedByParents(directory.Parent));
+        directory.IsWatcherRoot = NeedsOwnWatcherNoLock(directory);
         directory.IsStale = false;
+    }
+
+    // Every started watcher is expensive (FSEvents stream on macOS takes tens of ms to start), so instead of watching
+    // each package in node_modules (and each linked workspace package) separately, it watches whole project containing
+    // that node_modules.
+    bool NeedsOwnWatcherNoLock(IDirectoryCache directory)
+    {
+        if (directory.IsInvalid || IsUnwatchableDirectory(directory.FullPath))
+            return false;
+        if (directory.IsLink)
+        {
+            TryWatchNodeModulesOwnerNoLock(directory);
+            return !TryWatchLinkByRealPathNoLock(directory);
+        }
+
+        if (!NotWatchedByParents(directory.Parent))
+            return false;
+        return !TryWatchNodeModulesOwnerNoLock(directory);
+    }
+
+    bool TryWatchNodeModulesOwnerNoLock(IDirectoryCache directory)
+    {
+        var fullPath = directory.FullPath;
+        var index = fullPath.IndexOf("/node_modules/", StringComparison.Ordinal);
+        if (index <= 0)
+            return false;
+        var ownerPath = fullPath[..index];
+        if (IsUnwatchableDirectory(ownerPath))
+            return false;
+        if (TryGetKnownItemNoLock(ownerPath) is not DirectoryCache { IsInvalid: false, IsLink: false } owner)
+            return false;
+        if (!NotWatchedByParents(owner))
+            return true;
+        // Directory containing node_modules without package.json could be some very big directory like user home
+        if (!FsAbstraction.GetItemInfo(ownerPath + "/package.json").Exists)
+            return false;
+        owner.IsWatcherRoot = true;
+        return true;
+    }
+
+    bool TryWatchLinkByRealPathNoLock(IDirectoryCache directory)
+    {
+        var linkPath = directory.FullPath;
+        var realPath = FsAbstraction.RealPath(linkPath);
+        if (realPath == linkPath || IsSamePathOrChild(linkPath, realPath) || IsSamePathOrChild(realPath, linkPath))
+            return false;
+        var watchedByRealPath = false;
+        foreach (var watchedPath in _watchers.Keys)
+        {
+            if (IsSamePathOrChild(realPath, watchedPath) &&
+                TryGetKnownItemNoLock(watchedPath) is IDirectoryCache { IsLink: false })
+            {
+                watchedByRealPath = true;
+                break;
+            }
+        }
+
+        if (!watchedByRealPath)
+            return false;
+        if (!_linksWatchedByRealPath.TryGetValue(realPath, out var linkPaths))
+        {
+            linkPaths = new();
+            _linksWatchedByRealPath.Add(realPath, linkPaths);
+        }
+
+        linkPaths.Add(linkPath);
+        return true;
     }
 
     static bool IsUnwatchableDirectory(string? fullPath)
