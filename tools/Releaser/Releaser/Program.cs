@@ -11,10 +11,18 @@ using System.Threading.Tasks;
 
 namespace Releaser;
 
-// colima start --vm-type=vz --vz-rosetta --cpu 4 --memory 16 --disk 100
-
 static class Program
 {
+    // Native arm64 VM with Rosetta for linux/amd64 is several times faster than x86_64 QEMU VM, separate profile keeps
+    // build cache between releases. DNS proxy of Colima is not reliable, so DNS servers are explicit.
+    const string ColimaProfile = "bbcore-release";
+    const string ColimaStartArguments = "start -p " + ColimaProfile +
+                                        " --arch aarch64 --vm-type vz --vz-rosetta --cpu 4 --memory 8 --disk 60" +
+                                        " --dns 1.1.1.1 --dns 8.8.8.8";
+
+    static string DockerContextArgument =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "--context colima-" + ColimaProfile + " " : "";
+
     static void Main()
     {
         MainAsync().Wait();
@@ -25,7 +33,7 @@ static class Program
     static async Task<int> MainAsync()
     {
         var projDir = Environment.CurrentDirectory;
-        var colimaStartedByReleaser = false;
+        var colimaUsed = false;
         try
         {
             while (!File.Exists(projDir + "/CHANGELOG.md"))
@@ -184,7 +192,9 @@ static class Program
                 }
             }
 
-            colimaStartedByReleaser = EnsureDockerRunning(projDir);
+            // Colima is stopped at the end even when it was already running, so it does not keep its memory
+            colimaUsed = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+            EnsureDockerRunning(projDir);
             DockerBuild(projDir, newVersion);
             return 0;
         }
@@ -196,7 +206,7 @@ static class Program
             }
             finally
             {
-                if (colimaStartedByReleaser)
+                if (colimaUsed)
                 {
                     StopColima(projDir);
                 }
@@ -245,11 +255,11 @@ static class Program
         }
     }
 
-    static bool EnsureDockerRunning(string projDir)
+    static void EnsureDockerRunning(string projDir)
     {
         if (IsDockerRunning(projDir))
         {
-            return false;
+            return;
         }
 
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -257,22 +267,21 @@ static class Program
             throw new("Docker is not running and automatic Colima start is supported only on macOS.");
         }
 
-        Console.WriteLine("Docker is not running. Starting Colima.");
-        RunCommand(projDir, "colima", "start --vm-type=vz --vz-rosetta --cpu 4 --memory 16 --disk 100");
+        Console.WriteLine("Docker is not running. Starting Colima profile " + ColimaProfile + ".");
+        RunCommand(projDir, "colima", ColimaStartArguments);
         if (!IsDockerRunning(projDir))
         {
             throw new("Docker is still not running after starting Colima.");
         }
 
         Console.WriteLine("Docker is running after Colima start.");
-        return true;
     }
 
     static bool IsDockerRunning(string projDir)
     {
         try
         {
-            var start = new ProcessStartInfo("docker", "info -f {{.ServerVersion}}")
+            var start = new ProcessStartInfo("docker", DockerContextArgument + "info -f {{.ServerVersion}}")
             {
                 UseShellExecute = false,
                 WorkingDirectory = projDir,
@@ -316,8 +325,8 @@ static class Program
     {
         try
         {
-            Console.WriteLine("Stopping Colima started by releaser.");
-            RunCommand(projDir, "colima", "stop");
+            Console.WriteLine("Stopping Colima profile " + ColimaProfile + ".");
+            RunCommand(projDir, "colima", "stop -p " + ColimaProfile);
         }
         catch (Exception ex)
         {
@@ -368,7 +377,7 @@ static class Program
 
     static void RunDocker(string projDir, string command)
     {
-        RunCommand(projDir, "docker", command);
+        RunCommand(projDir, "docker", DockerContextArgument + command);
     }
 
     static async Task<ReleaseAsset> UploadWithRetry(string projDir, GitHubClient client, Release release2,
