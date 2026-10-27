@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.0.6
+
 ### Changed
 
 - Faster bundling of large projects. When appending each module to the bundle, the names of the already merged top level
