@@ -800,8 +800,7 @@ public class ProjectOptions
                 if (Owner.DiskCache.TryGetItem(PathUtils.Join(Owner.Owner.FullPath, s.Name!)) is
                     IFileCache fc)
                 {
-                    var content = fc.Utf8Content;
-                    var oc = ConvertSvgToJs(content, s);
+                    var oc = ConvertSvgToJsCached(fc.FullPath, fc.Utf8Content, s);
                     if (s.HasColor)
                     {
                         sourceReplacer.Replace(s.StartLine, s.StartCol, s.ColorStartLine, s.ColorStartCol,
@@ -961,15 +960,29 @@ public class ProjectOptions
         }
     }
 
-    static OutputContext ConvertSvgToJs(string content, SourceInfo.Sprite s)
+    static readonly Regex SvgTitleRegex =
+        new("<title>[^<]+</title>", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    // Same svg files are converted again on every bundle, so result is remembered while file content is the same
+    readonly Dictionary<string, (string Content, string Js)> _svgJsCache = new();
+
+    string ConvertSvgToJsCached(string fullPath, string content, SourceInfo.Sprite s)
+    {
+        if (_svgJsCache.TryGetValue(fullPath, out var cached) && cached.Content == content)
+            return cached.Js;
+        var js = ConvertSvgToJs(content, s);
+        _svgJsCache[fullPath] = (content, js);
+        return js;
+    }
+
+    static string ConvertSvgToJs(string content, SourceInfo.Sprite s)
     {
         var start = ValidateSvg(content, s);
         content = content[(start + 14)..^6];
-        content = new Regex("<title>[^<]+</title>", RegexOptions.Compiled | RegexOptions.CultureInvariant)
-            .Replace(content, "");
+        content = SvgTitleRegex.Replace(content, "");
         var oc = new OutputContext();
         oc.PrintString(content);
-        return oc;
+        return oc.ToString();
     }
 
     public static int ValidateSvg(string content, SourceInfo.Sprite s)

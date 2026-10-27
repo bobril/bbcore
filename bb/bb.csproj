@@ -8,6 +8,8 @@
         <Nullable>enable</Nullable>
         <PublishTrimmed>true</PublishTrimmed>
         <TrimMode>partial</TrimMode>
+        <!-- Trimming drops precompiled code even from framework, without it everything is JIT compiled on each start -->
+        <PublishReadyToRun>true</PublishReadyToRun>
         <InvariantGlobalization>true</InvariantGlobalization>
     </PropertyGroup>
     <ItemGroup>

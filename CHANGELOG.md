@@ -2,6 +2,18 @@
 
 ## [unreleased]
 
+### Changed
+
+- Faster builds, mainly when sources come from the build cache. In a project with ~3500 cached sources, interactive
+  `Build done` went from ~2.3s to ~1.2s:
+  - Released binaries are now published with ReadyToRun. Trimming dropped precompiled code even from the .NET
+    framework, so everything was JIT compiled on each start. Download is a bit bigger.
+  - Build cache records found while looking for sources to transpile ahead are reused, so each record is no longer
+    loaded twice.
+  - Svg sprites converted to JavaScript are remembered while their content is the same, and the regex used for it is
+    no longer compiled again for every sprite.
+  - Rechecking all known directories for changes (done on each build) reads the file system in parallel.
+
 ## 7.0.4
 
 ### Changed

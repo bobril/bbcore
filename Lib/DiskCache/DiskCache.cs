@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive.Subjects;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using BTDB.Collections;
 using Lib.Utils;
 using Lib.Watcher;
@@ -698,13 +699,13 @@ public class DiskCache : IDiskCache
         var wasFake = directory.IsFake;
         directory.IsFake = false;
         var fullPath = directory.FullPath;
-        if (!FsAbstraction.GetItemInfo(fullPath).Exists)
+        if (!GetItemInfoNoLock(fullPath).Exists)
         {
             directory.IsInvalid = true;
         }
         else
         {
-            var fsis = FsAbstraction.GetDirectoryContent(fullPath);
+            var fsis = GetDirectoryContentNoLock(fullPath);
             var origItems = ((DirectoryCache)directory).Items;
             ((DirectoryCache)directory).Items = new Dictionary<string, IItemCache>();
 
@@ -870,9 +871,65 @@ public class DiskCache : IDiskCache
     {
         lock (_lock)
         {
-            CheckUpdateIfNeededNoLock(_root);
+            PrefetchDirectoriesNoLock();
+            try
+            {
+                CheckUpdateIfNeededNoLock(_root);
+            }
+            finally
+            {
+                _prefetchedDirectories = null;
+            }
+
             return _changed;
         }
+    }
+
+    // Rechecking whole known tree is mostly waiting for file system, so it is read in parallel ahead of sequential
+    // update. Directories not known before are read when needed as usual.
+    Dictionary<string, (FsItemInfo Info, IReadOnlyList<FsItemInfo>? Content)>? _prefetchedDirectories;
+
+    void PrefetchDirectoriesNoLock()
+    {
+        var paths = new List<string>();
+        CollectDirectoriesToCheckNoLock(_root, paths);
+        var results = new (FsItemInfo Info, IReadOnlyList<FsItemInfo>? Content)[paths.Count];
+        Parallel.For(0, paths.Count, i =>
+        {
+            var info = FsAbstraction.GetItemInfo(paths[i]);
+            results[i] = (info, info is { Exists: true, IsDirectory: true }
+                ? FsAbstraction.GetDirectoryContent(paths[i])
+                : null);
+        });
+        _prefetchedDirectories = new(paths.Count);
+        for (var i = 0; i < paths.Count; i++)
+            _prefetchedDirectories[paths[i]] = results[i];
+    }
+
+    void CollectDirectoriesToCheckNoLock(IDirectoryCache directory, List<string> paths)
+    {
+        if (!directory.IsFake)
+            paths.Add(directory.FullPath);
+        foreach (var item in directory)
+        {
+            if (item is IDirectoryCache cache && (directory.IsFake || cache.WasNonStale || cache.IsFake))
+                CollectDirectoriesToCheckNoLock(cache, paths);
+        }
+    }
+
+    FsItemInfo GetItemInfoNoLock(string path)
+    {
+        if (_prefetchedDirectories != null && _prefetchedDirectories.TryGetValue(path, out var prefetched))
+            return prefetched.Info;
+        return FsAbstraction.GetItemInfo(path);
+    }
+
+    IReadOnlyList<FsItemInfo> GetDirectoryContentNoLock(string path)
+    {
+        if (_prefetchedDirectories != null && _prefetchedDirectories.TryGetValue(path, out var prefetched) &&
+            prefetched.Content != null)
+            return prefetched.Content;
+        return FsAbstraction.GetDirectoryContent(path);
     }
 
     void CheckUpdateIfNeededNoLock(IDirectoryCache directory)
@@ -886,7 +943,7 @@ public class DiskCache : IDiskCache
         }
         else
         {
-            var info = FsAbstraction.GetItemInfo(directory.FullPath);
+            var info = GetItemInfoNoLock(directory.FullPath);
             if (info.Exists)
             {
                 if (info.IsDirectory)

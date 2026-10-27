@@ -513,8 +513,10 @@ public class BuildModuleCtx : IImportResolver
                 return false;
             }
 
-            var confId = OwnerOptions.ConfigurationBuildCacheId;
-            var fbc = bc.FindTSFileBuildCache(hashOfContent, confId);
+            // Reuse record already loaded by prefetch scan, loading it from build cache is not cheap
+            if (!_buildCacheHits.Remove(itemInfo.Owner.FullPath, out var fbc) ||
+                !fbc.ContentHash.AsSpan().SequenceEqual(hashOfContent))
+                fbc = bc.FindTSFileBuildCache(hashOfContent, OwnerOptions.ConfigurationBuildCacheId);
             if (fbc != null)
             {
                 if (MatchingTranspilationDendencies(itemInfo.Owner, fbc.TranspilationDependencies))
@@ -762,6 +764,7 @@ public class BuildModuleCtx : IImportResolver
         {
             // Unused results (file taken from build cache or changed meanwhile) are just dropped
             _prefetchedTranspiles.Clear();
+            _buildCacheHits.Clear();
             _prefetchOptions = null;
         }
     }
@@ -1255,6 +1258,7 @@ public class BuildModuleCtx : IImportResolver
     // Native transpilation is pure function of file name, source and options, so files queued for crawl are transpiled
     // ahead in parallel on native transpiler pool and sequential crawl just takes finished results
     readonly Dictionary<string, (string Source, Task<TranspileResult> Result)> _prefetchedTranspiles = new();
+    readonly Dictionary<string, TSFileBuildCache> _buildCacheHits = new();
     ITSCompilerOptions? _prefetchOptions;
     int _prefetchScanIndex;
 
@@ -1311,9 +1315,13 @@ public class BuildModuleCtx : IImportResolver
         {
             try
             {
-                if (buildCache.FindTSFileBuildCache(file.HashOfContent, OwnerOptions.ConfigurationBuildCacheId) !=
-                    null)
+                var fbc = buildCache.FindTSFileBuildCache(file.HashOfContent,
+                    OwnerOptions.ConfigurationBuildCacheId);
+                if (fbc != null)
+                {
+                    _buildCacheHits[fileName] = fbc;
                     return false;
+                }
             }
             catch
             {
