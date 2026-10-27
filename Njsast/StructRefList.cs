@@ -414,14 +414,10 @@ public struct StructRefList<T> : IEnumerable<T> where T : class
 
         var oldCount = _count;
         var totalCount = _count + (uint)range.Length;
-        Reserve(totalCount);
-        if (oldCount == 0)
-            _count = totalCount;
-        else if (oldCount == 1)
-            _count = totalCount;
-        else
-            _count = totalCount;
+        if (oldCount <= 1 || totalCount > ((T[])_itemOrArray!).Length)
+            Reserve(Math.Max(totalCount, (uint)Math.Min(int.MaxValue, (long)oldCount * 2)));
         range.CopyTo(((T[])_itemOrArray!).AsSpan((int)oldCount));
+        _count = totalCount;
     }
 
     public void AddRange(in StructRefList<T> range)

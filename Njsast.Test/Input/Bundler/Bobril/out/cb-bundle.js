@@ -1803,30 +1803,6 @@
         var pd = event.preventDefault;
         if (pd) pd.call(event); else event.returnValue = !1;
     }
-    function cloneNodeArray(a) {
-        var i, n;
-        a = a.slice(0);
-        for (i = 0; i < a.length; i++) {
-            n = a[i];
-            if (__export_isArray(n)) {
-                a[i] = cloneNodeArray(n);
-            } else isObject(n) && (a[i] = cloneNode(n));
-        }
-        return a;
-    }
-    function cloneNode(node) {
-        var r, ch;
-        r = __export_assign({}, node);
-        r.attrs && (r.attrs = __export_assign({}, r.attrs));
-        isObject(r.style) && (r.style = __export_assign({}, r.style));
-        ch = r.children;
-        if (ch) {
-            if (__export_isArray(ch)) {
-                r.children = cloneNodeArray(ch);
-            } else isObject(ch) && (r.children = cloneNode(ch));
-        }
-        return r;
-    }
     function setStyleShim(name, action) {
         mapping.set(name, action);
     }

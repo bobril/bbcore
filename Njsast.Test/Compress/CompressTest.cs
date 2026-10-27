@@ -186,6 +186,66 @@ public class CompressTest
         Assert.Contains("console.log(undefined, undefined);", outNiceJs);
     }
 
+    [Theory]
+    [InlineData("function unusedA(){return unusedB()}function unusedB(){return unusedA()}")]
+    [InlineData("const unusedA=()=>unusedB();const unusedB=()=>unusedA();")]
+    [InlineData("const unusedA=function recurse(){return recurse()};")]
+    public void RemovesUnreachableRecursiveFunctionsInOnePass(string declarations)
+    {
+        var top = Parser.Parse("(()=>{" + declarations + "console.log(1)})()");
+        top = top.Compress(new CompressOptions { EnableRemoveSideEffectFreeCode = true, MaxPasses = 1 });
+        Assert.Equal("(()=>{console.log(1)})()", top.PrintToString());
+    }
+
+    [Fact]
+    public void RemovesLongUnusedFunctionChainInOnePass()
+    {
+        var declarations = string.Concat(Enumerable.Range(0, 40).Select(i =>
+            $"function unused{i}(){{return " + (i == 39 ? "1" : $"unused{i + 1}()") + "}"));
+        var top = Parser.Parse("(()=>{" + declarations + "console.log(1)})()");
+        top = top.Compress(new CompressOptions { EnableRemoveSideEffectFreeCode = true, MaxPasses = 1 });
+        Assert.Equal("(()=>{console.log(1)})()", top.PrintToString());
+    }
+
+    [Theory]
+    [InlineData("function liveA(){return liveB()}function liveB(){return liveA()}use(liveA);")]
+    [InlineData("const liveA=()=>liveB();const liveB=()=>liveA();use(liveA);")]
+    [InlineData("function liveA(){return ()=>liveB()}function liveB(){return 1}use(liveA);")]
+    [InlineData("function liveA(){function liveB(){return 1}return liveB}use(liveA);")]
+    [InlineData("function liveA(){return liveB()}function liveB(){return 1}liveA=replacement;use(liveA);")]
+    public void KeepsFunctionsReachableThroughClosuresAndAssignments(string source)
+    {
+        var top = Parser.Parse("(()=>{" + source + "})()").Compress(CompressOptions.FastDefault);
+        var output = top.PrintToString();
+        Assert.Contains("liveA", output);
+        Assert.Contains("liveB", output);
+    }
+
+    [Theory]
+    [InlineData("function hidden(){return 1}eval('hidden()');", "function hidden(")]
+    [InlineData("var hidden=function(){return 1};eval('hidden()');", "hidden=function(")]
+    [InlineData("function hidden(){return 1}with(source){consume(hidden)}", "function hidden(")]
+    public void KeepsFunctionsInScopesWithDynamicNameLookup(string source, string declaration)
+    {
+        var top = Parser.Parse("(function(){" + source + "})()").Compress(CompressOptions.FastDefault);
+        Assert.Contains(declaration, top.PrintToString());
+    }
+
+    [Fact]
+    public void KeepsExportedFunctionsAndSideEffectingInitializers()
+    {
+        var top = new Parser(new Options { SourceType = SourceType.Module },
+            "export function live(){return 1}export const other=()=>live();").Parse();
+        var output = top.Compress(CompressOptions.FastDefault).PrintToString();
+        Assert.Contains("function live", output);
+        Assert.Contains("other", output);
+
+        top = Parser.Parse("(()=>{const unused=()=>1,result=sideEffect();console.log(2)})()");
+        output = top.Compress(CompressOptions.FastDefault).PrintToString();
+        Assert.DoesNotContain("unused", output);
+        Assert.Contains("sideEffect()", output);
+    }
+
     [Fact]
     public void ShouldCompressOptionalChainOnKnownNonNullishValues()
     {

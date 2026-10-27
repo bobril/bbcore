@@ -32,6 +32,8 @@ public class AstScope : AstBlock
     /// [SymbolDef*/S] a list of all symbol definitions that are accessed from this scope or any subscopes
     public StructRefList<SymbolDef> Enclosed;
 
+    HashSet<SymbolDef>? _enclosedSet;
+
     /// [integer/S] current index for mangling variables (used internally by the mangler)
     public uint Cname;
 
@@ -66,21 +68,40 @@ public class AstScope : AstBlock
 
     public virtual void InitScopeVars(AstScope? parentScope)
     {
-        Variables = new Dictionary<string, SymbolDef>();
-        Functions = new Dictionary<string, SymbolDef>();
+        Variables ??= [];
+        Variables.Clear();
+        Functions ??= [];
+        Functions.Clear();
         UsesWith = false;
         UsesEval = false;
         ParentScope = parentScope;
         Enclosed = new StructRefList<SymbolDef>();
+        _enclosedSet = null;
         Cname = 0;
+    }
+
+    internal void AddEnclosed(SymbolDef def)
+    {
+        // Most scopes capture only a few symbols. Keep those allocation-free, but avoid
+        // scanning thousands of definitions for every reference in a bundled module.
+        if (Enclosed.Count < 32)
+        {
+            foreach (var symbol in Enclosed.AsReadOnlySpan())
+                if (ReferenceEquals(symbol, def)) return;
+        }
+        else
+        {
+            _enclosedSet ??= new HashSet<SymbolDef>(Enclosed, ReferenceEqualityComparer.Instance);
+            if (!_enclosedSet.Add(def)) return;
+        }
+
+        Enclosed.Add(def);
     }
 
     public SymbolDef DefVariable(AstSymbol symbol, AstNode? init)
     {
-        SymbolDef def;
-        if (Variables!.ContainsKey(symbol.Name))
+        if (Variables!.TryGetValue(symbol.Name, out var def))
         {
-            def = Variables![symbol.Name];
             def.Orig.Add(symbol);
             if (def.Init != null && (!ReferenceEquals(def.Scope, symbol.Scope) || def.Init is AstFunction))
             {
@@ -112,7 +133,7 @@ public class AstScope : AstBlock
 
     public SymbolDef? FindVariable(string name)
     {
-        return Variables!.ContainsKey(name) ? Variables![name] : ParentScope?.FindVariable(name);
+        return Variables!.TryGetValue(name, out var def) ? def : ParentScope?.FindVariable(name);
     }
 
     public virtual AstScope? Resolve()

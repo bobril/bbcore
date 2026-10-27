@@ -85,7 +85,7 @@ public class FindBackReferencesAndEvalTreeWalker : TreeWalker
             {
                 for (var s = astSymbolCatch.Scope; s != null; s = s.ParentScope)
                 {
-                    s.Enclosed.AddUnique(def);
+                    s.AddEnclosed(def);
                     if (s == def.Scope) break;
                 }
             }

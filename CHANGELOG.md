@@ -2,6 +2,25 @@
 
 ## [unreleased]
 
+### Changed
+
+- Faster production bundling: large scopes use indexed reference tracking, scope analysis reuses symbol tables,
+  and module merging avoids copying all known names or rescanning all declarations after each rename. Statement
+  lists grow geometrically when appending modules, and compression avoids rebuilding unchanged declaration lists
+  and walking entire function bodies just to locate outside references. On a 3,426-source application, the median
+  of three Release builds fell from 15.5 s to 10.9 s with the source cache and from 18.4 s to 13.6 s without it.
+- Remove whole unreachable chains and mutually recursive groups of local functions, including function and arrow
+  initializers, in one compression pass. This reduces repeated scope analysis and removes unused code that could
+  previously survive the compression pass limit.
+- Added `tools/benchmark-bundlers.py` to compare build time, JavaScript size and gzip size between two bbcore builds
+  on installed applications, with warmups and alternating sequential runs.
+
+### Fixed
+
+- Preserve otherwise unused function declarations and initializers in scopes using direct `eval` or `with`, where
+  a function can be referenced dynamically.
+- Removing an unused function declaration used directly as an `if` body now leaves a valid empty statement.
+
 ## 7.0.6
 
 ### Changed

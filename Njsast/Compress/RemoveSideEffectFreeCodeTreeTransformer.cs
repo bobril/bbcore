@@ -55,6 +55,7 @@ public class GatherVarDeclarations : TreeWalker
 public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
 {
     bool NeedValue = true;
+    HashSet<AstLambda>? _unusedFunctions;
 
     // Symbol is considered cloned when there is just single initialization by constant symbol
     // var a = 42; var b = a;
@@ -65,6 +66,13 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
 
     protected override AstNode? Before(AstNode node, bool inList)
     {
+        if (node is AstToplevel top)
+            _unusedFunctions = UnusedFunctionReachability.Find(top);
+        else if (node is AstDefun function && _unusedFunctions?.Contains(function) == true)
+            return RemoveFunction(function, inList);
+        else if (node is AstVarDef { Value: AstLambda initializer } && _unusedFunctions?.Contains(initializer) == true)
+            return Remove;
+
         if (NeedValue)
         {
             switch (node)
@@ -77,7 +85,7 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     return node;
                 case AstSymbolRef symbolRef:
                 {
-                    if (!symbolRef.Usage.HasFlag(SymbolUsage.Write) &&
+                    if (_clonedSymbolMap.Count != 0 && !symbolRef.Usage.HasFlag(SymbolUsage.Write) &&
                         _clonedSymbolMap.TryGetValue(symbolRef.Thedef!, out var replaceSymbol))
                     {
                         return new AstSymbolRef(node, replaceSymbol, symbolRef.Usage);
@@ -380,12 +388,13 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                 {
                     if (lambda.Name == null || lambda.Name.Thedef!.OnlyDeclared)
                     {
-                        return Remove;
+                        return RemoveFunction(lambda, inList);
                     }
 
-                    if (lambda.Name.Thedef.References.Count == CountReferences(lambda, lambda.Name.Thedef))
+                    if (!lambda.Name.Thedef.Scope.Pinned() &&
+                        HasOnlyInternalReferences(lambda, lambda.Name.Thedef))
                     {
-                        return Remove;
+                        return RemoveFunction(lambda, inList);
                     }
 
                     TransformList(ref lambda.Body);
@@ -541,7 +550,8 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                             continue;
                         }
 
-                        if (varDef.Value is AstLambda && def.References.Count == CountReferences(varDef.Value, def))
+                        if (varDef.Value is AstLambda valueLambda && !def.Scope.Pinned() &&
+                            HasOnlyInternalReferences(valueLambda, def))
                         {
                             return Remove;
                         }
@@ -712,11 +722,20 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
                     if (inList)
                     {
                         var defsResult = new StructList<AstNode>();
-                        defsResult.Reserve(def.Definitions.Count);
                         var wasChange = 0;
-                        foreach (var defi in def.Definitions)
+                        for (var definitionIndex = 0; definitionIndex < def.Definitions.Count; definitionIndex++)
                         {
+                            var defi = def.Definitions[definitionIndex];
                             var defo = Transform(defi);
+                            if (wasChange == 0)
+                            {
+                                if (defo == defi) continue;
+                                // Most declarations survive unchanged. Allocate a replacement list
+                                // only after finding a definition that actually changes.
+                                defsResult.Reserve(def.Definitions.Count);
+                                for (var previous = 0; previous < definitionIndex; previous++)
+                                    defsResult.Add(def.Definitions[previous]);
+                            }
                             if (IsRemove(defo))
                             {
                                 wasChange |= 1;
@@ -907,28 +926,24 @@ public class RemoveSideEffectFreeCodeTreeTransformer : TreeTransformer
         }
     }
 
-    class CountReferencesWalker : TreeWalker
+    static AstNode RemoveFunction(AstLambda function, bool inList)
     {
-        readonly SymbolDef _def;
-        internal uint Refs;
-
-        public CountReferencesWalker(SymbolDef def)
-        {
-            _def = def;
-        }
-
-        protected override void Visit(AstNode node)
-        {
-            if (node is AstSymbolRef symbolRef && symbolRef.Thedef == _def)
-                Refs++;
-        }
+        // A declaration used directly as an if/label body still needs a statement.
+        return function is AstDefun && !inList
+            ? new AstEmptyStatement(function.Source, function.Start, function.End)
+            : Remove;
     }
 
-    static uint CountReferences(AstNode node, SymbolDef def)
+    static bool HasOnlyInternalReferences(AstLambda function, SymbolDef definition)
     {
-        var walker = new CountReferencesWalker(def);
-        walker.Walk(node);
-        return walker.Refs;
+        // Scope analysis already records every reference. A live reference outside
+        // the function is enough to keep it, without walking its entire body again.
+        foreach (var reference in definition.References)
+        {
+            if (reference is not AstSymbolRef || !function.IsParentScopeFor(reference.Scope)) return false;
+        }
+
+        return true;
     }
 
     static AstNode MakeBlockFrom(AstNode from, params AstNode[] statements)

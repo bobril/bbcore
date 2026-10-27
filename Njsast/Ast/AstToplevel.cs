@@ -35,9 +35,9 @@ public class AstToplevel : AstScope
     public SymbolDef DefGlobal(AstSymbol symbol)
     {
         var name = symbol.Name;
-        if (Globals!.ContainsKey(name))
+        if (Globals!.TryGetValue(name, out var existing))
         {
-            return Globals![name];
+            return existing;
         }
 
         var global = new SymbolDef(this, symbol, null);

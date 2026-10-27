@@ -99,16 +99,14 @@ public static class BundlerHelpers
         nonRootSymbolNames.UnionWith(add.CalcNonRootSymbolNames());
         var renameWalker = new ToplevelRenameWalker(main.Variables!, nonRootSymbolNames, suffix);
         renameWalker.Walk(add);
-        nonRootSymbolNames = nonRootSymbolNames.ToHashSet();
-        nonRootSymbolNames.ExceptWith(add.Globals!.Keys);
-        nonRootSymbolNames.ExceptWith(knownDeclaredGlobals);
         var state = AppendStates.GetOrCreateValue(main);
         // only names that can newly collide need a re-check, everything else was already checked against the same name sets
         HashSet<string>? candidates = state.Seen ? [..state.PrevAddedNames, ..state.PrevGlobals, ..add.NonRootSymbolNames!] : null;
         state.Seen = true;
-        renameWalker = new(new Dictionary<string, SymbolDef>(), nonRootSymbolNames, "m", candidates);
+        renameWalker = new(new Dictionary<string, SymbolDef>(), nonRootSymbolNames, "m", candidates,
+            add.Globals!, knownDeclaredGlobals);
         renameWalker.Walk(main);
-        state.PrevGlobals = [..add.Globals.Keys];
+        state.PrevGlobals = [..add.Globals!.Keys];
 
         add = beforeAdd?.Invoke(add) ?? add;
         main.Body.AddRange(add.Body.AsReadOnlySpan());

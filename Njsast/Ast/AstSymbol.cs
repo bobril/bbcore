@@ -61,20 +61,12 @@ public abstract class AstSymbol : AstNode
     {
         for (var s = Scope; s != null; s = s.ParentScope)
         {
-            // Faster AddUnique
-            var span = s.Enclosed.AsReadOnlySpan();
-            var def = Thedef!;
-            foreach (var symb in span)
-            {
-                if (symb == def) goto alreadyExists;
-            }
-            s.Enclosed.Add(Thedef!);
-            alreadyExists:
+            s.AddEnclosed(Thedef!);
             if (options.KeepFunctionNames)
             {
                 foreach (var keyValuePair in s.Functions!)
                 {
-                    Thedef!.Scope.Enclosed.AddUnique(keyValuePair.Value);
+                    Thedef!.Scope.AddEnclosed(keyValuePair.Value);
                 }
             }
 

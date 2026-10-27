@@ -9,15 +9,24 @@ class ToplevelRenameWalker : TreeWalker
     readonly HashSet<string> _nonRootSymbolNames;
     readonly string _suffix;
     readonly HashSet<string>? _onlyNames;
+    readonly IReadOnlyDictionary<string, SymbolDef>? _allowedGlobals;
+    readonly HashSet<string>? _knownDeclaredGlobals;
 
     public ToplevelRenameWalker(IDictionary<string, SymbolDef> variables,
-        HashSet<string> nonRootSymbolNames, string suffix, HashSet<string>? onlyNames = null)
+        HashSet<string> nonRootSymbolNames, string suffix, HashSet<string>? onlyNames = null,
+        IReadOnlyDictionary<string, SymbolDef>? allowedGlobals = null, HashSet<string>? knownDeclaredGlobals = null)
     {
         _onlyNames = onlyNames;
         _variables = variables;
         _nonRootSymbolNames = nonRootSymbolNames;
         _suffix = "_" + suffix;
+        _allowedGlobals = allowedGlobals;
+        _knownDeclaredGlobals = knownDeclaredGlobals;
     }
+
+    bool IsForbidden(string name) => _nonRootSymbolNames.Contains(name) &&
+                                     _allowedGlobals?.ContainsKey(name) != true &&
+                                     _knownDeclaredGlobals?.Contains(name) != true;
 
     IEnumerable<KeyValuePair<string, SymbolDef>> Candidates(AstToplevel scope)
     {
@@ -37,10 +46,10 @@ class ToplevelRenameWalker : TreeWalker
         {
             return;
         }
-        var wasRename = false;
+        List<KeyValuePair<string, SymbolDef>>? renamed = null;
         foreach (var (name, symbol) in Candidates(scope))
         {
-            if (!_nonRootSymbolNames.Contains(name) && !_variables.ContainsKey(name))
+            if (!IsForbidden(name) && !_variables.ContainsKey(name))
             {
                 _variables[name] = symbol;
                 continue;
@@ -52,26 +61,18 @@ class ToplevelRenameWalker : TreeWalker
                 index++;
                 newName = name + _suffix;
                 if (index > 1) newName += index.ToString();
-            } while (_nonRootSymbolNames.Contains(newName) || _variables.ContainsKey(newName) || scope.Variables!.ContainsKey(newName));
+            } while (IsForbidden(newName) || _variables.ContainsKey(newName) || scope.Variables!.ContainsKey(newName));
 
             Helpers.RenameSymbol(symbol, newName);
             _variables[newName] = symbol;
-            wasRename = true;
+            (renamed ??= []).Add(new(name, symbol));
         }
 
-        while (wasRename)
+        if (renamed == null) return;
+        foreach (var (name, symbol) in renamed)
         {
-            wasRename = false;
-            foreach (var (name, symbol) in scope.Variables!)
-            {
-                if (name != symbol.Name)
-                {
-                    scope.Variables!.Remove(name);
-                    scope.Variables!.Add(symbol.Name, symbol);
-                    wasRename = true;
-                    break;
-                }
-            }
+            scope.Variables!.Remove(name);
+            scope.Variables.Add(symbol.Name, symbol);
         }
     }
 }
