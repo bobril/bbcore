@@ -80,6 +80,8 @@ public static class BundlerHelpers
         }
     }
 
+    sealed class AppendState { public List<string> PrevAddedNames = []; public List<string> PrevGlobals = []; public bool Seen; }
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<AstToplevel, AppendState> AppendStates = new();
     public static void AppendToplevelWithRename(AstToplevel main, AstToplevel add, string suffix, HashSet<string> knownDeclaredGlobals,
         Func<AstToplevel, AstToplevel>? beforeAdd = null)
     {
@@ -100,14 +102,21 @@ public static class BundlerHelpers
         nonRootSymbolNames = nonRootSymbolNames.ToHashSet();
         nonRootSymbolNames.ExceptWith(add.Globals!.Keys);
         nonRootSymbolNames.ExceptWith(knownDeclaredGlobals);
-        renameWalker = new(new Dictionary<string, SymbolDef>(), nonRootSymbolNames, "m");
+        var state = AppendStates.GetOrCreateValue(main);
+        // only names that can newly collide need a re-check, everything else was already checked against the same name sets
+        HashSet<string>? candidates = state.Seen ? [..state.PrevAddedNames, ..state.PrevGlobals, ..add.NonRootSymbolNames!] : null;
+        state.Seen = true;
+        renameWalker = new(new Dictionary<string, SymbolDef>(), nonRootSymbolNames, "m", candidates);
         renameWalker.Walk(main);
+        state.PrevGlobals = [..add.Globals.Keys];
 
         add = beforeAdd?.Invoke(add) ?? add;
         main.Body.AddRange(add.Body.AsReadOnlySpan());
+        state.PrevAddedNames = [];
         foreach (var (_, symbolDef) in add.Variables!)
         {
             main.Variables!.TryAdd(symbolDef.Name, symbolDef);
+            state.PrevAddedNames.Add(symbolDef.Name);
         }
 
         foreach (var (_, symbolDef) in add.Globals!)

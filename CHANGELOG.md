@@ -2,6 +2,12 @@
 
 ## [unreleased]
 
+### Changed
+
+- Faster bundling of large projects. When appending each module to the bundle, the names of the already merged top level
+  variables are no longer all re-checked for collisions, only those that can newly collide. In a project with ~2650
+  modules this step went from ~11 s to ~0.1 s of a ~40 s build without build cache, output is byte identical.
+
 ## 7.0.5
 
 ### Changed
