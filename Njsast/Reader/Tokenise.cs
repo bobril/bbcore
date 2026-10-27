@@ -567,14 +567,7 @@ public sealed partial class Parser : IEnumerable<Token>
         var mods = ReadWord1();
         if (!string.IsNullOrEmpty(mods))
         {
-            Regex validFlags = Options.EcmaVersion switch
-            {
-                >= 11 => new Regex("^[dgimsuvys]*$"),
-                >= 9 => new Regex("^[gimuys]*$"),
-                >= 6 => new Regex("^[gimuy]*$"),
-                _ => new Regex("^[gim]*$")
-            };
-            if (!validFlags.IsMatch(mods) && !IsTypeScript) Raise(start, "Invalid regular expression flag");
+            if (!ValidRegExpFlags().IsMatch(mods) && !IsTypeScript) Raise(start, "Invalid regular expression flag");
         }
 
         var flags = RegExp.String2Flags(mods);
@@ -582,13 +575,7 @@ public sealed partial class Parser : IEnumerable<Token>
         {
             Pattern = content,
             RawFlags = !string.IsNullOrEmpty(mods) &&
-                       !((Options.EcmaVersion switch
-                       {
-                           >= 11 => new Regex("^[dgimsuvys]*$"),
-                           >= 9 => new Regex("^[gimuys]*$"),
-                           >= 6 => new Regex("^[gimuy]*$"),
-                           _ => new Regex("^[gim]*$")
-                       }).IsMatch(mods)) && IsTypeScript ? mods : null,
+                       !ValidRegExpFlags().IsMatch(mods) && IsTypeScript ? mods : null,
             Flags = flags
         });
     }
@@ -697,7 +684,31 @@ public sealed partial class Parser : IEnumerable<Token>
         FinishToken(TokenType.Num, val.Value);
     }
 
-    static readonly Regex Test89 = new Regex("[89]");
+    [GeneratedRegex("[89]")]
+    private static partial Regex Test89 { get; }
+
+    [GeneratedRegex("^[0-7]+")]
+    private static partial Regex OctalDigits { get; }
+
+    [GeneratedRegex("^[dgimsuvys]*$")]
+    private static partial Regex RegExpFlags11 { get; }
+
+    [GeneratedRegex("^[gimuys]*$")]
+    private static partial Regex RegExpFlags9 { get; }
+
+    [GeneratedRegex("^[gimuy]*$")]
+    private static partial Regex RegExpFlags6 { get; }
+
+    [GeneratedRegex("^[gim]*$")]
+    private static partial Regex RegExpFlags3 { get; }
+
+    Regex ValidRegExpFlags() => Options.EcmaVersion switch
+    {
+        >= 11 => RegExpFlags11,
+        >= 9 => RegExpFlags9,
+        >= 6 => RegExpFlags6,
+        _ => RegExpFlags3
+    };
 
     // Read an integer, octal integer, or floating-point number.
     void ReadNumber(bool startsWithDot)
@@ -988,7 +999,7 @@ public sealed partial class Parser : IEnumerable<Token>
             default:
                 if (ch >= 48 && ch <= 55)
                 {
-                    var octalStr = new Regex("^[0-7]+")
+                    var octalStr = OctalDigits
                         .Match(_input.Substring(_pos.Index - 1, Math.Min(3, _input.Length - _pos.Index + 1))).Groups[0]
                         .Value;
                     var octal = ParseInt(octalStr, 8);
@@ -1121,7 +1132,7 @@ public sealed partial class Parser : IEnumerable<Token>
     {
         var word = ReadWord1();
         var type = TokenType.Name;
-        if (_keywords.IsMatch(word))
+        if (_keywords.Contains(word))
         {
             if (_containsEsc) RaiseRecoverable(Start, "Escape sequence in keyword " + word);
             type = TokenInformation.Keywords[word];

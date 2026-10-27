@@ -4,9 +4,10 @@ using System.Text.RegularExpressions;
 
 namespace Lib.Registry;
 
-public static class YarnLockParser
+public static partial class YarnLockParser
 {
-    static readonly Regex VersionRegex = new Regex("yarn lockfile v(\\d+)$");
+    [GeneratedRegex("yarn lockfile v(\\d+)$")]
+    private static partial Regex VersionRegex { get; }
     
     class Parser(string input)
     {

@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Lib.Composition;
 
-public class StackFrame
+public partial class StackFrame
 {
     public string? FunctionName;
     public List<string>? Args;
@@ -22,10 +22,26 @@ public class StackFrame
         return functionName + args + fileName + lineNumber + columnNumber;
     }
 
-    static Regex CHROME_IE_STACK_REGEXP = new Regex("^\\s*at .*(\\S+\\:\\d+|\\(native\\))", RegexOptions.ECMAScript | RegexOptions.Multiline);
-    static Regex SAFARI_NATIVE_CODE_REGEXP = new Regex("^(eval@)?(\\[native code\\])?$", RegexOptions.ECMAScript);
-    static Regex ParseLocationRegexPar = new Regex("^\\((.+?)(?:\\:(\\d+))?(?:\\:(\\d+))?\\)\\D*$", RegexOptions.ECMAScript);
-    static Regex ParseLocationRegex = new Regex("^(.+?)(?:\\:(\\d+))?(?:\\:(\\d+))?$", RegexOptions.ECMAScript);
+    [GeneratedRegex("^\\s*at .*(\\S+\\:\\d+|\\(native\\))", RegexOptions.ECMAScript | RegexOptions.Multiline)]
+    private static partial Regex CHROME_IE_STACK_REGEXP { get; }
+
+    [GeneratedRegex("^(eval@)?(\\[native code\\])?$", RegexOptions.ECMAScript)]
+    private static partial Regex SAFARI_NATIVE_CODE_REGEXP { get; }
+
+    [GeneratedRegex("^\\((.+?)(?:\\:(\\d+))?(?:\\:(\\d+))?\\)\\D*$", RegexOptions.ECMAScript)]
+    private static partial Regex ParseLocationRegexPar { get; }
+
+    [GeneratedRegex("^(.+?)(?:\\:(\\d+))?(?:\\:(\\d+))?$", RegexOptions.ECMAScript)]
+    private static partial Regex ParseLocationRegex { get; }
+
+    [GeneratedRegex("(\\(eval at [^\\()]*)|(\\)\\,.*$)", RegexOptions.ECMAScript)]
+    private static partial Regex EvalInfoRegex { get; }
+
+    [GeneratedRegex("\\s+")]
+    private static partial Regex WhitespaceRegex { get; }
+
+    [GeneratedRegex(" line (\\d+)(?: > eval line \\d+)* > eval\\:\\d+\\:\\d+", RegexOptions.ECMAScript)]
+    private static partial Regex FirefoxEvalRegex { get; }
 
     public static List<StackFrame> Parse(string stack)
     {
@@ -67,9 +83,9 @@ public class StackFrame
             if (line.IndexOf("(eval ", StringComparison.Ordinal) > -1)
             {
                 // Throw away eval information
-                line = new Regex("(\\(eval at [^\\()]*)|(\\)\\,.*$)", RegexOptions.ECMAScript).Replace(line.Replace("eval code", "eval"), "");
+                line = EvalInfoRegex.Replace(line.Replace("eval code", "eval"), "");
             }
-            var tokens = new Regex("\\s+").Split(line.TrimStart()).Skip(1).ToList();
+            var tokens = WhitespaceRegex.Split(line.TrimStart()).Skip(1).ToList();
             var locationParts = ExtractLocation(tokens.Last());
             tokens.RemoveAt(tokens.Count - 1);
             var functionName = string.Join(' ', tokens);
@@ -98,7 +114,7 @@ public class StackFrame
             // Throw away eval information
             if (line.IndexOf(" > eval") >= 0)
             {
-                line = new Regex(" line (\\d+)(?: > eval line \\d+)* > eval\\:\\d+\\:\\d+", RegexOptions.ECMAScript).Replace(line, ":$1");
+                line = FirefoxEvalRegex.Replace(line, ":$1");
             }
 
             if (line.IndexOf('@') == -1 && line.IndexOf(':') == -1)

@@ -279,7 +279,7 @@ public sealed partial class Parser
         switch (expr)
         {
             case AstSymbol identifierNode:
-                if (_strict && _reservedWordsStrictBind.IsMatch(identifierNode.Name) &&
+                if (_strict && _reservedWordsStrictBind.Contains(identifierNode.Name) &&
                     !TsCanUseContextualModifierAsIdentifier(identifierNode.Name))
                 {
                     if (!IsTypeScript)

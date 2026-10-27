@@ -6,23 +6,24 @@ using System.Text.RegularExpressions;
 
 namespace Njsast.Css;
 
-public static class CssMinifier
+public static partial class CssMinifier
 {
-    static readonly Regex ZeroUnitRegex =
-        new(@"(?<![\w.-])([+-]?)0+(?:\.0+)?(?:px|em|rem|ex|ch|vw|vh|vmin|vmax|cm|mm|q|in|pt|pc|deg|grad|rad|turn|s|ms|Hz|kHz)\b",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    [GeneratedRegex(
+        @"(?<![\w.-])([+-]?)0+(?:\.0+)?(?:px|em|rem|ex|ch|vw|vh|vmin|vmax|cm|mm|q|in|pt|pc|deg|grad|rad|turn|s|ms|Hz|kHz)\b",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex ZeroUnitRegex { get; }
 
-    static readonly Regex DecimalRegex =
-        new(@"(?<![\w.-])([+-]?)(\d+)\.(\d+)([a-z%]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    [GeneratedRegex(@"(?<![\w.-])([+-]?)(\d+)\.(\d+)([a-z%]*)", RegexOptions.IgnoreCase)]
+    private static partial Regex DecimalRegex { get; }
 
-    static readonly Regex LeadingZeroRegex =
-        new(@"(?<![\w.-])([+-]?)0\.(\d+)([a-z%]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    [GeneratedRegex(@"(?<![\w.-])([+-]?)0\.(\d+)([a-z%]*)", RegexOptions.IgnoreCase)]
+    private static partial Regex LeadingZeroRegex { get; }
 
-    static readonly Regex WholeNumberLeadingZeroRegex =
-        new(@"(?<![\w.-])([+-]?)0+([1-9]\d*)([a-z%]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    [GeneratedRegex(@"(?<![\w.-])([+-]?)0+([1-9]\d*)([a-z%]*)", RegexOptions.IgnoreCase)]
+    private static partial Regex WholeNumberLeadingZeroRegex { get; }
 
-    static readonly Regex HexColorRegex =
-        new(@"#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b", RegexOptions.Compiled);
+    [GeneratedRegex(@"#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b")]
+    private static partial Regex HexColorRegex { get; }
 
     static readonly Dictionary<string, string> ColorNames = new(StringComparer.OrdinalIgnoreCase)
     {

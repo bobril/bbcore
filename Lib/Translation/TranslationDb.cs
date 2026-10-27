@@ -18,7 +18,7 @@ using Njsast.SourceMap;
 
 namespace Lib.Translation;
 
-public class TranslationDb
+public partial class TranslationDb
 {
     public TranslationDb(IFsAbstraction fsAbstraction, ILogger logger)
     {
@@ -507,19 +507,19 @@ public class TranslationDb
         return true;
     }
 
-    static readonly Regex _customFormatterRegex = new Regex(
-        @"\{([a-zA-Z_][a-zA-Z0-9_]*)\s*,\s*(?!number\b|date\b|time\b|plural\b|select\b|selectordinal\b)([a-zA-Z_][a-zA-Z0-9_]*)\s*\}",
-        RegexOptions.Compiled);
+    [GeneratedRegex(
+        @"\{([a-zA-Z_][a-zA-Z0-9_]*)\s*,\s*(?!number\b|date\b|time\b|plural\b|select\b|selectordinal\b)([a-zA-Z_][a-zA-Z0-9_]*)\s*\}")]
+    private static partial Regex CustomFormatterRegex { get; }
 
     internal static string NormalizeMessageForExport(string message)
     {
-        return _customFormatterRegex.Replace(message, "{$1} ");
+        return CustomFormatterRegex.Replace(message, "{$1} ");
     }
 
     internal static string RestoreCustomFormatters(string originalMessage, string target)
     {
         var formatters = new Dictionary<string, string>();
-        foreach (Match m in _customFormatterRegex.Matches(originalMessage))
+        foreach (Match m in CustomFormatterRegex.Matches(originalMessage))
         {
             var paramName = m.Groups[1].Value;
             var formatterType = m.Groups[2].Value;
@@ -530,7 +530,7 @@ public class TranslationDb
         if (formatters.Count == 0) return target;
 
         var escapedNames = formatters.Keys.Select(Regex.Escape).ToArray();
-        var pattern = new Regex(@"\{(" + string.Join("|", escapedNames) + @")\} ?", RegexOptions.Compiled);
+        var pattern = new Regex(@"\{(" + string.Join("|", escapedNames) + @")\} ?");
         return pattern.Replace(target, match =>
         {
             var paramName = match.Groups[1].Value;

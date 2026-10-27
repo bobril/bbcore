@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Njsast.Ast;
@@ -10,10 +11,10 @@ public sealed partial class Parser
     internal readonly string? SourceFile;
     readonly string _input;
     bool _containsEsc;
-    readonly Regex _keywords;
-    readonly Regex _reservedWords;
-    readonly Regex _reservedWordsStrict;
-    readonly Regex _reservedWordsStrictBind;
+    readonly FrozenSet<string> _keywords;
+    readonly FrozenSet<string> _reservedWords;
+    readonly FrozenSet<string> _reservedWordsStrict;
+    readonly FrozenSet<string> _reservedWordsStrictBind;
     Position _pos;
     readonly Stack<Scope> _scopeStack;
     StructList<AstLabel> _labels;
@@ -85,23 +86,23 @@ public sealed partial class Parser
         Options = options = Options.GetOptions(options);
         SourceFile = options.SourceFile;
         _tsRuntimeEnumConstants = options.TypeScriptRuntimeEnumConstants;
-        _keywords = options.EcmaVersion >= 6 ? Ecmascript6KeywordsRegex : Ecmascript5KeywordsRegex;
+        _keywords = options.EcmaVersion >= 6 ? Ecmascript6KeywordSet : Ecmascript5KeywordSet;
 
         if (options.AllowReserved == null || options.AllowReserved is bool && (bool)options.AllowReserved == false)
         {
             var isModule = options.SourceType == SourceType.Module;
             if (options.EcmaVersion < 3)
-                (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = isModule ? EcmascriptModuleNoReservedRegex : EcmascriptNoReservedRegex;
+                (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = isModule ? EcmascriptModuleNoReserved : EcmascriptNoReserved;
             else if (options.EcmaVersion < 5)
-                (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = isModule ? Ecmascript3ModuleReservedRegex : Ecmascript3ReservedRegex;
+                (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = isModule ? Ecmascript3ModuleReserved : Ecmascript3Reserved;
             else if (options.EcmaVersion < 6)
-                (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = isModule ? Ecmascript5ModuleReservedRegex : Ecmascript5ReservedRegex;
+                (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = isModule ? Ecmascript5ModuleReserved : Ecmascript5Reserved;
             else
-                (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = isModule ? Ecmascript6ModuleReservedRegex : Ecmascript6ReservedRegex;
+                (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = isModule ? Ecmascript6ModuleReserved : Ecmascript6Reserved;
         }
         else
         {
-            (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = EcmascriptNoReservedRegex;
+            (_reservedWords, _reservedWordsStrict, _reservedWordsStrictBind) = EcmascriptNoReserved;
         }
 
         _input = input;

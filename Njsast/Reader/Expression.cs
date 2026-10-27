@@ -961,7 +961,8 @@ public sealed partial class Parser
         return new AstNew(SourceFile, nodeStart, _lastTokEnd, callee, ref arguments);
     }
 
-    static readonly Regex TemplateRawRegex = new Regex("\r\n?");
+    [GeneratedRegex("\r\n?")]
+    private static partial Regex TemplateRawRegex { get; }
 
     // Parse template expression.
     AstTemplateSegment ParseTemplateElement(ref bool isTagged)
@@ -1621,13 +1622,13 @@ public sealed partial class Parser
             RaiseRecoverable(start, "Can not use 'yield' as identifier inside a generator");
         if (_inAsync && name == "await")
             RaiseRecoverable(start, "Can not use 'await' as identifier inside an async function");
-        if (!IsTypeScript && _keywords.IsMatch(name))
+        if (!IsTypeScript && _keywords.Contains(name))
             Raise(start, $"Unexpected keyword '{name}'");
         if (Options.EcmaVersion < 6 &&
             _input.Substring(start.Index, end - start).IndexOf("\\", StringComparison.Ordinal) != -1)
             return;
         var re = _strict ? _reservedWordsStrict : _reservedWords;
-        if (re.IsMatch(name) && !TsCanUseContextualModifierAsIdentifier(name))
+        if (re.Contains(name) && !TsCanUseContextualModifierAsIdentifier(name))
         {
             if (!IsTypeScript)
                 RaiseRecoverable(start, $"The keyword '{name}' is reserved");

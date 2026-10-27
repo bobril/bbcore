@@ -44,8 +44,14 @@ using ProxyKit;
 
 namespace Lib.Composition;
 
-public class Composition
+public partial class Composition
 {
+    [GeneratedRegex(@"^(?<URL>https?://[^\s:]+)(:(?<line>\d+))?(:(?<column>\d+))?$")]
+    private static partial Regex UrlWithPositionRegex { get; }
+
+    [GeneratedRegex(@"^(?<FileName>[^:]+)(:(?<line>\d+))?(:(?<column>\d+))?$")]
+    private static partial Regex FileWithPositionRegex { get; }
+
     readonly bool _inDocker;
     string _bbdir;
     ToolsDir.IToolsDir _tools;
@@ -226,8 +232,7 @@ public class Composition
             return 1;
         }
 
-        var regex = new Regex(@"^(?<URL>https?://[^\s:]+)(:(?<line>\d+))?(:(?<column>\d+))?$");
-        var match = regex.Match(fnWithPos);
+        var match = UrlWithPositionRegex.Match(fnWithPos);
 
         if (match.Success)
         {
@@ -237,8 +242,7 @@ public class Composition
         }
         else
         {
-            regex = new Regex(@"^(?<FileName>[^:]+)(:(?<line>\d+))?(:(?<column>\d+))?$");
-            match = regex.Match(fnWithPos);
+            match = FileWithPositionRegex.Match(fnWithPos);
 
             if (match.Success)
             {

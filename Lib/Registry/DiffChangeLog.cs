@@ -7,7 +7,7 @@ using Lib.Utils;
 
 namespace Lib.Registry;
 
-public class DiffChangeLog
+public partial class DiffChangeLog
 {
     readonly IDiskCache _diskCache;
 
@@ -28,7 +28,8 @@ public class DiffChangeLog
         }
     }
 
-    static Regex _lineWithVersion = new Regex("^#+\\s*(\\d+\\.\\d+\\.\\d+)(?>\\s+.*)?$", RegexOptions.Compiled);
+    [GeneratedRegex("^#+\\s*(\\d+\\.\\d+\\.\\d+)(?>\\s+.*)?$")]
+    private static partial Regex LineWithVersion { get; }
 
     public IEnumerable<string> Generate(PackagePathVersion[] before, PackagePathVersion[] after)
     {
@@ -51,7 +52,7 @@ public class DiffChangeLog
                     (acc, line) =>
                     {
                         var read = acc.Item2;
-                        var verMatch = _lineWithVersion.Match(line);
+                        var verMatch = LineWithVersion.Match(line);
                         if (verMatch.Success)
                         {
                             var verStr = verMatch.Groups[1].Value;

@@ -13,7 +13,7 @@ using SkiaSharp;
 
 namespace Lib.TSCompiler;
 
-public class SpriteHolder : ISpritePlace, ISpriteGenerator
+public partial class SpriteHolder : ISpritePlace, ISpriteGenerator
 {
     readonly IDiskCache _dc;
     readonly ILogger _logger;
@@ -253,7 +253,8 @@ public class SpriteHolder : ISpritePlace, ISpriteGenerator
         return slices.Last();
     }
 
-    static readonly Regex RgbaColorParser = new(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript);
+    [GeneratedRegex(@"\s*rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d+|\d*\.\d+)\s*\)\s*", RegexOptions.ECMAScript)]
+    private static partial Regex RgbaColorParser { get; }
 
     public static SKColor ParseColor(string color)
     {

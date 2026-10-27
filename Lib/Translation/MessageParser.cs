@@ -184,8 +184,14 @@ public class SelectAst : MessageAst
     }
 }
 
-public class MessageParser
+public partial class MessageParser
 {
+    [GeneratedRegex("^offset: *([0-9]+)$")]
+    private static partial Regex OffsetRegex { get; }
+
+    [GeneratedRegex("^=[0-9]+$")]
+    private static partial Regex ExactValueRegex { get; }
+
     string _sourceText = "";
     int _pos;
     int _length;
@@ -538,7 +544,7 @@ public class MessageParser
                 SkipWs();
                 if (offsetAllowed && chars.StartsWith("offset:"))
                 {
-                    var m = new Regex("^offset: *([0-9]+)$").Match(chars);
+                    var m = OffsetRegex.Match(chars);
                     if (m.Success)
                     {
                         ((PluralAst) res.Format).Offset = int.Parse(m.Groups[1].Value);
@@ -561,7 +567,7 @@ public class MessageParser
 
                 offsetAllowed = false;
                 object selector;
-                if (new Regex("^=[0-9]+$").IsMatch(chars))
+                if (ExactValueRegex.IsMatch(chars))
                 {
                     selector = int.Parse(chars.AsSpan().Slice(1));
                 }
@@ -610,7 +616,7 @@ public class MessageParser
                 var chars = ParseChars();
                 SkipWs();
                 object selector;
-                if (new Regex("^=[0-9]+$").IsMatch(chars))
+                if (ExactValueRegex.IsMatch(chars))
                 {
                     selector = int.Parse(chars.AsSpan().Slice(1));
                 }

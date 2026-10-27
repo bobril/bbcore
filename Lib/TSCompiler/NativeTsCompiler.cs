@@ -23,25 +23,22 @@ public enum NativeTypeScriptKind
     Tsc
 }
 
-public sealed class NativeTsCompiler : ITSCompiler
+public sealed partial class NativeTsCompiler : ITSCompiler
 {
     public const string GlobalTsgoExecutable = "tsgo";
 
-    static readonly Regex AnsiEscapeRegex = new(
-        @"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])",
-        RegexOptions.Compiled);
+    [GeneratedRegex(@"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")]
+    private static partial Regex AnsiEscapeRegex { get; }
 
-    static readonly Regex FileDiagnosticRegex = new(
-        @"^(?<file>.+)\((?<line>\d+),(?<col>\d+)\): (?<severity>error|warning) TS(?<code>\d+): (?<text>.*)$",
-        RegexOptions.Compiled);
+    [GeneratedRegex(
+        @"^(?<file>.+)\((?<line>\d+),(?<col>\d+)\): (?<severity>error|warning) TS(?<code>\d+): (?<text>.*)$")]
+    private static partial Regex FileDiagnosticRegex { get; }
 
-    static readonly Regex GlobalDiagnosticRegex = new(
-        @"^(?<severity>error|warning) TS(?<code>\d+): (?<text>.*)$",
-        RegexOptions.Compiled);
+    [GeneratedRegex(@"^(?<severity>error|warning) TS(?<code>\d+): (?<text>.*)$")]
+    private static partial Regex GlobalDiagnosticRegex { get; }
 
-    static readonly Regex WatchCompleteRegex = new(
-        @"Found \d+ errors?\. Watching for file changes\.",
-        RegexOptions.Compiled);
+    [GeneratedRegex(@"Found \d+ errors?\. Watching for file changes\.")]
+    private static partial Regex WatchCompleteRegex { get; }
 
     readonly string _nativePreviewDirectory;
     readonly NativeTypeScriptKind _kind;

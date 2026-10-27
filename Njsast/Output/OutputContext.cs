@@ -10,7 +10,7 @@ using Njsast.SourceMap;
 
 namespace Njsast.Output;
 
-public class OutputContext
+public partial class OutputContext
 {
     public readonly OutputOptions Options;
     readonly SourceMapBuilder? _sourceMapBuilder;
@@ -653,8 +653,8 @@ public class OutputContext
         }
     }
 
-    static readonly Regex SimpleIdentifierRegex = new Regex("^[a-zA-Z_$][a-zA-Z0-9_$]*$",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    [GeneratedRegex("^[a-zA-Z_$][a-zA-Z0-9_$]*$", RegexOptions.CultureInvariant)]
+    private static partial Regex SimpleIdentifierRegex { get; }
 
     public static bool IsIdentifierString(string key)
     {

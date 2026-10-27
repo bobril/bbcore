@@ -24,7 +24,7 @@ using Njsast.SourceMap;
 
 namespace Lib.TSCompiler;
 
-public class ProjectOptions
+public partial class ProjectOptions
 {
     public const string DefaultTypeScriptVersion = "5.6.3";
     public const string DefaultTestRegex = @"^.*?(?:\.s|S)pec(?:\.d)?\.ts(?:x)?$";
@@ -413,7 +413,8 @@ public class ProjectOptions
         };
     }
 
-    public static readonly Regex ResourceLinkDetector = new Regex("<<[^>]+>>", RegexOptions.Compiled);
+    [GeneratedRegex("<<[^>]+>>")]
+    public static partial Regex ResourceLinkDetector { get; }
 
     public string ExpandHtmlHead(BuildResult buildResult)
     {
@@ -960,8 +961,8 @@ public class ProjectOptions
         }
     }
 
-    static readonly Regex SvgTitleRegex =
-        new("<title>[^<]+</title>", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    [GeneratedRegex("<title>[^<]+</title>", RegexOptions.CultureInvariant)]
+    private static partial Regex SvgTitleRegex { get; }
 
     // Same svg files are converted again on every bundle, so result is remembered while file content is the same
     readonly Dictionary<string, (string Content, string Js)> _svgJsCache = new();

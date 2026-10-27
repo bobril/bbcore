@@ -12,6 +12,34 @@ namespace Njsast.Reader;
 
 public sealed partial class Parser
 {
+    [GeneratedRegex(@"\busing\s+\[")]
+    private static partial Regex TsUsingArrayRegex { get; }
+
+    [GeneratedRegex(@"\bexport\s+import\b")]
+    private static partial Regex TsExportImportRegex { get; }
+
+    [GeneratedRegex(@"\bexport\s+(?:type\s+)?\*")]
+    private static partial Regex TsExportStarRegex { get; }
+
+    [GeneratedRegex(@"\bexport\s+(?:var|let|const)\b")]
+    private static partial Regex TsExportVariableRegex { get; }
+
+    [GeneratedRegex(@"\bfunction\s+[A-Za-z_$][\w$]*\s*(?:<[^>{};]*>\s*)?\([^{};]*\)\s*;")]
+    private static partial Regex TsFunctionOverloadRegex { get; }
+
+    [GeneratedRegex(
+        @"\b(?:namespace|module)\s+[A-Za-z_$][\w$]*(?:\s*\.\s*[A-Za-z_$][\w$]*)*\s*\{[\s\S]*?\bexport\s+import\b")]
+    private static partial Regex TsNestedNamespaceExportImportRegex { get; }
+
+    [GeneratedRegex(@"\b(?:type|interface)\s+(?<name>[A-Za-z_$][\w$]*)\b")]
+    private static partial Regex TsTypeDeclarationRegex { get; }
+
+    [GeneratedRegex(@"\bexport\s+(?<type>type\s+)?\{(?<spec>[^}]*)\}")]
+    private static partial Regex TsExportSpecifiersRegex { get; }
+
+    [GeneratedRegex(@"\bexport\s+declare\s+(?:var|let|const)\s+(?<name>[A-Za-z_$][\w$]*)\b")]
+    private static partial Regex TsExportDeclareVariableRegex { get; }
+
     bool IsTypeScript => Options.ParseTypeScript;
 
     AstStatement TsParseTypeOnlyStatement(Position startLocation)
@@ -337,9 +365,9 @@ public sealed partial class Parser
     {
         var equals = TsFindTopLevelChar(source, '=');
         if (equals < 0)
-            return Regex.Replace(source, @"\busing\s+\[", "using[") + ";";
+            return TsUsingArrayRegex.Replace(source, "using[") + ";";
 
-        var left = Regex.Replace(source[..equals].Trim(), @"\busing\s+\[", "using[");
+        var left = TsUsingArrayRegex.Replace(source[..equals].Trim(), "using[");
         var right = source[(equals + 1)..].Trim();
         return left + "; " + right.TrimEnd(';') + ";";
     }
@@ -430,7 +458,7 @@ public sealed partial class Parser
         ExitLexicalScope();
 
         var raw = _input.Substring(nodeStart.Index, end - nodeStart.Index).TrimEnd();
-        raw = Regex.Replace(raw, @"\busing\s+\[", "using[");
+        raw = TsUsingArrayRegex.Replace(raw, "using[");
         if (forAwait && TsForHeaderHasTopLevelIn(raw))
             raw = TsRemoveForAwaitFromPreservedForStatement(raw);
         return new AstRawStatement(SourceFile, nodeStart, _lastTokEnd, raw);
@@ -1899,12 +1927,12 @@ public sealed partial class Parser
     static bool TsNamespaceBodyNeedsRuntimeShell(string body)
     {
         var searchable = TsEraseCommentsAndStrings(body);
-        return Regex.IsMatch(searchable, @"\bexport\s+import\b") ||
-               Regex.IsMatch(searchable, @"\bexport\s+(?:type\s+)?\*") ||
-               Regex.IsMatch(searchable, @"\bexport\s+(?:var|let|const)\b") ||
-               Regex.IsMatch(searchable, @"\bfunction\s+[A-Za-z_$][\w$]*\s*(?:<[^>{};]*>\s*)?\([^{};]*\)\s*;") ||
+        return TsExportImportRegex.IsMatch(searchable) ||
+               TsExportStarRegex.IsMatch(searchable) ||
+               TsExportVariableRegex.IsMatch(searchable) ||
+               TsFunctionOverloadRegex.IsMatch(searchable) ||
                TsNamespaceBodyHasValueExportSpecifier(searchable) ||
-               Regex.IsMatch(searchable, @"\b(?:namespace|module)\s+[A-Za-z_$][\w$]*(?:\s*\.\s*[A-Za-z_$][\w$]*)*\s*\{[\s\S]*?\bexport\s+import\b");
+               TsNestedNamespaceExportImportRegex.IsMatch(searchable);
     }
 
     static string TsEraseCommentsAndStrings(string text)
@@ -1967,10 +1995,10 @@ public sealed partial class Parser
     static bool TsNamespaceBodyHasValueExportSpecifier(string body)
     {
         var typeOnlyNames = new HashSet<string>(StringComparer.Ordinal);
-        foreach (Match typeMatch in Regex.Matches(body, @"\b(?:type|interface)\s+(?<name>[A-Za-z_$][\w$]*)\b"))
+        foreach (Match typeMatch in TsTypeDeclarationRegex.Matches(body))
             typeOnlyNames.Add(typeMatch.Groups["name"].Value);
 
-        foreach (Match match in Regex.Matches(body, @"\bexport\s+(?<type>type\s+)?\{(?<spec>[^}]*)\}"))
+        foreach (Match match in TsExportSpecifiersRegex.Matches(body))
         {
             if (match.Groups["type"].Success)
                 continue;
@@ -3029,8 +3057,7 @@ public sealed partial class Parser
     static void TsCollectNamespaceAmbientExportedValueNames(string body, HashSet<string> names)
     {
         var searchable = TsEraseCommentsAndStrings(body);
-        foreach (Match match in Regex.Matches(searchable,
-                     @"\bexport\s+declare\s+(?:var|let|const)\s+(?<name>[A-Za-z_$][\w$]*)\b"))
+        foreach (Match match in TsExportDeclareVariableRegex.Matches(searchable))
         {
             names.Add(match.Groups["name"].Value);
         }

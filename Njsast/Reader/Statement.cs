@@ -182,7 +182,7 @@ public sealed partial class Parser
             while (IsIdentifierChar(_input.Get(pos), true))
                 ++pos;
             var ident = _input.Substring(next, pos - next);
-            if (!KeywordRelationalOperator.IsMatch(ident))
+            if (ident is not ("in" or "instanceof"))
                 return true;
         }
 

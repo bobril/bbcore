@@ -18,8 +18,11 @@ using Njsast.SourceMap;
 
 namespace Lib.TSCompiler;
 
-public class NjsastBundleBundler : IBundler, IBundlerCtx
+public partial class NjsastBundleBundler : IBundler, IBundlerCtx
 {
+    [GeneratedRegex("@import .*;")]
+    private static partial Regex CssImportRegex { get; }
+
     readonly string _mainJsBundleUrl;
     string? _bundlePng;
     List<float>? _bundlePngInfo;
@@ -92,7 +95,7 @@ public class NjsastBundleBundler : IBundler, IBundlerCtx
                        full.Substring(fullJustName.Length);
             }, LoadCssImport).Result;
             var cssImports = "";
-            foreach (Match match in Regex.Matches(cssContent, "@import .*;"))
+            foreach (Match match in CssImportRegex.Matches(cssContent))
             {
                 cssImports += match.Value;
                 cssContent = cssContent.Replace(match.Value, "");

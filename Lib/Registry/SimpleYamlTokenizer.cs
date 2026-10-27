@@ -5,8 +5,11 @@ using Newtonsoft.Json.Linq;
 
 namespace Lib.Registry;
 
-public static class SimpleYamlTokenizer
+public static partial class SimpleYamlTokenizer
 {
+    [GeneratedRegex("^[0-9a-zA-Z_\\^\\.@/-]")]
+    private static partial Regex NameStartRegex { get; }
+
     const string MergeConflictEnd = ">>>>>>>";
     const string MergeConflictSep = "=======";
     const string MergeConflictStart = "<<<<<<<";
@@ -184,7 +187,7 @@ public static class SimpleYamlTokenizer
                 yield return BuildToken(TokenTypes.ObjectEnd);
                 chop++;
             }
-            else if (new Regex("^[0-9a-zA-Z_\\^\\.@/-]").IsMatch(input))
+            else if (NameStartRegex.IsMatch(input))
             {
                 var name = "";
                 foreach (var ch in input)

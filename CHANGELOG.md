@@ -13,6 +13,9 @@
   - Svg sprites converted to JavaScript are remembered while their content is the same, and the regex used for it is
     no longer compiled again for every sprite.
   - Rechecking all known directories for changes (done on each build) reads the file system in parallel.
+- Faster JavaScript parsing, which makes builds without build cache ~0.6s faster in the same project. Keyword and
+  reserved word checks done for every identifier use sets instead of regexes, and all regexes with constant pattern are
+  generated at compile time (`[GeneratedRegex]`) instead of being compiled at runtime or created again on each use.
 
 ## 7.0.4
 

@@ -8,7 +8,9 @@ public sealed partial class Parser
          * \u2028 LINE SEPARATOR
          * \u2029 PARAGRAPH SEPARATOR
          */
-    static readonly Regex LineBreak = new Regex("\r\n?|\n|\u2028|\u2029");
+    [GeneratedRegex("\r\n?|\n|\u2028|\u2029")]
+    private static partial Regex LineBreak { get; }
+
     /**
          * \u1680 OGHAM SPACE MARK
          * \u2000 EN QUAD
@@ -31,8 +33,11 @@ public sealed partial class Parser
     // https://en.wikipedia.org/wiki/Whitespace_character
     // and is not in "Zs" unicode category => https://www.compart.com/en/unicode/category/Zs 
     // https://www.ecma-international.org/ecma-262/10.0/index.html#table-32
-    static readonly Regex NonAsciIwhitespace = new Regex(@"[\u0085\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]");
-    static readonly Regex SkipWhiteSpace = new Regex(@"(?:\s|\/\/.*|\/\*.*?\*\/)*");
+    [GeneratedRegex(@"[\u0085\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]")]
+    private static partial Regex NonAsciIwhitespace { get; }
+
+    [GeneratedRegex(@"(?:\s|\/\/.*|\/\*.*?\*\/)*")]
+    private static partial Regex SkipWhiteSpace { get; }
 
     static bool IsNewLine(char code)
     {
