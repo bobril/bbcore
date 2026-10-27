@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.0.5
+
 ### Changed
 
 - Faster builds, mainly when sources come from the build cache. In a project with ~3500 cached sources, interactive
