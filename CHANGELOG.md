@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.1.0
+
 ### Changed
 
 - Smaller bundles using syntax allowed by the configured TypeScript target: ES2019 can omit unused catch
