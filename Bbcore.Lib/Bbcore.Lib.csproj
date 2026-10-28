@@ -1130,6 +1130,9 @@
         <Compile Include="..\Njsast\Compress\UnusedFunctionReachability.cs">
             <Link>Compress\UnusedFunctionReachability.cs</Link>
         </Compile>
+        <Compile Include="..\Njsast\Compress\ModernSyntaxTreeTransformer.cs">
+            <Link>Compress\ModernSyntaxTreeTransformer.cs</Link>
+        </Compile>
         <Compile Include="..\Njsast\Compress\VariableHoistingTreeTransformer.cs">
             <Link>Compress\VariableHoistingTreeTransformer.cs</Link>
         </Compile>

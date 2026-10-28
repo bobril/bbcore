@@ -4,6 +4,15 @@
 
 ### Changed
 
+- Smaller bundles using syntax allowed by the configured TypeScript target: ES2019 can omit unused catch
+  bindings, ES2020 can replace strict null/undefined guards with optional chaining and nullish coalescing,
+  and ES2021 can use logical assignment (`||=`, `&&=`, `??=`). These features are supported in Safari 14+,
+  Firefox 79+ and Chrome 85+. Rewrites preserve getters/setters, conditional evaluation, immutable bindings,
+  direct `eval`, method receivers and `document.all` behavior; older output targets retain older syntax.
+- Production and development bundle printers now use the actual configured compiler target instead of an
+  uninitialized target field that limited generated syntax to ES5. The existing default target is ES2022.
+- The Njsast `Compress` API accepts an explicit ECMAScript edition/year as a third argument; existing
+  two-argument calls retain their previous output-syntax behavior.
 - Faster production bundling: large scopes use indexed reference tracking, scope analysis reuses symbol tables,
   and module merging avoids copying all known names or rescanning all declarations after each rename. Statement
   lists grow geometrically when appending modules, and compression avoids rebuilding unchanged declaration lists
@@ -17,6 +26,8 @@
 
 ### Fixed
 
+- Preserve the distinction between prototype setters and own `__proto__` properties when printing object
+  shorthand or mangling a shorthand property value.
 - Preserve otherwise unused function declarations and initializers in scopes using direct `eval` or `with`, where
   a function can be referenced dynamically.
 - Removing an unused function declaration used directly as an `if` body now leaves a valid empty statement.

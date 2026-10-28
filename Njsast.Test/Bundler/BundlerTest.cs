@@ -14,6 +14,36 @@ namespace Test.Bundler;
 public class BundlerTest
 {
     [Theory]
+    [InlineData(2018, false, false, false)]
+    [InlineData(2019, false, false, true)]
+    [InlineData(2020, true, false, true)]
+    [InlineData(2021, true, true, true)]
+    public void BundlingHonorsModernSyntaxTarget(int ecma, bool nullish, bool assignment, bool catchBinding)
+    {
+        var source = "globalThis.f=function(x,y){try{unknown()}catch(e){handled()}" +
+                     "return x===null||x===void 0?y:x};" +
+                     "globalThis.g=function(x,y){return x||(x=y)};" +
+                     "globalThis.h=function(x){return x===null||x===void 0?void 0:x.p};";
+        Dictionary<string, string> output = [];
+        var data = new BundlerTestData(new() { ["index.js"] = source }, "", "ModernSyntax");
+        var bundler = new BundlerImpl(new BundlerCtx(data, output, ""))
+        {
+            CompressOptions = CompressOptions.FastDefault,
+            UseArrowWrapper = false,
+            OutputOptions = new() { Ecma = ecma },
+            PartToMainFilesMap = new Dictionary<string, IReadOnlyList<string>> { ["bundle"] = ["index.js"] }
+        };
+        bundler.Run();
+        var code = output["bundle.js"];
+        Assert.Contains("\"use strict\"", code);
+        Assert.Equal(nullish, code.Contains("??"));
+        Assert.Equal(nullish, code.Contains("?."));
+        Assert.Equal(assignment, code.Contains("||="));
+        Assert.Equal(catchBinding, code.Contains("catch{"));
+        Njsast.Reader.Parser.Parse(code, new() { EcmaVersion = ecma });
+    }
+
+    [Theory]
     [BundlerDataProvider("Input/Bundler")]
     public void ShouldCorrectlyBundle(BundlerTestData testData)
     {

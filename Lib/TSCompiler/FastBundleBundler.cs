@@ -231,7 +231,7 @@ public class FastBundleBundler
                 sourceMapBuilder = new SourceMapBuilder();
                 toplevel.PrintToBuilder(sourceMapBuilder, new()
                 {
-                    Beautify = true, Ecma = _project.Target > ScriptTarget.Es5 ? 6 : 5,
+                    Beautify = true, Ecma = _project.OutputEcmaVersion,
                 });
                 sourceMapBuilder.AddText("//# sourceMappingURL=" + PathUtils.GetFile(_buildResult.BundleJsUrl) +
                                          ".map");

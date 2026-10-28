@@ -41,6 +41,7 @@ public class BundlerImpl
     public IReadOnlyDictionary<string, IReadOnlyList<string>> PartToMainFilesMap;
     public ICompressOptions? CompressOptions;
     public bool LibraryMode { get; set; }
+    public bool UseArrowWrapper { get; set; } = true;
     public bool Mangle;
     public bool MangleWithFrequencyCounting;
     public bool GenerateSourceMap;
@@ -163,7 +164,7 @@ public class BundlerImpl
             else
             {
                 AddExportsFromLazyBundle(splitInfo, topLevelAst);
-                BundlerHelpers.WrapByIIFE(topLevelAst, (OutputOptions?.Ecma ?? 6) >= 6);
+                BundlerHelpers.WrapByIIFE(topLevelAst, UseArrowWrapper && (OutputOptions?.Ecma ?? 6) >= 6);
             }
 
             var backupBody = topLevelAst.Body;
@@ -195,7 +196,7 @@ public class BundlerImpl
                 {
                     TopLevel = LibraryMode,
                     BeforeMangling = LibraryMode ? IgnoreEvalInToplevelScope : IgnoreEvalInTwoScopes
-                });
+                }, OutputOptions?.Ecma ?? 6);
                 stopwatch.Stop();
                 _ctx.ReportTime("Compress", stopwatch.Elapsed);
             }

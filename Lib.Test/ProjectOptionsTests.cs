@@ -12,6 +12,22 @@ namespace Lib.Test;
 
 public class ProjectOptionsTests
 {
+    [Theory]
+    [InlineData(ScriptTarget.Es3, 3)]
+    [InlineData(ScriptTarget.Es5, 5)]
+    [InlineData(ScriptTarget.Es2015, 2015)]
+    [InlineData(ScriptTarget.Es2019, 2019)]
+    [InlineData(ScriptTarget.Es2020, 2020)]
+    [InlineData(ScriptTarget.Es2021, 2021)]
+    [InlineData(ScriptTarget.Es2022, 2022)]
+    [InlineData(ScriptTarget.Esnext, 2022)]
+    public void BundlerTargetFollowsConfiguredCompilerTarget(ScriptTarget target, int expected)
+    {
+        var options = new ProjectOptions { CompilerOptions = new TSCompilerOptions { target = target } };
+        Assert.Equal(expected, options.OutputEcmaVersion);
+        Assert.Equal(2022, new ProjectOptions().OutputEcmaVersion);
+    }
+
     [Fact]
     public void DefaultTSCompilerOptionsUseES2022WithoutDefineClassFields()
     {

@@ -7,6 +7,10 @@ namespace Njsast.Ast;
 /// A key: value object property
 public class AstObjectKeyVal : AstObjectProperty
 {
+    // Unlike a colon property, shorthand/computed __proto__ creates an own data
+    // property. Preserve this distinction even after the value has been mangled.
+    public bool IsPrototypeDataProperty;
+
     public AstObjectKeyVal(string? source, Position startLoc, Position endLoc, AstNode key, AstNode value) : base(
         source, startLoc, endLoc, key, value)
     {
@@ -18,7 +22,8 @@ public class AstObjectKeyVal : AstObjectProperty
 
     public override AstNode ShallowClone()
     {
-        return new AstObjectKeyVal(Source, Start, End, Key, Value);
+        return new AstObjectKeyVal(Source, Start, End, Key, Value)
+            { IsPrototypeDataProperty = IsPrototypeDataProperty };
     }
 
     public override void CodeGen(OutputContext output)
@@ -38,7 +43,7 @@ public class AstObjectKeyVal : AstObjectProperty
             _ => null
         };
 
-        if (allowShortHand &&
+        if (allowShortHand && (keyString != "__proto__" || IsPrototypeDataProperty) &&
             Value is AstSymbol value && keyString != null &&
             GetName(value) == keyString &&
             OutputContext.IsIdentifierString(keyString) &&
@@ -62,7 +67,11 @@ public class AstObjectKeyVal : AstObjectProperty
         }
         else
         {
-            if (keyString != null)
+            if (keyString == "__proto__" && IsPrototypeDataProperty)
+            {
+                output.Print("[\"__proto__\"]");
+            }
+            else if (keyString != null)
             {
                 output.PrintPropertyName(keyString);
             }
@@ -82,7 +91,8 @@ public class AstObjectKeyVal : AstObjectProperty
     {
         if (with is AstObjectKeyVal astObjectKeyVal)
         {
-            return Key.IsStructurallyEquivalentTo(astObjectKeyVal.Key) &&
+            return IsPrototypeDataProperty == astObjectKeyVal.IsPrototypeDataProperty &&
+                   Key.IsStructurallyEquivalentTo(astObjectKeyVal.Key) &&
                    Value.IsStructurallyEquivalentTo(astObjectKeyVal.Value);
         }
 

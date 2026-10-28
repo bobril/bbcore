@@ -88,6 +88,20 @@ public partial class ProjectOptions
     public bool Debug = true;
     public string? HeadlessBrowserStrategy { get; set; }
     public ScriptTarget Target { get; set; }
+    public int OutputEcmaVersion
+    {
+        get
+        {
+            RefreshCompilerOptions();
+            return FinalCompilerOptions!.target switch
+            {
+                ScriptTarget.Es3 => 3,
+                ScriptTarget.Es5 => 5,
+                ScriptTarget.Esnext or null => 2022,
+                { } target => (int)target + 2013
+            };
+        }
+    }
     public bool LibraryMode { get; set; }
     public bool Future { get; set; }
     public bool Validate { get; set; }

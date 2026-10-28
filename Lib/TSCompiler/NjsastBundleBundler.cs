@@ -141,9 +141,12 @@ public partial class NjsastBundleBundler : IBundler, IBundlerCtx
         }
 
         bundler.CompressOptions = compress ? CompressOptions.FastDefault : null;
+        // Keep the established strict function environment (including arguments
+        // and top-level this) when enabling newer expression syntax.
+        bundler.UseArrowWrapper = false;
         bundler.Mangle = mangle;
         bundler.OutputOptions = new()
-            { Beautify = beautify, ShortenBooleans = !beautify, Ecma = _project.Target > ScriptTarget.Es5 ? 6 : 5 };
+            { Beautify = beautify, ShortenBooleans = !beautify, Ecma = _project.OutputEcmaVersion };
         bundler.GenerateSourceMap = BuildSourceMap;
         bundler.GlobalDefines = _project.BuildDefines(_mainBuildResult);
         bundler.LibraryMode = _project.LibraryMode;

@@ -93,6 +93,9 @@ public class AstToplevel : AstScope
     }
 
     public AstToplevel Compress(ICompressOptions? compressOptions = null, ScopeOptions? scopeOptions = null)
+        => Compress(compressOptions, scopeOptions, 6);
+
+    public AstToplevel Compress(ICompressOptions? compressOptions, ScopeOptions? scopeOptions, int ecmaVersion)
     {
         compressOptions ??= CompressOptions.Default;
         scopeOptions ??= new ScopeOptions();
@@ -116,7 +119,7 @@ public class AstToplevel : AstScope
                     var tr = new RemoveSideEffectFreeCodeTreeTransformer();
                     transformed = (AstToplevel) tr.Transform(transformed);
                     if (tr.Modified) shouldIterateAgain = true;
-                    transformed._isScopeFigured = false;
+                    transformed._isScopeFigured = !tr.Modified && !trDetect.Modified;
                 }
             } while (shouldIterateAgain && ++iteration < compressOptions.MaxPasses);
         }
@@ -128,6 +131,7 @@ public class AstToplevel : AstScope
                 if (!transformed._isScopeFigured || iteration > 0)
                     transformed.FigureOutScope(scopeOptions);
                 transformed = (AstToplevel) treeTransformer.Compress(transformed, out shouldIterateAgain);
+                transformed._isScopeFigured = !shouldIterateAgain;
                 if (compressOptions.EnableRemoveSideEffectFreeCode)
                 {
                     transformed.FigureOutScope(scopeOptions);
@@ -136,8 +140,17 @@ public class AstToplevel : AstScope
                     var tr = new RemoveSideEffectFreeCodeTreeTransformer();
                     transformed = (AstToplevel) tr.Transform(transformed);
                     if (tr.Modified) shouldIterateAgain = true;
+                    transformed._isScopeFigured = !tr.Modified && !trDetect.Modified;
                 }
             } while (shouldIterateAgain && ++iteration < compressOptions.MaxPasses);
+        }
+
+        if ((ecmaVersion >= 2015 ? ecmaVersion - 2009 : ecmaVersion) >= 10)
+        {
+            if (!transformed._isScopeFigured) transformed.FigureOutScope(scopeOptions);
+            var modern = new ModernSyntaxTreeTransformer(ecmaVersion);
+            transformed = (AstToplevel)modern.Transform(transformed);
+            if (modern.Modified) transformed._isScopeFigured = false;
         }
 
         return transformed;

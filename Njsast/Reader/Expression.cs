@@ -1123,7 +1123,11 @@ public sealed partial class Parser
             if (method)
                 return new AstConciseMethod(SourceFile, nodeStart, _lastTokEnd, key, value, false, isGenerator,
                     isAsync);
-            return new AstObjectKeyVal(SourceFile, nodeStart, _lastTokEnd, key, value);
+            return new AstObjectKeyVal(SourceFile, nodeStart, _lastTokEnd, key, value)
+            {
+                IsPrototypeDataProperty = (computed || shorthand) &&
+                    (key is AstString { Value: "__proto__" } or AstSymbol { Name: "__proto__" })
+            };
         }
 
         throw new NotImplementedException("parseProperty");
