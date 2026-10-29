@@ -4,6 +4,11 @@
 
 ### Changed
 
+- Faster crawl of sources, which runs on one thread. Finding an export of another module while gathering source info
+  (`import {x} from "..."` used in `b.asset`, `b.sprite`, translation parameters) walked the whole module for each
+  lookup, now one pass per module builds an index of its exports. Parsing of the transpiled JavaScript is done on the
+  worker threads of native transpiler (tsrs) instead of on the crawl thread. In a project with ~2650 sources the crawl
+  thread went from ~9.4 s to ~6.5 s, output is byte identical.
 - Faster builds: released binaries now use the server garbage collector and have dynamic PGO (`TieredPGO`) turned off.
   A build without build cache of a ~2650 source project went from ~27 s to ~22 s and one with build cache from ~20 s to
   ~17 s, at the cost of ~170 MB more memory and ~30-100 ms slower start. `DOTNET_gcServer=0` and `DOTNET_TieredPGO=1`
