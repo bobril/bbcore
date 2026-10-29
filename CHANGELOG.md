@@ -2,6 +2,13 @@
 
 ## [unreleased]
 
+### Changed
+
+- Faster builds: released binaries now use the server garbage collector and have dynamic PGO (`TieredPGO`) turned off.
+  A build without build cache of a ~2650 source project went from ~27 s to ~22 s and one with build cache from ~20 s to
+  ~17 s, at the cost of ~170 MB more memory and ~30-100 ms slower start. `DOTNET_gcServer=0` and `DOTNET_TieredPGO=1`
+  restore the previous behavior.
+
 ## 7.1.0
 
 ### Changed
