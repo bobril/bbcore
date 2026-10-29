@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.1.1
+
 ### Changed
 
 - Faster crawl of sources, which runs on one thread. Finding an export of another module while gathering source info
