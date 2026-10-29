@@ -1286,16 +1286,38 @@ public class BuildModuleCtx : IImportResolver
             _prefetchedTranspiles[fileName] = (source, Task.Run(() =>
             {
                 var compiler = pool.GetNativeTranspiler(nativeExecutable, options);
+                TranspileResult result;
                 try
                 {
-                    return compiler.Transpile(transpileFileName, source);
+                    result = compiler.Transpile(transpileFileName, source);
                 }
                 finally
                 {
                     pool.ReleaseNativeTranspiler(compiler);
                 }
+
+                ParseAhead(result);
+                return result;
             }));
             running++;
+        }
+    }
+
+    // Parsing and scope analysis of the transpiled JavaScript is pure function of its text, so it is done here on the worker
+    // thread instead of on the sequential crawl. When it fails the crawl parses again and reports the error as before.
+    static void ParseAhead(TranspileResult result)
+    {
+        if (result.Diagnostics != null && result.Diagnostics.Exists(d => d.IsError))
+            return;
+        try
+        {
+            var toplevel = new Parser(new(), SourceMap.RemoveLinkToSourceMap(result.JavaScript)).Parse();
+            toplevel.FigureOutScope();
+            result.Ast = toplevel;
+        }
+        catch (Exception)
+        {
+            result.Ast = null;
         }
     }
 
