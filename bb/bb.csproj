@@ -11,7 +11,13 @@
         <!-- Trimming drops precompiled code even from framework, without it everything is JIT compiled on each start -->
         <PublishReadyToRun>true</PublishReadyToRun>
         <InvariantGlobalization>true</InvariantGlobalization>
+        <!-- A build is a short CPU bound run with a lot of allocations: parallel GC pauses are much shorter and instrumented
+             tier-0 code (dynamic PGO) costs more than it gains in a process which lives for tens of seconds -->
+        <TieredPGO>false</TieredPGO>
     </PropertyGroup>
+    <ItemGroup>
+        <RuntimeHostConfigurationOption Include="System.GC.Server" Value="true"/>
+    </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="../Lib/Lib.csproj"/>
     </ItemGroup>
