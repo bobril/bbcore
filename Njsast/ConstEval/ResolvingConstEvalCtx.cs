@@ -29,13 +29,12 @@ public class ResolvingConstEvalCtx : IConstEvalCtx
         try
         {
             var ctx2 = ctx.CreateForSourceName(fileName);
-            var treeWalker = new ExportFinder((string)export, ctx2);
-            treeWalker.Walk(content);
-            if (treeWalker.Result == null)
+            var (finderResult, completeResult) = ExportIndex.For(content).Find((string)export, ctx2);
+            if (finderResult == null)
                 return null;
-            var result = treeWalker.Result.ConstValue(ctx2);
+            var result = finderResult.ConstValue(ctx2);
             if (result == null) return null;
-            if (treeWalker.CompleteResult)
+            if (completeResult)
             {
                 if (result is IReadOnlyDictionary<object, object> dict)
                 {

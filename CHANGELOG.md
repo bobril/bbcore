@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Changed
+
+- Faster crawl of sources, which runs on one thread. Finding an export of another module while gathering source info
+  (`import {x} from "..."` used in `b.asset`, `b.sprite`, translation parameters) walked the whole module for each
+  lookup, now one pass per module builds an index of its exports. Parsing of the transpiled JavaScript is done on the
+  worker threads of native transpiler (tsrs) instead of on the crawl thread. In a project with ~2650 sources the crawl
+  thread went from ~9.4 s to ~6.5 s, output is byte identical.
+
 ## 7.1.0
 
 ### Changed
