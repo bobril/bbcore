@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.1.2
+
 ### Changed
 
 - Default tsrs version updated to `0.21.0-ts7.1.0-beta`: faster checker, language server frees dropped sessions. It
