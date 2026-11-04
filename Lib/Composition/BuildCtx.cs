@@ -594,11 +594,27 @@ public class BuildCtx
         }
     }
 
+    // tsrs 0.21 --watch exits on Windows with "not supported", so interactive typecheck falls back like when tsrs is
+    // missing: TypeScript 7 (tsc), then Go TypeScript (tsgo). One time builds (bb b) use tsrs without --watch.
+    bool TsrsWatchUnsupported => !_buildOnceOnly && OperatingSystem.IsWindows();
+
+    bool _tsrsWatchFallbackReported;
+
     (NativeTypeScriptKind, string?) DetectNativeTypeScriptDirectory(ProjectOptions project, string? tsrsExecutable,
         string? tscExecutable)
     {
         if (project.Tsrs && tsrsExecutable != null)
-            return (NativeTypeScriptKind.Tsrs, tsrsExecutable);
+        {
+            if (!TsrsWatchUnsupported)
+                return (NativeTypeScriptKind.Tsrs, tsrsExecutable);
+            if (!_tsrsWatchFallbackReported)
+            {
+                _tsrsWatchFallbackReported = true;
+                _logger.Info("tsrs does not support watch mode on Windows, interactive typecheck falls back to " +
+                             "TypeScript 7 (tsc), then Go TypeScript (tsgo)");
+            }
+        }
+
         if (tscExecutable != null)
             return (NativeTypeScriptKind.Tsc, tscExecutable);
         if (project.Tsrs)
@@ -636,7 +652,8 @@ public class BuildCtx
     (string? Tsrs, string? Tsc) ResolveNativeCompilers(ProjectOptions project)
     {
         var tsrs = project.Tsrs || project.ValidateTsrs ? ResolveTsrsExecutable(project) : null;
-        var tsc = ResolveTscExecutable(project, (project.Tsrs || project.ValidateTsrs) && tsrs == null);
+        var tsc = ResolveTscExecutable(project,
+            (project.Tsrs || project.ValidateTsrs) && (tsrs == null || project.Tsrs && TsrsWatchUnsupported));
         return (tsrs, tsc);
     }
 

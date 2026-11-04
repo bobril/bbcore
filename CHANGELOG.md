@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Interactive `bb` with `tsrs: true` on Windows did not typecheck at all and reported no errors: tsrs (up to 0.21.0)
+  does not support `--watch` on Windows and exits with "not supported". Interactive typecheck on Windows now falls
+  back to TypeScript 7 (tsc), then Go TypeScript (tsgo), same as when tsrs is not available. One time builds (`bb b`)
+  still typecheck with tsrs, transpilation with tsrs is unchanged.
+- Native typecheck watch process (tsrs, tsc, tsgo) that exits unexpectedly is reported as typecheck error with its
+  exit code and error message, instead of silently reporting no errors. It is started again on next rebuild.
+
 ## 7.1.1
 
 ### Changed

@@ -244,6 +244,68 @@ public class TsrsTests
     }
 
     [Fact]
+    public void WatchProcessExitIsReportedAsError()
+    {
+        // Like tsrs --watch on Windows, which exits with "not supported" instead of watching
+        if (OperatingSystem.IsWindows())
+            return;
+        var dir = Path.Combine(Path.GetTempPath(), "bbcore-watch-exit-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var executable = Path.Combine(dir, "fake-tsrs");
+            File.WriteAllText(executable,
+                "#!/bin/sh\necho 'error: watch mode (--watch) on this platform is not supported by tsrs.' >&2\nexit 2\n");
+            File.SetUnixFileMode(executable, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            File.WriteAllText(Path.Combine(dir, "a.ts"), "");
+            using var compiler = new NativeTsCompiler(executable, new DummyLogger(), NativeTypeScriptKind.Tsrs);
+            compiler.CreateProgram(dir, ["a.ts"]);
+            var diagnostic = Assert.Single(compiler.GetDiagnostics());
+            Assert.True(diagnostic.IsError);
+            Assert.Contains("exit code 2", diagnostic.Text);
+            Assert.Contains("not supported by tsrs", diagnostic.Text);
+
+            // Rebuild clears diagnostics, exited watch process is started again and reports error again
+            compiler.ClearDiagnostics();
+            compiler.TriggerUpdate();
+            Assert.Single(compiler.GetDiagnostics());
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public void RealTsrsWatchReportsErrorsWhenAvailable()
+    {
+        // Runs only when TSRS_BINARY points to a tsrs native binary, on platform where tsrs supports --watch
+        var tsrsExecutable = Environment.GetEnvironmentVariable(TsrsLocator.BinaryEnvironmentVariable);
+        if (string.IsNullOrEmpty(tsrsExecutable) || !File.Exists(tsrsExecutable) || OperatingSystem.IsWindows())
+            return;
+        var dir = Path.Combine(Path.GetTempPath(), "bbcore-tsrs-watch-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "tsconfig.json"), "{ \"compilerOptions\": { \"strict\": true } }");
+            File.WriteAllText(Path.Combine(dir, "a.ts"), "export const a: number = \"x\";\n");
+            using var compiler = new NativeTsCompiler(tsrsExecutable, new DummyLogger(), NativeTypeScriptKind.Tsrs);
+            compiler.CreateProgram(dir, ["a.ts"]);
+            var diagnostic = Assert.Single(compiler.GetDiagnostics());
+            Assert.Equal(2322, diagnostic.Code);
+
+            File.WriteAllText(Path.Combine(dir, "a.ts"), "export const a: number = 1;\n");
+            compiler.ClearDiagnostics();
+            compiler.TriggerUpdate();
+            Assert.Empty(compiler.GetDiagnostics());
+        }
+        finally
+        {
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
     public void CompilerOptionsUseTypeScript7EnumNumbers()
     {
         var options = NativeApiTranspiler.ToApiCompilerOptions(new TSCompilerOptions

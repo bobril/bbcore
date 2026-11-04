@@ -50,6 +50,8 @@ public sealed partial class NativeTsCompiler : ITSCompiler
     TaskCompletionSource<int>? _watchCompletion;
     int _watchGeneration;
     bool _watchCompiling;
+    bool _watchExited;
+    string? _lastWatchOutput;
     string _currentDirectory = "";
     string _typeCheckProjectPath = "tsconfig.json";
     string[] _mainFiles = [];
@@ -107,6 +109,18 @@ public sealed partial class NativeTsCompiler : ITSCompiler
     public void TriggerUpdate()
     {
         WriteTypeCheckProject(_mainFiles);
+        bool exited;
+        lock (_lock)
+            exited = _watchExited;
+        if (exited)
+        {
+            // Watch process died (crash, unsupported platform), start it again to report current state
+            StopWatchProcess();
+            StartWatchProcess();
+            WaitForWatchCompilation(0, true);
+            return;
+        }
+
         WaitForWatchCompilation(_watchGeneration, false);
     }
 
@@ -205,21 +219,55 @@ public sealed partial class NativeTsCompiler : ITSCompiler
             _watchDiagnostics.Clear();
             _watchGeneration = 0;
             _watchCompiling = true;
+            _watchExited = false;
+            _lastWatchOutput = null;
             _watchCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
-        _watchProcess = Process.Start(start)!;
-        RegisterWatchProcess(_watchProcess);
-        _watchProcess.EnableRaisingEvents = true;
-        _watchProcess.Exited += (_, _) =>
+        var process = Process.Start(start)!;
+        lock (_lock)
+            _watchProcess = process;
+        RegisterWatchProcess(process);
+        process.EnableRaisingEvents = true;
+        process.Exited += (_, _) => HandleWatchProcessExit(process);
+        process.OutputDataReceived += (_, args) => HandleWatchLine(args.Data);
+        process.ErrorDataReceived += (_, args) => HandleWatchLine(args.Data);
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+    }
+
+    // Watch process should run until StopWatchProcess, exit before that is reported as error, otherwise typecheck
+    // would silently report no errors (like tsrs --watch on Windows, which exits with "not supported")
+    void HandleWatchProcessExit(Process process)
+    {
+        int exitCode;
+        try
         {
-            lock (_lock)
-                _watchCompletion?.TrySetResult(_watchGeneration);
-        };
-        _watchProcess.OutputDataReceived += (_, args) => HandleWatchLine(args.Data);
-        _watchProcess.ErrorDataReceived += (_, args) => HandleWatchLine(args.Data);
-        _watchProcess.BeginOutputReadLine();
-        _watchProcess.BeginErrorReadLine();
+            // Waits for redirected output to be fully read
+            process.WaitForExit();
+            exitCode = process.ExitCode;
+        }
+        catch
+        {
+            exitCode = -1;
+        }
+
+        lock (_lock)
+        {
+            if (ReferenceEquals(process, _watchProcess))
+            {
+                _watchExited = true;
+                var text = GetDisplayName(_kind) + " watch process exited unexpectedly with exit code " +
+                           exitCode.ToString(CultureInfo.InvariantCulture) +
+                           (_lastWatchOutput != null ? ": " + _lastWatchOutput : "");
+                _diagnostics = [.. _watchDiagnostics, new Diagnostic { IsError = true, IsSemantic = true, Text = text }];
+                _watchDiagnostics.Clear();
+                _watchCompiling = false;
+                _watchGeneration++;
+            }
+
+            _watchCompletion?.TrySetResult(_watchGeneration);
+        }
     }
 
     // tsrs --watch keeps running when bb exits, so kill watch processes on exit and on termination signals
@@ -275,21 +323,28 @@ public sealed partial class NativeTsCompiler : ITSCompiler
 
     void StopWatchProcess()
     {
-        if (_watchProcess == null)
+        Process? process;
+        lock (_lock)
+        {
+            process = _watchProcess;
+            // Cleared before kill, so exit handler knows this exit is expected
+            _watchProcess = null;
+        }
+
+        if (process == null)
             return;
-        UnregisterWatchProcess(_watchProcess);
+        UnregisterWatchProcess(process);
         try
         {
-            if (!_watchProcess.HasExited)
-                _watchProcess.Kill(true);
+            if (!process.HasExited)
+                process.Kill(true);
         }
         catch
         {
         }
         finally
         {
-            _watchProcess.Dispose();
-            _watchProcess = null;
+            process.Dispose();
         }
     }
 
@@ -369,6 +424,7 @@ public sealed partial class NativeTsCompiler : ITSCompiler
             {
                 _watchDiagnostics.Clear();
                 _watchCompiling = true;
+                _lastWatchOutput = null;
             }
         }
 
@@ -393,6 +449,10 @@ public sealed partial class NativeTsCompiler : ITSCompiler
             return;
         }
 
+        // Remember error message (tsrs prints "error: ..."), otherwise last line, to report unexpected exit
+        lock (_lock)
+            if (_lastWatchOutput == null || !_lastWatchOutput.StartsWith("error", StringComparison.OrdinalIgnoreCase))
+                _lastWatchOutput = line;
         if (_logger.Verbose)
             _logger.Info(line);
     }
