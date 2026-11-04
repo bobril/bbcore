@@ -2,6 +2,11 @@
 
 ## [unreleased]
 
+### Changed
+
+- Default tsrs version updated to `0.21.0-ts7.1.0-beta`: faster checker, language server frees dropped sessions. It
+  ports the same TypeScript commit as 0.20.0, so the fallback TypeScript 7 (tsc) version is unchanged.
+
 ### Fixed
 
 - Interactive `bb` with `tsrs: true` on Windows did not typecheck at all and reported no errors: tsrs (up to 0.21.0)
