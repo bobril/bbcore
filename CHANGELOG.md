@@ -2,6 +2,10 @@
 
 ## [unreleased]
 
+### Changed
+
+- Bbcore.Lib NuGet package declares MIT license and includes README with usage examples.
+
 ## 7.1.2
 
 ### Changed

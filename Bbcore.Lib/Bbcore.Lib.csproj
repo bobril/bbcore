@@ -5,11 +5,21 @@
         <LangVersion>latest</LangVersion>
         <PackageId>Bbcore.Lib</PackageId>
         <Version>7.1.2</Version>
-        <PackageProjectUrl>https://github.com/Bobris/bbcore</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/bobril/bbcore</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/bobril/bbcore</RepositoryUrl>
         <Authors>Tomáš Zálešák, Boris Letocha</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>Bobril build (bbcore) as a library: TypeScript transpilation, typecheck and bundling</Description>
+        <PackageTags>Bobril TypeScript Build Bundling</PackageTags>
         <Nullable>enable</Nullable>
         <DefineConstants>$(DefineConstants);BBCORE_LIB</DefineConstants>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="BTDB" Version="35.13.0"/>
