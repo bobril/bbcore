@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Default tsrs version updated to `0.22.0-ts7.1.0-beta`: faster checker under its fast preset, and the language server
+  supports `contentMappers`. It ports the same TypeScript commit as 0.21.0, so the fallback TypeScript 7 (tsc) version
+  is unchanged.
 - Bbcore.Lib NuGet package declares MIT license and includes README with usage examples.
 
 ## 7.1.2
