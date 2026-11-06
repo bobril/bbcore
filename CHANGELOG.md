@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.1.3
+
 ### Changed
 
 - Default tsrs version updated to `0.22.0-ts7.1.0-beta`: faster checker under its fast preset, and the language server
