@@ -122,7 +122,7 @@ public class TsrsTests
     }
 
     [Fact]
-    public void InstallerMoveWaitsForHeldFile()
+    public async System.Threading.Tasks.Task InstallerMoveWaitsForHeldFile()
     {
         // On Windows directory with open file (like binary held by antivirus) cannot be renamed until it is closed
         var dir = Path.Combine(Path.GetTempPath(), "bbcore-install-move-" + Guid.NewGuid().ToString("N"));
@@ -136,7 +136,7 @@ public class TsrsTests
             var held = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
             var release = System.Threading.Tasks.Task.Delay(700).ContinueWith(_ => held.Dispose());
             NativePackageInstaller.MoveDirectory(source, target);
-            release.Wait();
+            await release;
             Assert.False(Directory.Exists(source));
             Assert.Equal("binary", File.ReadAllText(Path.Combine(target, "tsrs.exe")));
         }
