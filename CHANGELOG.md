@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.1.4
+
 ### Fixed
 
 - Installing tsrs or TypeScript 7 native package on Windows could fail with "Access to the path ... is denied" and
