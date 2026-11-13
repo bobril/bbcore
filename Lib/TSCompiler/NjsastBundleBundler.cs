@@ -80,7 +80,7 @@ public partial class NjsastBundleBundler : IBundler, IBundlerCtx
         if (cssToBundle.Count > 0)
         {
             string cssPath = _mainBuildResult.AllocateName("bundle.css");
-            var cssProcessor = new CssProcessor(_project.Tools);
+            using var cssProcessor = new CssProcessor(_project.Tools);
             cssProcessor.ForceNativeCss = _project.Future;
             var cssContent = cssProcessor.ConcatenateAndMinifyCss(cssToBundle, (string url, string from) =>
             {

@@ -288,13 +288,21 @@ public class BuildCtx
                 }
 
                 _typeChecker = CreateTypeChecker();
-                if (_nativeTypeScriptDirectory != null)
-                    ShowNativeTypeChecker(_typeChecker.GetTSVersion());
-                _typeChecker.ClearDiagnostics();
-                _typeChecker.CheckProgram(_currentDirectory, MakeSourceListArray());
-                _lastSemantics = _typeChecker.GetDiagnostics().ToList();
-                ReleaseTypeChecker(_typeChecker);
-                _typeChecker = null;
+                try
+                {
+                    if (_nativeTypeScriptDirectory != null)
+                        ShowNativeTypeChecker(_typeChecker.GetTSVersion());
+                    _typeChecker.ClearDiagnostics();
+                    _typeChecker.CheckProgram(_currentDirectory, MakeSourceListArray());
+                    _lastSemantics = _typeChecker.GetDiagnostics().ToList();
+                }
+                finally
+                {
+                    // Always return it to the pool, CompilerPool.FreeMemory waits for all borrowed compilers
+                    ReleaseTypeChecker(_typeChecker);
+                    _typeChecker = null;
+                }
+
                 return;
         }
 

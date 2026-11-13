@@ -2,6 +2,15 @@
 
 ## [unreleased]
 
+### Fixed
+
+- `bb build` and `bb test` could crash with exit code 139 (SIGSEGV) right after "Build done" on Linux and macOS when
+  the project uses TypeScript running in V8. Pooled JavaScript engines were disposed on a background thread while the
+  process was already exiting, and V8 keeps running background tasks even after the engines are disposed, while exit
+  tears down V8's native global state. Both commands now wait until the engines are disposed, and bb ends the
+  process without running native static destructors. A type check failing with an exception now always returns its
+  compiler to the pool, and the CSS processor used for bundling is disposed.
+
 ## 7.1.4
 
 ### Fixed
