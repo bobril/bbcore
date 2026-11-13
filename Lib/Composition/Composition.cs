@@ -732,6 +732,7 @@ public partial class Composition
         var errors = 0;
         var warnings = 0;
         var messages = new List<Diagnostic>();
+        Task? freeMemory = null;
         try
         {
             _logger.WriteLine("Build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
@@ -751,7 +752,7 @@ public partial class Composition
                 bCommand.UpdateTranslations.Value ? "no" : bCommand.TypeCheck.Value!);
             ctx.Build(proj, true, buildResult, _mainBuildResult, 1, includeTestSourcesInBuild: false);
             ctx.BuildSubProjects(proj, true, buildResult, _mainBuildResult, 1);
-            _compilerPool.FreeMemory().GetAwaiter();
+            freeMemory = _compilerPool.FreeMemory();
             if (!ctx.OnlyTypeCheck)
                 proj.FillOutputByAdditionalResourcesDirectory(buildResult.Modules, _mainBuildResult);
             IncludeMessages(proj, buildResult, ref errors, ref warnings, messages);
@@ -812,7 +813,22 @@ public partial class Composition
             $"Build done in {duration.TotalSeconds.ToString("F1", CultureInfo.InvariantCulture)}s with {Plural(errors, "error")} and {Plural(warnings, "warning")} and has {Plural(_mainBuildResult.FilesContent.Count, "file")}{_mainBuildResult.TranspileStats}",
             color);
 
+        WaitForJsEnginesDisposal(freeMemory);
         Environment.ExitCode = errors != 0 ? 1 : 0;
+    }
+
+    // FreeMemory disposes pooled V8 engines once the background type check returns its compiler. Process exit must
+    // not race with that disposal (or with a still running type check), otherwise ClearScript crashes with SIGSEGV.
+    void WaitForJsEnginesDisposal(Task? freeMemory)
+    {
+        try
+        {
+            (freeMemory ?? _compilerPool.FreeMemory()).Wait();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Failed to dispose JavaScript engines: " + ex);
+        }
     }
 
     void PrintMessages(IList<Diagnostic> messages, bool onlySemantic = false)
@@ -892,6 +908,7 @@ public partial class Composition
         var incompleteTest = false;
         var messages = new List<Diagnostic>();
         var totalFiles = 0;
+        Task? freeMemory = null;
         try
         {
             _logger.WriteLine("Test build started " + proj.Owner.Owner.FullPath, ConsoleColor.Blue);
@@ -914,7 +931,7 @@ public partial class Composition
                 proj.FillOutputByAdditionalResourcesDirectory(testBuildResult.Modules, _mainBuildResult);
                 fastBundle.Build("bb/base", true);
                 fastBundle.BuildHtml(true);
-                _compilerPool.FreeMemory().GetAwaiter();
+                freeMemory = _compilerPool.FreeMemory();
                 if (testCommand.Dir.Value != null)
                 {
                     var startWrite = DateTime.UtcNow;
@@ -1075,6 +1092,7 @@ public partial class Composition
             }
         }
 
+        WaitForJsEnginesDisposal(freeMemory);
         Environment.ExitCode = errors + testFailures != 0 || incompleteTest ? 1 : 0;
         _logger.Info("Exiting with code " + Environment.ExitCode);
     }
