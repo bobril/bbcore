@@ -2,6 +2,14 @@
 
 ## [unreleased]
 
+### Fixed
+
+- Installing tsrs or TypeScript 7 native package on Windows could fail with "Access to the path ... is denied" and
+  fall back to TypeScript 7 or tsgo. The just downloaded and verified binary is often still held open by antivirus
+  (longer for unsigned `tsrs.exe`), so its temporary folder could not be renamed. The rename is now retried for about
+  15 seconds, failure to delete the temporary folder no longer fails installation, and temporary folders left by
+  earlier failed installations are removed.
+
 ## 7.1.3
 
 ### Changed

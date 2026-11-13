@@ -94,9 +94,12 @@ public class TsrsTests
     public void InstallerDownloadsTsrsWhenEnabled()
     {
         // Downloads from npm, runs only with TSRS_INSTALL_TEST=1 on platform with tsrs build
-        if (!InstallTestsEnabled || !(OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() &&
-                System.Runtime.InteropServices.RuntimeInformation.OSArchitecture ==
-                System.Runtime.InteropServices.Architecture.Arm64))
+        var arch = System.Runtime.InteropServices.RuntimeInformation.OSArchitecture;
+        if (!InstallTestsEnabled || !(OperatingSystem.IsLinux() ||
+                                      OperatingSystem.IsMacOS() &&
+                                      arch == System.Runtime.InteropServices.Architecture.Arm64 ||
+                                      OperatingSystem.IsWindows() &&
+                                      arch == System.Runtime.InteropServices.Architecture.X64))
             return;
         var tools = Path.Combine(Path.GetTempPath(), "bbcore-tsrs-install-" + Guid.NewGuid().ToString("N"));
         try
@@ -114,8 +117,80 @@ public class TsrsTests
         }
         finally
         {
-            if (Directory.Exists(tools))
-                Directory.Delete(tools, true);
+            NativePackageInstaller.TryDeleteDirectory(tools);
+        }
+    }
+
+    [Fact]
+    public void InstallerMoveWaitsForHeldFile()
+    {
+        // On Windows directory with open file (like binary held by antivirus) cannot be renamed until it is closed
+        var dir = Path.Combine(Path.GetTempPath(), "bbcore-install-move-" + Guid.NewGuid().ToString("N"));
+        var source = Path.Combine(dir, "win32-x64.tmp-1");
+        var target = Path.Combine(dir, "win32-x64");
+        Directory.CreateDirectory(source);
+        try
+        {
+            var file = Path.Combine(source, "tsrs.exe");
+            File.WriteAllText(file, "binary");
+            var held = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var release = System.Threading.Tasks.Task.Delay(700).ContinueWith(_ => held.Dispose());
+            NativePackageInstaller.MoveDirectory(source, target);
+            release.Wait();
+            Assert.False(Directory.Exists(source));
+            Assert.Equal("binary", File.ReadAllText(Path.Combine(target, "tsrs.exe")));
+        }
+        finally
+        {
+            NativePackageInstaller.TryDeleteDirectory(dir);
+        }
+    }
+
+    [Fact]
+    public void InstallerMoveKeepsDirectoryInstalledByAnotherProcess()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "bbcore-install-move-" + Guid.NewGuid().ToString("N"));
+        var source = Path.Combine(dir, "win32-x64.tmp-1");
+        var target = Path.Combine(dir, "win32-x64");
+        Directory.CreateDirectory(source);
+        Directory.CreateDirectory(target);
+        try
+        {
+            File.WriteAllText(Path.Combine(source, "tsrs.exe"), "new");
+            File.WriteAllText(Path.Combine(target, "tsrs.exe"), "installed");
+            NativePackageInstaller.MoveDirectory(source, target);
+            Assert.Equal("installed", File.ReadAllText(Path.Combine(target, "tsrs.exe")));
+        }
+        finally
+        {
+            NativePackageInstaller.TryDeleteDirectory(dir);
+        }
+    }
+
+    [Fact]
+    public void InstallerDeletesStaleTemporaryDirectories()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "bbcore-install-stale-" + Guid.NewGuid().ToString("N"));
+        var stale = Path.Combine(dir, "win32-x64.tmp-stale");
+        var recent = Path.Combine(dir, "win32-x64.tmp-recent");
+        var otherPlatform = Path.Combine(dir, "win32-arm64.tmp-stale");
+        var installed = Path.Combine(dir, "win32-x64");
+        foreach (var d in new[] { stale, recent, otherPlatform, installed })
+            Directory.CreateDirectory(d);
+        try
+        {
+            File.WriteAllText(Path.Combine(stale, "tsrs.exe"), "");
+            foreach (var d in new[] { stale, otherPlatform, installed })
+                Directory.SetLastWriteTimeUtc(d, DateTime.UtcNow.AddHours(-2));
+            NativePackageInstaller.DeleteStaleTemporaryDirectories(dir, "win32-x64");
+            Assert.False(Directory.Exists(stale));
+            Assert.True(Directory.Exists(recent));
+            Assert.True(Directory.Exists(otherPlatform));
+            Assert.True(Directory.Exists(installed));
+        }
+        finally
+        {
+            NativePackageInstaller.TryDeleteDirectory(dir);
         }
     }
 
@@ -133,8 +208,7 @@ public class TsrsTests
         }
         finally
         {
-            if (Directory.Exists(tools))
-                Directory.Delete(tools, true);
+            NativePackageInstaller.TryDeleteDirectory(tools);
         }
     }
 
@@ -216,8 +290,7 @@ public class TsrsTests
         }
         finally
         {
-            if (Directory.Exists(tools))
-                Directory.Delete(tools, true);
+            NativePackageInstaller.TryDeleteDirectory(tools);
         }
     }
 

@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Lib.Registry;
 using Lib.Utils;
@@ -99,7 +100,8 @@ public static class NativePackageInstaller
         var bytes = await npm.GetPackageTgz(packageName, tgzName);
         // Extract to temporary directory and move it into place, so parallel bb processes never see half written binary
         var targetDirectory = PathUtils.Join(installDirectory, platform);
-        var temporaryDirectory = targetDirectory + ".tmp-" + Guid.NewGuid().ToString("N");
+        DeleteStaleTemporaryDirectories(installDirectory, platform);
+        var temporaryDirectory = targetDirectory + TemporarySuffix + Guid.NewGuid().ToString("N");
         Directory.CreateDirectory(temporaryDirectory);
         try
         {
@@ -121,18 +123,88 @@ public static class NativePackageInstaller
                     UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead |
                     UnixFileMode.OtherExecute);
             VerifyRuns(temporaryExecutable, package);
-            if (!Directory.Exists(targetDirectory))
-                Directory.Move(temporaryDirectory, targetDirectory);
+            MoveDirectory(temporaryDirectory, targetDirectory);
         }
         finally
         {
-            if (Directory.Exists(temporaryDirectory))
-                Directory.Delete(temporaryDirectory, true);
+            TryDeleteDirectory(temporaryDirectory);
         }
 
         var executable = PathUtils.Join(targetDirectory, package.ExecutablePath);
         logger.Info("Installed " + package.DisplayName + " " + version + " to " + executable);
         return executable;
+    }
+
+    const string TemporarySuffix = ".tmp-";
+    const int MoveAttempts = 20;
+    const int DeleteAttempts = 5;
+
+    // Waits before next attempt: 100, 200, 300, ... ms up to 1 s, together about 15 s for all move attempts
+    internal static Action<int> RetryDelay = attempt => Thread.Sleep(Math.Min(attempt * 100, 1000));
+
+    // On Windows a directory cannot be renamed while any file in it is open. Just written and just executed binary is
+    // often held for a while by antivirus real time scanning (much longer for unsigned binary it sees first time) or by
+    // loader after process exits, so the move is retried. Directory installed meanwhile by another bb process is used.
+    internal static void MoveDirectory(string source, string target)
+    {
+        for (var attempt = 1;; attempt++)
+        {
+            if (Directory.Exists(target))
+                return;
+            try
+            {
+                Directory.Move(source, target);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (Directory.Exists(target))
+                    return;
+                if (attempt >= MoveAttempts)
+                    throw new IOException("moving " + source + " to " + target + " failed " + attempt +
+                                          " times, file is probably held by antivirus: " + ex.Message, ex);
+                RetryDelay(attempt);
+            }
+        }
+    }
+
+    // Best effort, failure to remove temporary directory must not fail installation
+    internal static bool TryDeleteDirectory(string directory)
+    {
+        for (var attempt = 1;; attempt++)
+        {
+            try
+            {
+                if (Directory.Exists(directory))
+                    Directory.Delete(directory, true);
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (attempt >= DeleteAttempts)
+                    return false;
+                RetryDelay(attempt);
+            }
+        }
+    }
+
+    // Leftovers of earlier installations which could not delete their temporary directory. Recent ones may belong to
+    // installation running in parallel bb process, so they are kept.
+    internal static void DeleteStaleTemporaryDirectories(string installDirectory, string platform)
+    {
+        try
+        {
+            if (!Directory.Exists(installDirectory))
+                return;
+            foreach (var directory in Directory.GetDirectories(installDirectory, platform + TemporarySuffix + "*"))
+            {
+                if (DateTime.UtcNow - Directory.GetLastWriteTimeUtc(directory) > TimeSpan.FromHours(1))
+                    TryDeleteDirectory(directory);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
     }
 
     static void VerifyRuns(string executable, NativePackage package)

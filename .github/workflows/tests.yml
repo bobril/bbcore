@@ -25,6 +25,8 @@ jobs:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
+      # Downloads tsrs and TypeScript 7 native packages from npm and installs them like bb does
+      TSRS_INSTALL_TEST: "1"
     steps:
       # Parser/printer snapshots must retain the same line endings on Windows.
       - name: Preserve fixture line endings
