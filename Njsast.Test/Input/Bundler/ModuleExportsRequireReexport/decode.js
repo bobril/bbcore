@@ -1,1 +1,1 @@
-module.exports = require("./dist/commonjs/decode");
+module.exports = require("./lib/commonjs/decode");
