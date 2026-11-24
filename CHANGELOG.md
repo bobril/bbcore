@@ -7,7 +7,8 @@
 - Production bundle could reference an undeclared variable (`__export_$`) for a module doing
   `module.exports = require("...")`, failing only at runtime (for example `TypeError: LD.EntityDecoder is not a
   constructor` with `html-to-text` 10 / `entities` 7). The whole export object of the required module is now created
-  before modules are concatenated.
+  before modules are concatenated. If the bundler ever needs to create such object later, the build now fails instead
+  of silently emitting reference to an undeclared variable.
 - Import of a package subpath (`pkg/sub/path`) now uses its target from `exports` in package.json when that subpath is
   listed there exactly. Conditions `browser`, `import`, `module` and `default` are tried in package.json order,
   `require` and `types` are skipped. Subpath patterns (`./*`) and subpaths not listed in `exports` resolve as before.

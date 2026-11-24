@@ -57,6 +57,9 @@ public class SourceFile
     public bool OnlyWholeExport;
     public bool ExternalImport;
 
+    /// Ast of this file was already copied into bundle, so adding new declarations into it would be lost
+    public bool AddedToBundle;
+
     /// set of file name and export name path (think namespaces). Empty array in Path means need whole module imports as object.
     public HashSet<FileAndPath> NeedsImports = new();
 
@@ -78,6 +81,7 @@ public class SourceFile
 
     public void CreateWholeExport(string[] needPath, AstToplevel? ast = null)
     {
+        var lateCreation = ast == null && AddedToBundle;
         ast ??= Ast;
         if (ast == null) throw new InvalidOperationException("ExternalImport cannot be used to create WholeExport");
         if (needPath.Length >= 1 && needPath[0] == "default" &&
@@ -88,6 +92,11 @@ public class SourceFile
 
         Exports!.EnsureKeyExists(needPath, tuples =>
         {
+            if (lateCreation)
+                throw new InvalidOperationException("Bundler needs whole export" +
+                                                    (needPath.Length > 0 ? " " + string.Join('.', needPath) : "") +
+                                                    " of " + Name +
+                                                    " after this module was already added to bundle. This is bug in bundler, please report it.");
             var init = new AstObject(ast);
             foreach (var (propName, value) in tuples)
             {

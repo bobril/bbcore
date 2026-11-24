@@ -147,6 +147,7 @@ public class BundlerImpl
                 _currentFileIdent = BundlerHelpers.FileNameToIdent(sourceFile.Name);
                 BundlerHelpers.AppendToplevelWithRename(topLevelAst, sourceFile.Ast!, _currentFileIdent,
                     knownDeclaredGlobals, BeforeAdd);
+                sourceFile.AddedToBundle = true;
             }
 
             if (LibraryMode)
