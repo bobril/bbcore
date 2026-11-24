@@ -438,7 +438,9 @@ public class BuildModuleCtx : IImportResolver
 
             if (moduleName.Length != name.Length)
             {
-                fn = PathUtils.Join(moduleInfo.Owner.FullPath, name.Substring(moduleName.Length + 1));
+                var subpath = name.Substring(moduleName.Length + 1);
+                fn = PathUtils.Join(moduleInfo.Owner.FullPath,
+                    moduleInfo.ResolveExportsSubpath("./" + subpath) ?? subpath);
                 relative = true;
                 goto relative;
             }

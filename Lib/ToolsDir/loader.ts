@@ -15,6 +15,8 @@ interface IR {
     r(name: string, parent: string): any;
 
     map?: { [name: string]: string };
+    // package subpaths from "exports" in package.json, like "entities/decode" -> "node_modules/entities/dist/esm/decode.js"
+    e?: { [name: string]: string };
 }
 
 const R: IR = function (name: string, fnOrJson: ModuleFun | any) {
@@ -56,6 +58,8 @@ R.r = function (name: string, parent: string) {
         }
         if (parts.length <= 1) {
             p = R.map![name.toLowerCase()];
+        } else if (R.e && (lp = R.e[name.toLowerCase()]) != null) {
+            p = lp;
         } else {
             p = parts[0];
             if ((parts[0] = R.map![p.toLowerCase() + "/"]) == null) {

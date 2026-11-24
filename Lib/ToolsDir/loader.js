@@ -37,6 +37,9 @@ R.r = function (name, parent) {
         if (parts.length <= 1) {
             p = R.map[name.toLowerCase()];
         }
+        else if (R.e && (lp = R.e[name.toLowerCase()]) != null) {
+            p = lp;
+        }
         else {
             p = parts[0];
             if ((parts[0] = R.map[p.toLowerCase() + "/"]) == null) {

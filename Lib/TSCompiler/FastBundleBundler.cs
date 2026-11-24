@@ -473,9 +473,21 @@ public class FastBundleBundler
     {
         var root = _mainBuildResult.CommonSourceDirectory!;
         var res = new Dictionary<string, string>();
+        var exportsRes = new Dictionary<string, string>();
         foreach (var source in _buildResult.Modules)
         {
             if (!source.Value.Valid) continue;
+            if (source.Value.PackageExports is { } packageExports)
+            {
+                foreach (var subpath in packageExports.Properties())
+                {
+                    if (!subpath.Name.StartsWith("./", StringComparison.Ordinal)) continue;
+                    if (source.Value.ResolveExportsSubpath(subpath.Name) is not { } target) continue;
+                    exportsRes.TryAdd((source.Key + subpath.Name[1..]).ToLowerInvariant(),
+                        PathUtils.Subtract(PathUtils.Join(source.Value.Owner.FullPath, target), root));
+                }
+            }
+
             res.TryAdd(source.Key.ToLowerInvariant(),
                 PathUtils.Subtract(
                     PathUtils.Join(source.Value.Owner.FullPath, PathUtils.WithoutExtension(source.Value.MainFile)),
@@ -529,7 +541,8 @@ public class FastBundleBundler
             }
         }
 
-        return $"R.map = {Newtonsoft.Json.JsonConvert.SerializeObject(res)};";
+        return $"R.map = {Newtonsoft.Json.JsonConvert.SerializeObject(res)};" +
+               (exportsRes.Count > 0 ? $"R.e = {Newtonsoft.Json.JsonConvert.SerializeObject(exportsRes)};" : "");
     }
 
     // Bobril must be first because it contains polyfills

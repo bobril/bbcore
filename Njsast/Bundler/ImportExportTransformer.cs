@@ -91,6 +91,13 @@ public class ImportExportTransformer : TreeTransformer
             if (DetectImport(val) is { } import)
             {
                 _reqSymbolDefMap[reqSymbolDef] = import;
+                // `module.exports = require("...")` becomes the whole export of this module, so the imported
+                // module needs its whole export object created before bundling
+                if (_sourceFile.Exports?.Values().Any(n => n.IsSymbolDef() == reqSymbolDef) ?? false)
+                {
+                    _sourceFile.NeedsImports.Add(import);
+                }
+
                 return node;
             }
         }

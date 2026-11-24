@@ -27,6 +27,7 @@ public class TSProject
     public HashSet<string>? UsedDependencies;
     public Dictionary<string, string>? Assets;
     public Dictionary<string, string>? Imports { get; set; }
+    public JObject? PackageExports { get; set; }
 
     public string? Name;
     internal int IterationId;
@@ -42,6 +43,7 @@ public class TSProject
             Dependencies = new();
             DevDependencies = new();
             Assets = null;
+            PackageExports = null;
             return;
         }
 
@@ -125,7 +127,8 @@ public class TSProject
                 TypesMainFile = PathUtils.Normalize(typingsV.ToString());
             }
 
-            if (parsed.GetValue("exports") is JObject exports)
+            PackageExports = parsed.GetValue("exports") as JObject;
+            if (PackageExports is { } exports)
             {
                 if (exports.GetValue(".") is JObject exportMain)
                 {
@@ -290,6 +293,7 @@ public class TSProject
             Dependencies = new();
             DevDependencies = new();
             Assets = null;
+            PackageExports = null;
             ProjectOptions?.FillProjectOptionsFromPackageJson(null, Owner);
         }
     }
@@ -413,6 +417,45 @@ public class TSProject
                         });
                     break;
             }
+        }
+    }
+
+    // conditions which bbcore resolves, all others like "require", "types" or "node" are skipped
+    static readonly HashSet<string> ExportsConditions = ["browser", "import", "module", "default"];
+
+    /// Resolves package subpath like "./decode" through exact key in "exports" of package.json.
+    /// Returns path relative to package directory or null when subpath is not listed there.
+    public string? ResolveExportsSubpath(string subpath)
+    {
+        if (PackageExports?.Property(subpath, StringComparison.Ordinal) is not { } property) return null;
+        return ResolveExportsTarget(property.Value);
+    }
+
+    static string? ResolveExportsTarget(JToken token)
+    {
+        switch (token)
+        {
+            case JValue { Type: JTokenType.String } value:
+                var target = value.ToString();
+                if (!target.StartsWith("./", StringComparison.Ordinal) || target.Contains('*')) return null;
+                return PathUtils.Normalize(target[2..]);
+            case JObject conditions:
+                foreach (var condition in conditions.Properties())
+                {
+                    if (!ExportsConditions.Contains(condition.Name)) continue;
+                    if (ResolveExportsTarget(condition.Value) is { } res) return res;
+                }
+
+                return null;
+            case JArray alternatives:
+                foreach (var alternative in alternatives)
+                {
+                    if (ResolveExportsTarget(alternative) is { } res) return res;
+                }
+
+                return null;
+            default:
+                return null;
         }
     }
 
