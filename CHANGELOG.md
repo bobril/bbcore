@@ -2,6 +2,8 @@
 
 ## [unreleased]
 
+## 7.1.5
+
 ### Fixed
 
 - Production bundle could reference an undeclared variable (`__export_$`) for a module doing
